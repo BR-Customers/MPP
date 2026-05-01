@@ -1,8 +1,8 @@
 # MPP MES — Open Issues Register
 
 **Document:** FDS-MPP-MES-OIR-001
-**Version:** 2.16 — Working Draft
-**Date:** 2026-04-29
+**Version:** 2.17 — Working Draft
+**Date:** 2026-05-01
 **Prepared By:** Blue Ridge Automation
 **Prepared For:** Madison Precision Products, Inc. (Madison, IN)
 
@@ -14,6 +14,7 @@ This register consolidates all open items and design decisions that gate Perspec
 
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
+| 2.17 | 2026-05-01 | Blue Ridge Automation | **Nine items closed from Jacques's 2026-05-01 markup of the Outstanding Items extract.** OI-07 (Production-only WO seed confirmed → ✅ Resolved). OI-24 (legacy Automation tile not reproduced; covered by `Audit.InterfaceLog` + OPC tag management → ✅ Resolved). OI-25 (Notifications module out-of-MVP; banner notifications already covered via terminal context per FDS-07-006a/b; text/email notifications a future change order or follow-on project → ✅ Resolved). OI-27 (Supply-part flag covered by existing component-part modeling — `Parts.Item` + `Parts.Bom` + `Parts.ItemType` Cast/Machined/Assembled/Received → ✅ Resolved). OI-28 (Cast-override flag covered by `LocationAttribute` system; no new BIT column on Cell → ✅ Resolved). OI-29 (Workstation Category covered by ISA-95 hierarchy; no `WorkstationCategory` LocationAttribute → ✅ Resolved). OI-30 (Legacy Reports-tile contents not mirrored 1:1; the four named PD reports stay MVP via UJ-19; additional Ignition reports beyond those four = post-deployment change order → ✅ Resolved). OI-31 (Proposed direction confirmed + new business rule: cutover seed at **+10,000 above current Flexware `LastCounterValue`** — or MPP-agreed delta — to avoid LTT collisions during partial-cutover windows. Format `MESL{0:D7}` / `MESI{0:D7}` retained, no reset policy, rollover deferred ~30 yrs → ✅ Resolved). UJ-03 (Per-Operation `Parts.OperationTemplate.RequiresSubLotSplit BIT` flag confirmed; mockup verified at Trim OUT with `+ Add sub-LOT` button toggling 1 vs N destination rows; Configuration Tool surfaces this as "may split for machining" toggle on the per-Operation row of the Item edit screen → ✅ Resolved). UJ-19 confirmed in MVP scope: the four named PD reports are deliverables for this project; the post-deployment change-order comment in OI-30 was about reports BEYOND the four. **Count shifts:** Part A Resolved 22 → 30, In Review 1 → 0, Open 11 → 4 (only OI-32, OI-33, OI-34, OI-35 remain); Part B Resolved 16 → 17, In Review 1 → 0, Open 2 → 2 (UJ-05, UJ-19). Grand total: 54 items, 47 resolved, 0 in review, 6 open, 1 superseded. **Companion FDS amendments queued separately:** §16 cutover-offset rule (FDS-16-003) + §12 banners-only / text-out one-liner; FDS embedded Open Items Register trimmed to the 6 remaining items. No data model / SQL changes this revision — register entries + FDS prose only. |
 | 2.16 | 2026-04-29 | Blue Ridge Automation | **OI-35 NEW / ⬜ Open / HIGH — Long-horizon scaling, retention, and archiving strategy.** Captures the 20-year-retention architectural decisions surfaced during the 2026-04-28 indexing & query-perf review. **Tagged "must decide before Arc 2 Phase 1 SQL build"** — partition functions, materialization columns, and closure-table presence all need to be in the CREATE migration; retrofitting them on a populated 100M+ row table is operationally painful. The decision space: per-table retention class (push-back candidates: `Audit.OperationLog` / `InterfaceLog` / `FailureLog` at 7-year vs 20-year), monthly range partitioning + sliding-window automation for ~14 high-volume event tables, clustered columnstore on partitions older than 90 days, materialized closure table for `Lots.LotGenealogy` (so Honda audits don't recursive-CTE-walk 100M+ rows at year 15), materialize `TotalInProcess` / `InventoryAvailable` columns onto `Lots.Lot` (replaces the read-time `v_LotDerivedQuantities` view at scale), switch `Lots.IdentifierSequence_Next` to SQL Server `SEQUENCE` object (eliminates row-level lock contention at LOT creation), split `Audit.OperationLog` into a 7-year retention general audit + a separate 20-year `Lots.LotEventLog` for traceability events. Owner: Blue Ridge architecture + MPP IT (retention policy negotiation). Last-responsible-moment posture confirmed by Jacques 2026-04-29 — the decision is deferred but the gate is hard. Couples to: indexing review meeting note (`Meeting_Notes/2026-04-28_DataModel_Indexing_Scaling_Review.md`), the data model spec § for Arc 2 deferred tables, and the existing "indexing pass" follow-up. Count shifts: Part A Open 10 → 11 (added OI-35 HIGH). Active Part A item count 34 → 35. No FDS / data model / SQL changes this revision — register entry only. |
 | 2.15 | 2026-04-28 | Blue Ridge Automation | **Canonical sync of OI-33 + OI-34 from the embedded FDS Open Items Register.** Both items were added to the FDS body's Open Items Register during the 2026-04-28 v0.11m continuity + clarity pass but had not yet been folded into this canonical OIR. **OI-33 ⬜ Open / HIGH** — AIM Shipper ID pool empty-pool **hard-fail** behavior (FDS-07-010a). When the local pool is exhausted, `Container_Complete` rolls back and production stops on affected lines until the pool refills (no soft-fallback, no placeholder-then-reconcile). Customer validation needed: confirm hard-fail is the desired operational posture given trucks cannot ship without valid Honda-issued AIM IDs. Owner: MPP Operations / IT. Couples to UJ-04 (already Resolved — pool design locked v2.12). **OI-34 ⬜ Open / MEDIUM** — MPP-authored production schedules — how should the MES leverage them beyond shift-window timing (FDS-09-008 / FDS-09-012)? Current design imports them for shift-instance creation and event-derived availability math. Whether MPP wants additional uses (target quotas per shift, line scheduling drift detection, throughput planning, etc.) is unanswered. Owner: MPP Production Control. Couples to UJ-19 (PD report enumeration) and OI-30 (Reports tile contents). Count shifts: Part A Resolved 22 → 22, In Review 1 → 1, Open 8 → 10 (added OI-33 + OI-34), Superseded 1 → 1. Active Part A item count 32 → 34. No FDS / data model / SQL changes — OIR sync only. |
 | 2.1 | 2026-04-06 | Blue Ridge Automation | Initial register consolidating FDS open items and User Journey assumptions |
@@ -35,33 +36,33 @@ This register consolidates all open items and design decisions that gate Perspec
 
 ## Summary
 
-**Part A counts (35 items — updated v2.16):**
+**Part A counts (35 items — updated v2.17):**
 
 | Priority | ✅ Resolved | 🔶 In Review | ⬜ Open | Superseded | **Total** |
 |---|---|---|---|---|---|
-| HIGH | 3 (OI-01, OI-02, OI-05) | 1 (OI-07) | 2 (OI-33, OI-35) | 0 | **6** |
-| MEDIUM | 13 (OI-03, OI-04, OI-06, OI-08, OI-09, OI-11, OI-12, OI-16, OI-17, OI-18, OI-21, OI-22, OI-31) | 0 | 5 (OI-24, OI-28, OI-30, OI-32, OI-34) | 0 | **18** |
-| LOW | 6 (OI-13, OI-14, OI-15, OI-19, OI-20, OI-23, OI-32b) | 0 | 4 (OI-25, OI-27, OI-29) | 0 | **10** |
+| HIGH | 4 (OI-01, OI-02, OI-05, OI-07) | 0 | 2 (OI-33, OI-35) | 0 | **6** |
+| MEDIUM | 16 (OI-03, OI-04, OI-06, OI-08, OI-09, OI-11, OI-12, OI-16, OI-17, OI-18, OI-21, OI-22, OI-24, OI-28, OI-30, OI-31) | 0 | 2 (OI-32, OI-34) | 0 | **18** |
+| LOW | 10 (OI-13, OI-14, OI-15, OI-19, OI-20, OI-23, OI-25, OI-27, OI-29, OI-32b) | 0 | 0 | 0 | **10** |
 | — | 0 | 0 | 0 | 1 (OI-10) | **1** |
-| **Total** | **22** | **1** | **11** | **1** | **35** |
+| **Total** | **30** | **0** | **4** | **1** | **35** |
 
-> **Authoritative row lists (after v2.16 sync):**
+> **Authoritative row lists (after v2.17 sync):**
 >
-> - Resolved (22) = OI-01, -02, -03, -04, -05, -06, -08, -09, -11, -12, -13, -14, -15, -16, -17, -18, -19, -20, -21, -22, -23, -32b
-> - In Review (1) = OI-07 (mid-correction — see v2.9 entry)
-> - Open (11) = OI-24, -25, -27, -28, -29, -30, -31, -32, -33, -34, -35
+> - Resolved (30) = OI-01, -02, -03, -04, -05, -06, -07, -08, -09, -11, -12, -13, -14, -15, -16, -17, -18, -19, -20, -21, -22, -23, -24, -25, -27, -28, -29, -30, -31, -32b
+> - In Review (0) = —
+> - Open (4) = OI-32, -33, -34, -35
 > - Superseded (1) = OI-10
 
-**Part B counts (19 items) — updated v2.14:**
+**Part B counts (19 items) — updated v2.17:**
 
 | Priority | ✅ Resolved | 🔶 In Review | ⬜ Open | **Total** |
 |---|---|---|---|---|
-| HIGH | 6 (UJ-01, UJ-04, UJ-07, UJ-08, UJ-11, UJ-13, UJ-18) | 0 | 1 (UJ-19) | **7** |
-| MEDIUM | 9 (UJ-02, UJ-09, UJ-10, UJ-12, UJ-14, UJ-15, UJ-16, UJ-17) | 1 (UJ-03) | 1 (UJ-05) | **11** |
+| HIGH | 7 (UJ-01, UJ-04, UJ-07, UJ-08, UJ-11, UJ-13, UJ-18) | 0 | 1 (UJ-19) | **8** |
+| MEDIUM | 9 (UJ-02, UJ-03, UJ-09, UJ-10, UJ-12, UJ-14, UJ-15, UJ-16, UJ-17) | 0 | 1 (UJ-05) | **10** |
 | LOW | 1 (UJ-06) | 0 | 0 | **1** |
-| **Total** | **16** | **1** | **2** | **19** |
+| **Total** | **17** | **0** | **2** | **19** |
 
-**Grand total:** 54 items (35 Part A + 19 Part B). 38 resolved, 2 in review, 13 open, 1 superseded.
+**Grand total:** 54 items (35 Part A + 19 Part B). **47 resolved, 0 in review, 6 open, 1 superseded.**
 
 > **Note on UJ descriptions:** Jacques flagged 2026-04-24 that UJ entries lack the options/impact/reference depth of the OI entries. A separate enrichment pass is queued before the next MPP review — not addressed in v2.10.
 
@@ -197,7 +198,7 @@ Delivered via FDS v0.8, Data Model v1.6, User Journeys v0.6, Config Tool phased 
 
 ---
 
-### OI-07 — Work order scope — 🔶 In Review (revised 2026-04-24)
+### OI-07 — Work order scope — ✅ Resolved (2026-05-01)
 
 **Priority:** HIGH (active); FUTURE hooks are LOW
 **Owner:** MPP / Blue Ridge (Ben is SME for the future Demand / Maintenance engine)
@@ -246,6 +247,8 @@ The existing **MVP-lite behaviour does not change.** What changes is:
 3. Update repeatable proc comments for `R__Workorder_WorkOrderType_List.sql` and `R__Workorder_WorkOrderType_Get.sql` (comment-only change landing this turn).
 
 **Ben's maintenance-engine scope** is NOT gating this project. When MPP later scopes a maintenance MES project, they can INSERT the new `Demand` (planned PM) and `Maintenance` (emergency) code rows and build the flow on top of the existing schema hook. Until then, leave the code table single-seeded.
+
+**Decision (2026-05-01):** Closed. Production-only seed confirmed by Jacques in markup of the 2026-05-01 Outstanding Items extract. SQL correction migration `0013_oi07_oi12_corrections.sql` already landed (2026-04-28); no further work this project. The schema hook for future Demand / Maintenance code rows remains in place.
 
 ---
 
@@ -614,7 +617,7 @@ The consumption metadata (Min / Max / Default / IsConsumptionPoint) **retains** 
 
 ---
 
-### OI-24 — "Automation" top-level tile scope — ⬜ Open (new, discovery)
+### OI-24 — "Automation" top-level tile scope — ✅ Resolved (2026-05-01)
 
 **Priority:** MEDIUM
 **Owner:** MPP IT / Blue Ridge
@@ -625,22 +628,28 @@ The consumption metadata (Min / Max / Default / IsConsumptionPoint) **retains** 
 
 **Proposed direction:** Ask MPP for screenshots or a walk-through of the Automation tile. Confirm any in-scope functionality is already covered by our interface-logging / OPC-tag management design. Discovery only — no design commitment until contents known.
 
+**Decision (2026-05-01):** Closed — can be entirely ignored. The legacy Automation tile is not reproduced. Interface logging is covered by `Audit.InterfaceLog` and OPC tag management is covered by the Ignition Gateway's native tooling. No new schema; no Configuration Tool tile.
+
 ---
 
-### OI-25 — Notifications configuration scope — ⬜ Open (new, discovery)
+### OI-25 — Notifications configuration scope — ✅ Resolved (2026-05-01)
 
 **Priority:** LOW
 **Owner:** MPP Operations / Blue Ridge
-**FDS §:** Out-of-MVP (pending confirmation)
-**References:** Screenshot review 2026-04-22 (image 10, Configuration "Setup > Notifications" tile)
+**FDS §:** Out-of-MVP (banner-only via terminal context)
+**References:** Screenshot review 2026-04-22 (image 10, Configuration "Setup > Notifications" tile); FDS-07-006a/b (banner notification mechanics)
 
 **Description:** Legacy Configuration has a Notifications module for email / alert rules (likely fires on events such as hold placed, line stopped, etc.). Not in our design.
 
 **Proposed direction:** Confirm MPP considers this out-of-MVP and that its absence is not a regression. If in-scope, schema and FDS §12 additions needed. Discovery only.
 
+**Decision (2026-05-01):** Closed. Legacy Notifications configuration tile is out-of-MVP. Banner notifications are already covered by the workstation terminal-context feedback (FDS-07-006a/b print-failure broadcast pattern + elevation banners + hold/AIM-pool alarm tiles). Text and email notifications MAY be added as a post-deployment change order or as scope of a follow-on project — not gating this engagement.
+
+**Integration queued:** FDS §12 (Reporting) one-liner: "Text and email notifications are out-of-MVP. Banner notifications via terminal context cover the in-scope notification surface."
+
 ---
 
-### OI-27 — Material "Supply part" flag purpose — ⬜ Open (new, discovery)
+### OI-27 — Material "Supply part" flag purpose — ✅ Resolved (2026-05-01)
 
 **Priority:** LOW
 **Owner:** MPP Engineering
@@ -651,9 +660,11 @@ The consumption metadata (Min / Max / Default / IsConsumptionPoint) **retains** 
 
 **Proposed direction:** Ask MPP what a "Supply part" is and whether it drives any workflow (BOM expansion, shipping, etc.). If confirmed, add `IsSupplyPart BIT NOT NULL DEFAULT 0` to `Parts.Item`. Discovery only.
 
+**Decision (2026-05-01):** Closed — already handled. Our component-part modeling (`Parts.Item` + `Parts.Bom` + `Parts.ItemType` covering Cast / Machined / Assembled / Received) captures the supplier-vs-in-house distinction implicit in Flexware's `Supply part` BIT. No new `Parts.Item.IsSupplyPart` column needed.
+
 ---
 
-### OI-28 — Work Cell "Require override for cast parts" flag — ⬜ Open (new, discovery)
+### OI-28 — Work Cell "Require override for cast parts" flag — ✅ Resolved (2026-05-01)
 
 **Priority:** MEDIUM
 **Owner:** MPP Engineering / Blue Ridge
@@ -664,9 +675,11 @@ The consumption metadata (Min / Max / Default / IsConsumptionPoint) **retains** 
 
 **Proposed direction:** Confirm with MPP whether this is still needed and how it interacts with OI-04's line-stop / escalation model. If retained, add `RequiresCastOverride BIT` as a `LocationAttribute` on the Cell type. Discovery only.
 
+**Decision (2026-05-01):** Closed — built into the existing attribute system. Per-cell override behavior can be configured via the existing `LocationAttribute` slots without a new dedicated `RequiresCastOverride` BIT column on the Cell type.
+
 ---
 
-### OI-29 — Workstation Category grouping orthogonal to Area/Line — ⬜ Open (new, discovery)
+### OI-29 — Workstation Category grouping orthogonal to Area/Line — ✅ Resolved (2026-05-01)
 
 **Priority:** LOW
 **Owner:** MPP Operations / Blue Ridge
@@ -677,22 +690,28 @@ The consumption metadata (Min / Max / Default / IsConsumptionPoint) **retains** 
 
 **Proposed direction:** Confirm MPP operators rely on this grouping for floor navigation. Our Area / Line / Cell ISA-95 hierarchy should cover it — if not, add a `WorkstationCategory` attribute via `LocationAttribute`. Discovery only.
 
+**Decision (2026-05-01):** Closed — legacy configuration ignored, covered by the ISA-95 model. Our Area / Line / Cell / Terminal hierarchy provides the operator floor-navigation grouping without a separate `WorkstationCategory` LocationAttribute.
+
 ---
 
-### OI-30 — "Reports" tile contents enumeration — ⬜ Open (new)
+### OI-30 — "Reports" tile contents enumeration — ✅ Resolved (2026-05-01)
 
 **Priority:** MEDIUM
 **Owner:** MPP Production Control / Blue Ridge
-**FDS §:** 15 (Reports) + UJ-19
+**FDS §:** 12 (Reporting) + UJ-19
 **References:** Screenshot review 2026-04-22 (image 1, top-level "Reports" tile — contents not captured); UJ-19 (Productivity DB replacement)
 
 **Description:** Legacy home page has a Reports tile. UJ-19 flags the four Productivity DB reports as a known requirement but the full Reports menu has not been enumerated — there may be additional reports MPP considers baseline.
 
 **Proposed direction:** Walk through the legacy Reports tile with MPP and list every report, then match against our MVP reporting scope. Couples directly to UJ-19 closure.
 
+**Decision (2026-05-01):** Closed. The legacy Reports-tile contents are not reproduced as a 1:1 mirror. **The four named Productivity DB reports (UJ-19) ARE in MVP scope** and will be delivered as MES reports as part of this project. Any reports BEYOND those four — additional Ignition reports MPP may want — are scoped as a post-deployment change order or follow-on project, not in this engagement.
+
+**Boundary with UJ-19:** UJ-19 delivers the four named PD reports (MVP, in scope). OI-30 closure scopes everything else (post-deployment change order). When MPP names the four reports, UJ-19 closes; the Reports tile shipped in MVP carries those four entries.
+
 ---
 
-### OI-31 — Identifier sequence table + format carry-forward — ⬜ Open (new, 2026-04-23)
+### OI-31 — Identifier sequence table + format carry-forward — ✅ Resolved (2026-05-01)
 
 **Priority:** MEDIUM
 **Owner:** MPP IT / Blue Ridge
@@ -732,6 +751,20 @@ Companion proc `Lots.IdentifierSequence_Next @Code` atomically increments `LastV
 **Counter inventory:** The Flexware `IdentifierFormat` export Jacques provided (2026-04-23) contains exactly two rows — `Lot` (`MESL{0:D7}`, `LastCounterValue=1,710,932`) and `SerializedItem` (`MESI{0:D7}`, `LastCounterValue=2,492`). No other live counters. Any FK references to `IdentifierFormat` from other Flexware tables (WorkOrder, ProductionOrder, etc.) are schema placeholders with no populated format rows.
 
 **Proposed direction:** Implement schema as shown in Arc 2 Phase 1. Phase 0 resolves the three open questions above before cutover-day seeding. `Lots.IdentifierSequence_Next` replaces ad-hoc identifier generation for LOT and SerializedItem minting; no additional counters needed.
+
+**Decision (2026-05-01):** Proposed direction confirmed by Jacques with one new business rule on cutover-day seeding: **start the new MES counter at +10,000 above the current Flexware `LastCounterValue`** (or an MPP-agreed delta) to avoid LTT collisions during any partial-cutover window where both systems mint LOTs in parallel. This subsumes the original "seed at or above Flexware values" guidance with a concrete buffer.
+
+The three open questions also resolve:
+1. **Format continuity:** keep `MESL{0:D7}` / `MESI{0:D7}` (Jacques default).
+2. **Reset policy:** none — no line / shift / time-based counter resets.
+3. **Rollover policy:** ~30+ year horizon at current burn rate; warning mechanism is a future concern, not MVP.
+
+Rollout shape (single-line vs full-cutover vs shadow) still couples to Ben's deployment-shape decision (memo `Meeting_Notes/2026-04-24_OI-31_Single-Line_Deployment_Impact.md`); the +10K seed-offset rule applies regardless of which rollout shape Ben picks.
+
+**Integration queued:**
+- **Data Model** — add the +10K seeding rule to the `Lots.IdentifierSequence` table description as a deployment-time note.
+- **FDS §16** — FDS-16-003 amended to bake in the `+10,000` cutover offset rule explicitly. "Open items (OI-31)" paragraph absorbed into design fact.
+- **Phase 1 migration** (`0014_arc2_phase1_shop_floor_foundation.sql`) — seed both rows at `<Flexware-current> + 10000` (or final MPP-agreed delta captured before cutover).
 
 ---
 
@@ -948,7 +981,7 @@ These are the 19 assumptions from `MPP_MES_USER_JOURNEYS.md`. Each gates one or 
 
 ---
 
-### UJ-03 — Sub-LOT split trigger — 🔶 In Review
+### UJ-03 — Sub-LOT split trigger — ✅ Resolved (2026-05-01)
 
 **Priority:** MEDIUM
 **Blocks:** Machining OUT screen
@@ -970,6 +1003,17 @@ These are the 19 assumptions from `MPP_MES_USER_JOURNEYS.md`. Each gates one or 
 **What's needed to decide:** Ben's input on which Machining workflows split vs run through whole. Specifically: does every part that hits Machining IN get split, or only some? If only some, by what rule?
 
 **Decision (existing):** Auto-split on arrival at machining, defaulting to 50/50, with operator override. Sublots treated via `Lots.LotGenealogy` (relationship = Split). Needs review with Ben, and reconciliation with the sublot pattern now in OI-09 addenda.
+
+**Decision (2026-05-01):** Per-Operation flag confirmed — `Parts.OperationTemplate.RequiresSubLotSplit BIT` (Data Model v1.9m) is the implemented mechanism. The Trim OUT screen toggles between a **single-destination panel** (flag OFF, parent moves whole) and an **N-destination Sub-LOT Distribution panel with `+ Add sub-LOT` button** (flag ON, parent splits into N children routed to N machining cells). Mockup verified: `mockup/plantFloor.html` `terminal/trim` (and `terminal/trim-out`) with the `RequiresSubLotSplit` toggle. The Configuration Tool surfaces this as a **"may split for machining"** toggle on the per-Operation row of the Item edit screen — operators / engineers configure it once per Operation per Item, not per LOT at run time.
+
+**Trigger location** is **Trim OUT** (split happens when LOT exits Trim, sub-LOTs route into Machining FIFO already split), not Machining IN — matches the 2026-04-29 design decision.
+
+**Per-Operation vs per-Item placement (locked):** the flag stays on `Parts.OperationTemplate` (per-Op-per-Item) rather than directly on `Parts.Item`. Per-Operation gives more flexibility — the same Item could split at one Operation but not another in some future workflow — without losing the simpler day-to-day UX (Item edit screen surfaces a single "may split" toggle on the relevant Operation row).
+
+**Integration queued:**
+- **Configuration Tool** — Item edit screen surfaces "may split for machining" toggle on the per-Operation row. Backend storage is the existing `Parts.OperationTemplate.RequiresSubLotSplit` column — no schema change.
+- **FDS §5** — already references the flag (FDS-05-009 / -011); confirm UI-labeling alignment in next FDS pass.
+- **No SQL change.**
 
 ---
 

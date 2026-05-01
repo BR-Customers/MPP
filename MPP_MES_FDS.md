@@ -4,8 +4,8 @@
 **Project:** Madison Precision Products MES Replacement
 **Prepared By:** Blue Ridge Automation
 **Client:** Madison Precision Products, Inc. (Madison, IN)
-**Version:** 0.11o — Working Draft
-**Date:** 2026-04-28
+**Version:** 0.11p — Working Draft
+**Date:** 2026-05-01
 
 ---
 
@@ -2114,6 +2114,12 @@ Each section SHALL have a **Print / Export** action producing a Honda-ready PDF 
 
 Role requirement: the Global Trace screen SHALL be accessible to Operators (no login required — view-only), Quality, Supervisor, Engineering, and Admin. All views are read-only; no mutations on this screen. Operators reaching the screen from a shop-floor terminal SHALL see an "Open on Supervisor dashboard" option for deep drilling.
 
+### 12.6 Notifications Posture — `MVP`
+
+#### FDS-12-015 — Banners-Only In-MVP
+
+User-facing notifications in MVP are surfaced **as banners on workstation terminals** via the terminal-context broadcast pattern (FDS-07-006a/b print-failure broadcast, elevation banners, hold-event tiles, AIM-pool alarm tiles). **Text and email notifications are out-of-MVP** — they MAY be added as a post-deployment change order or as scope of a follow-on project. The legacy Configuration Tool's "Notifications" module (per-event email / alert rules) is not reproduced in MVP. (OI-25 closure 2026-05-01.)
+
 ---
 
 ## 13. External System Interfaces — MIXED SCOPE
@@ -2279,11 +2285,11 @@ All identifier-minting paths (Lot create, SerializedItem create, future counters
 
 #### FDS-16-003 — Cutover-Day Seeding
 
-The cutover migration SHALL include a seeding step that fetches `LastCounterValue` from the Flexware `IdentifierFormat` table at cutover and seeds `Lots.IdentifierSequence.LastValue` at **or above** the Flexware value for each sequence, preventing LTT collisions with in-circulation LOTs.
+The cutover migration SHALL include a seeding step that fetches `LastCounterValue` from the Flexware `IdentifierFormat` table at cutover and seeds `Lots.IdentifierSequence.LastValue` at **`<Flexware-current> + 10,000`** for each sequence (or an MPP-agreed delta captured before cutover). The +10,000 offset reserves a safety buffer that prevents LTT collisions during any partial-cutover window where the legacy Flexware MES and the replacement MES mint LOTs in parallel — even if the legacy system continues issuing identifiers for several days after the new MES goes live, the buffer guarantees no overlap with in-circulation LOTs.
 
-Baseline values sampled 2026-04-23 (subject to drift — re-sample on cutover day): `Lot=1,710,932`, `SerializedItem=2,492`.
+Baseline values sampled 2026-04-23 (subject to drift — re-sample on cutover day): `Lot=1,710,932`, `SerializedItem=2,492`. With the +10,000 offset rule and no further drift, cutover-day seeds would be approximately `Lot=1,720,932` and `SerializedItem=12,492`.
 
-**Open items (OI-31):** Format carry-forward (keep `MESL`/`MESI`, or mint new prefixes in the replacement MES?), reset policy (currently none in Flexware; any line/shift-specific rules MPP wants honored going forward?), rollover policy at 9,999,999 (~30+ years at current burn rate for Lots).
+**Format carry-forward:** the existing `MESL{0:D7}` (Lot) and `MESI{0:D7}` (SerializedItem) prefixes are retained — no new prefix space minted in the replacement MES. **Reset policy:** none. No line-specific, shift-specific, or time-based counter resets. **Rollover horizon:** at MPP's current burn rate, `Lot` rolls over from `9,999,999` in approximately 30+ years. No earlier warning mechanism is in MVP scope; this is a future concern.
 
 **Counter inventory confirmed:** The Flexware `IdentifierFormat` table is the authoritative list. MPP's export shows exactly two rows — Lot (`MESL{0:D7}`) and SerializedItem (`MESI{0:D7}`). Other Flexware tables that reference `IdentifierFormat` via FK do so without populated format rows. No additional counters in scope.
 
@@ -2323,21 +2329,13 @@ This register lists only items that are **unresolved** (Open or In Review) as of
 
 The full historical record (resolution rationale, options considered, revised-decision text, closed items, supersession history) lives in `MPP_MES_Open_Issues_Register.docx` — the canonical source.
 
-**Status as of 2026-04-28:** 14 unresolved items (2 In Review, 12 Open). Part A items (FDS open issues) numbered `OI-XX`; Part B items (user-journey open questions) numbered `UJ-XX`.
+**Status as of 2026-05-01:** 6 unresolved items (0 In Review, 6 Open). Part A items (FDS open issues) numbered `OI-XX`; Part B items (user-journey open questions) numbered `UJ-XX`.
 
 | ID | FDS § | Description | Criticality | Owner |
 |---|---|---|---|---|
-| **OI-07** | 6.10 | Work order scope — single active `Production` type confirmed; `Demand` / `Maintenance` retained as FUTURE code-table hooks. | **HIGH** (active flow); LOW (FUTURE hooks) | Blue Ridge / Ben (SME) |
 | **OI-33** | 7.4 (FDS-07-010a) | AIM Shipper ID pool empty-pool **hard-fail** behavior — when the local pool is exhausted, `Container_Complete` rolls back and production stops on affected lines until the pool refills (no soft-fallback, no placeholder-then-reconcile). Customer validation: confirm hard-fail is the desired operational posture given trucks cannot ship without valid Honda-issued AIM IDs. | **HIGH** | MPP Operations / IT |
-| **UJ-19** | 12 | Productivity DB replacement — MPP to enumerate the four PD reports + their data sources; couples to OI-30 and UJ-11. | **HIGH** | MPP Production Control |
-| **OI-24** | TBD | Legacy "Automation" home-tile contents not captured in screenshots — likely OPC / interface management UI. Discovery walk-through with MPP needed. | MEDIUM | MPP IT |
-| **OI-28** | 10 | Legacy Cell flag *"Require override for cast parts"* — likely couples to OI-04 vision-conflict / line-stop at cell-level granularity. Confirm purpose; if retained, add `RequiresCastOverride` LocationAttribute. | MEDIUM | MPP Engineering |
-| **OI-30** | 12 | Legacy "Reports" tile contents not enumerated. Walk-through needed; couples directly to UJ-19 closure. | MEDIUM | MPP Production Control |
-| **OI-34** | 9.4 (FDS-09-008 / FDS-09-012) | MPP-authored production schedules — how should the MES leverage them beyond shift-window timing? Current design imports them for shift-instance creation and event-derived availability math. Whether MPP wants additional uses (target quotas per shift, line scheduling drift detection, throughput planning, etc.) is unanswered: *"How would MPP like to leverage the provided production schedules in the MES?"* | MEDIUM | MPP Production Control |
-| **OI-31** | 16 | `Lots.IdentifierSequence` cutover seed values + Ben's rollout-shape decision (single-line vs full-cutover vs shadow). Memo: `Meeting_Notes/2026-04-24_OI-31_Single-Line_Deployment_Impact.md`. | MEDIUM | MPP IT / Ben (rollout) |
-| **OI-32** | 5.11 / 6.6a (proposed) | Material Allocation operator screen — Jacques challenged the premise; clarification queued for "close as not-reproduced." Not blocking until reopened. | MEDIUM | Blue Ridge / Ben |
-| **UJ-03** | 5.4 | Sub-LOT split trigger — auto-prompt 50/50 vs operator-triggered vs per-Item conditional. Recommended Option A (auto-prompt, current FDS-05-009 design). | MEDIUM | Ben |
+| **OI-35** | 11 (Audit retention); cross-cutting §5/§6/§9 | **HARD GATE — must decide before Arc 2 Phase 1 SQL build.** Long-horizon scaling, retention, and archiving strategy across the deferred Arc 2 event tables. Eight architectural decisions (per-table retention class, monthly partitioning, columnstore on aged partitions, materialized closure table for `Lots.LotGenealogy`, materialized `TotalInProcess` / `InventoryAvailable` columns on `Lots.Lot`, `IdentifierSequence_Next` locking model, `Audit.OperationLog` split for traceability subset, filtered indexes). Items 2/4/5/7 must be in the CREATE migration. | **HIGH** | Blue Ridge architecture + MPP IT |
+| **UJ-19** | 12 | Productivity DB replacement — MPP to name the four PD reports + their data sources. The four reports are MVP scope (delivered as MES reports); reports beyond the four are post-deployment change order per OI-30 closure. Couples to UJ-11. | **HIGH** | MPP Production Control / Ben |
+| **OI-34** | 9.4 (FDS-09-008 / FDS-09-012) | MPP-authored production schedules — how should the MES leverage them beyond shift-window timing? Current design imports them for shift-instance creation and event-derived availability math. Whether MPP wants additional uses (target quotas per shift, line-scheduling drift detection, throughput planning, etc.) is unanswered: *"How would MPP like to leverage the provided production schedules in the MES?"* | MEDIUM | MPP Production Control |
+| **OI-32** | 5.11 / 6.6a (proposed) | Material Allocation operator screen — Jacques challenged the premise; clarification queued for "close as not-reproduced" (lineside check-in IS the allocation per our LocationTypeDefinition + ConsumptionEvent model). Awaits Ben's explicit confirmation of the not-reproduced framing before final closure. | MEDIUM | Blue Ridge / Ben |
 | **UJ-05** | 7.7 | Sort Cage serial migration — recommended update-in-place + `Lots.ContainerSerialHistory`; awaits MPP Quality + Honda compliance affirmation. Highest traceability-loss-risk decision in the system. | MEDIUM | MPP Quality / Honda |
-| **OI-25** | (out-of-MVP) | Legacy "Notifications" Configuration module (email / alert rules) — confirm out-of-MVP and not a regression. | LOW | MPP Operations |
-| **OI-27** | 3 | Legacy Material *"Supply part"* BIT flag — purpose unclear. Confirm whether it drives any workflow; if so, add `IsSupplyPart` to `Parts.Item`. | LOW | MPP Engineering |
-| **OI-29** | 2 | Legacy Workstation Category grouping orthogonal to Area / Line / Cell — UI navigation convenience? Our ISA-95 hierarchy may already cover; if not, add `WorkstationCategory` LocationAttribute. | LOW | MPP Operations |
