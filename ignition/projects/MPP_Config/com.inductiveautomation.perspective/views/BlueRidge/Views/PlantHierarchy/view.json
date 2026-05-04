@@ -8,13 +8,11 @@
       "description": "400-ton Toshiba die cast press, Bay 3",
       "sortOrder": 3,
       "tier": "Cell",
-      "typeDefinition": "DieCastMachine",
-      "attributes": [
-        {"name": "Tonnage", "value": "400", "dataType": "DECIMAL", "uom": "tons", "required": true},
-        {"name": "ConfirmationMethod", "value": "None", "dataType": "NVARCHAR", "uom": "", "required": false},
-        {"name": "RefCycleTimeSec", "value": "62.5", "dataType": "DECIMAL", "uom": "sec", "required": false}
-      ]
-    }
+      "typeDefinition": "DieCastMachine"
+    },
+    "attr0": {"name": "Tonnage", "value": "400", "dataType": "DECIMAL", "uom": "tons", "required": true},
+    "attr1": {"name": "ConfirmationMethod", "value": "None", "dataType": "NVARCHAR", "uom": "", "required": false},
+    "attr2": {"name": "RefCycleTimeSec", "value": "62.5", "dataType": "DECIMAL", "uom": "sec", "required": false}
   },
   "params": {},
   "propConfig": {},
@@ -106,236 +104,232 @@
               {
                 "children": [
                   {
-                    "events": {
-                      "component": {
-                        "onSelectionChange": {
-                          "config": {
-                            "script": "data = self.props.selection.data\nif data:\n    self.view.custom.selectedLocation = data"
-                          },
-                          "type": "script"
-                        }
-                      }
+                    "children": [
+                      {"meta": {"name": "Icon"}, "position": {}, "propConfig": {}, "props": {"text": "🏢", "style": {"fontSize": "13px"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Name"}, "position": {"grow": 1}, "propConfig": {}, "props": {"text": "Madison Precision Products", "style": {"color": "#1a1a1a", "fontSize": "12px", "fontWeight": "500"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Tier"}, "position": {}, "propConfig": {}, "props": {"text": "Enterprise", "style": {"color": "#888888", "fontSize": "10px"}}, "type": "ia.display.label"}
+                    ],
+                    "events": {"dom": {"onClick": {"config": {"script": "loc = {'id': 1, 'name': 'Madison Precision Products', 'code': 'MPP', 'parentName': '', 'description': 'Madison Precision Products, Inc.', 'sortOrder': 1, 'tier': 'Enterprise', 'typeDefinition': 'Enterprise'}\nself.view.custom.selectedLocation = loc\nblank = {'name': '', 'value': '', 'dataType': '', 'uom': '', 'required': False}\nself.view.custom.attr0 = blank\nself.view.custom.attr1 = blank\nself.view.custom.attr2 = blank"}, "type": "script"}}},
+                    "meta": {"name": "TreeItemEnterprise"},
+                    "position": {},
+                    "propConfig": {
+                      "props.style.backgroundColor": {"binding": {"config": {"expression": "if({view.custom.selectedLocation.id} = 1, '#e3f2fd', 'transparent')"}, "type": "expr"}},
+                      "props.style.color": {"binding": {"config": {"expression": "if({view.custom.selectedLocation.id} = 1, '#1565c0', '#1a1a1a')"}, "type": "expr"}}
                     },
-                    "meta": {"name": "LocationTree"},
-                    "position": {"grow": 1},
-                    "propConfig": {},
                     "props": {
-                      "items": [
-                        {
-                          "label": "Madison Precision Products",
-                          "expanded": true,
-                          "icon": {"path": "material/business"},
-                          "data": {
-                            "id": 1,
-                            "name": "Madison Precision Products",
-                            "code": "MPP",
-                            "parentName": "",
-                            "description": "Madison Precision Products, Inc.",
-                            "sortOrder": 1,
-                            "tier": "Enterprise",
-                            "typeDefinition": "Enterprise",
-                            "attributes": []
-                          },
-                          "items": [
-                            {
-                              "label": "Madison Facility",
-                              "expanded": true,
-                              "icon": {"path": "material/location_city"},
-                              "data": {
-                                "id": 2,
-                                "name": "Madison Facility",
-                                "code": "MAD",
-                                "parentName": "Madison Precision Products (Enterprise)",
-                                "description": "Madison, Indiana manufacturing facility",
-                                "sortOrder": 1,
-                                "tier": "Site",
-                                "typeDefinition": "ManufacturingSite",
-                                "attributes": []
-                              },
-                              "items": [
-                                {
-                                  "label": "Die Cast",
-                                  "expanded": true,
-                                  "icon": {"path": "material/factory"},
-                                  "data": {
-                                    "id": 3,
-                                    "name": "Die Cast",
-                                    "code": "DC",
-                                    "parentName": "Madison Facility (Site)",
-                                    "description": "High-pressure aluminum die cast area",
-                                    "sortOrder": 1,
-                                    "tier": "Area",
-                                    "typeDefinition": "ProductionArea",
-                                    "attributes": []
-                                  },
-                                  "items": [
-                                    {
-                                      "label": "DC Machine #7",
-                                      "expanded": false,
-                                      "icon": {"path": "material/precision_manufacturing"},
-                                      "data": {
-                                        "id": 7,
-                                        "name": "DC Machine #7",
-                                        "code": "DC-007",
-                                        "parentName": "Die Cast (Area)",
-                                        "description": "400-ton Toshiba die cast press, Bay 3",
-                                        "sortOrder": 3,
-                                        "tier": "Cell",
-                                        "typeDefinition": "DieCastMachine",
-                                        "attributes": [
-                                          {"name": "Tonnage", "value": "400", "dataType": "DECIMAL", "uom": "tons", "required": true},
-                                          {"name": "ConfirmationMethod", "value": "None", "dataType": "NVARCHAR", "uom": "", "required": false},
-                                          {"name": "RefCycleTimeSec", "value": "62.5", "dataType": "DECIMAL", "uom": "sec", "required": false}
-                                        ]
-                                      },
-                                      "items": []
-                                    },
-                                    {
-                                      "label": "DC Machine #12",
-                                      "expanded": false,
-                                      "icon": {"path": "material/precision_manufacturing"},
-                                      "data": {
-                                        "id": 12,
-                                        "name": "DC Machine #12",
-                                        "code": "DC-012",
-                                        "parentName": "Die Cast (Area)",
-                                        "description": "350-ton Toshiba die cast press, Bay 5",
-                                        "sortOrder": 5,
-                                        "tier": "Cell",
-                                        "typeDefinition": "DieCastMachine",
-                                        "attributes": [
-                                          {"name": "Tonnage", "value": "350", "dataType": "DECIMAL", "uom": "tons", "required": true},
-                                          {"name": "ConfirmationMethod", "value": "None", "dataType": "NVARCHAR", "uom": "", "required": false},
-                                          {"name": "RefCycleTimeSec", "value": "68.0", "dataType": "DECIMAL", "uom": "sec", "required": false}
-                                        ]
-                                      },
-                                      "items": []
-                                    },
-                                    {
-                                      "label": "DC Machine #15",
-                                      "expanded": false,
-                                      "icon": {"path": "material/precision_manufacturing"},
-                                      "data": {
-                                        "id": 15,
-                                        "name": "DC Machine #15",
-                                        "code": "DC-015",
-                                        "parentName": "Die Cast (Area)",
-                                        "description": "500-ton Bühler die cast press, Bay 7",
-                                        "sortOrder": 7,
-                                        "tier": "Cell",
-                                        "typeDefinition": "DieCastMachine",
-                                        "attributes": [
-                                          {"name": "Tonnage", "value": "500", "dataType": "DECIMAL", "uom": "tons", "required": true},
-                                          {"name": "ConfirmationMethod", "value": "None", "dataType": "NVARCHAR", "uom": "", "required": false},
-                                          {"name": "RefCycleTimeSec", "value": "75.0", "dataType": "DECIMAL", "uom": "sec", "required": false}
-                                        ]
-                                      },
-                                      "items": []
-                                    }
-                                  ]
-                                },
-                                {
-                                  "label": "Trim Shop",
-                                  "expanded": true,
-                                  "icon": {"path": "material/factory"},
-                                  "data": {
-                                    "id": 4,
-                                    "name": "Trim Shop",
-                                    "code": "TRIM",
-                                    "parentName": "Madison Facility (Site)",
-                                    "description": "Trim and deflash operations area",
-                                    "sortOrder": 2,
-                                    "tier": "Area",
-                                    "typeDefinition": "ProductionArea",
-                                    "attributes": []
-                                  },
-                                  "items": [
-                                    {
-                                      "label": "Trim Press #1",
-                                      "expanded": false,
-                                      "icon": {"path": "material/precision_manufacturing"},
-                                      "data": {
-                                        "id": 20,
-                                        "name": "Trim Press #1",
-                                        "code": "TP-001",
-                                        "parentName": "Trim Shop (Area)",
-                                        "description": "Progressive trim press #1",
-                                        "sortOrder": 1,
-                                        "tier": "Cell",
-                                        "typeDefinition": "TrimPress",
-                                        "attributes": []
-                                      },
-                                      "items": []
-                                    }
-                                  ]
-                                },
-                                {
-                                  "label": "Machine Shop",
-                                  "expanded": false,
-                                  "icon": {"path": "material/factory"},
-                                  "data": {
-                                    "id": 5,
-                                    "name": "Machine Shop",
-                                    "code": "MACH",
-                                    "parentName": "Madison Facility (Site)",
-                                    "description": "CNC machining operations area",
-                                    "sortOrder": 3,
-                                    "tier": "Area",
-                                    "typeDefinition": "ProductionArea",
-                                    "attributes": []
-                                  },
-                                  "items": []
-                                },
-                                {
-                                  "label": "Production Control",
-                                  "expanded": false,
-                                  "icon": {"path": "material/factory"},
-                                  "data": {
-                                    "id": 6,
-                                    "name": "Production Control",
-                                    "code": "PC",
-                                    "parentName": "Madison Facility (Site)",
-                                    "description": "Production scheduling and control area",
-                                    "sortOrder": 4,
-                                    "tier": "Area",
-                                    "typeDefinition": "ProductionArea",
-                                    "attributes": []
-                                  },
-                                  "items": []
-                                },
-                                {
-                                  "label": "Quality Control",
-                                  "expanded": false,
-                                  "icon": {"path": "material/factory"},
-                                  "data": {
-                                    "id": 8,
-                                    "name": "Quality Control",
-                                    "code": "QC",
-                                    "parentName": "Madison Facility (Site)",
-                                    "description": "Quality inspection and control area",
-                                    "sortOrder": 5,
-                                    "tier": "Area",
-                                    "typeDefinition": "ProductionArea",
-                                    "attributes": []
-                                  },
-                                  "items": []
-                                }
-                              ]
-                            }
-                          ]
-                        }
-                      ],
-                      "style": {"fontSize": "12px", "overflow": "auto"}
+                      "alignItems": "center",
+                      "direction": "row",
+                      "style": {"cursor": "pointer", "gap": "6px", "padding": "5px 8px 5px 10px"}
                     },
-                    "type": "ia.display.tree"
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {"meta": {"name": "Icon"}, "position": {}, "propConfig": {}, "props": {"text": "🏭", "style": {"fontSize": "13px"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Name"}, "position": {"grow": 1}, "propConfig": {}, "props": {"text": "Madison Facility", "style": {"color": "#1a1a1a", "fontSize": "12px", "fontWeight": "500"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Tier"}, "position": {}, "propConfig": {}, "props": {"text": "Site", "style": {"color": "#888888", "fontSize": "10px"}}, "type": "ia.display.label"}
+                    ],
+                    "events": {"dom": {"onClick": {"config": {"script": "loc = {'id': 2, 'name': 'Madison Facility', 'code': 'MAD', 'parentName': 'Madison Precision Products (Enterprise)', 'description': 'Madison, Indiana manufacturing facility', 'sortOrder': 1, 'tier': 'Site', 'typeDefinition': 'ManufacturingSite'}\nself.view.custom.selectedLocation = loc\nblank = {'name': '', 'value': '', 'dataType': '', 'uom': '', 'required': False}\nself.view.custom.attr0 = blank\nself.view.custom.attr1 = blank\nself.view.custom.attr2 = blank"}, "type": "script"}}},
+                    "meta": {"name": "TreeItemSite"},
+                    "position": {},
+                    "propConfig": {
+                      "props.style.backgroundColor": {"binding": {"config": {"expression": "if({view.custom.selectedLocation.id} = 2, '#e3f2fd', 'transparent')"}, "type": "expr"}},
+                      "props.style.color": {"binding": {"config": {"expression": "if({view.custom.selectedLocation.id} = 2, '#1565c0', '#1a1a1a')"}, "type": "expr"}}
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "direction": "row",
+                      "style": {"cursor": "pointer", "gap": "6px", "padding": "5px 8px 5px 22px"}
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {"meta": {"name": "Icon"}, "position": {}, "propConfig": {}, "props": {"text": "⚙", "style": {"fontSize": "13px"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Name"}, "position": {"grow": 1}, "propConfig": {}, "props": {"text": "Die Cast", "style": {"color": "#1a1a1a", "fontSize": "12px", "fontWeight": "500"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Tier"}, "position": {}, "propConfig": {}, "props": {"text": "Area", "style": {"color": "#888888", "fontSize": "10px"}}, "type": "ia.display.label"}
+                    ],
+                    "events": {"dom": {"onClick": {"config": {"script": "loc = {'id': 3, 'name': 'Die Cast', 'code': 'DC', 'parentName': 'Madison Facility (Site)', 'description': 'High-pressure aluminum die cast area', 'sortOrder': 1, 'tier': 'Area', 'typeDefinition': 'ProductionArea'}\nself.view.custom.selectedLocation = loc\nblank = {'name': '', 'value': '', 'dataType': '', 'uom': '', 'required': False}\nself.view.custom.attr0 = blank\nself.view.custom.attr1 = blank\nself.view.custom.attr2 = blank"}, "type": "script"}}},
+                    "meta": {"name": "TreeItemDieCast"},
+                    "position": {},
+                    "propConfig": {
+                      "props.style.backgroundColor": {"binding": {"config": {"expression": "if({view.custom.selectedLocation.id} = 3, '#e3f2fd', 'transparent')"}, "type": "expr"}},
+                      "props.style.color": {"binding": {"config": {"expression": "if({view.custom.selectedLocation.id} = 3, '#1565c0', '#1a1a1a')"}, "type": "expr"}}
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "direction": "row",
+                      "style": {"cursor": "pointer", "gap": "6px", "padding": "5px 8px 5px 34px"}
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {"meta": {"name": "Icon"}, "position": {}, "propConfig": {}, "props": {"text": "▸", "style": {"fontSize": "11px"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Name"}, "position": {"grow": 1}, "propConfig": {}, "props": {"text": "DC Machine #7", "style": {"color": "#1a1a1a", "fontSize": "12px", "fontWeight": "500"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Tier"}, "position": {}, "propConfig": {}, "props": {"text": "Cell", "style": {"color": "#888888", "fontSize": "10px"}}, "type": "ia.display.label"}
+                    ],
+                    "events": {"dom": {"onClick": {"config": {"script": "loc = {'id': 7, 'name': 'DC Machine #7', 'code': 'DC-007', 'parentName': 'Die Cast (Area)', 'description': '400-ton Toshiba die cast press, Bay 3', 'sortOrder': 3, 'tier': 'Cell', 'typeDefinition': 'DieCastMachine'}\nself.view.custom.selectedLocation = loc\nself.view.custom.attr0 = {'name': 'Tonnage', 'value': '400', 'dataType': 'DECIMAL', 'uom': 'tons', 'required': True}\nself.view.custom.attr1 = {'name': 'ConfirmationMethod', 'value': 'None', 'dataType': 'NVARCHAR', 'uom': '', 'required': False}\nself.view.custom.attr2 = {'name': 'RefCycleTimeSec', 'value': '62.5', 'dataType': 'DECIMAL', 'uom': 'sec', 'required': False}"}, "type": "script"}}},
+                    "meta": {"name": "TreeItemDC7"},
+                    "position": {},
+                    "propConfig": {
+                      "props.style.backgroundColor": {"binding": {"config": {"expression": "if({view.custom.selectedLocation.id} = 7, '#e3f2fd', 'transparent')"}, "type": "expr"}},
+                      "props.style.color": {"binding": {"config": {"expression": "if({view.custom.selectedLocation.id} = 7, '#1565c0', '#1a1a1a')"}, "type": "expr"}}
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "direction": "row",
+                      "style": {"cursor": "pointer", "gap": "6px", "padding": "5px 8px 5px 46px"}
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {"meta": {"name": "Icon"}, "position": {}, "propConfig": {}, "props": {"text": "▸", "style": {"fontSize": "11px"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Name"}, "position": {"grow": 1}, "propConfig": {}, "props": {"text": "DC Machine #12", "style": {"color": "#1a1a1a", "fontSize": "12px", "fontWeight": "500"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Tier"}, "position": {}, "propConfig": {}, "props": {"text": "Cell", "style": {"color": "#888888", "fontSize": "10px"}}, "type": "ia.display.label"}
+                    ],
+                    "events": {"dom": {"onClick": {"config": {"script": "loc = {'id': 12, 'name': 'DC Machine #12', 'code': 'DC-012', 'parentName': 'Die Cast (Area)', 'description': '350-ton Toshiba die cast press, Bay 5', 'sortOrder': 5, 'tier': 'Cell', 'typeDefinition': 'DieCastMachine'}\nself.view.custom.selectedLocation = loc\nself.view.custom.attr0 = {'name': 'Tonnage', 'value': '350', 'dataType': 'DECIMAL', 'uom': 'tons', 'required': True}\nself.view.custom.attr1 = {'name': 'ConfirmationMethod', 'value': 'None', 'dataType': 'NVARCHAR', 'uom': '', 'required': False}\nself.view.custom.attr2 = {'name': 'RefCycleTimeSec', 'value': '68.0', 'dataType': 'DECIMAL', 'uom': 'sec', 'required': False}"}, "type": "script"}}},
+                    "meta": {"name": "TreeItemDC12"},
+                    "position": {},
+                    "propConfig": {
+                      "props.style.backgroundColor": {"binding": {"config": {"expression": "if({view.custom.selectedLocation.id} = 12, '#e3f2fd', 'transparent')"}, "type": "expr"}},
+                      "props.style.color": {"binding": {"config": {"expression": "if({view.custom.selectedLocation.id} = 12, '#1565c0', '#1a1a1a')"}, "type": "expr"}}
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "direction": "row",
+                      "style": {"cursor": "pointer", "gap": "6px", "padding": "5px 8px 5px 46px"}
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {"meta": {"name": "Icon"}, "position": {}, "propConfig": {}, "props": {"text": "▸", "style": {"fontSize": "11px"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Name"}, "position": {"grow": 1}, "propConfig": {}, "props": {"text": "DC Machine #15", "style": {"color": "#1a1a1a", "fontSize": "12px", "fontWeight": "500"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Tier"}, "position": {}, "propConfig": {}, "props": {"text": "Cell", "style": {"color": "#888888", "fontSize": "10px"}}, "type": "ia.display.label"}
+                    ],
+                    "events": {"dom": {"onClick": {"config": {"script": "loc = {'id': 15, 'name': 'DC Machine #15', 'code': 'DC-015', 'parentName': 'Die Cast (Area)', 'description': '500-ton Buhler die cast press, Bay 7', 'sortOrder': 7, 'tier': 'Cell', 'typeDefinition': 'DieCastMachine'}\nself.view.custom.selectedLocation = loc\nself.view.custom.attr0 = {'name': 'Tonnage', 'value': '500', 'dataType': 'DECIMAL', 'uom': 'tons', 'required': True}\nself.view.custom.attr1 = {'name': 'ConfirmationMethod', 'value': 'None', 'dataType': 'NVARCHAR', 'uom': '', 'required': False}\nself.view.custom.attr2 = {'name': 'RefCycleTimeSec', 'value': '75.0', 'dataType': 'DECIMAL', 'uom': 'sec', 'required': False}"}, "type": "script"}}},
+                    "meta": {"name": "TreeItemDC15"},
+                    "position": {},
+                    "propConfig": {
+                      "props.style.backgroundColor": {"binding": {"config": {"expression": "if({view.custom.selectedLocation.id} = 15, '#e3f2fd', 'transparent')"}, "type": "expr"}},
+                      "props.style.color": {"binding": {"config": {"expression": "if({view.custom.selectedLocation.id} = 15, '#1565c0', '#1a1a1a')"}, "type": "expr"}}
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "direction": "row",
+                      "style": {"cursor": "pointer", "gap": "6px", "padding": "5px 8px 5px 46px"}
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {"meta": {"name": "Icon"}, "position": {}, "propConfig": {}, "props": {"text": "⚙", "style": {"fontSize": "13px"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Name"}, "position": {"grow": 1}, "propConfig": {}, "props": {"text": "Trim Shop", "style": {"color": "#1a1a1a", "fontSize": "12px", "fontWeight": "500"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Tier"}, "position": {}, "propConfig": {}, "props": {"text": "Area", "style": {"color": "#888888", "fontSize": "10px"}}, "type": "ia.display.label"}
+                    ],
+                    "events": {"dom": {"onClick": {"config": {"script": "loc = {'id': 4, 'name': 'Trim Shop', 'code': 'TRIM', 'parentName': 'Madison Facility (Site)', 'description': 'Trim and deflash operations area', 'sortOrder': 2, 'tier': 'Area', 'typeDefinition': 'ProductionArea'}\nself.view.custom.selectedLocation = loc\nblank = {'name': '', 'value': '', 'dataType': '', 'uom': '', 'required': False}\nself.view.custom.attr0 = blank\nself.view.custom.attr1 = blank\nself.view.custom.attr2 = blank"}, "type": "script"}}},
+                    "meta": {"name": "TreeItemTrimShop"},
+                    "position": {},
+                    "propConfig": {
+                      "props.style.backgroundColor": {"binding": {"config": {"expression": "if({view.custom.selectedLocation.id} = 4, '#e3f2fd', 'transparent')"}, "type": "expr"}},
+                      "props.style.color": {"binding": {"config": {"expression": "if({view.custom.selectedLocation.id} = 4, '#1565c0', '#1a1a1a')"}, "type": "expr"}}
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "direction": "row",
+                      "style": {"cursor": "pointer", "gap": "6px", "padding": "5px 8px 5px 34px"}
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {"meta": {"name": "Icon"}, "position": {}, "propConfig": {}, "props": {"text": "▸", "style": {"fontSize": "11px"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Name"}, "position": {"grow": 1}, "propConfig": {}, "props": {"text": "Trim Press #1", "style": {"color": "#1a1a1a", "fontSize": "12px", "fontWeight": "500"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Tier"}, "position": {}, "propConfig": {}, "props": {"text": "Cell", "style": {"color": "#888888", "fontSize": "10px"}}, "type": "ia.display.label"}
+                    ],
+                    "events": {"dom": {"onClick": {"config": {"script": "loc = {'id': 20, 'name': 'Trim Press #1', 'code': 'TP-001', 'parentName': 'Trim Shop (Area)', 'description': 'Progressive trim press #1', 'sortOrder': 1, 'tier': 'Cell', 'typeDefinition': 'TrimPress'}\nself.view.custom.selectedLocation = loc\nblank = {'name': '', 'value': '', 'dataType': '', 'uom': '', 'required': False}\nself.view.custom.attr0 = blank\nself.view.custom.attr1 = blank\nself.view.custom.attr2 = blank"}, "type": "script"}}},
+                    "meta": {"name": "TreeItemTrimPress1"},
+                    "position": {},
+                    "propConfig": {
+                      "props.style.backgroundColor": {"binding": {"config": {"expression": "if({view.custom.selectedLocation.id} = 20, '#e3f2fd', 'transparent')"}, "type": "expr"}},
+                      "props.style.color": {"binding": {"config": {"expression": "if({view.custom.selectedLocation.id} = 20, '#1565c0', '#1a1a1a')"}, "type": "expr"}}
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "direction": "row",
+                      "style": {"cursor": "pointer", "gap": "6px", "padding": "5px 8px 5px 46px"}
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {"meta": {"name": "Icon"}, "position": {}, "propConfig": {}, "props": {"text": "⚙", "style": {"fontSize": "13px"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Name"}, "position": {"grow": 1}, "propConfig": {}, "props": {"text": "Machine Shop", "style": {"color": "#1a1a1a", "fontSize": "12px", "fontWeight": "500"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Tier"}, "position": {}, "propConfig": {}, "props": {"text": "Area", "style": {"color": "#888888", "fontSize": "10px"}}, "type": "ia.display.label"}
+                    ],
+                    "events": {"dom": {"onClick": {"config": {"script": "loc = {'id': 5, 'name': 'Machine Shop', 'code': 'MACH', 'parentName': 'Madison Facility (Site)', 'description': 'CNC machining operations area', 'sortOrder': 3, 'tier': 'Area', 'typeDefinition': 'ProductionArea'}\nself.view.custom.selectedLocation = loc\nblank = {'name': '', 'value': '', 'dataType': '', 'uom': '', 'required': False}\nself.view.custom.attr0 = blank\nself.view.custom.attr1 = blank\nself.view.custom.attr2 = blank"}, "type": "script"}}},
+                    "meta": {"name": "TreeItemMachineShop"},
+                    "position": {},
+                    "propConfig": {
+                      "props.style.backgroundColor": {"binding": {"config": {"expression": "if({view.custom.selectedLocation.id} = 5, '#e3f2fd', 'transparent')"}, "type": "expr"}},
+                      "props.style.color": {"binding": {"config": {"expression": "if({view.custom.selectedLocation.id} = 5, '#1565c0', '#1a1a1a')"}, "type": "expr"}}
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "direction": "row",
+                      "style": {"cursor": "pointer", "gap": "6px", "padding": "5px 8px 5px 34px"}
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {"meta": {"name": "Icon"}, "position": {}, "propConfig": {}, "props": {"text": "⚙", "style": {"fontSize": "13px"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Name"}, "position": {"grow": 1}, "propConfig": {}, "props": {"text": "Production Control", "style": {"color": "#1a1a1a", "fontSize": "12px", "fontWeight": "500"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Tier"}, "position": {}, "propConfig": {}, "props": {"text": "Area", "style": {"color": "#888888", "fontSize": "10px"}}, "type": "ia.display.label"}
+                    ],
+                    "events": {"dom": {"onClick": {"config": {"script": "loc = {'id': 6, 'name': 'Production Control', 'code': 'PC', 'parentName': 'Madison Facility (Site)', 'description': 'Production scheduling and control area', 'sortOrder': 4, 'tier': 'Area', 'typeDefinition': 'ProductionArea'}\nself.view.custom.selectedLocation = loc\nblank = {'name': '', 'value': '', 'dataType': '', 'uom': '', 'required': False}\nself.view.custom.attr0 = blank\nself.view.custom.attr1 = blank\nself.view.custom.attr2 = blank"}, "type": "script"}}},
+                    "meta": {"name": "TreeItemProductionControl"},
+                    "position": {},
+                    "propConfig": {
+                      "props.style.backgroundColor": {"binding": {"config": {"expression": "if({view.custom.selectedLocation.id} = 6, '#e3f2fd', 'transparent')"}, "type": "expr"}},
+                      "props.style.color": {"binding": {"config": {"expression": "if({view.custom.selectedLocation.id} = 6, '#1565c0', '#1a1a1a')"}, "type": "expr"}}
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "direction": "row",
+                      "style": {"cursor": "pointer", "gap": "6px", "padding": "5px 8px 5px 34px"}
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {"meta": {"name": "Icon"}, "position": {}, "propConfig": {}, "props": {"text": "⚙", "style": {"fontSize": "13px"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Name"}, "position": {"grow": 1}, "propConfig": {}, "props": {"text": "Quality Control", "style": {"color": "#1a1a1a", "fontSize": "12px", "fontWeight": "500"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Tier"}, "position": {}, "propConfig": {}, "props": {"text": "Area", "style": {"color": "#888888", "fontSize": "10px"}}, "type": "ia.display.label"}
+                    ],
+                    "events": {"dom": {"onClick": {"config": {"script": "loc = {'id': 8, 'name': 'Quality Control', 'code': 'QC', 'parentName': 'Madison Facility (Site)', 'description': 'Quality inspection and control area', 'sortOrder': 5, 'tier': 'Area', 'typeDefinition': 'ProductionArea'}\nself.view.custom.selectedLocation = loc\nblank = {'name': '', 'value': '', 'dataType': '', 'uom': '', 'required': False}\nself.view.custom.attr0 = blank\nself.view.custom.attr1 = blank\nself.view.custom.attr2 = blank"}, "type": "script"}}},
+                    "meta": {"name": "TreeItemQualityControl"},
+                    "position": {},
+                    "propConfig": {
+                      "props.style.backgroundColor": {"binding": {"config": {"expression": "if({view.custom.selectedLocation.id} = 8, '#e3f2fd', 'transparent')"}, "type": "expr"}},
+                      "props.style.color": {"binding": {"config": {"expression": "if({view.custom.selectedLocation.id} = 8, '#1565c0', '#1a1a1a')"}, "type": "expr"}}
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "direction": "row",
+                      "style": {"cursor": "pointer", "gap": "6px", "padding": "5px 8px 5px 34px"}
+                    },
+                    "type": "ia.container.flex"
                   }
                 ],
-                "meta": {"name": "TreeWrapper"},
+                "meta": {"name": "TreeScroll"},
                 "position": {"grow": 1},
                 "propConfig": {},
                 "props": {
                   "direction": "column",
-                  "style": {"overflow": "hidden"}
+                  "style": {"overflowY": "auto", "padding": "4px 0"}
                 },
                 "type": "ia.container.flex"
               }
@@ -364,109 +358,43 @@
                         "meta": {"name": "DetailsTitleLabel"},
                         "position": {},
                         "propConfig": {},
-                        "props": {
-                          "text": "Location Details",
-                          "style": {"color": "#1a1a1a", "fontSize": "13px", "fontWeight": "600"}
-                        },
+                        "props": {"text": "Location Details", "style": {"color": "#1a1a1a", "fontSize": "13px", "fontWeight": "600"}},
                         "type": "ia.display.label"
                       },
                       {
                         "meta": {"name": "TypeBadge"},
                         "position": {},
                         "propConfig": {
-                          "props.text": {
-                            "binding": {
-                              "type": "expr",
-                              "config": {"expression": "{view.custom.selectedLocation.tier} + \" • \" + {view.custom.selectedLocation.typeDefinition}"}
-                            }
-                          }
+                          "props.text": {"binding": {"config": {"expression": "{view.custom.selectedLocation.tier} + \" • \" + {view.custom.selectedLocation.typeDefinition}"}, "type": "expr"}}
                         },
                         "props": {
                           "text": "Cell • DieCastMachine",
-                          "style": {
-                            "backgroundColor": "#e3f2fd",
-                            "borderRadius": "10px",
-                            "color": "#1565c0",
-                            "fontSize": "11px",
-                            "fontWeight": "500",
-                            "padding": "2px 8px"
-                          }
+                          "style": {"backgroundColor": "#e3f2fd", "borderRadius": "10px", "color": "#1565c0", "fontSize": "11px", "fontWeight": "500", "padding": "2px 8px"}
                         },
                         "type": "ia.display.label"
                       },
+                      {"children": [], "meta": {"name": "HeaderSpacer"}, "position": {"grow": 1}, "propConfig": {}, "props": {"style": {}}, "type": "ia.container.flex"},
                       {
-                        "children": [],
-                        "meta": {"name": "HeaderSpacer"},
-                        "position": {"grow": 1},
-                        "propConfig": {},
-                        "props": {"style": {}},
-                        "type": "ia.container.flex"
-                      },
-                      {
-                        "events": {
-                          "component": {
-                            "onActionPerformed": {
-                              "config": {"script": "# Call Location.Location_Update named query with current field values"},
-                              "type": "script"
-                            }
-                          }
-                        },
+                        "events": {"component": {"onActionPerformed": {"config": {"script": "# Call Location.Location_Update named query"}, "type": "script"}}},
                         "meta": {"name": "SaveBtn"},
                         "position": {},
                         "propConfig": {},
-                        "props": {
-                          "text": "Save",
-                          "style": {
-                            "backgroundColor": "#1976d2",
-                            "border": "1px solid #1976d2",
-                            "borderRadius": "4px",
-                            "color": "#ffffff",
-                            "fontSize": "12px",
-                            "fontWeight": "500",
-                            "padding": "4px 10px"
-                          }
-                        },
+                        "props": {"text": "Save", "style": {"backgroundColor": "#1976d2", "border": "1px solid #1976d2", "borderRadius": "4px", "color": "#ffffff", "fontSize": "12px", "fontWeight": "500", "padding": "4px 10px"}},
                         "type": "ia.input.button"
                       },
                       {
-                        "events": {
-                          "component": {
-                            "onActionPerformed": {
-                              "config": {"script": "# Call Location.Location_Deprecate named query"},
-                              "type": "script"
-                            }
-                          }
-                        },
+                        "events": {"component": {"onActionPerformed": {"config": {"script": "# Call Location.Location_Deprecate named query"}, "type": "script"}}},
                         "meta": {"name": "DeprecateBtn"},
                         "position": {},
                         "propConfig": {},
-                        "props": {
-                          "text": "Deprecate",
-                          "style": {
-                            "backgroundColor": "#ffffff",
-                            "border": "1px solid #d32f2f",
-                            "borderRadius": "4px",
-                            "color": "#d32f2f",
-                            "fontSize": "12px",
-                            "fontWeight": "500",
-                            "padding": "4px 10px"
-                          }
-                        },
+                        "props": {"text": "Deprecate", "style": {"backgroundColor": "#ffffff", "border": "1px solid #d32f2f", "borderRadius": "4px", "color": "#d32f2f", "fontSize": "12px", "fontWeight": "500", "padding": "4px 10px"}},
                         "type": "ia.input.button"
                       }
                     ],
                     "meta": {"name": "DetailsHeader"},
                     "position": {},
                     "propConfig": {},
-                    "props": {
-                      "alignItems": "center",
-                      "direction": "row",
-                      "style": {
-                        "borderBottom": "1px solid #d4d4d4",
-                        "gap": "10px",
-                        "padding": "8px 12px"
-                      }
-                    },
+                    "props": {"alignItems": "center", "direction": "row", "style": {"borderBottom": "1px solid #d4d4d4", "gap": "10px", "padding": "8px 12px"}},
                     "type": "ia.container.flex"
                   },
                   {
@@ -475,650 +403,239 @@
                         "children": [
                           {
                             "children": [
-                              {
-                                "meta": {"name": "NameLabel"},
-                                "position": {},
-                                "propConfig": {},
-                                "props": {
-                                  "text": "Name",
-                                  "style": {"color": "#888888", "fontSize": "11px", "fontWeight": "500"}
-                                },
-                                "type": "ia.display.label"
-                              },
+                              {"meta": {"name": "NameLabel"}, "position": {}, "propConfig": {}, "props": {"text": "Name", "style": {"color": "#888888", "fontSize": "11px", "fontWeight": "500"}}, "type": "ia.display.label"},
                               {
                                 "meta": {"name": "NameInput"},
                                 "position": {},
-                                "propConfig": {
-                                  "props.text": {
-                                    "binding": {
-                                      "type": "expr",
-                                      "config": {"expression": "{view.custom.selectedLocation.name}"}
-                                    }
-                                  }
-                                },
-                                "props": {
-                                  "text": "DC Machine #7",
-                                  "style": {
-                                    "border": "1px solid #d4d4d4",
-                                    "borderRadius": "4px",
-                                    "fontSize": "12px",
-                                    "padding": "5px 8px",
-                                    "width": "100%"
-                                  }
-                                },
+                                "propConfig": {"props.text": {"binding": {"config": {"expression": "{view.custom.selectedLocation.name}"}, "type": "expr"}}},
+                                "props": {"text": "DC Machine #7", "style": {"border": "1px solid #d4d4d4", "borderRadius": "4px", "fontSize": "12px", "padding": "5px 8px", "width": "100%"}},
                                 "type": "ia.input.text-field"
                               }
                             ],
                             "meta": {"name": "NameField"},
                             "position": {"grow": 1},
                             "propConfig": {},
-                            "props": {
-                              "direction": "column",
-                              "style": {"gap": "4px", "minWidth": "0"}
-                            },
+                            "props": {"direction": "column", "style": {"gap": "4px", "minWidth": "0"}},
                             "type": "ia.container.flex"
                           },
                           {
                             "children": [
-                              {
-                                "meta": {"name": "CodeLabel"},
-                                "position": {},
-                                "propConfig": {},
-                                "props": {
-                                  "text": "Code",
-                                  "style": {"color": "#888888", "fontSize": "11px", "fontWeight": "500"}
-                                },
-                                "type": "ia.display.label"
-                              },
+                              {"meta": {"name": "CodeLabel"}, "position": {}, "propConfig": {}, "props": {"text": "Code", "style": {"color": "#888888", "fontSize": "11px", "fontWeight": "500"}}, "type": "ia.display.label"},
                               {
                                 "meta": {"name": "CodeInput"},
                                 "position": {},
-                                "propConfig": {
-                                  "props.text": {
-                                    "binding": {
-                                      "type": "expr",
-                                      "config": {"expression": "{view.custom.selectedLocation.code}"}
-                                    }
-                                  }
-                                },
-                                "props": {
-                                  "text": "DC-007",
-                                  "style": {
-                                    "border": "1px solid #d4d4d4",
-                                    "borderRadius": "4px",
-                                    "fontSize": "12px",
-                                    "padding": "5px 8px",
-                                    "width": "100%"
-                                  }
-                                },
+                                "propConfig": {"props.text": {"binding": {"config": {"expression": "{view.custom.selectedLocation.code}"}, "type": "expr"}}},
+                                "props": {"text": "DC-007", "style": {"border": "1px solid #d4d4d4", "borderRadius": "4px", "fontSize": "12px", "padding": "5px 8px", "width": "100%"}},
                                 "type": "ia.input.text-field"
                               }
                             ],
                             "meta": {"name": "CodeField"},
                             "position": {"basis": "120px", "shrink": "0"},
                             "propConfig": {},
-                            "props": {
-                              "direction": "column",
-                              "style": {"gap": "4px"}
-                            },
+                            "props": {"direction": "column", "style": {"gap": "4px"}},
                             "type": "ia.container.flex"
                           },
                           {
                             "children": [
-                              {
-                                "meta": {"name": "ParentLabel"},
-                                "position": {},
-                                "propConfig": {},
-                                "props": {
-                                  "text": "Parent",
-                                  "style": {"color": "#888888", "fontSize": "11px", "fontWeight": "500"}
-                                },
-                                "type": "ia.display.label"
-                              },
+                              {"meta": {"name": "ParentLabel"}, "position": {}, "propConfig": {}, "props": {"text": "Parent", "style": {"color": "#888888", "fontSize": "11px", "fontWeight": "500"}}, "type": "ia.display.label"},
                               {
                                 "meta": {"name": "ParentValue"},
                                 "position": {},
-                                "propConfig": {
-                                  "props.text": {
-                                    "binding": {
-                                      "type": "expr",
-                                      "config": {"expression": "{view.custom.selectedLocation.parentName}"}
-                                    }
-                                  }
-                                },
-                                "props": {
-                                  "text": "Die Cast (Area)",
-                                  "style": {
-                                    "backgroundColor": "#f7f7f7",
-                                    "border": "1px solid #d4d4d4",
-                                    "borderRadius": "4px",
-                                    "color": "#888888",
-                                    "fontSize": "12px",
-                                    "padding": "5px 8px",
-                                    "width": "100%"
-                                  }
-                                },
+                                "propConfig": {"props.text": {"binding": {"config": {"expression": "{view.custom.selectedLocation.parentName}"}, "type": "expr"}}},
+                                "props": {"text": "Die Cast (Area)", "style": {"backgroundColor": "#f7f7f7", "border": "1px solid #d4d4d4", "borderRadius": "4px", "color": "#888888", "fontSize": "12px", "padding": "5px 8px", "width": "100%"}},
                                 "type": "ia.display.label"
                               }
                             ],
                             "meta": {"name": "ParentField"},
                             "position": {"grow": 1},
                             "propConfig": {},
-                            "props": {
-                              "direction": "column",
-                              "style": {"gap": "4px", "minWidth": "0"}
-                            },
+                            "props": {"direction": "column", "style": {"gap": "4px", "minWidth": "0"}},
                             "type": "ia.container.flex"
                           }
                         ],
                         "meta": {"name": "DetailsRow1"},
                         "position": {},
                         "propConfig": {},
-                        "props": {
-                          "direction": "row",
-                          "style": {"gap": "10px"}
-                        },
+                        "props": {"direction": "row", "style": {"gap": "10px"}},
                         "type": "ia.container.flex"
                       },
                       {
                         "children": [
                           {
                             "children": [
-                              {
-                                "meta": {"name": "DescLabel"},
-                                "position": {},
-                                "propConfig": {},
-                                "props": {
-                                  "text": "Description",
-                                  "style": {"color": "#888888", "fontSize": "11px", "fontWeight": "500"}
-                                },
-                                "type": "ia.display.label"
-                              },
+                              {"meta": {"name": "DescLabel"}, "position": {}, "propConfig": {}, "props": {"text": "Description", "style": {"color": "#888888", "fontSize": "11px", "fontWeight": "500"}}, "type": "ia.display.label"},
                               {
                                 "meta": {"name": "DescInput"},
                                 "position": {},
-                                "propConfig": {
-                                  "props.text": {
-                                    "binding": {
-                                      "type": "expr",
-                                      "config": {"expression": "{view.custom.selectedLocation.description}"}
-                                    }
-                                  }
-                                },
-                                "props": {
-                                  "text": "400-ton Toshiba die cast press, Bay 3",
-                                  "style": {
-                                    "border": "1px solid #d4d4d4",
-                                    "borderRadius": "4px",
-                                    "fontSize": "12px",
-                                    "padding": "5px 8px",
-                                    "width": "100%"
-                                  }
-                                },
+                                "propConfig": {"props.text": {"binding": {"config": {"expression": "{view.custom.selectedLocation.description}"}, "type": "expr"}}},
+                                "props": {"text": "400-ton Toshiba die cast press, Bay 3", "style": {"border": "1px solid #d4d4d4", "borderRadius": "4px", "fontSize": "12px", "padding": "5px 8px", "width": "100%"}},
                                 "type": "ia.input.text-field"
                               }
                             ],
                             "meta": {"name": "DescField"},
                             "position": {"grow": 1},
                             "propConfig": {},
-                            "props": {
-                              "direction": "column",
-                              "style": {"gap": "4px", "minWidth": "0"}
-                            },
+                            "props": {"direction": "column", "style": {"gap": "4px", "minWidth": "0"}},
                             "type": "ia.container.flex"
                           },
                           {
                             "children": [
-                              {
-                                "meta": {"name": "SortLabel"},
-                                "position": {},
-                                "propConfig": {},
-                                "props": {
-                                  "text": "Sort Order",
-                                  "style": {"color": "#888888", "fontSize": "11px", "fontWeight": "500"}
-                                },
-                                "type": "ia.display.label"
-                              },
+                              {"meta": {"name": "SortLabel"}, "position": {}, "propConfig": {}, "props": {"text": "Sort Order", "style": {"color": "#888888", "fontSize": "11px", "fontWeight": "500"}}, "type": "ia.display.label"},
                               {
                                 "children": [
                                   {
-                                    "meta": {"name": "SortOrderDisplay"},
+                                    "meta": {"name": "SortDisplay"},
                                     "position": {},
-                                    "propConfig": {
-                                      "props.text": {
-                                        "binding": {
-                                          "type": "expr",
-                                          "config": {"expression": "toString({view.custom.selectedLocation.sortOrder})"}
-                                        }
-                                      }
-                                    },
-                                    "props": {
-                                      "text": "3",
-                                      "style": {
-                                        "backgroundColor": "#f7f7f7",
-                                        "border": "1px solid #d4d4d4",
-                                        "borderRadius": "4px",
-                                        "color": "#1a1a1a",
-                                        "fontSize": "12px",
-                                        "padding": "5px 0",
-                                        "textAlign": "center",
-                                        "width": "44px"
-                                      }
-                                    },
+                                    "propConfig": {"props.text": {"binding": {"config": {"expression": "toString({view.custom.selectedLocation.sortOrder})"}, "type": "expr"}}},
+                                    "props": {"text": "3", "style": {"backgroundColor": "#f7f7f7", "border": "1px solid #d4d4d4", "borderRadius": "4px", "color": "#1a1a1a", "fontSize": "12px", "padding": "5px 0", "textAlign": "center", "width": "44px"}},
                                     "type": "ia.display.label"
                                   },
                                   {
                                     "children": [
-                                      {
-                                        "events": {
-                                          "component": {
-                                            "onActionPerformed": {
-                                              "config": {"script": "# Call Location.Location_MoveUp named query"},
-                                              "type": "script"
-                                            }
-                                          }
-                                        },
-                                        "meta": {"name": "MoveUpBtn"},
-                                        "position": {},
-                                        "propConfig": {},
-                                        "props": {
-                                          "text": "▲",
-                                          "style": {
-                                            "backgroundColor": "#ffffff",
-                                            "border": "1px solid #d4d4d4",
-                                            "borderRadius": "2px",
-                                            "color": "#1a1a1a",
-                                            "fontSize": "9px",
-                                            "padding": "2px 5px"
-                                          }
-                                        },
-                                        "type": "ia.input.button"
-                                      },
-                                      {
-                                        "events": {
-                                          "component": {
-                                            "onActionPerformed": {
-                                              "config": {"script": "# Call Location.Location_MoveDown named query"},
-                                              "type": "script"
-                                            }
-                                          }
-                                        },
-                                        "meta": {"name": "MoveDownBtn"},
-                                        "position": {},
-                                        "propConfig": {},
-                                        "props": {
-                                          "text": "▼",
-                                          "style": {
-                                            "backgroundColor": "#ffffff",
-                                            "border": "1px solid #d4d4d4",
-                                            "borderRadius": "2px",
-                                            "color": "#1a1a1a",
-                                            "fontSize": "9px",
-                                            "padding": "2px 5px"
-                                          }
-                                        },
-                                        "type": "ia.input.button"
-                                      }
+                                      {"events": {"component": {"onActionPerformed": {"config": {"script": "# Location.Location_MoveUp"}, "type": "script"}}}, "meta": {"name": "MoveUpBtn"}, "position": {}, "propConfig": {}, "props": {"text": "▲", "style": {"backgroundColor": "#ffffff", "border": "1px solid #d4d4d4", "borderRadius": "2px", "fontSize": "9px", "padding": "2px 5px"}}, "type": "ia.input.button"},
+                                      {"events": {"component": {"onActionPerformed": {"config": {"script": "# Location.Location_MoveDown"}, "type": "script"}}}, "meta": {"name": "MoveDownBtn"}, "position": {}, "propConfig": {}, "props": {"text": "▼", "style": {"backgroundColor": "#ffffff", "border": "1px solid #d4d4d4", "borderRadius": "2px", "fontSize": "9px", "padding": "2px 5px"}}, "type": "ia.input.button"}
                                     ],
                                     "meta": {"name": "ArrowBtns"},
                                     "position": {},
                                     "propConfig": {},
-                                    "props": {
-                                      "direction": "column",
-                                      "style": {"gap": "2px"}
-                                    },
+                                    "props": {"direction": "column", "style": {"gap": "2px"}},
                                     "type": "ia.container.flex"
                                   }
                                 ],
-                                "meta": {"name": "SortOrderRow"},
+                                "meta": {"name": "SortRow"},
                                 "position": {},
                                 "propConfig": {},
-                                "props": {
-                                  "alignItems": "center",
-                                  "direction": "row",
-                                  "style": {"gap": "6px"}
-                                },
+                                "props": {"alignItems": "center", "direction": "row", "style": {"gap": "6px"}},
                                 "type": "ia.container.flex"
                               }
                             ],
                             "meta": {"name": "SortOrderField"},
                             "position": {"basis": "130px", "shrink": "0"},
                             "propConfig": {},
-                            "props": {
-                              "direction": "column",
-                              "style": {"gap": "4px"}
-                            },
+                            "props": {"direction": "column", "style": {"gap": "4px"}},
                             "type": "ia.container.flex"
                           }
                         ],
                         "meta": {"name": "DetailsRow2"},
                         "position": {},
                         "propConfig": {},
-                        "props": {
-                          "direction": "row",
-                          "style": {"gap": "10px"}
-                        },
+                        "props": {"direction": "row", "style": {"gap": "10px"}},
                         "type": "ia.container.flex"
                       }
                     ],
                     "meta": {"name": "DetailsBody"},
                     "position": {},
                     "propConfig": {},
-                    "props": {
-                      "direction": "column",
-                      "style": {
-                        "gap": "10px",
-                        "padding": "12px"
-                      }
-                    },
+                    "props": {"direction": "column", "style": {"gap": "10px", "padding": "12px"}},
                     "type": "ia.container.flex"
                   }
                 ],
                 "meta": {"name": "LocationDetailsCard"},
                 "position": {},
                 "propConfig": {},
-                "props": {
-                  "direction": "column",
-                  "style": {
-                    "border": "1px solid #d4d4d4",
-                    "borderRadius": "4px"
-                  }
-                },
+                "props": {"direction": "column", "style": {"border": "1px solid #d4d4d4", "borderRadius": "4px"}},
                 "type": "ia.container.flex"
               },
               {
                 "children": [
                   {
                     "children": [
-                      {
-                        "meta": {"name": "AttributesTitleLabel"},
-                        "position": {},
-                        "propConfig": {},
-                        "props": {
-                          "text": "Attributes",
-                          "style": {"color": "#1a1a1a", "fontSize": "13px", "fontWeight": "600"}
-                        },
-                        "type": "ia.display.label"
-                      },
+                      {"meta": {"name": "AttrTitle"}, "position": {}, "propConfig": {}, "props": {"text": "Attributes", "style": {"color": "#1a1a1a", "fontSize": "13px", "fontWeight": "600"}}, "type": "ia.display.label"},
                       {
                         "meta": {"name": "SchemaHint"},
                         "position": {},
-                        "propConfig": {
-                          "props.text": {
-                            "binding": {
-                              "type": "expr",
-                              "config": {"expression": "\"(\" + {view.custom.selectedLocation.typeDefinition} + \" schema)\""}
-                            }
-                          }
-                        },
-                        "props": {
-                          "text": "(DieCastMachine schema)",
-                          "style": {"color": "#888888", "fontSize": "11px"}
-                        },
+                        "propConfig": {"props.text": {"binding": {"config": {"expression": "\"(\" + {view.custom.selectedLocation.typeDefinition} + \" schema)\""}, "type": "expr"}}},
+                        "props": {"text": "(DieCastMachine schema)", "style": {"color": "#888888", "fontSize": "11px"}},
                         "type": "ia.display.label"
                       }
                     ],
                     "meta": {"name": "AttributesHeader"},
                     "position": {},
                     "propConfig": {},
-                    "props": {
-                      "alignItems": "center",
-                      "direction": "row",
-                      "style": {
-                        "borderBottom": "1px solid #d4d4d4",
-                        "gap": "10px",
-                        "padding": "8px 12px"
-                      }
-                    },
+                    "props": {"alignItems": "center", "direction": "row", "style": {"borderBottom": "1px solid #d4d4d4", "gap": "10px", "padding": "8px 12px"}},
                     "type": "ia.container.flex"
                   },
                   {
                     "children": [
-                      {
-                        "meta": {"name": "ColAttribute"},
-                        "position": {"grow": 1},
-                        "propConfig": {},
-                        "props": {
-                          "text": "Attribute",
-                          "style": {"color": "#888888", "fontSize": "11px", "fontWeight": "600"}
-                        },
-                        "type": "ia.display.label"
-                      },
-                      {
-                        "meta": {"name": "ColValue"},
-                        "position": {"basis": "160px", "shrink": "0"},
-                        "propConfig": {},
-                        "props": {
-                          "text": "Value",
-                          "style": {"color": "#888888", "fontSize": "11px", "fontWeight": "600"}
-                        },
-                        "type": "ia.display.label"
-                      },
-                      {
-                        "meta": {"name": "ColUOM"},
-                        "position": {"basis": "60px", "shrink": "0"},
-                        "propConfig": {},
-                        "props": {
-                          "text": "UOM",
-                          "style": {"color": "#888888", "fontSize": "11px", "fontWeight": "600"}
-                        },
-                        "type": "ia.display.label"
-                      },
-                      {
-                        "meta": {"name": "ColReq"},
-                        "position": {"basis": "36px", "shrink": "0"},
-                        "propConfig": {},
-                        "props": {
-                          "text": "Req",
-                          "style": {"color": "#888888", "fontSize": "11px", "fontWeight": "600", "textAlign": "center"}
-                        },
-                        "type": "ia.display.label"
-                      }
+                      {"meta": {"name": "ColAttr"}, "position": {"grow": 1}, "propConfig": {}, "props": {"text": "Attribute", "style": {"color": "#888888", "fontSize": "11px", "fontWeight": "600"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "ColValue"}, "position": {"basis": "110px", "shrink": "0"}, "propConfig": {}, "props": {"text": "Value", "style": {"color": "#888888", "fontSize": "11px", "fontWeight": "600"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "ColType"}, "position": {"basis": "70px", "shrink": "0"}, "propConfig": {}, "props": {"text": "Type", "style": {"color": "#888888", "fontSize": "11px", "fontWeight": "600"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "ColUOM"}, "position": {"basis": "50px", "shrink": "0"}, "propConfig": {}, "props": {"text": "UOM", "style": {"color": "#888888", "fontSize": "11px", "fontWeight": "600"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "ColReq"}, "position": {"basis": "36px", "shrink": "0"}, "propConfig": {}, "props": {"text": "Req", "style": {"color": "#888888", "fontSize": "11px", "fontWeight": "600", "textAlign": "center"}}, "type": "ia.display.label"}
                     ],
-                    "meta": {"name": "AttributesColumnHeader"},
+                    "meta": {"name": "ColHeader"},
                     "position": {},
                     "propConfig": {},
-                    "props": {
-                      "direction": "row",
-                      "style": {
-                        "backgroundColor": "#f7f7f7",
-                        "borderBottom": "1px solid #d4d4d4",
-                        "padding": "5px 12px"
-                      }
-                    },
+                    "props": {"direction": "row", "style": {"backgroundColor": "#f7f7f7", "borderBottom": "1px solid #d4d4d4", "padding": "5px 12px"}},
                     "type": "ia.container.flex"
                   },
                   {
                     "children": [
-                      {
-                        "children": [
-                          {
-                            "meta": {"name": "AttrName"},
-                            "position": {"grow": 1},
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "type": "expr",
-                                  "config": {"expression": "{parent.parent.props.instances[parent.meta.instanceIndex]['name']}"}
-                                }
-                              }
-                            },
-                            "props": {
-                              "text": "Attribute",
-                              "style": {"color": "#1a1a1a", "fontSize": "12px"}
-                            },
-                            "type": "ia.display.label"
-                          },
-                          {
-                            "children": [
-                              {
-                                "meta": {"name": "AttrValueInput"},
-                                "position": {},
-                                "propConfig": {
-                                  "props.text": {
-                                    "binding": {
-                                      "type": "expr",
-                                      "config": {"expression": "{parent.parent.parent.props.instances[parent.parent.meta.instanceIndex]['value']}"}
-                                    }
-                                  }
-                                },
-                                "props": {
-                                  "text": "",
-                                  "style": {
-                                    "border": "1px solid #d4d4d4",
-                                    "borderRadius": "4px",
-                                    "fontSize": "12px",
-                                    "padding": "3px 6px",
-                                    "width": "80px"
-                                  }
-                                },
-                                "type": "ia.input.text-field"
-                              },
-                              {
-                                "meta": {"name": "DataTypeBadge"},
-                                "position": {},
-                                "propConfig": {
-                                  "props.text": {
-                                    "binding": {
-                                      "type": "expr",
-                                      "config": {"expression": "{parent.parent.parent.props.instances[parent.parent.meta.instanceIndex]['dataType']}"}
-                                    }
-                                  }
-                                },
-                                "props": {
-                                  "text": "DECIMAL",
-                                  "style": {"color": "#888888", "fontSize": "9px", "whiteSpace": "nowrap"}
-                                },
-                                "type": "ia.display.label"
-                              }
-                            ],
-                            "meta": {"name": "AttrValueCell"},
-                            "position": {"basis": "160px", "shrink": "0"},
-                            "propConfig": {},
-                            "props": {
-                              "alignItems": "center",
-                              "direction": "row",
-                              "style": {"gap": "6px"}
-                            },
-                            "type": "ia.container.flex"
-                          },
-                          {
-                            "meta": {"name": "AttrUOM"},
-                            "position": {"basis": "60px", "shrink": "0"},
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "type": "expr",
-                                  "config": {"expression": "if({parent.parent.props.instances[parent.meta.instanceIndex]['uom']} = '', '—', {parent.parent.props.instances[parent.meta.instanceIndex]['uom']})"}
-                                }
-                              }
-                            },
-                            "props": {
-                              "text": "tons",
-                              "style": {"color": "#888888", "fontSize": "12px"}
-                            },
-                            "type": "ia.display.label"
-                          },
-                          {
-                            "meta": {"name": "AttrRequired"},
-                            "position": {"basis": "36px", "shrink": "0"},
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "type": "expr",
-                                  "config": {"expression": "if({parent.parent.props.instances[parent.meta.instanceIndex]['required']}, '✓', '—')"}
-                                }
-                              },
-                              "props.style.color": {
-                                "binding": {
-                                  "type": "expr",
-                                  "config": {"expression": "if({parent.parent.props.instances[parent.meta.instanceIndex]['required']}, '#1976d2', '#888888')"}
-                                }
-                              }
-                            },
-                            "props": {
-                              "text": "✓",
-                              "style": {
-                                "color": "#1976d2",
-                                "fontSize": "13px",
-                                "fontWeight": "600",
-                                "textAlign": "center"
-                              }
-                            },
-                            "type": "ia.display.label"
-                          }
-                        ],
-                        "meta": {"name": "AttributeRow"},
-                        "position": {},
-                        "propConfig": {},
-                        "props": {
-                          "alignItems": "center",
-                          "direction": "row",
-                          "style": {
-                            "borderBottom": "1px solid #f0f0f0",
-                            "minHeight": "36px",
-                            "padding": "4px 12px"
-                          }
-                        },
-                        "type": "ia.container.flex"
-                      }
+                      {"meta": {"name": "Attr0Name"}, "position": {"grow": 1}, "propConfig": {"props.text": {"binding": {"config": {"expression": "{view.custom.attr0.name}"}, "type": "expr"}}}, "props": {"text": "Tonnage", "style": {"color": "#1a1a1a", "fontSize": "12px"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Attr0Value"}, "position": {"basis": "110px", "shrink": "0"}, "propConfig": {"props.text": {"binding": {"config": {"expression": "{view.custom.attr0.value}"}, "type": "expr"}}}, "props": {"text": "400", "style": {"border": "1px solid #d4d4d4", "borderRadius": "4px", "fontSize": "12px", "padding": "3px 6px", "width": "80px"}}, "type": "ia.input.text-field"},
+                      {"meta": {"name": "Attr0Type"}, "position": {"basis": "70px", "shrink": "0"}, "propConfig": {"props.text": {"binding": {"config": {"expression": "{view.custom.attr0.dataType}"}, "type": "expr"}}}, "props": {"text": "DECIMAL", "style": {"color": "#888888", "fontSize": "10px"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Attr0UOM"}, "position": {"basis": "50px", "shrink": "0"}, "propConfig": {"props.text": {"binding": {"config": {"expression": "if({view.custom.attr0.uom} = '', '—', {view.custom.attr0.uom})"}, "type": "expr"}}}, "props": {"text": "tons", "style": {"color": "#888888", "fontSize": "12px"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Attr0Req"}, "position": {"basis": "36px", "shrink": "0"}, "propConfig": {"props.text": {"binding": {"config": {"expression": "if({view.custom.attr0.required}, '✓', '—')"}, "type": "expr"}}, "props.style.color": {"binding": {"config": {"expression": "if({view.custom.attr0.required}, '#1976d2', '#888888')"}, "type": "expr"}}}, "props": {"text": "✓", "style": {"color": "#1976d2", "fontSize": "13px", "fontWeight": "600", "textAlign": "center"}}, "type": "ia.display.label"}
                     ],
-                    "meta": {"name": "AttributesRepeater"},
+                    "meta": {"name": "AttrRow0"},
                     "position": {},
                     "propConfig": {
-                      "props.instances": {
-                        "binding": {
-                          "type": "expr",
-                          "config": {"expression": "{view.custom.selectedLocation.attributes}"}
-                        }
-                      }
+                      "props.visible": {"binding": {"config": {"expression": "{view.custom.attr0.name} != ''"}, "type": "expr"}}
                     },
-                    "props": {
-                      "direction": "column",
-                      "instances": [
-                        {"name": "Tonnage", "value": "400", "dataType": "DECIMAL", "uom": "tons", "required": true},
-                        {"name": "ConfirmationMethod", "value": "None", "dataType": "NVARCHAR", "uom": "", "required": false},
-                        {"name": "RefCycleTimeSec", "value": "62.5", "dataType": "DECIMAL", "uom": "sec", "required": false}
-                      ],
-                      "style": {}
+                    "props": {"alignItems": "center", "direction": "row", "style": {"borderBottom": "1px solid #f0f0f0", "minHeight": "36px", "padding": "4px 12px"}},
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {"meta": {"name": "Attr1Name"}, "position": {"grow": 1}, "propConfig": {"props.text": {"binding": {"config": {"expression": "{view.custom.attr1.name}"}, "type": "expr"}}}, "props": {"text": "ConfirmationMethod", "style": {"color": "#1a1a1a", "fontSize": "12px"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Attr1Value"}, "position": {"basis": "110px", "shrink": "0"}, "propConfig": {"props.text": {"binding": {"config": {"expression": "{view.custom.attr1.value}"}, "type": "expr"}}}, "props": {"text": "None", "style": {"border": "1px solid #d4d4d4", "borderRadius": "4px", "fontSize": "12px", "padding": "3px 6px", "width": "80px"}}, "type": "ia.input.text-field"},
+                      {"meta": {"name": "Attr1Type"}, "position": {"basis": "70px", "shrink": "0"}, "propConfig": {"props.text": {"binding": {"config": {"expression": "{view.custom.attr1.dataType}"}, "type": "expr"}}}, "props": {"text": "NVARCHAR", "style": {"color": "#888888", "fontSize": "10px"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Attr1UOM"}, "position": {"basis": "50px", "shrink": "0"}, "propConfig": {"props.text": {"binding": {"config": {"expression": "if({view.custom.attr1.uom} = '', '—', {view.custom.attr1.uom})"}, "type": "expr"}}}, "props": {"text": "—", "style": {"color": "#888888", "fontSize": "12px"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Attr1Req"}, "position": {"basis": "36px", "shrink": "0"}, "propConfig": {"props.text": {"binding": {"config": {"expression": "if({view.custom.attr1.required}, '✓', '—')"}, "type": "expr"}}, "props.style.color": {"binding": {"config": {"expression": "if({view.custom.attr1.required}, '#1976d2', '#888888')"}, "type": "expr"}}}, "props": {"text": "—", "style": {"color": "#888888", "fontSize": "13px", "fontWeight": "600", "textAlign": "center"}}, "type": "ia.display.label"}
+                    ],
+                    "meta": {"name": "AttrRow1"},
+                    "position": {},
+                    "propConfig": {
+                      "props.visible": {"binding": {"config": {"expression": "{view.custom.attr1.name} != ''"}, "type": "expr"}}
                     },
-                    "type": "ia.display.flex-repeater"
+                    "props": {"alignItems": "center", "direction": "row", "style": {"borderBottom": "1px solid #f0f0f0", "minHeight": "36px", "padding": "4px 12px"}},
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {"meta": {"name": "Attr2Name"}, "position": {"grow": 1}, "propConfig": {"props.text": {"binding": {"config": {"expression": "{view.custom.attr2.name}"}, "type": "expr"}}}, "props": {"text": "RefCycleTimeSec", "style": {"color": "#1a1a1a", "fontSize": "12px"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Attr2Value"}, "position": {"basis": "110px", "shrink": "0"}, "propConfig": {"props.text": {"binding": {"config": {"expression": "{view.custom.attr2.value}"}, "type": "expr"}}}, "props": {"text": "62.5", "style": {"border": "1px solid #d4d4d4", "borderRadius": "4px", "fontSize": "12px", "padding": "3px 6px", "width": "80px"}}, "type": "ia.input.text-field"},
+                      {"meta": {"name": "Attr2Type"}, "position": {"basis": "70px", "shrink": "0"}, "propConfig": {"props.text": {"binding": {"config": {"expression": "{view.custom.attr2.dataType}"}, "type": "expr"}}}, "props": {"text": "DECIMAL", "style": {"color": "#888888", "fontSize": "10px"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Attr2UOM"}, "position": {"basis": "50px", "shrink": "0"}, "propConfig": {"props.text": {"binding": {"config": {"expression": "if({view.custom.attr2.uom} = '', '—', {view.custom.attr2.uom})"}, "type": "expr"}}}, "props": {"text": "sec", "style": {"color": "#888888", "fontSize": "12px"}}, "type": "ia.display.label"},
+                      {"meta": {"name": "Attr2Req"}, "position": {"basis": "36px", "shrink": "0"}, "propConfig": {"props.text": {"binding": {"config": {"expression": "if({view.custom.attr2.required}, '✓', '—')"}, "type": "expr"}}, "props.style.color": {"binding": {"config": {"expression": "if({view.custom.attr2.required}, '#1976d2', '#888888')"}, "type": "expr"}}}, "props": {"text": "—", "style": {"color": "#888888", "fontSize": "13px", "fontWeight": "600", "textAlign": "center"}}, "type": "ia.display.label"}
+                    ],
+                    "meta": {"name": "AttrRow2"},
+                    "position": {},
+                    "propConfig": {
+                      "props.visible": {"binding": {"config": {"expression": "{view.custom.attr2.name} != ''"}, "type": "expr"}}
+                    },
+                    "props": {"alignItems": "center", "direction": "row", "style": {"minHeight": "36px", "padding": "4px 12px"}},
+                    "type": "ia.container.flex"
                   }
                 ],
                 "meta": {"name": "AttributesCard"},
                 "position": {},
                 "propConfig": {},
-                "props": {
-                  "direction": "column",
-                  "style": {
-                    "border": "1px solid #d4d4d4",
-                    "borderRadius": "4px"
-                  }
-                },
+                "props": {"direction": "column", "style": {"border": "1px solid #d4d4d4", "borderRadius": "4px"}},
                 "type": "ia.container.flex"
               }
             ],
             "meta": {"name": "RightPanel"},
             "position": {"grow": 1},
             "propConfig": {},
-            "props": {
-              "direction": "column",
-              "style": {
-                "gap": "10px",
-                "overflow": "auto",
-                "padding": "12px"
-              }
-            },
+            "props": {"direction": "column", "style": {"gap": "10px", "overflow": "auto", "padding": "12px"}},
             "type": "ia.container.flex"
           }
         ],
         "meta": {"name": "Body"},
         "position": {"grow": 1},
         "propConfig": {},
-        "props": {
-          "direction": "row",
-          "style": {"overflow": "hidden"}
-        },
+        "props": {"direction": "row", "style": {"overflow": "hidden"}},
         "type": "ia.container.flex"
       }
     ],
@@ -1127,11 +644,7 @@
     "propConfig": {},
     "props": {
       "direction": "column",
-      "style": {
-        "height": "100%",
-        "overflow": "hidden",
-        "width": "100%"
-      }
+      "style": {"height": "100%", "overflow": "hidden", "width": "100%"}
     },
     "type": "ia.container.flex"
   }
