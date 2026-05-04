@@ -1,0 +1,57 @@
+{
+  "custom": {},
+  "params": {},
+  "propConfig": {},
+  "props": {
+    "defaultSize": { "height": 768, "width": 1024 }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": { "name": "LandingIcon" },
+        "position": {},
+        "propConfig": {},
+        "props": {
+          "text": "\u2699",
+          "style": {
+            "color": "#888888",
+            "fontSize": "56px",
+            "lineHeight": "1",
+            "opacity": "0.3",
+            "textAlign": "center"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": { "name": "LandingText" },
+        "position": {},
+        "propConfig": {},
+        "props": {
+          "text": "Select a category to begin",
+          "style": {
+            "color": "#888888",
+            "fontSize": "15px",
+            "fontWeight": "400",
+            "textAlign": "center"
+          }
+        },
+        "type": "ia.display.label"
+      }
+    ],
+    "meta": { "name": "root" },
+    "propConfig": {},
+    "props": {
+      "alignItems": "center",
+      "direction": "column",
+      "justify": "center",
+      "style": {
+        "backgroundColor": "#f0f0f0",
+        "gap": "16px",
+        "height": "100%",
+        "width": "100%"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

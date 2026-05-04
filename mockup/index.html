@@ -89,7 +89,6 @@
             <h1 style="font-size:15px;font-weight:600;">Plant Hierarchy</h1>
           </div>
           <div class="title-row-spacer"></div>
-          <button class="btn btn-primary" onclick="openModal('modal-add-location')">+ Add Location</button>
           <button class="btn btn-icon" onclick="openModal('modal-loc-type-editor')" title="Location Type Editor">&#9881;</button>
         </div>
 
@@ -99,6 +98,7 @@
           <!-- Left: tree panel -->
           <div class="tree-panel" style="width:240px;min-width:240px;border-right:1px solid var(--border);background:var(--bg-nav);display:flex;flex-direction:column;">
             <div style="padding:8px 10px;border-bottom:1px solid var(--border);">
+              <button class="btn btn-primary" style="width:100%;margin-bottom:8px;" onclick="openModal('modal-add-location')">+ Add Location</button>
               <input class="search-input" style="width:100%;" type="text" placeholder="&#128269; Search locations…" />
             </div>
             <div style="flex:1;overflow-y:auto;padding:4px 0;">
@@ -195,7 +195,7 @@
           </div>
 
           <!-- Right: detail area -->
-          <div class="detail-area" style="flex:1;padding:12px;gap:10px;overflow-y:auto;">
+          <div class="detail-area" style="flex:1;padding:12px;gap:10px;overflow-y:auto;overflow-x:hidden;min-width:0;">
 
             <!-- Location Details panel -->
             <div class="detail-panel" style="margin-bottom:10px;">
@@ -208,23 +208,23 @@
               </div>
               <div class="detail-body">
                 <div class="field-row" style="margin-bottom:10px;">
-                  <div class="field">
+                  <div class="field" style="min-width:0;">
                     <div class="field-label">Name</div>
-                    <input class="search-input" style="width:100%;" type="text" value="DC Machine #7" />
+                    <input class="search-input" style="width:100%;box-sizing:border-box;" type="text" value="DC Machine #7" />
                   </div>
-                  <div class="field">
+                  <div class="field" style="min-width:0;">
                     <div class="field-label">Code</div>
-                    <input class="search-input" style="width:100%;" type="text" value="DC-007" />
+                    <input class="search-input" style="width:100%;box-sizing:border-box;" type="text" value="DC-007" />
                   </div>
-                  <div class="field">
+                  <div class="field" style="min-width:0;">
                     <div class="field-label">Parent</div>
-                    <input class="search-input" style="width:100%;" type="text" value="Die Cast (Area)" readonly style="background:var(--bg-row-alt);color:var(--text-muted);" />
+                    <input class="search-input" style="width:100%;box-sizing:border-box;background:var(--bg-row-alt);color:var(--text-muted);" type="text" value="Die Cast (Area)" readonly />
                   </div>
                 </div>
                 <div class="field-row" style="margin-bottom:10px;">
-                  <div class="field">
+                  <div class="field" style="min-width:0;">
                     <div class="field-label">Description</div>
-                    <input class="search-input" style="width:100%;" type="text" value="400-ton Toshiba die cast press, Bay 3" />
+                    <input class="search-input" style="width:100%;box-sizing:border-box;" type="text" value="400-ton Toshiba die cast press, Bay 3" />
                   </div>
                   <div class="field" style="flex: 0 0 120px;">
                     <div class="field-label">Sort Order</div>
@@ -277,10 +277,10 @@
                           <button class="arrow-btn">&#9660;</button>
                         </div>
                       </td>
-                      <td>NumberOfCavities</td>
-                      <td><div style="display:flex;align-items:center;gap:6px;"><input class="search-input" style="width:70px;" type="text" value="2" /><span style="font-size:9px;color:var(--text-muted);white-space:nowrap;">INT</span></div></td>
+                      <td>ConfirmationMethod</td>
+                      <td><div style="display:flex;align-items:center;gap:6px;"><input class="search-input" style="width:70px;" type="text" value="None" /><span style="font-size:9px;color:var(--text-muted);white-space:nowrap;">NVARCHAR</span></div></td>
                       <td>—</td>
-                      <td><input type="checkbox" checked style="accent-color:var(--accent);" /></td>
+                      <td><input type="checkbox" style="accent-color:var(--accent);" /></td>
                     </tr>
                     <tr>
                       <td>
@@ -439,7 +439,7 @@
                   <input class="search-input" style="width:80px;" type="text" value="24" />
                 </div>
                 <div class="field">
-                  <div class="field-label">Max Lot Size</div>
+                  <div class="field-label">Parts Per Basket</div>
                   <input class="search-input" style="width:80px;" type="text" value="100" />
                 </div>
               </div>
@@ -476,6 +476,14 @@
                     </div>
                     <div class="field-row">
                       <div class="field">
+                        <div class="field-label">Closure Method</div>
+                        <select class="select">
+                          <option selected>ByCount</option>
+                          <option>ByWeight</option>
+                          <option>ByVision</option>
+                        </select>
+                      </div>
+                      <div class="field">
                         <div class="field-label">Dunnage Code</div>
                         <input class="search-input" style="width:120px;" type="text" value="RD-5G0F" />
                       </div>
@@ -489,24 +497,51 @@
               </div>
 
               <!-- Tab: Routes -->
-              <div class="tab-content" data-tab="tab-routes">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+              <div class="tab-content" data-tab="tab-routes" id="routes-tab">
+
+                <!-- Published header -->
+                <div id="routes-pub-header" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
                   <div class="version-selector">
-                    <select class="select"><option selected>v2 — Effective 2026-01-15 (Published)</option><option>v1 — Effective 2025-06-01 (Deprecated)</option></select>
+                    <select class="select" id="routes-version-select">
+                      <option selected>v2 — Effective 2026-01-15 (Published)</option>
+                      <option>v1 — Effective 2025-06-01 (Deprecated)</option>
+                    </select>
                   </div>
                   <span class="badge badge-published">Published</span>
                   <div style="flex:1;"></div>
-                  <button class="btn btn-sm">New Version</button>
+                  <button class="btn btn-sm" onclick="routesNewVersion()">New Version</button>
                 </div>
-                <div class="detail-panel">
+
+                <!-- Draft header (hidden initially) -->
+                <div id="routes-draft-header" style="display:none;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+                  <div class="version-selector">
+                    <select class="select">
+                      <option selected>v3 — Draft (Unsaved)</option>
+                      <option>v2 — Effective 2026-01-15 (Published)</option>
+                      <option>v1 — Effective 2025-06-01 (Deprecated)</option>
+                    </select>
+                  </div>
+                  <span class="badge badge-draft">Draft</span>
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="font-size:11px;color:var(--text-muted);white-space:nowrap;">Effective Date</span>
+                    <input class="search-input" type="date" id="routes-effective-date" value="2026-05-01" style="width:130px;" />
+                  </div>
+                  <div style="flex:1;"></div>
+                  <button class="btn btn-sm btn-secondary" onclick="routesDiscard()">Discard Draft</button>
+                  <button class="btn btn-sm btn-primary" onclick="routesPublish()">Publish</button>
+                </div>
+
+                <!-- Published panel -->
+                <div class="detail-panel" id="routes-pub-panel">
                   <div style="overflow-x:auto;">
                     <table class="data-table">
                       <thead>
                         <tr>
-                          <th style="width:46px;">#</th>
+                          <th style="width:36px;">#</th>
                           <th style="width:46px;"></th>
-                          <th>Step Name</th>
                           <th>Area</th>
+                          <th>Operation Template</th>
+                          <th style="width:72px;">Required</th>
                           <th>Data Collection</th>
                         </tr>
                       </thead>
@@ -515,67 +550,149 @@
                           <td>1</td>
                           <td><div class="arrows"><button class="arrow-btn disabled">&#9650;</button><button class="arrow-btn disabled">&#9660;</button></div></td>
                           <td>Die Cast</td>
-                          <td>Die Cast</td>
-                          <td><span style="font-size:11px;color:var(--text-muted);">Die, Cavity, Weight, Good, Bad</span></td>
+                          <td><span style="font-family:'SF Mono','Consolas',monospace;font-size:12px;">DC-5G0 v1 — Die Cast 5G0 Front Cover</span></td>
+                          <td style="text-align:center;"><input type="checkbox" checked disabled style="accent-color:var(--accent);" /></td>
+                          <td><span style="font-size:11px;color:var(--text-muted);">DieInfo, CavityInfo, Weight, GoodCount, BadCount</span></td>
                         </tr>
                         <tr>
                           <td>2</td>
                           <td><div class="arrows"><button class="arrow-btn disabled">&#9650;</button><button class="arrow-btn disabled">&#9660;</button></div></td>
-                          <td>Trim</td>
                           <td>Trim Shop</td>
-                          <td><span style="font-size:11px;color:var(--text-muted);">Weight, Good, Bad</span></td>
+                          <td><span style="font-family:'SF Mono','Consolas',monospace;font-size:12px;">TRIM-5G0 v1 — Trim 5G0 Front Cover</span></td>
+                          <td style="text-align:center;"><input type="checkbox" checked disabled style="accent-color:var(--accent);" /></td>
+                          <td><span style="font-size:11px;color:var(--text-muted);">Weight, GoodCount, BadCount</span></td>
                         </tr>
                         <tr>
                           <td>3</td>
                           <td><div class="arrows"><button class="arrow-btn disabled">&#9650;</button><button class="arrow-btn disabled">&#9660;</button></div></td>
-                          <td>CNC Machining</td>
                           <td>Machine Shop</td>
-                          <td><span style="font-size:11px;color:var(--text-muted);">Good, Bad</span></td>
+                          <td><span style="font-family:'SF Mono','Consolas',monospace;font-size:12px;">CNC-5G0 v1 — CNC Machining 5G0</span></td>
+                          <td style="text-align:center;"><input type="checkbox" checked disabled style="accent-color:var(--accent);" /></td>
+                          <td><span style="font-size:11px;color:var(--text-muted);">GoodCount, BadCount</span></td>
                         </tr>
                         <tr>
                           <td>4</td>
                           <td><div class="arrows"><button class="arrow-btn disabled">&#9650;</button><button class="arrow-btn disabled">&#9660;</button></div></td>
-                          <td>Assembly Front</td>
-                          <td>Die Cast</td>
-                          <td><span style="font-size:11px;color:var(--text-muted);">Serial, Material Verify, Good, Bad</span></td>
-                        </tr>
-                        <tr>
-                          <td>5</td>
-                          <td><div class="arrows"><button class="arrow-btn disabled">&#9650;</button><button class="arrow-btn disabled">&#9660;</button></div></td>
-                          <td>Pack &amp; Ship</td>
                           <td>Prod Control</td>
-                          <td><span style="font-size:11px;color:var(--text-muted);">Good</span></td>
+                          <td><span style="font-family:'SF Mono','Consolas',monospace;font-size:12px;">ASSY-FRONT v1 — Assembly Front Cover</span></td>
+                          <td style="text-align:center;"><input type="checkbox" checked disabled style="accent-color:var(--accent);" /></td>
+                          <td><span style="font-size:11px;color:var(--text-muted);">SerialNumber, MaterialVerification, GoodCount, BadCount</span></td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
-                  <div style="padding:8px 10px;">
-                    <em style="font-size:11px;color:var(--text-muted);">Published route — read-only. Click New Version to create a draft copy for editing.</em>
+                  <div style="padding:8px 12px;">
+                    <em style="font-size:11px;color:var(--text-muted);">Published — read-only. Click New Version to create a draft copy for editing.</em>
                   </div>
                 </div>
-              </div>
 
-              <!-- Tab: BOMs -->
-              <div class="tab-content" data-tab="tab-boms">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-                  <div class="version-selector">
-                    <select class="select"><option selected>v1 — Effective 2026-01-15 (Published)</option></select>
-                  </div>
-                  <span class="badge badge-published">Published</span>
-                  <div style="flex:1;"></div>
-                  <button class="btn btn-sm">New Version</button>
-                </div>
-                <div class="detail-panel">
+                <!-- Draft panel (hidden initially) -->
+                <div class="detail-panel" id="routes-draft-panel" style="display:none;">
                   <div style="overflow-x:auto;">
                     <table class="data-table">
                       <thead>
                         <tr>
-                          <th style="width:46px;">#</th>
+                          <th style="width:36px;">#</th>
+                          <th style="width:46px;"></th>
+                          <th style="width:150px;">Area</th>
+                          <th>Operation Template</th>
+                          <th style="width:72px;">Required</th>
+                          <th>Data Collection</th>
+                          <th style="width:36px;"></th>
+                        </tr>
+                      </thead>
+                      <tbody id="routes-draft-tbody">
+                        <tr>
+                          <td>1</td>
+                          <td><div class="arrows"><button class="arrow-btn disabled">&#9650;</button><button class="arrow-btn" onclick="routesMoveRow(this,1)">&#9660;</button></div></td>
+                          <td><select class="select" style="width:100%;" onchange="routesAreaChanged(this)"><option selected>Die Cast</option><option>Trim Shop</option><option>Machine Shop</option><option>Prod Control</option></select></td>
+                          <td><select class="select" style="width:100%;" onchange="routesTemplateChanged(this)"><option value="DC-5G0" data-fields="DieInfo, CavityInfo, Weight, GoodCount, BadCount" selected>DC-5G0 v1 — Die Cast 5G0 Front Cover</option></select></td>
+                          <td style="text-align:center;"><input type="checkbox" checked style="accent-color:var(--accent);" /></td>
+                          <td><span class="routes-fields" style="font-size:11px;color:var(--text-muted);">DieInfo, CavityInfo, Weight, GoodCount, BadCount</span></td>
+                          <td><button class="btn btn-icon" style="color:var(--mpp-state-bad-fg);font-size:14px;" onclick="routesDeleteRow(this)" title="Remove step">&#10005;</button></td>
+                        </tr>
+                        <tr>
+                          <td>2</td>
+                          <td><div class="arrows"><button class="arrow-btn" onclick="routesMoveRow(this,-1)">&#9650;</button><button class="arrow-btn" onclick="routesMoveRow(this,1)">&#9660;</button></div></td>
+                          <td><select class="select" style="width:100%;" onchange="routesAreaChanged(this)"><option>Die Cast</option><option selected>Trim Shop</option><option>Machine Shop</option><option>Prod Control</option></select></td>
+                          <td><select class="select" style="width:100%;" onchange="routesTemplateChanged(this)"><option value="TRIM-5G0" data-fields="Weight, GoodCount, BadCount" selected>TRIM-5G0 v1 — Trim 5G0 Front Cover</option></select></td>
+                          <td style="text-align:center;"><input type="checkbox" checked style="accent-color:var(--accent);" /></td>
+                          <td><span class="routes-fields" style="font-size:11px;color:var(--text-muted);">Weight, GoodCount, BadCount</span></td>
+                          <td><button class="btn btn-icon" style="color:var(--mpp-state-bad-fg);font-size:14px;" onclick="routesDeleteRow(this)" title="Remove step">&#10005;</button></td>
+                        </tr>
+                        <tr>
+                          <td>3</td>
+                          <td><div class="arrows"><button class="arrow-btn" onclick="routesMoveRow(this,-1)">&#9650;</button><button class="arrow-btn" onclick="routesMoveRow(this,1)">&#9660;</button></div></td>
+                          <td><select class="select" style="width:100%;" onchange="routesAreaChanged(this)"><option>Die Cast</option><option>Trim Shop</option><option selected>Machine Shop</option><option>Prod Control</option></select></td>
+                          <td><select class="select" style="width:100%;" onchange="routesTemplateChanged(this)"><option value="CNC-5G0" data-fields="GoodCount, BadCount" selected>CNC-5G0 v1 — CNC Machining 5G0</option></select></td>
+                          <td style="text-align:center;"><input type="checkbox" checked style="accent-color:var(--accent);" /></td>
+                          <td><span class="routes-fields" style="font-size:11px;color:var(--text-muted);">GoodCount, BadCount</span></td>
+                          <td><button class="btn btn-icon" style="color:var(--mpp-state-bad-fg);font-size:14px;" onclick="routesDeleteRow(this)" title="Remove step">&#10005;</button></td>
+                        </tr>
+                        <tr>
+                          <td>4</td>
+                          <td><div class="arrows"><button class="arrow-btn" onclick="routesMoveRow(this,-1)">&#9650;</button><button class="arrow-btn disabled">&#9660;</button></div></td>
+                          <td><select class="select" style="width:100%;" onchange="routesAreaChanged(this)"><option>Die Cast</option><option>Trim Shop</option><option>Machine Shop</option><option selected>Prod Control</option></select></td>
+                          <td><select class="select" style="width:100%;" onchange="routesTemplateChanged(this)"><option value="ASSY-FRONT" data-fields="SerialNumber, MaterialVerification, GoodCount, BadCount" selected>ASSY-FRONT v1 — Assembly Front Cover</option><option value="ASSY-REAR" data-fields="SerialNumber, MaterialVerification, GoodCount, BadCount">ASSY-REAR v1 — Assembly Rear Cover</option></select></td>
+                          <td style="text-align:center;"><input type="checkbox" checked style="accent-color:var(--accent);" /></td>
+                          <td><span class="routes-fields" style="font-size:11px;color:var(--text-muted);">SerialNumber, MaterialVerification, GoodCount, BadCount</span></td>
+                          <td><button class="btn btn-icon" style="color:var(--mpp-state-bad-fg);font-size:14px;" onclick="routesDeleteRow(this)" title="Remove step">&#10005;</button></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div style="padding:8px 12px;border-top:1px solid var(--border);">
+                    <button class="btn btn-sm" onclick="routesAddStep()">+ Add Step</button>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Tab: BOMs -->
+              <div class="tab-content" data-tab="tab-boms" id="boms-tab">
+
+                <!-- Published header -->
+                <div id="boms-pub-header" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                  <div class="version-selector">
+                    <select class="select" id="boms-version-select">
+                      <option selected>v1 — Effective 2026-01-15 (Published)</option>
+                    </select>
+                  </div>
+                  <span class="badge badge-published">Published</span>
+                  <div style="flex:1;"></div>
+                  <button class="btn btn-sm" onclick="bomsNewVersion()">New Version</button>
+                </div>
+
+                <!-- Draft header (hidden initially) -->
+                <div id="boms-draft-header" style="display:none;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+                  <div class="version-selector">
+                    <select class="select">
+                      <option selected>v2 — Draft (Unsaved)</option>
+                      <option>v1 — Effective 2026-01-15 (Published)</option>
+                    </select>
+                  </div>
+                  <span class="badge badge-draft">Draft</span>
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="font-size:11px;color:var(--text-muted);white-space:nowrap;">Effective Date</span>
+                    <input class="search-input" type="date" id="boms-effective-date" value="2026-05-01" style="width:130px;" />
+                  </div>
+                  <div style="flex:1;"></div>
+                  <button class="btn btn-sm btn-secondary" onclick="bomsDiscard()">Discard Draft</button>
+                  <button class="btn btn-sm btn-primary" onclick="bomsPublish()">Publish</button>
+                </div>
+
+                <!-- Published panel -->
+                <div class="detail-panel" id="boms-pub-panel">
+                  <div style="overflow-x:auto;">
+                    <table class="data-table">
+                      <thead>
+                        <tr>
+                          <th style="width:36px;">#</th>
                           <th style="width:46px;"></th>
                           <th>Component</th>
                           <th>Part Number</th>
-                          <th>Qty</th>
-                          <th>UOM</th>
+                          <th style="width:60px;">Qty</th>
+                          <th style="width:60px;">UOM</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -598,10 +715,61 @@
                       </tbody>
                     </table>
                   </div>
-                  <div style="padding:8px 10px;">
-                    <em style="font-size:11px;color:var(--text-muted);">Published BOM — read-only. Click New Version to create a draft copy for editing.</em>
+                  <div style="padding:8px 12px;">
+                    <em style="font-size:11px;color:var(--text-muted);">Published — read-only. Click New Version to create a draft copy for editing.</em>
                   </div>
                 </div>
+
+                <!-- Draft panel (hidden initially) -->
+                <div class="detail-panel" id="boms-draft-panel" style="display:none;">
+                  <div style="overflow-x:auto;">
+                    <table class="data-table">
+                      <thead>
+                        <tr>
+                          <th style="width:36px;">#</th>
+                          <th style="width:46px;"></th>
+                          <th>Part Number</th>
+                          <th>Component</th>
+                          <th style="width:72px;">Qty</th>
+                          <th style="width:80px;">UOM</th>
+                          <th style="width:36px;"></th>
+                        </tr>
+                      </thead>
+                      <tbody id="boms-draft-tbody">
+                        <tr>
+                          <td>1</td>
+                          <td><div class="arrows"><button class="arrow-btn disabled">&#9650;</button><button class="arrow-btn" onclick="bomsMoveRow(this,1)">&#9660;</button></div></td>
+                          <td><select class="select" style="width:100%;" onchange="bomsItemChanged(this)"><option value="">— Select item —</option><option value="5G0-C" data-name="Front Cover Casting" data-uom="EA" selected>5G0-C</option><option value="5G0-MACHINED" data-name="Front Cover Machined" data-uom="EA">5G0-MACHINED</option><option value="PNA" data-name="Mounting Pin" data-uom="EA">PNA</option><option value="SEAL-5G0" data-name="Sealing Ring 5G0" data-uom="EA">SEAL-5G0</option><option value="ALUM-380" data-name="Aluminum Alloy 380" data-uom="LB">ALUM-380</option></select></td>
+                          <td><span class="boms-item-name" style="font-size:13px;color:var(--text-secondary);">Front Cover Casting</span></td>
+                          <td><input class="search-input" style="width:56px;text-align:right;" type="number" value="1" min="0" /></td>
+                          <td>
+                            <select class="select boms-uom" style="width:100%;">
+                              <option selected>EA</option><option>LB</option><option>KG</option>
+                            </select>
+                          </td>
+                          <td><button class="btn btn-icon" style="color:var(--mpp-state-bad-fg);font-size:14px;" onclick="bomsDeleteRow(this)" title="Remove component">&#10005;</button></td>
+                        </tr>
+                        <tr>
+                          <td>2</td>
+                          <td><div class="arrows"><button class="arrow-btn" onclick="bomsMoveRow(this,-1)">&#9650;</button><button class="arrow-btn disabled">&#9660;</button></div></td>
+                          <td><select class="select" style="width:100%;" onchange="bomsItemChanged(this)"><option value="">— Select item —</option><option value="5G0-C" data-name="Front Cover Casting" data-uom="EA">5G0-C</option><option value="5G0-MACHINED" data-name="Front Cover Machined" data-uom="EA">5G0-MACHINED</option><option value="PNA" data-name="Mounting Pin" data-uom="EA" selected>PNA</option><option value="SEAL-5G0" data-name="Sealing Ring 5G0" data-uom="EA">SEAL-5G0</option><option value="ALUM-380" data-name="Aluminum Alloy 380" data-uom="LB">ALUM-380</option></select></td>
+                          <td><span class="boms-item-name" style="font-size:13px;color:var(--text-secondary);">Mounting Pin</span></td>
+                          <td><input class="search-input" style="width:56px;text-align:right;" type="number" value="2" min="0" /></td>
+                          <td>
+                            <select class="select boms-uom" style="width:100%;">
+                              <option selected>EA</option><option>LB</option><option>KG</option>
+                            </select>
+                          </td>
+                          <td><button class="btn btn-icon" style="color:var(--mpp-state-bad-fg);font-size:14px;" onclick="bomsDeleteRow(this)" title="Remove component">&#10005;</button></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div style="padding:8px 12px;border-top:1px solid var(--border);">
+                    <button class="btn btn-sm" onclick="bomsAddRow()">+ Add Component</button>
+                  </div>
+                </div>
+
               </div>
 
               <!-- Tab: Quality Specs -->
@@ -622,13 +790,13 @@
                         <tr>
                           <td>5G0 Dimensional Spec</td>
                           <td>v2</td>
-                          <td><span class="badge badge-published">Published</span></td>
+                          <td><span class="badge badge-published">Active</span></td>
                           <td><button class="btn btn-sm" onclick="toggleCategory('quality');navigateTo('quality','quality-specs');">Go to spec &#8594;</button></td>
                         </tr>
                         <tr>
                           <td>5G0 Visual Inspection</td>
                           <td>v1</td>
-                          <td><span class="badge badge-published">Published</span></td>
+                          <td><span class="badge badge-published">Active</span></td>
                           <td><button class="btn btn-sm" onclick="toggleCategory('quality');navigateTo('quality','quality-specs');">Go to spec &#8594;</button></td>
                         </tr>
                       </tbody>
@@ -707,7 +875,7 @@
             <h1 style="font-size:15px;font-weight:600;">Operation Templates</h1>
           </div>
           <div class="title-row-spacer"></div>
-          <button class="btn btn-primary">+ New Template</button>
+          <button class="btn btn-primary" onclick="showToast('info','New template form coming soon.')">+ New Template</button>
         </div>
 
         <!-- Main split layout -->
@@ -716,128 +884,163 @@
           <!-- Left: grouped list -->
           <div class="tree-panel" style="width:240px;min-width:240px;border-right:1px solid var(--border);background:var(--bg-nav);display:flex;flex-direction:column;">
             <div style="padding:8px 10px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:6px;">
-              <select class="select" style="width:100%;"><option>All Areas</option><option>Die Cast</option><option>Trim Shop</option><option>Machine Shop</option><option>Assembly</option></select>
+              <select class="select" style="width:100%;"><option>All Areas</option><option>Die Cast</option><option>Trim Shop</option><option>Machine Shop</option><option>Prod Control</option></select>
               <input class="search-input" style="width:100%;" type="text" placeholder="&#128269; Search templates…" />
             </div>
             <div style="flex:1;overflow-y:auto;padding:4px 0;">
 
               <div style="padding:4px 10px 2px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-muted);">Die Cast</div>
               <div class="tree-item selected" style="padding-left:14px;justify-content:space-between;">
-                <span>Die Cast Operation</span>
-                <span style="font-size:11px;color:var(--text-muted);">v2</span>
+                <div style="display:flex;flex-direction:column;gap:1px;">
+                  <span style="font-size:13px;">Die Cast 5G0 Front Cover</span>
+                  <span style="font-family:'SF Mono','Consolas',monospace;font-size:10px;color:var(--text-muted);">DC-5G0</span>
+                </div>
+                <span class="badge badge-type" style="font-size:10px;">v1</span>
               </div>
 
               <div style="padding:8px 10px 2px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-muted);">Trim Shop</div>
               <div class="tree-item" style="padding-left:14px;justify-content:space-between;">
-                <span>Trim Operation</span>
-                <span style="font-size:11px;color:var(--text-muted);">v1</span>
+                <div style="display:flex;flex-direction:column;gap:1px;">
+                  <span style="font-size:13px;">Trim 5G0 Front Cover</span>
+                  <span style="font-family:'SF Mono','Consolas',monospace;font-size:10px;color:var(--text-muted);">TRIM-5G0</span>
+                </div>
+                <span class="badge badge-type" style="font-size:10px;">v1</span>
               </div>
 
               <div style="padding:8px 10px 2px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-muted);">Machine Shop</div>
               <div class="tree-item" style="padding-left:14px;justify-content:space-between;">
-                <span>CNC Machining</span>
-                <span style="font-size:11px;color:var(--text-muted);">v1</span>
+                <div style="display:flex;flex-direction:column;gap:1px;">
+                  <span style="font-size:13px;">CNC Machining 5G0</span>
+                  <span style="font-family:'SF Mono','Consolas',monospace;font-size:10px;color:var(--text-muted);">CNC-5G0</span>
+                </div>
+                <span class="badge badge-type" style="font-size:10px;">v1</span>
               </div>
 
-              <div style="padding:8px 10px 2px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-muted);">Assembly</div>
+              <div style="padding:8px 10px 2px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-muted);">Prod Control</div>
               <div class="tree-item" style="padding-left:14px;justify-content:space-between;">
-                <span>Assembly Front (Serialized)</span>
-                <span style="font-size:11px;color:var(--text-muted);">v1</span>
+                <div style="display:flex;flex-direction:column;gap:1px;">
+                  <span style="font-size:13px;">Assembly Front Cover</span>
+                  <span style="font-family:'SF Mono','Consolas',monospace;font-size:10px;color:var(--text-muted);">ASSY-FRONT</span>
+                </div>
+                <span class="badge badge-type" style="font-size:10px;">v1</span>
               </div>
               <div class="tree-item" style="padding-left:14px;justify-content:space-between;">
-                <span>Pack &amp; Ship</span>
-                <span style="font-size:11px;color:var(--text-muted);">v1</span>
+                <div style="display:flex;flex-direction:column;gap:1px;">
+                  <span style="font-size:13px;">Assembly Rear Cover</span>
+                  <span style="font-family:'SF Mono','Consolas',monospace;font-size:10px;color:var(--text-muted);">ASSY-REAR</span>
+                </div>
+                <span class="badge badge-type" style="font-size:10px;">v1</span>
               </div>
 
             </div>
           </div>
 
           <!-- Right: detail area -->
-          <div class="detail-area" style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
+          <div class="detail-area" style="flex:1;overflow-y:auto;overflow-x:hidden;min-width:0;padding:12px 14px;display:flex;flex-direction:column;gap:10px;">
 
-            <!-- Template Details -->
-            <div style="padding:10px 14px;border-bottom:1px solid var(--border);background:var(--bg-panel);">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                <span style="font-size:13px;font-weight:600;">Die Cast Operation</span>
-                <span style="font-size:11px;color:var(--text-muted);">v2</span>
+            <!-- Template Details panel -->
+            <div class="detail-panel">
+              <div class="detail-header">
+                <h2>Template Details</h2>
+                <span class="badge badge-type">v1</span>
                 <div style="flex:1;"></div>
                 <button class="btn btn-primary btn-sm" onclick="showToast('success','Template saved.')">Save</button>
-                <button class="btn btn-sm">New Version</button>
-                <button class="btn btn-danger btn-sm">Deprecate</button>
+                <button class="btn btn-sm" onclick="showToast('info','Version 2 created.')">New Version</button>
+                <button class="btn btn-danger btn-sm" onclick="showToast('info','Template deprecated.')">Deprecate</button>
               </div>
-              <div class="field-row">
-                <div class="field">
-                  <div class="field-label">Code</div>
-                  <input class="search-input" type="text" value="DIE-CAST" readonly style="background:var(--bg-row-alt);color:var(--text-muted);" />
+              <div class="detail-body">
+                <div class="field-row" style="margin-bottom:10px;">
+                  <div class="field" style="min-width:0;flex:0 0 120px;">
+                    <div class="field-label">Code</div>
+                    <input class="search-input" style="width:100%;box-sizing:border-box;background:var(--bg-row-alt);color:var(--text-muted);" type="text" value="DC-5G0" readonly />
+                  </div>
+                  <div class="field" style="min-width:0;flex:0 0 40px;">
+                    <div class="field-label">Version</div>
+                    <input class="search-input" style="width:100%;box-sizing:border-box;background:var(--bg-row-alt);color:var(--text-muted);text-align:center;" type="text" value="1" readonly />
+                  </div>
+                  <div class="field" style="min-width:0;flex:2;">
+                    <div class="field-label">Name</div>
+                    <input class="search-input" style="width:100%;box-sizing:border-box;" type="text" value="Die Cast 5G0 Front Cover" />
+                  </div>
+                  <div class="field" style="min-width:0;">
+                    <div class="field-label">Area</div>
+                    <select class="select" style="width:100%;"><option selected>Die Cast</option><option>Trim Shop</option><option>Machine Shop</option><option>Prod Control</option></select>
+                  </div>
                 </div>
-                <div class="field" style="flex:2;">
-                  <div class="field-label">Name</div>
-                  <input class="search-input" style="width:100%;" type="text" value="Die Cast Operation" />
+                <div class="field-row">
+                  <div class="field" style="min-width:0;flex:3;">
+                    <div class="field-label">Description</div>
+                    <input class="search-input" style="width:100%;box-sizing:border-box;" type="text" value="Primary die cast operation — collects die, cavity, weight, good count, and bad count." />
+                  </div>
+                  <div class="field" style="min-width:0;flex:0 0 160px;">
+                    <div class="field-label">Requires Sub-LOT Split</div>
+                    <div style="display:flex;align-items:center;gap:8px;height:28px;">
+                      <input type="checkbox" id="optempl-sublot" style="accent-color:var(--accent);" />
+                      <label for="optempl-sublot" style="font-size:12px;color:var(--text-secondary);">Split at completion</label>
+                    </div>
+                  </div>
                 </div>
-                <div class="field">
-                  <div class="field-label">Area</div>
-                  <select class="select"><option selected>Die Cast</option><option>Trim Shop</option><option>Machine Shop</option><option>Assembly</option></select>
-                </div>
-              </div>
-              <div class="field" style="margin-top:8px;">
-                <div class="field-label">Description</div>
-                <input class="search-input" style="width:100%;" type="text" value="Primary die cast operation with die, cavity, weight, and count collection." />
               </div>
             </div>
 
-            <!-- Data Collection Fields builder -->
-            <div style="flex:1;overflow-y:auto;padding:12px 14px;background:var(--bg-content);">
-              <div class="detail-panel">
-                <div class="detail-header">
-                  <h2>Data Collection Fields</h2>
-                  <span style="font-size:11px;color:var(--text-muted);">5 fields</span>
-                  <div style="flex:1;"></div>
-                  <button class="btn btn-sm btn-primary">+ Add Field</button>
+            <!-- Data Collection Fields panel -->
+            <div class="detail-panel">
+              <div class="detail-header">
+                <h2>Data Collection Fields</h2>
+                <span style="font-size:11px;color:var(--text-muted);" id="optempl-field-count">5 fields configured</span>
+                <div style="flex:1;"></div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <select class="select" id="optempl-add-field-select" style="width:180px;">
+                    <option value="">— Add field —</option>
+                    <option value="SerialNumber">SerialNumber</option>
+                    <option value="MaterialVerification">MaterialVerification</option>
+                  </select>
+                  <button class="btn btn-sm btn-primary" onclick="optemplAddField()">+ Add</button>
                 </div>
-                <div style="overflow-x:auto;">
-                  <table class="data-table">
-                    <thead>
-                      <tr>
-                        <th style="width:46px;"></th>
-                        <th>Field</th>
-                        <th>Required</th>
-                        <th></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td><div class="arrows"><button class="arrow-btn disabled">&#9650;</button><button class="arrow-btn">&#9660;</button></div></td>
-                        <td>CollectsDieInfo</td>
-                        <td><input type="checkbox" checked style="accent-color:var(--accent);" /></td>
-                        <td><button class="btn btn-sm btn-danger">Remove</button></td>
-                      </tr>
-                      <tr>
-                        <td><div class="arrows"><button class="arrow-btn">&#9650;</button><button class="arrow-btn">&#9660;</button></div></td>
-                        <td>CollectsCavityInfo</td>
-                        <td><input type="checkbox" checked style="accent-color:var(--accent);" /></td>
-                        <td><button class="btn btn-sm btn-danger">Remove</button></td>
-                      </tr>
-                      <tr>
-                        <td><div class="arrows"><button class="arrow-btn">&#9650;</button><button class="arrow-btn">&#9660;</button></div></td>
-                        <td>CollectsWeight</td>
-                        <td><input type="checkbox" checked style="accent-color:var(--accent);" /></td>
-                        <td><button class="btn btn-sm btn-danger">Remove</button></td>
-                      </tr>
-                      <tr>
-                        <td><div class="arrows"><button class="arrow-btn">&#9650;</button><button class="arrow-btn">&#9660;</button></div></td>
-                        <td>CollectsGoodCount</td>
-                        <td><input type="checkbox" checked style="accent-color:var(--accent);" /></td>
-                        <td><button class="btn btn-sm btn-danger">Remove</button></td>
-                      </tr>
-                      <tr>
-                        <td><div class="arrows"><button class="arrow-btn">&#9650;</button><button class="arrow-btn disabled">&#9660;</button></div></td>
-                        <td>CollectsBadCount</td>
-                        <td><input type="checkbox" style="accent-color:var(--accent);" /></td>
-                        <td><button class="btn btn-sm btn-danger">Remove</button></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+              </div>
+              <div style="overflow-x:auto;">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th style="width:46px;"></th>
+                      <th>Field</th>
+                      <th style="width:90px;">Required</th>
+                      <th style="width:36px;"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="optempl-fields-tbody">
+                    <tr>
+                      <td><div class="arrows"><button class="arrow-btn disabled">&#9650;</button><button class="arrow-btn" onclick="optemplMoveField(this,1)">&#9660;</button></div></td>
+                      <td><span style="font-family:'SF Mono','Consolas',monospace;font-size:13px;">DieInfo</span></td>
+                      <td><input type="checkbox" checked style="accent-color:var(--accent);" /></td>
+                      <td><button class="btn btn-icon" style="color:var(--mpp-state-bad-fg);font-size:14px;" onclick="optemplRemoveField(this)" title="Remove">&#10005;</button></td>
+                    </tr>
+                    <tr>
+                      <td><div class="arrows"><button class="arrow-btn" onclick="optemplMoveField(this,-1)">&#9650;</button><button class="arrow-btn" onclick="optemplMoveField(this,1)">&#9660;</button></div></td>
+                      <td><span style="font-family:'SF Mono','Consolas',monospace;font-size:13px;">CavityInfo</span></td>
+                      <td><input type="checkbox" checked style="accent-color:var(--accent);" /></td>
+                      <td><button class="btn btn-icon" style="color:var(--mpp-state-bad-fg);font-size:14px;" onclick="optemplRemoveField(this)" title="Remove">&#10005;</button></td>
+                    </tr>
+                    <tr>
+                      <td><div class="arrows"><button class="arrow-btn" onclick="optemplMoveField(this,-1)">&#9650;</button><button class="arrow-btn" onclick="optemplMoveField(this,1)">&#9660;</button></div></td>
+                      <td><span style="font-family:'SF Mono','Consolas',monospace;font-size:13px;">Weight</span></td>
+                      <td><input type="checkbox" checked style="accent-color:var(--accent);" /></td>
+                      <td><button class="btn btn-icon" style="color:var(--mpp-state-bad-fg);font-size:14px;" onclick="optemplRemoveField(this)" title="Remove">&#10005;</button></td>
+                    </tr>
+                    <tr>
+                      <td><div class="arrows"><button class="arrow-btn" onclick="optemplMoveField(this,-1)">&#9650;</button><button class="arrow-btn" onclick="optemplMoveField(this,1)">&#9660;</button></div></td>
+                      <td><span style="font-family:'SF Mono','Consolas',monospace;font-size:13px;">GoodCount</span></td>
+                      <td><input type="checkbox" checked style="accent-color:var(--accent);" /></td>
+                      <td><button class="btn btn-icon" style="color:var(--mpp-state-bad-fg);font-size:14px;" onclick="optemplRemoveField(this)" title="Remove">&#10005;</button></td>
+                    </tr>
+                    <tr>
+                      <td><div class="arrows"><button class="arrow-btn" onclick="optemplMoveField(this,-1)">&#9650;</button><button class="arrow-btn disabled">&#9660;</button></div></td>
+                      <td><span style="font-family:'SF Mono','Consolas',monospace;font-size:13px;">BadCount</span></td>
+                      <td><input type="checkbox" checked style="accent-color:var(--accent);" /></td>
+                      <td><button class="btn btn-icon" style="color:var(--mpp-state-bad-fg);font-size:14px;" onclick="optemplRemoveField(this)" title="Remove">&#10005;</button></td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
 
@@ -861,32 +1064,57 @@
             <h1 style="font-size:15px;font-weight:600;">Quality Specs</h1>
           </div>
           <div class="title-row-spacer"></div>
-          <button class="btn btn-primary">+ New Spec</button>
+          <button class="btn btn-primary" onclick="openModal('modal-new-spec')">+ New Spec</button>
         </div>
 
         <!-- Main split layout -->
         <div style="display:flex;flex:1;overflow:hidden;border-top:1px solid var(--border);">
 
           <!-- Left: spec list -->
-          <div class="tree-panel" style="width:240px;min-width:240px;border-right:1px solid var(--border);background:var(--bg-nav);display:flex;flex-direction:column;">
+          <!-- QualitySpec.ItemId and QualitySpec.OperationTemplateId are both nullable — -->
+          <!-- a spec may be linked to an Item, an OperationTemplate, or neither.          -->
+          <div class="tree-panel" style="width:260px;min-width:260px;border-right:1px solid var(--border);background:var(--bg-nav);display:flex;flex-direction:column;">
             <div style="padding:8px 10px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:6px;">
-              <select class="select" style="width:100%;"><option>All Items</option><option selected>5G0 Front Cover</option><option>RPY Assembly Set</option></select>
+              <input class="search-input" style="width:100%;" type="text" placeholder="&#128269; Search specs…" />
+              <select class="select" style="width:100%;">
+                <option>All Types</option>
+                <option>Item-Linked</option>
+                <option>Operation-Linked</option>
+                <option>Unlinked</option>
+              </select>
             </div>
             <div style="flex:1;overflow-y:auto;padding:4px 0;">
 
-              <div class="tree-item selected" style="padding-left:10px;justify-content:space-between;">
-                <span style="flex:1;">5G0 Dimensional Spec</span>
-                <span class="badge badge-published" style="font-size:10px;padding:1px 5px;">Published v2</span>
+              <div class="tree-item selected" style="padding-left:10px;flex-direction:column;align-items:flex-start;gap:2px;">
+                <div style="display:flex;width:100%;align-items:center;gap:6px;">
+                  <span style="flex:1;font-weight:600;font-size:12px;">5G0 Dimensional Spec</span>
+                  <span class="badge badge-published" style="font-size:10px;padding:1px 5px;">Active v2</span>
+                </div>
+                <span style="font-size:11px;color:var(--text-muted);">Item: 5G0 · Op: CNC-5G0</span>
               </div>
 
-              <div class="tree-item" style="padding-left:10px;justify-content:space-between;">
-                <span style="flex:1;">5G0 Visual Inspection</span>
-                <span class="badge badge-published" style="font-size:10px;padding:1px 5px;">Published v1</span>
+              <div class="tree-item" style="padding-left:10px;flex-direction:column;align-items:flex-start;gap:2px;">
+                <div style="display:flex;width:100%;align-items:center;gap:6px;">
+                  <span style="flex:1;font-weight:600;font-size:12px;">5G0 Visual Inspection</span>
+                  <span class="badge badge-published" style="font-size:10px;padding:1px 5px;">Active v1</span>
+                </div>
+                <span style="font-size:11px;color:var(--text-muted);">Item: 5G0 · Op: DC-5G0</span>
               </div>
 
-              <div class="tree-item" style="padding-left:10px;justify-content:space-between;">
-                <span style="flex:1;">RPY Assembly Check</span>
-                <span class="badge badge-draft" style="font-size:10px;padding:1px 5px;">Draft v1</span>
+              <div class="tree-item" style="padding-left:10px;flex-direction:column;align-items:flex-start;gap:2px;">
+                <div style="display:flex;width:100%;align-items:center;gap:6px;">
+                  <span style="flex:1;font-weight:600;font-size:12px;">RPY Assembly Check</span>
+                  <span class="badge badge-warning" style="font-size:10px;padding:1px 5px;">Pending v1</span>
+                </div>
+                <span style="font-size:11px;color:var(--text-muted);">Item: RPY · Op: ASSY-REAR</span>
+              </div>
+
+              <div class="tree-item" style="padding-left:10px;flex-direction:column;align-items:flex-start;gap:2px;opacity:0.6;">
+                <div style="display:flex;width:100%;align-items:center;gap:6px;">
+                  <span style="flex:1;font-weight:600;font-size:12px;">5G0 First-Piece Check</span>
+                  <span class="badge badge-deprecated" style="font-size:10px;padding:1px 5px;">Deprecated</span>
+                </div>
+                <span style="font-size:11px;color:var(--text-muted);">Item: 5G0</span>
               </div>
 
             </div>
@@ -895,14 +1123,17 @@
           <!-- Right: detail area -->
           <div class="detail-area" style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
 
-            <!-- Spec Details -->
+            <!-- Fixed header -->
             <div style="padding:10px 14px;border-bottom:1px solid var(--border);background:var(--bg-panel);">
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
                 <span style="font-size:13px;font-weight:600;">5G0 Dimensional Spec</span>
+                <span class="badge badge-published">Active</span>
                 <div style="flex:1;"></div>
                 <button class="btn btn-primary btn-sm" onclick="showToast('success','Spec saved.')">Save</button>
-                <button class="btn btn-danger btn-sm">Deprecate</button>
+                <button class="btn btn-danger btn-sm" onclick="showToast('info','Spec deprecated.')">Deprecate</button>
               </div>
+
+              <!-- QualitySpec core fields: Name, ItemId (nullable), OperationTemplateId (nullable), Description -->
               <div class="field-row" style="margin-bottom:8px;">
                 <div class="field" style="flex:2;">
                   <div class="field-label">Name</div>
@@ -910,20 +1141,51 @@
                 </div>
                 <div class="field">
                   <div class="field-label">Linked Item</div>
-                  <input class="search-input" type="text" value="5G0" readonly style="background:var(--bg-row-alt);color:var(--text-muted);" />
+                  <input class="search-input" type="text" value="5G0" readonly style="width:100%;background:var(--bg-row-alt);color:var(--text-muted);" />
                 </div>
                 <div class="field" style="flex:2;">
-                  <div class="field-label">Linked Operation</div>
-                  <input class="search-input" style="width:100%;" type="text" value="CNC Machining" readonly style="background:var(--bg-row-alt);color:var(--text-muted);" />
+                  <div class="field-label">Linked Operation Template</div>
+                  <input class="search-input" type="text" value="CNC-5G0 v1" readonly style="width:100%;background:var(--bg-row-alt);color:var(--text-muted);" />
                 </div>
               </div>
+              <div class="field-row" style="margin-bottom:8px;">
+                <div class="field" style="flex:1;">
+                  <div class="field-label">Description</div>
+                  <input class="search-input" style="width:100%;" type="text" value="Dimensional inspection for 5G0 Front Cover after CNC machining" />
+                </div>
+              </div>
+
+              <!-- QualitySpecVersion selector: EffectiveFrom drives active/pending/deprecated state — no PublishedAt -->
               <div style="display:flex;align-items:center;gap:8px;">
                 <div class="version-selector">
-                  <select class="select"><option selected>v2 — Effective 2026-03-01 (Published)</option><option>v1 — Effective 2025-06-01 (Deprecated)</option></select>
+                  <select class="select" id="spec-version-select">
+                    <option selected>v2 — Effective 2026-03-01</option>
+                    <option>v1 — Effective 2025-06-01 (Deprecated)</option>
+                  </select>
                 </div>
-                <span class="badge badge-published">Published</span>
+                <span class="badge badge-published">Active</span>
+                <span style="font-size:11px;color:var(--text-muted);">Effective 2026-03-01</span>
                 <div style="flex:1;"></div>
-                <button class="btn btn-sm">New Version</button>
+                <button class="btn btn-sm" onclick="specNewVersion()">New Version</button>
+              </div>
+
+              <!-- Pending version header (hidden initially) -->
+              <div id="spec-pending-header" style="display:none;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap;">
+                <div class="version-selector">
+                  <select class="select">
+                    <option selected>v3 — Pending</option>
+                    <option>v2 — Effective 2026-03-01</option>
+                    <option>v1 — Effective 2025-06-01 (Deprecated)</option>
+                  </select>
+                </div>
+                <span class="badge badge-warning">Pending</span>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span style="font-size:11px;color:var(--text-muted);white-space:nowrap;">Effective Date</span>
+                  <input class="search-input" type="date" value="2026-06-01" style="width:130px;" />
+                </div>
+                <div style="flex:1;"></div>
+                <button class="btn btn-sm btn-secondary" onclick="specDiscardVersion()">Discard</button>
+                <button class="btn btn-sm btn-primary" onclick="specActivateVersion()">Activate</button>
               </div>
             </div>
 
@@ -931,99 +1193,204 @@
             <div id="spec-tabs" style="display:flex;flex-direction:column;flex:1;overflow:hidden;background:var(--bg-panel);">
               <div class="tab-strip">
                 <button class="tab-item active" data-tab="spec-tab-attributes" onclick="switchTab('spec-tabs','spec-tab-attributes')">Attributes</button>
-                <button class="tab-item" data-tab="spec-tab-history" onclick="switchTab('spec-tabs','spec-tab-history')">Version History</button>
+                <button class="tab-item" data-tab="spec-tab-history"    onclick="switchTab('spec-tabs','spec-tab-history')">Version History</button>
               </div>
 
               <!-- Tab: Attributes -->
+              <!-- QualitySpecAttribute columns: AttributeName, DataType, Uom, TargetValue,    -->
+              <!-- LowerLimit, UpperLimit, IsRequired, SortOrder.                               -->
+              <!-- No Trigger column — SampleTriggerCodeId lives on QualitySample (runtime).   -->
               <div class="tab-content active" data-tab="spec-tab-attributes">
-                <div class="detail-panel">
+
+                <!-- Active version — read-only panel -->
+                <div id="spec-attrs-readonly">
                   <div style="overflow-x:auto;">
                     <table class="data-table">
                       <thead>
                         <tr>
                           <th style="width:46px;"></th>
-                          <th>Attribute</th>
-                          <th>Type</th>
-                          <th>Target</th>
-                          <th>Lower</th>
-                          <th>Upper</th>
-                          <th>UOM</th>
-                          <th>Trigger</th>
+                          <th>Attribute Name</th>
+                          <th style="width:90px;">Data Type</th>
+                          <th style="width:70px;">UOM</th>
+                          <th style="width:80px;">Target</th>
+                          <th style="width:80px;">Lower</th>
+                          <th style="width:80px;">Upper</th>
+                          <th style="width:70px;text-align:center;">Required</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr>
                           <td><div class="arrows"><button class="arrow-btn disabled">&#9650;</button><button class="arrow-btn disabled">&#9660;</button></div></td>
                           <td>Surface Flatness</td>
-                          <td>DECIMAL</td>
+                          <td>Numeric</td>
+                          <td>in</td>
                           <td>0.002</td>
                           <td>0.001</td>
                           <td>0.003</td>
-                          <td>in</td>
-                          <td>FirstPiece</td>
+                          <td style="text-align:center;"><input type="checkbox" checked disabled style="accent-color:var(--accent);" /></td>
                         </tr>
                         <tr>
                           <td><div class="arrows"><button class="arrow-btn disabled">&#9650;</button><button class="arrow-btn disabled">&#9660;</button></div></td>
                           <td>Bore Diameter</td>
-                          <td>DECIMAL</td>
+                          <td>Numeric</td>
+                          <td>mm</td>
                           <td>25.40</td>
                           <td>25.38</td>
                           <td>25.42</td>
-                          <td>mm</td>
-                          <td>FirstPiece</td>
+                          <td style="text-align:center;"><input type="checkbox" checked disabled style="accent-color:var(--accent);" /></td>
                         </tr>
                         <tr>
                           <td><div class="arrows"><button class="arrow-btn disabled">&#9650;</button><button class="arrow-btn disabled">&#9660;</button></div></td>
                           <td>Porosity Visual</td>
-                          <td>PASS/FAIL</td>
-                          <td>Pass</td>
-                          <td>—</td>
-                          <td>—</td>
-                          <td>—</td>
-                          <td>Hourly</td>
+                          <td>Boolean</td>
+                          <td style="color:var(--text-muted);">—</td>
+                          <td style="color:var(--text-muted);">—</td>
+                          <td style="color:var(--text-muted);">—</td>
+                          <td style="color:var(--text-muted);">—</td>
+                          <td style="text-align:center;"><input type="checkbox" checked disabled style="accent-color:var(--accent);" /></td>
+                        </tr>
+                        <tr>
+                          <td><div class="arrows"><button class="arrow-btn disabled">&#9650;</button><button class="arrow-btn disabled">&#9660;</button></div></td>
+                          <td>Operator Notes</td>
+                          <td>Text</td>
+                          <td style="color:var(--text-muted);">—</td>
+                          <td style="color:var(--text-muted);">—</td>
+                          <td style="color:var(--text-muted);">—</td>
+                          <td style="color:var(--text-muted);">—</td>
+                          <td style="text-align:center;"><input type="checkbox" disabled style="accent-color:var(--accent);" /></td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
-                  <div style="padding:8px 10px;">
-                    <em style="font-size:11px;color:var(--text-muted);">Published spec — read-only. Click New Version to create a draft copy for editing.</em>
+                  <div style="padding:8px 12px;border-top:1px solid var(--border);">
+                    <em style="font-size:11px;color:var(--text-muted);">Active version — read-only. Click New Version to create an editable copy with a new effective date.</em>
                   </div>
                 </div>
-              </div>
 
-              <!-- Tab: Version History -->
-              <div class="tab-content" data-tab="spec-tab-history">
-                <div class="detail-panel">
+                <!-- Pending version — editable panel (hidden initially) -->
+                <div id="spec-attrs-editable" style="display:none;">
+                  <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+                    <button class="btn btn-primary btn-sm" onclick="showToast('success','Attribute added.')">+ Add Attribute</button>
+                  </div>
                   <div style="overflow-x:auto;">
                     <table class="data-table">
                       <thead>
                         <tr>
-                          <th>Version</th>
-                          <th>Effective</th>
-                          <th>Status</th>
-                          <th>Created By</th>
-                          <th>Created</th>
+                          <th style="width:46px;"></th>
+                          <th>Attribute Name</th>
+                          <th style="width:110px;">Data Type</th>
+                          <th style="width:70px;">UOM</th>
+                          <th style="width:90px;">Target</th>
+                          <th style="width:90px;">Lower</th>
+                          <th style="width:90px;">Upper</th>
+                          <th style="width:70px;text-align:center;">Required</th>
+                          <th style="width:36px;"></th>
                         </tr>
                       </thead>
                       <tbody>
-                        <tr class="selected">
-                          <td>v2</td>
-                          <td>2026-03-01</td>
-                          <td><span class="badge badge-published">Published</span></td>
-                          <td>J. Potgieter</td>
-                          <td>2026-02-28</td>
+                        <tr>
+                          <td><div class="arrows"><button class="arrow-btn">&#9650;</button><button class="arrow-btn">&#9660;</button></div></td>
+                          <td><input class="search-input" style="width:100%;box-sizing:border-box;" type="text" value="Surface Flatness" /></td>
+                          <td>
+                            <select class="select" style="width:100%;">
+                              <option selected>Numeric</option><option>Boolean</option><option>Text</option>
+                            </select>
+                          </td>
+                          <td><input class="search-input" style="width:100%;box-sizing:border-box;" type="text" value="in" /></td>
+                          <td><input class="search-input" style="width:100%;box-sizing:border-box;" type="number" value="0.002" /></td>
+                          <td><input class="search-input" style="width:100%;box-sizing:border-box;" type="number" value="0.001" /></td>
+                          <td><input class="search-input" style="width:100%;box-sizing:border-box;" type="number" value="0.003" /></td>
+                          <td style="text-align:center;"><input type="checkbox" checked style="accent-color:var(--accent);" /></td>
+                          <td><button class="btn btn-sm btn-danger" onclick="showToast('info','Attribute removed.')">✕</button></td>
                         </tr>
                         <tr>
-                          <td>v1</td>
-                          <td>2025-06-01</td>
-                          <td><span class="badge badge-deprecated">Deprecated</span></td>
-                          <td>J. Potgieter</td>
-                          <td>2025-05-15</td>
+                          <td><div class="arrows"><button class="arrow-btn">&#9650;</button><button class="arrow-btn">&#9660;</button></div></td>
+                          <td><input class="search-input" style="width:100%;box-sizing:border-box;" type="text" value="Bore Diameter" /></td>
+                          <td>
+                            <select class="select" style="width:100%;">
+                              <option selected>Numeric</option><option>Boolean</option><option>Text</option>
+                            </select>
+                          </td>
+                          <td><input class="search-input" style="width:100%;box-sizing:border-box;" type="text" value="mm" /></td>
+                          <td><input class="search-input" style="width:100%;box-sizing:border-box;" type="number" value="25.40" /></td>
+                          <td><input class="search-input" style="width:100%;box-sizing:border-box;" type="number" value="25.38" /></td>
+                          <td><input class="search-input" style="width:100%;box-sizing:border-box;" type="number" value="25.42" /></td>
+                          <td style="text-align:center;"><input type="checkbox" checked style="accent-color:var(--accent);" /></td>
+                          <td><button class="btn btn-sm btn-danger" onclick="showToast('info','Attribute removed.')">✕</button></td>
+                        </tr>
+                        <tr>
+                          <td><div class="arrows"><button class="arrow-btn">&#9650;</button><button class="arrow-btn">&#9660;</button></div></td>
+                          <td><input class="search-input" style="width:100%;box-sizing:border-box;" type="text" value="Porosity Visual" /></td>
+                          <td>
+                            <select class="select" style="width:100%;">
+                              <option>Numeric</option><option selected>Boolean</option><option>Text</option>
+                            </select>
+                          </td>
+                          <td><input class="search-input" style="width:100%;box-sizing:border-box;" type="text" placeholder="—" disabled style="background:var(--bg-row-alt);" /></td>
+                          <td><input class="search-input" style="width:100%;box-sizing:border-box;" type="text" placeholder="—" disabled style="background:var(--bg-row-alt);" /></td>
+                          <td><input class="search-input" style="width:100%;box-sizing:border-box;" type="text" placeholder="—" disabled style="background:var(--bg-row-alt);" /></td>
+                          <td><input class="search-input" style="width:100%;box-sizing:border-box;" type="text" placeholder="—" disabled style="background:var(--bg-row-alt);" /></td>
+                          <td style="text-align:center;"><input type="checkbox" checked style="accent-color:var(--accent);" /></td>
+                          <td><button class="btn btn-sm btn-danger" onclick="showToast('info','Attribute removed.')">✕</button></td>
+                        </tr>
+                        <tr>
+                          <td><div class="arrows"><button class="arrow-btn">&#9650;</button><button class="arrow-btn">&#9660;</button></div></td>
+                          <td><input class="search-input" style="width:100%;box-sizing:border-box;" type="text" value="Operator Notes" /></td>
+                          <td>
+                            <select class="select" style="width:100%;">
+                              <option>Numeric</option><option>Boolean</option><option selected>Text</option>
+                            </select>
+                          </td>
+                          <td><input class="search-input" style="width:100%;box-sizing:border-box;" type="text" placeholder="—" disabled style="background:var(--bg-row-alt);" /></td>
+                          <td><input class="search-input" style="width:100%;box-sizing:border-box;" type="text" placeholder="—" disabled style="background:var(--bg-row-alt);" /></td>
+                          <td><input class="search-input" style="width:100%;box-sizing:border-box;" type="text" placeholder="—" disabled style="background:var(--bg-row-alt);" /></td>
+                          <td><input class="search-input" style="width:100%;box-sizing:border-box;" type="text" placeholder="—" disabled style="background:var(--bg-row-alt);" /></td>
+                          <td style="text-align:center;"><input type="checkbox" style="accent-color:var(--accent);" /></td>
+                          <td><button class="btn btn-sm btn-danger" onclick="showToast('info','Attribute removed.')">✕</button></td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
                 </div>
+
+              </div>
+
+              <!-- Tab: Version History -->
+              <!-- QualitySpecVersion state is derived from EffectiveFrom + DeprecatedAt — no PublishedAt column. -->
+              <!-- Active = EffectiveFrom ≤ today AND DeprecatedAt IS NULL                                       -->
+              <!-- Pending = EffectiveFrom > today AND DeprecatedAt IS NULL                                      -->
+              <!-- Deprecated = DeprecatedAt IS NOT NULL                                                         -->
+              <div class="tab-content" data-tab="spec-tab-history">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th style="width:60px;">Version</th>
+                      <th>Effective From</th>
+                      <th>Deprecated At</th>
+                      <th style="width:110px;">State</th>
+                      <th>Created By</th>
+                      <th>Created At</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr class="selected">
+                      <td>v2</td>
+                      <td>2026-03-01</td>
+                      <td style="color:var(--text-muted);">—</td>
+                      <td><span class="badge badge-published">Active</span></td>
+                      <td>J. Potgieter</td>
+                      <td>2026-02-28 09:14</td>
+                    </tr>
+                    <tr style="color:var(--text-muted);">
+                      <td>v1</td>
+                      <td>2025-06-01</td>
+                      <td>2026-03-01</td>
+                      <td><span class="badge badge-deprecated">Deprecated</span></td>
+                      <td>J. Potgieter</td>
+                      <td>2025-05-15 11:22</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
 
             </div><!-- /spec-tabs -->
@@ -1351,7 +1718,7 @@
                       </div>
                     </td>
                     <td>2026-01-01</td>
-                    <td><button class="btn btn-sm">Edit</button></td>
+                    <td><button class="btn btn-sm" onclick="openModal('modal-edit-shift')">Edit</button></td>
                   </tr>
                   <tr>
                     <td>Second Shift</td>
@@ -1369,7 +1736,7 @@
                       </div>
                     </td>
                     <td>2026-01-01</td>
-                    <td><button class="btn btn-sm">Edit</button></td>
+                    <td><button class="btn btn-sm" onclick="openModal('modal-edit-shift')">Edit</button></td>
                   </tr>
                   <tr>
                     <td>Weekend OT</td>
@@ -1387,7 +1754,7 @@
                       </div>
                     </td>
                     <td>2026-01-01</td>
-                    <td><button class="btn btn-sm">Edit</button></td>
+                    <td><button class="btn btn-sm" onclick="openModal('modal-edit-shift')">Edit</button></td>
                   </tr>
                 </tbody>
               </table>
@@ -1439,52 +1806,45 @@
                   <thead>
                     <tr>
                       <th>Display Name</th>
+                      <th>Initials</th>
                       <th>AD Account</th>
-                      <th>Clock #</th>
+                      <th>Class</th>
                       <th>Role</th>
-                      <th>Actions</th>
+                      <th></th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr class="selected">
                       <td>J. Potgieter</td>
+                      <td><strong>JP</strong></td>
                       <td style="font-family:monospace;font-size:11px;">jpotgieter@mpp.local</td>
-                      <td>1042</td>
+                      <td><span class="badge badge-type">AD</span></td>
                       <td><span class="badge badge-type">Engineering</span></td>
-                      <td style="white-space:nowrap;">
-                        <button class="btn btn-sm">Edit</button>
-                        <button class="btn btn-sm" style="margin-left:4px;">PIN</button>
-                      </td>
+                      <td><button class="btn btn-sm">Edit</button></td>
                     </tr>
                     <tr>
                       <td>Bootstrap Admin</td>
+                      <td><strong>BA</strong></td>
                       <td style="font-family:monospace;font-size:11px;">system.bootstrap</td>
-                      <td>0001</td>
+                      <td><span class="badge badge-type">AD</span></td>
                       <td><span class="badge badge-type">Admin</span></td>
-                      <td style="white-space:nowrap;">
-                        <button class="btn btn-sm">Edit</button>
-                        <button class="btn btn-sm" style="margin-left:4px;">PIN</button>
-                      </td>
+                      <td><button class="btn btn-sm">Edit</button></td>
                     </tr>
                     <tr>
                       <td>Diane Martinez</td>
+                      <td><strong>DM</strong></td>
                       <td style="font-family:monospace;font-size:11px;">dmartinez@mpp.local</td>
-                      <td>2015</td>
+                      <td><span class="badge badge-type">AD</span></td>
                       <td><span class="badge badge-warning">Quality</span></td>
-                      <td style="white-space:nowrap;">
-                        <button class="btn btn-sm">Edit</button>
-                        <button class="btn btn-sm" style="margin-left:4px;">PIN</button>
-                      </td>
+                      <td><button class="btn btn-sm">Edit</button></td>
                     </tr>
                     <tr>
                       <td>Carlos Reyes</td>
-                      <td style="font-family:monospace;font-size:11px;">creyes@mpp.local</td>
-                      <td>3047</td>
+                      <td><strong>CR</strong></td>
+                      <td style="color:var(--text-muted);">—</td>
                       <td><span class="badge badge-muted">Operator</span></td>
-                      <td style="white-space:nowrap;">
-                        <button class="btn btn-sm">Edit</button>
-                        <button class="btn btn-sm" style="margin-left:4px;">PIN</button>
-                      </td>
+                      <td><span class="badge badge-muted">Operator</span></td>
+                      <td><button class="btn btn-sm">Edit</button></td>
                     </tr>
                   </tbody>
                 </table>
@@ -1801,6 +2161,280 @@
         </div><!-- /main split -->
       </div><!-- /screen-failure-log -->
 
+
+      <!-- ═══════════════════════════════════════════════════════════════
+           SCREEN: Tools
+           ═══════════════════════════════════════════════════════════════ -->
+      <div class="screen" id="screen-tools">
+
+        <!-- Title bar -->
+        <div class="title-row" style="padding-bottom:8px; border-bottom:1px solid var(--border); background:var(--bg-panel);">
+          <div style="display:flex;flex-direction:column;gap:2px;">
+            <div class="breadcrumb">
+              <span>Parts</span><span class="crumb-sep">›</span>
+              <span class="crumb-active">Tools</span>
+            </div>
+            <h1 style="font-size:15px;font-weight:600;">Tools</h1>
+          </div>
+          <div class="title-row-spacer"></div>
+          <button class="btn" onclick="openModal('modal-die-ranks')" style="margin-right:6px;">Die Ranks</button>
+          <button class="btn btn-primary" onclick="openModal('modal-add-die')">+ Add Die</button>
+        </div>
+
+        <!-- Main split layout -->
+        <div style="display:flex;flex:1;overflow:hidden;border-top:1px solid var(--border);">
+
+          <!-- Left: list panel -->
+          <div class="tree-panel" style="width:240px;min-width:240px;border-right:1px solid var(--border);background:var(--bg-nav);display:flex;flex-direction:column;">
+            <div style="padding:8px 10px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:6px;">
+              <select class="select" style="width:100%;"><option>All Statuses</option><option>Active</option><option>UnderRepair</option><option>Retired</option></select>
+              <input class="search-input" style="width:100%;" type="text" placeholder="&#128269; Search dies…" />
+            </div>
+            <div style="flex:1;overflow-y:auto;padding:4px 0;">
+
+              <div style="padding:4px 10px 2px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);">Active</div>
+              <div class="tree-item selected" style="padding-left:14px;justify-content:space-between;">
+                <div style="display:flex;flex-direction:column;gap:1px;">
+                  <span style="font-size:13px;font-weight:600;">DC-042</span>
+                  <span style="font-size:11px;color:var(--text-muted);">Front Cover Die</span>
+                </div>
+                <span class="badge badge-type" style="font-size:10px;">A</span>
+              </div>
+              <div class="tree-item" style="padding-left:14px;justify-content:space-between;">
+                <div style="display:flex;flex-direction:column;gap:1px;">
+                  <span style="font-size:13px;font-weight:600;">DC-018</span>
+                  <span style="font-size:11px;color:var(--text-muted);">Oil Pan Die</span>
+                </div>
+                <span class="badge badge-muted" style="font-size:10px;">B</span>
+              </div>
+
+              <div style="padding:8px 10px 2px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);">Under Repair</div>
+              <div class="tree-item" style="padding-left:14px;justify-content:space-between;">
+                <div style="display:flex;flex-direction:column;gap:1px;">
+                  <span style="font-size:13px;font-weight:600;">DC-031</span>
+                  <span style="font-size:11px;color:var(--text-muted);">Cam Holder Die</span>
+                </div>
+                <span class="badge badge-muted" style="font-size:10px;">B</span>
+              </div>
+
+              <div style="padding:8px 10px 2px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);">Retired</div>
+              <div class="tree-item" style="padding-left:14px;justify-content:space-between;opacity:0.6;">
+                <div style="display:flex;flex-direction:column;gap:1px;">
+                  <span style="font-size:13px;font-weight:600;">DC-007</span>
+                  <span style="font-size:11px;color:var(--text-muted);">Fuel Pump Die</span>
+                </div>
+                <span class="badge badge-muted" style="font-size:10px;">C</span>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Right: detail area -->
+          <div class="detail-area" style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
+
+            <!-- Fixed header — mirrors Item Master pattern -->
+            <div style="padding:10px 14px;border-bottom:1px solid var(--border);background:var(--bg-panel);">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                <span style="font-size:13px;font-weight:600;">DC-042 — Front Cover Die</span>
+                <span class="badge badge-published">Active</span>
+                <span class="badge badge-type">Die</span>
+                <span class="badge badge-muted">A — Premium</span>
+                <div style="flex:1;"></div>
+                <button class="btn btn-primary btn-sm" onclick="showToast('success','Die saved.')">Save</button>
+                <button class="btn btn-danger btn-sm" onclick="showToast('info','Die retired.')">Retire</button>
+              </div>
+              <div class="field-row" style="margin-bottom:8px;">
+                <div class="field" style="flex:0 0 90px;">
+                  <div class="field-label">Code</div>
+                  <input class="search-input" type="text" value="DC-042" readonly style="background:var(--bg-row-alt);color:var(--text-muted);" />
+                </div>
+                <div class="field" style="flex:2;">
+                  <div class="field-label">Name</div>
+                  <input class="search-input" style="width:100%;" type="text" value="Front Cover Die" />
+                </div>
+                <div class="field">
+                  <div class="field-label">Tool Type</div>
+                  <input class="search-input" type="text" value="Die" readonly style="background:var(--bg-row-alt);color:var(--text-muted);" />
+                </div>
+                <div class="field">
+                  <div class="field-label">Die Rank</div>
+                  <select class="select"><option selected>A — Premium</option><option>B — Standard</option><option>C — Marginal</option></select>
+                </div>
+                <div class="field">
+                  <div class="field-label">Status</div>
+                  <select class="select"><option selected>Active</option><option>Under Repair</option><option>Scrapped</option><option>Retired</option></select>
+                </div>
+              </div>
+              <div class="field-row">
+                <div class="field" style="flex:1;">
+                  <div class="field-label">Description</div>
+                  <input class="search-input" style="width:100%;" type="text" value="2-cavity die for 5G0 Front Cover Assy" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab container — mirrors Item Master -->
+            <div id="tool-tabs" style="display:flex;flex-direction:column;flex:1;overflow:hidden;background:var(--bg-panel);">
+              <div class="tab-strip">
+                <button class="tab-item active" data-tab="tool-tab-attrs"       onclick="switchTab('tool-tabs','tool-tab-attrs')">Attributes</button>
+                <button class="tab-item"        data-tab="tool-tab-cavities"    onclick="switchTab('tool-tabs','tool-tab-cavities')">Cavities</button>
+                <button class="tab-item"        data-tab="tool-tab-assignments" onclick="switchTab('tool-tabs','tool-tab-assignments')">Assignments</button>
+              </div>
+
+              <!-- Attributes tab -->
+              <div class="tab-content active" data-tab="tool-tab-attrs">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                  <span style="font-size:11px;color:var(--text-muted);flex:1;">Shot counts are derived at runtime from production events — not stored on the tool record.</span>
+                  <select class="select" style="width:220px;">
+                    <option value="">— add attribute —</option>
+                    <option>Cycle Time (sec)</option>
+                    <option>Injection Pressure (bar)</option>
+                    <option>Temperature Setpoint (°C)</option>
+                  </select>
+                  <button class="btn btn-primary btn-sm" onclick="showToast('success','Attribute added.')">+ Add</button>
+                </div>
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Attribute</th>
+                      <th style="width:220px;">Value</th>
+                      <th style="width:36px;"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Maintenance Interval (shots)</td>
+                      <td><input class="search-input" style="width:100%;box-sizing:border-box;" type="number" value="25000" /></td>
+                      <td><button class="btn btn-sm btn-danger" onclick="showToast('info','Attribute removed.')">✕</button></td>
+                    </tr>
+                    <tr>
+                      <td>Last Maintained</td>
+                      <td><input class="search-input" style="width:100%;box-sizing:border-box;" type="date" value="2026-04-01" /></td>
+                      <td><button class="btn btn-sm btn-danger" onclick="showToast('info','Attribute removed.')">✕</button></td>
+                    </tr>
+                    <tr>
+                      <td>Tonnage</td>
+                      <td><input class="search-input" style="width:100%;box-sizing:border-box;" type="number" value="800" /></td>
+                      <td><button class="btn btn-sm btn-danger" onclick="showToast('info','Attribute removed.')">✕</button></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Cavities tab -->
+              <div class="tab-content" data-tab="tool-tab-cavities">
+                <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
+                  <button class="btn btn-primary btn-sm" onclick="openModal('modal-add-cavity')">+ Add Cavity</button>
+                </div>
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th style="width:70px;">Number</th>
+                      <th style="width:110px;">Status</th>
+                      <th>Description</th>
+                      <th style="width:140px;"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td style="font-weight:600;text-align:center;">1</td>
+                      <td><span class="badge badge-published">Active</span></td>
+                      <td><input class="search-input" style="width:100%;box-sizing:border-box;" type="text" placeholder="Optional notes…" /></td>
+                      <td style="white-space:nowrap;text-align:right;">
+                        <button class="btn btn-sm" onclick="showToast('info','Cavity 1 closed.')" style="margin-right:4px;">Close</button>
+                        <button class="btn btn-sm btn-danger" onclick="showToast('info','Cavity 1 scrapped.')">Scrap</button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="font-weight:600;text-align:center;">2</td>
+                      <td><span class="badge badge-published">Active</span></td>
+                      <td><input class="search-input" style="width:100%;box-sizing:border-box;" type="text" placeholder="Optional notes…" /></td>
+                      <td style="white-space:nowrap;text-align:right;">
+                        <button class="btn btn-sm" onclick="showToast('info','Cavity 2 closed.')" style="margin-right:4px;">Close</button>
+                        <button class="btn btn-sm btn-danger" onclick="showToast('info','Cavity 2 scrapped.')">Scrap</button>
+                      </td>
+                    </tr>
+                    <tr style="opacity:0.65;">
+                      <td style="font-weight:600;text-align:center;">3</td>
+                      <td><span class="badge badge-deprecated">Closed</span></td>
+                      <td><input class="search-input" style="width:100%;box-sizing:border-box;" type="text" value="Shut off 2026-03-14 — porosity defects" /></td>
+                      <td style="white-space:nowrap;text-align:right;">
+                        <button class="btn btn-sm" onclick="showToast('success','Cavity 3 reactivated.')" style="margin-right:4px;">Reactivate</button>
+                        <button class="btn btn-sm btn-danger" onclick="showToast('info','Cavity 3 scrapped.')">Scrap</button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Assignments tab -->
+              <!-- UQ_ToolAssignment_ActiveTool enforces one active assignment per tool. -->
+              <!-- Mount to Cell is disabled while an active assignment exists.          -->
+              <div class="tab-content" data-tab="tool-tab-assignments">
+                <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
+                  <button class="btn btn-primary btn-sm" disabled title="Release the current assignment before mounting to a new cell." onclick="openModal('modal-mount-die')">Mount to Cell</button>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--mpp-state-good-bg);border:1px solid var(--mpp-state-good-border);border-radius:var(--mpp-radius-sm);margin-bottom:12px;">
+                  <div style="flex:1;">
+                    <div style="font-size:13px;font-weight:600;color:var(--mpp-state-good-fg);">Currently mounted on DC Machine #7</div>
+                    <div style="font-size:11px;color:var(--text-muted);">Assigned 2026-04-29 06:02 by CM</div>
+                  </div>
+                  <button class="btn btn-sm btn-danger" onclick="showToast('info','Die released from DC Machine #7.')">Release</button>
+                </div>
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Cell</th>
+                      <th>Assigned At</th>
+                      <th>Released At</th>
+                      <th style="width:90px;">Assigned By</th>
+                      <th style="width:90px;">Released By</th>
+                      <th>Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>DC Machine #7</strong></td>
+                      <td>2026-04-29 06:02</td>
+                      <td><span class="badge badge-published" style="font-size:10px;">Active</span></td>
+                      <td>CM</td>
+                      <td style="color:var(--text-muted);">—</td>
+                      <td style="color:var(--text-muted);">—</td>
+                    </tr>
+                    <tr style="color:var(--text-muted);">
+                      <td>DC Machine #7</td>
+                      <td>2026-04-21 05:58</td>
+                      <td>2026-04-29 05:55</td>
+                      <td>JR</td>
+                      <td>CM</td>
+                      <td>—</td>
+                    </tr>
+                    <tr style="color:var(--text-muted);">
+                      <td>DC Machine #3</td>
+                      <td>2026-04-10 06:10</td>
+                      <td>2026-04-21 05:45</td>
+                      <td>CM</td>
+                      <td>JR</td>
+                      <td>Loan from line 7</td>
+                    </tr>
+                    <tr style="color:var(--text-muted);">
+                      <td>DC Machine #7</td>
+                      <td>2026-03-02 06:05</td>
+                      <td>2026-04-10 06:08</td>
+                      <td>JR</td>
+                      <td>JR</td>
+                      <td>—</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+            </div><!-- /tool-tabs -->
+          </div><!-- /detail area -->
+        </div><!-- /main split -->
+      </div><!-- /screen-tools -->
+
+
     </main>
 
     <!-- ══════════════════════════════════════════════════════════════════════
@@ -1854,7 +2488,7 @@
 
     <!-- Modal 2: Location Type Definition Editor -->
     <div class="modal-overlay" id="modal-loc-type-editor">
-      <div class="modal modal-lg" style="max-height: 85vh;">
+      <div class="modal modal-lg" style="max-height: 85vh; width: 1100px;">
         <div class="modal-header">
           Location Type Definitions
           <button class="close-btn" onclick="closeModal('modal-loc-type-editor')">&times;</button>
@@ -2080,6 +2714,401 @@
       </div>
     </div>
 
+    <!-- modal: Edit Shift Schedule -->
+    <div class="modal-overlay" id="modal-edit-shift">
+      <div class="modal">
+        <div class="modal-header">
+          <span class="modal-title">Edit Shift Schedule</span>
+          <button class="modal-close" onclick="closeModal('modal-edit-shift')">&#10005;</button>
+        </div>
+        <div class="modal-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+            <div class="form-row" style="margin:0;">
+              <label>Name</label>
+              <input class="search-input" type="text" value="First Shift" style="width:100%;" />
+            </div>
+            <div class="form-row" style="margin:0;">
+              <label>Effective Date</label>
+              <input class="search-input" type="text" value="2026-01-01" style="width:100%;" />
+            </div>
+            <div class="form-row" style="margin:0;">
+              <label>Start Time</label>
+              <input class="search-input" type="text" value="06:00" style="width:100%;" />
+            </div>
+            <div class="form-row" style="margin:0;">
+              <label>End Time</label>
+              <input class="search-input" type="text" value="14:00" style="width:100%;" />
+            </div>
+          </div>
+          <div class="form-row">
+            <label>Days</label>
+            <div style="display:flex;gap:6px;">
+              <label style="display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;"><input type="checkbox" checked />M</label>
+              <label style="display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;"><input type="checkbox" checked />T</label>
+              <label style="display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;"><input type="checkbox" checked />W</label>
+              <label style="display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;"><input type="checkbox" checked />T</label>
+              <label style="display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;"><input type="checkbox" checked />F</label>
+              <label style="display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;"><input type="checkbox" />S</label>
+              <label style="display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;"><input type="checkbox" />S</label>
+            </div>
+          </div>
+          <hr style="border:none;border-top:1px solid var(--border);margin:12px 0;" />
+          <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">Break durations are used by the system to automatically write <code>DowntimeEvent</code> rows when operators submit end-of-shift time entry.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+            <div class="form-row" style="margin:0;">
+              <label>Lunch (min)</label>
+              <input class="search-input" type="text" value="30" style="width:100%;" />
+            </div>
+            <div class="form-row" style="margin:0;">
+              <label>Morning Break (min)</label>
+              <input class="search-input" type="text" value="10" style="width:100%;" />
+            </div>
+            <div class="form-row" style="margin:0;">
+              <label>Afternoon Break (min)</label>
+              <input class="search-input" type="text" value="10" style="width:100%;" />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-danger" style="margin-right:auto;">Remove</button>
+          <button class="btn" onclick="closeModal('modal-edit-shift')">Cancel</button>
+          <button class="btn btn-primary" onclick="closeModal('modal-edit-shift')">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- modal: Die Ranks -->
+    <div class="modal-overlay" id="modal-die-ranks">
+      <div class="modal" style="width:700px;max-width:95vw;">
+        <div class="modal-header">
+          <span class="modal-title">Die Ranks</span>
+          <button class="modal-close" onclick="closeModal('modal-die-ranks')">&#10005;</button>
+        </div>
+        <div class="modal-body" style="display:flex;gap:16px;min-height:320px;padding:0;">
+
+          <!-- Left: rank list -->
+          <div style="width:200px;min-width:180px;display:flex;flex-direction:column;border-right:1px solid var(--border);">
+            <div style="padding:10px 12px 8px;border-bottom:1px solid var(--border);">
+              <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;">Ranks</span>
+            </div>
+            <div style="flex:1;overflow-y:auto;">
+              <table class="data-table">
+                <tbody>
+                  <tr>
+                    <td><strong>A</strong> — Premium</td>
+                    <td style="width:52px;"><button class="btn btn-sm" onclick="openModal('modal-edit-rank')">Edit</button></td>
+                  </tr>
+                  <tr>
+                    <td><strong>B</strong> — Standard</td>
+                    <td style="width:52px;"><button class="btn btn-sm" onclick="openModal('modal-edit-rank')">Edit</button></td>
+                  </tr>
+                  <tr>
+                    <td><strong>C</strong> — Marginal</td>
+                    <td style="width:52px;"><button class="btn btn-sm" onclick="openModal('modal-edit-rank')">Edit</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div style="padding:8px 12px;border-top:1px solid var(--border);">
+              <button class="btn btn-primary" style="width:100%;">+ Add Rank</button>
+            </div>
+          </div>
+
+          <!-- Right: compatibility matrix -->
+          <div style="flex:1;overflow-y:auto;padding:16px;">
+            <div style="margin-bottom:12px;">
+              <h3 style="font-size:13px;font-weight:600;margin-bottom:3px;">Merge Compatibility</h3>
+              <p style="font-size:11px;color:var(--text-muted);margin:0;">Click a cell to toggle. Green = can merge. Red = blocked. Lower triangle mirrors the upper.</p>
+            </div>
+            <table style="border-collapse:separate;border-spacing:5px;">
+              <thead>
+                <tr>
+                  <td style="width:100px;"></td>
+                  <th style="width:90px;text-align:center;font-size:12px;color:var(--text-muted);font-weight:600;padding:4px;">A — Premium</th>
+                  <th style="width:90px;text-align:center;font-size:12px;color:var(--text-muted);font-weight:600;padding:4px;">B — Standard</th>
+                  <th style="width:90px;text-align:center;font-size:12px;color:var(--text-muted);font-weight:600;padding:4px;">C — Marginal</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th style="text-align:right;padding-right:10px;font-size:12px;color:var(--text-muted);font-weight:600;">A — Premium</th>
+                  <td class="matrix-cell matrix-yes" onclick="toggleMatrixCell(this)" title="A × A — Can merge"></td>
+                  <td class="matrix-cell matrix-yes" onclick="toggleMatrixCell(this)" title="A × B — Can merge"></td>
+                  <td class="matrix-cell matrix-no"  onclick="toggleMatrixCell(this)" title="A × C — Blocked"></td>
+                </tr>
+                <tr>
+                  <th style="text-align:right;padding-right:10px;font-size:12px;color:var(--text-muted);font-weight:600;">B — Standard</th>
+                  <td class="matrix-cell matrix-mirror" title="Mirror of A × B"></td>
+                  <td class="matrix-cell matrix-yes" onclick="toggleMatrixCell(this)" title="B × B — Can merge"></td>
+                  <td class="matrix-cell matrix-no"  onclick="toggleMatrixCell(this)" title="B × C — Blocked"></td>
+                </tr>
+                <tr>
+                  <th style="text-align:right;padding-right:10px;font-size:12px;color:var(--text-muted);font-weight:600;">C — Marginal</th>
+                  <td class="matrix-cell matrix-mirror" title="Mirror of A × C"></td>
+                  <td class="matrix-cell matrix-mirror" title="Mirror of B × C"></td>
+                  <td class="matrix-cell matrix-yes" onclick="toggleMatrixCell(this)" title="C × C — Can merge"></td>
+                </tr>
+              </tbody>
+            </table>
+            <div style="margin-top:12px;display:flex;gap:16px;font-size:11px;color:var(--text-muted);">
+              <span><span style="display:inline-block;width:14px;height:14px;background:#c8e6c9;border-radius:3px;vertical-align:middle;margin-right:4px;border:1px solid #a5d6a7;"></span>Can merge</span>
+              <span><span style="display:inline-block;width:14px;height:14px;background:#ffcdd2;border-radius:3px;vertical-align:middle;margin-right:4px;border:1px solid #ef9a9a;"></span>Blocked</span>
+              <span><span style="display:inline-block;width:14px;height:14px;background:var(--bg-row-alt);border-radius:3px;vertical-align:middle;margin-right:4px;border:1px solid var(--border);"></span>Mirror</span>
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeModal('modal-die-ranks')">Close</button>
+          <button class="btn btn-primary" onclick="closeModal('modal-die-ranks')">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- modal: Edit Rank -->
+    <div class="modal-overlay" id="modal-edit-rank">
+      <div class="modal">
+        <div class="modal-header">
+          <span class="modal-title">Edit Rank</span>
+          <button class="modal-close" onclick="closeModal('modal-edit-rank')">&#10005;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-row">
+            <label>Code</label>
+            <input class="search-input" type="text" value="A" style="width:100%;" />
+          </div>
+          <div class="form-row">
+            <label>Name</label>
+            <input class="search-input" type="text" value="Premium" style="width:100%;" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-danger" style="margin-right:auto;">Remove</button>
+          <button class="btn" onclick="closeModal('modal-edit-rank')">Cancel</button>
+          <button class="btn btn-primary" onclick="closeModal('modal-edit-rank')">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- modal: New Quality Spec -->
+    <div class="modal-overlay" id="modal-new-spec">
+      <div class="modal" style="width:480px;">
+        <div class="modal-header">
+          <span class="modal-title">New Quality Spec</span>
+          <button class="modal-close" onclick="closeModal('modal-new-spec')">&#10005;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-row">
+            <label>Name</label>
+            <input class="search-input" type="text" placeholder="e.g. 5G0 First-Piece Check" style="width:100%;" />
+          </div>
+          <div class="form-row">
+            <label>Linked Item <span style="color:var(--text-muted);font-weight:400;">(optional)</span></label>
+            <select class="select" style="width:100%;">
+              <option value="">— none —</option>
+              <option>5G0 — Front Cover Assy</option>
+              <option>5G0-C — Front Cover Casting</option>
+              <option>RPY — Assembly Set</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>Linked Operation Template <span style="color:var(--text-muted);font-weight:400;">(optional)</span></label>
+            <select class="select" style="width:100%;">
+              <option value="">— none —</option>
+              <option>DC-5G0 v1 — Die Cast 5G0 Front Cover</option>
+              <option>TRIM-5G0 v1 — Trim 5G0 Front Cover</option>
+              <option>CNC-5G0 v1 — CNC Machining 5G0</option>
+              <option>ASSY-FRONT v1 — Assembly Front Cover</option>
+              <option>ASSY-REAR v1 — Assembly Rear Cover</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>Description</label>
+            <input class="search-input" type="text" placeholder="Optional description" style="width:100%;" />
+          </div>
+          <div class="form-row">
+            <label>Initial Effective Date</label>
+            <input class="search-input" type="date" style="width:160px;" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeModal('modal-new-spec')">Cancel</button>
+          <button class="btn btn-primary" onclick="closeModal('modal-new-spec');showToast('success','Quality spec created.')">Create</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- modal: Add Die -->
+    <div class="modal-overlay" id="modal-add-die">
+      <div class="modal">
+        <div class="modal-header">
+          <span class="modal-title">Add Die</span>
+          <button class="modal-close" onclick="closeModal('modal-add-die')">&#10005;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-row">
+            <label>Code</label>
+            <input class="search-input" type="text" placeholder="e.g. DC-043" style="width:100%;" />
+          </div>
+          <div class="form-row">
+            <label>Name</label>
+            <input class="search-input" type="text" placeholder="e.g. Cam Holder Die" style="width:100%;" />
+          </div>
+          <div class="form-row">
+            <label>Die Rank</label>
+            <select class="select" style="width:100%;">
+              <option>A — Premium</option>
+              <option>B — Standard</option>
+              <option>C — Marginal</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>Description</label>
+            <input class="search-input" type="text" placeholder="Optional description" style="width:100%;" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeModal('modal-add-die')">Cancel</button>
+          <button class="btn btn-primary" onclick="closeModal('modal-add-die')">Create Die</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- modal: Add Cavity -->
+    <div class="modal-overlay" id="modal-add-cavity">
+      <div class="modal">
+        <div class="modal-header">
+          <span class="modal-title">Add Cavity — DC-042</span>
+          <button class="modal-close" onclick="closeModal('modal-add-cavity')">&#10005;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-row">
+            <label>Cavity Number <span style="font-size:11px;color:var(--text-muted);">(immutable after creation)</span></label>
+            <input class="search-input" type="text" placeholder="e.g. C" style="width:100%;" />
+          </div>
+          <div class="form-row">
+            <label>Notes</label>
+            <input class="search-input" type="text" placeholder="Optional" style="width:100%;" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeModal('modal-add-cavity')">Cancel</button>
+          <button class="btn btn-primary" onclick="closeModal('modal-add-cavity')">Add Cavity</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- modal: Mount Die to Cell -->
+    <div class="modal-overlay" id="modal-mount-die">
+      <div class="modal">
+        <div class="modal-header">
+          <span class="modal-title">Mount DC-042 to Cell</span>
+          <button class="modal-close" onclick="closeModal('modal-mount-die')">&#10005;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-row">
+            <label>Cell</label>
+            <select class="select" style="width:100%;">
+              <option>DC Machine #3</option>
+              <option>DC Machine #5</option>
+              <option selected>DC Machine #7</option>
+              <option>DC Machine #12</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>Notes</label>
+            <input class="search-input" type="text" placeholder="Optional" style="width:100%;" />
+          </div>
+          <p style="font-size:11px;color:var(--text-muted);margin-top:8px;">Only one die can be actively mounted per cell. If another die is currently mounted it must be released first.</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeModal('modal-mount-die')">Cancel</button>
+          <button class="btn btn-primary" onclick="closeModal('modal-mount-die')">Mount</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- modal: Tool Attribute Schema -->
+    <div class="modal-overlay" id="modal-tool-attr-def">
+      <div class="modal" style="width:1200px;max-width:96vw;">
+        <div class="modal-header">
+          <span class="modal-title">Tool Attribute Schema — Die</span>
+          <button class="modal-close" onclick="closeModal('modal-tool-attr-def')">&#10005;</button>
+        </div>
+        <div class="modal-body">
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Define the custom attributes that appear on every die's Attributes tab. Changes affect all dies immediately.</p>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width:40px;"></th>
+                <th>Name</th>
+                <th style="width:130px;">Data Type</th>
+                <th style="width:80px;">Required</th>
+                <th style="width:100px;">Default</th>
+                <th style="width:80px;">UOM</th>
+                <th>Description</th>
+                <th style="width:80px;"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div style="display:flex;flex-direction:column;gap:2px;">
+                    <button class="btn btn-sm" style="padding:1px 6px;line-height:1;">▲</button>
+                    <button class="btn btn-sm" style="padding:1px 6px;line-height:1;">▼</button>
+                  </div>
+                </td>
+                <td><input class="search-input" type="text" value="Tonnage" style="width:100%;" /></td>
+                <td><select class="select" style="width:100%;"><option selected>DECIMAL</option><option>INTEGER</option><option>NVARCHAR</option><option>BIT</option></select></td>
+                <td style="text-align:center;"><input type="checkbox" checked style="width:15px;height:15px;accent-color:var(--accent);" /></td>
+                <td><input class="search-input" type="text" value="—" style="width:100%;" /></td>
+                <td><input class="search-input" type="text" value="tons" style="width:100%;" /></td>
+                <td><input class="search-input" type="text" value="Press tonnage rating" style="width:100%;" /></td>
+                <td><button class="btn btn-sm btn-danger">Remove</button></td>
+              </tr>
+              <tr>
+                <td>
+                  <div style="display:flex;flex-direction:column;gap:2px;">
+                    <button class="btn btn-sm" style="padding:1px 6px;line-height:1;">▲</button>
+                    <button class="btn btn-sm" style="padding:1px 6px;line-height:1;">▼</button>
+                  </div>
+                </td>
+                <td><input class="search-input" type="text" value="RefCycleTimeSec" style="width:100%;" /></td>
+                <td><select class="select" style="width:100%;"><option selected>DECIMAL</option><option>INTEGER</option><option>NVARCHAR</option><option>BIT</option></select></td>
+                <td style="text-align:center;"><input type="checkbox" style="width:15px;height:15px;accent-color:var(--accent);" /></td>
+                <td><input class="search-input" type="text" value="60.0" style="width:100%;" /></td>
+                <td><input class="search-input" type="text" value="sec" style="width:100%;" /></td>
+                <td><input class="search-input" type="text" value="Reference cycle time" style="width:100%;" /></td>
+                <td><button class="btn btn-sm btn-danger">Remove</button></td>
+              </tr>
+              <tr>
+                <td>
+                  <div style="display:flex;flex-direction:column;gap:2px;">
+                    <button class="btn btn-sm" style="padding:1px 6px;line-height:1;">▲</button>
+                    <button class="btn btn-sm" style="padding:1px 6px;line-height:1;">▼</button>
+                  </div>
+                </td>
+                <td><input class="search-input" type="text" value="ConfirmationMethod" style="width:100%;" /></td>
+                <td><select class="select" style="width:100%;"><option>DECIMAL</option><option>INTEGER</option><option selected>NVARCHAR</option><option>BIT</option></select></td>
+                <td style="text-align:center;"><input type="checkbox" style="width:15px;height:15px;accent-color:var(--accent);" /></td>
+                <td><input class="search-input" type="text" value="None" style="width:100%;" /></td>
+                <td><input class="search-input" type="text" value="—" style="width:100%;" /></td>
+                <td><input class="search-input" type="text" value="WO completion signal type" style="width:100%;" /></td>
+                <td><button class="btn btn-sm btn-danger">Remove</button></td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="margin-top:10px;">
+            <button class="btn btn-primary btn-sm">+ Add Attribute</button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeModal('modal-tool-attr-def')">Close</button>
+          <button class="btn btn-primary" onclick="closeModal('modal-tool-attr-def')">Save Schema</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -2094,7 +3123,8 @@
     ],
     parts: [
       { id: 'item-master',           label: 'Item Master',           icon: '&#128230;' },
-      { id: 'operation-templates',   label: 'Operation Templates',   icon: '&#128203;' }
+      { id: 'operation-templates',   label: 'Operation Templates',   icon: '&#128203;' },
+      { id: 'tools',                 label: 'Tools',                 icon: '&#128295;' }
     ],
     quality: [
       { id: 'quality-specs',  label: 'Quality Specs',  icon: '&#128200;' },
@@ -2219,6 +3249,17 @@
   }
 
   /* ─── openModal ──────────────────────────────────────────────────── */
+  function toggleMatrixCell(el) {
+    if (el.classList.contains('matrix-mirror')) return;
+    if (el.classList.contains('matrix-yes')) {
+      el.classList.replace('matrix-yes', 'matrix-no');
+      el.title = el.title.replace('Can merge', 'Blocked');
+    } else {
+      el.classList.replace('matrix-no', 'matrix-yes');
+      el.title = el.title.replace('Blocked', 'Can merge');
+    }
+  }
+
   function openModal(modalId) {
     const overlay = document.getElementById(modalId);
     if (overlay) overlay.classList.add('open');
@@ -2257,6 +3298,259 @@
       document.querySelectorAll('.modal-overlay.open').forEach(el => el.classList.remove('open'));
     }
   });
+
+  /* ─── Operation Template — field builder ────────────────────────── */
+  const allDataCollectionFields = ['DieInfo','CavityInfo','Weight','GoodCount','BadCount','SerialNumber','MaterialVerification'];
+
+  function optemplRefreshAddSelect() {
+    const tbody = document.getElementById('optempl-fields-tbody');
+    const used = new Set(Array.from(tbody.querySelectorAll('span[style*="monospace"]')).map(s => s.textContent.trim()));
+    const sel = document.getElementById('optempl-add-field-select');
+    sel.innerHTML = '<option value="">— Add field —</option>' +
+      allDataCollectionFields.filter(f => !used.has(f)).map(f => `<option value="${f}">${f}</option>`).join('');
+    const count = tbody.rows.length;
+    document.getElementById('optempl-field-count').textContent = count + ' field' + (count !== 1 ? 's' : '') + ' configured';
+  }
+
+  function optemplAddField() {
+    const sel = document.getElementById('optempl-add-field-select');
+    const code = sel.value;
+    if (!code) return;
+    const tbody = document.getElementById('optempl-fields-tbody');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><div class="arrows"><button class="arrow-btn" onclick="optemplMoveField(this,-1)">&#9650;</button><button class="arrow-btn disabled">&#9660;</button></div></td>
+      <td><span style="font-family:'SF Mono','Consolas',monospace;font-size:13px;">${code}</span></td>
+      <td><input type="checkbox" checked style="accent-color:var(--accent);" /></td>
+      <td><button class="btn btn-icon" style="color:var(--mpp-state-bad-fg);font-size:14px;" onclick="optemplRemoveField(this)" title="Remove">&#10005;</button></td>`;
+    tbody.appendChild(tr);
+    optemplRefreshArrows();
+    optemplRefreshAddSelect();
+  }
+
+  function optemplRemoveField(btn) {
+    btn.closest('tr').remove();
+    optemplRefreshArrows();
+    optemplRefreshAddSelect();
+  }
+
+  function optemplMoveField(btn, dir) {
+    const tr = btn.closest('tr');
+    const tbody = tr.parentElement;
+    if (dir === -1 && tr.previousElementSibling) tbody.insertBefore(tr, tr.previousElementSibling);
+    else if (dir === 1 && tr.nextElementSibling) tbody.insertBefore(tr.nextElementSibling, tr);
+    optemplRefreshArrows();
+  }
+
+  function optemplRefreshArrows() {
+    const rows = document.getElementById('optempl-fields-tbody').rows;
+    Array.from(rows).forEach((tr, i) => {
+      const btns = tr.querySelectorAll('.arrow-btn');
+      btns[0].classList.toggle('disabled', i === 0);
+      btns[1].classList.toggle('disabled', i === rows.length - 1);
+    });
+  }
+
+  /* ─── Routes — operation template catalogue ─────────────────────── */
+  const routesTemplatesByArea = {
+    'Die Cast':    [{ code: 'DC-5G0',      name: 'Die Cast 5G0 Front Cover',   fields: 'DieInfo, CavityInfo, Weight, GoodCount, BadCount' }],
+    'Trim Shop':   [{ code: 'TRIM-5G0',    name: 'Trim 5G0 Front Cover',        fields: 'Weight, GoodCount, BadCount' }],
+    'Machine Shop':[{ code: 'CNC-5G0',     name: 'CNC Machining 5G0',           fields: 'GoodCount, BadCount' }],
+    'Prod Control':[{ code: 'ASSY-FRONT',  name: 'Assembly Front Cover',        fields: 'SerialNumber, MaterialVerification, GoodCount, BadCount' },
+                    { code: 'ASSY-REAR',   name: 'Assembly Rear Cover',          fields: 'SerialNumber, MaterialVerification, GoodCount, BadCount' }]
+  };
+
+  function routesAreaChanged(areaSelect) {
+    const tr = areaSelect.closest('tr');
+    const area = areaSelect.value;
+    const templates = routesTemplatesByArea[area] || [];
+    const tmplSelect = tr.querySelector('select:nth-of-type(2)');
+    tmplSelect.innerHTML = templates.map(t =>
+      `<option value="${t.code}" data-fields="${t.fields}">${t.code} — ${t.name}</option>`
+    ).join('');
+    routesTemplateChanged(tmplSelect);
+  }
+
+  function routesTemplateChanged(tmplSelect) {
+    const tr = tmplSelect.closest('tr');
+    const opt = tmplSelect.options[tmplSelect.selectedIndex];
+    const fields = opt ? (opt.dataset.fields || '—') : '—';
+    tr.querySelector('.routes-fields').textContent = fields;
+  }
+
+  /* ─── Quality Spec versioning ───────────────────────────────────── */
+  function specNewVersion() {
+    document.getElementById('spec-pending-header').style.display = 'flex';
+    document.getElementById('spec-attrs-readonly').style.display = 'none';
+    document.getElementById('spec-attrs-editable').style.display = 'block';
+  }
+  function specDiscardVersion() {
+    document.getElementById('spec-pending-header').style.display = 'none';
+    document.getElementById('spec-attrs-readonly').style.display = 'block';
+    document.getElementById('spec-attrs-editable').style.display = 'none';
+    showToast('info', 'Pending version discarded.');
+  }
+  function specActivateVersion() {
+    document.getElementById('spec-pending-header').style.display = 'none';
+    document.getElementById('spec-attrs-readonly').style.display = 'block';
+    document.getElementById('spec-attrs-editable').style.display = 'none';
+    showToast('success', 'Version activated.');
+  }
+
+  /* ─── Routes versioning ─────────────────────────────────────────── */
+  function routesNewVersion() {
+    document.getElementById('routes-pub-header').style.display = 'none';
+    document.getElementById('routes-draft-header').style.display = 'flex';
+    document.getElementById('routes-pub-panel').style.display = 'none';
+    document.getElementById('routes-draft-panel').style.display = 'block';
+  }
+  function routesDiscard() {
+    document.getElementById('routes-pub-header').style.display = 'flex';
+    document.getElementById('routes-draft-header').style.display = 'none';
+    document.getElementById('routes-pub-panel').style.display = 'block';
+    document.getElementById('routes-draft-panel').style.display = 'none';
+    showToast('info', 'Draft discarded.');
+  }
+  function routesPublish() {
+    const date = document.getElementById('routes-effective-date').value || '2026-05-01';
+    const sel = document.getElementById('routes-version-select');
+    const opt = document.createElement('option');
+    opt.text = 'v3 — Effective ' + date + ' (Published)';
+    opt.selected = true;
+    sel.insertBefore(opt, sel.options[0]);
+    document.getElementById('routes-pub-header').style.display = 'flex';
+    document.getElementById('routes-draft-header').style.display = 'none';
+    document.getElementById('routes-pub-panel').style.display = 'block';
+    document.getElementById('routes-draft-panel').style.display = 'none';
+    showToast('success', 'Route v3 published.');
+  }
+  function routesAddStep() {
+    const tbody = document.getElementById('routes-draft-tbody');
+    const defaultArea = 'Die Cast';
+    const defaultTemplates = routesTemplatesByArea[defaultArea];
+    const tmplOptions = defaultTemplates.map(t =>
+      `<option value="${t.code}" data-fields="${t.fields}">${t.code} — ${t.name}</option>`
+    ).join('');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td></td>
+      <td><div class="arrows"><button class="arrow-btn" onclick="routesMoveRow(this,-1)">&#9650;</button><button class="arrow-btn disabled">&#9660;</button></div></td>
+      <td><select class="select" style="width:100%;" onchange="routesAreaChanged(this)"><option selected>Die Cast</option><option>Trim Shop</option><option>Machine Shop</option><option>Prod Control</option></select></td>
+      <td><select class="select" style="width:100%;" onchange="routesTemplateChanged(this)">${tmplOptions}</select></td>
+      <td style="text-align:center;"><input type="checkbox" checked style="accent-color:var(--accent);" /></td>
+      <td><span class="routes-fields" style="font-size:11px;color:var(--text-muted);">${defaultTemplates[0].fields}</span></td>
+      <td><button class="btn btn-icon" style="color:var(--mpp-state-bad-fg);font-size:14px;" onclick="routesDeleteRow(this)" title="Remove step">&#10005;</button></td>`;
+    tbody.appendChild(tr);
+    routesRefreshArrows();
+  }
+  function routesDeleteRow(btn) {
+    btn.closest('tr').remove();
+    routesRefreshArrows();
+  }
+  function routesMoveRow(btn, dir) {
+    const tr = btn.closest('tr');
+    const tbody = tr.parentElement;
+    if (dir === -1 && tr.previousElementSibling) tbody.insertBefore(tr, tr.previousElementSibling);
+    else if (dir === 1 && tr.nextElementSibling) tbody.insertBefore(tr.nextElementSibling, tr);
+    routesRefreshArrows();
+  }
+  function routesRefreshArrows() {
+    const rows = document.getElementById('routes-draft-tbody').rows;
+    Array.from(rows).forEach((tr, i) => {
+      tr.cells[0].textContent = i + 1;
+      const btns = tr.querySelectorAll('.arrow-btn');
+      btns[0].classList.toggle('disabled', i === 0);
+      btns[1].classList.toggle('disabled', i === rows.length - 1);
+    });
+  }
+
+  /* ─── BOMs — item catalogue ─────────────────────────────────────── */
+  const bomsItemCatalogue = [
+    { code: '5G0-C',        name: 'Front Cover Casting',   uom: 'EA' },
+    { code: '5G0-MACHINED', name: 'Front Cover Machined',  uom: 'EA' },
+    { code: 'PNA',          name: 'Mounting Pin',           uom: 'EA' },
+    { code: 'SEAL-5G0',     name: 'Sealing Ring 5G0',       uom: 'EA' },
+    { code: 'ALUM-380',     name: 'Aluminum Alloy 380',     uom: 'LB' },
+  ];
+
+  function bomsItemOptions(selectedCode) {
+    const blank = `<option value="">— Select item —</option>`;
+    return blank + bomsItemCatalogue.map(item =>
+      `<option value="${item.code}" data-name="${item.name}" data-uom="${item.uom}"${item.code === selectedCode ? ' selected' : ''}>${item.code}</option>`
+    ).join('');
+  }
+
+  function bomsItemChanged(sel) {
+    const tr = sel.closest('tr');
+    const opt = sel.options[sel.selectedIndex];
+    tr.querySelector('.boms-item-name').textContent = opt.dataset.name || '—';
+    const uomSel = tr.querySelector('.boms-uom');
+    if (opt.dataset.uom) {
+      Array.from(uomSel.options).forEach(o => { o.selected = o.value === opt.dataset.uom; });
+    }
+  }
+
+  /* ─── BOMs versioning ───────────────────────────────────────────── */
+  function bomsNewVersion() {
+    document.getElementById('boms-pub-header').style.display = 'none';
+    document.getElementById('boms-draft-header').style.display = 'flex';
+    document.getElementById('boms-pub-panel').style.display = 'none';
+    document.getElementById('boms-draft-panel').style.display = 'block';
+  }
+  function bomsDiscard() {
+    document.getElementById('boms-pub-header').style.display = 'flex';
+    document.getElementById('boms-draft-header').style.display = 'none';
+    document.getElementById('boms-pub-panel').style.display = 'block';
+    document.getElementById('boms-draft-panel').style.display = 'none';
+    showToast('info', 'Draft discarded.');
+  }
+  function bomsPublish() {
+    const date = document.getElementById('boms-effective-date').value || '2026-05-01';
+    const sel = document.getElementById('boms-version-select');
+    const opt = document.createElement('option');
+    opt.text = 'v2 — Effective ' + date + ' (Published)';
+    opt.selected = true;
+    sel.insertBefore(opt, sel.options[0]);
+    document.getElementById('boms-pub-header').style.display = 'flex';
+    document.getElementById('boms-draft-header').style.display = 'none';
+    document.getElementById('boms-pub-panel').style.display = 'block';
+    document.getElementById('boms-draft-panel').style.display = 'none';
+    showToast('success', 'BOM v2 published.');
+  }
+  function bomsAddRow() {
+    const tbody = document.getElementById('boms-draft-tbody');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td></td>
+      <td><div class="arrows"><button class="arrow-btn" onclick="bomsMoveRow(this,-1)">&#9650;</button><button class="arrow-btn disabled">&#9660;</button></div></td>
+      <td><select class="select" style="width:100%;" onchange="bomsItemChanged(this)">${bomsItemOptions('')}</select></td>
+      <td><span class="boms-item-name" style="font-size:13px;color:var(--text-secondary);">—</span></td>
+      <td><input class="search-input" style="width:56px;text-align:right;" type="number" value="1" min="0" /></td>
+      <td><select class="select boms-uom" style="width:100%;"><option selected>EA</option><option>LB</option><option>KG</option></select></td>
+      <td><button class="btn btn-icon" style="color:var(--mpp-state-bad-fg);font-size:14px;" onclick="bomsDeleteRow(this)" title="Remove component">&#10005;</button></td>`;
+    tbody.appendChild(tr);
+    bomsRefreshArrows();
+  }
+  function bomsDeleteRow(btn) {
+    btn.closest('tr').remove();
+    bomsRefreshArrows();
+  }
+  function bomsMoveRow(btn, dir) {
+    const tr = btn.closest('tr');
+    const tbody = tr.parentElement;
+    if (dir === -1 && tr.previousElementSibling) tbody.insertBefore(tr, tr.previousElementSibling);
+    else if (dir === 1 && tr.nextElementSibling) tbody.insertBefore(tr.nextElementSibling, tr);
+    bomsRefreshArrows();
+  }
+  function bomsRefreshArrows() {
+    const rows = document.getElementById('boms-draft-tbody').rows;
+    Array.from(rows).forEach((tr, i) => {
+      tr.cells[0].textContent = i + 1;
+      const btns = tr.querySelectorAll('.arrow-btn');
+      btns[0].classList.toggle('disabled', i === 0);
+      btns[1].classList.toggle('disabled', i === rows.length - 1);
+    });
+  }
 </script>
 
 </body>

@@ -282,8 +282,9 @@
                 <a href="#terminal/trim"          class="pf-btn pf-btn-secondary" style="justify-content: flex-start;">Phase 4 · Trim Station (polymorphic IN/OUT)</a>
                 <a href="#terminal/machining-in"  class="pf-btn pf-btn-secondary" style="justify-content: flex-start;">Phase 5 · Machining IN (FIFO)</a>
                 <a href="#terminal/assembly"      class="pf-btn pf-btn-secondary" style="justify-content: flex-start;">Phase 6 · Assembly Serialized</a>
-                <a href="#terminal/assembly-ns"   class="pf-btn pf-btn-secondary" style="justify-content: flex-start;">Phase 6 · Assembly Non-Serialized</a>
-                <a href="#terminal/sort-cage"     class="pf-btn pf-btn-secondary" style="justify-content: flex-start;">Phase 7 · Sort Cage (toggle Serialized / Non-Serialized)</a>
+                <a href="#terminal/assembly-ns"         class="pf-btn pf-btn-secondary" style="justify-content: flex-start;">Phase 6 · Assembly Non-Serialized</a>
+                <a href="#terminal/lineside-inventory"  class="pf-btn pf-btn-secondary" style="justify-content: flex-start;">Phase 6 · Assembly Lineside Inventory</a>
+                <a href="#terminal/sort-cage"           class="pf-btn pf-btn-secondary" style="justify-content: flex-start;">Phase 7 · Sort Cage (toggle Serialized / Non-Serialized)</a>
                 <a href="#terminal/shipping"      class="pf-btn pf-btn-secondary" style="justify-content: flex-start;">Phase 7 · Shipping Dock</a>
                 <a href="#terminal/end-of-shift"  class="pf-btn pf-btn-secondary" style="justify-content: flex-start;">Phase 8 · End-of-Shift Entry</a>
                 <a href="#lot/detail"             class="pf-btn pf-btn-secondary" style="justify-content: flex-start;">Phase 2 · LOT Detail (polymorphic)</a>
@@ -908,16 +909,15 @@
           <span>Paused LOTs</span>
           <span class="pf-paused-indicator-count">0</span>
         </span>
+        <div class="pf-terminal-cell-context" style="width:100%;">
+          <span class="pf-cell-context-label">Active Cell</span>
+          <span class="pf-cell-context-value">Press 7</span>
+          <button class="pf-btn pf-btn-secondary" type="button">Change (scan or pick)</button>
+          <span style="flex:1"></span>
+          <span class="pf-kpi-sub">Tool DC-042 mounted · 2 cavities active</span>
+        </div>
       </header>
 
-      <!-- Cell Context Selector (Shared terminal — first step of every interaction) -->
-      <div class="pf-terminal-cell-context">
-        <span class="pf-cell-context-label">Active Cell</span>
-        <span class="pf-cell-context-value">Press 7</span>
-        <button class="pf-btn pf-btn-secondary" type="button">Change (scan or pick)</button>
-        <span style="flex:1"></span>
-        <span class="pf-kpi-sub">Tool DC-042 mounted · 2 cavities active</span>
-      </div>
 
       <!-- Two-column layout: form on left, KPIs on right -->
       <div style="display:grid; grid-template-columns: 1fr 320px; gap: var(--pf-content-pad);">
@@ -1452,6 +1452,481 @@
         });
       </script>
     </section>
+
+
+    <!-- ─── TERMINAL VIEW: ASSEMBLY LINESIDE INVENTORY (Phase 6) ─── -->
+    <!-- Supervisory view. Shows component LOTs currently staged at an  -->
+    <!-- assembly cell, driven by ItemLocation rows with               -->
+    <!-- IsConsumptionPoint=1 (FDS-03-018). Enforces LinesideLimit     -->
+    <!-- (FDS-03-020) and Item.MaxParts (FDS-03-019) at scan-in.       -->
+    <section data-route="terminal/lineside-inventory" class="pf-terminal">
+      <header class="pf-terminal-header">
+        <div class="pf-terminal-title">
+          <h1>Lineside Inventory · ASSY-FRONT Cell #3</h1>
+          <span class="pf-terminal-title-meta">Supervisory view · components staged at this assembly cell</span>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <select style="background:var(--bg-input);border:1px solid var(--border);color:var(--text-primary);border-radius:var(--radius);padding:4px 8px;font-size:12px;">
+            <option selected>ASSY-FRONT Cell #3</option>
+            <option>ASSY-FRONT Cell #4</option>
+            <option>ASSY-REAR Cell #1</option>
+          </select>
+        </div>
+      </header>
+
+      <!-- KPI bar -->
+      <section class="pf-kpis">
+        <div class="pf-kpi">
+          <span class="pf-kpi-label">Lineside Capacity</span>
+          <span class="pf-kpi-value">486 / 800 pcs</span>
+          <span class="pf-kpi-sub">LinesideLimit = 800 · 61% used</span>
+        </div>
+        <div class="pf-kpi">
+          <span class="pf-kpi-label">Components Configured</span>
+          <span class="pf-kpi-value">4 items</span>
+          <span class="pf-kpi-sub">IsConsumptionPoint = 1 · active BOM</span>
+        </div>
+        <div class="pf-kpi">
+          <span class="pf-kpi-label">Oldest Staged LOT</span>
+          <span class="pf-kpi-value">4 h 22 m</span>
+          <span class="pf-kpi-sub">MESL1710401 · SLV-GASKET-5G0</span>
+        </div>
+        <div class="pf-kpi">
+          <span class="pf-kpi-label">Low / Empty Items</span>
+          <span class="pf-kpi-value pf-kpi-bad">2</span>
+          <span class="pf-kpi-sub">SLV-GASKET-5G0 · BRG-INSERT-M8</span>
+        </div>
+      </section>
+
+      <!-- Overall capacity bar (LinesideLimit — FDS-03-020) -->
+      <section class="pf-panel" style="padding:12px 16px;">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:6px;">
+          <span style="font-size:12px; font-weight:600;">Cell Capacity</span>
+          <span style="font-size:11px; color:var(--text-secondary);">LinesideLimit LocationAttribute · all items combined</span>
+          <span style="margin-left:auto; font-size:12px; font-weight:600;">486 / 800 pcs</span>
+        </div>
+        <div style="height:8px; background:var(--bg-row-alt); border-radius:4px; overflow:hidden;">
+          <div style="height:100%; width:61%; background:var(--pf-status-good-fg); border-radius:4px;"></div>
+        </div>
+      </section>
+
+      <!-- ── Component filter bar ──────────────────────────────────── -->
+      <div style="display:flex; align-items:center; gap:8px; padding:8px 16px; border-bottom:1px solid var(--border); background:var(--bg-panel); flex-shrink:0;">
+        <span style="font-size:11px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.05em; margin-right:4px;">Filter:</span>
+        <button id="ls-filter-all" onclick="linesideFilter('all')" style="font-size:12px; padding:4px 12px; border-radius:20px; background:var(--accent); color:#fff; border:none; cursor:pointer; font-family:inherit; font-weight:500;">All (4)</button>
+        <button id="ls-filter-attention" onclick="linesideFilter('attention')" style="font-size:12px; padding:4px 12px; border-radius:20px; background:transparent; color:var(--text-secondary); border:1px solid var(--border); cursor:pointer; font-family:inherit;">Needs Attention (2)</button>
+        <button id="ls-filter-ok" onclick="linesideFilter('ok')" style="font-size:12px; padding:4px 12px; border-radius:20px; background:transparent; color:var(--text-secondary); border:1px solid var(--border); cursor:pointer; font-family:inherit;">OK (2)</button>
+        <div style="flex:1;"></div>
+        <span style="font-size:11px; color:var(--text-secondary);">Sorted: attention first</span>
+      </div>
+
+      <!-- ── Component: BRG-INSERT-M8 — EMPTY ───────────────────────── -->
+      <section class="pf-panel" data-ls-status="empty" style="border-color:var(--pf-status-bad-fg);">
+        <div class="pf-panel-header" style="align-items:flex-start;">
+          <div style="flex:1;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
+              <h3 style="margin:0;">BRG-INSERT-M8</h3>
+              <span class="pf-pill pf-pill-bad">✕ EMPTY</span>
+            </div>
+            <span class="pf-kpi-sub">Bearing Insert M8 · Component · BOM: 2 per unit · no LOTs staged</span>
+          </div>
+          <button class="pf-btn pf-btn-primary" style="font-size:12px; padding:6px 14px;"
+                  onclick="linesideOpenScan('BRG-INSERT-M8', 'Bearing Insert M8', 160, 80, 240)">
+            Scan In LOT
+          </button>
+        </div>
+
+        <div style="display:flex; gap:24px; padding:8px 0 10px; border-bottom:1px solid var(--border-subtle);">
+          <div><span style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.05em;">Min</span><br><strong style="font-size:14px;">80</strong></div>
+          <div><span style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.05em;">Default</span><br><strong style="font-size:14px;">160</strong></div>
+          <div><span style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.05em;">Max (MaxParts)</span><br><strong style="font-size:14px;">240</strong></div>
+          <div style="margin-left:auto; text-align:right;">
+            <span style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.05em;">Staged</span><br>
+            <strong style="font-size:20px; color:var(--pf-status-bad-fg);">0 pcs</strong>
+          </div>
+        </div>
+
+        <div style="margin:8px 0;">
+          <div style="height:6px; background:var(--bg-row-alt); border-radius:3px; overflow:hidden;">
+            <div style="height:100%; width:0%; background:var(--pf-status-bad-fg); border-radius:3px;"></div>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-secondary); margin-top:2px;">
+            <span>0</span><span>Min 80</span><span>Max 240</span>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:10px; padding:8px 12px; background:var(--pf-status-bad-bg); border:1px solid var(--pf-status-bad-fg); border-radius:var(--radius); font-size:12px; color:var(--pf-status-bad-fg);">
+          <span style="font-size:16px;">✕</span>
+          <span>No LOTs staged. Assembly cannot proceed on lines requiring BRG-INSERT-M8 until a LOT is scanned in.</span>
+        </div>
+      </section>
+
+      <!-- ── Component: SLV-GASKET-5G0 — LOW ────────────────────────── -->
+      <section class="pf-panel" data-ls-status="low" style="border-color:var(--pf-status-warn-fg);">
+        <div class="pf-panel-header" style="align-items:flex-start;">
+          <div style="flex:1;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
+              <h3 style="margin:0;">SLV-GASKET-5G0</h3>
+              <span class="pf-pill pf-pill-hold">⚠ LOW</span>
+            </div>
+            <span class="pf-kpi-sub">Sealing Gasket · Component · BOM: 1 per unit · below MinQuantity (50)</span>
+          </div>
+          <button class="pf-btn pf-btn-primary" style="font-size:12px; padding:6px 14px;"
+                  onclick="linesideOpenScan('SLV-GASKET-5G0', 'Sealing Gasket', 100, 50, 150)">
+            Scan In LOT
+          </button>
+        </div>
+
+        <div style="display:flex; gap:24px; padding:8px 0 10px; border-bottom:1px solid var(--border-subtle);">
+          <div><span style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.05em;">Min</span><br><strong style="font-size:14px;">50</strong></div>
+          <div><span style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.05em;">Default</span><br><strong style="font-size:14px;">100</strong></div>
+          <div><span style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.05em;">Max (MaxParts)</span><br><strong style="font-size:14px;">150</strong></div>
+          <div style="margin-left:auto; text-align:right;">
+            <span style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.05em;">Staged</span><br>
+            <strong style="font-size:20px; color:var(--pf-status-warn-fg);">8 pcs</strong>
+          </div>
+        </div>
+
+        <div style="margin:8px 0;">
+          <div style="height:6px; background:var(--bg-row-alt); border-radius:3px; overflow:hidden;">
+            <div style="height:100%; width:5%; background:var(--pf-status-warn-fg); border-radius:3px;"></div>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-secondary); margin-top:2px;">
+            <span>0</span><span style="color:var(--pf-status-warn-fg); font-weight:600;">Min 50 ←</span><span>Max 150</span>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:10px; padding:8px 12px; background:var(--pf-status-warn-bg); border:1px solid var(--pf-status-warn-fg); border-radius:var(--radius); margin-bottom:8px; font-size:12px; color:var(--pf-status-warn-fg);">
+          <span style="font-size:16px;">⚠</span>
+          <span>8 pcs staged — below MinQuantity of 50. Scan in a replenishment LOT before continuing assembly.</span>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <div class="pf-repeater-entity" style="background:var(--pf-status-warn-bg); border:1px solid var(--pf-status-warn-fg);">
+            <div style="flex:1;">
+              <a href="#lot/detail" style="font-family:monospace; font-weight:600; font-size:13px; color:var(--accent); text-decoration:none;">MESL1710401</a>
+              <span class="pf-pill pf-pill-good" style="margin-left:8px;">Good</span>
+            </div>
+            <span style="font-size:12px; color:var(--text-secondary);">8 pcs · staged 04:42 (5 h 42 m ago)</span>
+            <button class="pf-btn pf-btn-secondary" style="font-size:11px; padding:4px 10px;"
+                    onclick="linesideOpenRelease('MESL1710401', 'SLV-GASKET-5G0', '8 pcs', '04:42 today (5 h 42 m)')">Release</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Component: 5G0-MACHINED-4102 — OK ───────────────────────── -->
+      <section class="pf-panel" data-ls-status="ok">
+        <div class="pf-panel-header" style="align-items:flex-start;">
+          <div style="flex:1;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
+              <h3 style="margin:0;">5G0-MACHINED-4102</h3>
+              <span class="pf-pill pf-pill-good">OK</span>
+            </div>
+            <span class="pf-kpi-sub">Front Cover Machined · Sub-Assembly · BOM: 1 per unit</span>
+          </div>
+          <button class="pf-btn pf-btn-secondary" style="font-size:12px; padding:6px 14px;"
+                  onclick="linesideOpenScan('5G0-MACHINED-4102', 'Front Cover Machined', 24, 12, 48)">
+            Scan In LOT
+          </button>
+        </div>
+
+        <div style="display:flex; gap:24px; padding:8px 0 10px; border-bottom:1px solid var(--border-subtle);">
+          <div><span style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.05em;">Min</span><br><strong style="font-size:14px;">12</strong></div>
+          <div><span style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.05em;">Default</span><br><strong style="font-size:14px;">24</strong></div>
+          <div><span style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.05em;">Max (MaxParts)</span><br><strong style="font-size:14px;">48</strong></div>
+          <div style="margin-left:auto; text-align:right;">
+            <span style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.05em;">Staged</span><br>
+            <strong style="font-size:20px; color:var(--pf-status-good-fg);">36 pcs</strong>
+          </div>
+        </div>
+
+        <div style="margin:8px 0;">
+          <div style="height:6px; background:var(--bg-row-alt); border-radius:3px; overflow:hidden;">
+            <div style="height:100%; width:75%; background:var(--pf-status-good-fg); border-radius:3px;"></div><!-- 36/48 = 75% -->
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-secondary); margin-top:2px;">
+            <span>0</span><span>Min 12</span><span>Max 48</span>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:4px; margin-top:4px;">
+          <div class="pf-repeater-entity" style="background:var(--pf-status-good-bg); border:1px solid var(--pf-status-good-fg);">
+            <div style="flex:1;">
+              <a href="#lot/detail" style="font-family:monospace; font-weight:600; font-size:13px; color:var(--accent); text-decoration:none;">MESL1710955</a>
+              <span class="pf-pill pf-pill-good" style="margin-left:8px;">Good</span>
+            </div>
+            <span style="font-size:12px; color:var(--text-secondary);">24 pcs · staged 09:52 (32 min ago)</span>
+            <button class="pf-btn pf-btn-secondary" style="font-size:11px; padding:4px 10px;"
+                    onclick="linesideOpenRelease('MESL1710955', '5G0-MACHINED-4102', '24 pcs', '09:52 today (32 min)')">Release</button>
+          </div>
+          <div class="pf-repeater-entity" style="background:var(--pf-status-good-bg); border:1px solid var(--pf-status-good-fg);">
+            <div style="flex:1;">
+              <a href="#lot/detail" style="font-family:monospace; font-weight:600; font-size:13px; color:var(--accent); text-decoration:none;">MESL1710862</a>
+              <span class="pf-pill pf-pill-good" style="margin-left:8px;">Good</span>
+            </div>
+            <span style="font-size:12px; color:var(--text-secondary);">12 pcs · staged 07:31 (2 h 53 m ago)</span>
+            <button class="pf-btn pf-btn-secondary" style="font-size:11px; padding:4px 10px;"
+                    onclick="linesideOpenRelease('MESL1710862', '5G0-MACHINED-4102', '12 pcs', '07:31 today (2 h 53 m)')">Release</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Component: PNA-PIN-2.5 — OK ─────────────────────────────── -->
+      <section class="pf-panel" data-ls-status="ok">
+        <div class="pf-panel-header" style="align-items:flex-start;">
+          <div style="flex:1;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
+              <h3 style="margin:0;">PNA-PIN-2.5</h3>
+              <span class="pf-pill pf-pill-good">OK</span>
+            </div>
+            <span class="pf-kpi-sub">Mounting Pin Assembly · Component · BOM: 4 per unit</span>
+          </div>
+          <button class="pf-btn pf-btn-secondary" style="font-size:12px; padding:6px 14px;"
+                  onclick="linesideOpenScan('PNA-PIN-2.5', 'Mounting Pin Assembly', 400, 200, 600)">
+            Scan In LOT
+          </button>
+        </div>
+
+        <div style="display:flex; gap:24px; padding:8px 0 10px; border-bottom:1px solid var(--border-subtle);">
+          <div><span style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.05em;">Min</span><br><strong style="font-size:14px;">200</strong></div>
+          <div><span style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.05em;">Default</span><br><strong style="font-size:14px;">400</strong></div>
+          <div><span style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.05em;">Max (MaxParts)</span><br><strong style="font-size:14px;">600</strong></div>
+          <div style="margin-left:auto; text-align:right;">
+            <span style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.05em;">Staged</span><br>
+            <strong style="font-size:20px; color:var(--pf-status-good-fg);">442 pcs</strong>
+          </div>
+        </div>
+
+        <div style="margin:8px 0;">
+          <div style="height:6px; background:var(--bg-row-alt); border-radius:3px; overflow:hidden;">
+            <div style="height:100%; width:74%; background:var(--pf-status-good-fg); border-radius:3px;"></div><!-- 442/600 = 74% -->
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-secondary); margin-top:2px;">
+            <span>0</span><span>Min 200</span><span>Max 600</span>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:4px; margin-top:4px;">
+          <div class="pf-repeater-entity" style="background:var(--pf-status-good-bg); border:1px solid var(--pf-status-good-fg);">
+            <div style="flex:1;">
+              <a href="#lot/detail" style="font-family:monospace; font-weight:600; font-size:13px; color:var(--accent); text-decoration:none;">MESL1710512</a>
+              <span class="pf-pill pf-pill-good" style="margin-left:8px;">Good</span>
+            </div>
+            <span style="font-size:12px; color:var(--text-secondary);">442 pcs · staged 06:15 (4 h 9 m ago)</span>
+            <button class="pf-btn pf-btn-secondary" style="font-size:11px; padding:4px 10px;"
+                    onclick="linesideOpenRelease('MESL1710512', 'PNA-PIN-2.5', '442 pcs', '06:15 today (4 h 9 m)')">Release</button>
+          </div>
+        </div>
+      </section>
+
+    </section><!-- /terminal/lineside-inventory -->
+
+
+    <!-- ─── MODAL: Lineside Scan In ────────────────────────────────────────
+         FDS-06-011: BOM validates the scanned LOT.
+         FDS-03-018/019/020: ItemLocation qty limits + LinesideLimit cell cap.
+         Three states: pre-scan → post-scan-ok → post-scan-mismatch.
+         linesideOpenScan() populates item context and resets to pre-scan state.
+    ────────────────────────────────────────────────────────────────────── -->
+    <div class="pf-modal" id="lineside-scan-modal">
+      <div class="pf-modal-card" style="max-width:480px;">
+        <header class="pf-modal-header">
+          <h3>Scan In LOT — <span id="ls-modal-item-code">SLV-GASKET-5G0</span></h3>
+        </header>
+        <div class="pf-modal-body">
+
+          <!-- Pre-scan state (default) -->
+          <div id="ls-scan-pre">
+            <p style="margin:0; font-size:13px; color:var(--text-secondary);">
+              Scan the LTT barcode on the incoming basket. MES validates the LOT against the active BOM (FDS-06-011) and checks item and cell capacity limits (FDS-03-019 / FDS-03-020).
+            </p>
+            <div class="pf-field">
+              <label class="pf-field-label">LTT Barcode</label>
+              <input class="pf-field-input pf-field-mono" type="text" id="ls-scan-barcode"
+                     placeholder="Scan LTT…"
+                     oninput="linesideSimulateScan(this.value)" />
+            </div>
+            <p class="pf-field-help" style="text-align:center; margin-top:4px;">Scan a barcode or type to simulate validation.</p>
+          </div>
+
+          <!-- Post-scan OK state (hidden until scan) -->
+          <div id="ls-scan-ok" style="display:none;">
+            <div style="display:flex; align-items:flex-start; gap:10px; padding:12px 14px; background:var(--pf-status-good-bg); border:1px solid var(--pf-status-good-fg); border-radius:var(--radius);">
+              <span style="font-size:20px; line-height:1;">✓</span>
+              <div style="flex:1;">
+                <div style="font-weight:600; font-size:13px; color:var(--pf-status-good-fg); margin-bottom:4px;">
+                  LOT <span id="ls-ok-lot" style="font-family:monospace;">MESL1710988</span> — BOM Match ✓
+                </div>
+                <div style="font-size:12px; color:var(--text-secondary); display:flex; flex-wrap:wrap; gap:12px; margin-top:2px;">
+                  <span>Item: <strong id="ls-ok-item">SLV-GASKET-5G0</strong></span>
+                  <span>Qty on LOT: <strong id="ls-ok-qty">120 pcs</strong></span>
+                  <span>Status: <strong style="color:var(--pf-status-good-fg);">Good</strong></span>
+                </div>
+                <div style="font-size:12px; color:var(--text-secondary); display:flex; gap:12px; margin-top:4px;">
+                  <span>Cell capacity after staging: <strong>606 / 800</strong> ✓</span>
+                  <span>Item capacity: <strong>128 / 150</strong> ✓</span>
+                </div>
+              </div>
+            </div>
+            <div class="pf-field">
+              <label class="pf-field-label">Quantity to Stage (pcs)</label>
+              <input class="pf-field-input" type="number" id="ls-scan-qty" value="100" min="1" />
+              <span class="pf-field-help">
+                DefaultQuantity = <strong id="ls-modal-default">100</strong> ·
+                Min <strong id="ls-modal-min">50</strong> ·
+                Max (MaxParts) <strong id="ls-modal-max">150</strong>
+              </span>
+            </div>
+          </div>
+
+          <!-- Post-scan BOM mismatch state (hidden until scan of wrong item) -->
+          <div id="ls-scan-mismatch" style="display:none;">
+            <div style="display:flex; align-items:flex-start; gap:10px; padding:12px 14px; background:var(--pf-status-warn-bg); border:1px solid var(--pf-status-warn-fg); border-radius:var(--radius); margin-bottom:4px;">
+              <span style="font-size:20px; line-height:1;">⚠</span>
+              <div>
+                <div style="font-weight:600; font-size:13px; color:var(--pf-status-warn-fg); margin-bottom:4px;">
+                  BOM Mismatch — LOT <span style="font-family:monospace;" id="ls-mis-lot">MESL1710099</span>
+                </div>
+                <div style="font-size:12px; color:var(--text-secondary);">
+                  LOT carries <strong id="ls-mis-actual">SLV-SEALER-ALT</strong> but active BOM at ASSY-FRONT Cell #3
+                  requires <strong id="ls-mis-expected">SLV-GASKET-5G0</strong> at this position.<br>
+                  <strong id="ls-mis-actual2">SLV-SEALER-ALT</strong> is not a registered substitute in the active BOM.
+                </div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--bg-row-alt); border:1px solid var(--border); border-radius:var(--radius); font-size:12px; color:var(--text-secondary);">
+              <span>Supervisor override required to stage a non-BOM item.</span>
+              <button class="pf-btn pf-btn-secondary" style="margin-left:auto; font-size:12px; white-space:nowrap;"
+                      onclick="hideModal('lineside-scan-modal'); showModal('lineside-bom-override-modal');">
+                Request Override →
+              </button>
+            </div>
+          </div>
+
+          <!-- Demo state controls (mockup only) -->
+          <div style="border-top:1px solid var(--border); padding-top:10px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span style="font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); font-weight:600;">Demo:</span>
+            <button onclick="linesideScanState('ok')" style="font-size:11px; padding:3px 10px; border-radius:20px; background:var(--pf-status-good-bg); color:var(--pf-status-good-fg); border:1px solid var(--pf-status-good-fg); cursor:pointer; font-family:inherit;">Scan OK</button>
+            <button onclick="linesideScanState('mismatch')" style="font-size:11px; padding:3px 10px; border-radius:20px; background:var(--pf-status-warn-bg); color:var(--pf-status-warn-fg); border:1px solid var(--pf-status-warn-fg); cursor:pointer; font-family:inherit;">BOM Mismatch</button>
+            <button onclick="linesideScanState('pre')" style="font-size:11px; padding:3px 10px; border-radius:20px; background:var(--bg-row-alt); color:var(--text-secondary); border:1px solid var(--border); cursor:pointer; font-family:inherit;">Reset</button>
+          </div>
+
+        </div>
+        <footer class="pf-modal-footer">
+          <button class="pf-btn pf-btn-secondary" type="button" data-modal-close>Cancel</button>
+          <button class="pf-btn pf-btn-primary" type="button" id="ls-scan-confirm" style="display:none;" data-modal-close>Confirm Stage</button>
+        </footer>
+      </div>
+    </div>
+
+    <!-- ─── MODAL: Lineside Release Confirmation ─────────────────────────
+         Opened by Release buttons on staged LOT rows.
+         linesideOpenRelease() populates the LOT / item / qty / time fields.
+    ────────────────────────────────────────────────────────────────────── -->
+    <div class="pf-modal" id="lineside-release-modal">
+      <div class="pf-modal-card" style="max-width:420px;">
+        <header class="pf-modal-header">
+          <h3>Release Staged LOT</h3>
+        </header>
+        <div class="pf-modal-body">
+          <p style="margin:0; font-size:13px; color:var(--text-secondary);">
+            Remove this LOT from lineside inventory at <strong>ASSY-FRONT Cell #3</strong>? The LOT returns to In-Process status and becomes available for re-staging.
+          </p>
+          <div style="background:var(--bg-row-alt); border:1px solid var(--border); border-radius:var(--radius-lg); padding:14px 16px; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-secondary);">LOT</span>
+              <a href="#lot/detail" id="ls-release-lot" style="font-family:monospace; font-weight:600; font-size:14px; color:var(--accent); text-decoration:none;">MESL1710862</a>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-secondary);">Item</span>
+              <span id="ls-release-item" style="font-size:13px; font-weight:500;">5G0-MACHINED-4102</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-secondary);">Quantity</span>
+              <span id="ls-release-qty" style="font-size:13px; font-weight:600;">12 pcs</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-secondary);">Staged At</span>
+              <span id="ls-release-time" style="font-size:12px; color:var(--text-secondary);">07:31 today (2 h 53 m)</span>
+            </div>
+          </div>
+        </div>
+        <footer class="pf-modal-footer">
+          <button class="pf-btn pf-btn-secondary" type="button" data-modal-close>Cancel</button>
+          <button class="pf-btn pf-btn-danger" type="button" data-modal-close>Release LOT</button>
+        </footer>
+      </div>
+    </div>
+
+    <!-- ─── MODAL: Lineside BOM Substitute Override ──────────────────────
+         FDS-06-011: Supervisor override required when scanned LOT item
+         is not found in the active BOM at this cell.
+         Requires per-action AD elevation (FDS-04-007).
+    ────────────────────────────────────────────────────────────────────── -->
+    <div class="pf-modal" id="lineside-bom-override-modal">
+      <div class="pf-modal-card" style="max-width:500px;">
+        <header class="pf-modal-header" style="background:var(--pf-status-warn-bg); border-bottom-color:var(--pf-status-warn-fg);">
+          <h3 style="color:var(--pf-status-warn-fg);">⚠ BOM Substitute Override</h3>
+        </header>
+        <div class="pf-modal-body">
+          <p style="margin:0; font-size:13px; color:var(--text-secondary);">
+            The scanned LOT carries an item that is not in the active BOM for this cell. Staging it requires supervisor authorization and will be logged as a substitute event (FDS-06-011).
+          </p>
+
+          <!-- Mismatch summary -->
+          <div style="background:var(--bg-row-alt); border:1px solid var(--border); border-radius:var(--radius-lg); padding:14px 16px; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-secondary);">Scanned LOT</span>
+              <span style="font-family:monospace; font-weight:600; font-size:14px;">MESL1710099</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-secondary);">LOT Item</span>
+              <span style="font-weight:600; color:var(--pf-status-warn-fg);">SLV-SEALER-ALT</span>
+            </div>
+            <div style="height:1px; background:var(--border);"></div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-secondary);">BOM Requires</span>
+              <span style="font-weight:600;">SLV-GASKET-5G0</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-secondary);">Cell</span>
+              <span>ASSY-FRONT Cell #3</span>
+            </div>
+          </div>
+
+          <!-- Quantity -->
+          <div class="pf-field">
+            <label class="pf-field-label">Quantity to Stage (pcs)</label>
+            <input class="pf-field-input" type="number" value="100" min="1" />
+          </div>
+
+          <!-- Override reason -->
+          <div class="pf-field">
+            <label class="pf-field-label">Override Reason</label>
+            <input class="pf-field-input" type="text" placeholder="Required — explain why this substitute is acceptable" />
+            <span class="pf-field-help">Recorded in the QualitySample event. Will be visible to quality review.</span>
+          </div>
+
+          <!-- Supervisor elevation -->
+          <div style="display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--pf-status-warn-bg); border:1px solid var(--pf-status-warn-fg); border-radius:var(--radius);">
+            <span style="font-size:18px;">🔐</span>
+            <div style="flex:1; font-size:12px; color:var(--pf-status-warn-fg);">
+              <strong>Elevation required.</strong> A supervisor must authenticate to approve this override.
+              No sticky session — the badge applies only to this action.
+            </div>
+            <button class="pf-btn pf-btn-secondary" style="font-size:12px; white-space:nowrap;"
+                    onclick="showModal('elevation-modal');">
+              Sign In →
+            </button>
+          </div>
+
+        </div>
+        <footer class="pf-modal-footer">
+          <button class="pf-btn pf-btn-secondary" type="button" data-modal-close>Cancel</button>
+          <button class="pf-btn pf-btn-primary" type="button" data-modal-close>Override &amp; Stage</button>
+        </footer>
+      </div>
+    </div>
 
 
     <!-- ─── TERMINAL VIEW: SORT CAGE WORKFLOW (Phase 7) ──────────── -->
@@ -2024,16 +2499,15 @@
         <span class="pf-paused-indicator">
           <span>⏸</span><span>Paused</span><span class="pf-paused-indicator-count">0</span>
         </span>
+        <div class="pf-terminal-cell-context" style="width:100%;">
+          <span class="pf-cell-context-label">Active Location</span>
+          <span class="pf-cell-context-value">Receiving Dock A</span>
+          <button class="pf-btn pf-btn-secondary" type="button">Change (scan or pick)</button>
+          <span style="flex:1"></span>
+          <span class="pf-kpi-sub">Items received here flow to Lineside Cells via subsequent Movement Scan.</span>
+        </div>
       </header>
 
-      <!-- Cell Context Selector (Shared terminal — Receiving Area) -->
-      <div class="pf-terminal-cell-context">
-        <span class="pf-cell-context-label">Active Location</span>
-        <span class="pf-cell-context-value">Receiving Dock A</span>
-        <button class="pf-btn pf-btn-secondary" type="button">Change (scan or pick)</button>
-        <span style="flex:1"></span>
-        <span class="pf-kpi-sub">Items received here flow to Lineside Cells via subsequent Movement Scan.</span>
-      </div>
 
       <!-- Two-column: receive form + recent log -->
       <div style="display:grid; grid-template-columns: 1fr 360px; gap: var(--pf-content-pad);">
@@ -2165,16 +2639,15 @@
         <span class="pf-paused-indicator">
           <span>⏸</span><span>Paused</span><span class="pf-paused-indicator-count">0</span>
         </span>
+        <div class="pf-terminal-cell-context" style="width:100%;">
+          <span class="pf-cell-context-label">Active Location</span>
+          <span class="pf-cell-context-value">Shipping Dock A</span>
+          <button class="pf-btn pf-btn-secondary" type="button">Change (scan or pick)</button>
+          <span style="flex:1"></span>
+          <span class="pf-kpi-sub">Loaded containers move <code>CurrentLocationId</code> → Shipping Dock; audit `ContainerShipped`.</span>
+        </div>
       </header>
 
-      <!-- Cell Context Selector -->
-      <div class="pf-terminal-cell-context">
-        <span class="pf-cell-context-label">Active Location</span>
-        <span class="pf-cell-context-value">Shipping Dock A</span>
-        <button class="pf-btn pf-btn-secondary" type="button">Change (scan or pick)</button>
-        <span style="flex:1"></span>
-        <span class="pf-kpi-sub">Loaded containers move <code>CurrentLocationId</code> → Shipping Dock; audit `ContainerShipped`.</span>
-      </div>
 
       <!-- Two-column: Active Manifest (scan + per-scan results) + Today's Loaded log -->
       <div style="display:grid; grid-template-columns: 1fr 360px; gap: var(--pf-content-pad);">
@@ -2375,16 +2848,15 @@
         <span class="pf-paused-indicator" title="Open paused LOTs at this Cell">
           <span>⏸</span><span>Paused</span><span class="pf-paused-indicator-count">1</span>
         </span>
+        <div class="pf-terminal-cell-context" style="width:100%;">
+          <span class="pf-cell-context-label">Active Cell</span>
+          <span class="pf-cell-context-value">Trim Cell 3</span>
+          <button class="pf-btn pf-btn-secondary" type="button">Change (scan or pick)</button>
+          <span style="flex:1"></span>
+          <span class="pf-kpi-sub">Trim is yield loss only — LOT keeps its cast-part identity through Trim OUT.</span>
+        </div>
       </header>
 
-      <!-- Cell context (Shared terminal) -->
-      <div class="pf-terminal-cell-context">
-        <span class="pf-cell-context-label">Active Cell</span>
-        <span class="pf-cell-context-value">Trim Cell 3</span>
-        <button class="pf-btn pf-btn-secondary" type="button">Change (scan or pick)</button>
-        <span style="flex:1"></span>
-        <span class="pf-kpi-sub">Trim is yield loss only — LOT keeps its cast-part identity through Trim OUT.</span>
-      </div>
 
       <!-- State stripe (mockup-demo cycler) -->
       <div class="pf-terminal-cell-context" style="background: rgba(99, 102, 241, 0.08); border-color: rgba(99, 102, 241, 0.35);">
@@ -2438,59 +2910,59 @@
         </div>
 
         <div class="pf-panel-header" style="border-top: 1px solid var(--border); padding-top: 14px; margin-top: 6px;">
-          <h3>Trim Shop Area-side Storage · 5 LOTs awaiting</h3>
+          <h3>Lineside Inventory · 5 LOTs awaiting</h3>
           <span class="pf-kpi-sub">Auto-arrived from Die Cast OUT · <code>Lot.LocationId = Trim Shop Area</code> (no Cell yet)</span>
         </div>
 
         <div class="pf-queue pf-repeater-scroll" id="trim-storage-queue" style="max-height: 260px;">
-          <div class="pf-queue-row" data-trim-pick-lot="MESL1710935">
+          <div class="pf-queue-row" data-trim-pick-lot="MESL1710935" style="align-items:flex-start; padding-top:14px; padding-bottom:14px;">
             <div style="display:flex; flex-direction:column; gap:2px;">
               <span class="pf-queue-position">Position 1 · oldest · arrived 08:45</span>
               <span class="pf-queue-name">MESL1710935</span>
-              <span class="pf-queue-detail">5G0-TRIM-4102 · 48 pcs · from Press 7 · DC-042 / Cavity A</span>
+              <span class="pf-queue-detail" style="white-space:normal;">5G0-TRIM-4102 · 48 pcs · from Press 7 · DC-042 / Cavity A</span>
             </div>
             <span class="pf-pill pf-pill-good">Good</span>
-            <span class="pf-kpi-sub">2.1 hrs in storage</span>
+            <span class="pf-kpi-sub">2.1 hrs lineside</span>
             <button class="pf-btn pf-btn-primary" type="button">Pick → IN</button>
           </div>
-          <div class="pf-queue-row" data-trim-pick-lot="MESL1710936">
+          <div class="pf-queue-row" data-trim-pick-lot="MESL1710936" style="align-items:flex-start; padding-top:14px; padding-bottom:14px;">
             <div style="display:flex; flex-direction:column; gap:2px;">
               <span class="pf-queue-position">Position 2 · arrived 08:47</span>
               <span class="pf-queue-name">MESL1710936</span>
-              <span class="pf-queue-detail">5G0-TRIM-4102 · 48 pcs · from Press 7 · DC-042 / Cavity B</span>
+              <span class="pf-queue-detail" style="white-space:normal;">5G0-TRIM-4102 · 48 pcs · from Press 7 · DC-042 / Cavity B</span>
             </div>
             <span class="pf-pill pf-pill-good">Good</span>
-            <span class="pf-kpi-sub">2.1 hrs in storage</span>
+            <span class="pf-kpi-sub">2.1 hrs lineside</span>
             <button class="pf-btn pf-btn-secondary" type="button">Pick → IN</button>
           </div>
-          <div class="pf-queue-row" data-trim-pick-lot="MESL1710942">
+          <div class="pf-queue-row" data-trim-pick-lot="MESL1710942" style="align-items:flex-start; padding-top:14px; padding-bottom:14px;">
             <div style="display:flex; flex-direction:column; gap:2px;">
               <span class="pf-queue-position">Position 3 · arrived 09:02</span>
               <span class="pf-queue-name">MESL1710942</span>
-              <span class="pf-queue-detail">5G0-TRIM-4102 · 48 pcs · from Press 7 · DC-042 / Cavity A</span>
+              <span class="pf-queue-detail" style="white-space:normal;">5G0-TRIM-4102 · 48 pcs · from Press 7 · DC-042 / Cavity A</span>
             </div>
             <span class="pf-pill pf-pill-good">Good</span>
-            <span class="pf-kpi-sub">1.8 hrs in storage</span>
+            <span class="pf-kpi-sub">1.8 hrs lineside</span>
             <button class="pf-btn pf-btn-secondary" type="button">Pick → IN</button>
           </div>
-          <div class="pf-queue-row" data-trim-pick-lot="MESL1710948">
+          <div class="pf-queue-row" data-trim-pick-lot="MESL1710948" style="align-items:flex-start; padding-top:14px; padding-bottom:14px;">
             <div style="display:flex; flex-direction:column; gap:2px;">
               <span class="pf-queue-position">Position 4 · arrived 09:18</span>
               <span class="pf-queue-name">MESL1710948</span>
-              <span class="pf-queue-detail">5G0-RC-4102 · 47 pcs · from Press 5 · DC-031 / Cavity A · 1 reject upstream</span>
+              <span class="pf-queue-detail" style="white-space:normal;">5G0-RC-4102 · 47 pcs · from Press 5 · DC-031 / Cavity A · 1 reject upstream</span>
             </div>
             <span class="pf-pill pf-pill-good">Good</span>
-            <span class="pf-kpi-sub">1.6 hrs in storage</span>
+            <span class="pf-kpi-sub">1.6 hrs lineside</span>
             <button class="pf-btn pf-btn-secondary" type="button">Pick → IN</button>
           </div>
-          <div class="pf-queue-row" data-trim-pick-lot="MESL1710951">
+          <div class="pf-queue-row" data-trim-pick-lot="MESL1710951" style="align-items:flex-start; padding-top:14px; padding-bottom:14px;">
             <div style="display:flex; flex-direction:column; gap:2px;">
               <span class="pf-queue-position">Position 5 · arrived 09:42</span>
               <span class="pf-queue-name">MESL1710951</span>
-              <span class="pf-queue-detail">5G0-RC-4102 · 48 pcs · from Press 5 · DC-031 / Cavity B</span>
+              <span class="pf-queue-detail" style="white-space:normal;">5G0-RC-4102 · 48 pcs · from Press 5 · DC-031 / Cavity B</span>
             </div>
             <span class="pf-pill pf-pill-good">Good</span>
-            <span class="pf-kpi-sub">1.2 hrs in storage</span>
+            <span class="pf-kpi-sub">1.2 hrs lineside</span>
             <button class="pf-btn pf-btn-secondary" type="button">Pick → IN</button>
           </div>
         </div>
@@ -3554,6 +4026,84 @@
     });
     renderCavityPreview(matched);
   });
+
+  // ─── Lineside Inventory interactions ─────────────────────────────
+
+  // Open the scan modal for a specific component item.
+  // Populates item context, resets to pre-scan state.
+  window.linesideOpenScan = function(itemCode, itemName, defaultQty, minQty, maxQty) {
+    document.getElementById('ls-modal-item-code').textContent = itemCode;
+    document.getElementById('ls-modal-default').textContent = defaultQty;
+    document.getElementById('ls-modal-min').textContent = minQty;
+    document.getElementById('ls-modal-max').textContent = maxQty;
+    document.getElementById('ls-scan-qty').value = defaultQty;
+    document.getElementById('ls-ok-item').textContent = itemCode;
+    document.getElementById('ls-mis-expected').textContent = itemCode;
+    document.getElementById('ls-scan-barcode').value = '';
+    linesideScanState('pre');
+    showModal('lineside-scan-modal');
+  };
+
+  // Switch the scan modal between its three display states.
+  window.linesideScanState = function(state) {
+    document.getElementById('ls-scan-pre').style.display      = state === 'pre'      ? '' : 'none';
+    document.getElementById('ls-scan-ok').style.display       = state === 'ok'       ? '' : 'none';
+    document.getElementById('ls-scan-mismatch').style.display = state === 'mismatch' ? '' : 'none';
+    document.getElementById('ls-scan-confirm').style.display  = state === 'ok'       ? '' : 'none';
+  };
+
+  // Simulate validation when user types in the barcode field (mockup only).
+  window.linesideSimulateScan = function(value) {
+    const v = (value || '').trim().toUpperCase();
+    if (!v) { linesideScanState('pre'); return; }
+    // Anything starting with 'BAD' simulates a BOM mismatch for demo.
+    if (v.startsWith('BAD') || v === 'MISMATCH') {
+      document.getElementById('ls-mis-lot').textContent    = v || 'MESL1710099';
+      document.getElementById('ls-mis-actual').textContent  = 'SLV-SEALER-ALT';
+      document.getElementById('ls-mis-actual2').textContent = 'SLV-SEALER-ALT';
+      linesideScanState('mismatch');
+    } else if (v.length >= 4) {
+      const fakeLot = v.startsWith('MESL') ? v : 'MESL' + v.padStart(7, '0');
+      document.getElementById('ls-ok-lot').textContent = fakeLot;
+      document.getElementById('ls-ok-qty').textContent = document.getElementById('ls-scan-qty').value + ' pcs';
+      linesideScanState('ok');
+    }
+  };
+
+  // Open the release modal and populate it with the LOT's details.
+  window.linesideOpenRelease = function(lotId, itemCode, qty, stagedAt) {
+    document.getElementById('ls-release-lot').textContent  = lotId;
+    document.getElementById('ls-release-lot').href         = '#lot/detail';
+    document.getElementById('ls-release-item').textContent = itemCode;
+    document.getElementById('ls-release-qty').textContent  = qty;
+    document.getElementById('ls-release-time').textContent = stagedAt;
+    showModal('lineside-release-modal');
+  };
+
+  // Filter component panels by status.
+  // data-ls-status="ok" | "low" | "empty" on each .pf-panel
+  window.linesideFilter = function(mode) {
+    const filterIds = ['ls-filter-all', 'ls-filter-attention', 'ls-filter-ok'];
+    filterIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.style.background = 'transparent';
+      el.style.color = 'var(--text-secondary)';
+      el.style.border = '1px solid var(--border)';
+    });
+    const active = document.getElementById(
+      mode === 'all' ? 'ls-filter-all' : mode === 'attention' ? 'ls-filter-attention' : 'ls-filter-ok'
+    );
+    if (active) { active.style.background = 'var(--accent)'; active.style.color = '#fff'; active.style.border = 'none'; }
+
+    document.querySelectorAll('[data-route="terminal/lineside-inventory"] [data-ls-status]').forEach(panel => {
+      const status = panel.dataset.lsStatus;
+      let visible = true;
+      if (mode === 'attention') visible = (status === 'low' || status === 'empty');
+      if (mode === 'ok')        visible = (status === 'ok');
+      panel.style.display = visible ? '' : 'none';
+    });
+  };
 
   // ─── Demo helpers (mockup-only) ───────────────────────────────────
   // Press B to toggle the print-failure banner; Press I to fire the idle modal.

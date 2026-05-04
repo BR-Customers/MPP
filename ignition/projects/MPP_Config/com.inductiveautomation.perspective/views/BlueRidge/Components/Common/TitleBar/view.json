@@ -1,0 +1,151 @@
+{
+  "custom": {},
+  "params": {
+    "breadcrumbCategory": "Plant",
+    "breadcrumbItem": "Plant Hierarchy",
+    "pageTitle": "Plant Hierarchy",
+    "primaryActionLabel": ""
+  },
+  "propConfig": {},
+  "props": {
+    "defaultSize": { "height": 52, "width": 1024 }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": { "name": "BreadcrumbCategory" },
+                "position": {},
+                "propConfig": {
+                  "props.text": {
+                    "binding": { "config": { "paramName": "breadcrumbCategory" }, "type": "param" }
+                  }
+                },
+                "props": {
+                  "text": "Plant",
+                  "style": { "color": "#888888", "fontSize": "12px" }
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": { "name": "BreadcrumbSep" },
+                "position": {},
+                "propConfig": {},
+                "props": {
+                  "text": "\u203A",
+                  "style": { "color": "#d4d4d4", "fontSize": "12px" }
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": { "name": "BreadcrumbItem" },
+                "position": {},
+                "propConfig": {
+                  "props.text": {
+                    "binding": { "config": { "paramName": "breadcrumbItem" }, "type": "param" }
+                  }
+                },
+                "props": {
+                  "text": "Plant Hierarchy",
+                  "style": { "color": "#1a1a1a", "fontSize": "12px", "fontWeight": "500" }
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": { "name": "Breadcrumb" },
+            "position": {},
+            "propConfig": {},
+            "props": {
+              "alignItems": "center",
+              "direction": "row",
+              "style": { "gap": "6px" }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": { "name": "PageTitle" },
+            "position": {},
+            "propConfig": {
+              "props.text": {
+                "binding": { "config": { "paramName": "pageTitle" }, "type": "param" }
+              }
+            },
+            "props": {
+              "text": "Plant Hierarchy",
+              "style": { "color": "#1a1a1a", "fontSize": "15px", "fontWeight": "600" }
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": { "name": "TitleLeft" },
+        "position": {},
+        "propConfig": {},
+        "props": {
+          "direction": "column",
+          "style": { "gap": "2px" }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [],
+        "meta": { "name": "Spacer" },
+        "position": { "grow": 1 },
+        "propConfig": {},
+        "props": { "style": {} },
+        "type": "ia.container.flex"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": { "script": "# Primary action — wire up in Designer per screen" },
+              "type": "script"
+            }
+          }
+        },
+        "meta": { "name": "PrimaryAction" },
+        "position": {},
+        "propConfig": {
+          "props.text": {
+            "binding": { "config": { "paramName": "primaryActionLabel" }, "type": "param" }
+          },
+          "props.visible": {
+            "binding": {
+              "config": { "expression": "{view.params.primaryActionLabel} != ''" },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "text": "+ Add",
+          "style": {
+            "backgroundColor": "#1976d2",
+            "border": "1px solid #1976d2",
+            "borderRadius": "4px",
+            "color": "#ffffff",
+            "fontSize": "12px",
+            "fontWeight": "500",
+            "padding": "5px 12px"
+          }
+        },
+        "type": "ia.input.button"
+      }
+    ],
+    "meta": { "name": "root" },
+    "propConfig": {},
+    "props": {
+      "alignItems": "center",
+      "direction": "row",
+      "style": {
+        "backgroundColor": "#ffffff",
+        "borderBottom": "1px solid #d4d4d4",
+        "gap": "10px",
+        "padding": "10px 16px 8px 16px"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

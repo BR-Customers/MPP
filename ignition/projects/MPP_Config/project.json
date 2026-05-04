@@ -1,0 +1,7 @@
+{
+  "title": "MPP Configuration Tool",
+  "description": "Madison Precision Products MES Configuration Tool",
+  "enabled": true,
+  "inheritable": false,
+  "parent": ""
+}

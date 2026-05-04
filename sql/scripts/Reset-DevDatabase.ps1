@@ -32,8 +32,16 @@
 [CmdletBinding()]
 param(
     [string]$ServerInstance = "localhost",
-    [string]$DatabaseName  = "MPP_MES_Dev"
+    [string]$DatabaseName  = "MPP_MES_Dev",
+    [string]$Username      = "",
+    [string]$Password      = ""
 )
+
+# Build SQL auth args if credentials were supplied
+$AuthArgs = @()
+if ($Username -ne "") {
+    $AuthArgs = @("-U", $Username, "-P", $Password)
+}
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
@@ -54,7 +62,7 @@ function Invoke-SqlFile {
     $fileName = Split-Path -Leaf $FilePath
     Write-Host "  Running: $fileName" -ForegroundColor DarkGray
 
-    $output = & sqlcmd -S $ServerInstance -d $Database -i $FilePath -b -I -C 2>&1
+    $output = & sqlcmd -S $ServerInstance @AuthArgs -d $Database -i $FilePath -b -I -C 2>&1
     if ($LASTEXITCODE -ne 0) {
         Write-Host "  FAILED: $fileName" -ForegroundColor Red
         $output | ForEach-Object { Write-Host "    $_" -ForegroundColor Red }
@@ -68,7 +76,7 @@ function Invoke-Sql {
         [string]$Query,
         [string]$Database = "master"
     )
-    $output = & sqlcmd -S $ServerInstance -d $Database -Q $Query -b -I -C 2>&1
+    $output = & sqlcmd -S $ServerInstance @AuthArgs -d $Database -Q $Query -b -I -C 2>&1
     if ($LASTEXITCODE -ne 0) {
         $output | ForEach-Object { Write-Host "    $_" -ForegroundColor Red }
         throw "sqlcmd failed (exit code $LASTEXITCODE)"
@@ -83,7 +91,7 @@ function Invoke-SqlQuery {
         [string]$Database = $DatabaseName
     )
     # -h -1 suppresses headers, -W trims whitespace
-    $output = & sqlcmd -S $ServerInstance -d $Database -Q $Query -b -I -C -W -s "|" 2>&1
+    $output = & sqlcmd -S $ServerInstance @AuthArgs -d $Database -Q $Query -b -I -C -W -s "|" 2>&1
     if ($LASTEXITCODE -ne 0) {
         throw "sqlcmd query failed (exit code $LASTEXITCODE)"
     }
@@ -134,9 +142,17 @@ END
 "@
 
 # Database-level: map the login and grant owner (wiped by DROP DATABASE).
+# Sysadmin logins are auto-mapped to dbo — skip CREATE USER if already mapped.
 Invoke-Sql -Database $DatabaseName -Query @"
-CREATE USER [ignition] FOR LOGIN [ignition];
-ALTER ROLE db_owner ADD MEMBER [ignition];
+IF NOT EXISTS (
+    SELECT 1 FROM sys.database_principals dp
+    JOIN sys.server_principals sp ON dp.sid = sp.sid
+    WHERE sp.name = N'ignition'
+)
+BEGIN
+    CREATE USER [ignition] FOR LOGIN [ignition];
+    ALTER ROLE db_owner ADD MEMBER [ignition];
+END
 "@
 
 # ============================================================
@@ -216,10 +232,10 @@ $migrationResult | ForEach-Object { Write-Host ('  ' + $_) }
 Write-Host ""
 
 # Show deployed procs
-$procResult = & sqlcmd -S $ServerInstance -d $DatabaseName -Q "SELECT COUNT(*) FROM sys.procedures WHERE schema_id != SCHEMA_ID('dbo');" -h -1 -W -b -C 2>&1
+$procResult = & sqlcmd -S $ServerInstance @AuthArgs -d $DatabaseName -Q "SELECT COUNT(*) FROM sys.procedures WHERE schema_id != SCHEMA_ID('dbo');" -h -1 -W -b -C 2>&1
 Write-Host "Stored procedures deployed: $($procResult[0].Trim())" -ForegroundColor Green
 
 # Show table count
-$tableResult = & sqlcmd -S $ServerInstance -d $DatabaseName -Q "SELECT COUNT(*) FROM sys.tables;" -h -1 -W -b -C 2>&1
+$tableResult = & sqlcmd -S $ServerInstance @AuthArgs -d $DatabaseName -Q "SELECT COUNT(*) FROM sys.tables;" -h -1 -W -b -C 2>&1
 Write-Host "Tables created: $($tableResult[0].Trim())" -ForegroundColor Green
 Write-Host ""
