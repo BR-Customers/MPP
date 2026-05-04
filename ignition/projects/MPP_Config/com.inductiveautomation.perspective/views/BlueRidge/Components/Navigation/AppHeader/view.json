@@ -1,0 +1,157 @@
+{
+  "custom": {},
+  "params": {
+    "title": "Configuration Tool",
+    "userName": "J. Potgieter",
+    "userInitials": "JP"
+  },
+  "propConfig": {},
+  "props": {
+    "defaultSize": { "height": 42, "width": 1024 }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": { "name": "Logo" },
+        "position": {},
+        "propConfig": {},
+        "props": {
+          "text": "MPP",
+          "style": {
+            "color": "#1976d2",
+            "fontSize": "16px",
+            "fontWeight": "700",
+            "letterSpacing": "-0.5px",
+            "whiteSpace": "nowrap"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "children": [],
+        "meta": { "name": "HeaderDivider" },
+        "position": {},
+        "propConfig": {},
+        "props": {
+          "style": {
+            "backgroundColor": "#d4d4d4",
+            "flexShrink": "0",
+            "height": "20px",
+            "minWidth": "1px",
+            "width": "1px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "meta": { "name": "ContextTitle" },
+        "position": {},
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": { "paramName": "title" },
+              "type": "param"
+            }
+          }
+        },
+        "props": {
+          "text": "Configuration Tool",
+          "style": {
+            "color": "#888888",
+            "fontSize": "13px",
+            "fontWeight": "400"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "children": [],
+        "meta": { "name": "Spacer" },
+        "position": { "grow": 1 },
+        "propConfig": {},
+        "props": { "style": {} },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": { "name": "UserAvatar" },
+            "position": {},
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": { "paramName": "userInitials" },
+                  "type": "param"
+                }
+              }
+            },
+            "props": {
+              "text": "JP",
+              "style": {
+                "alignItems": "center",
+                "backgroundColor": "#1976d2",
+                "borderRadius": "50%",
+                "color": "#ffffff",
+                "display": "flex",
+                "flexShrink": "0",
+                "fontSize": "11px",
+                "fontWeight": "700",
+                "height": "28px",
+                "justifyContent": "center",
+                "lineHeight": "28px",
+                "textAlign": "center",
+                "width": "28px"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": { "name": "UserName" },
+            "position": {},
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": { "paramName": "userName" },
+                  "type": "param"
+                }
+              }
+            },
+            "props": {
+              "text": "J. Potgieter",
+              "style": {
+                "color": "#555555",
+                "fontSize": "12px"
+              }
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": { "name": "HeaderRight" },
+        "position": {},
+        "propConfig": {},
+        "props": {
+          "alignItems": "center",
+          "direction": "row",
+          "style": { "gap": "10px" }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": { "name": "root" },
+    "propConfig": {},
+    "props": {
+      "alignItems": "center",
+      "direction": "row",
+      "style": {
+        "backgroundColor": "#ffffff",
+        "borderBottom": "1px solid #d4d4d4",
+        "boxShadow": "0 1px 4px rgba(0,0,0,0.12)",
+        "gap": "10px",
+        "height": "42px",
+        "minHeight": "42px",
+        "padding": "0 12px"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

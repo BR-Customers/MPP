@@ -1,0 +1,47 @@
+{
+  "custom": {},
+  "params": {},
+  "propConfig": {},
+  "props": {
+    "defaultSize": {
+      "height": 768,
+      "width": 1024
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "Label"
+        },
+        "position": {
+          "height": 50,
+          "width": 400,
+          "x": 312,
+          "y": 300
+        },
+        "propConfig": {},
+        "props": {
+          "style": {
+            "color": "#333333",
+            "fontSize": "24px",
+            "fontWeight": "bold",
+            "textAlign": "center"
+          },
+          "text": "MPP Configuration Tool"
+        },
+        "type": "ia.display.label"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "propConfig": {},
+    "props": {
+      "style": {
+        "backgroundColor": "#f0f0f0"
+      }
+    },
+    "type": "ia.container.coord"
+  }
+}

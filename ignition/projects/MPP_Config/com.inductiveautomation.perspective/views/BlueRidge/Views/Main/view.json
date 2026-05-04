@@ -1,0 +1,96 @@
+{
+  "custom": {},
+  "params": {},
+  "propConfig": {},
+  "props": {
+    "defaultSize": { "height": 768, "width": 1024 }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": { "name": "AppHeader" },
+        "position": {},
+        "propConfig": {},
+        "props": {
+          "params": {
+            "title": "Configuration Tool",
+            "userName": "J. Potgieter",
+            "userInitials": "JP"
+          },
+          "style": { "flexShrink": "0", "height": "42px", "width": "100%" },
+          "viewPath": "BlueRidge/Components/Navigation/AppHeader"
+        },
+        "type": "ia.container.embeddedview"
+      },
+      {
+        "children": [
+          {
+            "meta": { "name": "RailNav" },
+            "position": {},
+            "propConfig": {},
+            "props": {
+              "params": {},
+              "style": { "flexShrink": "0", "height": "100%", "width": "52px" },
+              "viewPath": "BlueRidge/Components/Navigation/RailNav"
+            },
+            "type": "ia.container.embeddedview"
+          },
+          {
+            "meta": { "name": "NavPanel" },
+            "position": {},
+            "propConfig": {
+              "props.visible": {
+                "binding": {
+                  "config": { "expression": "{session.custom.navPanelOpen}" },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "params": {},
+              "style": { "flexShrink": "0", "height": "100%", "width": "200px" },
+              "viewPath": "BlueRidge/Components/Navigation/NavPanel"
+            },
+            "type": "ia.container.embeddedview"
+          },
+          {
+            "meta": { "name": "ContentArea" },
+            "position": { "grow": 1 },
+            "propConfig": {
+              "props.viewPath": {
+                "binding": {
+                  "config": { "expression": "{session.custom.activeScreen}" },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": { "height": "100%", "overflow": "hidden" },
+              "viewPath": "BlueRidge/Views/Landing"
+            },
+            "type": "ia.container.embeddedview"
+          }
+        ],
+        "meta": { "name": "AppBody" },
+        "position": { "grow": 1 },
+        "propConfig": {},
+        "props": {
+          "direction": "row",
+          "style": { "overflow": "hidden" }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": { "name": "root" },
+    "propConfig": {},
+    "props": {
+      "direction": "column",
+      "style": {
+        "height": "100%",
+        "overflow": "hidden",
+        "width": "100%"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

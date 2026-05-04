@@ -1,0 +1,337 @@
+{
+  "custom": {},
+  "params": {
+    "showAreaFilter": false,
+    "showSearchFilter": true,
+    "showReasonTypeFilter": false,
+    "showDateFilters": false,
+    "showEntityTypeFilter": false,
+    "showUserFilter": false,
+    "showProcedureFilter": false,
+    "showIncludeDeprecated": true
+  },
+  "propConfig": {},
+  "props": {
+    "defaultSize": { "height": 768, "width": 180 }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": { "name": "AreaLabel" },
+            "position": {},
+            "propConfig": {},
+            "props": {
+              "text": "Area",
+              "style": { "color": "#888888", "display": "block", "fontSize": "11px", "fontWeight": "600", "letterSpacing": "0.4px", "marginBottom": "2px", "textTransform": "uppercase" }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": { "name": "AreaDropdown" },
+            "position": {},
+            "propConfig": {},
+            "props": {
+              "options": [
+                { "label": "All Areas", "value": "" },
+                { "label": "Die Cast", "value": "die-cast" },
+                { "label": "Trim Shop", "value": "trim-shop" },
+                { "label": "Machine Shop", "value": "machine-shop" },
+                { "label": "Prod Control", "value": "prod-control" },
+                { "label": "Quality Control", "value": "quality-control" },
+                { "label": "HSP", "value": "hsp" }
+              ],
+              "style": { "height": "28px", "width": "100%" }
+            },
+            "type": "ia.input.dropdown"
+          }
+        ],
+        "meta": { "name": "AreaFilterSection" },
+        "position": {},
+        "propConfig": {
+          "props.visible": {
+            "binding": { "config": { "paramName": "showAreaFilter" }, "type": "param" }
+          }
+        },
+        "props": { "direction": "column", "style": { "gap": "2px" } },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": { "name": "ReasonTypeLabel" },
+            "position": {},
+            "propConfig": {},
+            "props": {
+              "text": "Reason Type",
+              "style": { "color": "#888888", "display": "block", "fontSize": "11px", "fontWeight": "600", "letterSpacing": "0.4px", "marginBottom": "2px", "textTransform": "uppercase" }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": { "name": "ReasonTypeDropdown" },
+            "position": {},
+            "propConfig": {},
+            "props": {
+              "options": [
+                { "label": "All Types", "value": "" },
+                { "label": "Equipment", "value": "equipment" },
+                { "label": "Mold", "value": "mold" },
+                { "label": "Quality", "value": "quality" },
+                { "label": "Setup", "value": "setup" },
+                { "label": "Miscellaneous", "value": "miscellaneous" },
+                { "label": "Unscheduled", "value": "unscheduled" }
+              ],
+              "style": { "height": "28px", "width": "100%" }
+            },
+            "type": "ia.input.dropdown"
+          }
+        ],
+        "meta": { "name": "ReasonTypeFilterSection" },
+        "position": {},
+        "propConfig": {
+          "props.visible": {
+            "binding": { "config": { "paramName": "showReasonTypeFilter" }, "type": "param" }
+          }
+        },
+        "props": { "direction": "column", "style": { "gap": "2px" } },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": { "name": "StartDateLabel" },
+            "position": {},
+            "propConfig": {},
+            "props": {
+              "text": "Start Date",
+              "style": { "color": "#888888", "display": "block", "fontSize": "11px", "fontWeight": "600", "letterSpacing": "0.4px", "marginBottom": "2px", "textTransform": "uppercase" }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": { "name": "StartDateInput" },
+            "position": {},
+            "propConfig": {},
+            "props": { "style": { "height": "28px", "width": "100%" } },
+            "type": "ia.input.date-time-picker"
+          },
+          {
+            "meta": { "name": "EndDateLabel" },
+            "position": {},
+            "propConfig": {},
+            "props": {
+              "text": "End Date",
+              "style": { "color": "#888888", "display": "block", "fontSize": "11px", "fontWeight": "600", "letterSpacing": "0.4px", "marginBottom": "2px", "marginTop": "4px", "textTransform": "uppercase" }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": { "name": "EndDateInput" },
+            "position": {},
+            "propConfig": {},
+            "props": { "style": { "height": "28px", "width": "100%" } },
+            "type": "ia.input.date-time-picker"
+          }
+        ],
+        "meta": { "name": "DateFilterSection" },
+        "position": {},
+        "propConfig": {
+          "props.visible": {
+            "binding": { "config": { "paramName": "showDateFilters" }, "type": "param" }
+          }
+        },
+        "props": { "direction": "column", "style": { "gap": "2px" } },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": { "name": "EntityTypeLabel" },
+            "position": {},
+            "propConfig": {},
+            "props": {
+              "text": "Entity Type",
+              "style": { "color": "#888888", "display": "block", "fontSize": "11px", "fontWeight": "600", "letterSpacing": "0.4px", "marginBottom": "2px", "textTransform": "uppercase" }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": { "name": "EntityTypeDropdown" },
+            "position": {},
+            "propConfig": {},
+            "props": {
+              "options": [
+                { "label": "All", "value": "" },
+                { "label": "Location", "value": "Location" },
+                { "label": "Item", "value": "Item" },
+                { "label": "Bom", "value": "Bom" },
+                { "label": "RouteTemplate", "value": "RouteTemplate" },
+                { "label": "OperationTemplate", "value": "OperationTemplate" },
+                { "label": "QualitySpec", "value": "QualitySpec" },
+                { "label": "AppUser", "value": "AppUser" }
+              ],
+              "style": { "height": "28px", "width": "100%" }
+            },
+            "type": "ia.input.dropdown"
+          }
+        ],
+        "meta": { "name": "EntityTypeFilterSection" },
+        "position": {},
+        "propConfig": {
+          "props.visible": {
+            "binding": { "config": { "paramName": "showEntityTypeFilter" }, "type": "param" }
+          }
+        },
+        "props": { "direction": "column", "style": { "gap": "2px" } },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": { "name": "UserLabel" },
+            "position": {},
+            "propConfig": {},
+            "props": {
+              "text": "User",
+              "style": { "color": "#888888", "display": "block", "fontSize": "11px", "fontWeight": "600", "letterSpacing": "0.4px", "marginBottom": "2px", "textTransform": "uppercase" }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": { "name": "UserDropdown" },
+            "position": {},
+            "propConfig": {},
+            "props": {
+              "options": [
+                { "label": "All", "value": "" },
+                { "label": "J. Potgieter", "value": "jpotgieter" },
+                { "label": "Bootstrap Admin", "value": "bootstrap" }
+              ],
+              "style": { "height": "28px", "width": "100%" }
+            },
+            "type": "ia.input.dropdown"
+          }
+        ],
+        "meta": { "name": "UserFilterSection" },
+        "position": {},
+        "propConfig": {
+          "props.visible": {
+            "binding": { "config": { "paramName": "showUserFilter" }, "type": "param" }
+          }
+        },
+        "props": { "direction": "column", "style": { "gap": "2px" } },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": { "name": "ProcedureLabel" },
+            "position": {},
+            "propConfig": {},
+            "props": {
+              "text": "Procedure",
+              "style": { "color": "#888888", "display": "block", "fontSize": "11px", "fontWeight": "600", "letterSpacing": "0.4px", "marginBottom": "2px", "textTransform": "uppercase" }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": { "name": "ProcedureDropdown" },
+            "position": {},
+            "propConfig": {},
+            "props": {
+              "options": [
+                { "label": "All Procs", "value": "" },
+                { "label": "Location_Create", "value": "Location_Create" },
+                { "label": "Item_Deprecate", "value": "Item_Deprecate" },
+                { "label": "Bom_Publish", "value": "Bom_Publish" }
+              ],
+              "style": { "height": "28px", "width": "100%" }
+            },
+            "type": "ia.input.dropdown"
+          }
+        ],
+        "meta": { "name": "ProcedureFilterSection" },
+        "position": {},
+        "propConfig": {
+          "props.visible": {
+            "binding": { "config": { "paramName": "showProcedureFilter" }, "type": "param" }
+          }
+        },
+        "props": { "direction": "column", "style": { "gap": "2px" } },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": { "name": "SearchLabel" },
+            "position": {},
+            "propConfig": {},
+            "props": {
+              "text": "Search",
+              "style": { "color": "#888888", "display": "block", "fontSize": "11px", "fontWeight": "600", "letterSpacing": "0.4px", "marginBottom": "2px", "textTransform": "uppercase" }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": { "name": "SearchInput" },
+            "position": {},
+            "propConfig": {},
+            "props": {
+              "placeholderText": "Search...",
+              "style": { "height": "28px", "width": "100%" }
+            },
+            "type": "ia.input.text-field"
+          }
+        ],
+        "meta": { "name": "SearchFilterSection" },
+        "position": {},
+        "propConfig": {
+          "props.visible": {
+            "binding": { "config": { "paramName": "showSearchFilter" }, "type": "param" }
+          }
+        },
+        "props": { "direction": "column", "style": { "gap": "2px" } },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": { "name": "IncludeDeprecatedCheckbox" },
+            "position": {},
+            "propConfig": {},
+            "props": {
+              "text": "Include deprecated",
+              "style": { "fontSize": "12px" }
+            },
+            "type": "ia.input.checkbox"
+          }
+        ],
+        "meta": { "name": "IncludeDeprecatedSection" },
+        "position": {},
+        "propConfig": {
+          "props.visible": {
+            "binding": { "config": { "paramName": "showIncludeDeprecated" }, "type": "param" }
+          }
+        },
+        "props": { "direction": "column", "style": {} },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": { "name": "root" },
+    "propConfig": {},
+    "props": {
+      "direction": "column",
+      "style": {
+        "backgroundColor": "#f7f7f7",
+        "borderRight": "1px solid #d4d4d4",
+        "gap": "8px",
+        "minWidth": "180px",
+        "padding": "10px",
+        "width": "180px"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

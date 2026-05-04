@@ -1,0 +1,47 @@
+{
+  "custom": {},
+  "params": {
+    "status": "published",
+    "text": "Published"
+  },
+  "propConfig": {},
+  "props": {
+    "defaultSize": { "height": 22, "width": 90 }
+  },
+  "root": {
+    "meta": { "name": "root" },
+    "propConfig": {
+      "props.text": {
+        "binding": { "config": { "paramName": "text" }, "type": "param" }
+      },
+      "props.style.backgroundColor": {
+        "binding": {
+          "config": {
+            "expression": "if({view.params.status} = 'published', '#e8f5e9', if({view.params.status} = 'draft', '#efebe9', if({view.params.status} = 'deprecated', '#f5f5f5', if({view.params.status} = 'type', '#ede7f6', if({view.params.status} = 'warning', '#fff3e0', '#f5f5f5')))))"
+          },
+          "type": "expr"
+        }
+      },
+      "props.style.color": {
+        "binding": {
+          "config": {
+            "expression": "if({view.params.status} = 'published', '#2e7d32', if({view.params.status} = 'draft', '#795548', if({view.params.status} = 'deprecated', '#757575', if({view.params.status} = 'type', '#5c35b3', if({view.params.status} = 'warning', '#e65100', '#888888')))))"
+          },
+          "type": "expr"
+        }
+      }
+    },
+    "props": {
+      "text": "Published",
+      "style": {
+        "borderRadius": "10px",
+        "display": "inline-flex",
+        "fontSize": "11px",
+        "fontWeight": "600",
+        "padding": "2px 7px",
+        "whiteSpace": "nowrap"
+      }
+    },
+    "type": "ia.display.label"
+  }
+}

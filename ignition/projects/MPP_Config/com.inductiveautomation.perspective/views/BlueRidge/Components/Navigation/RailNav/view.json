@@ -1,0 +1,282 @@
+{
+  "custom": {},
+  "params": {},
+  "propConfig": {},
+  "props": {
+    "defaultSize": { "height": 768, "width": 52 }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": { "name": "Icon" },
+            "position": {},
+            "propConfig": {},
+            "props": {
+              "text": "\uD83C\uDFED",
+              "style": { "color": "#cccccc", "fontSize": "18px", "lineHeight": "1", "textAlign": "center" }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": { "name": "Label" },
+            "position": {},
+            "propConfig": {},
+            "props": {
+              "text": "Plant",
+              "style": { "color": "#aaaaaa", "fontSize": "10px", "lineHeight": "1", "textAlign": "center" }
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "events": {
+          "dom": {
+            "onClick": {
+              "config": {
+                "script": "cat = 'plant'\nif self.session.custom.activeCategory == cat and self.session.custom.navPanelOpen:\n\tself.session.custom.navPanelOpen = False\n\tself.session.custom.activeCategory = ''\nelse:\n\tself.session.custom.activeCategory = cat\n\tself.session.custom.navPanelOpen = True\n\tself.session.custom.activeScreen = 'BlueRidge/Views/PlantHierarchy'"
+              },
+              "type": "script"
+            }
+          }
+        },
+        "meta": { "name": "RailItemPlant" },
+        "position": {},
+        "propConfig": {
+          "props.style.backgroundColor": {
+            "binding": {
+              "config": { "expression": "if({session.custom.activeCategory} = 'plant', 'rgba(255,255,255,0.15)', 'transparent')" },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "alignItems": "center",
+          "direction": "column",
+          "justify": "center",
+          "style": { "borderRadius": "4px", "cursor": "pointer", "gap": "3px", "height": "52px", "padding": "4px 2px", "width": "44px" }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": { "name": "Icon" },
+            "position": {},
+            "propConfig": {},
+            "props": {
+              "text": "\u2699",
+              "style": { "color": "#cccccc", "fontSize": "18px", "lineHeight": "1", "textAlign": "center" }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": { "name": "Label" },
+            "position": {},
+            "propConfig": {},
+            "props": {
+              "text": "Parts",
+              "style": { "color": "#aaaaaa", "fontSize": "10px", "lineHeight": "1", "textAlign": "center" }
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "events": {
+          "dom": {
+            "onClick": {
+              "config": {
+                "script": "cat = 'parts'\nif self.session.custom.activeCategory == cat and self.session.custom.navPanelOpen:\n\tself.session.custom.navPanelOpen = False\n\tself.session.custom.activeCategory = ''\nelse:\n\tself.session.custom.activeCategory = cat\n\tself.session.custom.navPanelOpen = True\n\tself.session.custom.activeScreen = 'BlueRidge/Views/ItemMaster'"
+              },
+              "type": "script"
+            }
+          }
+        },
+        "meta": { "name": "RailItemParts" },
+        "position": {},
+        "propConfig": {
+          "props.style.backgroundColor": {
+            "binding": {
+              "config": { "expression": "if({session.custom.activeCategory} = 'parts', 'rgba(255,255,255,0.15)', 'transparent')" },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "alignItems": "center",
+          "direction": "column",
+          "justify": "center",
+          "style": { "borderRadius": "4px", "cursor": "pointer", "gap": "3px", "height": "52px", "padding": "4px 2px", "width": "44px" }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": { "name": "Icon" },
+            "position": {},
+            "propConfig": {},
+            "props": {
+              "text": "\u2611",
+              "style": { "color": "#cccccc", "fontSize": "18px", "lineHeight": "1", "textAlign": "center" }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": { "name": "Label" },
+            "position": {},
+            "propConfig": {},
+            "props": {
+              "text": "Quality",
+              "style": { "color": "#aaaaaa", "fontSize": "10px", "lineHeight": "1", "textAlign": "center" }
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "events": {
+          "dom": {
+            "onClick": {
+              "config": {
+                "script": "cat = 'quality'\nif self.session.custom.activeCategory == cat and self.session.custom.navPanelOpen:\n\tself.session.custom.navPanelOpen = False\n\tself.session.custom.activeCategory = ''\nelse:\n\tself.session.custom.activeCategory = cat\n\tself.session.custom.navPanelOpen = True\n\tself.session.custom.activeScreen = 'BlueRidge/Views/QualitySpecs'"
+              },
+              "type": "script"
+            }
+          }
+        },
+        "meta": { "name": "RailItemQuality" },
+        "position": {},
+        "propConfig": {
+          "props.style.backgroundColor": {
+            "binding": {
+              "config": { "expression": "if({session.custom.activeCategory} = 'quality', 'rgba(255,255,255,0.15)', 'transparent')" },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "alignItems": "center",
+          "direction": "column",
+          "justify": "center",
+          "style": { "borderRadius": "4px", "cursor": "pointer", "gap": "3px", "height": "52px", "padding": "4px 2px", "width": "44px" }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": { "name": "Icon" },
+            "position": {},
+            "propConfig": {},
+            "props": {
+              "text": "\u23F0",
+              "style": { "color": "#cccccc", "fontSize": "18px", "lineHeight": "1", "textAlign": "center" }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": { "name": "Label" },
+            "position": {},
+            "propConfig": {},
+            "props": {
+              "text": "Ops",
+              "style": { "color": "#aaaaaa", "fontSize": "10px", "lineHeight": "1", "textAlign": "center" }
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "events": {
+          "dom": {
+            "onClick": {
+              "config": {
+                "script": "cat = 'operations'\nif self.session.custom.activeCategory == cat and self.session.custom.navPanelOpen:\n\tself.session.custom.navPanelOpen = False\n\tself.session.custom.activeCategory = ''\nelse:\n\tself.session.custom.activeCategory = cat\n\tself.session.custom.navPanelOpen = True\n\tself.session.custom.activeScreen = 'BlueRidge/Views/DowntimeCodes'"
+              },
+              "type": "script"
+            }
+          }
+        },
+        "meta": { "name": "RailItemOps" },
+        "position": {},
+        "propConfig": {
+          "props.style.backgroundColor": {
+            "binding": {
+              "config": { "expression": "if({session.custom.activeCategory} = 'operations', 'rgba(255,255,255,0.15)', 'transparent')" },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "alignItems": "center",
+          "direction": "column",
+          "justify": "center",
+          "style": { "borderRadius": "4px", "cursor": "pointer", "gap": "3px", "height": "52px", "padding": "4px 2px", "width": "44px" }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": { "name": "Icon" },
+            "position": {},
+            "propConfig": {},
+            "props": {
+              "text": "\uD83D\uDD27",
+              "style": { "color": "#cccccc", "fontSize": "18px", "lineHeight": "1", "textAlign": "center" }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": { "name": "Label" },
+            "position": {},
+            "propConfig": {},
+            "props": {
+              "text": "System",
+              "style": { "color": "#aaaaaa", "fontSize": "10px", "lineHeight": "1", "textAlign": "center" }
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "events": {
+          "dom": {
+            "onClick": {
+              "config": {
+                "script": "cat = 'system'\nif self.session.custom.activeCategory == cat and self.session.custom.navPanelOpen:\n\tself.session.custom.navPanelOpen = False\n\tself.session.custom.activeCategory = ''\nelse:\n\tself.session.custom.activeCategory = cat\n\tself.session.custom.navPanelOpen = True\n\tself.session.custom.activeScreen = 'BlueRidge/Views/Users'"
+              },
+              "type": "script"
+            }
+          }
+        },
+        "meta": { "name": "RailItemSystem" },
+        "position": {},
+        "propConfig": {
+          "props.style.backgroundColor": {
+            "binding": {
+              "config": { "expression": "if({session.custom.activeCategory} = 'system', 'rgba(255,255,255,0.15)', 'transparent')" },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "alignItems": "center",
+          "direction": "column",
+          "justify": "center",
+          "style": { "borderRadius": "4px", "cursor": "pointer", "gap": "3px", "height": "52px", "padding": "4px 2px", "width": "44px" }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": { "name": "root" },
+    "propConfig": {},
+    "props": {
+      "alignItems": "center",
+      "direction": "column",
+      "style": {
+        "backgroundColor": "#2c2c2c",
+        "gap": "2px",
+        "minWidth": "52px",
+        "overflow": "hidden",
+        "padding": "8px 0",
+        "width": "52px"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}
