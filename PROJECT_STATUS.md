@@ -1,6 +1,6 @@
 # MPP MES — Project Status
 
-**Last updated:** 2026-05-01
+**Last updated:** 2026-05-04
 
 This file holds the **volatile** state of the project — current doc versions, active blockers, recent change narrative, and the next-session briefing. Durable identity, document map, architecture, and conventions live in `CLAUDE.md`.
 
@@ -11,7 +11,7 @@ This file holds the **volatile** state of the project — current doc versions, 
 | Doc | Version | Rev Date | Status / Notes |
 |---|---|---|---|
 | Data Model | **v1.9m** | 2026-04-29 | Current. `Parts.OperationTemplate.RequiresSubLotSplit` added (FDS-05-009). |
-| FDS | **v0.11p** | 2026-05-01 | Current. §16 cutover-offset rule (`+10K`) + §12.6 banners-only notifications + embedded register reduced to 6 items. Revision history in `MPP_MES_FDS_CHANGELOG.docx` while pre-release. |
+| FDS | **v1.0** | 2026-05-04 | **First customer-review release.** Feedback-Welcomed callout added near front matter. In-document Revision History reset to start at v1.0; pre-release granular history (v0.1 through v0.11p) archived in `MPP_MES_FDS_CHANGELOG.docx`. From v1.0 forward, revisions are tracked in the FDS body itself. |
 | Open Issues Register | **v2.17** | 2026-05-01 | Current. **9 items closed** from Jacques's 2026-05-01 markup: OI-07, -24, -25, -27, -28, -29, -30, -31, UJ-03 → all ✅ Resolved. 6 items remain Open. |
 | Outstanding Items extract | **v2.0** | 2026-05-01 | Current. Reduced to 6 Open items per OIR v2.17. |
 | User Journeys | **v0.9** | 2026-04-29 | Current. FDS v0.11m reconciliation pass. |
@@ -152,6 +152,14 @@ Phase G capability snapshot: `Meeting_Notes/2026-04-22_Phase_G_Capabilities_Summ
 ## Recent Change Narrative
 
 A timeline of session-by-session changes. Most recent first.
+
+### 2026-05-04 — FDS v1.0 customer-review release
+
+Cut FDS v0.11p → **v1.0**, the first customer-review release. Pre-release working-session history (v0.1 through v0.11p) archived in `MPP_MES_FDS_CHANGELOG.docx`; future revisions tracked in the FDS body itself.
+
+- **Feedback-Welcomed callout** added prominently near the front matter, framing v1.0 as the critical-feedback window. Specific areas highlighted: plant-floor workflows (§5–§9), event-data capture, Honda traceability, integration touch points, scope boundary, the 6 remaining open items.
+- **In-document Revision History** reset to start at v1.0 with one consolidated entry summarising the 16 sections covered + the 6 remaining open items. Pointer block to the standalone changelog removed.
+- **`MPP_MES_FDS_CHANGELOG.md/.docx`** marked archival as of v1.0; standalone artifact retained as the historical record of design evolution but no longer appended to.
 
 ### 2026-05-01 — Outstanding Items extract + 9-item closure pass + companion FDS amendments
 

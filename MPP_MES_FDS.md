@@ -4,14 +4,37 @@
 **Project:** Madison Precision Products MES Replacement
 **Prepared By:** Blue Ridge Automation
 **Client:** Madison Precision Products, Inc. (Madison, IN)
-**Version:** 0.11p — Working Draft
-**Date:** 2026-05-01
+**Version:** 1.0 — Customer Review Release
+**Date:** 2026-05-04
+
+---
+
+## Feedback Welcomed
+
+This is the **first release of this FDS for customer review.** Critical feedback at this stage produces a better end product.
+
+Please challenge any design decision, requirement, scope tag, integration point, terminology choice, workflow assumption, or operational rule that does not match Madison Precision Products' operations or Honda's traceability expectations — and please challenge it as concretely as possible. We would rather discover a gap or wrong assumption now, in markup on a document, than six months from now in front of an operator at a workstation. The cost of rework grows steeply once SQL is built, Perspective screens are wired up, and PLC integrations are commissioned; the cost of correction during this review window is measured in document edits.
+
+Areas where critical feedback is especially valuable:
+
+- **Plant-floor workflows** (§5 LOT Lifecycle, §6 Production Execution, §7 Container & Shipping, §8 Quality & Hold, §9 Downtime) — does each scene match how operators actually work? Are the scan / dropdown / button choices right? Are the gating prompts placed where they help vs where they slow the line down?
+- **Data captured at each event** — is anything we record extraneous? Is anything we omit going to be missed later?
+- **Honda traceability** (§5, §7, §12 Reporting) — does the genealogy capture what Honda asks for in audits? Does the Global Trace Tool surface the right entities?
+- **Integration touch points** (§10 PLC/OPC, §13 External Interfaces — AIM, Macola) — are the handshake contracts, retry policies, and error-recovery flows correct?
+- **Scope boundary** — is anything we have tagged FUTURE actually MVP? Is anything we have tagged MVP actually out of scope for this engagement?
+- **Outstanding items** — six items remain Open at the end of this document. Each requires explicit input before that section closes.
+
+Comments may be returned as annotations on the Word document, an annotated PDF, or a separate written response — whichever is easiest for the reviewer. There is no wrong way to flag a concern.
 
 ---
 
 ## Revision History
 
-The detailed change log lives in **`MPP_MES_FDS_CHANGELOG.docx`** for the duration of pre-release development. The current FDS version and date are in the header above. On customer-review release the change log will be reintegrated into this document in tightened release-by-release form.
+| Version | Date | Author | Change Summary |
+|---|---|---|---|
+| 1.0 | 2026-05-04 | Blue Ridge Automation | **First release for customer review.** Consolidates all pre-release working-session edits (v0.1 through v0.11p) into a single customer-facing release. Covers all 16 sections — System Architecture, Plant Model & Location Hierarchy, Master Data, User Identity / Authentication / Elevation, LOT Lifecycle & Genealogy, Production Execution, Container Management & Shipping, Quality & Hold, Downtime Tracking, PLC/OPC Integration, Audit & Logging, Reporting, External System Interfaces, Data Migration, Deployment & Commissioning, Identifier Sequences — plus appendices (machine list, downtime codes, defect codes, OPC tag map, MIP touchpoints, FRS crosswalk, scope matrix crosswalk, paper-sheet mapping). The embedded Open Items Register at the end of this document carries the **6 items still requiring resolution** (OI-32, OI-33, OI-34, OI-35, UJ-05, UJ-19) — these gate either Arc 2 SQL build or specific design sections and need MPP customer validation or Blue Ridge architecture review before commencement. |
+
+> Granular pre-release history (v0.1 through v0.11p — every working-session edit captured) is preserved in `MPP_MES_FDS_CHANGELOG.docx` as the design-evolution record. From v1.0 forward, revisions are tracked in this in-document table.
 
 ---
 
