@@ -1,0 +1,40 @@
+# MPP MES — Icon Mapping (Material Symbols)
+# Style: outlined · Weight: 300 · Fill: outlined · Grade: -25 · Optical size: 48px
+# Locked: 2026-05-04
+#
+key,group,purpose,current_emoji,codepoint,material_symbol
+home,Navigation,"Home",⌂,U+2302,home
+forward,Navigation,"Forward / play",▶,U+25B6,play_arrow
+flow,Navigation,"Flow / next",→,U+2192,arrow_right_alt
+sort-up,Navigation,"Sort ascending",▲,U+25B2,expand_less
+sort-down,Navigation,"Sort descending",▼,U+25BC,expand_more
+check,Actions,"Confirm / success",✓,U+2713,check_circle
+close,Actions,"Close / dismiss",✕,U+2715,cancel
+reject,Actions,"Reject / fail",✗,U+2717,cancel
+pause,Actions,"Pause LOT",⏸,U+23F8,pause_circle
+search,Actions,"Search",🔍,U+1F50D,search
+lock,Actions,"Auth / lock",🔐,U+1F510,lock
+add,Actions,"Add / create",+,U+002B,add_circle
+edit,Actions,"Edit",✎,U+270E,edit
+plant,Sections,"Plant / factory",🏭,U+1F3ED,factory
+enterprise,Sections,"Enterprise (ISA-95)",🏛,U+1F3DB,account_balance
+parts,Sections,"Parts / settings",⚙,U+2699,settings
+system,Sections,"System config",🛠,U+1F6E0,tune
+item,Sections,"Item Master",📦,U+1F4E6,inventory_2
+container,Sections,"Container",📦,U+1F4E6,package_2
+list,Sections,"Operation Templates",📋,U+1F4CB,fact_check
+reports,Sections,"Reports / trends",📈,U+1F4C8,analytics
+audit,Sections,"Audit log",📜,U+1F4DC,manage_history
+tools,Sections,"Tools (config)",🛠,U+1F6E0,handyman
+maintenance,Sections,"Maintenance (FUTURE)",🔧,U+1F527,engineering
+quality,Sections,"Quality",⚖,U+2696,verified
+shipping,Sections,"Shipping",🚚,U+1F69A,local_shipping
+vision,Sections,"Vision / camera",🎥,U+1F3A5,videocam
+defects,Sections,"Defect codes",🚫,U+1F6AB,report
+schedule,Sections,"Shift schedules",📅,U+1F4C5,calendar_month
+ops,Sections,"Operations / time",⏰,U+23F0,pending_actions
+user,Sections,"Users",👤,U+1F464,group
+trim,Sections,"Trim shop",✂,U+2702,content_cut
+qr,Sections,"Barcode / scan",⊞,U+229E,qr_code_scanner
+warning,Status,"Warning",⚠,U+26A0,warning
+fire,Status,"Hot / urgent",🔥,U+1F525,local_fire_department

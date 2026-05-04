@@ -1327,3 +1327,90 @@ a {
   .matrix-mirror { background: var(--bg-row-alt); }
 }
 
+/* ============================================================================
+   Material Symbols — monochrome icon family (Outlined variant)
+   ----------------------------------------------------------------------------
+   Locked 2026-05-04 per `mockup/icons.csv`. Settings:
+     · Style:  Outlined
+     · Weight: 300
+     · Fill:   0 (outlined, not filled)
+     · Grade:  -25 (slightly thinner — high-contrast / dark-bg friendly)
+     · Optical size: 48 (designed for ~24-48 px rendering)
+
+   Usage:
+     <span class="ms">factory</span>
+     <span class="ms ms-lg ms-accent">build</span>
+     <span class="ms ms-sm ms-warning">warning</span>
+
+   Migration: replaces emoji / HTML entity glyphs across both mockups. See
+   `mockup/icons.csv` for the per-icon mapping. The same icon names are
+   reusable in Ignition Perspective via the Icon component's
+   `material/<name>` paths — no rename needed when porting.
+   ============================================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
+
+:root {
+  /* Variable-font axes — driven by `font-variation-settings` on `.ms` */
+  --ms-fill: 0;
+  --ms-wght: 300;
+  --ms-grad: -25;
+  --ms-opsz: 48;
+
+  /* Icon color tokens — semantic, theme-aware */
+  --mpp-icon-color:         var(--mpp-neutral-90);
+  --mpp-icon-color-muted:   var(--mpp-neutral-70);
+  --mpp-icon-color-accent:  var(--mpp-accent-70);
+  --mpp-icon-color-success: var(--mpp-state-good-fg);
+  --mpp-icon-color-warning: var(--mpp-state-warn-fg);
+  --mpp-icon-color-danger:  var(--mpp-state-bad-fg);
+}
+
+.ms {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: normal;
+  display: inline-block;
+  vertical-align: middle;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'liga';
+  color: var(--mpp-icon-color);
+  font-variation-settings:
+    'FILL' var(--ms-fill),
+    'wght' var(--ms-wght),
+    'GRAD' var(--ms-grad),
+    'opsz' var(--ms-opsz);
+  white-space: nowrap;
+}
+
+.ms-xs { font-size: 14px; }
+.ms-sm { font-size: 18px; }
+.ms-lg { font-size: 28px; }
+.ms-xl { font-size: 40px; }
+
+.ms-muted   { color: var(--mpp-icon-color-muted); }
+.ms-accent  { color: var(--mpp-icon-color-accent); }
+.ms-success { color: var(--mpp-icon-color-success); }
+.ms-warning { color: var(--mpp-icon-color-warning); }
+.ms-danger  { color: var(--mpp-icon-color-danger); }
+
+.ms-filled { --ms-fill: 1; }
+
+.ms-btn {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 100ms;
+}
+.ms-btn:hover { background: var(--mpp-neutral-30); }
+.ms-btn:hover .ms { color: var(--mpp-neutral-100); }
+

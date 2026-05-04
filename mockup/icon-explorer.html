@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MPP MES — Icon Explorer</title>
+
+  <!-- All three Material Symbols variants pre-loaded so style toggle is instant -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&family=Material+Symbols+Sharp:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ─── Tokens (mirror mockup/styles.css) ─────────────────────────── */
+    :root {
+      --mpp-neutral-10:  #0B1220;
+      --mpp-neutral-20:  #111A2E;
+      --mpp-neutral-30:  #172238;
+      --mpp-neutral-40:  #1F2C44;
+      --mpp-neutral-50:  #2C3A55;
+      --mpp-neutral-60:  #425270;
+      --mpp-neutral-70:  #697A98;
+      --mpp-neutral-80:  #9AA8BF;
+      --mpp-neutral-90:  #C9D2E0;
+      --mpp-neutral-100: #F0F3F8;
+
+      --mpp-accent-cyan:    #22D3EE;
+      --mpp-accent-blue:    #60A5FA;
+      --mpp-success:        #34D399;
+      --mpp-warning:        #FBBF24;
+      --mpp-danger:         #F87171;
+
+      --mpp-icon-color:     var(--mpp-neutral-90);
+      --mpp-icon-color-muted: var(--mpp-neutral-70);
+      --mpp-icon-color-accent: var(--mpp-accent-cyan);
+
+      /* Material Symbols variable axes — driven by JS */
+      --ms-fill: 0;
+      --ms-wght: 400;
+      --ms-grad: 0;
+      --ms-opsz: 24;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--mpp-neutral-10);
+      color: var(--mpp-neutral-90);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    body.bg-light {
+      background: var(--mpp-neutral-100);
+      color: var(--mpp-neutral-30);
+    }
+    body.bg-light .panel { background: #FFFFFF; border-color: #E2E8F0; }
+    body.bg-light .controls { background: #FFFFFF; border-bottom-color: #E2E8F0; }
+    body.bg-light .icon-cell { background: #F8FAFC; border-color: #E2E8F0; }
+    body.bg-light .icon-cell.chosen { background: rgba(34, 211, 238, 0.10); border-color: var(--mpp-accent-cyan); }
+    body.bg-light .icon-name { color: var(--mpp-neutral-50); }
+    body.bg-light h2, body.bg-light h3 { color: var(--mpp-neutral-20); }
+    body.bg-light .muted { color: var(--mpp-neutral-60); }
+    body.bg-light .emoji-cell { background: #F1F5F9; border-color: #E2E8F0; }
+
+    /* ─── Material Symbols base ──────────────────────────────────────── */
+    .ms {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 24px;
+      line-height: 1;
+      letter-spacing: normal;
+      display: inline-block;
+      vertical-align: middle;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      font-feature-settings: 'liga';
+      color: var(--mpp-icon-color);
+      font-variation-settings:
+        'FILL' var(--ms-fill),
+        'wght' var(--ms-wght),
+        'GRAD' var(--ms-grad),
+        'opsz' var(--ms-opsz);
+    }
+    body.style-rounded .ms { font-family: 'Material Symbols Rounded'; }
+    body.style-sharp   .ms { font-family: 'Material Symbols Sharp'; }
+
+    .ms-sm { font-size: 18px; }
+    .ms-lg { font-size: 32px; }
+    .ms-xl { font-size: 48px; }
+    .ms-muted { color: var(--mpp-icon-color-muted); }
+    .ms-accent { color: var(--mpp-icon-color-accent); }
+    .ms-success { color: var(--mpp-success); }
+    .ms-warning { color: var(--mpp-warning); }
+    .ms-danger { color: var(--mpp-danger); }
+
+    /* ─── Layout ─────────────────────────────────────────────────────── */
+    .controls {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--mpp-neutral-20);
+      border-bottom: 1px solid var(--mpp-neutral-40);
+      padding: 12px 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .control-group label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--mpp-neutral-70);
+    }
+    .seg {
+      display: inline-flex;
+      border: 1px solid var(--mpp-neutral-50);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .seg button {
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 500;
+      background: transparent;
+      color: var(--mpp-neutral-80);
+      border: none;
+      border-right: 1px solid var(--mpp-neutral-50);
+      cursor: pointer;
+      transition: background 100ms;
+    }
+    .seg button:last-child { border-right: none; }
+    .seg button:hover { background: var(--mpp-neutral-30); color: var(--mpp-neutral-100); }
+    .seg button.active {
+      background: var(--mpp-accent-cyan);
+      color: var(--mpp-neutral-10);
+    }
+    body.bg-light .seg { border-color: #CBD5E1; }
+    body.bg-light .seg button { color: var(--mpp-neutral-50); border-right-color: #CBD5E1; }
+    body.bg-light .seg button:hover { background: #F1F5F9; color: var(--mpp-neutral-20); }
+    body.bg-light .seg button.active { background: var(--mpp-accent-cyan); color: var(--mpp-neutral-10); }
+
+    input[type="color"] {
+      width: 36px;
+      height: 24px;
+      padding: 0;
+      border: 1px solid var(--mpp-neutral-50);
+      border-radius: 4px;
+      cursor: pointer;
+      background: transparent;
+    }
+
+    main {
+      padding: 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    section { margin-bottom: 48px; }
+    h2 {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0 0 4px 0;
+      color: var(--mpp-neutral-100);
+      letter-spacing: -0.01em;
+    }
+    h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin: 24px 0 12px 0;
+      color: var(--mpp-neutral-90);
+    }
+    .section-sub {
+      font-size: 12px;
+      color: var(--mpp-neutral-70);
+      margin-bottom: 16px;
+    }
+
+    .panel {
+      background: var(--mpp-neutral-20);
+      border: 1px solid var(--mpp-neutral-40);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .muted { color: var(--mpp-neutral-70); }
+
+    /* ─── Section 1: All-at-a-glance grid ────────────────────────────── */
+    .glance-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 8px;
+    }
+    .glance-cell {
+      background: var(--mpp-neutral-30);
+      border: 1px solid var(--mpp-neutral-40);
+      border-radius: 6px;
+      padding: 16px 8px;
+      text-align: center;
+      cursor: default;
+      transition: background 100ms, border-color 100ms;
+    }
+    .glance-cell:hover {
+      background: var(--mpp-neutral-40);
+      border-color: var(--mpp-accent-cyan);
+    }
+    .glance-cell .ms { font-size: 28px; }
+    .glance-cell .name {
+      display: block;
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--mpp-neutral-80);
+      font-family: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
+      word-break: break-all;
+    }
+    .glance-cell .purpose {
+      display: block;
+      margin-top: 2px;
+      font-size: 10px;
+      color: var(--mpp-neutral-60);
+    }
+
+    /* ─── Section 2: Comparison rows ─────────────────────────────────── */
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .compare-table th {
+      text-align: left;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--mpp-neutral-70);
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--mpp-neutral-40);
+      background: var(--mpp-neutral-30);
+    }
+    .compare-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--mpp-neutral-30);
+      vertical-align: middle;
+    }
+    .compare-table tr:hover td { background: rgba(34, 211, 238, 0.04); }
+    .compare-table .emoji-glyph {
+      font-size: 22px;
+      line-height: 1;
+    }
+    .compare-table .codepoint {
+      font-family: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
+      font-size: 11px;
+      color: var(--mpp-neutral-70);
+    }
+    .compare-table .arrow {
+      color: var(--mpp-neutral-60);
+      font-size: 18px;
+    }
+    .compare-table .ms-name {
+      font-family: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
+      font-size: 12px;
+      color: var(--mpp-neutral-90);
+    }
+    .compare-table .group-row td {
+      background: var(--mpp-neutral-30);
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--mpp-accent-cyan);
+      padding: 12px;
+    }
+
+    /* ─── Section 3: Decision points ─────────────────────────────────── */
+    .decision-card {
+      background: var(--mpp-neutral-20);
+      border: 1px solid var(--mpp-neutral-40);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .decision-header {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .decision-header .concept {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--mpp-neutral-100);
+    }
+    .decision-header .current {
+      font-size: 12px;
+      color: var(--mpp-neutral-70);
+    }
+    .decision-header .current .emoji-glyph { font-size: 18px; vertical-align: middle; }
+
+    .candidates {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 8px;
+    }
+    .icon-cell {
+      background: var(--mpp-neutral-30);
+      border: 2px solid var(--mpp-neutral-40);
+      border-radius: 6px;
+      padding: 14px 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 120ms;
+      position: relative;
+    }
+    .icon-cell:hover {
+      background: var(--mpp-neutral-40);
+      border-color: var(--mpp-neutral-60);
+    }
+    .icon-cell.chosen {
+      background: rgba(34, 211, 238, 0.10);
+      border-color: var(--mpp-accent-cyan);
+    }
+    .icon-cell.chosen::after {
+      content: '✓';
+      position: absolute;
+      top: 4px;
+      right: 6px;
+      color: var(--mpp-accent-cyan);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .icon-cell .ms { font-size: 28px; }
+    .icon-cell .icon-name {
+      display: block;
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--mpp-neutral-80);
+      font-family: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
+    }
+    .emoji-cell {
+      background: var(--mpp-neutral-30);
+      border: 2px solid var(--mpp-neutral-40);
+      border-radius: 6px;
+      padding: 14px 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 120ms;
+    }
+    .emoji-cell.chosen {
+      background: rgba(34, 211, 238, 0.10);
+      border-color: var(--mpp-accent-cyan);
+    }
+    .emoji-cell .emoji-glyph { font-size: 28px; line-height: 1; }
+    .emoji-cell .label {
+      display: block;
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--mpp-neutral-80);
+    }
+
+    /* ─── Section 4: In-context previews ─────────────────────────────── */
+    .context-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 16px;
+    }
+    .context-card {
+      background: var(--mpp-neutral-20);
+      border: 1px solid var(--mpp-neutral-40);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .context-card h4 {
+      font-size: 12px;
+      font-weight: 600;
+      margin: 0 0 12px 0;
+      color: var(--mpp-neutral-70);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Rail nav preview */
+    .demo-rail {
+      width: 64px;
+      background: var(--mpp-neutral-30);
+      border-radius: 6px;
+      padding: 8px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: center;
+    }
+    .demo-rail-item {
+      width: 56px;
+      padding: 8px 0;
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      transition: background 100ms;
+    }
+    .demo-rail-item:hover { background: var(--mpp-neutral-40); }
+    .demo-rail-item.active {
+      background: rgba(34, 211, 238, 0.15);
+    }
+    .demo-rail-item.active .ms { color: var(--mpp-accent-cyan); }
+    .demo-rail-item .ms { font-size: 22px; }
+    .demo-rail-item .label {
+      font-size: 9px;
+      color: var(--mpp-neutral-80);
+      letter-spacing: 0.02em;
+    }
+    .demo-rail-item.active .label { color: var(--mpp-accent-cyan); }
+
+    /* App bar preview */
+    .demo-appbar {
+      background: var(--mpp-neutral-30);
+      border-radius: 6px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .demo-appbar .crumb {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--mpp-neutral-80);
+    }
+    .demo-appbar .crumb .sep { color: var(--mpp-neutral-60); }
+    .demo-appbar .crumb .last { color: var(--mpp-neutral-100); font-weight: 600; }
+    .demo-appbar .spacer { flex: 1; }
+    .demo-appbar .icon-btn {
+      width: 28px; height: 28px;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: none; background: transparent; color: var(--mpp-neutral-80);
+      border-radius: 4px; cursor: pointer;
+    }
+    .demo-appbar .icon-btn:hover { background: var(--mpp-neutral-40); color: var(--mpp-neutral-100); }
+
+    /* Table header sort preview */
+    .demo-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .demo-table th {
+      text-align: left;
+      padding: 8px 10px;
+      background: var(--mpp-neutral-30);
+      border-bottom: 1px solid var(--mpp-neutral-40);
+      font-weight: 600;
+      color: var(--mpp-neutral-90);
+      cursor: pointer;
+    }
+    .demo-table th .sort-stack {
+      display: inline-flex;
+      flex-direction: column;
+      vertical-align: middle;
+      margin-left: 4px;
+      line-height: 0.6;
+      font-size: 10px;
+    }
+    .demo-table th .sort-stack .ms { font-size: 14px; line-height: 0.6; color: var(--mpp-neutral-70); }
+    .demo-table th .sort-stack .ms.active { color: var(--mpp-accent-cyan); }
+    .demo-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--mpp-neutral-30);
+      color: var(--mpp-neutral-80);
+    }
+
+    /* Status badges */
+    .demo-badges {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      width: fit-content;
+    }
+    .badge .ms { font-size: 14px; }
+    .badge.b-success { background: rgba(52, 211, 153, 0.15); color: var(--mpp-success); }
+    .badge.b-warning { background: rgba(251, 191, 36, 0.15); color: var(--mpp-warning); }
+    .badge.b-danger { background: rgba(248, 113, 113, 0.15); color: var(--mpp-danger); }
+    .badge.b-info { background: rgba(34, 211, 238, 0.15); color: var(--mpp-accent-cyan); }
+    .badge.b-muted { background: var(--mpp-neutral-30); color: var(--mpp-neutral-80); }
+
+    /* Buttons */
+    .demo-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      border: 1px solid var(--mpp-neutral-50);
+      border-radius: 4px;
+      background: var(--mpp-neutral-30);
+      color: var(--mpp-neutral-90);
+      cursor: pointer;
+    }
+    .btn:hover { background: var(--mpp-neutral-40); }
+    .btn.primary {
+      background: var(--mpp-accent-cyan);
+      color: var(--mpp-neutral-10);
+      border-color: var(--mpp-accent-cyan);
+    }
+    .btn.primary .ms { color: var(--mpp-neutral-10); }
+    .btn.danger {
+      background: rgba(248, 113, 113, 0.15);
+      color: var(--mpp-danger);
+      border-color: rgba(248, 113, 113, 0.4);
+    }
+    .btn.danger .ms { color: var(--mpp-danger); }
+    .btn .ms { font-size: 16px; }
+
+    /* Search input */
+    .demo-search {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      background: var(--mpp-neutral-30);
+      border: 1px solid var(--mpp-neutral-50);
+      border-radius: 4px;
+      width: 100%;
+    }
+    .demo-search input {
+      background: transparent;
+      border: none;
+      color: var(--mpp-neutral-100);
+      flex: 1;
+      font-size: 12px;
+      font-family: inherit;
+      outline: none;
+    }
+    .demo-search input::placeholder { color: var(--mpp-neutral-60); }
+
+    /* ─── Section 5: Output / mapping summary ────────────────────────── */
+    .output-pre {
+      background: var(--mpp-neutral-30);
+      border: 1px solid var(--mpp-neutral-40);
+      border-radius: 6px;
+      padding: 16px;
+      font-family: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
+      font-size: 11px;
+      color: var(--mpp-neutral-90);
+      white-space: pre;
+      overflow-x: auto;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .copy-btn {
+      float: right;
+      padding: 4px 10px;
+      font-size: 11px;
+      background: var(--mpp-accent-cyan);
+      color: var(--mpp-neutral-10);
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 12px;
+      font-size: 11px;
+      color: var(--mpp-neutral-70);
+    }
+    .legend kbd {
+      display: inline-block;
+      padding: 1px 5px;
+      background: var(--mpp-neutral-30);
+      border: 1px solid var(--mpp-neutral-50);
+      border-radius: 3px;
+      font-size: 10px;
+      font-family: inherit;
+      color: var(--mpp-neutral-90);
+    }
+  </style>
+</head>
+<body class="style-outlined bg-dark">
+
+  <!-- ═══ CONTROLS ═══════════════════════════════════════════════════════ -->
+  <header class="controls">
+    <div class="control-group">
+      <label>Style</label>
+      <div class="seg" data-control="style">
+        <button data-value="outlined" class="active">Outlined</button>
+        <button data-value="rounded">Rounded</button>
+        <button data-value="sharp">Sharp</button>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>Weight</label>
+      <div class="seg" data-control="weight">
+        <button data-value="200">200</button>
+        <button data-value="300">300</button>
+        <button data-value="400" class="active">400</button>
+        <button data-value="500">500</button>
+        <button data-value="600">600</button>
+        <button data-value="700">700</button>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>Fill</label>
+      <div class="seg" data-control="fill">
+        <button data-value="0" class="active">Outlined</button>
+        <button data-value="1">Filled</button>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>Grade</label>
+      <div class="seg" data-control="grade">
+        <button data-value="-25">−25</button>
+        <button data-value="0" class="active">0</button>
+        <button data-value="200">200</button>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>Optical Size</label>
+      <div class="seg" data-control="opsz">
+        <button data-value="20">20</button>
+        <button data-value="24" class="active">24</button>
+        <button data-value="40">40</button>
+        <button data-value="48">48</button>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>Background</label>
+      <div class="seg" data-control="bg">
+        <button data-value="dark" class="active">Dark</button>
+        <button data-value="light">Light</button>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>Icon Color</label>
+      <input type="color" id="iconColor" value="#C9D2E0" />
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ═══ SECTION 1: AT A GLANCE ════════════════════════════════════════ -->
+    <section>
+      <h2>1. At a glance</h2>
+      <p class="section-sub">All proposed Material Symbol mappings rendered with the current variant. Scan for visual coherence.</p>
+      <div class="glance-grid" id="glance-grid"></div>
+    </section>
+
+    <!-- ═══ SECTION 2: COMPARISON ═════════════════════════════════════════ -->
+    <section>
+      <h2>2. Side-by-side comparison</h2>
+      <p class="section-sub">Each row shows the current emoji/entity in both mockups vs the proposed Material Symbol. Confirm semantic fidelity.</p>
+      <div class="panel" style="padding: 0; overflow: hidden;">
+        <table class="compare-table" id="compare-table"></table>
+      </div>
+    </section>
+
+    <!-- ═══ SECTION 3: DECISION POINTS ════════════════════════════════════ -->
+    <section>
+      <h2>3. Decision points</h2>
+      <p class="section-sub">Where multiple Material Symbols are reasonable for the same concept, click to choose. Selections feed Section 5 output.</p>
+      <div id="decisions"></div>
+    </section>
+
+    <!-- ═══ SECTION 4: IN CONTEXT ═════════════════════════════════════════ -->
+    <section>
+      <h2>4. In context</h2>
+      <p class="section-sub">Real UI patterns from the mockups, rendered with the current selections. Icons in isolation read differently than icons in nav, breadcrumbs, badges, and buttons.</p>
+
+      <div class="context-grid">
+
+        <!-- Rail nav -->
+        <div class="context-card">
+          <h4>Rail nav · BlueRidge shell</h4>
+          <div style="display: flex; gap: 12px;">
+            <div class="demo-rail">
+              <div class="demo-rail-item active"><span class="ms" data-icon-key="plant">factory</span><span class="label">Plant</span></div>
+              <div class="demo-rail-item"><span class="ms" data-icon-key="parts">settings</span><span class="label">Parts</span></div>
+              <div class="demo-rail-item"><span class="ms" data-icon-key="quality">check_box</span><span class="label">Quality</span></div>
+              <div class="demo-rail-item"><span class="ms" data-icon-key="ops">schedule</span><span class="label">Ops</span></div>
+              <div class="demo-rail-item"><span class="ms" data-icon-key="system">tune</span><span class="label">System</span></div>
+            </div>
+            <div style="flex: 1; font-size: 11px; color: var(--mpp-neutral-70); padding-top: 8px;">
+              The five Configuration Tool sections.<br/>
+              Currently active: <span style="color: var(--mpp-accent-cyan);">Plant</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- App bar -->
+        <div class="context-card">
+          <h4>Top app bar · breadcrumb + actions</h4>
+          <div class="demo-appbar">
+            <span class="ms ms-sm" data-icon-key="home">home</span>
+            <div class="crumb">
+              <span>Plant</span>
+              <span class="sep">›</span>
+              <span>Die Cast</span>
+              <span class="sep">›</span>
+              <span class="last">DC Machine #7</span>
+            </div>
+            <div class="spacer"></div>
+            <button class="icon-btn"><span class="ms ms-sm" data-icon-key="search">search</span></button>
+            <button class="icon-btn"><span class="ms ms-sm" data-icon-key="close">close</span></button>
+          </div>
+        </div>
+
+        <!-- Table sort -->
+        <div class="context-card">
+          <h4>Table · sort indicators</h4>
+          <table class="demo-table">
+            <thead>
+              <tr>
+                <th>LOT
+                  <span class="sort-stack">
+                    <span class="ms active" data-icon-key="sort-up">arrow_drop_up</span>
+                    <span class="ms" data-icon-key="sort-down">arrow_drop_down</span>
+                  </span>
+                </th>
+                <th>Part</th>
+                <th>Status</th>
+                <th>Pieces</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>MESL1710935</td><td>5G0F</td><td>Active</td><td>48</td></tr>
+              <tr><td>MESL1710936</td><td>RPY</td><td>Active</td><td>72</td></tr>
+              <tr><td>MESL1710937</td><td>5G0F</td><td>Hold</td><td>24</td></tr>
+            </tbody>
+          </table>
+          <p class="muted" style="font-size: 11px; margin-top: 8px;">No drag-and-drop convention — up/down arrow buttons only. Material's <code>arrow_drop_up</code>/<code>arrow_drop_down</code> stacks read clearly at small sizes; alternative is <code>expand_less</code>/<code>expand_more</code>.</p>
+        </div>
+
+        <!-- Status badges -->
+        <div class="context-card">
+          <h4>Status badges</h4>
+          <div class="demo-badges">
+            <span class="badge b-success"><span class="ms" data-icon-key="check">check_circle</span> Production · running</span>
+            <span class="badge b-warning"><span class="ms" data-icon-key="warning">warning</span> AIM pool · low</span>
+            <span class="badge b-danger"><span class="ms" data-icon-key="reject">cancel</span> Print · failed</span>
+            <span class="badge b-info"><span class="ms" data-icon-key="pause">pause_circle</span> LOT · paused</span>
+            <span class="badge b-muted"><span class="ms" data-icon-key="lock">lock</span> Awaiting elevation</span>
+          </div>
+        </div>
+
+        <!-- Search -->
+        <div class="context-card">
+          <h4>Search · Global Trace input</h4>
+          <div class="demo-search">
+            <span class="ms ms-sm" data-icon-key="search">search</span>
+            <input type="text" placeholder="LOT / Serial / Container / Shipper ID…" />
+            <span class="ms ms-sm muted" data-icon-key="qr">qr_code_scanner</span>
+          </div>
+          <p class="muted" style="font-size: 11px; margin-top: 8px;">Leading icon for search; trailing for scan-to-input affordance.</p>
+        </div>
+
+        <!-- Buttons -->
+        <div class="context-card">
+          <h4>Buttons · primary actions</h4>
+          <div class="demo-buttons">
+            <button class="btn primary"><span class="ms" data-icon-key="add">add</span> Add Die</button>
+            <button class="btn"><span class="ms" data-icon-key="edit">edit</span> Edit</button>
+            <button class="btn danger"><span class="ms" data-icon-key="reject">cancel</span> Reject</button>
+            <button class="btn"><span class="ms" data-icon-key="check">check</span> Confirm</button>
+            <button class="btn"><span class="ms" data-icon-key="reports">analytics</span> Reports</button>
+            <button class="btn"><span class="ms" data-icon-key="shipping">local_shipping</span> Ship</button>
+          </div>
+        </div>
+
+        <!-- Plant floor terminal preview -->
+        <div class="context-card">
+          <h4>Plant-floor terminal · operator chrome</h4>
+          <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--mpp-neutral-30); border-radius: 6px; margin-bottom: 8px;">
+            <span class="ms ms-lg ms-accent" data-icon-key="plant">factory</span>
+            <div style="flex: 1;">
+              <div style="font-weight: 600; font-size: 13px;">DC Machine #7</div>
+              <div style="font-size: 11px; color: var(--mpp-neutral-70);">Carlos · Cavity A · Tool DC-042</div>
+            </div>
+            <span class="badge b-success"><span class="ms" data-icon-key="check">check_circle</span> Online</span>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn"><span class="ms" data-icon-key="trim">content_cut</span> Trim</button>
+            <button class="btn"><span class="ms" data-icon-key="vision">videocam</span> Vision</button>
+            <button class="btn"><span class="ms" data-icon-key="container">inventory_2</span> Container</button>
+            <button class="btn"><span class="ms" data-icon-key="shipping">local_shipping</span> Ship</button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ═══ SECTION 5: OUTPUT ═════════════════════════════════════════════ -->
+    <section>
+      <h2>5. Current selections — copy-pasteable mapping</h2>
+      <p class="section-sub">Reflects your decisions in Section 3. Copy this when you're done; paste into the Phase 1 manifest.</p>
+      <div class="panel">
+        <button class="copy-btn" id="copy-btn">Copy CSV</button>
+        <pre class="output-pre" id="output"></pre>
+      </div>
+      <div class="legend">
+        <span><kbd>Style</kbd> + <kbd>Fill</kbd> + <kbd>Weight</kbd> apply to every icon globally.</span>
+        <span><kbd>Decision</kbd> selections apply per-icon.</span>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // ─── Inventory data ──────────────────────────────────────────────────
+    // Format: { key, emoji, codepoint, purpose, group, default, alternatives }
+    const INVENTORY = [
+      // Navigation
+      { key: 'home',         emoji: '⌂',   codepoint: 'U+2302',  purpose: 'Home',                    group: 'Navigation', default: 'home',                alternatives: ['home', 'cottage', 'dashboard'] },
+      { key: 'forward',      emoji: '▶',   codepoint: 'U+25B6',  purpose: 'Forward / play',          group: 'Navigation', default: 'play_arrow',          alternatives: ['play_arrow', 'chevron_right', 'arrow_forward'] },
+      { key: 'flow',         emoji: '→',   codepoint: 'U+2192',  purpose: 'Flow / next',             group: 'Navigation', default: 'arrow_right_alt',     alternatives: ['arrow_right_alt', 'arrow_forward', 'trending_flat'] },
+      { key: 'sort-up',      emoji: '▲',   codepoint: 'U+25B2',  purpose: 'Sort ascending',          group: 'Navigation', default: 'arrow_drop_up',       alternatives: ['arrow_drop_up', 'expand_less', 'keyboard_arrow_up'] },
+      { key: 'sort-down',    emoji: '▼',   codepoint: 'U+25BC',  purpose: 'Sort descending',         group: 'Navigation', default: 'arrow_drop_down',     alternatives: ['arrow_drop_down', 'expand_more', 'keyboard_arrow_down'] },
+
+      // Actions
+      { key: 'check',        emoji: '✓',   codepoint: 'U+2713',  purpose: 'Confirm / success',       group: 'Actions',    default: 'check_circle',        alternatives: ['check_circle', 'check', 'task_alt', 'verified'] },
+      { key: 'close',        emoji: '✕',   codepoint: 'U+2715',  purpose: 'Close / dismiss',         group: 'Actions',    default: 'close',               alternatives: ['close', 'cancel'] },
+      { key: 'reject',       emoji: '✗',   codepoint: 'U+2717',  purpose: 'Reject / fail',           group: 'Actions',    default: 'cancel',              alternatives: ['cancel', 'highlight_off', 'do_not_disturb_on'] },
+      { key: 'pause',        emoji: '⏸',   codepoint: 'U+23F8',  purpose: 'Pause LOT',               group: 'Actions',    default: 'pause_circle',        alternatives: ['pause_circle', 'pause', 'pause_presentation'] },
+      { key: 'search',       emoji: '🔍',  codepoint: 'U+1F50D', purpose: 'Search',                  group: 'Actions',    default: 'search',              alternatives: ['search', 'manage_search'] },
+      { key: 'lock',         emoji: '🔐',  codepoint: 'U+1F510', purpose: 'Auth / lock',             group: 'Actions',    default: 'lock',                alternatives: ['lock', 'lock_outline', 'security'] },
+      { key: 'add',          emoji: '+',   codepoint: 'U+002B',  purpose: 'Add / create',            group: 'Actions',    default: 'add',                 alternatives: ['add', 'add_circle', 'add_box'] },
+      { key: 'edit',         emoji: '✎',   codepoint: 'U+270E',  purpose: 'Edit',                    group: 'Actions',    default: 'edit',                alternatives: ['edit', 'edit_note', 'edit_square'] },
+
+      // Sections / domains
+      { key: 'plant',        emoji: '🏭',  codepoint: 'U+1F3ED', purpose: 'Plant / factory',         group: 'Sections',   default: 'factory',             alternatives: ['factory', 'precision_manufacturing', 'business'] },
+      { key: 'enterprise',   emoji: '🏛',  codepoint: 'U+1F3DB', purpose: 'Enterprise (ISA-95)',     group: 'Sections',   default: 'account_balance',     alternatives: ['account_balance', 'apartment', 'corporate_fare'] },
+      { key: 'parts',        emoji: '⚙',   codepoint: 'U+2699',  purpose: 'Parts / settings',        group: 'Sections',   default: 'settings',            alternatives: ['settings', 'tune', 'category', 'extension'] },
+      { key: 'system',       emoji: '🛠',  codepoint: 'U+1F6E0', purpose: 'System config',           group: 'Sections',   default: 'tune',                alternatives: ['tune', 'admin_panel_settings', 'manage_accounts'] },
+      { key: 'item',         emoji: '📦',  codepoint: 'U+1F4E6', purpose: 'Item Master',             group: 'Sections',   default: 'inventory_2',         alternatives: ['inventory_2', 'category', 'package_2', 'deployed_code'] },
+      { key: 'container',    emoji: '📦',  codepoint: 'U+1F4E6', purpose: 'Container',               group: 'Sections',   default: 'inventory_2',         alternatives: ['inventory_2', 'package_2', 'box', 'all_inbox'] },
+      { key: 'list',         emoji: '📋',  codepoint: 'U+1F4CB', purpose: 'Operation Templates',     group: 'Sections',   default: 'list_alt',            alternatives: ['list_alt', 'fact_check', 'checklist', 'description'] },
+      { key: 'reports',      emoji: '📈',  codepoint: 'U+1F4C8', purpose: 'Reports / trends',        group: 'Sections',   default: 'analytics',           alternatives: ['analytics', 'trending_up', 'monitoring', 'equalizer', 'show_chart'] },
+      { key: 'audit',        emoji: '📜',  codepoint: 'U+1F4DC', purpose: 'Audit log',               group: 'Sections',   default: 'history',             alternatives: ['history', 'description', 'article', 'manage_history'] },
+      { key: 'tools',        emoji: '🛠',  codepoint: 'U+1F6E0', purpose: 'Tools (config)',          group: 'Sections',   default: 'build',               alternatives: ['build', 'handyman', 'construction', 'home_repair_service'] },
+      { key: 'maintenance',  emoji: '🔧',  codepoint: 'U+1F527', purpose: 'Maintenance (FUTURE)',    group: 'Sections',   default: 'handyman',            alternatives: ['handyman', 'build', 'construction', 'engineering'] },
+      { key: 'quality',      emoji: '⚖',   codepoint: 'U+2696',  purpose: 'Quality',                 group: 'Sections',   default: 'verified',            alternatives: ['verified', 'check_box', 'task_alt', 'balance', 'fact_check'] },
+      { key: 'shipping',     emoji: '🚚',  codepoint: 'U+1F69A', purpose: 'Shipping',                group: 'Sections',   default: 'local_shipping',      alternatives: ['local_shipping', 'shipping', 'inventory'] },
+      { key: 'vision',       emoji: '🎥',  codepoint: 'U+1F3A5', purpose: 'Vision / camera',         group: 'Sections',   default: 'videocam',            alternatives: ['videocam', 'photo_camera', 'camera_alt', 'smart_toy'] },
+      { key: 'defects',      emoji: '🚫',  codepoint: 'U+1F6AB', purpose: 'Defect codes',            group: 'Sections',   default: 'block',               alternatives: ['block', 'do_not_disturb_on', 'dangerous', 'report'] },
+      { key: 'schedule',     emoji: '📅',  codepoint: 'U+1F4C5', purpose: 'Shift schedules',         group: 'Sections',   default: 'calendar_month',      alternatives: ['calendar_month', 'event', 'calendar_today', 'today'] },
+      { key: 'ops',          emoji: '⏰',  codepoint: 'U+23F0',  purpose: 'Operations / time',       group: 'Sections',   default: 'schedule',            alternatives: ['schedule', 'access_time', 'pending_actions', 'work_history'] },
+      { key: 'user',         emoji: '👤',  codepoint: 'U+1F464', purpose: 'Users',                   group: 'Sections',   default: 'person',              alternatives: ['person', 'account_circle', 'face', 'group'] },
+      { key: 'trim',         emoji: '✂',   codepoint: 'U+2702',  purpose: 'Trim shop',               group: 'Sections',   default: 'content_cut',         alternatives: ['content_cut', 'cut', 'precision_manufacturing'] },
+      { key: 'qr',           emoji: '⊞',   codepoint: 'U+229E',  purpose: 'Barcode / scan',          group: 'Sections',   default: 'qr_code_scanner',     alternatives: ['qr_code_scanner', 'qr_code_2', 'document_scanner'] },
+
+      // Status / alerts
+      { key: 'warning',      emoji: '⚠',   codepoint: 'U+26A0',  purpose: 'Warning',                 group: 'Status',     default: 'warning',             alternatives: ['warning', 'error', 'priority_high', 'report_problem'] },
+      { key: 'fire',         emoji: '🔥',  codepoint: 'U+1F525', purpose: 'Hot / urgent',            group: 'Status',     default: 'local_fire_department', alternatives: ['local_fire_department', 'whatshot', 'priority_high', 'bolt'] },
+    ];
+
+    // ─── State ───────────────────────────────────────────────────────────
+    const STATE = {
+      style: 'outlined',
+      weight: 400,
+      fill: 0,
+      grade: 0,
+      opsz: 24,
+      bg: 'dark',
+      iconColor: '#C9D2E0',
+      // Per-icon selections (start with each item's default)
+      selections: Object.fromEntries(INVENTORY.map(it => [it.key, it.default])),
+    };
+
+    // ─── Apply state to DOM ──────────────────────────────────────────────
+    function applyState() {
+      document.documentElement.style.setProperty('--ms-fill',  STATE.fill);
+      document.documentElement.style.setProperty('--ms-wght',  STATE.weight);
+      document.documentElement.style.setProperty('--ms-grad',  STATE.grade);
+      document.documentElement.style.setProperty('--ms-opsz',  STATE.opsz);
+      document.documentElement.style.setProperty('--mpp-icon-color', STATE.iconColor);
+
+      document.body.classList.remove('style-outlined', 'style-rounded', 'style-sharp');
+      document.body.classList.add('style-' + STATE.style);
+
+      document.body.classList.remove('bg-dark', 'bg-light');
+      document.body.classList.add('bg-' + STATE.bg);
+
+      // Re-render contextual icons that use data-icon-key (the ones whose label depends on selection)
+      document.querySelectorAll('[data-icon-key]').forEach(el => {
+        const key = el.dataset.iconKey;
+        if (STATE.selections[key]) el.textContent = STATE.selections[key];
+      });
+
+      renderGlance();
+      renderOutput();
+    }
+
+    // ─── Section 1: Glance grid ──────────────────────────────────────────
+    function renderGlance() {
+      const grid = document.getElementById('glance-grid');
+      grid.innerHTML = INVENTORY.map(it => `
+        <div class="glance-cell" title="${it.purpose} · was ${it.emoji}">
+          <span class="ms">${STATE.selections[it.key] || it.default}</span>
+          <span class="name">${STATE.selections[it.key] || it.default}</span>
+          <span class="purpose">${it.purpose}</span>
+        </div>
+      `).join('');
+    }
+
+    // ─── Section 2: Comparison table ────────────────────────────────────
+    function renderCompare() {
+      const tbl = document.getElementById('compare-table');
+      const groups = [...new Set(INVENTORY.map(it => it.group))];
+      let html = `<thead><tr>
+          <th>Current glyph</th>
+          <th>Codepoint</th>
+          <th>Purpose</th>
+          <th></th>
+          <th>Material Symbol</th>
+          <th>Name</th>
+        </tr></thead><tbody>`;
+      groups.forEach(g => {
+        html += `<tr class="group-row"><td colspan="6">${g}</td></tr>`;
+        INVENTORY.filter(it => it.group === g).forEach(it => {
+          html += `<tr>
+            <td><span class="emoji-glyph">${it.emoji}</span></td>
+            <td><span class="codepoint">${it.codepoint}</span></td>
+            <td>${it.purpose}</td>
+            <td><span class="arrow">→</span></td>
+            <td><span class="ms" data-icon-key="${it.key}">${it.default}</span></td>
+            <td><span class="ms-name">${it.default}</span></td>
+          </tr>`;
+        });
+      });
+      html += '</tbody>';
+      tbl.innerHTML = html;
+    }
+
+    // ─── Section 3: Decision points ──────────────────────────────────────
+    // Only show items that have >1 alternative
+    function renderDecisions() {
+      const container = document.getElementById('decisions');
+      const decisions = INVENTORY.filter(it => it.alternatives.length > 1);
+      // Special-case sort-up/sort-down: include "keep Unicode" cell
+      container.innerHTML = decisions.map(it => {
+        const alts = it.alternatives.map(name => {
+          const chosen = STATE.selections[it.key] === name;
+          return `
+            <div class="icon-cell ${chosen ? 'chosen' : ''}" data-key="${it.key}" data-name="${name}">
+              <span class="ms">${name}</span>
+              <span class="icon-name">${name}</span>
+            </div>
+          `;
+        }).join('');
+
+        // Add a "keep Unicode" option for sort triangles
+        const keepUnicodeHtml = (it.key === 'sort-up' || it.key === 'sort-down')
+          ? `<div class="emoji-cell ${STATE.selections[it.key] === '__unicode__' ? 'chosen' : ''}" data-key="${it.key}" data-name="__unicode__">
+               <span class="emoji-glyph">${it.emoji}</span>
+               <span class="label">keep Unicode</span>
+             </div>`
+          : '';
+
+        return `
+          <div class="decision-card">
+            <div class="decision-header">
+              <span class="concept">${it.purpose}</span>
+              <span class="current">currently <span class="emoji-glyph">${it.emoji}</span> <span class="codepoint">(${it.codepoint})</span></span>
+            </div>
+            <div class="candidates">
+              ${alts}
+              ${keepUnicodeHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      container.querySelectorAll('.icon-cell, .emoji-cell').forEach(el => {
+        el.addEventListener('click', () => {
+          const key = el.dataset.key;
+          const name = el.dataset.name;
+          STATE.selections[key] = name;
+          // Refresh the affected card only
+          renderDecisions();
+          applyState();
+        });
+      });
+    }
+
+    // ─── Section 5: Output / mapping CSV ─────────────────────────────────
+    function renderOutput() {
+      const lines = [
+        '# MPP MES — Icon Mapping (Material Symbols)',
+        '# Style: ' + STATE.style + ' · Weight: ' + STATE.weight + ' · Fill: ' + (STATE.fill ? 'filled' : 'outlined') + ' · Grade: ' + STATE.grade + ' · Optical size: ' + STATE.opsz + 'px',
+        '#',
+        'key,group,purpose,current_emoji,codepoint,material_symbol',
+      ];
+      INVENTORY.forEach(it => {
+        const chosen = STATE.selections[it.key];
+        const value = (chosen === '__unicode__') ? `(keep Unicode ${it.emoji})` : chosen;
+        lines.push([it.key, it.group, '"' + it.purpose + '"', it.emoji, it.codepoint, value].join(','));
+      });
+      document.getElementById('output').textContent = lines.join('\n');
+    }
+
+    document.getElementById('copy-btn').addEventListener('click', () => {
+      const text = document.getElementById('output').textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copy-btn');
+        const oldText = btn.textContent;
+        btn.textContent = 'Copied ✓';
+        setTimeout(() => btn.textContent = oldText, 1200);
+      });
+    });
+
+    // ─── Wire controls ───────────────────────────────────────────────────
+    document.querySelectorAll('.seg').forEach(seg => {
+      seg.addEventListener('click', e => {
+        if (e.target.tagName !== 'BUTTON') return;
+        const control = seg.dataset.control;
+        const value = e.target.dataset.value;
+        seg.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        if (control === 'fill' || control === 'weight' || control === 'grade' || control === 'opsz') {
+          STATE[control] = parseInt(value, 10);
+        } else {
+          STATE[control] = value;
+        }
+        applyState();
+      });
+    });
+
+    document.getElementById('iconColor').addEventListener('input', e => {
+      STATE.iconColor = e.target.value;
+      applyState();
+    });
+
+    // ─── Initialize ──────────────────────────────────────────────────────
+    renderCompare();
+    renderDecisions();
+    applyState();
+  </script>
+
+</body>
+</html>
