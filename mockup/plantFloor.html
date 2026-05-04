@@ -41,6 +41,11 @@
          title="Configuration Tool — opens in a new tab" style="height: 36px; min-height: 36px; font-size: 12px;">
         Config Tool ↗
       </a>
+      <button class="pf-btn-downtime" type="button" id="dt-header-btn"
+              onclick="window.showDowntimeModal()" title="Log a downtime event for the current machine">
+        <span class="pf-dt-open-dot" id="dt-open-dot" style="display:none;"></span>
+        ⏱ Enter Downtime
+      </button>
       <span class="pf-op-indicator">
         <span class="pf-op-label">OP:</span>
         <span class="pf-op-value">CM</span>
@@ -460,7 +465,7 @@
                     <span class="pf-repeater-index">1</span>
                     <div>
                       <span class="pf-queue-name">MESL1710955 · machined LOT</span>
-                      <div class="pf-queue-detail">5G0-MACHINED-4102 · CNC 12 · ConsumptionEvent #84421 · 09:52</div>
+                      <div class="pf-queue-detail">5G0-MACHINED-4102 · CNC 12 · 09:52</div>
                     </div>
                     <span class="pf-pill pf-pill-good">Good</span>
                   </a>
@@ -831,7 +836,7 @@
           <label class="pf-field-label">Initials</label>
           <input class="pf-field-input pf-field-mono" type="text" placeholder="XX" autofocus
                  style="font-size: 28px; height: 64px; text-align: center; letter-spacing: 0.2em; text-transform: uppercase;" />
-          <span class="pf-field-help">No password, no PIN. Initials map to <code>AppUser_GetByInitials</code>.</span>
+          <span class="pf-field-help">No password, no PIN.</span>
         </div>
         <div class="pf-actions" style="border:none; margin:0; padding:0;">
           <button class="pf-btn pf-btn-primary pf-btn-large" type="button" style="flex:1;">Set Presence</button>
@@ -955,7 +960,7 @@
                 <input class="pf-field-input pf-field-mono" type="text" value="DC-042" disabled style="flex:1;" />
                 <button class="pf-btn pf-btn-elevated" data-elevated-action="EditTool" data-elevated-target="tool-assignment-modal" type="button">Edit</button>
               </div>
-              <span class="pf-field-help">From <code>Tools.ToolAssignment_ListActiveByCell</code>. Edit (elevated) opens release + mount-new dialog.</span>
+              <span class="pf-field-help">Resolved from the active tool mounted at this machine. Edit (elevated) opens a tool reassignment dialog.</span>
             </div>
             <div class="pf-field">
               <label class="pf-field-label">Cavity</label>
@@ -972,7 +977,7 @@
             <div class="pf-field">
               <label class="pf-field-label">Piece Count</label>
               <input class="pf-field-input" type="number" value="48" min="1" />
-              <span class="pf-field-help">≤ <code>Item.MaxLotSize</code> (PartsPerBasket) = 48</span>
+              <span class="pf-field-help">Max 48 (configured on this item)</span>
             </div>
             <div class="pf-field">
               <label class="pf-field-label">Weight (lb)</label>
@@ -1078,8 +1083,8 @@
         </div>
 
         <p class="pf-kpi-sub" style="margin:0;">
-          Override-FIFO selection prompts for an optional reason (captured to the resulting ProductionEvent).
-          Held LOTs cannot be picked until the hold is released (B2 — `Lot_AssertNotBlocked`).
+          Override-FIFO selection prompts for an optional reason (recorded).
+          Held LOTs cannot be picked until the hold is released.
         </p>
       </section>
 
@@ -1087,7 +1092,7 @@
         <div class="pf-panel-header"><h3>Active machined LOT (after pick)</h3></div>
         <div class="pf-empty-state">
           <p>No LOT picked yet. Click "Pick" above to fire the BOM-Driven Rename Confirmation Modal.<br>
-             On confirm: new machined LOT minted, ConsumptionEvent + Genealogy + ProductionEvent written, source sub-LOT closed.</p>
+             On confirm: a new machined LOT is created from this sub-LOT.</p>
           <p class="pf-kpi-sub">Press <kbd>R</kbd> to preview the BOM Rename Modal.</p>
         </div>
       </section>
@@ -1168,7 +1173,7 @@
           <code>TrayFullFlag</code> asserts — one validation event per tray; positions
           show the serial that was etched into each slot during the cycle. Position 5
           was placed during a <code>HardwareInterlockEnable=false</code> window —
-          the corresponding <code>ContainerSerial.HardwareInterlockBypassed = 1</code>
+          the serial is flagged as hardware-interlock-bypassed
           per UJ-16; the audit row captures the bypass. A 4-tray container therefore
           accumulates via 4 successful tray-scan events.
         </p>
@@ -1269,7 +1274,7 @@
           The Cognex camera scans the <strong>full tray as a single image</strong> once
           the PLC asserts <code>TrayFullFlag</code> at <code>PartsPerTray</code> — one
           validation event per tray, never per piece. On <code>PASS</code>, the tray
-          closes and a single <code>ConsumptionEvent</code> records the BOM consumption
+          closes and the BOM consumption is recorded
           for that tray. Container fill is the MES-side accumulation of validated tray
           closes — same camera, same closure path as the Sort Cage non-serialized
           re-pack flow.
@@ -1986,9 +1991,7 @@
         </div>
 
         <p class="pf-kpi-sub" style="margin:0;">
-          Per UJ-05 default: update-in-place. Each row writes a <code>Lots.ContainerSerialHistory</code>
-          row capturing Old/New container + tray position; <code>ContainerSerial</code> updated in place.
-          Same Flex Repeater + Embedded View pattern as Trim OUT — N rows, one per serial to migrate.
+          Per UJ-05 default: update-in-place. Each row moves a serial number to its new container and tray position.
         </p>
 
         <div class="pf-repeater pf-repeater-scroll">
@@ -2139,12 +2142,11 @@
           container with 4 trays therefore yields 4 total passing scans. The PLC
           asserts <code>TrayFullFlag</code> at <code>PartsPerTray</code>; the camera
           fires its scan; on pass, the tray closes and a single
-          <code>ConsumptionEvent</code> records the BOM consumption for that tray.
+          the BOM consumption is recorded for that tray.
           Container fill is the MES-side accumulation of validated tray closes — same
           <code>ByVision</code> closure path as Assembly. Operator-rejected pieces
           (visual inspection before the part enters the tray) are routed to scrap
-          before they ever reach the camera. No <code>ContainerSerialHistory</code>
-          writes (those are serialized-only per UJ-05).
+          before they ever reach the camera.
         </p>
 
         <!-- Camera view (left) + stacked counters (right) -->
@@ -2270,7 +2272,7 @@
           if (isSerialized) {
             btn.dataset.state = 'nonserialized';
             state.textContent = 'Non-Serialized · bulk piece-count split';
-            subtitle.textContent = 'Container CTR-6B2-0211 on hold · re-containerization · no ContainerSerialHistory rows';
+            subtitle.textContent = 'Container CTR-6B2-0211 on hold · re-containerization';
             srcS.style.display = 'none';
             migS.style.display = 'none';
             srcN.style.display = '';
@@ -2528,7 +2530,6 @@
             <div class="pf-field">
               <label class="pf-field-label">Part Number</label>
               <input class="pf-field-input pf-field-mono" type="text" value="6MA-HSG" />
-              <span class="pf-field-help">Resolves to `Parts.Item.Id`.</span>
             </div>
             <div class="pf-field">
               <label class="pf-field-label">Item Description</label>
@@ -2566,7 +2567,7 @@
             <div class="pf-field">
               <label class="pf-field-label">Min Serial Range (optional)</label>
               <input class="pf-field-input pf-field-mono" type="text" placeholder="e.g. 88721-001" />
-              <span class="pf-field-help">Vendor-issued serial low bound — Phase 6 Assembly validates consumed serials within range.</span>
+              <span class="pf-field-help">Vendor-issued serial number range, used during assembly validation.</span>
             </div>
             <div class="pf-field">
               <label class="pf-field-label">Max Serial Range (optional)</label>
@@ -2634,7 +2635,7 @@
       <header class="pf-terminal-header">
         <div class="pf-terminal-title">
           <h1>Shipping Dock</h1>
-          <span class="pf-terminal-title-meta">Scan-to-ship · per-scan validates Complete + non-Hold + non-Void · Container_Ship proc</span>
+          <span class="pf-terminal-title-meta">Scan-to-ship · validates container is complete, not on hold, and has a valid shipping label</span>
         </div>
         <span class="pf-paused-indicator">
           <span>⏸</span><span>Paused</span><span class="pf-paused-indicator-count">0</span>
@@ -2687,7 +2688,7 @@
             <label class="pf-field-label">Scan Container Shipping Label</label>
             <input class="pf-field-input pf-field-mono" type="text" placeholder="Scan AIM Shipper ID or Container code…" autofocus
                    style="font-size: 18px; height: 56px;" />
-            <span class="pf-field-help">Per-scan: validates `ContainerStatusCode = Complete`, no open `HoldEvent`, `ShippingLabel.IsVoid = 0`. On success, fires `Lots.Container_Ship` and updates the manifest below.</span>
+            <span class="pf-field-help">Per-scan: validates the container is complete, not on hold, and has a valid shipping label. Updates the shipment manifest on success.</span>
           </div>
 
           <!-- Recent scan results -->
@@ -2890,7 +2891,7 @@
             <button class="pf-btn pf-btn-primary" type="button" data-trim-resume>Resume → OUT</button>
           </div>
         </div>
-        <span class="pf-field-help">Empty when no LOT is mid-process at this Cell. Source: <code>Lots.Lot_ListActiveAtCell</code>.</span>
+        <span class="pf-field-help">Empty when no LOT is currently active at this Cell.</span>
       </section>
 
       <!-- ────────── STATE: IDLE — scan + pick from storage ────────── -->
@@ -3019,7 +3020,7 @@
           <button class="pf-btn pf-btn-primary pf-btn-large" type="button" data-trim-submit-in>Submit · Receive at Trim Cell 3</button>
           <button class="pf-btn pf-btn-secondary" type="button" data-trim-cancel>Cancel</button>
           <span style="flex:1"></span>
-          <span class="pf-kpi-sub">Fires <code>TrimIn</code> ProductionEvent · sets <code>Lot.LocationId = Trim Cell 3</code></span>
+          <span class="pf-kpi-sub">Records check-in and moves LOT to Trim Cell 3</span>
         </div>
       </section>
 
@@ -3029,7 +3030,7 @@
         <span class="pf-cell-context-label">OperationTemplate</span>
         <span class="pf-cell-context-value">TrimOut · 5G0-TRIM-4102 v3</span>
         <span style="flex:1"></span>
-        <span class="pf-kpi-sub" style="margin-right:8px;">RequiresSubLotSplit:</span>
+        <span class="pf-kpi-sub" style="margin-right:8px;">Sub-LOT Split:</span>
         <button class="pf-btn pf-btn-secondary" type="button" id="trim-split-toggle" data-state="on">
           <span id="trim-split-state">ON · split + route</span>
         </button>
@@ -3037,7 +3038,7 @@
 
       <section class="pf-panel" data-trim-show="out">
         <div class="pf-panel-header">
-          <h3>Closing ProductionEvent (TrimOut)</h3>
+          <h3>Trim OUT</h3>
           <span class="pf-kpi-sub">Trim is yield loss — no shot delta. Operator initials capture closing identity; rejects entered below.</span>
         </div>
         <div class="pf-field-row">
@@ -3085,9 +3086,7 @@
         </div>
 
         <p class="pf-kpi-sub" style="margin:0;">
-          Same Flex Repeater renders 1 row when <code>RequiresSubLotSplit=0</code> (parent LOT moves whole)
-          and N rows when <code>RequiresSubLotSplit=1</code> (parent splits across N destinations). Each row
-          is the embedded Cell-Selector entity. Same submit handler · same proc · result-set count differs.
+          One row when the LOT moves whole; multiple rows when splitting.
         </p>
 
         <div class="pf-repeater pf-repeater-scroll" id="trim-repeater">
@@ -3328,7 +3327,6 @@
           <div class="pf-kpi">
             <span class="pf-kpi-label">LOT Name</span>
             <span class="pf-kpi-value pf-kpi-mono">MESL1710935</span>
-            <span class="pf-kpi-sub">Minted via IdentifierSequence_Next</span>
           </div>
           <div class="pf-kpi">
             <span class="pf-kpi-label">Item</span>
@@ -3384,7 +3382,6 @@
                   <span class="pf-queue-name">Die Cast Event</span>
                   <div class="pf-queue-detail">ShotCount 1247 · ScrapCount 3 (cumulative)</div>
                 </div>
-                <span class="pf-kpi-sub">ProductionEvent #41203</span>
               </div>
               <div class="pf-queue-row" style="grid-template-columns: auto 1fr auto;">
                 <span class="pf-queue-position">06:31</span>
@@ -3408,7 +3405,6 @@
                   <span class="pf-queue-name">Trim IN Event</span>
                   <div class="pf-queue-detail">ShotCount 1247 · ScrapCount 3 (carried — Trim adds no shots)</div>
                 </div>
-                <span class="pf-kpi-sub">ProductionEvent #41210</span>
               </div>
             </div>
           </div>
@@ -3801,6 +3797,53 @@
     </div>
   </div>
 
+  <!-- ─── MODAL: DOWNTIME EVENTS ──────────────────────────────────────── -->
+  <div class="pf-modal" id="downtime-modal">
+    <div class="pf-modal-card" style="max-width:920px;">
+      <header class="pf-modal-header">
+        <div style="display:flex; flex-direction:column; gap:2px;">
+          <h3>Downtime Events</h3>
+          <span style="font-size:12px; color:var(--text-secondary);" id="dt-modal-context">Press 7 · Die Cast Area</span>
+        </div>
+        <span style="font-size:12px; font-weight:600; color:var(--pf-status-warn-fg);" id="dt-modal-open-label"></span>
+      </header>
+      <div class="pf-modal-body" style="padding:0; gap:0; overflow:hidden;">
+
+        <!-- Toolbar -->
+        <div style="display:flex; align-items:center; justify-content:space-between;
+                    padding:10px 20px; border-bottom:1px solid var(--border); flex-shrink:0;">
+          <span style="font-size:12px; color:var(--text-secondary);" id="dt-event-count"></span>
+          <button class="pf-btn pf-btn-primary" type="button" onclick="window.dtAddEvent()">+ Add Event</button>
+        </div>
+
+        <!-- Scrollable table -->
+        <div style="overflow-y:auto; flex:1; max-height:460px;">
+          <table class="pf-dt-table">
+            <thead>
+              <tr>
+                <th style="width:110px;">Start Time</th>
+                <th style="width:110px;">End Time</th>
+                <th style="width:230px;">Reason Code</th>
+                <th style="width:76px;">Initials</th>
+                <th>Remarks</th>
+                <th style="width:96px;">Shot Count</th>
+                <th style="width:28px;"></th>
+              </tr>
+            </thead>
+            <tbody id="dt-event-tbody"></tbody>
+          </table>
+        </div>
+
+      </div>
+      <footer class="pf-modal-footer">
+        <span style="font-size:11px; color:var(--text-muted); margin-right:auto;">
+          Machine: <strong id="dt-footer-machine">Press 7</strong>
+        </span>
+        <button class="pf-btn pf-btn-secondary" type="button" data-modal-close>Close</button>
+      </footer>
+    </div>
+  </div>
+
 </div>
 
 <!-- ═══ JAVASCRIPT ═══════════════════════════════════════════════════════ -->
@@ -4137,6 +4180,211 @@
     elevation: (on) => { app.dataset.mode = on ? 'elevated' : 'operator'; },
     showIdle: () => showModal('idle-modal'),
   };
+
+  // ─── Downtime Events modal ────────────────────────────────────────────
+
+  const DT_REASON_CODES = [
+    { code: 'SETUP-STARTUP',    type: 'Setup',       desc: 'Startup / Warm-Up' },
+    { code: 'SETUP-CHANGEOVER', type: 'Setup',       desc: 'Die Changeover' },
+    { code: 'SETUP-ADJUST',     type: 'Setup',       desc: 'Parameter Adjustment' },
+    { code: 'EQ-DIE-STICK',     type: 'Equipment',   desc: 'Die Stuck' },
+    { code: 'EQ-COOL',          type: 'Equipment',   desc: 'Cooling Issue' },
+    { code: 'EQ-HYDRAULIC',     type: 'Equipment',   desc: 'Hydraulic Failure' },
+    { code: 'EQ-MAINT',         type: 'Equipment',   desc: 'Scheduled Maintenance' },
+    { code: 'MOLD-CRACK',       type: 'Mold',        desc: 'Mold Crack' },
+    { code: 'MOLD-RELEASE',     type: 'Mold',        desc: 'Release Agent Issue' },
+    { code: 'QUAL-HOLD',        type: 'Quality',     desc: 'Quality Hold' },
+    { code: 'QUAL-INSPECT',     type: 'Quality',     desc: 'Quality Inspection' },
+    { code: 'UNSCHED-POWER',    type: 'Unscheduled', desc: 'Power Outage' },
+    { code: 'UNSCHED-MAT',      type: 'Unscheduled', desc: 'Material Shortage' },
+  ];
+
+  let dtEvents = [
+    { id: 1, start: '06:05', end: '06:20', reasonCode: 'SETUP-STARTUP',    initials: 'CM', remarks: 'Initial warm-up before first run',    shotCount: '8',  open: false },
+    { id: 2, start: '06:45', end: '06:57', reasonCode: 'EQ-DIE-STICK',     initials: 'CM', remarks: 'Die stuck mid-cycle, cleared manually', shotCount: '',   open: false },
+    { id: 3, start: '09:15', end: '09:28', reasonCode: 'EQ-MAINT',         initials: 'CM', remarks: '',                                      shotCount: '',   open: false },
+    { id: 4, start: '13:45', end: '',      reasonCode: 'EQ-COOL',           initials: 'CM', remarks: 'Coolant temperature spiking',           shotCount: '',   open: true  },
+  ];
+  let dtNextId      = 5;
+  let dtExpandedId  = null;
+
+  function dtReasonByCode(code) {
+    return DT_REASON_CODES.find(r => r.code === code) || { code, type: '', desc: code };
+  }
+
+  function dtRenderAll() {
+    const tbody = document.getElementById('dt-event-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    const openCount = dtEvents.filter(e => e.open).length;
+
+    const countEl = document.getElementById('dt-event-count');
+    if (countEl) countEl.textContent = dtEvents.length + ' event' + (dtEvents.length !== 1 ? 's' : '') + ' this shift';
+
+    const openLabel = document.getElementById('dt-modal-open-label');
+    if (openLabel) openLabel.textContent = openCount > 0 ? openCount + ' open' : '';
+
+    // Orange dot on header button when there are open events
+    const dot = document.getElementById('dt-open-dot');
+    if (dot) dot.style.display = openCount > 0 ? 'inline-block' : 'none';
+
+    dtEvents.forEach(ev => dtRenderRow(tbody, ev));
+  }
+
+  function dtRenderRow(tbody, ev) {
+    const reason    = dtReasonByCode(ev.reasonCode);
+    const isSetup   = reason.type === 'Setup';
+    const isExpanded = dtExpandedId === ev.id;
+
+    // ── Summary row ──
+    const tr = document.createElement('tr');
+    tr.className = 'dt-row' + (isExpanded ? ' expanded' : '') + (ev.open ? ' dt-row-open' : '');
+    tr.dataset.id = ev.id;
+
+    const endCell   = ev.end ? `<span style="font-family:monospace;">${ev.end}</span>`
+                              : `<span class="dt-open-badge">OPEN</span>`;
+    const shotCell  = (isSetup && ev.shotCount)
+                      ? `<span style="font-family:monospace;">${ev.shotCount}</span>`
+                      : `<span style="color:var(--text-muted);">—</span>`;
+    const remarksCell = ev.remarks
+                      ? `<span style="color:var(--text-secondary);">${ev.remarks}</span>`
+                      : `<span style="color:var(--text-muted);">—</span>`;
+
+    tr.innerHTML = `
+      <td style="font-family:monospace; font-size:12px;">${ev.start || '<span style="color:var(--text-muted);">—</span>'}</td>
+      <td style="font-size:12px;">${endCell}</td>
+      <td>
+        <div style="font-size:12px; font-weight:600; line-height:1.3;">${reason.desc}</div>
+        <div style="font-size:11px; color:var(--text-secondary); margin-top:1px;">${reason.type} · ${ev.reasonCode}</div>
+      </td>
+      <td style="font-family:monospace; font-size:12px;">${ev.initials || '<span style="color:var(--text-muted);">—</span>'}</td>
+      <td style="font-size:12px;">${remarksCell}</td>
+      <td style="font-size:12px; text-align:right; padding-right:18px;">${shotCell}</td>
+      <td style="color:var(--text-muted); font-size:10px; text-align:center; user-select:none;">${isExpanded ? '▲' : '▼'}</td>
+    `;
+    tr.addEventListener('click', () => dtToggleRow(ev.id));
+    tbody.appendChild(tr);
+
+    // ── Expand / edit row ──
+    const expandTr = document.createElement('tr');
+    expandTr.className = 'dt-expand-row';
+    expandTr.style.display = isExpanded ? '' : 'none';
+
+    const reasonOptions = DT_REASON_CODES.map(r =>
+      `<option value="${r.code}"${r.code === ev.reasonCode ? ' selected' : ''}>${r.desc} (${r.type})</option>`
+    ).join('');
+
+    expandTr.innerHTML = `
+      <td colspan="7">
+        <div class="dt-expand-form" id="dt-form-${ev.id}">
+
+          <div class="pf-field" style="margin:0;">
+            <label class="pf-field-label">Start Time</label>
+            <input class="pf-field-input" type="time" id="dt-start-${ev.id}" value="${ev.start}" />
+          </div>
+
+          <div class="pf-field" style="margin:0;">
+            <label class="pf-field-label">End Time <span style="color:var(--text-muted); font-weight:400;">(blank = still open)</span></label>
+            <input class="pf-field-input" type="time" id="dt-end-${ev.id}" value="${ev.end}" />
+          </div>
+
+          <div class="pf-field" style="margin:0;">
+            <label class="pf-field-label">Initials</label>
+            <input class="pf-field-input" type="text" maxlength="4" id="dt-initials-${ev.id}"
+                   value="${ev.initials}" style="text-transform:uppercase;" />
+          </div>
+
+          <div class="pf-field" style="margin:0; grid-column:span 2;">
+            <label class="pf-field-label">Reason Code</label>
+            <select class="pf-field-select" id="dt-reason-${ev.id}"
+                    onchange="window.dtReasonChanged(${ev.id})">
+              ${reasonOptions}
+            </select>
+          </div>
+
+          <div class="pf-field" id="dt-sc-field-${ev.id}" style="margin:0;${isSetup ? '' : 'display:none;'}">
+            <label class="pf-field-label">Shot Count</label>
+            <input class="pf-field-input" type="number" min="0" id="dt-shotcount-${ev.id}"
+                   value="${ev.shotCount}" placeholder="Warm-up shots taken" />
+          </div>
+
+          <div class="pf-field" style="margin:0; grid-column:1 / -1;">
+            <label class="pf-field-label">Remarks</label>
+            <input class="pf-field-input" type="text" id="dt-remarks-${ev.id}"
+                   value="${ev.remarks}" placeholder="Optional" />
+          </div>
+
+          <div class="dt-expand-actions">
+            <button class="pf-btn pf-btn-secondary" type="button"
+                    onclick="window.dtCancelRow(${ev.id})">Cancel</button>
+            <button class="pf-btn pf-btn-primary" type="button"
+                    onclick="window.dtSaveRow(${ev.id})">Save</button>
+          </div>
+
+        </div>
+      </td>
+    `;
+    tbody.appendChild(expandTr);
+  }
+
+  function dtToggleRow(id) {
+    dtExpandedId = (dtExpandedId === id) ? null : id;
+    dtRenderAll();
+  }
+
+  window.dtReasonChanged = function(id) {
+    const sel   = document.getElementById('dt-reason-' + id);
+    const reason = DT_REASON_CODES.find(r => r.code === sel?.value);
+    const field  = document.getElementById('dt-sc-field-' + id);
+    if (field) field.style.display = (reason?.type === 'Setup') ? '' : 'none';
+  };
+
+  window.dtSaveRow = function(id) {
+    const ev = dtEvents.find(e => e.id === id);
+    if (!ev) return;
+    const getVal = suffix => document.getElementById('dt-' + suffix + '-' + id)?.value ?? '';
+    ev.start      = getVal('start');
+    ev.end        = getVal('end');
+    ev.open       = !ev.end;
+    ev.reasonCode = getVal('reason') || ev.reasonCode;
+    ev.initials   = getVal('initials').toUpperCase();
+    ev.remarks    = getVal('remarks');
+    ev.shotCount  = getVal('shotcount');
+    delete ev._isNew;
+    dtExpandedId = null;
+    dtRenderAll();
+  };
+
+  window.dtCancelRow = function(id) {
+    const ev = dtEvents.find(e => e.id === id);
+    if (ev?._isNew) dtEvents = dtEvents.filter(e => e.id !== id);
+    dtExpandedId = null;
+    dtRenderAll();
+  };
+
+  window.dtAddEvent = function() {
+    const newEv = {
+      id: dtNextId++, start: '', end: '', reasonCode: 'EQ-DIE-STICK',
+      initials: 'CM', remarks: '', shotCount: '', open: true, _isNew: true,
+    };
+    dtEvents.unshift(newEv);
+    dtExpandedId = newEv.id;
+    dtRenderAll();
+  };
+
+  window.showDowntimeModal = function() {
+    dtExpandedId = null;
+    dtRenderAll();
+    showModal('downtime-modal');
+  };
+
+  // Keyboard shortcut D → open downtime modal (demo ease)
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    if (e.key === 'd' || e.key === 'D') window.showDowntimeModal();
+  });
+
 })();
 </script>
 
