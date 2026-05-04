@@ -132,6 +132,9 @@
        Used by every focusable surface. Soft cyan glow at 18-20% opacity. */
     --mpp-focus-ring: 0 0 0 3px rgba(34, 168, 204, 0.18);
 
+    /* ─── Tinted accent washes — soft alpha overlays on the cyan accent. */
+    --mpp-accent-tint-10: rgba(34, 168, 204, 0.10);
+
     /* ─── Radii ──────────────────────────────────────────────────────────
        Subtle modern (3-8px band). */
     --mpp-radius-sm:   3px;
@@ -179,6 +182,12 @@
     /* ─── Motion ─────────────────────────────────────────────────────── */
     --mpp-transition-fast:   120ms ease-out;
     --mpp-transition-normal: 200ms ease-out;
+
+    /* ─── Z-index scale ──────────────────────────────────────────────── */
+    --mpp-z-rail:    90;
+    --mpp-z-header:  100;
+    --mpp-z-modal:   1000;
+    --mpp-z-toast:   2000;
 
     /* ─── Layout (structural dimensions) ─────────────────────────────── */
     --mpp-layout-header-h: 42px;
@@ -244,6 +253,7 @@
 
     /* Status accents — alpha overlays distinct from --mpp-state-*-bg solids */
     --pf-status-warn-bg: rgba(244, 179, 67, 0.10);
+    --pf-status-warn-bg-strong: rgba(244, 179, 67, 0.20);
     --pf-status-warn-fg: #F4B343;
     --pf-status-bad-bg:  rgba(220, 80, 80, 0.10);
     --pf-status-bad-fg:  #DC5050;
@@ -662,14 +672,11 @@ button {
 
 
 /* ─── Badges + tags (one family — cascading) ─────────────────────────
-   Both pills share the same shape and typography. The variant carries
-   the color triple only. Apply: "badge" + variant.
-   --------------------------------------------------------------------
    Categorical variants (purple/orange/green/pink/amber/violet) are for
-   type/material/category labels.
-   State variants (published/warning/danger/info/muted) are for system
-   or process states. Don't mix the two languages on the same surface
-   if you can help it. */
+   type/material/category labels. State variants (published/warning/
+   danger/info/muted) are for system or process states. Don't mix the
+   two languages on the same surface if you can help it.
+   Apply: "badge" + variant. */
 .psc-badge {
     display: inline-flex;
     align-items: center;
@@ -683,30 +690,25 @@ button {
     border: 1px solid transparent;
 }
 
-/* Categorical color variants — `.psc-tag-*` is the preferred semantic name
-   for category / material / type labels. `.psc-badge-{color}` aliases
-   accept the same styling for legacy mockup compatibility. */
-.psc-tag-purple, .psc-badge-purple { color: var(--mpp-cat-purple-fg); background: var(--mpp-cat-purple-bg); border-color: var(--mpp-cat-purple-border); }
-.psc-tag-orange, .psc-badge-orange { color: var(--mpp-cat-orange-fg); background: var(--mpp-cat-orange-bg); border-color: var(--mpp-cat-orange-border); }
-.psc-tag-green,  .psc-badge-green  { color: var(--mpp-cat-green-fg);  background: var(--mpp-cat-green-bg);  border-color: var(--mpp-cat-green-border); }
-.psc-tag-pink,   .psc-badge-pink   { color: var(--mpp-cat-pink-fg);   background: var(--mpp-cat-pink-bg);   border-color: var(--mpp-cat-pink-border); }
-.psc-tag-amber,  .psc-badge-amber, .psc-badge-draft { color: var(--mpp-cat-amber-fg); background: var(--mpp-cat-amber-bg); border-color: var(--mpp-cat-amber-border); }
-.psc-tag-violet, .psc-badge-violet { color: var(--mpp-cat-violet-fg); background: var(--mpp-cat-violet-bg); border-color: var(--mpp-cat-violet-border); }
-
-/* `.psc-badge-type` is a legacy mockup alias for `.psc-tag-purple`. */
-.psc-badge-type { color: var(--mpp-cat-purple-fg); background: var(--mpp-cat-purple-bg); border-color: var(--mpp-cat-purple-border); }
+/* Categorical color variants */
+.psc-badge-purple { color: var(--mpp-cat-purple-fg); background: var(--mpp-cat-purple-bg); border-color: var(--mpp-cat-purple-border); }
+.psc-badge-orange { color: var(--mpp-cat-orange-fg); background: var(--mpp-cat-orange-bg); border-color: var(--mpp-cat-orange-border); }
+.psc-badge-green  { color: var(--mpp-cat-green-fg);  background: var(--mpp-cat-green-bg);  border-color: var(--mpp-cat-green-border); }
+.psc-badge-pink   { color: var(--mpp-cat-pink-fg);   background: var(--mpp-cat-pink-bg);   border-color: var(--mpp-cat-pink-border); }
+.psc-badge-amber  { color: var(--mpp-cat-amber-fg);  background: var(--mpp-cat-amber-bg);  border-color: var(--mpp-cat-amber-border); }
+.psc-badge-violet { color: var(--mpp-cat-violet-fg); background: var(--mpp-cat-violet-bg); border-color: var(--mpp-cat-violet-border); }
 
 /* State variants — process / system state, distinct from categorical colors */
 .psc-badge-published { color: var(--mpp-state-good-fg); background: var(--mpp-state-good-bg); border-color: var(--mpp-state-good-border); }
 .psc-badge-warning   { color: var(--mpp-state-warn-fg); background: var(--mpp-state-warn-bg); border-color: var(--mpp-state-warn-border); }
 .psc-badge-danger    { color: var(--mpp-state-bad-fg);  background: var(--mpp-state-bad-bg);  border-color: var(--mpp-state-bad-border); }
 .psc-badge-info      { color: var(--mpp-state-info-fg); background: var(--mpp-state-info-bg); border-color: var(--mpp-state-info-border); }
-/* `.psc-badge-deprecated` is a legacy mockup alias for `.psc-badge-muted`. */
-.psc-badge-muted, .psc-badge-deprecated { color: var(--mpp-text-tertiary); background: var(--mpp-surface-card); border-color: var(--mpp-border-subtle); }
+.psc-badge-muted     { color: var(--mpp-text-tertiary); background: var(--mpp-surface-card); border-color: var(--mpp-border-subtle); }
 
 
-/* ─── Modal overlay + body ───────────────────────────────────────────
-   Apply "modal-overlay" + "modal-overlay-open" together when shown. */
+/* ─── Modal — overlay + card + sections (shared by Config Tool + Plant Floor)
+   Apply "modal-overlay" + "modal-overlay-open" together when shown.
+   Card uses size-variant `.psc-modal-lg` for a wider footprint. */
 .psc-modal-overlay {
     position: fixed;
     inset: 0;
@@ -714,7 +716,7 @@ button {
     display: none;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: var(--mpp-z-modal);
 }
 
 .psc-modal-overlay-open {
@@ -726,7 +728,7 @@ button {
     border: 1px solid var(--mpp-border-subtle);
     border-radius: var(--mpp-radius-lg);
     box-shadow: var(--mpp-shadow-lg);
-    width: 480px;
+    width: var(--pf-modal-w);
     max-width: calc(100vw - 32px);
     max-height: calc(100vh - 64px);
     display: flex;
@@ -919,6 +921,10 @@ button {
     background: var(--mpp-surface-hover);
 }
 
+/* Data-table row selected state */
+.psc-data-table tbody tr.psc-selected     { background: var(--mpp-accent-20); }
+.psc-data-table tbody tr.psc-selected td  { color: var(--mpp-accent-90); }
+
 
 /* ─── App shell (Configuration Tool layout) ────────────────────────── */
 .psc-app {
@@ -943,7 +949,7 @@ button {
     align-items: center;
     padding: 0 var(--mpp-space-3);
     gap: var(--mpp-space-3);
-    z-index: 100;
+    z-index: var(--mpp-z-header);
 }
 
 .psc-header-logo {
@@ -1019,7 +1025,7 @@ button {
     align-items: center;
     padding: var(--mpp-space-2) 0;
     gap: 2px;
-    z-index: 90;
+    z-index: var(--mpp-z-rail);
     overflow: hidden;
 }
 
@@ -1437,7 +1443,7 @@ button {
     display: flex;
     flex-direction: column;
     gap: var(--mpp-space-2);
-    z-index: 2000;
+    z-index: var(--mpp-z-toast);
     pointer-events: none;
 }
 
@@ -1474,12 +1480,14 @@ button {
    they render in a SECONDARY color scheme (gated visual), and clicking
    fires the AD Elevation Modal. For elevated sessions, those same
    buttons render in the primary action color and click-through directly.
+
+   Mode toggle: `.psc-pf-app[data-mode="operator"]` vs `[data-mode="elevated"]`.
    ============================================================================ */
 
 /* ─── Plant-floor app shell ────────────────────────────────────────── */
-.psc-pf-shell {
-    display: flex;
-    flex-direction: column;
+.psc-pf-app {
+    display: grid;
+    grid-template-rows: var(--pf-header-h) 1fr;
     height: 100vh;
     background: var(--mpp-surface-canvas);
     overflow: hidden;
@@ -1494,16 +1502,48 @@ button {
     align-items: center;
     padding: 0 var(--pf-content-pad);
     gap: var(--mpp-space-3);
-    z-index: 100;
+    z-index: var(--mpp-z-header);
 }
 
-.psc-pf-content {
-    flex: 1;
-    overflow: hidden;
+.psc-pf-header-left {
     display: flex;
+    align-items: center;
+    gap: var(--mpp-space-2);
+    min-width: 0;
 }
 
-.psc-pf-pad { padding: var(--pf-content-pad); }
+.psc-pf-header-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.psc-pf-header-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--mpp-space-4);
+}
+
+.psc-pf-app-title {
+    font-size: var(--mpp-fs-lg);
+    font-weight: var(--mpp-fw-semibold);
+    color: var(--mpp-text-primary);
+    text-decoration: none;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+.psc-pf-content { flex: 1; overflow: hidden; display: flex; }
+.psc-pf-pad     { padding: var(--pf-content-pad); }
+.psc-pf-main    { position: relative; overflow: hidden; height: 100%; }
+
+.psc-pf-home {
+    display: grid;
+    grid-template-columns: var(--pf-tree-w) 1fr;
+    height: 100%;
+    background: var(--mpp-surface-canvas);
+}
 
 
 /* ─── Plant-floor buttons (cascading: "pf-btn" + variant) ─────────── */
@@ -1575,14 +1615,23 @@ button {
     color: var(--mpp-text-primary);
 }
 
+.psc-pf-btn-downtime {
+    background: var(--pf-status-warn-bg);
+    border-color: var(--pf-status-warn-fg);
+    color: var(--pf-status-warn-fg);
+}
+.psc-pf-btn-downtime:hover {
+    background: var(--pf-status-warn-bg-strong);
+}
+
 /* Elevated-required button — gated visual in operator mode,
-   primary in elevated mode (toggled via session class on shell). */
+   primary in elevated mode (toggled via data-mode on .psc-pf-app). */
 .psc-pf-btn-elevated {
     background: var(--pf-btn-elevated-bg-operator);
     border-color: var(--pf-btn-elevated-border-operator);
     color: var(--pf-btn-elevated-fg-operator);
 }
-.psc-pf-shell-elevated .psc-pf-btn-elevated {
+.psc-pf-app[data-mode="elevated"] .psc-pf-btn-elevated {
     background: var(--pf-btn-elevated-bg-elevated);
     border-color: var(--pf-btn-elevated-border-elevated);
     color: var(--pf-btn-elevated-fg-elevated);
@@ -1616,6 +1665,26 @@ button {
     font-weight: var(--mpp-fw-semibold);
 }
 
+.psc-pf-toggle-btn-label {
+    font-size: var(--mpp-fs-lg);
+    font-weight: var(--mpp-fw-semibold);
+    letter-spacing: 0.02em;
+}
+
+.psc-pf-toggle-btn-meta {
+    font-size: var(--mpp-fs-sm);
+    font-weight: var(--mpp-fw-regular);
+    opacity: 0.85;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.psc-pf-toggle-group {
+    display: flex;
+    gap: var(--mpp-space-3);
+    align-items: flex-end;
+}
+
 
 /* ─── Pills (status indicators in plant-floor — cascading) ────────── */
 .psc-pf-pill {
@@ -1630,9 +1699,28 @@ button {
 }
 
 .psc-pf-pill-good { background: var(--pf-status-good-bg); color: var(--pf-status-good-fg); }
-.psc-pf-pill-warn { background: var(--pf-status-warn-bg); color: var(--pf-status-warn-fg); }
+.psc-pf-pill-warn,
 .psc-pf-pill-hold { background: var(--pf-status-warn-bg); color: var(--pf-status-warn-fg); }
 .psc-pf-pill-bad  { background: var(--pf-status-bad-bg);  color: var(--pf-status-bad-fg); }
+
+
+/* ─── Plant-floor confirmation method badges (FDS-10-013) ─────────── */
+.psc-pf-confirm-method {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px var(--mpp-space-2);
+    border-radius: var(--mpp-radius-pill);
+    font-size: var(--mpp-fs-xs);
+    font-weight: var(--mpp-fw-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: transparent;
+    border: 1px solid currentColor;
+}
+
+.psc-pf-confirm-method[data-method="Vision"]  { color: var(--mpp-vision-fg); }
+.psc-pf-confirm-method[data-method="Barcode"] { color: var(--mpp-barcode-fg); }
+.psc-pf-confirm-method[data-method="Both"]    { color: var(--mpp-both-fg); }
 
 
 /* ─── Plant hierarchy tree ─────────────────────────────────────────── */
@@ -1771,9 +1859,15 @@ button {
     color: var(--mpp-text-primary);
 }
 
-.psc-pf-terminal-subtitle {
+.psc-pf-terminal-subtitle,
+.psc-pf-terminal-title-meta {
     font-size: var(--mpp-fs-sm);
     color: var(--mpp-text-tertiary);
+}
+
+.psc-pf-terminal-title-meta {
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
 }
 
 .psc-pf-terminal-body {
@@ -1808,6 +1902,39 @@ button {
     border-color: var(--mpp-border-subtle);
 }
 
+.psc-pf-terminal-close-icon {
+    font-size: var(--mpp-fs-md);
+    line-height: 1;
+}
+
+.psc-pf-terminal-cell-context {
+    display: flex;
+    align-items: center;
+    gap: var(--mpp-space-3);
+    padding: var(--mpp-space-3) var(--mpp-space-4);
+    background: var(--mpp-surface-raised);
+    border: 1px solid var(--mpp-border-subtle);
+    border-radius: var(--mpp-radius-md);
+}
+
+.psc-pf-cell-context-label {
+    font-size: var(--mpp-fs-xs);
+    color: var(--mpp-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+}
+
+.psc-pf-cell-context-value {
+    font-size: var(--mpp-fs-md);
+    font-weight: var(--mpp-fw-semibold);
+    color: var(--mpp-accent-60);
+    letter-spacing: 0.02em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 
 /* ─── Plant-floor banner (top-of-terminal context strip) ──────────── */
 .psc-pf-banner {
@@ -1823,12 +1950,70 @@ button {
     color: var(--mpp-text-primary);
 }
 
+.psc-pf-banner-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
 
-/* ─── Plant-floor tabs (cascading: "pf-tab" + "pf-tab-active") ────── */
+.psc-pf-banner-title {
+    font-weight: var(--mpp-fw-semibold);
+    color: var(--pf-status-bad-fg);
+}
+
+.psc-pf-banner-detail {
+    color: var(--mpp-text-secondary);
+    font-size: var(--mpp-fs-sm);
+}
+
+.psc-pf-banner-icon {
+    font-size: var(--mpp-fs-md);
+    color: var(--pf-status-bad-fg);
+}
+
+.psc-pf-banner-actions {
+    display: flex;
+    gap: var(--mpp-space-2);
+}
+
+.psc-pf-banner-hidden {
+    display: none;
+}
+
+.psc-pf-breadcrumb {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--mpp-fs-sm);
+    color: var(--mpp-text-secondary);
+    max-width: 320px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+
+/* ─── Plant-floor tabs (cascading: "pf-tab" + "pf-tab-active") ──────
+   `.psc-pf-tab-strip` — basic header strip on dialogs.
+   `.psc-pf-tabs` — top-level terminal tab bar (fixed height, scrollable).
+   Both share the same `.psc-pf-tab` items. */
 .psc-pf-tab-strip {
     display: flex;
     border-bottom: 1px solid var(--mpp-border-subtle);
     background: var(--mpp-surface-raised);
+}
+
+.psc-pf-tabs {
+    display: flex;
+    align-items: stretch;
+    height: var(--pf-tab-h);
+    padding: 0 var(--pf-content-pad);
+    background: var(--mpp-surface-raised);
+    border-bottom: 1px solid var(--mpp-border-subtle);
+    gap: var(--mpp-space-1);
+    flex-shrink: 0;
+    overflow-x: auto;
 }
 
 .psc-pf-tab {
@@ -1853,27 +2038,21 @@ button {
     font-weight: var(--mpp-fw-semibold);
 }
 
-
-/* ─── Plant-floor confirmation method badges (FDS-10-013) ─────────── */
-.psc-pf-confirm-method {
-    display: inline-flex;
-    align-items: center;
-    padding: 2px var(--mpp-space-2);
-    border-radius: var(--mpp-radius-pill);
-    font-size: var(--mpp-fs-xs);
-    font-weight: var(--mpp-fw-semibold);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    background: transparent;
-    border: 1px solid currentColor;
+/* Tab-panel base + active variant — only display differs. */
+.psc-pf-tab-panel {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--pf-content-pad);
+    display: none;
 }
 
-.psc-pf-confirm-method[data-method="Vision"]  { color: var(--mpp-vision-fg); }
-.psc-pf-confirm-method[data-method="Barcode"] { color: var(--mpp-barcode-fg); }
-.psc-pf-confirm-method[data-method="Both"]    { color: var(--mpp-both-fg); }
+.psc-pf-tab-panel-active {
+    display: block;
+}
 
 
-/* ─── Plant-floor modal (cascading: "pf-modal" + "pf-modal-shown") ── */
+/* ─── Plant-floor modal — reuses .psc-modal-* card / sections.
+   Only the scrim wrapper is plant-floor-specific (touch-padded inset). */
 .psc-pf-modal {
     position: fixed;
     inset: 0;
@@ -1881,7 +2060,7 @@ button {
     display: none;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: var(--mpp-z-modal);
     padding: var(--mpp-space-4);
 }
 
@@ -1889,57 +2068,63 @@ button {
     display: flex;
 }
 
-.psc-pf-modal-card {
-    background: var(--mpp-surface-overlay);
-    border: 1px solid var(--mpp-border-subtle);
-    border-radius: var(--mpp-radius-lg);
-    box-shadow: var(--mpp-shadow-lg);
-    width: var(--pf-modal-w);
-    max-width: calc(100vw - 32px);
-    max-height: calc(100vh - 64px);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-.psc-pf-modal-header {
-    padding: var(--mpp-space-3) var(--mpp-space-4);
-    font-size: var(--mpp-fs-md);
-    font-weight: var(--mpp-fw-semibold);
-    color: var(--mpp-text-primary);
-    border-bottom: 1px solid var(--mpp-border-subtle);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.psc-pf-modal-body {
-    padding: var(--mpp-space-4);
-    overflow-y: auto;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: var(--mpp-space-3);
-}
-
-.psc-pf-modal-footer {
-    padding: var(--mpp-space-3) var(--mpp-space-4);
-    border-top: 1px solid var(--mpp-border-subtle);
-    display: flex;
-    justify-content: flex-end;
-    gap: var(--mpp-space-2);
-}
-
 
 /* ─── Plant-floor field rows + inputs ──────────────────────────────── */
-.psc-pf-toggle-group {
+.psc-pf-field {
     display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.psc-pf-field-label {
+    font-size: var(--mpp-fs-sm);
+    font-weight: var(--mpp-fw-medium);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--mpp-text-secondary);
+}
+
+.psc-pf-field-help {
+    font-size: var(--mpp-fs-xs);
+    color: var(--mpp-text-tertiary);
+}
+
+.psc-pf-field-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: var(--mpp-space-3);
-    align-items: flex-end;
+}
+
+/* Touch-friendly inputs. `-mono` adds the mono font + letter-spacing. */
+.psc-pf-field-input,
+.psc-pf-field-select,
+.psc-pf-field-input-mono {
+    min-height: var(--pf-touch-min);
+    padding: 0 14px;
+    border: 1px solid var(--mpp-border-default);
+    border-radius: var(--mpp-radius-md);
+    background: var(--mpp-surface-raised);
+    color: var(--mpp-text-primary);
+    font-size: 15px;
+    font-family: inherit;
+}
+
+.psc-pf-field-input-mono {
+    font-family: var(--mpp-font-mono);
+    letter-spacing: 0.05em;
+}
+
+.psc-pf-field-input:focus,
+.psc-pf-field-select:focus,
+.psc-pf-field-input-mono:focus {
+    outline: 2px solid var(--mpp-accent-60);
+    border-color: var(--mpp-accent-60);
 }
 
 
-/* ─── Plant-floor queue + repeater list ───────────────────────────── */
+/* ─── Plant-floor queue + repeater list ─────────────────────────────
+   Repeater = vertical list of cards. Queue = same shell as repeater.
+   `-row` has cascading `-selected` variant (only bg + border differ). */
 .psc-pf-queue,
 .psc-pf-repeater {
     display: flex;
@@ -1947,24 +2132,297 @@ button {
     gap: var(--mpp-space-2);
 }
 
+.psc-pf-queue-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto;
+    gap: var(--mpp-space-4);
+    align-items: center;
+    padding: var(--mpp-space-3) var(--mpp-space-4);
+    background: var(--mpp-surface-raised);
+    border: 1px solid var(--mpp-border-subtle);
+    border-radius: var(--mpp-radius-md);
+    min-height: var(--pf-touch-min);
+    flex-shrink: 0;
+}
 
-/* ─── Plant-floor operation-step labels ───────────────────────────── */
+.psc-pf-queue-row-selected {
+    background: var(--mpp-accent-20);
+    border-color: var(--mpp-accent-60);
+}
+
+.psc-pf-queue-name {
+    font-family: var(--mpp-font-mono);
+    font-size: var(--mpp-fs-base);
+    color: var(--mpp-accent-60);
+    letter-spacing: 0.04em;
+}
+
+.psc-pf-queue-detail {
+    font-size: var(--mpp-fs-sm);
+    color: var(--mpp-text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.psc-pf-queue-position {
+    font-size: var(--mpp-fs-xs);
+    color: var(--mpp-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.psc-pf-repeater-entity {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr auto;
+    gap: 14px;
+    align-items: center;
+    padding: var(--mpp-space-3) var(--mpp-space-4);
+    min-height: 56px;
+    background: var(--mpp-surface-raised);
+    border: 1px solid var(--mpp-border-subtle);
+    border-radius: var(--mpp-radius-md);
+}
+
+.psc-pf-repeater-index {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--mpp-surface-raised);
+    color: var(--mpp-accent-60);
+    font-weight: var(--mpp-fw-bold);
+    font-size: var(--mpp-fs-base);
+    border: 1px solid var(--mpp-accent-60);
+}
+
+.psc-pf-repeater-scroll {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mpp-space-2);
+    max-height: 320px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+
+/* ─── Plant-floor operation-step labels ──────────────────────────── */
+.psc-pf-op-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px var(--mpp-space-3);
+    border-radius: var(--mpp-radius-md);
+    background: var(--mpp-surface-raised);
+    border: 1px solid var(--mpp-border-subtle);
+    font-size: 13px;
+}
+
 .psc-pf-op-label,
 .psc-pf-op-sep {
     color: var(--mpp-text-tertiary);
 }
 
+.psc-pf-op-value {
+    color: var(--mpp-text-primary);
+    font-weight: var(--mpp-fw-semibold);
+    letter-spacing: 0.05em;
+}
 
-/* ─── Plant-floor downtime modal (FDS-09-013) ─────────────────────── */
-.psc-pf-btn-downtime {
-    background: rgba(244, 179, 67, 0.10);
+
+/* ─── KPI cards (cascading: "pf-kpi" + value variant) ──────────────
+   Base value = primary text. Variants override only the color
+   (and font-size/font-family for `-mono`). */
+.psc-pf-kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(var(--pf-kpi-w), 1fr));
+    gap: 10px;
+    margin-bottom: var(--pf-content-pad);
+}
+
+.psc-pf-kpi {
+    background: var(--mpp-surface-raised);
+    border: 1px solid var(--mpp-border-subtle);
+    border-radius: var(--mpp-radius-md);
+    padding: var(--mpp-space-3) 14px;
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--mpp-space-1);
+}
+
+.psc-pf-kpi-label {
+    font-size: var(--mpp-fs-xs);
+    color: var(--mpp-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: var(--mpp-fw-medium);
+}
+
+.psc-pf-kpi-sub {
+    font-size: var(--mpp-fs-xs);
+    color: var(--mpp-text-secondary);
+    letter-spacing: 0.02em;
+}
+
+.psc-pf-kpi-value {
+    font-size: 24px;
+    font-weight: var(--mpp-fw-semibold);
+    color: var(--mpp-text-primary);
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+}
+
+.psc-pf-kpi-value-bad   { color: var(--pf-status-bad-fg); }
+.psc-pf-kpi-value-good  { color: var(--pf-status-good-fg); }
+.psc-pf-kpi-value-warn  { color: var(--pf-status-warn-fg); }
+.psc-pf-kpi-value-mono  {
+    font-family: var(--mpp-font-mono);
+    font-size: var(--mpp-fs-lg);
+}
+
+
+/* ─── Plant-floor panels + details ─────────────────────────────────── */
+.psc-pf-panel {
+    background: var(--mpp-surface-raised);
+    border: 1px solid var(--mpp-border-subtle);
+    border-radius: var(--mpp-radius-md);
+    padding: 14px var(--mpp-space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--mpp-space-3);
+}
+
+.psc-pf-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.psc-pf-details {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--mpp-surface-canvas);
+}
+
+.psc-pf-details-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mpp-space-1);
+    margin-bottom: var(--pf-content-pad);
+}
+
+.psc-pf-location-meta {
+    display: flex;
+    gap: var(--mpp-space-2);
+    font-size: var(--mpp-fs-sm);
+    color: var(--mpp-text-tertiary);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.psc-pf-actions {
+    display: flex;
+    gap: var(--mpp-space-3);
+    align-items: center;
+    margin-top: var(--pf-content-pad);
+    padding-top: var(--pf-content-pad);
+    border-top: 1px solid var(--mpp-border-subtle);
+}
+
+.psc-pf-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--mpp-space-8) var(--mpp-space-5);
+    color: var(--mpp-text-tertiary);
+    gap: var(--mpp-space-2);
+}
+
+
+/* ─── Elevation toggle (header right) ───────────────────────────── */
+.psc-pf-elevation-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--mpp-space-2);
+    padding: 6px var(--mpp-space-3);
+    border: 1px solid var(--mpp-border-subtle);
+    border-radius: var(--mpp-radius-md);
+    background: var(--mpp-surface-raised);
+    color: var(--mpp-text-secondary);
+    font-size: var(--mpp-fs-sm);
+    font-weight: var(--mpp-fw-medium);
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    text-transform: uppercase;
+}
+
+.psc-pf-toggle-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--mpp-text-tertiary);
+    transition: background var(--mpp-transition-fast);
+}
+
+.psc-pf-app[data-mode="elevated"] .psc-pf-elevation-toggle {
+    background: var(--mpp-accent-tint-10);
+    border-color: var(--mpp-accent-60);
+    color: var(--mpp-accent-60);
+}
+.psc-pf-app[data-mode="elevated"] .psc-pf-elevation-toggle .psc-pf-toggle-dot {
+    background: var(--mpp-accent-60);
+    box-shadow: 0 0 6px var(--mpp-accent-60);
+}
+
+.psc-pf-elevated-label {
+    color: var(--mpp-accent-60);
+    font-weight: var(--mpp-fw-semibold);
+    font-size: var(--mpp-fs-xs);
+    letter-spacing: 0.08em;
+}
+
+.psc-pf-elevated-value {
+    color: var(--mpp-text-primary);
+    font-weight: var(--mpp-fw-medium);
+}
+
+
+/* ─── Paused-LOT indicator (FDS-06-021) ────────────────────────────── */
+.psc-pf-paused-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--mpp-space-2);
+    padding: var(--mpp-space-2) 14px;
+    background: var(--pf-status-warn-bg);
     border: 1px solid var(--pf-status-warn-fg);
+    border-radius: var(--mpp-radius-md);
     color: var(--pf-status-warn-fg);
-}
-.psc-pf-btn-downtime:hover {
-    background: rgba(244, 179, 67, 0.20);
+    font-size: 13px;
+    font-weight: var(--mpp-fw-medium);
+    cursor: pointer;
 }
 
+.psc-pf-paused-indicator-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    padding: 0 var(--mpp-space-2);
+    height: 24px;
+    border-radius: var(--mpp-radius-pill);
+    background: var(--pf-status-warn-fg);
+    color: var(--mpp-surface-raised);
+    font-weight: var(--mpp-fw-bold);
+}
+
+
+/* ─── Plant-floor downtime modal table (FDS-09-013) ───────────────── */
 .psc-pf-dt-open-dot {
     width: 8px;
     height: 8px;
@@ -2048,591 +2506,25 @@ button {
 }
 
 
-/* ─── Plant-floor toggle label (mockup-only annotation) ───────────── */
-.psc-pf-toggle-label-mockup {
-    font-size: var(--mpp-fs-xs);
-    color: var(--mpp-text-tertiary);
-    font-style: italic;
-}
-
-
-/* ============================================================================
-   8. PLANT-FLOOR EXTENDED CLASSES  (added 2026-05-04 cleanup)
-   Classes carried over from the original Section 9 of the source file.
-   Legacy --bg-* / --text-* / --accent / etc. aliases have been substituted
-   with their semantic-token equivalents.
-   ============================================================================ */
-
-.psc-pf-actions {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    margin-top: var(--pf-content-pad);
-    padding-top: var(--pf-content-pad);
-    border-top: 1px solid var(--mpp-border-subtle);
-}
-
-.psc-pf-app {
-    display: grid;
-    grid-template-rows: var(--pf-header-h) 1fr;
-    height: 100vh;
-    overflow: hidden;
-}
-
-.psc-pf-app-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--mpp-text-primary);
-    text-decoration: none;
-    letter-spacing: 0.02em;
-    white-space: nowrap;
-}
-
-.psc-pf-banner-actions {
-    display: flex;
-    gap: 8px;
-}
-
-.psc-pf-banner-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.psc-pf-banner-detail {
-    color: var(--mpp-text-secondary);
-    font-size: 12px;
-}
-
-.psc-pf-banner-hidden {
-    display: none;
-}
-
-.psc-pf-banner-icon {
-    font-size: 16px;
-    color: var(--pf-status-bad-fg);
-}
-
-.psc-pf-banner-title {
-    font-weight: 600;
-    color: var(--pf-status-bad-fg);
-}
-
-.psc-pf-breadcrumb {
-    display: none;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    color: var(--mpp-text-secondary);
-    max-width: 320px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.psc-pf-cell-context-label {
-    font-size: 11px;
-    color: var(--mpp-text-tertiary);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    white-space: nowrap;
-}
-
-.psc-pf-cell-context-value {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--mpp-accent-60);
-    letter-spacing: 0.02em;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.psc-pf-details {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    background: var(--mpp-surface-canvas);
-}
-
-.psc-pf-details-header {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    margin-bottom: var(--pf-content-pad);
-}
-
-.psc-pf-elevated-label {
-    color: var(--mpp-accent-60);
-    font-weight: 600;
-    font-size: 11px;
-    letter-spacing: 0.08em;
-}
-
-.psc-pf-elevated-value {
-    color: var(--mpp-text-primary);
-    font-weight: 500;
-}
-
-.psc-pf-elevation-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 12px;
-    border: 1px solid var(--mpp-border-subtle);
-    border-radius: var(--mpp-radius-md);
-    background: var(--mpp-surface-raised);
-    color: var(--mpp-text-secondary);
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.04em;
-    cursor: pointer;
-    text-transform: uppercase;
-}
-
-.psc-pf-empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 64px 24px;
-    color: var(--mpp-text-tertiary);
-    gap: 8px;
-}
-
-.psc-pf-field {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.psc-pf-field-help {
-    font-size: 11px;
-    color: var(--mpp-text-tertiary);
-}
-
-.psc-pf-field-label {
-    font-size: 12px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--mpp-text-secondary);
-}
-
-.psc-pf-field-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 12px;
-}
-
-/* Plant-floor field inputs — touch-friendly. .psc-pf-field-input +
-   .psc-pf-field-select share the base; .psc-pf-field-input-mono adds
-   the mono font. */
-.psc-pf-field-input,
-.psc-pf-field-select,
-.psc-pf-field-input-mono {
-    min-height: var(--pf-touch-min);
-    padding: 0 14px;
-    border: 1px solid var(--mpp-border-default);
-    border-radius: var(--mpp-radius-md);
-    background: var(--mpp-surface-raised);
-    color: var(--mpp-text-primary);
-    font-size: 15px;
-    font-family: inherit;
-}
-
-.psc-pf-field-input-mono {
-    font-family: var(--mpp-font-mono);
-    letter-spacing: 0.05em;
-}
-
-.psc-pf-field-input:focus,
-.psc-pf-field-select:focus,
-.psc-pf-field-input-mono:focus {
-    outline: 2px solid var(--mpp-accent-60);
-    border-color: var(--mpp-accent-60);
-}
-
-.psc-pf-header-center {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.psc-pf-header-left {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-width: 0;
-}
-
-.psc-pf-header-right {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 16px;
-}
-
-.psc-pf-home {
-    display: grid;
-    grid-template-columns: var(--pf-tree-w) 1fr;
-    height: 100%;
-    background: var(--mpp-surface-canvas);
-}
-
-.psc-pf-kpi {
-    background: var(--mpp-surface-raised);
-    border: 1px solid var(--mpp-border-subtle);
-    border-radius: var(--mpp-radius-md);
-    padding: 12px 14px;
-    min-height: 80px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.psc-pf-kpi-label {
-    font-size: 11px;
-    color: var(--mpp-text-tertiary);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-weight: 500;
-}
-
-.psc-pf-kpi-sub {
-    font-size: 11px;
-    color: var(--mpp-text-secondary);
-    letter-spacing: 0.02em;
-}
-
-.psc-pf-kpi-value {
-    font-size: 24px;
-    font-weight: 600;
-    color: var(--mpp-text-primary);
-    letter-spacing: -0.01em;
-    line-height: 1.1;
-}
-
-.psc-pf-kpi-value-bad {
-    font-size: 24px;
-    font-weight: 600;
-    color: var(--pf-status-bad-fg);
-    letter-spacing: -0.01em;
-    line-height: 1.1;
-}
-
-.psc-pf-kpi-value-good {
-    font-size: 24px;
-    font-weight: 600;
-    color: var(--pf-status-good-fg);
-    letter-spacing: -0.01em;
-    line-height: 1.1;
-}
-
-.psc-pf-kpi-value-mono {
-    font-size: 18px;
-    font-family: var(--mpp-font-mono);
-    font-weight: 600;
-    color: var(--mpp-text-primary);
-    letter-spacing: -0.01em;
-    line-height: 1.1;
-}
-
-.psc-pf-kpi-value-warn {
-    font-size: 24px;
-    font-weight: 600;
-    color: var(--pf-status-warn-fg);
-    letter-spacing: -0.01em;
-    line-height: 1.1;
-}
-
-.psc-pf-kpis {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(var(--pf-kpi-w), 1fr));
-    gap: 10px;
-    margin-bottom: var(--pf-content-pad);
-}
-
-.psc-pf-location-meta {
-    display: flex;
-    gap: 8px;
-    font-size: 12px;
-    color: var(--mpp-text-tertiary);
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-}
-
-.psc-pf-main {
-    position: relative;
-    overflow: hidden;
-    height: 100%;
-}
-
-.psc-pf-op-indicator {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    border-radius: var(--mpp-radius-md);
-    background: var(--mpp-surface-raised);
-    border: 1px solid var(--mpp-border-subtle);
-    font-size: 13px;
-}
-
-.psc-pf-op-label {
-    color: var(--mpp-text-tertiary);
-}
-
-.psc-pf-op-value {
-    color: var(--mpp-text-primary);
-    font-weight: 600;
-    letter-spacing: 0.05em;
-}
-
-.psc-pf-panel {
-    background: var(--mpp-surface-raised);
-    border: 1px solid var(--mpp-border-subtle);
-    border-radius: var(--mpp-radius-md);
-    padding: 14px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.psc-pf-panel-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.psc-pf-paused-indicator {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 14px;
-    background: var(--pf-status-warn-bg);
-    border: 1px solid var(--pf-status-warn-fg);
-    border-radius: var(--mpp-radius-md);
-    color: var(--pf-status-warn-fg);
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-}
-
-.psc-pf-paused-indicator-count {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 32px;
-    padding: 0 8px;
-    height: 24px;
-    border-radius: 12px;
-    background: var(--pf-status-warn-fg);
-    color: var(--mpp-surface-raised);
-    font-weight: 700;
-}
-
-.psc-pf-queue {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.psc-pf-queue-detail {
-    font-size: 13px;
-    color: var(--mpp-text-secondary);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.psc-pf-queue-name {
-    font-family: var(--mpp-font-mono);
-    font-size: 14px;
-    color: var(--mpp-accent-60);
-    letter-spacing: 0.04em;
-}
-
-.psc-pf-queue-position {
-    font-size: 11px;
-    color: var(--mpp-text-tertiary);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-}
-
-.psc-pf-queue-row {
-    display: grid;
-    grid-template-columns: 1fr auto auto auto;
-    gap: 16px;
-    align-items: center;
-    padding: 12px 16px;
-    background: var(--mpp-surface-raised);
-    border: 1px solid var(--mpp-border-subtle);
-    border-radius: var(--mpp-radius-md);
-    min-height: var(--pf-touch-min);
-    flex-shrink: 0;
-}
-
-.psc-pf-queue-row-selected {
-    display: grid;
-    grid-template-columns: 1fr auto auto auto;
-    gap: 16px;
-    align-items: center;
-    padding: 12px 16px;
-    background: var(--mpp-accent-20);
-    border: 1px solid var(--mpp-accent-60);
-    border-radius: var(--mpp-radius-md);
-    min-height: var(--pf-touch-min);
-    flex-shrink: 0;
-}
-
-.psc-pf-repeater-entity {
-    display: grid;
-    grid-template-columns: auto 1fr 1fr auto;
-    gap: 14px;
-    align-items: center;
-    padding: 12px 16px;
-    min-height: 56px;
-    background: var(--mpp-surface-raised);
-    border: 1px solid var(--mpp-border-subtle);
-    border-radius: var(--mpp-radius-md);
-}
-
-.psc-pf-repeater-index {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: var(--mpp-surface-raised);
-    color: var(--mpp-accent-60);
-    font-weight: 700;
-    font-size: 14px;
-    border: 1px solid var(--mpp-accent-60);
-}
-
-.psc-pf-repeater-scroll {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    max-height: 320px;
-    overflow-y: auto;
-    padding-right: 4px;
-}
-
-.psc-pf-tab-panel {
-    flex: 1;
-    overflow-y: auto;
-    padding: var(--pf-content-pad);
-    display: none;
-}
-
-.psc-pf-tab-panel-active {
-    flex: 1;
-    overflow-y: auto;
-    padding: var(--pf-content-pad);
-    display: block;
-}
-
-.psc-pf-tabs {
-    display: flex;
-    align-items: stretch;
-    height: var(--pf-tab-h);
-    padding: 0 var(--pf-content-pad);
-    background: var(--mpp-surface-raised);
-    border-bottom: 1px solid var(--mpp-border-subtle);
-    gap: 4px;
-    flex-shrink: 0;
-    overflow-x: auto;
-}
-
-.psc-pf-terminal-cell-context {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-    background: var(--mpp-surface-raised);
-    border: 1px solid var(--mpp-border-subtle);
-    border-radius: var(--mpp-radius-md);
-}
-
-.psc-pf-terminal-close-icon {
-    font-size: 16px;
-    line-height: 1;
-}
-
-.psc-pf-terminal-title-meta {
-    font-size: 12px;
-    color: var(--mpp-text-tertiary);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-}
-
-.psc-pf-toggle-btn-label {
-    font-size: 18px;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-}
-
-.psc-pf-toggle-btn-meta {
-    font-size: 12px;
-    font-weight: 400;
-    opacity: 0.85;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-}
-
-.psc-pf-tree-dock-shown {
-    transform: translateX(0);
-}
-
-
-
-/* ─── Descendant-selector classes (state extensions) ──────────────── */
-
-/* Data-table row selected state */
-.psc-data-table tbody tr.psc-selected     { background: var(--mpp-accent-20); }
-.psc-data-table tbody tr.psc-selected td  { color: var(--mpp-accent-90); }
-
-/* Plant-floor breadcrumb pieces */
-.psc-pf-breadcrumb .psc-pf-sep      { color: var(--mpp-text-tertiary); }
-.psc-pf-breadcrumb .psc-pf-current  {
-    color: var(--mpp-text-primary);
-    font-weight: var(--mpp-fw-medium);
-    padding: 4px 6px;
-}
-
-/* Operator vs elevated mode — toggle visibility of elevated UI segments */
+/* ─── Mode-driven visibility (operator vs elevated) ─────────────── */
 .psc-pf-app[data-mode="operator"] .psc-pf-elevated-segment  { display: none; }
 .psc-pf-app[data-mode="elevated"] .psc-pf-elevated-segment  { display: inline; }
-
-/* Elevation-toggle dot indicator */
-.psc-pf-elevation-toggle .psc-pf-toggle-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--mpp-text-tertiary);
-    transition: background var(--mpp-transition-fast);
-}
-.psc-pf-app[data-mode="elevated"] .psc-pf-elevation-toggle {
-    background: rgba(34, 211, 238, 0.10);
-    border-color: var(--mpp-accent-60);
-    color: var(--mpp-accent-60);
-}
-.psc-pf-app[data-mode="elevated"] .psc-pf-elevation-toggle .psc-pf-toggle-dot {
-    background: var(--mpp-accent-60);
-    box-shadow: 0 0 6px var(--mpp-accent-60);
-}
 
 /* Elevated-only tab marker (small dot rendered after the label) */
 .psc-pf-tab-elevated-only::after {
     content: "·";
     margin-left: 6px;
     color: var(--mpp-accent-60);
-    font-size: 16px;
+    font-size: var(--mpp-fs-md);
     line-height: 0;
 }
 .psc-pf-app[data-mode="operator"] .psc-pf-tab-elevated-only { display: none; }
+
+
+/* ─── Plant-floor breadcrumb pieces ─────────────────────────────── */
+.psc-pf-breadcrumb .psc-pf-sep      { color: var(--mpp-text-tertiary); }
+.psc-pf-breadcrumb .psc-pf-current  {
+    color: var(--mpp-text-primary);
+    font-weight: var(--mpp-fw-medium);
+    padding: 4px 6px;
+}
