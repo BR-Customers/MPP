@@ -979,3 +979,92 @@ html, body {
 [data-trim-state="out"] .pf-terminal-cell-context[data-trim-show="out"] {
   flex-direction: row;
 }
+
+/* ─── Downtime header button ─────────────────────────────────────────── */
+.pf-btn-downtime {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--radius);
+  border: 1px solid var(--pf-status-warn-fg);
+  background: var(--pf-status-warn-bg);
+  color: var(--pf-status-warn-fg);
+  cursor: pointer;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+  transition: background 0.15s;
+}
+.pf-btn-downtime:hover { background: rgba(244,179,67,0.20); }
+.pf-btn-downtime .pf-dt-open-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--pf-status-warn-fg);
+  display: inline-block;
+}
+
+/* ─── Downtime events table (inside modal) ───────────────────────────── */
+.pf-dt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.pf-dt-table thead th {
+  padding: 9px 14px;
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-row-alt);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.pf-dt-table tbody tr.dt-row {
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.pf-dt-table tbody tr.dt-row:hover { background: rgba(255,255,255,0.04); }
+.pf-dt-table tbody tr.dt-row.expanded { background: var(--bg-row-alt); }
+.pf-dt-table tbody tr.dt-row.dt-row-open td:first-child {
+  border-left: 3px solid var(--pf-status-warn-fg);
+}
+.pf-dt-table tbody tr.dt-row td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.pf-dt-table tbody tr.dt-expand-row > td {
+  padding: 0;
+  border-bottom: 2px solid var(--border);
+}
+.dt-expand-form {
+  padding: 16px 20px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px 16px;
+  background: var(--bg-row-alt);
+}
+.dt-expand-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+}
+.dt-open-badge {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: var(--pf-status-warn-fg);
+}
