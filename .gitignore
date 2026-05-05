@@ -50,6 +50,9 @@ ignition/projects/Refrence project/Spinner/
 # SQL test runner output
 sql/tests/test_output.txt
 
+# Deploy machine sync log (created by pull.ps1 on the deploy box)
+pull.log
+
 # Python (just in case)
 __pycache__/
 *.py[cod]
