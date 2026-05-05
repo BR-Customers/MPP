@@ -11,7 +11,8 @@
   "root": {
     "children": [
       {
-        "meta": { "name": "title" },
+        "meta": { "name": "Title" },
+        "position": {},
         "propConfig": {
           "props.text": {
             "binding": { "config": { "paramName": "title" }, "type": "param" }
@@ -20,27 +21,24 @@
         "props": {
           "text": "Section Title",
           "style": {
-            "color": "var(--mpp-text-primary)",
-            "fontFamily": "var(--mpp-font-sans)",
-            "fontSize": "var(--mpp-fs-lg)",
-            "fontWeight": "var(--mpp-fw-semibold)",
-            "lineHeight": "var(--mpp-lh-tight)",
-            "marginBottom": "2px"
+            "color": "#F0F3F8",
+            "fontSize": "18px",
+            "fontWeight": "600",
+            "lineHeight": "1.2"
           }
         },
         "type": "ia.display.label"
       },
       {
-        "meta": { "name": "subtitle" },
+        "meta": { "name": "Subtitle" },
+        "position": {},
         "propConfig": {
           "props.text": {
             "binding": { "config": { "paramName": "subtitle" }, "type": "param" }
           },
           "props.visible": {
             "binding": {
-              "config": {
-                "expression": "{view.params.subtitle} != ''"
-              },
+              "config": { "expression": "{view.params.subtitle} != ''" },
               "type": "expr"
             }
           }
@@ -48,23 +46,22 @@
         "props": {
           "text": "",
           "style": {
-            "color": "var(--mpp-text-tertiary)",
-            "fontFamily": "var(--mpp-font-sans)",
-            "fontSize": "var(--mpp-fs-sm)",
-            "fontWeight": "var(--mpp-fw-regular)"
+            "color": "#697A98",
+            "fontSize": "12px",
+            "fontWeight": "400"
           }
         },
         "type": "ia.display.label"
       }
     ],
     "meta": { "name": "root" },
+    "propConfig": {},
     "props": {
+      "direction": "column",
       "style": {
-        "display": "flex",
-        "flexDirection": "column",
-        "justifyContent": "center",
-        "paddingBottom": "var(--mpp-space-3)",
-        "borderBottom": "1px solid var(--mpp-border-subtle)"
+        "borderBottom": "1px solid #2C3A55",
+        "gap": "2px",
+        "paddingBottom": "12px"
       }
     },
     "type": "ia.container.flex"
