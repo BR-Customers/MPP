@@ -14,6 +14,7 @@
 |---|---|---|---|
 | 1.0 | 2026-04-14 | Blue Ridge Automation | Initial Configuration Tool UI specification with 15 screen definitions, SP mappings, user actions, and fresh-implementation views |
 | 1.1 | 2026-04-14 | Blue Ridge Automation | Validated against Claude Desktop memory files. Fixed: (1) Route Builder/BOM Editor now show three-state Draft/Published/Deprecated lifecycle; (2) Quality Spec Editor updated to match three-state pattern per feedback_three_state_versioning.md; (3) LocationTypeDefinition section corrected to read-only per feedback_readonly_type_tables.md — removed CRUD procs; (4) Updated proc count to 136. |
+| 1.2 | 2026-05-05 | Blue Ridge Automation | Aligned with `MPP_MES_CONFIG_TOOL_FRONTEND_CONVENTIONS.md` v1.0. Two screens updated: (1) Eligibility Map (Screen 10) — removed "saves immediately" auto-save; cells now flip in `editDraft` and Save commits the diff; (2) Route Builder (Screen 9) — Move Up / Move Down arrow clicks now reorder `editDraft.steps[]` locally, committed only on Save. |
 
 ---
 
@@ -27,6 +28,8 @@ This document specifies the Ignition Perspective user interface for the **Config
 4. **What a fresh implementation renders** — initial state after deployment with seed data
 
 This document complements `MPP_MES_PHASED_PLAN_CONFIG_TOOL.md` (which defines *what to build* in sequence) by specifying *exactly how each screen behaves*.
+
+> **Cross-cutting conventions** (three-layer DB architecture, save semantics, versioning workflow refinements) are defined in `MPP_MES_CONFIG_TOOL_FRONTEND_CONVENTIONS.md`. Where this document and the conventions document disagree, the conventions document wins. Currently superseding two screens here: Eligibility Map (Screen 10) and Route Builder move-up / move-down behavior (Screen 9).
 
 ---
 
@@ -727,11 +730,12 @@ Add Step Modal:
 | Publish route | Click [Publish] (on draft) | `Parts.RouteTemplate_Publish` | `@Id, @AppUserId` |
 | Deprecate route | Click Deprecate (on published) | `Parts.RouteTemplate_Deprecate` | `@Id, @AppUserId` |
 | Load operation dropdown | [+ Add Step] clicked | `Parts.OperationTemplate_List` | `@ActiveOnly = 1` |
-| Add step | Submit Add Step modal | `Parts.RouteStep_Add` | `@RouteTemplateId, @OperationTemplateId, @AppUserId` |
-| Update step | Change operation on existing step | `Parts.RouteStep_Update` | `@Id, @OperationTemplateId, @AppUserId` |
-| Move step up | Click [▲] | `Parts.RouteStep_MoveUp` | `@Id, @AppUserId` |
-| Move step down | Click [▼] | `Parts.RouteStep_MoveDown` | `@Id, @AppUserId` |
-| Remove step | Click [X] | `Parts.RouteStep_Remove` | `@Id, @AppUserId` |
+| Add step | Submit Add Step modal | (none — appended to `editDraft.steps[]`) | — |
+| Update step | Change operation on existing step | (none — mutates `editDraft.steps[i]`) | — |
+| Move step up | Click [▲] | (none — reorders `editDraft.steps[]` locally) | — |
+| Move step down | Click [▼] | (none — reorders `editDraft.steps[]` locally) | — |
+| Remove step | Click [X] | (none — removes from `editDraft.steps[]`) | — |
+| Save route | Click [Save Route] | `Parts.RouteStep_Replace` (or step-by-step `_Add` / `_Update` / `_Remove` / `_MoveUp` / `_MoveDown` per diff against `selected.steps`) | `@RouteTemplateId, @AppUserId, @StepsJson` (TBD per implementation) |
 
 #### Fresh Implementation View
 
@@ -762,9 +766,13 @@ Item picker dropdown populated from Item Master. No routes exist until engineeri
 │ │ 6MA          │ ☐     │ ☐     │ ☐     │ ☐     │ ☑     │ ☐     │ ☑        │ │
 │ └──────────────────────────────────────────────────────────────────────────┘ │
 │                                                                              │
-│ ℹ️ Click any cell to toggle eligibility. Changes save immediately.            │
+│ Click any cell to toggle eligibility in the draft. Save commits all changes. │
+│                                                                              │
+│                                            [Save] [Cancel] ● Unsaved changes │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
+
+> Per `MPP_MES_CONFIG_TOOL_FRONTEND_CONVENTIONS.md` §2: cell clicks update `editDraft` only. The Save button computes the diff against `selected` and calls `Parts.ItemLocation_Add` / `Parts.ItemLocation_Remove` per changed cell. No auto-save.
 
 #### User Actions
 
@@ -773,8 +781,9 @@ Item picker dropdown populated from Item Master. No routes exist until engineeri
 | Load items | Screen opens / filter change | `Parts.Item_List` | `@ItemTypeId` |
 | Load locations | Screen opens / filter change | `Location.Location_GetDescendantsOfType` | `@LocationId, @LocationTypeId = 4` (Cells) |
 | Load existing eligibility (row) | For each item in view | `Parts.ItemLocation_ListByItem` | `@ItemId` |
-| Add eligibility | Click unchecked cell | `Parts.ItemLocation_Add` | `@ItemId, @LocationId, @AppUserId` |
-| Remove eligibility | Click checked cell | `Parts.ItemLocation_Remove` | `@ItemId, @LocationId, @AppUserId` |
+| Toggle cell | Click cell | (none — updates `editDraft` only) | — |
+| Save changes | Click [Save] | `Parts.ItemLocation_Add` for newly-checked cells; `Parts.ItemLocation_Remove` for newly-unchecked cells | `@ItemId, @LocationId, @AppUserId` per call |
+| Cancel changes | Click [Cancel] | (none — restores `editDraft` from `selected`) | — |
 
 #### Fresh Implementation View
 
