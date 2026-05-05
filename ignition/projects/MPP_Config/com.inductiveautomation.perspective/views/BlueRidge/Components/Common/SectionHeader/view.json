@@ -1,0 +1,72 @@
+{
+  "custom": {},
+  "params": {
+    "title": "Section Title",
+    "subtitle": ""
+  },
+  "propConfig": {},
+  "props": {
+    "defaultSize": { "height": 52, "width": 400 }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": { "name": "title" },
+        "propConfig": {
+          "props.text": {
+            "binding": { "config": { "paramName": "title" }, "type": "param" }
+          }
+        },
+        "props": {
+          "text": "Section Title",
+          "style": {
+            "color": "var(--mpp-text-primary)",
+            "fontFamily": "var(--mpp-font-sans)",
+            "fontSize": "var(--mpp-fs-lg)",
+            "fontWeight": "var(--mpp-fw-semibold)",
+            "lineHeight": "var(--mpp-lh-tight)",
+            "marginBottom": "2px"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": { "name": "subtitle" },
+        "propConfig": {
+          "props.text": {
+            "binding": { "config": { "paramName": "subtitle" }, "type": "param" }
+          },
+          "props.visible": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.subtitle} != ''"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "color": "var(--mpp-text-tertiary)",
+            "fontFamily": "var(--mpp-font-sans)",
+            "fontSize": "var(--mpp-fs-sm)",
+            "fontWeight": "var(--mpp-fw-regular)"
+          }
+        },
+        "type": "ia.display.label"
+      }
+    ],
+    "meta": { "name": "root" },
+    "props": {
+      "style": {
+        "display": "flex",
+        "flexDirection": "column",
+        "justifyContent": "center",
+        "paddingBottom": "var(--mpp-space-3)",
+        "borderBottom": "1px solid var(--mpp-border-subtle)"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}
