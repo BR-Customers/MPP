@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!--
+        MPP MES — Material Symbols icon library
+        Lock date: 2026-05-04 (per mockup/icons.csv)
+        Style: Outlined · Weight 300 · Fill 0 · Grade -25 · Optical size 48px
+        ViewBox 0 -960 960 960 is the source font's glyph grid; preserved unchanged.
+        Source: https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/<name>/materialsymbolsoutlined/<name>_wght300gradN25_48px.svg
+    -->
+
+    <!-- ===== Navigation ===== -->
+
+    <!-- play_arrow — Forward / play (mockup key: forward) -->
+    <svg viewBox="0 -960 960 960" id="play_arrow"><path d="M342.16-241.77v-480.92l377.53 240.46-377.53 240.46ZM386-482.23Zm0 160.38 253.08-160.38L386-642.61v320.76Z" fill="currentColor"/></svg>
+
+</svg>

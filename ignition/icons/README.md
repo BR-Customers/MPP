@@ -18,23 +18,35 @@ The locked set lives in `mockup/icons.csv` — that file is the design contract.
 
 ## Source URL pattern
 
-Each icon is sourced from Google Fonts' static SVG endpoint at the locked axes:
+Each icon is sourced from the Google `material-design-icons` GitHub repository, which publishes pre-rendered static SVGs at every supported axis combination of the Material Symbols variable font. Our locked axes (weight 300, grade -25, optical size 48, fill 0) use this URL pattern:
 
 ```
-https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/<material_symbol_name>/wght300grad_N25/48px.svg
+https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/<name>/materialsymbolsoutlined/<name>_wght300gradN25_48px.svg
 ```
 
-(Example: `https://fonts.gstatic.com/s/i/short-term/release/materialsymbolsoutlined/play_arrow/wght300grad_N25/48px.svg`.)
+(Example: `https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/play_arrow/materialsymbolsoutlined/play_arrow_wght300gradN25_48px.svg`.)
 
-Fallback if the URL pattern fails for any icon: open <https://fonts.google.com/icons>, search the icon, set Weight=300 / Grade=-25 / Optical Size=48 / Fill=0, and download the static SVG.
+Note: Google's `fonts.gstatic.com` static endpoint only exposes weight and fill axes — `grad` is not available there. The GitHub repo is the only source that publishes pre-rendered SVGs at every variable-font axis combination, including `gradN25`.
+
+Fallback if a name 404s in the GitHub repo: open <https://fonts.google.com/icons>, search the icon, set Weight=300 / Grade=-25 / Optical Size=48 / Fill=0, and download the static SVG manually.
 
 ## Cleanup applied to each fetched SVG
 
-1. Preserve the original `viewBox="0 0 48 48"`.
-2. Strip any baked-in `fill="#..."` attribute on the root `<svg>` or on `<path>` elements.
-3. Set `fill="currentColor"` on each `<path>` so Perspective theme tokens (`--mpp-icon-color`, `--mpp-icon-color-accent`, etc.) drive color.
-4. Wrap in `<svg viewBox="0 0 48 48" id="<material_symbol_name>">…</svg>`.
-5. Append to `mpp.svg` in the order from `mockup/icons.csv`, grouped by the `group` column (Navigation, Actions, Sections, Status), with section comments.
+Each fetched SVG comes in this shape:
+
+```xml
+<svg xmlns="http://www.w3.org/2000/svg" height="48" viewBox="0 -960 960 960" width="48"><path d="…"/></svg>
+```
+
+The viewBox `0 -960 960 960` is intentional — it's the font's own glyph coordinate grid (baseline at 0, glyphs extending upward to 960). Perspective scales by the rendered CSS size regardless, so we keep this viewBox unchanged.
+
+Cleanup steps applied to each fetched SVG:
+
+1. **Preserve** the source `viewBox="0 -960 960 960"`. Do not re-map to `0 0 48 48`.
+2. **Drop** the outer `xmlns`, `height`, and `width` attributes from the source `<svg>` — Perspective's container handles dimensions.
+3. **Add** `fill="currentColor"` to each `<path>`. The source paths have no fill set (browser defaults to black); explicit `currentColor` lets Perspective theme tokens drive icon color.
+4. **Wrap** as `<svg viewBox="0 -960 960 960" id="<name>">…</svg>` (the inner `<svg>` keeps the viewBox; the outer wrapper in `mpp.svg` carries the `xmlns`).
+5. **Append** to `mpp.svg` in the order from `mockup/icons.csv`, grouped by the `group` column (Navigation, Actions, Sections, Status), with section comments.
 
 ## Deployment
 
