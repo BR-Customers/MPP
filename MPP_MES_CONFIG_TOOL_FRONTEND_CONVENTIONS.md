@@ -3,7 +3,7 @@
 **Document:** MPP-MES-FECONV-001
 **Project:** Madison Precision Products MES Replacement
 **Prepared By:** Blue Ridge Automation
-**Version:** 1.0
+**Version:** 1.1
 **Date:** 2026-05-05
 
 ---
@@ -13,6 +13,7 @@
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
 | 1.0 | 2026-05-05 | Blue Ridge Automation | Initial conventions: three-layer DB architecture, save semantics, versioning workflow refinements |
+| 1.1 | 2026-05-05 | Blue Ridge Automation | Section 4 expanded to align with the Blue Ridge "Standardization & Collaboration" Ignition standards deck: component naming requirement, view-level custom props as the default, binding/script efficiency hierarchy (replaces standalone 3-line cap rule), page-title requirement in page-config. |
 
 ---
 
@@ -467,9 +468,66 @@ def add(data):
 
 Spinner uses a per-module `log(msg)` wrapper that delegates into the domain's Util module. **Don't carry that pattern into MPP** — direct calls to `BlueRidge.Common.Util.log` keep one source of truth.
 
-### View event scripts capped at 3 lines
+### Page titles in `page-config`
 
-Scripts inline in `view.json` event configs are limited to 3 logical lines. Longer logic lives in entity scripts and is called as a one-liner. Keeps views diffable in PR review and keeps logic unit-testable from non-UI surfaces.
+Every entry in `page-config/config.json` SHALL include a `title` field. The browser tab is what an operator sees when they're juggling Configuration Tool windows alongside email, SAP, and the Honda EDI portal — meaningful titles are not optional.
+
+```json
+"pages": {
+  "/config/items":   { "title": "Item Master",        "viewPath": "BlueRidge/Views/Parts/ItemMaster" },
+  "/config/routes":  { "title": "Route Builder",      "viewPath": "BlueRidge/Views/Parts/RouteBuilder" },
+  "/config/audit":   { "title": "Audit Log",          "viewPath": "BlueRidge/Views/Audit/AuditLog" }
+}
+```
+
+Pages without a sensible static title (e.g., editors that change with selection) MAY override the title at runtime via `system.perspective.setSessionProps` or by binding `page.title`, but the static fallback in `page-config` MUST still be present.
+
+### Component naming
+
+Every container component (`ia.container.flex`, `ia.container.coord`, etc.) SHALL be given a `meta.name`. Every component with property bindings that may change (anything bound to `view.custom.*`, `session.custom.*`, a tag, or an expression) SHALL be named.
+
+A component MAY remain unnamed only when it is unambiguously locatable from context — typically a single static label inside a single-row container with no bindings. Default Designer names like `Label_3` are not considered named.
+
+```
+Container_RouteSteps
+  Label_StepCount        ← bound to {view.custom.editDraft.steps.length}; named
+  FlexContainer_StepList
+    FlexRepeater_Steps   ← bound to view.custom.editDraft.steps; named
+```
+
+Naming makes Designer scripting (`event.source.parent.getComponent('Label_StepCount')`) survivable, makes PR diffs readable, and makes tab-order intent explicit.
+
+### View-level custom properties as the default
+
+Custom properties SHALL live on the view (`view.custom.*`) by default, not on individual components. Component-level custom props get orphaned when a component is renamed, deleted, or moved between containers; view-level props stay reachable from any descendant via the `view.custom.*` path.
+
+The narrow exception: a property that is genuinely scoped to one component instance and should not be reachable elsewhere (e.g., a flex-repeater instance's `index`). When in doubt, put it on the view.
+
+```
+view.custom.selected         ← OK (view-level)
+view.custom.editDraft        ← OK (view-level)
+EditPanel.custom.dirty       ← AVOID (component-level on a panel that may move)
+```
+
+This is also why the editDraft/selected/dirty-indicator pattern in Section 2 lives at `view.custom.*` — anything below the view is fragile.
+
+### Binding and script efficiency hierarchy
+
+When a property needs to be computed or driven, prefer the cheapest mechanism that fits, in this order:
+
+| Rank | Mechanism | When to use |
+|---|---|---|
+| **1 (fastest)** | **Expression binding** | Any computation expressible in Ignition's expression language. Conditionals, string formatting, arithmetic, dataset access, `runScript('Pkg.Mod.fn', 0, args)`. |
+| **2** | **Project-script call** (binding transform `script` calling a one-liner into `BlueRidge.<...>`) | When the logic doesn't fit in an expression but is reusable. Project scripts are preloaded; the JVM doesn't recompile per call. |
+| **3 (slowest)** | **Inline event/transform script** (Python pasted into `view.json`) | Last resort. Inline scripts are interpreted at action time, not preloaded. Cap at 3 logical lines; longer goes into a project script and is called as a one-liner. |
+
+In practice this means:
+
+- Bind a label's text to `if({view.custom.dirty}, '● Unsaved changes', '')` (expression, fastest), not a transform script doing the same.
+- Wire a Save button's `onActionPerformed` to a one-line `BlueRidge.Parts.Part.handleSave(self.view.custom.editDraft)` call — *not* 8 inline lines of Python.
+- Treat the rare ≤3-line inline script as an exception you'd justify in code review, not the default.
+
+This hierarchy is the Blue Ridge Ignition standard ("almost all scripts should be called from project scripting libraries"), formalized for MPP.
 
 ### No drag-and-drop
 
