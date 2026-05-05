@@ -15,13 +15,7 @@
             "propConfig": {},
             "props": {
               "text": "PLANT",
-              "style": {
-                "color": "#697A98",
-                "fontSize": "10px",
-                "fontWeight": "600",
-                "letterSpacing": "0.8px",
-                "padding": "8px 12px 4px 12px"
-              }
+              "style": { "classes": "nav-category-label" }
             },
             "type": "ia.display.label"
           },
@@ -31,7 +25,7 @@
                 "meta": { "name": "Icon" },
                 "position": {},
                 "propConfig": {},
-                "props": { "text": "🏭", "style": { "fontSize": "14px" } },
+                "props": { "text": "🏭", "style": { "classes": "nav-icon" } },
                 "type": "ia.display.label"
               },
               {
@@ -53,27 +47,17 @@
             "meta": { "name": "NavItemPlantHierarchy" },
             "position": {},
             "propConfig": {
-              "props.style.backgroundColor": {
-                "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/PlantHierarchy', '#093240', 'transparent')" }, "type": "expr" }
-              },
-              "props.style.borderLeftColor": {
-                "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/PlantHierarchy', '#1888A8', 'transparent')" }, "type": "expr" }
-              },
-              "props.style.color": {
-                "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/PlantHierarchy', '#4BC2E0', '#C9D2E0')" }, "type": "expr" }
+              "props.style.classes": {
+                "binding": {
+                  "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/PlantHierarchy', 'nav-item nav-item-active', 'nav-item')" },
+                  "type": "expr"
+                }
               }
             },
             "props": {
               "alignItems": "center",
               "direction": "row",
-              "style": {
-                "borderLeft": "3px solid transparent",
-                "cursor": "pointer",
-                "fontWeight": "500",
-                "gap": "8px",
-                "padding": "7px 12px",
-                "width": "100%"
-              }
+              "style": { "classes": "nav-item" }
             },
             "type": "ia.container.flex"
           }
@@ -94,42 +78,39 @@
             "meta": { "name": "PartsCategoryLabel" },
             "position": {},
             "propConfig": {},
-            "props": {
-              "text": "PARTS",
-              "style": { "color": "#697A98", "fontSize": "10px", "fontWeight": "600", "letterSpacing": "0.8px", "padding": "8px 12px 4px 12px" }
-            },
+            "props": { "text": "PARTS", "style": { "classes": "nav-category-label" } },
             "type": "ia.display.label"
           },
           {
             "children": [
-              { "meta": { "name": "Icon" }, "position": {}, "propConfig": {}, "props": { "text": "📦", "style": { "fontSize": "14px" } }, "type": "ia.display.label" },
+              { "meta": { "name": "Icon" }, "position": {}, "propConfig": {}, "props": { "text": "📦", "style": { "classes": "nav-icon" } }, "type": "ia.display.label" },
               { "meta": { "name": "NavLabel" }, "position": { "grow": 1 }, "propConfig": {}, "props": { "text": "Item Master", "style": { "fontSize": "13px" } }, "type": "ia.display.label" }
             ],
             "events": { "dom": { "onClick": { "config": { "script": "self.session.custom.activeScreen = 'BlueRidge/Views/ItemMaster'" }, "type": "script" } } },
             "meta": { "name": "NavItemItemMaster" },
             "position": {},
             "propConfig": {
-              "props.style.backgroundColor": { "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/ItemMaster', '#093240', 'transparent')" }, "type": "expr" } },
-              "props.style.borderLeftColor": { "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/ItemMaster', '#1888A8', 'transparent')" }, "type": "expr" } },
-              "props.style.color": { "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/ItemMaster', '#4BC2E0', '#C9D2E0')" }, "type": "expr" } }
+              "props.style.classes": {
+                "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/ItemMaster', 'nav-item nav-item-active', 'nav-item')" }, "type": "expr" }
+              }
             },
-            "props": { "alignItems": "center", "direction": "row", "style": { "borderLeft": "3px solid transparent", "cursor": "pointer", "fontWeight": "500", "gap": "8px", "padding": "7px 12px", "width": "100%" } },
+            "props": { "alignItems": "center", "direction": "row", "style": { "classes": "nav-item" } },
             "type": "ia.container.flex"
           },
           {
             "children": [
-              { "meta": { "name": "Icon" }, "position": {}, "propConfig": {}, "props": { "text": "📋", "style": { "fontSize": "14px" } }, "type": "ia.display.label" },
+              { "meta": { "name": "Icon" }, "position": {}, "propConfig": {}, "props": { "text": "📋", "style": { "classes": "nav-icon" } }, "type": "ia.display.label" },
               { "meta": { "name": "NavLabel" }, "position": { "grow": 1 }, "propConfig": {}, "props": { "text": "Operation Templates", "style": { "fontSize": "13px" } }, "type": "ia.display.label" }
             ],
             "events": { "dom": { "onClick": { "config": { "script": "self.session.custom.activeScreen = 'BlueRidge/Views/OperationTemplates'" }, "type": "script" } } },
             "meta": { "name": "NavItemOperationTemplates" },
             "position": {},
             "propConfig": {
-              "props.style.backgroundColor": { "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/OperationTemplates', '#093240', 'transparent')" }, "type": "expr" } },
-              "props.style.borderLeftColor": { "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/OperationTemplates', '#1888A8', 'transparent')" }, "type": "expr" } },
-              "props.style.color": { "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/OperationTemplates', '#4BC2E0', '#C9D2E0')" }, "type": "expr" } }
+              "props.style.classes": {
+                "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/OperationTemplates', 'nav-item nav-item-active', 'nav-item')" }, "type": "expr" }
+              }
             },
-            "props": { "alignItems": "center", "direction": "row", "style": { "borderLeft": "3px solid transparent", "cursor": "pointer", "fontWeight": "500", "gap": "8px", "padding": "7px 12px", "width": "100%" } },
+            "props": { "alignItems": "center", "direction": "row", "style": { "classes": "nav-item" } },
             "type": "ia.container.flex"
           }
         ],
@@ -149,42 +130,39 @@
             "meta": { "name": "QualityCategoryLabel" },
             "position": {},
             "propConfig": {},
-            "props": {
-              "text": "QUALITY",
-              "style": { "color": "#697A98", "fontSize": "10px", "fontWeight": "600", "letterSpacing": "0.8px", "padding": "8px 12px 4px 12px" }
-            },
+            "props": { "text": "QUALITY", "style": { "classes": "nav-category-label" } },
             "type": "ia.display.label"
           },
           {
             "children": [
-              { "meta": { "name": "Icon" }, "position": {}, "propConfig": {}, "props": { "text": "📈", "style": { "fontSize": "14px" } }, "type": "ia.display.label" },
+              { "meta": { "name": "Icon" }, "position": {}, "propConfig": {}, "props": { "text": "📈", "style": { "classes": "nav-icon" } }, "type": "ia.display.label" },
               { "meta": { "name": "NavLabel" }, "position": { "grow": 1 }, "propConfig": {}, "props": { "text": "Quality Specs", "style": { "fontSize": "13px" } }, "type": "ia.display.label" }
             ],
             "events": { "dom": { "onClick": { "config": { "script": "self.session.custom.activeScreen = 'BlueRidge/Views/QualitySpecs'" }, "type": "script" } } },
             "meta": { "name": "NavItemQualitySpecs" },
             "position": {},
             "propConfig": {
-              "props.style.backgroundColor": { "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/QualitySpecs', '#093240', 'transparent')" }, "type": "expr" } },
-              "props.style.borderLeftColor": { "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/QualitySpecs', '#1888A8', 'transparent')" }, "type": "expr" } },
-              "props.style.color": { "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/QualitySpecs', '#4BC2E0', '#C9D2E0')" }, "type": "expr" } }
+              "props.style.classes": {
+                "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/QualitySpecs', 'nav-item nav-item-active', 'nav-item')" }, "type": "expr" }
+              }
             },
-            "props": { "alignItems": "center", "direction": "row", "style": { "borderLeft": "3px solid transparent", "cursor": "pointer", "fontWeight": "500", "gap": "8px", "padding": "7px 12px", "width": "100%" } },
+            "props": { "alignItems": "center", "direction": "row", "style": { "classes": "nav-item" } },
             "type": "ia.container.flex"
           },
           {
             "children": [
-              { "meta": { "name": "Icon" }, "position": {}, "propConfig": {}, "props": { "text": "🚫", "style": { "fontSize": "14px" } }, "type": "ia.display.label" },
+              { "meta": { "name": "Icon" }, "position": {}, "propConfig": {}, "props": { "text": "🚫", "style": { "classes": "nav-icon" } }, "type": "ia.display.label" },
               { "meta": { "name": "NavLabel" }, "position": { "grow": 1 }, "propConfig": {}, "props": { "text": "Defect Codes", "style": { "fontSize": "13px" } }, "type": "ia.display.label" }
             ],
             "events": { "dom": { "onClick": { "config": { "script": "self.session.custom.activeScreen = 'BlueRidge/Views/DefectCodes'" }, "type": "script" } } },
             "meta": { "name": "NavItemDefectCodes" },
             "position": {},
             "propConfig": {
-              "props.style.backgroundColor": { "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/DefectCodes', '#093240', 'transparent')" }, "type": "expr" } },
-              "props.style.borderLeftColor": { "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/DefectCodes', '#1888A8', 'transparent')" }, "type": "expr" } },
-              "props.style.color": { "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/DefectCodes', '#4BC2E0', '#C9D2E0')" }, "type": "expr" } }
+              "props.style.classes": {
+                "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/DefectCodes', 'nav-item nav-item-active', 'nav-item')" }, "type": "expr" }
+              }
             },
-            "props": { "alignItems": "center", "direction": "row", "style": { "borderLeft": "3px solid transparent", "cursor": "pointer", "fontWeight": "500", "gap": "8px", "padding": "7px 12px", "width": "100%" } },
+            "props": { "alignItems": "center", "direction": "row", "style": { "classes": "nav-item" } },
             "type": "ia.container.flex"
           }
         ],
@@ -204,42 +182,39 @@
             "meta": { "name": "OpsCategoryLabel" },
             "position": {},
             "propConfig": {},
-            "props": {
-              "text": "OPERATIONS",
-              "style": { "color": "#697A98", "fontSize": "10px", "fontWeight": "600", "letterSpacing": "0.8px", "padding": "8px 12px 4px 12px" }
-            },
+            "props": { "text": "OPERATIONS", "style": { "classes": "nav-category-label" } },
             "type": "ia.display.label"
           },
           {
             "children": [
-              { "meta": { "name": "Icon" }, "position": {}, "propConfig": {}, "props": { "text": "⏰", "style": { "fontSize": "14px" } }, "type": "ia.display.label" },
+              { "meta": { "name": "Icon" }, "position": {}, "propConfig": {}, "props": { "text": "⏰", "style": { "classes": "nav-icon" } }, "type": "ia.display.label" },
               { "meta": { "name": "NavLabel" }, "position": { "grow": 1 }, "propConfig": {}, "props": { "text": "Downtime Codes", "style": { "fontSize": "13px" } }, "type": "ia.display.label" }
             ],
             "events": { "dom": { "onClick": { "config": { "script": "self.session.custom.activeScreen = 'BlueRidge/Views/DowntimeCodes'" }, "type": "script" } } },
             "meta": { "name": "NavItemDowntimeCodes" },
             "position": {},
             "propConfig": {
-              "props.style.backgroundColor": { "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/DowntimeCodes', '#093240', 'transparent')" }, "type": "expr" } },
-              "props.style.borderLeftColor": { "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/DowntimeCodes', '#1888A8', 'transparent')" }, "type": "expr" } },
-              "props.style.color": { "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/DowntimeCodes', '#4BC2E0', '#C9D2E0')" }, "type": "expr" } }
+              "props.style.classes": {
+                "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/DowntimeCodes', 'nav-item nav-item-active', 'nav-item')" }, "type": "expr" }
+              }
             },
-            "props": { "alignItems": "center", "direction": "row", "style": { "borderLeft": "3px solid transparent", "cursor": "pointer", "fontWeight": "500", "gap": "8px", "padding": "7px 12px", "width": "100%" } },
+            "props": { "alignItems": "center", "direction": "row", "style": { "classes": "nav-item" } },
             "type": "ia.container.flex"
           },
           {
             "children": [
-              { "meta": { "name": "Icon" }, "position": {}, "propConfig": {}, "props": { "text": "📅", "style": { "fontSize": "14px" } }, "type": "ia.display.label" },
+              { "meta": { "name": "Icon" }, "position": {}, "propConfig": {}, "props": { "text": "📅", "style": { "classes": "nav-icon" } }, "type": "ia.display.label" },
               { "meta": { "name": "NavLabel" }, "position": { "grow": 1 }, "propConfig": {}, "props": { "text": "Shift Schedules", "style": { "fontSize": "13px" } }, "type": "ia.display.label" }
             ],
             "events": { "dom": { "onClick": { "config": { "script": "self.session.custom.activeScreen = 'BlueRidge/Views/ShiftSchedules'" }, "type": "script" } } },
             "meta": { "name": "NavItemShiftSchedules" },
             "position": {},
             "propConfig": {
-              "props.style.backgroundColor": { "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/ShiftSchedules', '#093240', 'transparent')" }, "type": "expr" } },
-              "props.style.borderLeftColor": { "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/ShiftSchedules', '#1888A8', 'transparent')" }, "type": "expr" } },
-              "props.style.color": { "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/ShiftSchedules', '#4BC2E0', '#C9D2E0')" }, "type": "expr" } }
+              "props.style.classes": {
+                "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/ShiftSchedules', 'nav-item nav-item-active', 'nav-item')" }, "type": "expr" }
+              }
             },
-            "props": { "alignItems": "center", "direction": "row", "style": { "borderLeft": "3px solid transparent", "cursor": "pointer", "fontWeight": "500", "gap": "8px", "padding": "7px 12px", "width": "100%" } },
+            "props": { "alignItems": "center", "direction": "row", "style": { "classes": "nav-item" } },
             "type": "ia.container.flex"
           }
         ],
@@ -259,58 +234,55 @@
             "meta": { "name": "SystemCategoryLabel" },
             "position": {},
             "propConfig": {},
-            "props": {
-              "text": "SYSTEM",
-              "style": { "color": "#697A98", "fontSize": "10px", "fontWeight": "600", "letterSpacing": "0.8px", "padding": "8px 12px 4px 12px" }
-            },
+            "props": { "text": "SYSTEM", "style": { "classes": "nav-category-label" } },
             "type": "ia.display.label"
           },
           {
             "children": [
-              { "meta": { "name": "Icon" }, "position": {}, "propConfig": {}, "props": { "text": "👤", "style": { "fontSize": "14px" } }, "type": "ia.display.label" },
+              { "meta": { "name": "Icon" }, "position": {}, "propConfig": {}, "props": { "text": "👤", "style": { "classes": "nav-icon" } }, "type": "ia.display.label" },
               { "meta": { "name": "NavLabel" }, "position": { "grow": 1 }, "propConfig": {}, "props": { "text": "Users", "style": { "fontSize": "13px" } }, "type": "ia.display.label" }
             ],
             "events": { "dom": { "onClick": { "config": { "script": "self.session.custom.activeScreen = 'BlueRidge/Views/Users'" }, "type": "script" } } },
             "meta": { "name": "NavItemUsers" },
             "position": {},
             "propConfig": {
-              "props.style.backgroundColor": { "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/Users', '#093240', 'transparent')" }, "type": "expr" } },
-              "props.style.borderLeftColor": { "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/Users', '#1888A8', 'transparent')" }, "type": "expr" } },
-              "props.style.color": { "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/Users', '#4BC2E0', '#C9D2E0')" }, "type": "expr" } }
+              "props.style.classes": {
+                "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/Users', 'nav-item nav-item-active', 'nav-item')" }, "type": "expr" }
+              }
             },
-            "props": { "alignItems": "center", "direction": "row", "style": { "borderLeft": "3px solid transparent", "cursor": "pointer", "fontWeight": "500", "gap": "8px", "padding": "7px 12px", "width": "100%" } },
+            "props": { "alignItems": "center", "direction": "row", "style": { "classes": "nav-item" } },
             "type": "ia.container.flex"
           },
           {
             "children": [
-              { "meta": { "name": "Icon" }, "position": {}, "propConfig": {}, "props": { "text": "📜", "style": { "fontSize": "14px" } }, "type": "ia.display.label" },
+              { "meta": { "name": "Icon" }, "position": {}, "propConfig": {}, "props": { "text": "📜", "style": { "classes": "nav-icon" } }, "type": "ia.display.label" },
               { "meta": { "name": "NavLabel" }, "position": { "grow": 1 }, "propConfig": {}, "props": { "text": "Audit Log", "style": { "fontSize": "13px" } }, "type": "ia.display.label" }
             ],
             "events": { "dom": { "onClick": { "config": { "script": "self.session.custom.activeScreen = 'BlueRidge/Views/AuditLog'" }, "type": "script" } } },
             "meta": { "name": "NavItemAuditLog" },
             "position": {},
             "propConfig": {
-              "props.style.backgroundColor": { "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/AuditLog', '#093240', 'transparent')" }, "type": "expr" } },
-              "props.style.borderLeftColor": { "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/AuditLog', '#1888A8', 'transparent')" }, "type": "expr" } },
-              "props.style.color": { "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/AuditLog', '#4BC2E0', '#C9D2E0')" }, "type": "expr" } }
+              "props.style.classes": {
+                "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/AuditLog', 'nav-item nav-item-active', 'nav-item')" }, "type": "expr" }
+              }
             },
-            "props": { "alignItems": "center", "direction": "row", "style": { "borderLeft": "3px solid transparent", "cursor": "pointer", "fontWeight": "500", "gap": "8px", "padding": "7px 12px", "width": "100%" } },
+            "props": { "alignItems": "center", "direction": "row", "style": { "classes": "nav-item" } },
             "type": "ia.container.flex"
           },
           {
             "children": [
-              { "meta": { "name": "Icon" }, "position": {}, "propConfig": {}, "props": { "text": "⚠", "style": { "fontSize": "14px" } }, "type": "ia.display.label" },
+              { "meta": { "name": "Icon" }, "position": {}, "propConfig": {}, "props": { "text": "⚠", "style": { "classes": "nav-icon" } }, "type": "ia.display.label" },
               { "meta": { "name": "NavLabel" }, "position": { "grow": 1 }, "propConfig": {}, "props": { "text": "Failure Log", "style": { "fontSize": "13px" } }, "type": "ia.display.label" }
             ],
             "events": { "dom": { "onClick": { "config": { "script": "self.session.custom.activeScreen = 'BlueRidge/Views/FailureLog'" }, "type": "script" } } },
             "meta": { "name": "NavItemFailureLog" },
             "position": {},
             "propConfig": {
-              "props.style.backgroundColor": { "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/FailureLog', '#093240', 'transparent')" }, "type": "expr" } },
-              "props.style.borderLeftColor": { "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/FailureLog', '#1888A8', 'transparent')" }, "type": "expr" } },
-              "props.style.color": { "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/FailureLog', '#4BC2E0', '#C9D2E0')" }, "type": "expr" } }
+              "props.style.classes": {
+                "binding": { "config": { "expression": "if({session.custom.activeScreen} = 'BlueRidge/Views/FailureLog', 'nav-item nav-item-active', 'nav-item')" }, "type": "expr" }
+              }
             },
-            "props": { "alignItems": "center", "direction": "row", "style": { "borderLeft": "3px solid transparent", "cursor": "pointer", "fontWeight": "500", "gap": "8px", "padding": "7px 12px", "width": "100%" } },
+            "props": { "alignItems": "center", "direction": "row", "style": { "classes": "nav-item" } },
             "type": "ia.container.flex"
           }
         ],
@@ -329,13 +301,7 @@
     "propConfig": {},
     "props": {
       "direction": "column",
-      "style": {
-        "backgroundColor": "#111A2E",
-        "borderRight": "1px solid #2C3A55",
-        "overflowY": "auto",
-        "padding": "8px 0",
-        "width": "200px"
-      }
+      "style": { "classes": "nav-panel-inner" }
     },
     "type": "ia.container.flex"
   }
