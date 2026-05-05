@@ -1,5 +1,10 @@
 {
-  "pages": {},
+  "pages": {
+    "/": {
+      "title": "Home",
+      "viewPath": "BlueRidge/Views/Home/Landing"
+    }
+  },
   "sharedDocks": {
     "cornerPriority": "top-bottom"
   }
