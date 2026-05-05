@@ -3,7 +3,7 @@
 **Document:** MPP-MES-FECONV-001
 **Project:** Madison Precision Products MES Replacement
 **Prepared By:** Blue Ridge Automation
-**Version:** 1.1
+**Version:** 1.2
 **Date:** 2026-05-05
 
 ---
@@ -14,6 +14,7 @@
 |---|---|---|---|
 | 1.0 | 2026-05-05 | Blue Ridge Automation | Initial conventions: three-layer DB architecture, save semantics, versioning workflow refinements |
 | 1.1 | 2026-05-05 | Blue Ridge Automation | Section 4 expanded to align with the Blue Ridge "Standardization & Collaboration" Ignition standards deck: component naming requirement, view-level custom props as the default, binding/script efficiency hierarchy (replaces standalone 3-line cap rule), page-title requirement in page-config. |
+| 1.2 | 2026-05-05 | Blue Ridge Automation | Component naming clarified: root container keeps reserved `meta.name: "root"`. Style class references in `view.json` use the suffix only (no `psc-` prefix) — Perspective adds the prefix at render time. |
 
 ---
 
@@ -496,6 +497,25 @@ Container_RouteSteps
 ```
 
 Naming makes Designer scripting (`event.source.parent.getComponent('Label_StepCount')`) survivable, makes PR diffs readable, and makes tab-order intent explicit.
+
+**Exception — the root container.** The top-level component of every view keeps its reserved `meta.name` of `"root"`. Do not rename it. Ignition's binding paths (`{view.custom.*}`, `{view.params.*}`) and the Designer's component tree both assume `root` is the top of the hierarchy.
+
+### Style class references — no `psc-` prefix in `style.classes`
+
+Perspective adds the `psc-` prefix automatically when rendering Style Classes from the Advanced Stylesheet. In `view.json`, reference the class by its **suffix only**:
+
+```json
+"style": { "classes": "surface-card" }       // CORRECT — renders as <div class="psc-surface-card">
+"style": { "classes": "psc-surface-card" }   // WRONG — would render as <div class="psc-psc-surface-card">
+```
+
+This applies to all classes defined in `stylesheet.css` with the `.psc-*` naming convention. It does NOT apply to nested Style Class paths from the `style-classes/` folder (those are referenced by full path, e.g., `BlueRidge/Components/coreButtonRound`).
+
+Multiple classes are space-separated:
+
+```json
+"style": { "classes": "badge badge-info" }   // both classes applied
+```
 
 ### View-level custom properties as the default
 
