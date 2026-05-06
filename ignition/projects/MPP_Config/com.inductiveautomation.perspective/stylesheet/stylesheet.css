@@ -439,23 +439,30 @@ button {
     text-align: left;
 }
 
-.ia_table__body__row {
+.ia_table__body__row,
+.ia_table__body__row > * {
+    background-color: var(--mpp-surface-raised);
     border-bottom: 1px solid var(--mpp-border-subtle);
     transition: background-color var(--mpp-transition-fast);
+    color: var(--mpp-text-primary);
 }
 
-.ia_table__body__row:hover {
+.ia_table__body__row:hover,
+.ia_table__body__row:hover > * {
     background-color: var(--mpp-surface-hover);
 }
 
 .ia_table__body__row--selected,
-.ia_table__body__row[data-selected="true"] {
+.ia_table__body__row[data-selected="true"],
+.ia_table__body__row--selected > *,
+.ia_table__body__row[data-selected="true"] > * {
     background-color: var(--mpp-surface-selected);
 }
 
 .ia_table__body__cell {
     padding: var(--mpp-space-3) var(--mpp-space-4);
     color: var(--mpp-text-primary);
+    background-color: transparent;
 }
 
 /* ─── Labels / containers / icons ─────────────────────────────────── */
