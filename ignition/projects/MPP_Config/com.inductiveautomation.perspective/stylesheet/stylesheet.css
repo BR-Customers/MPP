@@ -433,9 +433,18 @@ button {
     letter-spacing: 0.05em;
 }
 
-.ia_table__head__cell {
+.ia_table__head__cell,
+.ia_table__head__header__cell {
     padding: var(--mpp-space-3) var(--mpp-space-4);
     text-align: left;
+}
+
+/* Body wrapper + the React Virtualized grid that lives inside it.
+   Without these, the empty area below the rendered rows shows white. */
+.ia_table__body,
+.ia_table__body .ReactVirtualized__Grid,
+.ia_table__body .ReactVirtualized__Grid__innerScrollContainer {
+    background-color: var(--mpp-surface-raised);
 }
 
 .ia_table__body__row,
@@ -458,10 +467,42 @@ button {
     background-color: var(--mpp-surface-selected);
 }
 
-.ia_table__body__cell {
+/* Catch-all cell rule. Ignition 8.3 emits `.ia_table__cell` on every
+   cell (head and body); only head cells additionally have
+   `.ia_table__head__header__cell`. */
+.ia_table__cell {
     padding: var(--mpp-space-3) var(--mpp-space-4);
     color: var(--mpp-text-primary);
     background-color: transparent;
+}
+
+/* Pager (rows-per-page chooser + page indicator strip at table bottom). */
+.ia_pager,
+.pager-container {
+    background-color: var(--mpp-surface-raised);
+    color: var(--mpp-text-secondary);
+    border-top: 1px solid var(--mpp-border-subtle);
+    padding: var(--mpp-space-2) var(--mpp-space-3);
+}
+
+.ia_pager__page {
+    color: var(--mpp-text-secondary);
+    padding: var(--mpp-space-1) var(--mpp-space-2);
+    border-radius: var(--mpp-radius-sm);
+}
+
+.ia_pager__page--active {
+    color: var(--mpp-accent-90);
+    background: var(--mpp-accent-20);
+}
+
+.ia_pager .iaSelectCommon,
+.ia_pager .ia_select,
+.ia_pager .ia_select__select {
+    background-color: var(--mpp-surface-raised);
+    color: var(--mpp-text-primary);
+    border: 1px solid var(--mpp-border-default);
+    border-radius: var(--mpp-radius-sm);
 }
 
 /* ─── Labels / containers / icons ─────────────────────────────────── */
