@@ -10,6 +10,52 @@
     }
   },
   "sharedDocks": {
-    "cornerPriority": "top-bottom"
+    "cornerPriority": "top-bottom",
+    "top": [
+      {
+        "id": "header",
+        "anchor": "fixed",
+        "viewPath": "BlueRidge/Views/Containers/Header",
+        "size": 42,
+        "show": "visible",
+        "content": "push",
+        "modal": false,
+        "resizable": false,
+        "handle": "hide",
+        "iconUrl": "",
+        "viewParams": {},
+        "autoBreakpoint": 480
+      }
+    ],
+    "left": [
+      {
+        "id": "rail",
+        "anchor": "fixed",
+        "viewPath": "BlueRidge/Views/Containers/Rail",
+        "size": 60,
+        "show": "visible",
+        "content": "push",
+        "modal": false,
+        "resizable": false,
+        "handle": "hide",
+        "iconUrl": "",
+        "viewParams": {},
+        "autoBreakpoint": 480
+      },
+      {
+        "id": "navPanel",
+        "anchor": "fixed",
+        "viewPath": "BlueRidge/Views/Containers/NavPanel",
+        "size": 200,
+        "show": "onDemand",
+        "content": "push",
+        "modal": false,
+        "resizable": false,
+        "handle": "hide",
+        "iconUrl": "",
+        "viewParams": {},
+        "autoBreakpoint": 480
+      }
+    ]
   }
 }

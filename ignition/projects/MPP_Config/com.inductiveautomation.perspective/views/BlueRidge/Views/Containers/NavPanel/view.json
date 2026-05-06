@@ -1,0 +1,198 @@
+{
+  "custom": {},
+  "params": {},
+  "props": {
+    "defaultSize": { "width": 200, "height": 720 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "column",
+      "style": { "classes": "nav-panel-inner" }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "PlantCategory" },
+        "position": { "basis": "auto" },
+        "propConfig": {
+          "meta.visible": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "{session.custom.activeCategory} = 'plant'" }
+            }
+          }
+        },
+        "props": { "direction": "column" },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "Label" },
+            "position": { "basis": "auto" },
+            "props": { "text": "Plant", "style": { "classes": "nav-category-label" } }
+          },
+          {
+            "type": "ia.display.flex-repeater",
+            "meta": { "name": "Items" },
+            "position": { "basis": "auto" },
+            "props": {
+              "path": "BlueRidge/Components/Navigation/NavItem",
+              "direction": "column",
+              "useDefaultViewWidth": false,
+              "instances": [
+                { "label": "Plant Hierarchy", "icon": "material/account_tree", "path": "/plant" }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "PartsCategory" },
+        "position": { "basis": "auto" },
+        "propConfig": {
+          "meta.visible": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "{session.custom.activeCategory} = 'parts'" }
+            }
+          }
+        },
+        "props": { "direction": "column" },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "Label" },
+            "position": { "basis": "auto" },
+            "props": { "text": "Parts", "style": { "classes": "nav-category-label" } }
+          },
+          {
+            "type": "ia.display.flex-repeater",
+            "meta": { "name": "Items" },
+            "position": { "basis": "auto" },
+            "props": {
+              "path": "BlueRidge/Components/Navigation/NavItem",
+              "direction": "column",
+              "useDefaultViewWidth": false,
+              "instances": [
+                { "label": "Item Master",         "icon": "material/inventory_2", "path": "/items" },
+                { "label": "Operation Templates", "icon": "material/list_alt",    "path": "/operations" },
+                { "label": "Tools",               "icon": "material/handyman",    "path": "/tools" }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "QualityCategory" },
+        "position": { "basis": "auto" },
+        "propConfig": {
+          "meta.visible": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "{session.custom.activeCategory} = 'quality'" }
+            }
+          }
+        },
+        "props": { "direction": "column" },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "Label" },
+            "position": { "basis": "auto" },
+            "props": { "text": "Quality", "style": { "classes": "nav-category-label" } }
+          },
+          {
+            "type": "ia.display.flex-repeater",
+            "meta": { "name": "Items" },
+            "position": { "basis": "auto" },
+            "props": {
+              "path": "BlueRidge/Components/Navigation/NavItem",
+              "direction": "column",
+              "useDefaultViewWidth": false,
+              "instances": [
+                { "label": "Quality Specs", "icon": "material/insights", "path": "/quality-specs" },
+                { "label": "Defect Codes",  "icon": "material/report",   "path": "/defect-codes" }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "OperationsCategory" },
+        "position": { "basis": "auto" },
+        "propConfig": {
+          "meta.visible": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "{session.custom.activeCategory} = 'operations'" }
+            }
+          }
+        },
+        "props": { "direction": "column" },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "Label" },
+            "position": { "basis": "auto" },
+            "props": { "text": "Operations", "style": { "classes": "nav-category-label" } }
+          },
+          {
+            "type": "ia.display.flex-repeater",
+            "meta": { "name": "Items" },
+            "position": { "basis": "auto" },
+            "props": {
+              "path": "BlueRidge/Components/Navigation/NavItem",
+              "direction": "column",
+              "useDefaultViewWidth": false,
+              "instances": [
+                { "label": "Downtime Codes",  "icon": "material/timer",  "path": "/downtime-codes" },
+                { "label": "Shift Schedules", "icon": "material/event",  "path": "/shifts" }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "SystemCategory" },
+        "position": { "basis": "auto" },
+        "propConfig": {
+          "meta.visible": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "{session.custom.activeCategory} = 'system'" }
+            }
+          }
+        },
+        "props": { "direction": "column" },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "Label" },
+            "position": { "basis": "auto" },
+            "props": { "text": "System", "style": { "classes": "nav-category-label" } }
+          },
+          {
+            "type": "ia.display.flex-repeater",
+            "meta": { "name": "Items" },
+            "position": { "basis": "auto" },
+            "props": {
+              "path": "BlueRidge/Components/Navigation/NavItem",
+              "direction": "column",
+              "useDefaultViewWidth": false,
+              "instances": [
+                { "label": "Users",       "icon": "material/person",      "path": "/users" },
+                { "label": "Audit Log",   "icon": "material/article",     "path": "/audit-log" },
+                { "label": "Failure Log", "icon": "material/warning",     "path": "/failure-log" }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

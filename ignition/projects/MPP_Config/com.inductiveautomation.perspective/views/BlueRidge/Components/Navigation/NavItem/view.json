@@ -1,0 +1,66 @@
+{
+  "custom": {},
+  "params": {
+    "label": "",
+    "icon": "",
+    "path": ""
+  },
+  "propConfig": {
+    "params.label": { "paramDirection": "input" },
+    "params.icon":  { "paramDirection": "input" },
+    "params.path":  { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "width": 200, "height": 36 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "events": {
+      "dom": {
+        "onClick": {
+          "config": { "script": "system.perspective.navigate(self.view.params.path)" },
+          "scope": "C",
+          "type": "script"
+        }
+      }
+    },
+    "propConfig": {
+      "props.style.classes": {
+        "binding": {
+          "type": "expr",
+          "config": {
+            "expression": "if({page.props.path} = {view.params.path}, 'nav-item nav-item-active', 'nav-item')"
+          }
+        }
+      }
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center"
+    },
+    "children": [
+      {
+        "type": "ia.display.icon",
+        "meta": { "name": "Icon" },
+        "position": { "basis": "auto" },
+        "propConfig": {
+          "props.path": {
+            "binding": { "type": "property", "config": { "path": "view.params.icon" } }
+          }
+        },
+        "props": { "style": { "classes": "nav-icon" } }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Label" },
+        "position": { "grow": 1 },
+        "propConfig": {
+          "props.text": {
+            "binding": { "type": "property", "config": { "path": "view.params.label" } }
+          }
+        }
+      }
+    ]
+  }
+}
