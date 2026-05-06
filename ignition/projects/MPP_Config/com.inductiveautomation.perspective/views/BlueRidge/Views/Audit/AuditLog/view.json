@@ -170,7 +170,7 @@
                             }
                           }
                         },
-                        "props": { "format": "yyyy-MM-dd", "pickerType": "date" }
+                        "props": { "format": "YYYY-MM-DD", "pickerType": "date" }
                       }
                     ]
                   },
@@ -198,7 +198,7 @@
                             }
                           }
                         },
-                        "props": { "format": "yyyy-MM-dd", "pickerType": "date" }
+                        "props": { "format": "YYYY-MM-DD", "pickerType": "date" }
                       }
                     ]
                   },
