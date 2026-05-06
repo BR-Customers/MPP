@@ -14,13 +14,38 @@
     "children": [
       {
         "type": "ia.container.flex",
+        "meta": { "name": "EmptyState" },
+        "position": { "basis": "auto" },
+        "propConfig": {
+          "meta.visible": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = ''" }
+            }
+          }
+        },
+        "props": { "direction": "column" },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "Hint" },
+            "position": { "basis": "auto" },
+            "props": {
+              "text": "Select a category to begin",
+              "style": { "classes": "nav-category-label", "fontStyle": "italic" }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
         "meta": { "name": "PlantCategory" },
         "position": { "basis": "auto" },
         "propConfig": {
           "meta.visible": {
             "binding": {
               "type": "expr",
-              "config": { "expression": "{session.custom.activeCategory} = 'plant'" }
+              "config": { "expression": "runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'plant'" }
             }
           }
         },
@@ -55,7 +80,7 @@
           "meta.visible": {
             "binding": {
               "type": "expr",
-              "config": { "expression": "{session.custom.activeCategory} = 'parts'" }
+              "config": { "expression": "runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'parts'" }
             }
           }
         },
@@ -92,7 +117,7 @@
           "meta.visible": {
             "binding": {
               "type": "expr",
-              "config": { "expression": "{session.custom.activeCategory} = 'quality'" }
+              "config": { "expression": "runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'quality'" }
             }
           }
         },
@@ -128,7 +153,7 @@
           "meta.visible": {
             "binding": {
               "type": "expr",
-              "config": { "expression": "{session.custom.activeCategory} = 'operations'" }
+              "config": { "expression": "runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'operations'" }
             }
           }
         },
@@ -164,7 +189,7 @@
           "meta.visible": {
             "binding": {
               "type": "expr",
-              "config": { "expression": "{session.custom.activeCategory} = 'system'" }
+              "config": { "expression": "runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'system'" }
             }
           }
         },
