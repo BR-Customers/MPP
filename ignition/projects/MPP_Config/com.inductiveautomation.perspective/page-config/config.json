@@ -3,6 +3,10 @@
     "/": {
       "title": "Home",
       "viewPath": "BlueRidge/Views/Home/Landing"
+    },
+    "/audit-log": {
+      "title": "Audit Log",
+      "viewPath": "BlueRidge/Views/Audit/AuditLog"
     }
   },
   "sharedDocks": {
