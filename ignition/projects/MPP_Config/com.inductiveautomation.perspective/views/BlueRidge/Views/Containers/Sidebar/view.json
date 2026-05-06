@@ -265,7 +265,7 @@
             "meta": { "name": "EmptyState" },
             "position": { "basis": "auto" },
             "propConfig": {
-              "meta.visible": {
+              "position.display": {
                 "binding": {
                   "type": "expr",
                   "config": { "expression": "runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = ''" }
@@ -290,7 +290,7 @@
             "meta": { "name": "PlantCategory" },
             "position": { "basis": "auto" },
             "propConfig": {
-              "meta.visible": {
+              "position.display": {
                 "binding": {
                   "type": "expr",
                   "config": { "expression": "runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'plant'" }
@@ -325,7 +325,7 @@
             "meta": { "name": "PartsCategory" },
             "position": { "basis": "auto" },
             "propConfig": {
-              "meta.visible": {
+              "position.display": {
                 "binding": {
                   "type": "expr",
                   "config": { "expression": "runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'parts'" }
@@ -362,7 +362,7 @@
             "meta": { "name": "QualityCategory" },
             "position": { "basis": "auto" },
             "propConfig": {
-              "meta.visible": {
+              "position.display": {
                 "binding": {
                   "type": "expr",
                   "config": { "expression": "runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'quality'" }
@@ -398,7 +398,7 @@
             "meta": { "name": "OperationsCategory" },
             "position": { "basis": "auto" },
             "propConfig": {
-              "meta.visible": {
+              "position.display": {
                 "binding": {
                   "type": "expr",
                   "config": { "expression": "runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'operations'" }
@@ -434,7 +434,7 @@
             "meta": { "name": "SystemCategory" },
             "position": { "basis": "auto" },
             "propConfig": {
-              "meta.visible": {
+              "position.display": {
                 "binding": {
                   "type": "expr",
                   "config": { "expression": "runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'system'" }
