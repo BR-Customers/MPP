@@ -1187,10 +1187,21 @@ button {
     font-weight: var(--mpp-fw-medium);
 }
 
-/* nav-icon and elig-icon — same definition, distinct semantic role */
+/* nav-icon and elig-icon — same definition, distinct semantic role.
+   font-size handles HTML-entity icons (mockup); width/height are
+   needed for Ignition's ia.display.icon which renders an SVG and
+   ignores font-size for sizing. */
 .psc-nav-icon,
 .psc-elig-icon {
     font-size: 14px;
+    width: 16px;
+    height: 16px;
+}
+
+.psc-nav-icon svg,
+.psc-elig-icon svg {
+    width: 16px;
+    height: 16px;
 }
 
 
