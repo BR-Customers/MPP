@@ -13,20 +13,443 @@
     },
     "children": [
       {
-        "type": "ia.display.view",
+        "type": "ia.container.flex",
         "meta": { "name": "Rail" },
         "position": { "basis": "60px", "shrink": 0 },
         "props": {
-          "path": "BlueRidge/Views/Containers/Rail"
-        }
+          "direction": "column",
+          "alignItems": "center",
+          "style": { "classes": "rail" }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "RailItemPlant" },
+            "position": { "basis": "auto" },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": { "page": "/plant" },
+                  "scope": "C",
+                  "type": "nav"
+                }
+              }
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "if(runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'plant', 'rail-item rail-item-active', 'rail-item')" }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "center",
+              "justify": "center"
+            },
+            "children": [
+              {
+                "type": "ia.display.icon",
+                "meta": { "name": "Icon" },
+                "position": { "basis": "auto" },
+                "props": { "path": "material/apartment", "style": { "classes": "rail-icon" } }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "Label" },
+                "position": { "basis": "auto" },
+                "props": { "text": "Plant", "style": { "classes": "rail-label" } }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "RailItemParts" },
+            "position": { "basis": "auto" },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": { "page": "/items" },
+                  "scope": "C",
+                  "type": "nav"
+                }
+              }
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "if(runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'parts', 'rail-item rail-item-active', 'rail-item')" }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "center",
+              "justify": "center"
+            },
+            "children": [
+              {
+                "type": "ia.display.icon",
+                "meta": { "name": "Icon" },
+                "position": { "basis": "auto" },
+                "props": { "path": "material/inventory", "style": { "classes": "rail-icon" } }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "Label" },
+                "position": { "basis": "auto" },
+                "props": { "text": "Parts", "style": { "classes": "rail-label" } }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "RailItemQuality" },
+            "position": { "basis": "auto" },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": { "page": "/quality-specs" },
+                  "scope": "C",
+                  "type": "nav"
+                }
+              }
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "if(runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'quality', 'rail-item rail-item-active', 'rail-item')" }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "center",
+              "justify": "center"
+            },
+            "children": [
+              {
+                "type": "ia.display.icon",
+                "meta": { "name": "Icon" },
+                "position": { "basis": "auto" },
+                "props": { "path": "material/check_circle", "style": { "classes": "rail-icon" } }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "Label" },
+                "position": { "basis": "auto" },
+                "props": { "text": "Quality", "style": { "classes": "rail-label" } }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "RailItemOperations" },
+            "position": { "basis": "auto" },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": { "page": "/downtime-codes" },
+                  "scope": "C",
+                  "type": "nav"
+                }
+              }
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "if(runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'operations', 'rail-item rail-item-active', 'rail-item')" }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "center",
+              "justify": "center"
+            },
+            "children": [
+              {
+                "type": "ia.display.icon",
+                "meta": { "name": "Icon" },
+                "position": { "basis": "auto" },
+                "props": { "path": "material/timer", "style": { "classes": "rail-icon" } }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "Label" },
+                "position": { "basis": "auto" },
+                "props": { "text": "Ops", "style": { "classes": "rail-label" } }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "RailItemSystem" },
+            "position": { "basis": "auto" },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": { "page": "/audit-log" },
+                  "scope": "C",
+                  "type": "nav"
+                }
+              }
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "if(runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'system', 'rail-item rail-item-active', 'rail-item')" }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "center",
+              "justify": "center"
+            },
+            "children": [
+              {
+                "type": "ia.display.icon",
+                "meta": { "name": "Icon" },
+                "position": { "basis": "auto" },
+                "props": { "path": "material/build", "style": { "classes": "rail-icon" } }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "Label" },
+                "position": { "basis": "auto" },
+                "props": { "text": "System", "style": { "classes": "rail-label" } }
+              }
+            ]
+          }
+        ]
       },
       {
-        "type": "ia.display.view",
+        "type": "ia.container.flex",
         "meta": { "name": "NavPanel" },
         "position": { "grow": 1 },
         "props": {
-          "path": "BlueRidge/Views/Containers/NavPanel"
-        }
+          "direction": "column",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderRight": "1px solid var(--mpp-border-subtle)",
+            "padding": "var(--mpp-space-2) 0",
+            "overflowY": "auto"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "EmptyState" },
+            "position": { "basis": "auto" },
+            "propConfig": {
+              "meta.visible": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = ''" }
+                }
+              }
+            },
+            "props": { "direction": "column" },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "Hint" },
+                "position": { "basis": "auto" },
+                "props": {
+                  "text": "Select a category to begin",
+                  "style": { "classes": "nav-category-label", "fontStyle": "italic" }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "PlantCategory" },
+            "position": { "basis": "auto" },
+            "propConfig": {
+              "meta.visible": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'plant'" }
+                }
+              }
+            },
+            "props": { "direction": "column" },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "Label" },
+                "position": { "basis": "auto" },
+                "props": { "text": "Plant", "style": { "classes": "nav-category-label" } }
+              },
+              {
+                "type": "ia.display.flex-repeater",
+                "meta": { "name": "Items" },
+                "position": { "basis": "auto" },
+                "props": {
+                  "path": "BlueRidge/Components/Navigation/NavItem",
+                  "direction": "column",
+                  "useDefaultViewWidth": false,
+                  "instances": [
+                    { "label": "Plant Hierarchy", "icon": "material/apartment", "path": "/plant" }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "PartsCategory" },
+            "position": { "basis": "auto" },
+            "propConfig": {
+              "meta.visible": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'parts'" }
+                }
+              }
+            },
+            "props": { "direction": "column" },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "Label" },
+                "position": { "basis": "auto" },
+                "props": { "text": "Parts", "style": { "classes": "nav-category-label" } }
+              },
+              {
+                "type": "ia.display.flex-repeater",
+                "meta": { "name": "Items" },
+                "position": { "basis": "auto" },
+                "props": {
+                  "path": "BlueRidge/Components/Navigation/NavItem",
+                  "direction": "column",
+                  "useDefaultViewWidth": false,
+                  "instances": [
+                    { "label": "Item Master",         "icon": "material/inventory", "path": "/items" },
+                    { "label": "Operation Templates", "icon": "material/list",      "path": "/operations" },
+                    { "label": "Tools",               "icon": "material/build",     "path": "/tools" }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "QualityCategory" },
+            "position": { "basis": "auto" },
+            "propConfig": {
+              "meta.visible": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'quality'" }
+                }
+              }
+            },
+            "props": { "direction": "column" },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "Label" },
+                "position": { "basis": "auto" },
+                "props": { "text": "Quality", "style": { "classes": "nav-category-label" } }
+              },
+              {
+                "type": "ia.display.flex-repeater",
+                "meta": { "name": "Items" },
+                "position": { "basis": "auto" },
+                "props": {
+                  "path": "BlueRidge/Components/Navigation/NavItem",
+                  "direction": "column",
+                  "useDefaultViewWidth": false,
+                  "instances": [
+                    { "label": "Quality Specs", "icon": "material/check_circle", "path": "/quality-specs" },
+                    { "label": "Defect Codes",  "icon": "material/error",        "path": "/defect-codes" }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "OperationsCategory" },
+            "position": { "basis": "auto" },
+            "propConfig": {
+              "meta.visible": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'operations'" }
+                }
+              }
+            },
+            "props": { "direction": "column" },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "Label" },
+                "position": { "basis": "auto" },
+                "props": { "text": "Operations", "style": { "classes": "nav-category-label" } }
+              },
+              {
+                "type": "ia.display.flex-repeater",
+                "meta": { "name": "Items" },
+                "position": { "basis": "auto" },
+                "props": {
+                  "path": "BlueRidge/Components/Navigation/NavItem",
+                  "direction": "column",
+                  "useDefaultViewWidth": false,
+                  "instances": [
+                    { "label": "Downtime Codes",  "icon": "material/timer",      "path": "/downtime-codes" },
+                    { "label": "Shift Schedules", "icon": "material/event_note", "path": "/shifts" }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "SystemCategory" },
+            "position": { "basis": "auto" },
+            "propConfig": {
+              "meta.visible": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'system'" }
+                }
+              }
+            },
+            "props": { "direction": "column" },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "Label" },
+                "position": { "basis": "auto" },
+                "props": { "text": "System", "style": { "classes": "nav-category-label" } }
+              },
+              {
+                "type": "ia.display.flex-repeater",
+                "meta": { "name": "Items" },
+                "position": { "basis": "auto" },
+                "props": {
+                  "path": "BlueRidge/Components/Navigation/NavItem",
+                  "direction": "column",
+                  "useDefaultViewWidth": false,
+                  "instances": [
+                    { "label": "Users",       "icon": "material/person",      "path": "/users" },
+                    { "label": "Audit Log",   "icon": "material/description", "path": "/audit-log" },
+                    { "label": "Failure Log", "icon": "material/warning",     "path": "/failure-log" }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
       }
     ]
   }

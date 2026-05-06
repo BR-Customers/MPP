@@ -67,7 +67,7 @@
             "meta": { "name": "ThemeToggle" },
             "position": { "basis": "auto" },
             "props": {
-              "path": "material/dark_mode",
+              "path": "material/wb_sunny",
               "style": { "classes": "theme-toggle", "cursor": "pointer" }
             }
           },
