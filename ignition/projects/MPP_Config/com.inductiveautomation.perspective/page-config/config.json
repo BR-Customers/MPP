@@ -47,7 +47,7 @@
         "anchor": "fixed",
         "viewPath": "BlueRidge/Views/Containers/NavPanel",
         "size": 200,
-        "show": "visible",
+        "show": "onDemand",
         "content": "push",
         "modal": false,
         "resizable": false,

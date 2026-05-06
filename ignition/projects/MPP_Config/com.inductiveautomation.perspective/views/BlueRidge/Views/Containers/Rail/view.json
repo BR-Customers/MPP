@@ -20,9 +20,9 @@
         "events": {
           "dom": {
             "onClick": {
-              "config": { "page": "/plant" },
+              "config": { "script": "BlueRidge.Common.Nav.toggleCategory(self.session, 'plant', '/plant')" },
               "scope": "C",
-              "type": "nav"
+              "type": "script"
             }
           }
         },
@@ -30,7 +30,7 @@
           "props.style.classes": {
             "binding": {
               "type": "expr",
-              "config": { "expression": "if(runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'plant', 'rail-item rail-item-active', 'rail-item')" }
+              "config": { "expression": "if({session.custom.activeCategory} = 'plant', 'rail-item rail-item-active', 'rail-item')" }
             }
           }
         },
@@ -61,9 +61,9 @@
         "events": {
           "dom": {
             "onClick": {
-              "config": { "page": "/items" },
+              "config": { "script": "BlueRidge.Common.Nav.toggleCategory(self.session, 'parts', '/items')" },
               "scope": "C",
-              "type": "nav"
+              "type": "script"
             }
           }
         },
@@ -71,7 +71,7 @@
           "props.style.classes": {
             "binding": {
               "type": "expr",
-              "config": { "expression": "if(runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'parts', 'rail-item rail-item-active', 'rail-item')" }
+              "config": { "expression": "if({session.custom.activeCategory} = 'parts', 'rail-item rail-item-active', 'rail-item')" }
             }
           }
         },
@@ -102,9 +102,9 @@
         "events": {
           "dom": {
             "onClick": {
-              "config": { "page": "/quality-specs" },
+              "config": { "script": "BlueRidge.Common.Nav.toggleCategory(self.session, 'quality', '/quality-specs')" },
               "scope": "C",
-              "type": "nav"
+              "type": "script"
             }
           }
         },
@@ -112,7 +112,7 @@
           "props.style.classes": {
             "binding": {
               "type": "expr",
-              "config": { "expression": "if(runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'quality', 'rail-item rail-item-active', 'rail-item')" }
+              "config": { "expression": "if({session.custom.activeCategory} = 'quality', 'rail-item rail-item-active', 'rail-item')" }
             }
           }
         },
@@ -143,9 +143,9 @@
         "events": {
           "dom": {
             "onClick": {
-              "config": { "page": "/downtime-codes" },
+              "config": { "script": "BlueRidge.Common.Nav.toggleCategory(self.session, 'operations', '/downtime-codes')" },
               "scope": "C",
-              "type": "nav"
+              "type": "script"
             }
           }
         },
@@ -153,7 +153,7 @@
           "props.style.classes": {
             "binding": {
               "type": "expr",
-              "config": { "expression": "if(runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'operations', 'rail-item rail-item-active', 'rail-item')" }
+              "config": { "expression": "if({session.custom.activeCategory} = 'operations', 'rail-item rail-item-active', 'rail-item')" }
             }
           }
         },
@@ -184,9 +184,9 @@
         "events": {
           "dom": {
             "onClick": {
-              "config": { "page": "/audit-log" },
+              "config": { "script": "BlueRidge.Common.Nav.toggleCategory(self.session, 'system', '/audit-log')" },
               "scope": "C",
-              "type": "nav"
+              "type": "script"
             }
           }
         },
@@ -194,7 +194,7 @@
           "props.style.classes": {
             "binding": {
               "type": "expr",
-              "config": { "expression": "if(runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'system', 'rail-item rail-item-active', 'rail-item')" }
+              "config": { "expression": "if({session.custom.activeCategory} = 'system', 'rail-item rail-item-active', 'rail-item')" }
             }
           }
         },
