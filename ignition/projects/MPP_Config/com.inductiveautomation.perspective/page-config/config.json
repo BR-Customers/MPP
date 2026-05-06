@@ -29,25 +29,11 @@
     ],
     "left": [
       {
-        "id": "rail",
+        "id": "sidebar",
         "anchor": "fixed",
-        "viewPath": "BlueRidge/Views/Containers/Rail",
-        "size": 60,
+        "viewPath": "BlueRidge/Views/Containers/Sidebar",
+        "size": 260,
         "show": "visible",
-        "content": "push",
-        "modal": false,
-        "resizable": false,
-        "handle": "hide",
-        "iconUrl": "",
-        "viewParams": {},
-        "autoBreakpoint": 480
-      },
-      {
-        "id": "navPanel",
-        "anchor": "fixed",
-        "viewPath": "BlueRidge/Views/Containers/NavPanel",
-        "size": 200,
-        "show": "onDemand",
         "content": "push",
         "modal": false,
         "resizable": false,
