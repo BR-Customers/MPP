@@ -87,13 +87,13 @@
                     "type": "ia.display.label",
                     "meta": { "name": "BreadcrumbCategory" },
                     "position": { "basis": "auto" },
-                    "props": { "text": "System" }
+                    "props": { "text": "System", "style": { "classes": "breadcrumb" } }
                   },
                   {
                     "type": "ia.display.label",
                     "meta": { "name": "BreadcrumbSep" },
                     "position": { "basis": "auto" },
-                    "props": { "text": "›", "style": { "classes": "crumb-sep" } }
+                    "props": { "text": "›", "style": { "classes": "breadcrumb crumb-sep" } }
                   },
                   {
                     "type": "ia.display.label",
@@ -156,7 +156,7 @@
                         "type": "ia.display.label",
                         "meta": { "name": "StartDateLabel" },
                         "position": { "basis": "auto" },
-                        "props": { "text": "Start Date" }
+                        "props": { "text": "Start Date", "style": { "classes": "label-eyebrow" } }
                       },
                       {
                         "type": "ia.input.date-time-input",
@@ -184,7 +184,7 @@
                         "type": "ia.display.label",
                         "meta": { "name": "EndDateLabel" },
                         "position": { "basis": "auto" },
-                        "props": { "text": "End Date" }
+                        "props": { "text": "End Date", "style": { "classes": "label-eyebrow" } }
                       },
                       {
                         "type": "ia.input.date-time-input",
@@ -212,7 +212,7 @@
                         "type": "ia.display.label",
                         "meta": { "name": "EntityTypeLabel" },
                         "position": { "basis": "auto" },
-                        "props": { "text": "Entity Type" }
+                        "props": { "text": "Entity Type", "style": { "classes": "label-eyebrow" } }
                       },
                       {
                         "type": "ia.input.dropdown",
@@ -246,7 +246,7 @@
                         "type": "ia.display.label",
                         "meta": { "name": "UserLabel" },
                         "position": { "basis": "auto" },
-                        "props": { "text": "User" }
+                        "props": { "text": "User", "style": { "classes": "label-eyebrow" } }
                       },
                       {
                         "type": "ia.input.dropdown",
@@ -280,7 +280,7 @@
                         "type": "ia.display.label",
                         "meta": { "name": "SearchLabel" },
                         "position": { "basis": "auto" },
-                        "props": { "text": "Search" }
+                        "props": { "text": "Search", "style": { "classes": "label-eyebrow" } }
                       },
                       {
                         "type": "ia.input.text-field",
