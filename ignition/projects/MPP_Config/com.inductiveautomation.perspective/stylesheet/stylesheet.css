@@ -377,7 +377,9 @@ button {
 .ia_textField,
 .ia_numericEntryField,
 .ia_dropdown,
-.ia_textArea {
+.ia_textArea,
+.ia_dateTimeInput,
+.ia_dateTimeInput input {
     background-color: var(--mpp-surface-raised);
     color: var(--mpp-text-primary);
     border: 1px solid var(--mpp-border-default);
@@ -387,6 +389,10 @@ button {
     font-size: var(--mpp-fs-base);
     transition: border-color var(--mpp-transition-fast),
                 box-shadow var(--mpp-transition-fast);
+}
+
+.ia_dateTimeInput {
+    color-scheme: dark;
 }
 
 .ia_textField:hover,

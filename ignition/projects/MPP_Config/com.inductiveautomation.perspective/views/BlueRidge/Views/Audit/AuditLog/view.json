@@ -1,8 +1,8 @@
 {
   "custom": {
     "filter": {
-      "startDate": "2026-04-15",
-      "endDate": "2026-04-16",
+      "startDate": 1776211200000,
+      "endDate": 1776297600000,
       "entityType": "All",
       "user": "All",
       "searchText": ""
