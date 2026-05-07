@@ -64,7 +64,12 @@
             "position": { "basis": "auto" },
             "props": {
               "path": "material/settings",
-              "style": { "classes": "btn-icon", "cursor": "pointer", "marginRight": "12px" }
+              "style": {
+                "cursor": "pointer",
+                "marginRight": "12px",
+                "width": "18px",
+                "height": "18px"
+              }
             }
           }
         ]
