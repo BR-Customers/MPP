@@ -19,7 +19,7 @@
     "params.required":  { "paramDirection": "input" }
   },
   "props": {
-    "defaultSize": { "width": 800, "height": 44 }
+    "defaultSize": { "width": 800, "height": 56 }
   },
   "root": {
     "type": "ia.container.flex",
@@ -110,7 +110,7 @@
             "propConfig": {
               "props.text": { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.params.value" } } }
             },
-            "props": { "style": { "classes": "search-input", "width": "80px" } }
+            "props": { "style": { "classes": "search-input", "width": "70px", "height": "32px", "boxSizing": "border-box" } }
           },
           {
             "type": "ia.display.label",
