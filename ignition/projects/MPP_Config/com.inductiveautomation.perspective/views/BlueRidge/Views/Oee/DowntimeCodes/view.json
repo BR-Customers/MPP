@@ -251,7 +251,8 @@
                       "path": "BlueRidge/Components/DowntimeCodeRow",
                       "direction": "column",
                       "useDefaultViewWidth": false,
-                      "useDefaultViewHeight": false
+                      "useDefaultViewHeight": false,
+                      "elementPosition": { "basis": "48px", "shrink": 0 }
                     }
                   }
                 ]

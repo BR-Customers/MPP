@@ -565,7 +565,8 @@
                           "path": "BlueRidge/Components/AttributeRow",
                           "direction": "column",
                           "useDefaultViewWidth": false,
-                          "useDefaultViewHeight": false
+                          "useDefaultViewHeight": false,
+                          "elementPosition": { "basis": "56px", "shrink": 0 }
                         }
                       }
                     ]
