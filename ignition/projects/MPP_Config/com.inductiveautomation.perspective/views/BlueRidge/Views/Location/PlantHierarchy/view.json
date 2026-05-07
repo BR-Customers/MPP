@@ -13,9 +13,15 @@
       { "index": 0, "totalRows": 3, "name": "Tonnage",            "value": "400",  "dataType": "DECIMAL",  "uom": "tons", "required": true  },
       { "index": 1, "totalRows": 3, "name": "ConfirmationMethod", "value": "None", "dataType": "NVARCHAR", "uom": "—",    "required": false },
       { "index": 2, "totalRows": 3, "name": "RefCycleTimeSec",    "value": "62.5", "dataType": "DECIMAL",  "uom": "sec",  "required": false }
-    ]
+    ],
+    "selection": "",
+    "selectionKey": ""
   },
   "params": {},
+  "propConfig": {
+    "custom.selection":    { "persistent": true },
+    "custom.selectionKey": { "persistent": true }
+  },
   "props": {
     "defaultSize": { "width": 1280, "height": 720 }
   },
@@ -134,51 +140,64 @@
                 "type": "ia.display.tree",
                 "meta": { "name": "Tree" },
                 "position": { "grow": 1 },
+                "propConfig": {
+                  "props.selection[0]": {
+                    "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.selection" } }
+                  },
+                  "props.selectionData[0].value.key": {
+                    "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.selectionKey" } }
+                  }
+                },
                 "props": {
                   "appearance": {
                     "defaultNodeIcons": {
                       "collapsed": { "path": "material/folder" },
                       "expanded":  { "path": "material/folder_open" },
-                      "empty":     { "path": "material/inventory" }
+                      "empty":     { "path": "material/stop" }
                     },
                     "expandIcons": {
-                      "collapsed": { "path": "material/chevron_right" },
-                      "expanded":  { "path": "material/expand_more" }
+                      "collapsed": { "path": "material/arrow_right" },
+                      "expanded":  { "path": "material/arrow_drop_down" }
                     }
                   },
-                  "selection": [null],
+                  "selection":     [null],
+                  "selectionData": [{ "itemPath": "0", "value": {} }],
                   "items": [
                     {
                       "label": "Madison Precision Products",
                       "expanded": true,
-                      "data": { "code": "MPP", "type": "Enterprise" },
+                      "icon": { "color": "", "path": "material/business", "style": {} },
+                      "data": { "key": "MPP" },
                       "items": [
                         {
                           "label": "Madison Facility",
                           "expanded": true,
-                          "data": { "code": "MPP-MAD", "type": "Site" },
+                          "icon": { "color": "", "path": "material/factory", "style": {} },
+                          "data": { "key": "MPP-MAD" },
                           "items": [
                             {
                               "label": "Die Cast",
                               "expanded": true,
-                              "data": { "code": "MPP-MAD-DC", "type": "Area" },
+                              "icon": { "color": "", "path": "material/apartment", "style": {} },
+                              "data": { "key": "MPP-MAD-DC" },
                               "items": [
-                                { "label": "DC Machine #7",  "expanded": false, "items": [], "data": { "code": "DC-007", "type": "Cell" } },
-                                { "label": "DC Machine #12", "expanded": false, "items": [], "data": { "code": "DC-012", "type": "Cell" } },
-                                { "label": "DC Machine #15", "expanded": false, "items": [], "data": { "code": "DC-015", "type": "Cell" } }
+                                { "label": "DC Machine #7",  "expanded": false, "items": [], "icon": { "color": "", "path": "material/precision_manufacturing", "style": {} }, "data": { "key": "DC-007" } },
+                                { "label": "DC Machine #12", "expanded": false, "items": [], "icon": { "color": "", "path": "material/precision_manufacturing", "style": {} }, "data": { "key": "DC-012" } },
+                                { "label": "DC Machine #15", "expanded": false, "items": [], "icon": { "color": "", "path": "material/precision_manufacturing", "style": {} }, "data": { "key": "DC-015" } }
                               ]
                             },
                             {
                               "label": "Trim Shop",
                               "expanded": true,
-                              "data": { "code": "MPP-MAD-TR", "type": "Area" },
+                              "icon": { "color": "", "path": "material/apartment", "style": {} },
+                              "data": { "key": "MPP-MAD-TR" },
                               "items": [
-                                { "label": "Trim Press #1", "expanded": false, "items": [], "data": { "code": "TR-001", "type": "Cell" } }
+                                { "label": "Trim Press #1", "expanded": false, "items": [], "icon": { "color": "", "path": "material/precision_manufacturing", "style": {} }, "data": { "key": "TR-001" } }
                               ]
                             },
-                            { "label": "Machine Shop",       "expanded": false, "items": [], "data": { "code": "MPP-MAD-MS", "type": "Area" } },
-                            { "label": "Production Control", "expanded": false, "items": [], "data": { "code": "MPP-MAD-PC", "type": "Area" } },
-                            { "label": "Quality Control",    "expanded": false, "items": [], "data": { "code": "MPP-MAD-QC", "type": "Area" } }
+                            { "label": "Machine Shop",       "expanded": false, "items": [], "icon": { "color": "", "path": "material/apartment", "style": {} }, "data": { "key": "MPP-MAD-MS" } },
+                            { "label": "Production Control", "expanded": false, "items": [], "icon": { "color": "", "path": "material/apartment", "style": {} }, "data": { "key": "MPP-MAD-PC" } },
+                            { "label": "Quality Control",    "expanded": false, "items": [], "icon": { "color": "", "path": "material/apartment", "style": {} }, "data": { "key": "MPP-MAD-QC" } }
                           ]
                         }
                       ]
