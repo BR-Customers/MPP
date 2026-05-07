@@ -8,6 +8,10 @@
       "title": "Plant Hierarchy",
       "viewPath": "BlueRidge/Views/Location/PlantHierarchy"
     },
+    "/quality-specs": {
+      "title": "Quality Specs",
+      "viewPath": "BlueRidge/Views/Quality/QualitySpecs"
+    },
     "/defect-codes": {
       "title": "Defect Codes",
       "viewPath": "BlueRidge/Views/Quality/DefectCodes"

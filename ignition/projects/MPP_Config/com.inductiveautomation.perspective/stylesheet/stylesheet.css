@@ -754,6 +754,8 @@ button {
 /* State variants — process / system state, distinct from categorical colors */
 .psc-badge-published { color: var(--mpp-state-good-fg); background: var(--mpp-state-good-bg); border-color: var(--mpp-state-good-border); }
 .psc-badge-warning   { color: var(--mpp-state-warn-fg); background: var(--mpp-state-warn-bg); border-color: var(--mpp-state-warn-border); }
+.psc-badge-draft     { color: var(--mpp-cat-amber-fg); background: var(--mpp-cat-amber-bg); border-color: var(--mpp-cat-amber-border); }
+.psc-badge-deprecated{ color: var(--mpp-text-tertiary); background: var(--mpp-surface-card); border-color: var(--mpp-border-subtle); }
 .psc-badge-danger    { color: var(--mpp-state-bad-fg);  background: var(--mpp-state-bad-bg);  border-color: var(--mpp-state-bad-border); }
 .psc-badge-info      { color: var(--mpp-state-info-fg); background: var(--mpp-state-info-bg); border-color: var(--mpp-state-info-border); }
 .psc-badge-muted     { color: var(--mpp-text-tertiary); background: var(--mpp-surface-card); border-color: var(--mpp-border-subtle); }

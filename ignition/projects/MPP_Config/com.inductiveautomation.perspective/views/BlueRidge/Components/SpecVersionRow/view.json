@@ -1,0 +1,107 @@
+{
+  "custom": {},
+  "params": {
+    "version": "",
+    "effectiveFrom": "",
+    "deprecatedAt": "",
+    "state": "",
+    "stateBadge": "badge badge-published",
+    "createdBy": "",
+    "createdAt": "",
+    "selected": false,
+    "deprecated": false
+  },
+  "propConfig": {
+    "params.version":       { "paramDirection": "input" },
+    "params.effectiveFrom": { "paramDirection": "input" },
+    "params.deprecatedAt":  { "paramDirection": "input" },
+    "params.state":         { "paramDirection": "input" },
+    "params.stateBadge":    { "paramDirection": "input" },
+    "params.createdBy":     { "paramDirection": "input" },
+    "params.createdAt":     { "paramDirection": "input" },
+    "params.selected":      { "paramDirection": "input" },
+    "params.deprecated":    { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "width": 800, "height": 36 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "propConfig": {
+      "props.style.background": {
+        "binding": { "type": "expr",
+          "config": { "expression": "if({view.params.selected}, 'var(--mpp-accent-20)', 'transparent')" } }
+      },
+      "props.style.color": {
+        "binding": { "type": "expr",
+          "config": { "expression": "if({view.params.selected}, 'var(--mpp-accent-90)', if({view.params.deprecated}, 'var(--mpp-text-tertiary)', 'var(--mpp-text-primary)'))" } }
+      }
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "padding": "8px 12px",
+        "borderBottom": "1px solid var(--mpp-border-subtle)"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Version" },
+        "position": { "basis": "60px", "shrink": 0 },
+        "propConfig": {
+          "props.text": { "binding": { "type": "property", "config": { "path": "view.params.version" } } }
+        },
+        "props": {}
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "EffectiveFrom" },
+        "position": { "grow": 1, "basis": "0" },
+        "propConfig": {
+          "props.text": { "binding": { "type": "property", "config": { "path": "view.params.effectiveFrom" } } }
+        },
+        "props": {}
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "DeprecatedAt" },
+        "position": { "grow": 1, "basis": "0" },
+        "propConfig": {
+          "props.text": { "binding": { "type": "property", "config": { "path": "view.params.deprecatedAt" } } }
+        },
+        "props": {}
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "StateBadge" },
+        "position": { "basis": "110px", "shrink": 0 },
+        "propConfig": {
+          "props.text":          { "binding": { "type": "property", "config": { "path": "view.params.state" } } },
+          "props.style.classes": { "binding": { "type": "property", "config": { "path": "view.params.stateBadge" } } }
+        },
+        "props": {}
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "CreatedBy" },
+        "position": { "grow": 1, "basis": "0" },
+        "propConfig": {
+          "props.text": { "binding": { "type": "property", "config": { "path": "view.params.createdBy" } } }
+        },
+        "props": {}
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "CreatedAt" },
+        "position": { "grow": 1, "basis": "0" },
+        "propConfig": {
+          "props.text": { "binding": { "type": "property", "config": { "path": "view.params.createdAt" } } }
+        },
+        "props": {}
+      }
+    ]
+  }
+}
