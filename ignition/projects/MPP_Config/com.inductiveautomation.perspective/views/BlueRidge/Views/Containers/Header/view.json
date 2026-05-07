@@ -1,0 +1,114 @@
+{
+  "custom": {},
+  "params": {},
+  "props": {
+    "defaultSize": { "width": 1280, "height": 42 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": { "classes": "header" }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "HeaderLogo" },
+        "position": { "basis": "auto" },
+        "events": {
+          "dom": {
+            "onClick": {
+              "config": { "page": "/" },
+              "scope": "C",
+              "type": "nav"
+            }
+          }
+        },
+        "props": {
+          "text": "MPP",
+          "style": { "classes": "header-logo", "cursor": "pointer" }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "HeaderDivider" },
+        "position": { "basis": "auto" },
+        "props": { "style": { "classes": "header-divider" } }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "HeaderTitle" },
+        "position": { "basis": "auto" },
+        "props": {
+          "text": "Configuration Tool",
+          "style": { "classes": "header-title" }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "HeaderSpacer" },
+        "position": { "grow": 1 },
+        "props": { "style": { "classes": "header-spacer" } }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "HeaderRight" },
+        "position": { "basis": "auto" },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": { "classes": "header-right" }
+        },
+        "children": [
+          {
+            "type": "ia.display.icon",
+            "meta": { "name": "ThemeToggle" },
+            "position": { "basis": "auto" },
+            "props": {
+              "path": "material/wb_sunny",
+              "style": { "classes": "theme-toggle", "cursor": "pointer" }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "UserAvatar" },
+            "position": { "basis": "auto" },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if({session.props.auth.user.userName} = null || len({session.props.auth.user.userName}) = 0, '??', upper(left({session.props.auth.user.userName}, 1) + substring({session.props.auth.user.userName}, indexOf({session.props.auth.user.userName}, ' ')+1, 1)))"
+                  }
+                }
+              }
+            },
+            "props": { "style": { "classes": "user-avatar" } }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "UserInfo" },
+            "position": { "basis": "auto" },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": { "path": "session.props.auth.user.userName" },
+                  "transforms": [
+                    {
+                      "type": "expression",
+                      "expression": "if({value} = null || len({value}) = 0, 'Sign In', {value})"
+                    }
+                  ]
+                }
+              }
+            },
+            "props": { "style": { "classes": "user-info" } }
+          }
+        ]
+      }
+    ]
+  }
+}

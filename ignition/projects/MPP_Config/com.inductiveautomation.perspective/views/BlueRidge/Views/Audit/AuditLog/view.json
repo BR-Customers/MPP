@@ -1,0 +1,299 @@
+{
+  "custom": {
+    "filter": {
+      "startDate": 1776211200000,
+      "endDate": 1776297600000,
+      "entityType": "All",
+      "user": "All",
+      "searchText": ""
+    },
+    "entityTypeOptions": [
+      { "label": "All",                "value": "All" },
+      { "label": "Location",           "value": "Location" },
+      { "label": "Item",               "value": "Item" },
+      { "label": "Bom",                "value": "Bom" },
+      { "label": "RouteTemplate",      "value": "RouteTemplate" },
+      { "label": "OperationTemplate",  "value": "OperationTemplate" },
+      { "label": "QualitySpec",        "value": "QualitySpec" },
+      { "label": "AppUser",            "value": "AppUser" }
+    ],
+    "userOptions": [
+      { "label": "All",              "value": "All" },
+      { "label": "J. Potgieter",     "value": "J. Potgieter" },
+      { "label": "Bootstrap Admin",  "value": "Bootstrap Admin" }
+    ],
+    "auditRows": [
+      { "Timestamp": "2026-04-16 09:42:15", "User": "J. Potgieter",     "EntityType": "Location",          "Entity": "DC Machine #7",   "Event": "Updated", "Description": "Tonnage changed from 350 to 400" },
+      { "Timestamp": "2026-04-16 09:38:02", "User": "J. Potgieter",     "EntityType": "Item",              "Entity": "5G0 Front Cover", "Event": "Updated", "Description": "UnitWeight changed from 3.15 to 3.25" },
+      { "Timestamp": "2026-04-16 09:30:00", "User": "J. Potgieter",     "EntityType": "RouteTemplate",     "Entity": "5G0 Route v2",    "Event": "Created", "Description": "New version created from v1" },
+      { "Timestamp": "2026-04-15 16:45:12", "User": "Bootstrap Admin",  "EntityType": "AppUser",           "Entity": "D. Martinez",     "Event": "Created", "Description": "User created with role Quality" },
+      { "Timestamp": "2026-04-15 14:22:01", "User": "J. Potgieter",     "EntityType": "OperationTemplate", "Entity": "Die Cast v2",     "Event": "Updated", "Description": "Added CollectsWeight field" }
+    ]
+  },
+  "params": {},
+  "propConfig": {
+    "custom.filter.startDate":  { "persistent": true },
+    "custom.filter.endDate":    { "persistent": true },
+    "custom.filter.entityType": { "persistent": true },
+    "custom.filter.user":       { "persistent": true },
+    "custom.filter.searchText": { "persistent": true }
+  },
+  "props": {
+    "defaultSize": { "width": 1280, "height": 720 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "column",
+      "style": { "classes": "screen-active" }
+    },
+    "children": [
+      {
+        "type": "ia.display.view",
+        "meta": { "name": "TitleBar" },
+        "position": { "basis": "auto", "shrink": 0 },
+        "props": {
+          "path": "BlueRidge/Components/Common/TitleBar",
+          "params": {
+            "category": "System",
+            "title": "Audit Log"
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "MainSplit" },
+        "position": { "grow": 1 },
+        "props": {
+          "direction": "row",
+          "style": { "overflow": "hidden", "borderTop": "1px solid var(--mpp-border-subtle)" }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "FilterSidebar" },
+            "position": { "basis": "220px", "shrink": 0 },
+            "props": {
+              "direction": "column",
+              "style": { "classes": "filter-sidebar" }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "FilterPanel" },
+                "position": { "basis": "auto" },
+                "props": {
+                  "direction": "column",
+                  "style": { "classes": "filter-panel" }
+                },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": { "name": "StartDateField" },
+                    "position": { "basis": "auto" },
+                    "props": { "direction": "column", "style": { "gap": "4px" } },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": { "name": "StartDateLabel" },
+                        "position": { "basis": "auto" },
+                        "props": { "text": "Start Date", "style": { "classes": "label-eyebrow" } }
+                      },
+                      {
+                        "type": "ia.input.date-time-input",
+                        "meta": { "name": "StartDateInput" },
+                        "position": { "basis": "auto" },
+                        "propConfig": {
+                          "props.value": {
+                            "binding": {
+                              "type": "property",
+                              "config": { "bidirectional": true, "path": "view.custom.filter.startDate" }
+                            }
+                          }
+                        },
+                        "props": { "format": "YYYY-MM-DD", "pickerType": "date" }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": { "name": "EndDateField" },
+                    "position": { "basis": "auto" },
+                    "props": { "direction": "column", "style": { "gap": "4px" } },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": { "name": "EndDateLabel" },
+                        "position": { "basis": "auto" },
+                        "props": { "text": "End Date", "style": { "classes": "label-eyebrow" } }
+                      },
+                      {
+                        "type": "ia.input.date-time-input",
+                        "meta": { "name": "EndDateInput" },
+                        "position": { "basis": "auto" },
+                        "propConfig": {
+                          "props.value": {
+                            "binding": {
+                              "type": "property",
+                              "config": { "bidirectional": true, "path": "view.custom.filter.endDate" }
+                            }
+                          }
+                        },
+                        "props": { "format": "YYYY-MM-DD", "pickerType": "date" }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": { "name": "EntityTypeField" },
+                    "position": { "basis": "auto" },
+                    "props": { "direction": "column", "style": { "gap": "4px" } },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": { "name": "EntityTypeLabel" },
+                        "position": { "basis": "auto" },
+                        "props": { "text": "Entity Type", "style": { "classes": "label-eyebrow" } }
+                      },
+                      {
+                        "type": "ia.input.dropdown",
+                        "meta": { "name": "EntityTypeDropdown" },
+                        "position": { "basis": "auto" },
+                        "propConfig": {
+                          "props.options": {
+                            "binding": {
+                              "type": "property",
+                              "config": { "path": "view.custom.entityTypeOptions" }
+                            }
+                          },
+                          "props.value": {
+                            "binding": {
+                              "type": "property",
+                              "config": { "bidirectional": true, "path": "view.custom.filter.entityType" }
+                            }
+                          }
+                        },
+                        "props": { "style": { "classes": "select" } }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": { "name": "UserField" },
+                    "position": { "basis": "auto" },
+                    "props": { "direction": "column", "style": { "gap": "4px" } },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": { "name": "UserLabel" },
+                        "position": { "basis": "auto" },
+                        "props": { "text": "User", "style": { "classes": "label-eyebrow" } }
+                      },
+                      {
+                        "type": "ia.input.dropdown",
+                        "meta": { "name": "UserDropdown" },
+                        "position": { "basis": "auto" },
+                        "propConfig": {
+                          "props.options": {
+                            "binding": {
+                              "type": "property",
+                              "config": { "path": "view.custom.userOptions" }
+                            }
+                          },
+                          "props.value": {
+                            "binding": {
+                              "type": "property",
+                              "config": { "bidirectional": true, "path": "view.custom.filter.user" }
+                            }
+                          }
+                        },
+                        "props": { "style": { "classes": "select" } }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": { "name": "SearchField" },
+                    "position": { "basis": "auto" },
+                    "props": { "direction": "column", "style": { "gap": "4px" } },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": { "name": "SearchLabel" },
+                        "position": { "basis": "auto" },
+                        "props": { "text": "Search", "style": { "classes": "label-eyebrow" } }
+                      },
+                      {
+                        "type": "ia.input.text-field",
+                        "meta": { "name": "SearchInput" },
+                        "position": { "basis": "auto" },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "property",
+                              "config": { "bidirectional": true, "path": "view.custom.filter.searchText" }
+                            }
+                          }
+                        },
+                        "props": { "placeholder": "Search…", "style": { "classes": "search-input" } }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "DetailArea" },
+            "position": { "grow": 1 },
+            "props": {
+              "direction": "column",
+              "style": { "classes": "detail-area" }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "DetailPanel" },
+                "position": { "grow": 1 },
+                "props": {
+                  "direction": "column",
+                  "style": { "classes": "detail-panel" }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.table",
+                    "meta": { "name": "AuditTable" },
+                    "position": { "grow": 1 },
+                    "propConfig": {
+                      "props.data": {
+                        "binding": {
+                          "type": "property",
+                          "config": { "path": "view.custom.auditRows" }
+                        }
+                      }
+                    },
+                    "props": {
+                      "columns": [
+                        { "field": "Timestamp",   "header": { "title": "Timestamp"   }, "visible": true, "sort": "asc" },
+                        { "field": "User",        "header": { "title": "User"        }, "visible": true },
+                        { "field": "EntityType",  "header": { "title": "Entity Type" }, "visible": true },
+                        { "field": "Entity",      "header": { "title": "Entity"      }, "visible": true },
+                        { "field": "Event",       "header": { "title": "Event"       }, "visible": true },
+                        { "field": "Description", "header": { "title": "Description" }, "visible": true }
+                      ],
+                      "filter": { "enabled": false },
+                      "rows": { "selection": { "enabled": true, "selectionMode": "single" } },
+                      "style": { "classes": "data-table" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

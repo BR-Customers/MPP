@@ -1,0 +1,86 @@
+{
+  "custom": {},
+  "params": {
+    "label": "",
+    "value": 0,
+    "percent": 0
+  },
+  "propConfig": {
+    "params.label":   { "paramDirection": "input" },
+    "params.value":   { "paramDirection": "input" },
+    "params.percent": { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "width": 240, "height": 36 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "column",
+      "style": { "gap": "2px" }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "StatRow" },
+        "position": { "basis": "auto" },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": { "classes": "tile-stat-row" }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "RowLabel" },
+            "position": { "grow": 1 },
+            "propConfig": {
+              "props.text": {
+                "binding": { "type": "property", "config": { "path": "view.params.label" } }
+              }
+            },
+            "props": { "style": { "classes": "tile-row-label" } }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "RowValue" },
+            "position": { "basis": "auto" },
+            "propConfig": {
+              "props.text": {
+                "binding": { "type": "property", "config": { "path": "view.params.value" } }
+              }
+            },
+            "props": { "style": { "classes": "tile-row-value" } }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "Bar" },
+        "position": { "basis": "auto" },
+        "props": {
+          "style": { "classes": "tile-bar" }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "BarFill" },
+            "position": { "basis": "auto" },
+            "propConfig": {
+              "props.style.width": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "{view.params.percent} + '%'" }
+                }
+              }
+            },
+            "props": {
+              "style": { "classes": "tile-bar-fill" }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

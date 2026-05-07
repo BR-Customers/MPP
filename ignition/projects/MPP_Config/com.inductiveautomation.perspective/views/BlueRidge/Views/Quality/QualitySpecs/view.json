@@ -1,0 +1,578 @@
+{
+  "custom": {
+    "filter": {
+      "searchText": "",
+      "type": "All Types"
+    },
+    "typeOptions": [
+      { "label": "All Types",        "value": "All Types" },
+      { "label": "Item-Linked",      "value": "Item-Linked" },
+      { "label": "Operation-Linked", "value": "Operation-Linked" },
+      { "label": "Unlinked",         "value": "Unlinked" }
+    ],
+    "specs": [
+      { "name": "5G0 Dimensional Spec",   "versionLabel": "Active v2",  "versionBadge": "badge badge-published",  "subtext": "Item: 5G0 · Op: CNC-5G0",     "selected": true,  "deprecated": false },
+      { "name": "5G0 Visual Inspection",  "versionLabel": "Active v1",  "versionBadge": "badge badge-published",  "subtext": "Item: 5G0 · Op: DC-5G0",      "selected": false, "deprecated": false },
+      { "name": "RPY Assembly Check",     "versionLabel": "Pending v1", "versionBadge": "badge badge-warning",    "subtext": "Item: RPY · Op: ASSY-REAR",   "selected": false, "deprecated": false },
+      { "name": "5G0 First-Piece Check",  "versionLabel": "Deprecated", "versionBadge": "badge badge-deprecated", "subtext": "Item: 5G0",                   "selected": false, "deprecated": true  }
+    ],
+    "selected": {
+      "name": "5G0 Dimensional Spec",
+      "linkedItem": "5G0",
+      "linkedOpTemplate": "CNC-5G0 v1",
+      "description": "Dimensional inspection for 5G0 Front Cover after CNC machining",
+      "stateLabel": "Active",
+      "stateBadge": "badge badge-published",
+      "effectiveFrom": "Effective 2026-03-01"
+    },
+    "versionOptions": [
+      { "label": "v2 — Effective 2026-03-01",              "value": "v2" },
+      { "label": "v1 — Effective 2025-06-01 (Deprecated)", "value": "v1" }
+    ],
+    "selectedVersion": "v2",
+    "activeTab": "attributes",
+    "attributes": [
+      { "attributeName": "Surface Flatness", "dataType": "Numeric", "uom": "in", "target": "0.002", "lower": "0.001", "upper": "0.003", "required": true },
+      { "attributeName": "Bore Diameter",    "dataType": "Numeric", "uom": "mm", "target": "25.40", "lower": "25.38", "upper": "25.42", "required": true },
+      { "attributeName": "Porosity Visual",  "dataType": "Boolean", "uom": "—",  "target": "—",     "lower": "—",     "upper": "—",     "required": true },
+      { "attributeName": "Operator Notes",   "dataType": "Text",    "uom": "—",  "target": "—",     "lower": "—",     "upper": "—",     "required": false }
+    ],
+    "versions": [
+      { "version": "v2", "effectiveFrom": "2026-03-01", "deprecatedAt": "—",          "state": "Active",     "stateBadge": "badge badge-published",  "createdBy": "J. Potgieter", "createdAt": "2026-02-28 09:14", "selected": true,  "deprecated": false },
+      { "version": "v1", "effectiveFrom": "2025-06-01", "deprecatedAt": "2026-03-01", "state": "Deprecated", "stateBadge": "badge badge-deprecated", "createdBy": "J. Potgieter", "createdAt": "2025-05-15 11:22", "selected": false, "deprecated": true  }
+    ]
+  },
+  "params": {},
+  "propConfig": {
+    "custom.filter.searchText": { "persistent": true },
+    "custom.filter.type":       { "persistent": true },
+    "custom.activeTab":         { "persistent": true },
+    "custom.selectedVersion":   { "persistent": true }
+  },
+  "props": {
+    "defaultSize": { "width": 1280, "height": 720 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "column",
+      "style": { "classes": "screen-active" }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "TitleRow" },
+        "position": { "basis": "auto", "shrink": 0 },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "classes": "title-row",
+            "paddingBottom": "8px",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "background": "var(--mpp-surface-raised)"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "TitleColumn" },
+            "position": { "basis": "auto" },
+            "props": { "direction": "column", "style": { "gap": "2px" } },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "Breadcrumb" },
+                "position": { "basis": "auto" },
+                "props": { "direction": "row", "alignItems": "center", "style": { "classes": "breadcrumb" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "BreadcrumbCategory" }, "position": { "basis": "auto" }, "props": { "text": "Quality", "style": { "classes": "breadcrumb" } } },
+                  { "type": "ia.display.label", "meta": { "name": "BreadcrumbSep" },      "position": { "basis": "auto" }, "props": { "text": "›", "style": { "classes": "breadcrumb crumb-sep" } } },
+                  { "type": "ia.display.label", "meta": { "name": "BreadcrumbActive" },   "position": { "basis": "auto" }, "props": { "text": "Quality Specs", "style": { "classes": "crumb-active" } } }
+                ]
+              },
+              { "type": "ia.display.label", "meta": { "name": "Title" }, "position": { "basis": "auto" }, "props": { "text": "Quality Specs", "style": { "classes": "title-row-h1" } } }
+            ]
+          },
+          { "type": "ia.display.label", "meta": { "name": "TitleRowSpacer" }, "position": { "grow": 1 }, "props": { "text": "", "style": { "classes": "title-row-spacer" } } },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "NewSpecButton" },
+            "position": { "basis": "auto" },
+            "props": { "text": "+ New Spec", "style": { "classes": "btn btn-primary", "marginRight": "12px" } }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "MainSplit" },
+        "position": { "grow": 1 },
+        "props": {
+          "direction": "row",
+          "style": { "overflow": "hidden", "borderTop": "1px solid var(--mpp-border-subtle)" }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "SpecListPanel" },
+            "position": { "basis": "260px", "shrink": 0 },
+            "props": {
+              "direction": "column",
+              "style": { "classes": "tree-panel", "width": "260px", "minWidth": "260px" }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "ListHeader" },
+                "position": { "basis": "auto" },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "padding": "8px 10px",
+                    "borderBottom": "1px solid var(--mpp-border-subtle)",
+                    "gap": "6px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.input.text-field",
+                    "meta": { "name": "SearchInput" },
+                    "position": { "basis": "auto" },
+                    "propConfig": {
+                      "props.text": { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.filter.searchText" } } }
+                    },
+                    "props": { "placeholder": "Search specs…", "style": { "classes": "search-input", "width": "100%" } }
+                  },
+                  {
+                    "type": "ia.input.dropdown",
+                    "meta": { "name": "TypeDropdown" },
+                    "position": { "basis": "auto" },
+                    "propConfig": {
+                      "props.options": { "binding": { "type": "property", "config": { "path": "view.custom.typeOptions" } } },
+                      "props.value":   { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.filter.type" } } }
+                    },
+                    "props": { "style": { "classes": "select", "width": "100%" } }
+                  }
+                ]
+              },
+              {
+                "type": "ia.display.flex-repeater",
+                "meta": { "name": "SpecList" },
+                "position": { "grow": 1 },
+                "propConfig": {
+                  "props.instances": { "binding": { "type": "property", "config": { "path": "view.custom.specs" } } }
+                },
+                "props": {
+                  "path": "BlueRidge/Components/SpecListItem",
+                  "direction": "column",
+                  "useDefaultViewWidth": false,
+                  "useDefaultViewHeight": false,
+                  "elementPosition": { "grow": 0, "shrink": 0, "basis": "50px" }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "DetailArea" },
+            "position": { "grow": 1 },
+            "props": {
+              "direction": "column",
+              "style": { "overflow": "hidden", "background": "var(--mpp-surface-raised)" }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "FixedHeader" },
+                "position": { "basis": "auto", "shrink": 0 },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "padding": "10px 14px",
+                    "borderBottom": "1px solid var(--mpp-border-subtle)",
+                    "background": "var(--mpp-surface-raised)",
+                    "gap": "8px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": { "name": "TitleRow" },
+                    "position": { "basis": "auto" },
+                    "props": { "direction": "row", "alignItems": "center", "style": { "gap": "8px" } },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": { "name": "SpecName" },
+                        "position": { "basis": "auto" },
+                        "propConfig": {
+                          "props.text": { "binding": { "type": "property", "config": { "path": "view.custom.selected.name" } } }
+                        },
+                        "props": { "style": { "fontSize": "13px", "fontWeight": "600" } }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": { "name": "StateBadge" },
+                        "position": { "basis": "auto" },
+                        "propConfig": {
+                          "props.text":          { "binding": { "type": "property", "config": { "path": "view.custom.selected.stateLabel" } } },
+                          "props.style.classes": { "binding": { "type": "property", "config": { "path": "view.custom.selected.stateBadge" } } }
+                        },
+                        "props": {}
+                      },
+                      { "type": "ia.display.label", "meta": { "name": "Spacer" }, "position": { "grow": 1 }, "props": { "text": "" } },
+                      { "type": "ia.input.button", "meta": { "name": "SaveButton" },      "position": { "basis": "auto" }, "props": { "text": "Save",      "style": { "classes": "btn btn-primary btn-sm" } } },
+                      { "type": "ia.input.button", "meta": { "name": "DeprecateButton" }, "position": { "basis": "auto" }, "props": { "text": "Deprecate", "style": { "classes": "btn btn-danger btn-sm" } } }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": { "name": "FieldRow1" },
+                    "position": { "basis": "auto" },
+                    "props": { "direction": "row", "style": { "classes": "field-row", "gap": "12px" } },
+                    "children": [
+                      {
+                        "type": "ia.container.flex",
+                        "meta": { "name": "NameField" },
+                        "position": { "grow": 2, "basis": "0" },
+                        "props": { "direction": "column", "style": { "classes": "field", "minWidth": "0" } },
+                        "children": [
+                          { "type": "ia.display.label", "meta": { "name": "Label" }, "position": { "basis": "auto" }, "props": { "text": "Name", "style": { "classes": "field-label" } } },
+                          {
+                            "type": "ia.input.text-field",
+                            "meta": { "name": "Input" },
+                            "position": { "basis": "auto" },
+                            "propConfig": {
+                              "props.text": { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.selected.name" } } }
+                            },
+                            "props": { "style": { "classes": "search-input", "width": "100%", "boxSizing": "border-box" } }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": { "name": "LinkedItemField" },
+                        "position": { "grow": 1, "basis": "0" },
+                        "props": { "direction": "column", "style": { "classes": "field", "minWidth": "0" } },
+                        "children": [
+                          { "type": "ia.display.label", "meta": { "name": "Label" }, "position": { "basis": "auto" }, "props": { "text": "Linked Item", "style": { "classes": "field-label" } } },
+                          {
+                            "type": "ia.display.label",
+                            "meta": { "name": "Value" },
+                            "position": { "basis": "auto" },
+                            "propConfig": {
+                              "props.text": { "binding": { "type": "property", "config": { "path": "view.custom.selected.linkedItem" } } }
+                            },
+                            "props": {
+                              "style": {
+                                "background": "var(--mpp-surface-card)",
+                                "border": "1px solid var(--mpp-border-default)",
+                                "borderRadius": "var(--mpp-radius-sm)",
+                                "padding": "6px 8px",
+                                "color": "var(--mpp-text-tertiary)",
+                                "fontSize": "var(--mpp-fs-sm)",
+                                "width": "100%",
+                                "boxSizing": "border-box"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": { "name": "LinkedOpField" },
+                        "position": { "grow": 2, "basis": "0" },
+                        "props": { "direction": "column", "style": { "classes": "field", "minWidth": "0" } },
+                        "children": [
+                          { "type": "ia.display.label", "meta": { "name": "Label" }, "position": { "basis": "auto" }, "props": { "text": "Linked Operation Template", "style": { "classes": "field-label" } } },
+                          {
+                            "type": "ia.display.label",
+                            "meta": { "name": "Value" },
+                            "position": { "basis": "auto" },
+                            "propConfig": {
+                              "props.text": { "binding": { "type": "property", "config": { "path": "view.custom.selected.linkedOpTemplate" } } }
+                            },
+                            "props": {
+                              "style": {
+                                "background": "var(--mpp-surface-card)",
+                                "border": "1px solid var(--mpp-border-default)",
+                                "borderRadius": "var(--mpp-radius-sm)",
+                                "padding": "6px 8px",
+                                "color": "var(--mpp-text-tertiary)",
+                                "fontSize": "var(--mpp-fs-sm)",
+                                "width": "100%",
+                                "boxSizing": "border-box"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": { "name": "FieldRow2" },
+                    "position": { "basis": "auto" },
+                    "props": { "direction": "row", "style": { "classes": "field-row", "gap": "12px" } },
+                    "children": [
+                      {
+                        "type": "ia.container.flex",
+                        "meta": { "name": "DescriptionField" },
+                        "position": { "grow": 1, "basis": "0" },
+                        "props": { "direction": "column", "style": { "classes": "field", "minWidth": "0" } },
+                        "children": [
+                          { "type": "ia.display.label", "meta": { "name": "Label" }, "position": { "basis": "auto" }, "props": { "text": "Description", "style": { "classes": "field-label" } } },
+                          {
+                            "type": "ia.input.text-field",
+                            "meta": { "name": "Input" },
+                            "position": { "basis": "auto" },
+                            "propConfig": {
+                              "props.text": { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.selected.description" } } }
+                            },
+                            "props": { "style": { "classes": "search-input", "width": "100%", "boxSizing": "border-box" } }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": { "name": "VersionRow" },
+                    "position": { "basis": "auto" },
+                    "props": { "direction": "row", "alignItems": "center", "style": { "gap": "8px" } },
+                    "children": [
+                      {
+                        "type": "ia.input.dropdown",
+                        "meta": { "name": "VersionSelect" },
+                        "position": { "basis": "260px", "shrink": 0 },
+                        "propConfig": {
+                          "props.options": { "binding": { "type": "property", "config": { "path": "view.custom.versionOptions" } } },
+                          "props.value":   { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.selectedVersion" } } }
+                        },
+                        "props": { "style": { "classes": "select" } }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": { "name": "VersionStateBadge" },
+                        "position": { "basis": "auto" },
+                        "propConfig": {
+                          "props.text":          { "binding": { "type": "property", "config": { "path": "view.custom.selected.stateLabel" } } },
+                          "props.style.classes": { "binding": { "type": "property", "config": { "path": "view.custom.selected.stateBadge" } } }
+                        },
+                        "props": {}
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": { "name": "EffectiveFromText" },
+                        "position": { "basis": "auto" },
+                        "propConfig": {
+                          "props.text": { "binding": { "type": "property", "config": { "path": "view.custom.selected.effectiveFrom" } } }
+                        },
+                        "props": { "style": { "fontSize": "11px", "color": "var(--mpp-text-tertiary)" } }
+                      },
+                      { "type": "ia.display.label", "meta": { "name": "Spacer" }, "position": { "grow": 1 }, "props": { "text": "" } },
+                      { "type": "ia.input.button", "meta": { "name": "NewVersionButton" }, "position": { "basis": "auto" }, "props": { "text": "New Version", "style": { "classes": "btn btn-sm" } } }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "TabStrip" },
+                "position": { "basis": "auto", "shrink": 0 },
+                "props": {
+                  "direction": "row",
+                  "style": { "classes": "tab-strip" }
+                },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": { "name": "AttributesTab" },
+                    "position": { "basis": "auto" },
+                    "events": {
+                      "dom": {
+                        "onClick": {
+                          "config": { "script": "\tself.view.custom.activeTab = 'attributes'" },
+                          "scope": "G",
+                          "type": "script"
+                        }
+                      }
+                    },
+                    "propConfig": {
+                      "props.style.classes": {
+                        "binding": {
+                          "type": "expr",
+                          "config": { "expression": "if({view.custom.activeTab} = 'attributes', 'tab-item tab-item-active', 'tab-item')" }
+                        }
+                      }
+                    },
+                    "props": { "direction": "row", "alignItems": "center" },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "Text" }, "position": { "basis": "auto" }, "props": { "text": "Attributes" } }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": { "name": "VersionHistoryTab" },
+                    "position": { "basis": "auto" },
+                    "events": {
+                      "dom": {
+                        "onClick": {
+                          "config": { "script": "\tself.view.custom.activeTab = 'history'" },
+                          "scope": "G",
+                          "type": "script"
+                        }
+                      }
+                    },
+                    "propConfig": {
+                      "props.style.classes": {
+                        "binding": {
+                          "type": "expr",
+                          "config": { "expression": "if({view.custom.activeTab} = 'history', 'tab-item tab-item-active', 'tab-item')" }
+                        }
+                      }
+                    },
+                    "props": { "direction": "row", "alignItems": "center" },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "Text" }, "position": { "basis": "auto" }, "props": { "text": "Version History" } }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "AttributesTabContent" },
+                "position": { "grow": 1 },
+                "propConfig": {
+                  "position.display": {
+                    "binding": { "type": "expr",
+                      "config": { "expression": "{view.custom.activeTab} = 'attributes'" } }
+                  }
+                },
+                "props": { "direction": "column", "style": { "overflowY": "auto" } },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": { "name": "TableHeader" },
+                    "position": { "basis": "auto" },
+                    "props": {
+                      "direction": "row",
+                      "alignItems": "center",
+                      "style": {
+                        "background": "var(--mpp-surface-card)",
+                        "color": "var(--mpp-text-secondary)",
+                        "fontSize": "11px",
+                        "fontWeight": "600",
+                        "textTransform": "uppercase",
+                        "letterSpacing": "0.05em",
+                        "borderBottom": "1px solid var(--mpp-border-subtle)",
+                        "padding": "8px 12px"
+                      }
+                    },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "ColArrows" },   "position": { "basis": "46px", "shrink": 0 }, "props": { "text": "" } },
+                      { "type": "ia.display.label", "meta": { "name": "ColAttrName" }, "position": { "grow": 1, "basis": "0" },     "props": { "text": "Attribute Name" } },
+                      { "type": "ia.display.label", "meta": { "name": "ColDataType" }, "position": { "basis": "90px", "shrink": 0 }, "props": { "text": "Data Type" } },
+                      { "type": "ia.display.label", "meta": { "name": "ColUom" },      "position": { "basis": "70px", "shrink": 0 }, "props": { "text": "UOM" } },
+                      { "type": "ia.display.label", "meta": { "name": "ColTarget" },   "position": { "basis": "80px", "shrink": 0 }, "props": { "text": "Target" } },
+                      { "type": "ia.display.label", "meta": { "name": "ColLower" },    "position": { "basis": "80px", "shrink": 0 }, "props": { "text": "Lower" } },
+                      { "type": "ia.display.label", "meta": { "name": "ColUpper" },    "position": { "basis": "80px", "shrink": 0 }, "props": { "text": "Upper" } },
+                      { "type": "ia.display.label", "meta": { "name": "ColRequired" }, "position": { "basis": "70px", "shrink": 0 }, "props": { "text": "Required", "style": { "textAlign": "center" } } }
+                    ]
+                  },
+                  {
+                    "type": "ia.display.flex-repeater",
+                    "meta": { "name": "AttributeRows" },
+                    "position": { "basis": "auto" },
+                    "propConfig": {
+                      "props.instances": { "binding": { "type": "property", "config": { "path": "view.custom.attributes" } } }
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/SpecAttributeRow",
+                      "direction": "column",
+                      "useDefaultViewWidth": false,
+                      "useDefaultViewHeight": false,
+                      "elementPosition": { "basis": "44px", "shrink": 0 }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": { "name": "ReadOnlyHint" },
+                    "position": { "basis": "auto" },
+                    "props": {
+                      "text": "Active version — read-only. Click New Version to create an editable copy with a new effective date.",
+                      "style": {
+                        "padding": "8px 12px",
+                        "borderTop": "1px solid var(--mpp-border-subtle)",
+                        "fontSize": "11px",
+                        "color": "var(--mpp-text-tertiary)",
+                        "fontStyle": "italic"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "VersionHistoryTabContent" },
+                "position": { "grow": 1 },
+                "propConfig": {
+                  "position.display": {
+                    "binding": { "type": "expr",
+                      "config": { "expression": "{view.custom.activeTab} = 'history'" } }
+                  }
+                },
+                "props": { "direction": "column", "style": { "overflowY": "auto" } },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": { "name": "TableHeader" },
+                    "position": { "basis": "auto" },
+                    "props": {
+                      "direction": "row",
+                      "alignItems": "center",
+                      "style": {
+                        "background": "var(--mpp-surface-card)",
+                        "color": "var(--mpp-text-secondary)",
+                        "fontSize": "11px",
+                        "fontWeight": "600",
+                        "textTransform": "uppercase",
+                        "letterSpacing": "0.05em",
+                        "borderBottom": "1px solid var(--mpp-border-subtle)",
+                        "padding": "8px 12px"
+                      }
+                    },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "ColVersion" },       "position": { "basis": "60px", "shrink": 0 },  "props": { "text": "Version" } },
+                      { "type": "ia.display.label", "meta": { "name": "ColEffectiveFrom" }, "position": { "grow": 1, "basis": "0" },      "props": { "text": "Effective From" } },
+                      { "type": "ia.display.label", "meta": { "name": "ColDeprecatedAt" },  "position": { "grow": 1, "basis": "0" },      "props": { "text": "Deprecated At" } },
+                      { "type": "ia.display.label", "meta": { "name": "ColState" },         "position": { "basis": "110px", "shrink": 0 }, "props": { "text": "State" } },
+                      { "type": "ia.display.label", "meta": { "name": "ColCreatedBy" },     "position": { "grow": 1, "basis": "0" },      "props": { "text": "Created By" } },
+                      { "type": "ia.display.label", "meta": { "name": "ColCreatedAt" },     "position": { "grow": 1, "basis": "0" },      "props": { "text": "Created At" } }
+                    ]
+                  },
+                  {
+                    "type": "ia.display.flex-repeater",
+                    "meta": { "name": "VersionRows" },
+                    "position": { "basis": "auto" },
+                    "propConfig": {
+                      "props.instances": { "binding": { "type": "property", "config": { "path": "view.custom.versions" } } }
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/SpecVersionRow",
+                      "direction": "column",
+                      "useDefaultViewWidth": false,
+                      "useDefaultViewHeight": false,
+                      "elementPosition": { "basis": "40px", "shrink": 0 }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

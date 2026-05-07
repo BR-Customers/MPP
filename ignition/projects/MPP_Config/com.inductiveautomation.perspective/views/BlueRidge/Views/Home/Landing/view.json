@@ -1,0 +1,137 @@
+{
+  "custom": {
+    "userName": ""
+  },
+  "params": {},
+  "propConfig": {
+    "custom.userName": {
+      "binding": {
+        "type": "property",
+        "config": {
+          "path": "session.props.auth.user.userName"
+        },
+        "transforms": [
+          {
+            "type": "expression",
+            "expression": "if({value} = null || len({value}) = 0, 'Operator', {value})"
+          }
+        ]
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "justify": "center",
+      "alignItems": "center",
+      "style": {
+        "classes": "canvas"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "WelcomeCard"
+        },
+        "position": {
+          "basis": "auto"
+        },
+        "props": {
+          "direction": "column",
+          "justify": "flex-start",
+          "alignItems": "flex-start",
+          "style": {
+            "classes": "surface-card",
+            "minWidth": "480px",
+            "padding": "32px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "LabelEyebrow"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "props": {
+              "text": "MPP MES",
+              "style": {
+                "classes": "label-eyebrow"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "LabelTitle"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "props": {
+              "text": "Configuration Tool",
+              "style": {
+                "classes": "heading-lg",
+                "marginTop": "8px"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "LabelWelcomeUser"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "'Welcome, ' + {view.custom.userName}"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "marginTop": "24px",
+                "fontSize": "16px"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "LabelStatusBadge"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "props": {
+              "text": "Phase 0 — Foundation",
+              "style": {
+                "classes": "badge badge-info",
+                "marginTop": "16px"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

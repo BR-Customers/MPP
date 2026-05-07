@@ -1,0 +1,95 @@
+{
+  "custom": {},
+  "params": {
+    "name": "",
+    "versionLabel": "",
+    "versionBadge": "badge badge-published",
+    "subtext": "",
+    "selected": false,
+    "deprecated": false
+  },
+  "propConfig": {
+    "params.name":         { "paramDirection": "input" },
+    "params.versionLabel": { "paramDirection": "input" },
+    "params.versionBadge": { "paramDirection": "input" },
+    "params.subtext":      { "paramDirection": "input" },
+    "params.selected":     { "paramDirection": "input" },
+    "params.deprecated":   { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "width": 260, "height": 40 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "propConfig": {
+      "props.style.background": {
+        "binding": { "type": "expr",
+          "config": { "expression": "if({view.params.selected}, 'var(--mpp-surface-selected)', 'transparent')" } }
+      },
+      "props.style.color": {
+        "binding": { "type": "expr",
+          "config": { "expression": "if({view.params.selected}, 'var(--mpp-accent-90)', 'var(--mpp-text-secondary)')" } }
+      },
+      "props.style.borderLeft": {
+        "binding": { "type": "expr",
+          "config": { "expression": "if({view.params.selected}, '3px solid var(--mpp-accent-60)', '3px solid transparent')" } }
+      },
+      "props.style.opacity": {
+        "binding": { "type": "expr",
+          "config": { "expression": "if({view.params.deprecated}, 0.6, 1)" } }
+      }
+    },
+    "props": {
+      "direction": "column",
+      "alignItems": "stretch",
+      "style": {
+        "padding": "6px 10px",
+        "gap": "2px",
+        "cursor": "pointer"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "TopRow" },
+        "position": { "basis": "auto" },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": { "gap": "6px", "width": "100%" }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "Name" },
+            "position": { "grow": 1, "basis": "0" },
+            "propConfig": {
+              "props.text": { "binding": { "type": "property", "config": { "path": "view.params.name" } } }
+            },
+            "props": { "style": { "fontWeight": "600", "fontSize": "12px" } }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "VersionBadge" },
+            "position": { "basis": "auto" },
+            "propConfig": {
+              "props.text":          { "binding": { "type": "property", "config": { "path": "view.params.versionLabel" } } },
+              "props.style.classes": { "binding": { "type": "property", "config": { "path": "view.params.versionBadge" } } }
+            },
+            "props": { "style": { "fontSize": "10px", "padding": "1px 5px" } }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Subtext" },
+        "position": { "basis": "auto" },
+        "propConfig": {
+          "props.text": { "binding": { "type": "property", "config": { "path": "view.params.subtext" } } }
+        },
+        "props": { "style": { "fontSize": "11px", "color": "var(--mpp-text-tertiary)" } }
+      }
+    ]
+  }
+}

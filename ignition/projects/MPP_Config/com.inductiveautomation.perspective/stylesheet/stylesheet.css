@@ -377,7 +377,8 @@ button {
 .ia_textField,
 .ia_numericEntryField,
 .ia_dropdown,
-.ia_textArea {
+.ia_textArea,
+.ia_datetime_input {
     background-color: var(--mpp-surface-raised);
     color: var(--mpp-text-primary);
     border: 1px solid var(--mpp-border-default);
@@ -387,6 +388,10 @@ button {
     font-size: var(--mpp-fs-base);
     transition: border-color var(--mpp-transition-fast),
                 box-shadow var(--mpp-transition-fast);
+}
+
+.ia_datetime_input {
+    color-scheme: dark;
 }
 
 .ia_textField:hover,
@@ -428,28 +433,76 @@ button {
     letter-spacing: 0.05em;
 }
 
-.ia_table__head__cell {
+.ia_table__head__cell,
+.ia_table__head__header__cell {
     padding: var(--mpp-space-3) var(--mpp-space-4);
     text-align: left;
 }
 
-.ia_table__body__row {
-    border-bottom: 1px solid var(--mpp-border-subtle);
-    transition: background-color var(--mpp-transition-fast);
+/* Body wrapper + the React Virtualized grid that lives inside it.
+   Without these, the empty area below the rendered rows shows white. */
+.ia_table__body,
+.ia_table__body .ReactVirtualized__Grid,
+.ia_table__body .ReactVirtualized__Grid__innerScrollContainer {
+    background-color: var(--mpp-surface-raised);
 }
 
-.ia_table__body__row:hover {
+.ia_table__body__row,
+.ia_table__body__row > * {
+    background-color: var(--mpp-surface-raised);
+    border-bottom: 1px solid var(--mpp-border-subtle);
+    transition: background-color var(--mpp-transition-fast);
+    color: var(--mpp-text-primary);
+}
+
+.ia_table__body__row:hover,
+.ia_table__body__row:hover > * {
     background-color: var(--mpp-surface-hover);
 }
 
 .ia_table__body__row--selected,
-.ia_table__body__row[data-selected="true"] {
+.ia_table__body__row[data-selected="true"],
+.ia_table__body__row--selected > *,
+.ia_table__body__row[data-selected="true"] > * {
     background-color: var(--mpp-surface-selected);
 }
 
-.ia_table__body__cell {
+/* Catch-all cell rule. Ignition 8.3 emits `.ia_table__cell` on every
+   cell (head and body); only head cells additionally have
+   `.ia_table__head__header__cell`. */
+.ia_table__cell {
     padding: var(--mpp-space-3) var(--mpp-space-4);
     color: var(--mpp-text-primary);
+    background-color: transparent;
+}
+
+/* Pager (rows-per-page chooser + page indicator strip at table bottom). */
+.ia_pager,
+.pager-container {
+    background-color: var(--mpp-surface-raised);
+    color: var(--mpp-text-secondary);
+    border-top: 1px solid var(--mpp-border-subtle);
+    padding: var(--mpp-space-2) var(--mpp-space-3);
+}
+
+.ia_pager__page {
+    color: var(--mpp-text-secondary);
+    padding: var(--mpp-space-1) var(--mpp-space-2);
+    border-radius: var(--mpp-radius-sm);
+}
+
+.ia_pager__page--active {
+    color: var(--mpp-accent-90);
+    background: var(--mpp-accent-20);
+}
+
+.ia_pager .iaSelectCommon,
+.ia_pager .ia_select,
+.ia_pager .ia_select__select {
+    background-color: var(--mpp-surface-raised);
+    color: var(--mpp-text-primary);
+    border: 1px solid var(--mpp-border-default);
+    border-radius: var(--mpp-radius-sm);
 }
 
 /* ─── Labels / containers / icons ─────────────────────────────────── */
@@ -701,6 +754,8 @@ button {
 /* State variants — process / system state, distinct from categorical colors */
 .psc-badge-published { color: var(--mpp-state-good-fg); background: var(--mpp-state-good-bg); border-color: var(--mpp-state-good-border); }
 .psc-badge-warning   { color: var(--mpp-state-warn-fg); background: var(--mpp-state-warn-bg); border-color: var(--mpp-state-warn-border); }
+.psc-badge-draft     { color: var(--mpp-cat-amber-fg); background: var(--mpp-cat-amber-bg); border-color: var(--mpp-cat-amber-border); }
+.psc-badge-deprecated{ color: var(--mpp-text-tertiary); background: var(--mpp-surface-card); border-color: var(--mpp-border-subtle); }
 .psc-badge-danger    { color: var(--mpp-state-bad-fg);  background: var(--mpp-state-bad-bg);  border-color: var(--mpp-state-bad-border); }
 .psc-badge-info      { color: var(--mpp-state-info-fg); background: var(--mpp-state-info-bg); border-color: var(--mpp-state-info-border); }
 .psc-badge-muted     { color: var(--mpp-text-tertiary); background: var(--mpp-surface-card); border-color: var(--mpp-border-subtle); }
@@ -838,8 +893,8 @@ button {
 }
 
 .psc-arrow-btn {
-    width: 14px;
-    height: 14px;
+    width: 18px;
+    height: 18px;
     line-height: 1;
     background: transparent;
     border: none;
@@ -848,6 +903,12 @@ button {
     padding: 0;
     font-size: 10px;
     transition: color var(--mpp-transition-fast);
+}
+
+/* SVG inside arrow buttons — same trick as the tree-icon rule. */
+.psc-arrow-btn svg {
+    width: 18px;
+    height: 18px;
 }
 
 .psc-arrow-btn:hover:not(.psc-disabled) {
@@ -1134,10 +1195,21 @@ button {
     font-weight: var(--mpp-fw-medium);
 }
 
-/* nav-icon and elig-icon — same definition, distinct semantic role */
+/* nav-icon and elig-icon — same definition, distinct semantic role.
+   font-size handles HTML-entity icons (mockup); width/height are
+   needed for Ignition's ia.display.icon which renders an SVG and
+   ignores font-size for sizing. */
 .psc-nav-icon,
 .psc-elig-icon {
     font-size: 14px;
+    width: 16px;
+    height: 16px;
+}
+
+.psc-nav-icon svg,
+.psc-elig-icon svg {
+    width: 16px;
+    height: 16px;
 }
 
 
@@ -1230,6 +1302,20 @@ button {
 .psc-tree-item-level-1 { padding-left: var(--mpp-space-5); }
 .psc-tree-item-level-2 { padding-left: var(--mpp-space-6); }
 .psc-tree-item-level-3 { padding-left: var(--mpp-space-7); }
+
+/* Tree-item icons (chevron + type icon). ia.display.icon renders SVG
+   which doesn't respond to font-size for sizing -- explicit width/height
+   required. */
+.psc-tree-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.psc-tree-icon svg {
+    width: 16px;
+    height: 16px;
+}
 
 
 /* ─── Filter sidebar + filter panel ────────────────────────────────── */

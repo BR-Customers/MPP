@@ -1,0 +1,98 @@
+{
+  "custom": {},
+  "params": {
+    "code": "",
+    "description": "",
+    "area": "",
+    "excused": false,
+    "selected": false
+  },
+  "propConfig": {
+    "params.code":        { "paramDirection": "input" },
+    "params.description": { "paramDirection": "input" },
+    "params.area":        { "paramDirection": "input" },
+    "params.excused":     { "paramDirection": "input" },
+    "params.selected":    { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "width": 800, "height": 44 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "propConfig": {
+      "props.style.background": {
+        "binding": {
+          "type": "expr",
+          "config": { "expression": "if({view.params.selected}, 'var(--mpp-accent-20)', 'transparent')" }
+        }
+      },
+      "props.style.color": {
+        "binding": {
+          "type": "expr",
+          "config": { "expression": "if({view.params.selected}, 'var(--mpp-accent-90)', 'var(--mpp-text-primary)')" }
+        }
+      }
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "padding": "8px 12px",
+        "borderBottom": "1px solid var(--mpp-border-subtle)"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Code" },
+        "position": { "basis": "100px", "shrink": 0 },
+        "propConfig": {
+          "props.text": { "binding": { "type": "property", "config": { "path": "view.params.code" } } }
+        },
+        "props": {}
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Description" },
+        "position": { "grow": 1, "basis": "0" },
+        "propConfig": {
+          "props.text": { "binding": { "type": "property", "config": { "path": "view.params.description" } } }
+        },
+        "props": {}
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Area" },
+        "position": { "basis": "140px", "shrink": 0 },
+        "propConfig": {
+          "props.text": { "binding": { "type": "property", "config": { "path": "view.params.area" } } }
+        },
+        "props": {}
+      },
+      {
+        "type": "ia.display.icon",
+        "meta": { "name": "Excused" },
+        "position": { "basis": "80px", "shrink": 0 },
+        "propConfig": {
+          "props.path": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "if({view.params.excused}, 'material/check_box', 'material/check_box_outline_blank')" }
+            }
+          }
+        },
+        "props": {
+          "path": "material/check_box_outline_blank",
+          "style": { "width": "20px", "height": "20px", "color": "var(--mpp-text-secondary)" }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": { "name": "EditButton" },
+        "position": { "basis": "80px", "shrink": 0 },
+        "props": { "text": "Edit", "style": { "classes": "btn btn-sm" } }
+      }
+    ]
+  }
+}
