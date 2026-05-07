@@ -168,7 +168,7 @@
                   "direction": "column",
                   "useDefaultViewWidth": false,
                   "useDefaultViewHeight": false,
-                  "elementPosition": { "basis": "52px", "shrink": 0 }
+                  "elementPosition": { "basis": "40px", "shrink": 0 }
                 }
               }
             ]
@@ -387,12 +387,12 @@
                 },
                 "children": [
                   {
-                    "type": "ia.input.button",
+                    "type": "ia.display.label",
                     "meta": { "name": "AttributesTab" },
                     "position": { "basis": "auto" },
                     "events": {
-                      "component": {
-                        "onActionPerformed": {
+                      "dom": {
+                        "onClick": {
                           "config": { "script": "\tself.view.custom.activeTab = 'attributes'" },
                           "scope": "C",
                           "type": "script"
@@ -410,12 +410,12 @@
                     "props": { "text": "Attributes" }
                   },
                   {
-                    "type": "ia.input.button",
+                    "type": "ia.display.label",
                     "meta": { "name": "VersionHistoryTab" },
                     "position": { "basis": "auto" },
                     "events": {
-                      "component": {
-                        "onActionPerformed": {
+                      "dom": {
+                        "onClick": {
                           "config": { "script": "\tself.view.custom.activeTab = 'history'" },
                           "scope": "C",
                           "type": "script"

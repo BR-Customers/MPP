@@ -17,31 +17,36 @@
     "params.deprecated":   { "paramDirection": "input" }
   },
   "props": {
-    "defaultSize": { "width": 260, "height": 52 }
+    "defaultSize": { "width": 260, "height": 40 }
   },
   "root": {
     "type": "ia.container.flex",
     "meta": { "name": "root" },
     "propConfig": {
-      "props.style.classes": {
-        "binding": {
-          "type": "expr",
-          "config": { "expression": "if({view.params.selected}, 'tree-item tree-item-selected', 'tree-item')" }
-        }
+      "props.style.background": {
+        "binding": { "type": "expr",
+          "config": { "expression": "if({view.params.selected}, 'var(--mpp-surface-selected)', 'transparent')" } }
+      },
+      "props.style.color": {
+        "binding": { "type": "expr",
+          "config": { "expression": "if({view.params.selected}, 'var(--mpp-accent-90)', 'var(--mpp-text-secondary)')" } }
+      },
+      "props.style.borderLeft": {
+        "binding": { "type": "expr",
+          "config": { "expression": "if({view.params.selected}, '3px solid var(--mpp-accent-60)', '3px solid transparent')" } }
       },
       "props.style.opacity": {
-        "binding": {
-          "type": "expr",
-          "config": { "expression": "if({view.params.deprecated}, 0.6, 1)" }
-        }
+        "binding": { "type": "expr",
+          "config": { "expression": "if({view.params.deprecated}, 0.6, 1)" } }
       }
     },
     "props": {
       "direction": "column",
       "alignItems": "stretch",
       "style": {
-        "paddingLeft": "10px",
-        "gap": "2px"
+        "padding": "6px 10px",
+        "gap": "2px",
+        "cursor": "pointer"
       }
     },
     "children": [
