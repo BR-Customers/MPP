@@ -168,7 +168,7 @@
                   "direction": "column",
                   "useDefaultViewWidth": false,
                   "useDefaultViewHeight": false,
-                  "elementPosition": { "basis": "40px", "shrink": 0 }
+                  "elementPosition": { "grow": 0, "shrink": 0, "basis": "50px" }
                 }
               }
             ]
@@ -387,7 +387,7 @@
                 },
                 "children": [
                   {
-                    "type": "ia.display.label",
+                    "type": "ia.container.flex",
                     "meta": { "name": "AttributesTab" },
                     "position": { "basis": "auto" },
                     "events": {
@@ -407,10 +407,13 @@
                         }
                       }
                     },
-                    "props": { "text": "Attributes" }
+                    "props": { "direction": "row", "alignItems": "center" },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "Text" }, "position": { "basis": "auto" }, "props": { "text": "Attributes" } }
+                    ]
                   },
                   {
-                    "type": "ia.display.label",
+                    "type": "ia.container.flex",
                     "meta": { "name": "VersionHistoryTab" },
                     "position": { "basis": "auto" },
                     "events": {
@@ -430,7 +433,10 @@
                         }
                       }
                     },
-                    "props": { "text": "Version History" }
+                    "props": { "direction": "row", "alignItems": "center" },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "Text" }, "position": { "basis": "auto" }, "props": { "text": "Version History" } }
+                    ]
                   }
                 ]
               },
