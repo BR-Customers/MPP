@@ -891,8 +891,8 @@ button {
 }
 
 .psc-arrow-btn {
-    width: 14px;
-    height: 14px;
+    width: 18px;
+    height: 18px;
     line-height: 1;
     background: transparent;
     border: none;
@@ -905,8 +905,8 @@ button {
 
 /* SVG inside arrow buttons — same trick as the tree-icon rule. */
 .psc-arrow-btn svg {
-    width: 14px;
-    height: 14px;
+    width: 18px;
+    height: 18px;
 }
 
 .psc-arrow-btn:hover:not(.psc-disabled) {

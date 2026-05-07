@@ -8,7 +8,12 @@
       "sortOrder": 3,
       "typeBadge": "Cell • DieCastMachine",
       "schemaName": "DieCastMachine"
-    }
+    },
+    "attributes": [
+      { "index": 0, "totalRows": 3, "name": "Tonnage",            "value": "400",  "dataType": "DECIMAL",  "uom": "tons", "required": true  },
+      { "index": 1, "totalRows": 3, "name": "ConfirmationMethod", "value": "None", "dataType": "NVARCHAR", "uom": "—",    "required": false },
+      { "index": 2, "totalRows": 3, "name": "RefCycleTimeSec",    "value": "62.5", "dataType": "DECIMAL",  "uom": "sec",  "required": false }
+    ]
   },
   "params": {},
   "props": {
@@ -541,131 +546,27 @@
                         },
                         "children": [
                           { "type": "ia.display.label", "meta": { "name": "ColArrows" },    "position": { "basis": "46px", "shrink": 0 }, "props": { "text": "" } },
-                          { "type": "ia.display.label", "meta": { "name": "ColAttribute" }, "position": { "grow": 1 }, "props": { "text": "Attribute" } },
-                          { "type": "ia.display.label", "meta": { "name": "ColValue" },     "position": { "grow": 1 }, "props": { "text": "Value" } },
-                          { "type": "ia.display.label", "meta": { "name": "ColUom" },       "position": { "basis": "70px" }, "props": { "text": "UOM" } },
-                          { "type": "ia.display.label", "meta": { "name": "ColReq" },       "position": { "basis": "60px" }, "props": { "text": "Req" } }
+                          { "type": "ia.display.label", "meta": { "name": "ColAttribute" }, "position": { "grow": 1, "basis": "0" }, "props": { "text": "Attribute" } },
+                          { "type": "ia.display.label", "meta": { "name": "ColValue" },     "position": { "grow": 1, "basis": "0" }, "props": { "text": "Value" } },
+                          { "type": "ia.display.label", "meta": { "name": "ColUom" },       "position": { "basis": "70px", "shrink": 0 }, "props": { "text": "UOM" } },
+                          { "type": "ia.display.label", "meta": { "name": "ColReq" },       "position": { "basis": "60px", "shrink": 0 }, "props": { "text": "Req" } }
                         ]
                       },
                       {
-                        "type": "ia.container.flex",
-                        "meta": { "name": "RowTonnage" },
+                        "type": "ia.display.flex-repeater",
+                        "meta": { "name": "AttributeRows" },
                         "position": { "basis": "auto" },
-                        "props": {
-                          "direction": "row",
-                          "alignItems": "center",
-                          "style": { "padding": "8px 12px", "borderBottom": "1px solid var(--mpp-border-subtle)", "color": "var(--mpp-text-primary)" }
+                        "propConfig": {
+                          "props.instances": {
+                            "binding": { "type": "property", "config": { "path": "view.custom.attributes" } }
+                          }
                         },
-                        "children": [
-                          {
-                            "type": "ia.container.flex",
-                            "meta": { "name": "Arrows" },
-                            "position": { "basis": "46px", "shrink": 0 },
-                            "props": { "direction": "column", "style": { "classes": "arrows", "gap": "1px" } },
-                            "children": [
-                              { "type": "ia.display.icon", "meta": { "name": "Up" },   "position": { "basis": "auto" }, "props": { "path": "material/arrow_drop_up",   "style": { "classes": "arrow-btn arrow-btn-disabled" } } },
-                              { "type": "ia.display.icon", "meta": { "name": "Down" }, "position": { "basis": "auto" }, "props": { "path": "material/arrow_drop_down", "style": { "classes": "arrow-btn" } } }
-                            ]
-                          },
-                          { "type": "ia.display.label", "meta": { "name": "AttrName" }, "position": { "grow": 1 }, "props": { "text": "Tonnage" } },
-                          {
-                            "type": "ia.container.flex",
-                            "meta": { "name": "ValueCell" },
-                            "position": { "grow": 1 },
-                            "props": { "direction": "row", "alignItems": "center", "style": { "gap": "6px" } },
-                            "children": [
-                              {
-                                "type": "ia.input.text-field",
-                                "meta": { "name": "Value" },
-                                "position": { "basis": "auto" },
-                                "props": { "text": "400", "style": { "classes": "search-input", "width": "70px" } }
-                              },
-                              { "type": "ia.display.label", "meta": { "name": "DataType" }, "position": { "basis": "auto" }, "props": { "text": "DECIMAL", "style": { "fontSize": "9px", "color": "var(--mpp-text-tertiary)", "whiteSpace": "nowrap" } } }
-                            ]
-                          },
-                          { "type": "ia.display.label",    "meta": { "name": "Uom" },      "position": { "basis": "70px" }, "props": { "text": "tons" } },
-                          { "type": "ia.input.checkbox",   "meta": { "name": "Required" }, "position": { "basis": "60px" }, "props": { "selected": true, "text": "", "style": { "classes": "checkbox" } } }
-                        ]
-                      },
-                      {
-                        "type": "ia.container.flex",
-                        "meta": { "name": "RowConfirmationMethod" },
-                        "position": { "basis": "auto" },
                         "props": {
-                          "direction": "row",
-                          "alignItems": "center",
-                          "style": { "padding": "8px 12px", "borderBottom": "1px solid var(--mpp-border-subtle)", "color": "var(--mpp-text-primary)" }
-                        },
-                        "children": [
-                          {
-                            "type": "ia.container.flex",
-                            "meta": { "name": "Arrows" },
-                            "position": { "basis": "46px", "shrink": 0 },
-                            "props": { "direction": "column", "style": { "classes": "arrows", "gap": "1px" } },
-                            "children": [
-                              { "type": "ia.display.icon", "meta": { "name": "Up" },   "position": { "basis": "auto" }, "props": { "path": "material/arrow_drop_up",   "style": { "classes": "arrow-btn" } } },
-                              { "type": "ia.display.icon", "meta": { "name": "Down" }, "position": { "basis": "auto" }, "props": { "path": "material/arrow_drop_down", "style": { "classes": "arrow-btn" } } }
-                            ]
-                          },
-                          { "type": "ia.display.label", "meta": { "name": "AttrName" }, "position": { "grow": 1 }, "props": { "text": "ConfirmationMethod" } },
-                          {
-                            "type": "ia.container.flex",
-                            "meta": { "name": "ValueCell" },
-                            "position": { "grow": 1 },
-                            "props": { "direction": "row", "alignItems": "center", "style": { "gap": "6px" } },
-                            "children": [
-                              {
-                                "type": "ia.input.text-field",
-                                "meta": { "name": "Value" },
-                                "position": { "basis": "auto" },
-                                "props": { "text": "None", "style": { "classes": "search-input", "width": "70px" } }
-                              },
-                              { "type": "ia.display.label", "meta": { "name": "DataType" }, "position": { "basis": "auto" }, "props": { "text": "NVARCHAR", "style": { "fontSize": "9px", "color": "var(--mpp-text-tertiary)", "whiteSpace": "nowrap" } } }
-                            ]
-                          },
-                          { "type": "ia.display.label",    "meta": { "name": "Uom" },      "position": { "basis": "70px" }, "props": { "text": "—" } },
-                          { "type": "ia.input.checkbox",   "meta": { "name": "Required" }, "position": { "basis": "60px" }, "props": { "selected": false, "text": "", "style": { "classes": "checkbox" } } }
-                        ]
-                      },
-                      {
-                        "type": "ia.container.flex",
-                        "meta": { "name": "RowRefCycleTime" },
-                        "position": { "basis": "auto" },
-                        "props": {
-                          "direction": "row",
-                          "alignItems": "center",
-                          "style": { "padding": "8px 12px", "color": "var(--mpp-text-primary)" }
-                        },
-                        "children": [
-                          {
-                            "type": "ia.container.flex",
-                            "meta": { "name": "Arrows" },
-                            "position": { "basis": "46px", "shrink": 0 },
-                            "props": { "direction": "column", "style": { "classes": "arrows", "gap": "1px" } },
-                            "children": [
-                              { "type": "ia.display.icon", "meta": { "name": "Up" },   "position": { "basis": "auto" }, "props": { "path": "material/arrow_drop_up",   "style": { "classes": "arrow-btn" } } },
-                              { "type": "ia.display.icon", "meta": { "name": "Down" }, "position": { "basis": "auto" }, "props": { "path": "material/arrow_drop_down", "style": { "classes": "arrow-btn arrow-btn-disabled" } } }
-                            ]
-                          },
-                          { "type": "ia.display.label", "meta": { "name": "AttrName" }, "position": { "grow": 1 }, "props": { "text": "RefCycleTimeSec" } },
-                          {
-                            "type": "ia.container.flex",
-                            "meta": { "name": "ValueCell" },
-                            "position": { "grow": 1 },
-                            "props": { "direction": "row", "alignItems": "center", "style": { "gap": "6px" } },
-                            "children": [
-                              {
-                                "type": "ia.input.text-field",
-                                "meta": { "name": "Value" },
-                                "position": { "basis": "auto" },
-                                "props": { "text": "62.5", "style": { "classes": "search-input", "width": "70px" } }
-                              },
-                              { "type": "ia.display.label", "meta": { "name": "DataType" }, "position": { "basis": "auto" }, "props": { "text": "DECIMAL", "style": { "fontSize": "9px", "color": "var(--mpp-text-tertiary)", "whiteSpace": "nowrap" } } }
-                            ]
-                          },
-                          { "type": "ia.display.label",    "meta": { "name": "Uom" },      "position": { "basis": "70px" }, "props": { "text": "sec" } },
-                          { "type": "ia.input.checkbox",   "meta": { "name": "Required" }, "position": { "basis": "60px" }, "props": { "selected": false, "text": "", "style": { "classes": "checkbox" } } }
-                        ]
+                          "path": "BlueRidge/Components/AttributeRow",
+                          "direction": "column",
+                          "useDefaultViewWidth": false,
+                          "useDefaultViewHeight": false
+                        }
                       }
                     ]
                   }
