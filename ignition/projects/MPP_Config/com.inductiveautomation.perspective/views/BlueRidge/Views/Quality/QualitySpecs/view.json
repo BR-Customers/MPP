@@ -394,7 +394,7 @@
                       "dom": {
                         "onClick": {
                           "config": { "script": "\tself.view.custom.activeTab = 'attributes'" },
-                          "scope": "C",
+                          "scope": "G",
                           "type": "script"
                         }
                       }
@@ -420,7 +420,7 @@
                       "dom": {
                         "onClick": {
                           "config": { "script": "\tself.view.custom.activeTab = 'history'" },
-                          "scope": "C",
+                          "scope": "G",
                           "type": "script"
                         }
                       }

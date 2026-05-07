@@ -48,7 +48,7 @@
               "dom": {
                 "onClick": {
                   "config": { "script": "\tif self.view.params.index > 0:\n\t\tsystem.perspective.sendMessage('attributeMove', payload={'index': self.view.params.index, 'direction': 'up'}, scope='view')" },
-                  "scope": "C",
+                  "scope": "G",
                   "type": "script"
                 }
               }
@@ -71,7 +71,7 @@
               "dom": {
                 "onClick": {
                   "config": { "script": "\tif self.view.params.index < self.view.params.totalRows - 1:\n\t\tsystem.perspective.sendMessage('attributeMove', payload={'index': self.view.params.index, 'direction': 'down'}, scope='view')" },
-                  "scope": "C",
+                  "scope": "G",
                   "type": "script"
                 }
               }
