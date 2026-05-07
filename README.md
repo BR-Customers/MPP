@@ -42,6 +42,12 @@ mpp/
 ├── MPP_MES_Open_Issues_Register.docx   Open items register (authored in Word directly)
 ├── sql_best_practices_mes.md           SQL conventions
 │
+├── ignition/                          Ignition gateway resources we ship
+│   ├── projects/MPP_Config/              Perspective project export (views, stylesheet, page-config)
+│   └── icons/mpp/                        Custom Perspective icon library (mpp.svg + config.json + resource.json)
+│                                          Mirrors gateway path data/config/resources/core/com.inductiveautomation.perspective/icons/mpp/
+│                                          See ignition/icons/README.md for deploy + recolor recipe.
+│
 ├── reference/                          Source material — scope matrix, production sheets, PLC spec
 │   ├── MPP_Scope_Matrix.xlsx              Scope authority (37 rows: MVP/CONDITIONAL/FUTURE)
 │   ├── Excel Prod Sheets.xlsx             Paper production sheet templates
