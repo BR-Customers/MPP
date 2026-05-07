@@ -8,6 +8,14 @@
       "title": "Plant Hierarchy",
       "viewPath": "BlueRidge/Views/Location/PlantHierarchy"
     },
+    "/defect-codes": {
+      "title": "Defect Codes",
+      "viewPath": "BlueRidge/Views/Quality/DefectCodes"
+    },
+    "/downtime-codes": {
+      "title": "Downtime Codes",
+      "viewPath": "BlueRidge/Views/Oee/DowntimeCodes"
+    },
     "/audit-log": {
       "title": "Audit Log",
       "viewPath": "BlueRidge/Views/Audit/AuditLog"

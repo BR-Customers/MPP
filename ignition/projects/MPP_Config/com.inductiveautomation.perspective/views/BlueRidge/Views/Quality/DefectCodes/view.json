@@ -1,0 +1,239 @@
+{
+  "custom": {
+    "filter": {
+      "area": "All Areas",
+      "searchText": "",
+      "includeDeprecated": false
+    },
+    "areaOptions": [
+      { "label": "All Areas",       "value": "All Areas" },
+      { "label": "Die Cast",        "value": "Die Cast" },
+      { "label": "Trim Shop",       "value": "Trim Shop" },
+      { "label": "Machine Shop",    "value": "Machine Shop" },
+      { "label": "Prod Control",    "value": "Prod Control" },
+      { "label": "Quality Control", "value": "Quality Control" },
+      { "label": "HSP",             "value": "HSP" }
+    ],
+    "rows": [
+      { "code": "DC-0135",  "description": "Porosity",                    "area": "Die Cast",     "excused": false, "selected": false },
+      { "code": "DC-0136",  "description": "Cold Shut",                   "area": "Die Cast",     "excused": false, "selected": true  },
+      { "code": "DC-0137",  "description": "Flash",                       "area": "Die Cast",     "excused": true,  "selected": false },
+      { "code": "DC-0138",  "description": "Misrun",                      "area": "Die Cast",     "excused": false, "selected": false },
+      { "code": "MS-0001",  "description": "Dimensional (OOT)",           "area": "Machine Shop", "excused": false, "selected": false },
+      { "code": "MS-0143",  "description": "Surface Finish",              "area": "Machine Shop", "excused": false, "selected": false },
+      { "code": "MS-0154",  "description": "Tool Marks",                  "area": "Machine Shop", "excused": false, "selected": false },
+      { "code": "TS-0101",  "description": "Burr — Trim",                 "area": "Trim Shop",    "excused": false, "selected": false },
+      { "code": "HSP-0247", "description": "Vendor Defect — Dimensional", "area": "HSP",          "excused": false, "selected": false }
+    ]
+  },
+  "params": {},
+  "propConfig": {
+    "custom.filter.area":              { "persistent": true },
+    "custom.filter.searchText":        { "persistent": true },
+    "custom.filter.includeDeprecated": { "persistent": true }
+  },
+  "props": {
+    "defaultSize": { "width": 1280, "height": 720 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "column",
+      "style": { "classes": "screen-active" }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "TitleRow" },
+        "position": { "basis": "auto", "shrink": 0 },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "classes": "title-row",
+            "paddingBottom": "8px",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "background": "var(--mpp-surface-raised)"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "TitleColumn" },
+            "position": { "basis": "auto" },
+            "props": { "direction": "column", "style": { "gap": "2px" } },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "Breadcrumb" },
+                "position": { "basis": "auto" },
+                "props": { "direction": "row", "alignItems": "center", "style": { "classes": "breadcrumb" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "BreadcrumbCategory" }, "position": { "basis": "auto" }, "props": { "text": "Quality", "style": { "classes": "breadcrumb" } } },
+                  { "type": "ia.display.label", "meta": { "name": "BreadcrumbSep" },      "position": { "basis": "auto" }, "props": { "text": "›", "style": { "classes": "breadcrumb crumb-sep" } } },
+                  { "type": "ia.display.label", "meta": { "name": "BreadcrumbActive" },   "position": { "basis": "auto" }, "props": { "text": "Defect Codes", "style": { "classes": "crumb-active" } } }
+                ]
+              },
+              { "type": "ia.display.label", "meta": { "name": "Title" }, "position": { "basis": "auto" }, "props": { "text": "Defect Codes", "style": { "classes": "title-row-h1" } } }
+            ]
+          },
+          { "type": "ia.display.label", "meta": { "name": "TitleRowSpacer" }, "position": { "grow": 1 }, "props": { "text": "", "style": { "classes": "title-row-spacer" } } },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "AddCodeButton" },
+            "position": { "basis": "auto" },
+            "props": { "text": "+ Add Code", "style": { "classes": "btn btn-primary", "marginRight": "12px" } }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "MainSplit" },
+        "position": { "grow": 1 },
+        "props": {
+          "direction": "row",
+          "style": { "overflow": "hidden", "borderTop": "1px solid var(--mpp-border-subtle)" }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "FilterSidebar" },
+            "position": { "basis": "220px", "shrink": 0 },
+            "props": {
+              "direction": "column",
+              "style": { "classes": "filter-sidebar" }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "FilterPanel" },
+                "position": { "basis": "auto" },
+                "props": {
+                  "direction": "column",
+                  "style": { "classes": "filter-panel" }
+                },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": { "name": "AreaField" },
+                    "position": { "basis": "auto" },
+                    "props": { "direction": "column", "style": { "gap": "4px" } },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "AreaLabel" }, "position": { "basis": "auto" }, "props": { "text": "Area", "style": { "classes": "label-eyebrow" } } },
+                      {
+                        "type": "ia.input.dropdown",
+                        "meta": { "name": "AreaDropdown" },
+                        "position": { "basis": "auto" },
+                        "propConfig": {
+                          "props.options": { "binding": { "type": "property", "config": { "path": "view.custom.areaOptions" } } },
+                          "props.value":   { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.filter.area" } } }
+                        },
+                        "props": { "style": { "classes": "select" } }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": { "name": "SearchField" },
+                    "position": { "basis": "auto" },
+                    "props": { "direction": "column", "style": { "gap": "4px" } },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "SearchLabel" }, "position": { "basis": "auto" }, "props": { "text": "Search", "style": { "classes": "label-eyebrow" } } },
+                      {
+                        "type": "ia.input.text-field",
+                        "meta": { "name": "SearchInput" },
+                        "position": { "basis": "auto" },
+                        "propConfig": {
+                          "props.text": { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.filter.searchText" } } }
+                        },
+                        "props": { "placeholder": "Search…", "style": { "classes": "search-input" } }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.input.checkbox",
+                    "meta": { "name": "IncludeDeprecated" },
+                    "position": { "basis": "auto" },
+                    "propConfig": {
+                      "props.selected": { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.filter.includeDeprecated" } } }
+                    },
+                    "props": { "text": "Include deprecated", "style": { "classes": "checkbox", "color": "var(--mpp-text-secondary)", "fontSize": "12px" } }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "ContentArea" },
+            "position": { "grow": 1 },
+            "props": {
+              "direction": "column",
+              "style": {
+                "padding": "12px",
+                "background": "var(--mpp-surface-canvas)",
+                "overflowY": "auto"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "DataPanel" },
+                "position": { "grow": 1 },
+                "props": {
+                  "direction": "column",
+                  "style": { "classes": "detail-panel", "padding": "0", "overflowX": "auto" }
+                },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": { "name": "TableHeader" },
+                    "position": { "basis": "auto" },
+                    "props": {
+                      "direction": "row",
+                      "alignItems": "center",
+                      "style": {
+                        "background": "var(--mpp-surface-card)",
+                        "color": "var(--mpp-text-secondary)",
+                        "fontSize": "11px",
+                        "fontWeight": "600",
+                        "textTransform": "uppercase",
+                        "letterSpacing": "0.05em",
+                        "borderBottom": "1px solid var(--mpp-border-subtle)",
+                        "padding": "8px 12px"
+                      }
+                    },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "ColCode" },        "position": { "basis": "100px", "shrink": 0 }, "props": { "text": "Code" } },
+                      { "type": "ia.display.label", "meta": { "name": "ColDescription" }, "position": { "grow": 1, "basis": "0" },     "props": { "text": "Description" } },
+                      { "type": "ia.display.label", "meta": { "name": "ColArea" },        "position": { "basis": "140px", "shrink": 0 }, "props": { "text": "Area" } },
+                      { "type": "ia.display.label", "meta": { "name": "ColExcused" },     "position": { "basis": "80px", "shrink": 0 },  "props": { "text": "Excused" } },
+                      { "type": "ia.display.label", "meta": { "name": "ColEdit" },        "position": { "basis": "80px", "shrink": 0 },  "props": { "text": "" } }
+                    ]
+                  },
+                  {
+                    "type": "ia.display.flex-repeater",
+                    "meta": { "name": "Rows" },
+                    "position": { "basis": "auto" },
+                    "propConfig": {
+                      "props.instances": {
+                        "binding": { "type": "property", "config": { "path": "view.custom.rows" } }
+                      }
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/DefectCodeRow",
+                      "direction": "column",
+                      "useDefaultViewWidth": false,
+                      "useDefaultViewHeight": false
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
