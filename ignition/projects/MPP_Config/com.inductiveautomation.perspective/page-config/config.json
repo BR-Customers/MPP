@@ -7,6 +7,10 @@
     "/audit-log": {
       "title": "Audit Log",
       "viewPath": "BlueRidge/Views/Audit/AuditLog"
+    },
+    "/failure-log": {
+      "title": "Failure Log",
+      "viewPath": "BlueRidge/Views/Audit/FailureLog"
     }
   },
   "sharedDocks": {

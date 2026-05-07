@@ -1,0 +1,98 @@
+{
+  "custom": {},
+  "params": {
+    "category": "",
+    "title": ""
+  },
+  "propConfig": {
+    "params.category": { "paramDirection": "input" },
+    "params.title":    { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "width": 1200, "height": 60 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "classes": "title-row",
+        "paddingBottom": "8px",
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "background": "var(--mpp-surface-raised)"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "TitleColumn" },
+        "position": { "basis": "auto" },
+        "props": {
+          "direction": "column",
+          "style": { "gap": "2px" }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "Breadcrumb" },
+            "position": { "basis": "auto" },
+            "props": {
+              "direction": "row",
+              "alignItems": "center",
+              "style": { "classes": "breadcrumb" }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "BreadcrumbCategory" },
+                "position": { "basis": "auto" },
+                "propConfig": {
+                  "props.text": {
+                    "binding": { "type": "property", "config": { "path": "view.params.category" } }
+                  }
+                },
+                "props": { "style": { "classes": "breadcrumb" } }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "BreadcrumbSep" },
+                "position": { "basis": "auto" },
+                "props": { "text": "›", "style": { "classes": "breadcrumb crumb-sep" } }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "BreadcrumbActive" },
+                "position": { "basis": "auto" },
+                "propConfig": {
+                  "props.text": {
+                    "binding": { "type": "property", "config": { "path": "view.params.title" } }
+                  }
+                },
+                "props": { "style": { "classes": "crumb-active" } }
+              }
+            ]
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "Title" },
+            "position": { "basis": "auto" },
+            "propConfig": {
+              "props.text": {
+                "binding": { "type": "property", "config": { "path": "view.params.title" } }
+              }
+            },
+            "props": { "style": { "classes": "title-row-h1" } }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "TitleRowSpacer" },
+        "position": { "grow": 1 },
+        "props": { "text": "", "style": { "classes": "title-row-spacer" } }
+      }
+    ]
+  }
+}
