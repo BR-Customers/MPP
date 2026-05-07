@@ -13,13 +13,9 @@
       { "index": 0, "totalRows": 3, "name": "Tonnage",            "value": "400",  "dataType": "DECIMAL",  "uom": "tons", "required": true  },
       { "index": 1, "totalRows": 3, "name": "ConfirmationMethod", "value": "None", "dataType": "NVARCHAR", "uom": "—",    "required": false },
       { "index": 2, "totalRows": 3, "name": "RefCycleTimeSec",    "value": "62.5", "dataType": "DECIMAL",  "uom": "sec",  "required": false }
-    ],
-    "selectedPath": "0/0/0/0"
+    ]
   },
   "params": {},
-  "propConfig": {
-    "custom.selectedPath": { "persistent": true }
-  },
   "props": {
     "defaultSize": { "width": 1280, "height": 720 }
   },
@@ -138,17 +134,12 @@
                 "type": "ia.display.tree",
                 "meta": { "name": "Tree" },
                 "position": { "grow": 1 },
-                "propConfig": {
-                  "props.selection[0]": {
-                    "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.selectedPath" } }
-                  }
-                },
                 "props": {
                   "appearance": {
                     "defaultNodeIcons": {
                       "collapsed": { "path": "material/folder" },
                       "expanded":  { "path": "material/folder_open" },
-                      "empty":     { "path": "material/stop" }
+                      "empty":     { "path": "material/inventory" }
                     },
                     "expandIcons": {
                       "collapsed": { "path": "material/chevron_right" },
@@ -160,38 +151,34 @@
                     {
                       "label": "Madison Precision Products",
                       "expanded": true,
-                      "icon": { "color": "", "path": "material/business", "style": {} },
                       "data": { "code": "MPP", "type": "Enterprise" },
                       "items": [
                         {
                           "label": "Madison Facility",
                           "expanded": true,
-                          "icon": { "color": "", "path": "material/factory", "style": {} },
                           "data": { "code": "MPP-MAD", "type": "Site" },
                           "items": [
                             {
                               "label": "Die Cast",
                               "expanded": true,
-                              "icon": { "color": "", "path": "material/apartment", "style": {} },
                               "data": { "code": "MPP-MAD-DC", "type": "Area" },
                               "items": [
-                                { "label": "DC Machine #7",  "expanded": false, "items": [], "icon": { "color": "", "path": "material/precision_manufacturing", "style": {} }, "data": { "code": "DC-007", "type": "Cell" } },
-                                { "label": "DC Machine #12", "expanded": false, "items": [], "icon": { "color": "", "path": "material/precision_manufacturing", "style": {} }, "data": { "code": "DC-012", "type": "Cell" } },
-                                { "label": "DC Machine #15", "expanded": false, "items": [], "icon": { "color": "", "path": "material/precision_manufacturing", "style": {} }, "data": { "code": "DC-015", "type": "Cell" } }
+                                { "label": "DC Machine #7",  "expanded": false, "items": [], "data": { "code": "DC-007", "type": "Cell" } },
+                                { "label": "DC Machine #12", "expanded": false, "items": [], "data": { "code": "DC-012", "type": "Cell" } },
+                                { "label": "DC Machine #15", "expanded": false, "items": [], "data": { "code": "DC-015", "type": "Cell" } }
                               ]
                             },
                             {
                               "label": "Trim Shop",
                               "expanded": true,
-                              "icon": { "color": "", "path": "material/apartment", "style": {} },
                               "data": { "code": "MPP-MAD-TR", "type": "Area" },
                               "items": [
-                                { "label": "Trim Press #1", "expanded": false, "items": [], "icon": { "color": "", "path": "material/precision_manufacturing", "style": {} }, "data": { "code": "TR-001", "type": "Cell" } }
+                                { "label": "Trim Press #1", "expanded": false, "items": [], "data": { "code": "TR-001", "type": "Cell" } }
                               ]
                             },
-                            { "label": "Machine Shop",       "expanded": false, "items": [], "icon": { "color": "", "path": "material/apartment", "style": {} }, "data": { "code": "MPP-MAD-MS", "type": "Area" } },
-                            { "label": "Production Control", "expanded": false, "items": [], "icon": { "color": "", "path": "material/apartment", "style": {} }, "data": { "code": "MPP-MAD-PC", "type": "Area" } },
-                            { "label": "Quality Control",    "expanded": false, "items": [], "icon": { "color": "", "path": "material/apartment", "style": {} }, "data": { "code": "MPP-MAD-QC", "type": "Area" } }
+                            { "label": "Machine Shop",       "expanded": false, "items": [], "data": { "code": "MPP-MAD-MS", "type": "Area" } },
+                            { "label": "Production Control", "expanded": false, "items": [], "data": { "code": "MPP-MAD-PC", "type": "Area" } },
+                            { "label": "Quality Control",    "expanded": false, "items": [], "data": { "code": "MPP-MAD-QC", "type": "Area" } }
                           ]
                         }
                       ]
