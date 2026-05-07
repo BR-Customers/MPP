@@ -903,6 +903,12 @@ button {
     transition: color var(--mpp-transition-fast);
 }
 
+/* SVG inside arrow buttons — same trick as the tree-icon rule. */
+.psc-arrow-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
 .psc-arrow-btn:hover:not(.psc-disabled) {
     color: var(--mpp-text-primary);
 }
@@ -1294,6 +1300,20 @@ button {
 .psc-tree-item-level-1 { padding-left: var(--mpp-space-5); }
 .psc-tree-item-level-2 { padding-left: var(--mpp-space-6); }
 .psc-tree-item-level-3 { padding-left: var(--mpp-space-7); }
+
+/* Tree-item icons (chevron + type icon). ia.display.icon renders SVG
+   which doesn't respond to font-size for sizing -- explicit width/height
+   required. */
+.psc-tree-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.psc-tree-icon svg {
+    width: 16px;
+    height: 16px;
+}
 
 
 /* ─── Filter sidebar + filter panel ────────────────────────────────── */
