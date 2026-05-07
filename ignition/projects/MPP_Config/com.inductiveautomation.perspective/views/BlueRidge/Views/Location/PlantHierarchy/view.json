@@ -383,19 +383,22 @@
                             "children": [
                               { "type": "ia.display.label", "meta": { "name": "Label" }, "position": { "basis": "auto" }, "props": { "text": "Parent", "style": { "classes": "field-label" } } },
                               {
-                                "type": "ia.input.text-field",
-                                "meta": { "name": "Input" },
+                                "type": "ia.display.label",
+                                "meta": { "name": "Value" },
                                 "position": { "basis": "auto" },
                                 "propConfig": {
                                   "props.text": { "binding": { "type": "property", "config": { "path": "view.custom.selected.parent" } } }
                                 },
                                 "props": {
-                                  "enabled": false,
                                   "style": {
-                                    "classes": "search-input",
+                                    "background": "var(--mpp-surface-card)",
+                                    "border": "1px solid var(--mpp-border-default)",
+                                    "borderRadius": "var(--mpp-radius-sm)",
+                                    "padding": "6px 8px",
+                                    "color": "var(--mpp-text-tertiary)",
+                                    "fontSize": "var(--mpp-fs-sm)",
                                     "width": "100%",
-                                    "boxSizing": "border-box",
-                                    "color": "var(--mpp-text-tertiary)"
+                                    "boxSizing": "border-box"
                                   }
                                 }
                               }
@@ -430,8 +433,8 @@
                           {
                             "type": "ia.container.flex",
                             "meta": { "name": "SortOrderField" },
-                            "position": { "basis": "120px", "shrink": 0 },
-                            "props": { "direction": "column", "style": { "classes": "field" } },
+                            "position": { "basis": "100px", "shrink": 0 },
+                            "props": { "direction": "column", "style": { "classes": "field", "minWidth": "0" } },
                             "children": [
                               { "type": "ia.display.label", "meta": { "name": "Label" }, "position": { "basis": "auto" }, "props": { "text": "Sort Order", "style": { "classes": "field-label" } } },
                               {
@@ -441,15 +444,24 @@
                                 "props": { "direction": "row", "alignItems": "center", "style": { "gap": "6px" } },
                                 "children": [
                                   {
-                                    "type": "ia.input.text-field",
+                                    "type": "ia.display.label",
                                     "meta": { "name": "SortValue" },
                                     "position": { "basis": "auto" },
                                     "propConfig": {
                                       "props.text": { "binding": { "type": "property", "config": { "path": "view.custom.selected.sortOrder" } } }
                                     },
                                     "props": {
-                                      "enabled": false,
-                                      "style": { "classes": "search-input", "width": "50px", "textAlign": "center" }
+                                      "style": {
+                                        "background": "var(--mpp-surface-raised)",
+                                        "border": "1px solid var(--mpp-border-default)",
+                                        "borderRadius": "var(--mpp-radius-sm)",
+                                        "padding": "6px 0",
+                                        "color": "var(--mpp-text-primary)",
+                                        "fontSize": "var(--mpp-fs-sm)",
+                                        "width": "40px",
+                                        "textAlign": "center",
+                                        "boxSizing": "border-box"
+                                      }
                                     }
                                   },
                                   {
