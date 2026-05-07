@@ -4,6 +4,10 @@
       "title": "Home",
       "viewPath": "BlueRidge/Views/Home/Landing"
     },
+    "/plant": {
+      "title": "Plant Hierarchy",
+      "viewPath": "BlueRidge/Views/Location/PlantHierarchy"
+    },
     "/audit-log": {
       "title": "Audit Log",
       "viewPath": "BlueRidge/Views/Audit/AuditLog"
