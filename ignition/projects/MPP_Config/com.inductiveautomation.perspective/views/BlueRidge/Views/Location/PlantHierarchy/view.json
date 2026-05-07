@@ -561,7 +561,7 @@
                             "type": "ia.container.flex",
                             "meta": { "name": "Arrows" },
                             "position": { "basis": "46px", "shrink": 0 },
-                            "props": { "direction": "row", "style": { "classes": "arrows", "gap": "2px" } },
+                            "props": { "direction": "column", "style": { "classes": "arrows", "gap": "1px" } },
                             "children": [
                               { "type": "ia.display.icon", "meta": { "name": "Up" },   "position": { "basis": "auto" }, "props": { "path": "material/arrow_drop_up",   "style": { "classes": "arrow-btn arrow-btn-disabled" } } },
                               { "type": "ia.display.icon", "meta": { "name": "Down" }, "position": { "basis": "auto" }, "props": { "path": "material/arrow_drop_down", "style": { "classes": "arrow-btn" } } }
@@ -584,7 +584,7 @@
                             ]
                           },
                           { "type": "ia.display.label",    "meta": { "name": "Uom" },      "position": { "basis": "70px" }, "props": { "text": "tons" } },
-                          { "type": "ia.input.checkbox",   "meta": { "name": "Required" }, "position": { "basis": "60px" }, "props": { "selected": true, "style": { "classes": "checkbox" } } }
+                          { "type": "ia.input.checkbox",   "meta": { "name": "Required" }, "position": { "basis": "60px" }, "props": { "selected": true, "text": "", "style": { "classes": "checkbox" } } }
                         ]
                       },
                       {
@@ -601,7 +601,7 @@
                             "type": "ia.container.flex",
                             "meta": { "name": "Arrows" },
                             "position": { "basis": "46px", "shrink": 0 },
-                            "props": { "direction": "row", "style": { "classes": "arrows", "gap": "2px" } },
+                            "props": { "direction": "column", "style": { "classes": "arrows", "gap": "1px" } },
                             "children": [
                               { "type": "ia.display.icon", "meta": { "name": "Up" },   "position": { "basis": "auto" }, "props": { "path": "material/arrow_drop_up",   "style": { "classes": "arrow-btn" } } },
                               { "type": "ia.display.icon", "meta": { "name": "Down" }, "position": { "basis": "auto" }, "props": { "path": "material/arrow_drop_down", "style": { "classes": "arrow-btn" } } }
@@ -624,7 +624,7 @@
                             ]
                           },
                           { "type": "ia.display.label",    "meta": { "name": "Uom" },      "position": { "basis": "70px" }, "props": { "text": "—" } },
-                          { "type": "ia.input.checkbox",   "meta": { "name": "Required" }, "position": { "basis": "60px" }, "props": { "selected": false, "style": { "classes": "checkbox" } } }
+                          { "type": "ia.input.checkbox",   "meta": { "name": "Required" }, "position": { "basis": "60px" }, "props": { "selected": false, "text": "", "style": { "classes": "checkbox" } } }
                         ]
                       },
                       {
@@ -641,7 +641,7 @@
                             "type": "ia.container.flex",
                             "meta": { "name": "Arrows" },
                             "position": { "basis": "46px", "shrink": 0 },
-                            "props": { "direction": "row", "style": { "classes": "arrows", "gap": "2px" } },
+                            "props": { "direction": "column", "style": { "classes": "arrows", "gap": "1px" } },
                             "children": [
                               { "type": "ia.display.icon", "meta": { "name": "Up" },   "position": { "basis": "auto" }, "props": { "path": "material/arrow_drop_up",   "style": { "classes": "arrow-btn" } } },
                               { "type": "ia.display.icon", "meta": { "name": "Down" }, "position": { "basis": "auto" }, "props": { "path": "material/arrow_drop_down", "style": { "classes": "arrow-btn arrow-btn-disabled" } } }
@@ -664,7 +664,7 @@
                             ]
                           },
                           { "type": "ia.display.label",    "meta": { "name": "Uom" },      "position": { "basis": "70px" }, "props": { "text": "sec" } },
-                          { "type": "ia.input.checkbox",   "meta": { "name": "Required" }, "position": { "basis": "60px" }, "props": { "selected": false, "style": { "classes": "checkbox" } } }
+                          { "type": "ia.input.checkbox",   "meta": { "name": "Required" }, "position": { "basis": "60px" }, "props": { "selected": false, "text": "", "style": { "classes": "checkbox" } } }
                         ]
                       }
                     ]
