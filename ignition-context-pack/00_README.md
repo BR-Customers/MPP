@@ -15,6 +15,7 @@ The content is technology-specific (Ignition 8.3 file-based projects, Perspectiv
 | `05_lifecycle_and_timers.md` | Project lifecycle scripts (`startup`, `shutdown`, `update`) and timer-script structure. |
 | `06_component_quirks.md` | DevTools-verified specifics: actual DOM class names, format-token differences between components, table-component virtualized DOM, value type quirks. |
 | `07_conventions_and_antipatterns.md` | Naming and layout rules ("root" container, no `psc-` prefix, `position.display` for conditional flex visibility, underscore folder convention). Plus anti-patterns to flag rather than silently propagate. |
+| `08_custom_icon_libraries.md` | Custom icon library setup (8.3 path moved from 8.1's `data/modules/...`); SVG sprite format; viewBox + no-fill-on-path rules; recolor mechanism; Material Symbols GitHub source URL pattern for non-default axes. |
 
 Read in order if you're new to Ignition projects. Skim by topic if you're solving a specific problem.
 
@@ -39,6 +40,7 @@ When writing or editing anything under `ignition/projects/`, read the
 - Jython script modules             → 03_script_python.md
 - Named queries / DB access         → 04_named_queries.md
 - Project lifecycle / timers        → 05_lifecycle_and_timers.md
+- Custom icon libraries             → 08_custom_icon_libraries.md
 - All view authoring (always read)  → 07_conventions_and_antipatterns.md
 ```
 

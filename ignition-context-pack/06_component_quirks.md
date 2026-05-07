@@ -141,6 +141,8 @@ Icons render as SVG. **`font-size` does not size them** (it works for icon-fonts
 
 If an icon renders as a warning triangle ⚠, the path didn't resolve — either the prefix is wrong (`materialicons/` vs `material/`) or the specific name isn't in your gateway's icon set. Older sets are missing newer Material Symbols names like `factory`, `inventory_2`, `account_tree`, `dark_mode`, `handyman`, `insights`. Reliable older names: `apartment`, `inventory`, `person`, `build`, `settings`, `timer`, `check_circle`, `warning`, `error`, `description`, `event_note`, `wb_sunny`.
 
+For projects that need newer Material Symbols names, custom axis combinations (weight 300, grade -25, etc.), or a project-locked icon set independent of whatever ships with the gateway, build a custom icon library. See `08_custom_icon_libraries.md` for the full setup — file layout, SVG sprite format, viewBox + no-fill-on-path rules, and source URLs for Material Symbols at non-default axes.
+
 ## `ia.container.flex` — direction prop usually works
 
 `props.direction` accepts `"row"`, `"column"`, `"row-reverse"`, `"column-reverse"` and behaves like CSS flex-direction. In rare cases the prop doesn't take effect (observed on dock-rendered views with embedded child views) — when this happens, fall back to inline CSS:
