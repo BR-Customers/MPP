@@ -2,7 +2,7 @@
 
 This directory holds the **`mpp`** custom Perspective icon library deployed to the Ignition Gateway. Perspective references the icons as `mpp/<icon_name>` (e.g., `mpp/play_arrow`).
 
-## Repo layout (mirrors gateway layout, Ignition 8.3+)
+## Repo layout (mirrors gateway layout, Ignition 8.3)
 
 ```
 ignition/icons/
@@ -22,19 +22,29 @@ The 35 logical icons (34 unique sprites — `cancel` serves both `close` and `re
 | Weight | 300 |
 | Fill | 0 |
 | Grade | -25 |
-| Optical size | 48 |
+| Optical size (source grid) | 48 (mapped to 24 viewBox via path transform) |
 
 The locked set lives in `mockup/icons.csv` — that file is the design contract. `mpp/mpp.svg` is its Ignition realization.
 
+## Sprite format
+
+Each icon is wrapped per IA's documented custom-icon-library convention. The path data is the original Material Symbols glyph path in font-grid coordinates (the upstream viewBox is `0 -960 960 960`); a transform on the path maps it into a `0 0 24 24` viewBox so all icons share a consistent 24-unit grid that Perspective sizes via CSS.
+
+```xml
+<svg viewBox="0 0 24 24" id="<material_symbol_name>">
+    <path transform="translate(0 24) scale(0.025)" d="<original-path-data>"/>
+</svg>
+```
+
+**No `fill` attribute on the path.** Perspective wraps each rendered icon in an outer `<svg style="fill: currentcolor">` element; that fill cascades down to paths only when the path doesn't override. Setting any `fill` on the path (literal color or `currentColor`) breaks Perspective's color-control hook. Leaving fill off makes the icon recolorable from Perspective via the Icon component's top-level `color` property or via a Perspective Style Class with **Text > Color** set.
+
 ## Source URL pattern
 
-Each icon is sourced from the Google `material-design-icons` GitHub repository, which publishes pre-rendered static SVGs at every supported axis combination of the Material Symbols variable font:
+Each icon's path data is sourced from the Google `material-design-icons` GitHub repository, which publishes pre-rendered static SVGs at every supported axis combination of the Material Symbols variable font:
 
 ```
 https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/<name>/materialsymbolsoutlined/<name>_wght300gradN25_48px.svg
 ```
-
-(Example: `https://raw.githubusercontent.com/google/material-design-icons/master/symbols/web/play_arrow/materialsymbolsoutlined/play_arrow_wght300gradN25_48px.svg`.)
 
 Note: Google's `fonts.gstatic.com` static endpoint only exposes weight and fill axes — `grad` is not available there. The GitHub repo is the only source that publishes pre-rendered SVGs at every variable-font axis combination, including `gradN25`.
 
@@ -48,17 +58,15 @@ Each fetched SVG comes in this shape:
 <svg xmlns="http://www.w3.org/2000/svg" height="48" viewBox="0 -960 960 960" width="48"><path d="…"/></svg>
 ```
 
-The viewBox `0 -960 960 960` is intentional — it's the font's own glyph coordinate grid (baseline at 0, glyphs extending upward to 960). Perspective scales by the rendered CSS size regardless, so we keep this viewBox unchanged.
-
 Cleanup steps:
 
-1. **Preserve** the source `viewBox="0 -960 960 960"`. Do not re-map.
-2. **Drop** the outer `xmlns`, `height`, and `width` attributes from the source `<svg>` — Perspective's container handles dimensions.
-3. **Add** `fill="currentColor"` to each `<path>`. The source paths have no fill set (browser defaults to black); explicit `currentColor` lets Perspective theme tokens drive icon color.
-4. **Wrap** as `<svg viewBox="0 -960 960 960" id="<name>">…</svg>` (the inner `<svg>` keeps the viewBox; the outer wrapper in `mpp.svg` carries the `xmlns`).
+1. **Extract** the `<path d="…"/>` element(s) from the source. Most icons have one path; a few have multiple (each becomes its own `<path>` inside our wrapper).
+2. **Discard** the source's outer `<svg>` wrapper, its `xmlns`, `height`, `width`, and `viewBox` attributes.
+3. **Discard** any `fill` attribute the path may carry. Perspective drives color.
+4. **Wrap** in `<svg viewBox="0 0 24 24" id="<name>">` with each path carrying `transform="translate(0 24) scale(0.025)"`. The transform remaps the source's `0 -960 960 960` font grid into the `0 0 24 24` target grid.
 5. **Append** to `mpp.svg` in the order from `mockup/icons.csv`, grouped by the `group` column (Navigation, Actions, Sections, Status), with section comments.
 
-## Deployment (Ignition 8.3+)
+## Deployment (Ignition 8.3)
 
 The destination on the gateway is:
 
@@ -73,11 +81,20 @@ The library folder name (`mpp`) **must** equal the library reference name used i
 
 Steps:
 
-1. Copy the entire `ignition/icons/mpp/` folder (all three files) to `<install-dir>/data/config/resources/core/com.inductiveautomation.perspective/icons/mpp/` on the gateway. Create the parent folders if they don't exist.
-2. Restart the Ignition Gateway service, **or** click **Scan File System** on the Gateway's Platform Overview page (faster — no service interruption).
+1. Copy the entire `ignition/icons/mpp/` folder (all three files) to the gateway path above. Create the parent folders if they don't exist (admin permission required since this is under `Program Files`).
+2. **Restart the Ignition Gateway service.** "Scan File System" in the Gateway web UI registers new library *folders* but does not reliably reload modified content inside an existing sprite — a service restart is the safest reload.
 3. Reference icons from views as `mpp/<material_symbol_name>` (e.g., set an Icon component's `path` to `mpp/play_arrow`).
 
-> **Pre-8.3 note:** Ignition 8.1.x used a different path — single `mpp.svg` at `data/modules/com.inductiveautomation.perspective/icons/mpp.svg` with no `config.json` or `resource.json`. That layout does not work on 8.3.
+> **Pre-8.3 note:** Ignition 8.1.x used a single `<lib>.svg` at `data/modules/com.inductiveautomation.perspective/icons/`. That layout does not work on 8.3.
+
+## Recoloring icons in Perspective
+
+Two approaches both work since the paths have no baked-in fill:
+
+1. **Top-level `color` property on the Icon component** — set directly in the property panel.
+2. **Perspective Style Class** — create a style class, set its **Text → Color**, apply the class to the Icon component via `style.classes`. This is the right pattern for project-wide theming via CSS variables.
+
+Sizing and positioning are independent of the library — they're driven by the Icon component's container and `style.width` / `style.height` in Perspective.
 
 ## Regeneration / adding icons
 
@@ -88,4 +105,4 @@ Workflow when adding icon #36+:
 3. Apply the cleanup steps.
 4. Append a new wrapped `<svg id="<name>">` to `mpp/mpp.svg` in the appropriate group section.
 5. Update the `files` array in `resource.json` only if the SVG filename changed (it shouldn't).
-6. Redeploy the `mpp/` folder to the gateway and Scan File System.
+6. Redeploy the `mpp/` folder to the gateway and restart the gateway service.
