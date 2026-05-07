@@ -107,6 +107,12 @@ Stored procedures **SHALL NOT** use `OUTPUT` parameters — the Ignition JDBC dr
 - **One result set per proc.** If two were returned in legacy design, drop the second and use the sibling List proc.
 - **Test pattern:** INSERT-EXEC into a temp table matching the SELECT shape, assert against the temp table.
 
+### Ignition custom Perspective icon library
+
+Custom icons live at `ignition/icons/mpp/` (mirrors gateway path `data/config/resources/core/com.inductiveautomation.perspective/icons/mpp/`, **Ignition 8.3** layout — different from 8.1's `data/modules/...` path). Sprite is one `mpp.svg` file using IA's wrapped-`<svg id="...">` format; deployment requires `mpp.svg` + `config.json` + `resource.json` together, plus a gateway service restart (Scan File System is unreliable for content modifications inside an existing sprite).
+
+Inside the sprite: viewBox `0 0 24 24` with `<path transform="translate(0 24) scale(0.025)" d="..."/>` to remap from Material Symbols' source font grid. **No `fill` attribute on the path** — Perspective's outer-SVG `fill: currentcolor` cascades only when the path doesn't override; recolor in views via the Icon component's top-level `color` prop or a Style Class with **Text → Color**. Lock spec (Material Symbols Outlined wght 300, grade -25, fill 0, opsz 48 source grid), source URL pattern (`raw.githubusercontent.com/google/material-design-icons` — `fonts.gstatic.com` doesn't expose the `grad` axis), and full deploy + recolor recipe documented in `ignition/icons/README.md`.
+
 ### UI
 
 No drag-and-drop anywhere — up/down arrow buttons for all sortable lists.
