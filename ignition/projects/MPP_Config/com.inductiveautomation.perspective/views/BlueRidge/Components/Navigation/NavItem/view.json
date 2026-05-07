@@ -19,7 +19,7 @@
     "events": {
       "dom": {
         "onClick": {
-          "config": { "script": "\tlogger = system.util.getLogger('BlueRidge.NavItem')\n\tpath = self.view.params.path\n\tlogger.info('NavItem clicked: path=%s' % path)\n\tif path:\n\t\ttry:\n\t\t\tsystem.perspective.navigate(path)\n\t\t\tlogger.info('navigate succeeded for %s' % path)\n\t\texcept:\n\t\t\tlogger.exception('navigate failed for %s' % path)\n\telse:\n\t\tlogger.warn('NavItem clicked but path param is empty/null')" },
+          "config": { "script": "\tsystem.util.getLogger('BlueRidge.NavItem').info('clicked path=' + str(self.view.params.path))\n\tsystem.perspective.navigate(self.view.params.path)" },
           "scope": "C",
           "type": "script"
         }
