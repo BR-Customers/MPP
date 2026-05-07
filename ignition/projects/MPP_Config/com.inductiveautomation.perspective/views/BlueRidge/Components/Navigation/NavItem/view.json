@@ -2,7 +2,7 @@
   "custom": {},
   "params": {
     "label": "",
-    "icon": "",
+    "icon": "material/circle",
     "path": ""
   },
   "propConfig": {
@@ -46,10 +46,15 @@
         "position": { "basis": "auto" },
         "propConfig": {
           "props.path": {
-            "binding": { "type": "property", "config": { "path": "view.params.icon" } }
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if(len({view.params.icon}) > 0, {view.params.icon}, 'material/circle')"
+              }
+            }
           }
         },
-        "props": { "style": { "classes": "nav-icon" } }
+        "props": { "path": "material/circle", "style": { "classes": "nav-icon" } }
       },
       {
         "type": "ia.display.label",
