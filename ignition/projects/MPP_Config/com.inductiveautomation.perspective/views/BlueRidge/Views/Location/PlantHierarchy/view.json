@@ -13,9 +13,54 @@
       { "index": 0, "totalRows": 3, "name": "Tonnage",            "value": "400",  "dataType": "DECIMAL",  "uom": "tons", "required": true  },
       { "index": 1, "totalRows": 3, "name": "ConfirmationMethod", "value": "None", "dataType": "NVARCHAR", "uom": "—",    "required": false },
       { "index": 2, "totalRows": 3, "name": "RefCycleTimeSec",    "value": "62.5", "dataType": "DECIMAL",  "uom": "sec",  "required": false }
+    ],
+    "selectedPath": "0/0/0/0",
+    "tree": [
+      {
+        "label": "Madison Precision Products",
+        "expanded": true,
+        "icon": { "color": "", "path": "material/business", "style": {} },
+        "data": { "key": "MPP" },
+        "items": [
+          {
+            "label": "Madison Facility",
+            "expanded": true,
+            "icon": { "color": "", "path": "material/factory", "style": {} },
+            "data": { "key": "MPP-MAD" },
+            "items": [
+              {
+                "label": "Die Cast",
+                "expanded": true,
+                "icon": { "color": "", "path": "material/apartment", "style": {} },
+                "data": { "key": "MPP-MAD-DC" },
+                "items": [
+                  { "label": "DC Machine #7",  "expanded": false, "items": [], "icon": { "color": "", "path": "material/precision_manufacturing", "style": {} }, "data": { "key": "DC-007" } },
+                  { "label": "DC Machine #12", "expanded": false, "items": [], "icon": { "color": "", "path": "material/precision_manufacturing", "style": {} }, "data": { "key": "DC-012" } },
+                  { "label": "DC Machine #15", "expanded": false, "items": [], "icon": { "color": "", "path": "material/precision_manufacturing", "style": {} }, "data": { "key": "DC-015" } }
+                ]
+              },
+              {
+                "label": "Trim Shop",
+                "expanded": true,
+                "icon": { "color": "", "path": "material/apartment", "style": {} },
+                "data": { "key": "MPP-MAD-TR" },
+                "items": [
+                  { "label": "Trim Press #1", "expanded": false, "items": [], "icon": { "color": "", "path": "material/precision_manufacturing", "style": {} }, "data": { "key": "TR-001" } }
+                ]
+              },
+              { "label": "Machine Shop",       "expanded": false, "items": [], "icon": { "color": "", "path": "material/apartment", "style": {} }, "data": { "key": "MPP-MAD-MS" } },
+              { "label": "Production Control", "expanded": false, "items": [], "icon": { "color": "", "path": "material/apartment", "style": {} }, "data": { "key": "MPP-MAD-PC" } },
+              { "label": "Quality Control",    "expanded": false, "items": [], "icon": { "color": "", "path": "material/apartment", "style": {} }, "data": { "key": "MPP-MAD-QC" } }
+            ]
+          }
+        ]
+      }
     ]
   },
   "params": {},
+  "propConfig": {
+    "custom.selectedPath": { "persistent": true }
+  },
   "props": {
     "defaultSize": { "width": 1280, "height": 720 }
   },
@@ -131,147 +176,31 @@
                 ]
               },
               {
-                "type": "ia.container.flex",
-                "meta": { "name": "TreeList" },
+                "type": "ia.display.tree",
+                "meta": { "name": "Tree" },
                 "position": { "grow": 1 },
-                "props": {
-                  "direction": "column",
-                  "style": { "overflowY": "auto", "padding": "4px 0" }
-                },
-                "children": [
-                  {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "TreeItemEnterprise" },
-                    "position": { "basis": "auto" },
-                    "props": { "direction": "row", "alignItems": "center", "style": { "classes": "tree-item", "fontWeight": "600" } },
-                    "children": [
-                      { "type": "ia.display.icon",  "meta": { "name": "Chevron" },  "position": { "basis": "auto" }, "props": { "path": "material/expand_more",       "style": { "classes": "tree-icon" } } },
-                      { "type": "ia.display.icon",  "meta": { "name": "TypeIcon" }, "position": { "basis": "auto" }, "props": { "path": "material/business",           "style": { "classes": "tree-icon" } } },
-                      { "type": "ia.display.label", "meta": { "name": "Name" },     "position": { "grow": 1 },        "props": { "text": "Madison Precision Products" } },
-                      { "type": "ia.display.label", "meta": { "name": "TypeLabel" },"position": { "basis": "auto" }, "props": { "text": "Enterprise", "style": { "fontSize": "10px", "color": "var(--mpp-text-tertiary)" } } }
-                    ]
+                "propConfig": {
+                  "props.items": {
+                    "binding": { "type": "property", "config": { "path": "view.custom.tree" } }
                   },
-                  {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "TreeItemSite" },
-                    "position": { "basis": "auto" },
-                    "props": { "direction": "row", "alignItems": "center", "style": { "classes": "tree-item tree-item-level-1" } },
-                    "children": [
-                      { "type": "ia.display.icon",  "meta": { "name": "Chevron" },  "position": { "basis": "auto" }, "props": { "path": "material/expand_more", "style": { "classes": "tree-icon" } } },
-                      { "type": "ia.display.icon",  "meta": { "name": "TypeIcon" }, "position": { "basis": "auto" }, "props": { "path": "material/factory",     "style": { "classes": "tree-icon" } } },
-                      { "type": "ia.display.label", "meta": { "name": "Name" },     "position": { "grow": 1 },        "props": { "text": "Madison Facility" } },
-                      { "type": "ia.display.label", "meta": { "name": "TypeLabel" },"position": { "basis": "auto" }, "props": { "text": "Site", "style": { "fontSize": "10px", "color": "var(--mpp-text-tertiary)" } } }
-                    ]
-                  },
-                  {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "TreeItemDieCast" },
-                    "position": { "basis": "auto" },
-                    "props": { "direction": "row", "alignItems": "center", "style": { "classes": "tree-item tree-item-level-2" } },
-                    "children": [
-                      { "type": "ia.display.icon",  "meta": { "name": "Chevron" },  "position": { "basis": "auto" }, "props": { "path": "material/expand_more",  "style": { "classes": "tree-icon" } } },
-                      { "type": "ia.display.icon",  "meta": { "name": "TypeIcon" }, "position": { "basis": "auto" }, "props": { "path": "material/apartment",    "style": { "classes": "tree-icon" } } },
-                      { "type": "ia.display.label", "meta": { "name": "Name" },     "position": { "grow": 1 },        "props": { "text": "Die Cast" } },
-                      { "type": "ia.display.label", "meta": { "name": "TypeLabel" },"position": { "basis": "auto" }, "props": { "text": "Area", "style": { "fontSize": "10px", "color": "var(--mpp-text-tertiary)" } } }
-                    ]
-                  },
-                  {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "TreeItemDC07" },
-                    "position": { "basis": "auto" },
-                    "props": { "direction": "row", "alignItems": "center", "style": { "classes": "tree-item tree-item-level-3 tree-item-selected" } },
-                    "children": [
-                      { "type": "ia.display.icon",  "meta": { "name": "Chevron" },  "position": { "basis": "auto" }, "props": { "path": "material/chevron_right",         "style": { "classes": "tree-icon" } } },
-                      { "type": "ia.display.icon",  "meta": { "name": "TypeIcon" }, "position": { "basis": "auto" }, "props": { "path": "material/precision_manufacturing","style": { "classes": "tree-icon" } } },
-                      { "type": "ia.display.label", "meta": { "name": "Name" },     "position": { "grow": 1 },        "props": { "text": "DC Machine #7" } },
-                      { "type": "ia.display.label", "meta": { "name": "TypeLabel" },"position": { "basis": "auto" }, "props": { "text": "Cell", "style": { "fontSize": "10px", "color": "var(--mpp-text-tertiary)" } } }
-                    ]
-                  },
-                  {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "TreeItemDC12" },
-                    "position": { "basis": "auto" },
-                    "props": { "direction": "row", "alignItems": "center", "style": { "classes": "tree-item tree-item-level-3" } },
-                    "children": [
-                      { "type": "ia.display.icon",  "meta": { "name": "Chevron" },  "position": { "basis": "auto" }, "props": { "path": "material/chevron_right",         "style": { "classes": "tree-icon" } } },
-                      { "type": "ia.display.icon",  "meta": { "name": "TypeIcon" }, "position": { "basis": "auto" }, "props": { "path": "material/precision_manufacturing","style": { "classes": "tree-icon" } } },
-                      { "type": "ia.display.label", "meta": { "name": "Name" },     "position": { "grow": 1 },        "props": { "text": "DC Machine #12" } },
-                      { "type": "ia.display.label", "meta": { "name": "TypeLabel" },"position": { "basis": "auto" }, "props": { "text": "Cell", "style": { "fontSize": "10px", "color": "var(--mpp-text-tertiary)" } } }
-                    ]
-                  },
-                  {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "TreeItemDC15" },
-                    "position": { "basis": "auto" },
-                    "props": { "direction": "row", "alignItems": "center", "style": { "classes": "tree-item tree-item-level-3" } },
-                    "children": [
-                      { "type": "ia.display.icon",  "meta": { "name": "Chevron" },  "position": { "basis": "auto" }, "props": { "path": "material/chevron_right",         "style": { "classes": "tree-icon" } } },
-                      { "type": "ia.display.icon",  "meta": { "name": "TypeIcon" }, "position": { "basis": "auto" }, "props": { "path": "material/precision_manufacturing","style": { "classes": "tree-icon" } } },
-                      { "type": "ia.display.label", "meta": { "name": "Name" },     "position": { "grow": 1 },        "props": { "text": "DC Machine #15" } },
-                      { "type": "ia.display.label", "meta": { "name": "TypeLabel" },"position": { "basis": "auto" }, "props": { "text": "Cell", "style": { "fontSize": "10px", "color": "var(--mpp-text-tertiary)" } } }
-                    ]
-                  },
-                  {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "TreeItemTrimShop" },
-                    "position": { "basis": "auto" },
-                    "props": { "direction": "row", "alignItems": "center", "style": { "classes": "tree-item tree-item-level-2" } },
-                    "children": [
-                      { "type": "ia.display.icon",  "meta": { "name": "Chevron" },  "position": { "basis": "auto" }, "props": { "path": "material/expand_more",  "style": { "classes": "tree-icon" } } },
-                      { "type": "ia.display.icon",  "meta": { "name": "TypeIcon" }, "position": { "basis": "auto" }, "props": { "path": "material/apartment",    "style": { "classes": "tree-icon" } } },
-                      { "type": "ia.display.label", "meta": { "name": "Name" },     "position": { "grow": 1 },        "props": { "text": "Trim Shop" } },
-                      { "type": "ia.display.label", "meta": { "name": "TypeLabel" },"position": { "basis": "auto" }, "props": { "text": "Area", "style": { "fontSize": "10px", "color": "var(--mpp-text-tertiary)" } } }
-                    ]
-                  },
-                  {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "TreeItemTrim01" },
-                    "position": { "basis": "auto" },
-                    "props": { "direction": "row", "alignItems": "center", "style": { "classes": "tree-item tree-item-level-3" } },
-                    "children": [
-                      { "type": "ia.display.icon",  "meta": { "name": "Chevron" },  "position": { "basis": "auto" }, "props": { "path": "material/chevron_right",         "style": { "classes": "tree-icon" } } },
-                      { "type": "ia.display.icon",  "meta": { "name": "TypeIcon" }, "position": { "basis": "auto" }, "props": { "path": "material/precision_manufacturing","style": { "classes": "tree-icon" } } },
-                      { "type": "ia.display.label", "meta": { "name": "Name" },     "position": { "grow": 1 },        "props": { "text": "Trim Press #1" } },
-                      { "type": "ia.display.label", "meta": { "name": "TypeLabel" },"position": { "basis": "auto" }, "props": { "text": "Cell", "style": { "fontSize": "10px", "color": "var(--mpp-text-tertiary)" } } }
-                    ]
-                  },
-                  {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "TreeItemMachineShop" },
-                    "position": { "basis": "auto" },
-                    "props": { "direction": "row", "alignItems": "center", "style": { "classes": "tree-item tree-item-level-2" } },
-                    "children": [
-                      { "type": "ia.display.icon",  "meta": { "name": "Chevron" },  "position": { "basis": "auto" }, "props": { "path": "material/chevron_right", "style": { "classes": "tree-icon" } } },
-                      { "type": "ia.display.icon",  "meta": { "name": "TypeIcon" }, "position": { "basis": "auto" }, "props": { "path": "material/apartment",     "style": { "classes": "tree-icon" } } },
-                      { "type": "ia.display.label", "meta": { "name": "Name" },     "position": { "grow": 1 },        "props": { "text": "Machine Shop" } },
-                      { "type": "ia.display.label", "meta": { "name": "TypeLabel" },"position": { "basis": "auto" }, "props": { "text": "Area", "style": { "fontSize": "10px", "color": "var(--mpp-text-tertiary)" } } }
-                    ]
-                  },
-                  {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "TreeItemProductionControl" },
-                    "position": { "basis": "auto" },
-                    "props": { "direction": "row", "alignItems": "center", "style": { "classes": "tree-item tree-item-level-2" } },
-                    "children": [
-                      { "type": "ia.display.icon",  "meta": { "name": "Chevron" },  "position": { "basis": "auto" }, "props": { "path": "material/chevron_right", "style": { "classes": "tree-icon" } } },
-                      { "type": "ia.display.icon",  "meta": { "name": "TypeIcon" }, "position": { "basis": "auto" }, "props": { "path": "material/apartment",     "style": { "classes": "tree-icon" } } },
-                      { "type": "ia.display.label", "meta": { "name": "Name" },     "position": { "grow": 1 },        "props": { "text": "Production Control" } },
-                      { "type": "ia.display.label", "meta": { "name": "TypeLabel" },"position": { "basis": "auto" }, "props": { "text": "Area", "style": { "fontSize": "10px", "color": "var(--mpp-text-tertiary)" } } }
-                    ]
-                  },
-                  {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "TreeItemQualityControl" },
-                    "position": { "basis": "auto" },
-                    "props": { "direction": "row", "alignItems": "center", "style": { "classes": "tree-item tree-item-level-2" } },
-                    "children": [
-                      { "type": "ia.display.icon",  "meta": { "name": "Chevron" },  "position": { "basis": "auto" }, "props": { "path": "material/chevron_right", "style": { "classes": "tree-icon" } } },
-                      { "type": "ia.display.icon",  "meta": { "name": "TypeIcon" }, "position": { "basis": "auto" }, "props": { "path": "material/apartment",     "style": { "classes": "tree-icon" } } },
-                      { "type": "ia.display.label", "meta": { "name": "Name" },     "position": { "grow": 1 },        "props": { "text": "Quality Control" } },
-                      { "type": "ia.display.label", "meta": { "name": "TypeLabel" },"position": { "basis": "auto" }, "props": { "text": "Area", "style": { "fontSize": "10px", "color": "var(--mpp-text-tertiary)" } } }
-                    ]
+                  "props.selection[0]": {
+                    "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.selectedPath" } }
                   }
-                ]
+                },
+                "props": {
+                  "appearance": {
+                    "defaultNodeIcons": {
+                      "collapsed": { "path": "material/account_tree" },
+                      "expanded":  { "path": "material/account_tree" },
+                      "empty":     { "path": "material/inventory" }
+                    },
+                    "expandIcons": {
+                      "collapsed": { "path": "material/chevron_right" },
+                      "expanded":  { "path": "material/expand_more" }
+                    }
+                  },
+                  "selection": [null]
+                }
               }
             ]
           },
