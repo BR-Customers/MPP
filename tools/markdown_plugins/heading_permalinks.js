@@ -10,8 +10,9 @@ module.exports = function headingPermalinks(md) {
       const inline = state.tokens[i + 1];
       if (!inline || inline.type !== 'inline') continue;
       const text = inline.content;
-      const id = slugify(text, seen);
-      tok.attrSet('id', id);
+      const existingId = tok.attrGet('id');
+      const id = existingId || slugify(text, seen);
+      if (!existingId) tok.attrSet('id', id);
       // Append a permalink anchor as the last inline child.
       const linkOpen = new state.Token('html_inline', '', 0);
       linkOpen.content = ` <a class="heading-permalink" href="#${id}" aria-label="Permalink">#</a>`;

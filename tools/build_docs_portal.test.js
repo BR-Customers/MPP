@@ -109,3 +109,23 @@ test('heading_permalinks de-dupes within a render pass', () => {
   assert.match(html, /id="same"/);
   assert.match(html, /id="same-2"/);
 });
+
+test('buildToc strips heading_permalink anchors', () => {
+  const html = '<h2 id="x">Section <a class="heading-permalink" href="#x" aria-label="Permalink">#</a></h2>';
+  const toc = buildToc(html);
+  assert.match(toc, /<a[^>]*href="#x"[^>]*>Section\s*<\/a>/);
+  // Permalink # must NOT appear in the label text
+  assert.doesNotMatch(toc, />\s*Section\s*#\s*</);
+});
+
+test('heading_permalinks preserves an existing id (markdown-it-attrs cooperation)', () => {
+  const md = new MdLib();
+  const markdownItAttrs = require('markdown-it-attrs');
+  md.use(markdownItAttrs);
+  md.use(headingPermalinks);
+  const html = md.render('## My Heading {#explicit-anchor}\n');
+  assert.match(html, /<h2[^>]*id="explicit-anchor"/);
+  assert.match(html, /<a[^>]*class="heading-permalink"[^>]*href="#explicit-anchor"/);
+  // The slug-based id should NOT appear
+  assert.doesNotMatch(html, /id="my-heading"/);
+});

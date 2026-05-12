@@ -7,6 +7,7 @@ function buildToc(renderedHtml) {
     const id = m[2];
     let text = m[3]
       .replace(/<span[^>]*class="[^"]*scope-pill[^"]*"[^>]*>[\s\S]*?<\/span>/g, '') // strip pill/badge elements with their text
+      .replace(/<a[^>]*class="[^"]*heading-permalink[^"]*"[^>]*>[\s\S]*?<\/a>/g, '') // strip permalink chip (#) added by heading_permalinks plugin
       .replace(/<[^>]+>/g, '')         // strip remaining inline HTML (code, anchors, etc.)
       .replace(/\s+/g, ' ')
       .trim();
