@@ -6,6 +6,8 @@ const { renderShell } = require('./lib/render_shell');
 const { buildToc } = require('./lib/build_toc');
 const headingPermalinks = require('./markdown_plugins/heading_permalinks');
 const markdownItAttrs = require('markdown-it-attrs');
+const crossDocLink = require('./markdown_plugins/cross_doc_link');
+const { parseDmTables } = require('./lib/parse_dm_tables');
 
 const REPO_ROOT = path.resolve(__dirname, '..');
 const PORTAL_DIR = path.join(REPO_ROOT, 'docs_portal');
@@ -31,12 +33,13 @@ function copyDir(src, dest) {
   }
 }
 
-function buildMd(opts = {}) {
+function buildMd({ currentDoc, knownTables } = {}) {
   const md = new MarkdownIt({ html: true, linkify: false, typographer: false });
   md.use(markdownItAttrs);
   md.use(headingPermalinks);
   md.use(require('./markdown_plugins/anchor_fds_req'));
   md.use(require('./markdown_plugins/scope_pill'));
+  md.use(crossDocLink, { currentDoc, knownTables: knownTables || new Map() });
   return md;
 }
 
@@ -44,12 +47,15 @@ function build() {
   rmrf(PORTAL_DIR);
   fs.mkdirSync(PORTAL_DIR, { recursive: true });
 
-  const md = buildMd();
+  const dmRaw = fs.readFileSync(path.join(REPO_ROOT, 'MPP_MES_DATA_MODEL.md'), 'utf8');
+  const knownTables = parseDmTables(dmRaw);
+
   const generatedAt = new Date().toISOString();
 
   for (const doc of DOCS) {
     const src = path.join(REPO_ROOT, doc.source);
     const raw = fs.readFileSync(src, 'utf8');
+    const md = buildMd({ currentDoc: doc.key, knownTables });
     const contentHtml = md.render(raw);
     const tocHtml = buildToc(contentHtml);
     const html = renderShell({

@@ -187,3 +187,39 @@ test('parseDmTables extracts Schema.TableName from Data Model headings', () => {
   assert.ok(map.has('Lots.Lot'));
   assert.strictEqual(map.get('Parts.OperationTemplate'), 'parts-operationtemplate');
 });
+
+const crossDocLink = require('./markdown_plugins/cross_doc_link');
+
+test('cross_doc_link rewrites bare FDS-XX-NNN, OI-XX, UJ-XX, Schema.Table', () => {
+  const md = new MdLib();
+  md.use(crossDocLink, {
+    currentDoc: 'fds',
+    knownTables: new Map([['Parts.OperationTemplate', 'parts-operationtemplate']]),
+  });
+  let html = md.render('See FDS-05-009 and OI-35 and UJ-04.');
+  assert.match(html, /<a[^>]*href="#fds-05-009"[^>]*>FDS-05-009<\/a>/);   // within-doc anchor on FDS
+  assert.match(html, /<a[^>]*href="oir\.html#oi-35"[^>]*>OI-35<\/a>/);
+  assert.match(html, /<a[^>]*href="oir\.html#uj-04"[^>]*>UJ-04<\/a>/);
+
+  html = md.render('See Parts.OperationTemplate column.');
+  assert.match(html, /<a[^>]*href="data-model\.html#parts-operationtemplate"[^>]*>Parts\.OperationTemplate<\/a>/);
+});
+
+test('cross_doc_link styles (FRS X.Y) as a tag, no link', () => {
+  const md = new MdLib();
+  md.use(crossDocLink, { currentDoc: 'fds', knownTables: new Map() });
+  const html = md.render('(FRS 3.9.6)');
+  assert.match(html, /<span class="frs-ref">\(FRS 3\.9\.6\)<\/span>/);
+});
+
+test('cross_doc_link skips text inside existing links and code', () => {
+  const md = new MdLib();
+  md.use(crossDocLink, { currentDoc: 'fds', knownTables: new Map() });
+  const html = md.render('Code: `OI-35` and link: [OI-35](https://example.com)');
+  // Inside code: untouched
+  assert.match(html, /<code>OI-35<\/code>/);
+  // Inside link: untouched
+  assert.match(html, /<a href="https:\/\/example\.com">OI-35<\/a>/);
+  // Should NOT have wrapped either with the cross-doc href
+  assert.doesNotMatch(html, /<a[^>]*href="oir\.html#oi-35"[^>]*>OI-35<\/a><\/code>/);
+});
