@@ -12,7 +12,7 @@ function escape(s) {
 function renderShell({ activeDoc, title, contentHtml, tocHtml, sourcePath, generatedAt }) {
   const navLinks = DOCS.map((d) => {
     const cls = d.key === activeDoc ? 'nav-link active' : 'nav-link';
-    return `<a href="${d.href}" class="${cls}">${d.label}</a>`;
+    return `<a href="${escape(d.href)}" class="${escape(cls)}">${escape(d.label)}</a>`;
   }).join('');
 
   return `<!DOCTYPE html>
@@ -23,7 +23,7 @@ function renderShell({ activeDoc, title, contentHtml, tocHtml, sourcePath, gener
 <title>${escape(title)} — MPP MES Docs</title>
 <link rel="stylesheet" href="assets/portal.css">
 </head>
-<body data-active-doc="${activeDoc}">
+<body data-active-doc="${escape(activeDoc)}">
 <header class="portal-header">
   <div class="brand">MPP MES Docs</div>
   <nav class="doc-nav">${navLinks}</nav>

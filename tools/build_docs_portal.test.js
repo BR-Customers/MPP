@@ -16,4 +16,5 @@ test('renderShell wraps content in nav header + main', () => {
   assert.match(html, /<aside[^>]*>[\s\S]*Hello[\s\S]*<\/aside>/);
   assert.match(html, /<main[^>]*>[\s\S]*<h2>Hello<\/h2>[\s\S]*<\/main>/);
   assert.match(html, /MPP_MES_FDS\.md/);
+  assert.match(html, /data-active-doc="fds"/);
 });
