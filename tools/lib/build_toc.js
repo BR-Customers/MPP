@@ -17,20 +17,22 @@ function buildToc(renderedHtml) {
   // Nest: h3s go under the most recent h2.
   let html = '<ul>';
   let openSub = false;
+  let openH2Li = false;
   for (let i = 0; i < items.length; i++) {
     const it = items[i];
     if (it.level === 2) {
-      if (openSub) { html += '</ul></li>'; openSub = false; }
-      else if (i > 0) html += '</li>';
+      if (openSub) { html += '</ul></li>'; openSub = false; openH2Li = false; }
+      else if (openH2Li) { html += '</li>'; }
       html += `<li><a href="#${it.id}">${it.text}</a>`;
+      openH2Li = true;
       // Peek ahead — if next is h3, open sublist
       if (items[i + 1] && items[i + 1].level === 3) { html += '<ul>'; openSub = true; }
-    } else if (it.level === 3) {
+    } else {
       html += `<li><a href="#${it.id}">${it.text}</a></li>`;
     }
   }
   if (openSub) html += '</ul></li>';
-  else html += '</li>';
+  else if (openH2Li) html += '</li>';
   html += '</ul>';
   return html;
 }

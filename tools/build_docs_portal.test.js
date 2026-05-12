@@ -48,6 +48,24 @@ const { execSync } = require('node:child_process');
 const REPO_ROOT = path.resolve(__dirname, '..');
 const PORTAL_DIR = path.join(REPO_ROOT, 'docs_portal');
 
+test('buildToc h3-only input emits balanced <li> tags', () => {
+  const html = '<h3 id="a">A</h3><h3 id="b">B</h3>';
+  const toc = buildToc(html);
+  const opens = (toc.match(/<li/g) || []).length;
+  const closes = (toc.match(/<\/li>/g) || []).length;
+  assert.strictEqual(opens, closes, 'every <li> should have a matching </li>');
+  assert.match(toc, /<a[^>]*href="#a"[^>]*>A<\/a>/);
+  assert.match(toc, /<a[^>]*href="#b"[^>]*>B<\/a>/);
+});
+
+test('buildToc h2-only input emits balanced <li> tags', () => {
+  const html = '<h2 id="a">A</h2><h2 id="b">B</h2>';
+  const toc = buildToc(html);
+  const opens = (toc.match(/<li/g) || []).length;
+  const closes = (toc.match(/<\/li>/g) || []).length;
+  assert.strictEqual(opens, closes);
+});
+
 test('build script emits fds.html with shell + parsed markdown', () => {
   execSync('node tools/build_docs_portal.js', { cwd: REPO_ROOT, stdio: 'pipe' });
   const fdsPath = path.join(PORTAL_DIR, 'fds.html');
