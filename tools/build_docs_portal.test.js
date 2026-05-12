@@ -291,3 +291,30 @@ test('oi_badge fires on h4 FDS headings with open OIs', () => {
   const html = md.render('#### FDS-05-009 — Some Title\n');
   assert.match(html, /<a[^>]*class="oi-badge"[^>]*href="oir\.html#oi-35"[^>]*>🔓 OI-35<\/a>/);
 });
+
+const schemaTableAnchor = require('./markdown_plugins/schema_table_anchor');
+
+test('schema_table_anchor rewrites h3 ids inside a Schema section', () => {
+  const md = new MdLib();
+  md.use(require('./markdown_plugins/heading_permalinks'));
+  md.use(schemaTableAnchor, {
+    knownTables: new Map([
+      ['Parts.OperationTemplate', 'parts-operationtemplate'],
+      ['Parts.ContainerConfig', 'parts-containerconfig'],
+    ]),
+  });
+  const src = [
+    '## 3. Parts Schema',
+    '',
+    '### OperationTemplate',
+    '',
+    'Some prose.',
+    '',
+    '### ContainerConfig',
+    '',
+    'More prose.',
+  ].join('\n');
+  const html = md.render(src);
+  assert.match(html, /<h3[^>]*id="parts-operationtemplate"/);
+  assert.match(html, /<h3[^>]*id="parts-containerconfig"/);
+});

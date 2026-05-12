@@ -38,6 +38,9 @@ function buildMd({ currentDoc, knownTables, reqToOpenOis } = {}) {
   const md = new MarkdownIt({ html: true, linkify: false, typographer: false });
   md.use(markdownItAttrs);
   md.use(headingPermalinks);
+  if (currentDoc === 'data-model') {
+    md.use(require('./markdown_plugins/schema_table_anchor'), { knownTables: knownTables || new Map() });
+  }
   md.use(require('./markdown_plugins/anchor_fds_req'));
   md.use(require('./markdown_plugins/scope_pill'));
   md.use(require('./markdown_plugins/oi_badge'), { reqToOpenOis: reqToOpenOis || new Map() });
