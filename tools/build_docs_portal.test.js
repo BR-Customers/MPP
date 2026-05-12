@@ -318,3 +318,27 @@ test('schema_table_anchor rewrites h3 ids inside a Schema section', () => {
   assert.match(html, /<h3[^>]*id="parts-operationtemplate"/);
   assert.match(html, /<h3[^>]*id="parts-containerconfig"/);
 });
+
+test('build emits all four target HTMLs', () => {
+  execSync('node tools/build_docs_portal.js', { cwd: REPO_ROOT, stdio: 'pipe' });
+  for (const name of ['fds.html', 'data-model.html', 'oir.html', 'erd.html', 'index.html']) {
+    assert.ok(fs.existsSync(path.join(PORTAL_DIR, name)), `${name} should exist`);
+  }
+});
+
+test('erd.html iframes the standalone ERD file', () => {
+  const html = fs.readFileSync(path.join(PORTAL_DIR, 'erd.html'), 'utf8');
+  assert.match(html, /<iframe[^>]+src="\.\.\/MPP_MES_ERD\.html"/);
+  assert.match(html, /erd-fullscreen-link/);
+});
+
+test('index.html redirects to fds.html', () => {
+  const html = fs.readFileSync(path.join(PORTAL_DIR, 'index.html'), 'utf8');
+  assert.match(html, /<meta http-equiv="refresh" content="0;\s*url=fds\.html"/i);
+});
+
+test('data-model.html contains schema-prefixed anchors', () => {
+  const html = fs.readFileSync(path.join(PORTAL_DIR, 'data-model.html'), 'utf8');
+  assert.match(html, /id="parts-operationtemplate"/);
+  assert.match(html, /id="lots-shippinglabel"/);
+});

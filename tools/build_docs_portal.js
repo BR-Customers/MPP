@@ -17,6 +17,8 @@ const ASSETS_DEST = path.join(PORTAL_DIR, 'assets');
 
 const DOCS = [
   { key: 'fds', source: 'MPP_MES_FDS.md', out: 'fds.html', title: 'FDS' },
+  { key: 'data-model', source: 'MPP_MES_DATA_MODEL.md', out: 'data-model.html', title: 'Data Model' },
+  { key: 'oir', source: 'MPP_MES_Open_Issues_Register.md', out: 'oir.html', title: 'Open Issues Register' },
 ];
 
 function rmrf(dir) {
@@ -52,13 +54,11 @@ function build() {
   rmrf(PORTAL_DIR);
   fs.mkdirSync(PORTAL_DIR, { recursive: true });
 
+  const generatedAt = new Date().toISOString();
   const dmRaw = fs.readFileSync(path.join(REPO_ROOT, 'MPP_MES_DATA_MODEL.md'), 'utf8');
   const knownTables = parseDmTables(dmRaw);
-
   const oirRaw = fs.readFileSync(path.join(REPO_ROOT, 'MPP_MES_Open_Issues_Register.md'), 'utf8');
   const { reqToOpenOis } = parseOirMap(oirRaw);
-
-  const generatedAt = new Date().toISOString();
 
   for (const doc of DOCS) {
     const src = path.join(REPO_ROOT, doc.source);
@@ -77,10 +77,30 @@ function build() {
     fs.writeFileSync(path.join(PORTAL_DIR, doc.out), html, 'utf8');
   }
 
-  // Asset copy (empty in this task; populated in Phase 3+)
+  // erd.html — iframe wrapper
+  const erdHtml = renderShell({
+    activeDoc: 'erd',
+    title: 'ERD',
+    contentHtml: `
+      <a class="erd-fullscreen-link" href="../MPP_MES_ERD.html" target="_blank" rel="noopener">Open ERD full screen ↗</a>
+      <iframe class="erd-frame" src="../MPP_MES_ERD.html" title="MPP MES ERD"></iframe>
+    `,
+    tocHtml: '<ul><li><em>Pan + zoom inside the ERD.</em></li></ul>',
+    sourcePath: 'MPP_MES_ERD.html',
+    generatedAt,
+  });
+  fs.writeFileSync(path.join(PORTAL_DIR, 'erd.html'), erdHtml, 'utf8');
+
+  // index.html — meta-refresh to fds.html
+  fs.writeFileSync(
+    path.join(PORTAL_DIR, 'index.html'),
+    `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta http-equiv="refresh" content="0; url=fds.html"></head><body><a href="fds.html">Open FDS</a></body></html>`,
+    'utf8'
+  );
+
   copyDir(ASSETS_SRC, ASSETS_DEST);
 
-  console.log(`Built ${DOCS.length} doc(s) → ${PORTAL_DIR}`);
+  console.log(`Built ${DOCS.length + 1} pages → ${PORTAL_DIR}`);
 }
 
 if (require.main === module) build();
