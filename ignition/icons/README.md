@@ -7,14 +7,14 @@ This directory holds the **`mpp`** custom Perspective icon library deployed to t
 ```
 ignition/icons/
 └── mpp/                  ← folder name = library name (must match)
-    ├── mpp.svg           ← the SVG sprite (35 logical icons, 34 unique sprites)
+    ├── mpp.svg           ← the SVG sprite (37 logical icons, 36 unique sprites)
     ├── config.json       ← { "svgFileName": "mpp.svg" }
     └── resource.json     ← gateway-scope resource manifest
 ```
 
 ## Lock spec
 
-The 35 logical icons (34 unique sprites — `cancel` serves both `close` and `reject` aliases in `mockup/icons.csv`) are locked against **Material Symbols Outlined** at the following axis combination (set 2026-05-04 in `mockup/icons.csv`):
+The 37 logical icons (36 unique sprites — `cancel` serves both `close` and `reject` aliases in `mockup/icons.csv`) are locked against **Material Symbols Outlined** at the following axis combination (set 2026-05-04 in `mockup/icons.csv`):
 
 | Axis | Value |
 |---|---|

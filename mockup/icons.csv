@@ -16,7 +16,9 @@ search,Actions,"Search",🔍,U+1F50D,search
 lock,Actions,"Auth / lock",🔐,U+1F510,lock
 add,Actions,"Add / create",+,U+002B,add_circle
 edit,Actions,"Edit",✎,U+270E,edit
+refresh,Actions,"Refresh / reload",🔄,U+1F504,refresh
 plant,Sections,"Plant / factory",🏭,U+1F3ED,factory
+area,Sections,"Production area / workspaces",🗂,U+1F5C2,workspaces
 enterprise,Sections,"Enterprise (ISA-95)",🏛,U+1F3DB,account_balance
 parts,Sections,"Parts / settings",⚙,U+2699,settings
 system,Sections,"System config",🛠,U+1F6E0,tune
