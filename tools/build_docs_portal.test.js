@@ -19,6 +19,28 @@ test('renderShell wraps content in nav header + main', () => {
   assert.match(html, /data-active-doc="fds"/);
 });
 
+const { buildToc } = require('./lib/build_toc');
+
+test('buildToc nests h3 under h2', () => {
+  const html = '<h2 id="a">A</h2><p/><h3 id="a1">A.1</h3><h3 id="a2">A.2</h3><h2 id="b">B</h2>';
+  const toc = buildToc(html);
+  assert.match(toc, /<a[^>]*href="#a"[^>]*>A<\/a>/);
+  assert.match(toc, /<a[^>]*href="#a1"[^>]*>A\.1<\/a>/);
+  assert.match(toc, /<a[^>]*href="#b"[^>]*>B<\/a>/);
+  // h3s nested under their h2
+  const aIdx = toc.indexOf('href="#a"');
+  const a1Idx = toc.indexOf('href="#a1"');
+  const bIdx = toc.indexOf('href="#b"');
+  assert.ok(aIdx < a1Idx && a1Idx < bIdx, 'A.1 should appear between A and B');
+});
+
+test('buildToc strips trailing pills/badges from heading text', () => {
+  const html = '<h2 id="x">Section <span class="scope-pill scope-mvp">MVP</span></h2>';
+  const toc = buildToc(html);
+  // pill text excluded from TOC label
+  assert.match(toc, /<a[^>]*href="#x"[^>]*>Section\s*<\/a>/);
+});
+
 const fs = require('node:fs');
 const path = require('node:path');
 const { execSync } = require('node:child_process');

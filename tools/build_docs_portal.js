@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const MarkdownIt = require('markdown-it');
 const { renderShell } = require('./lib/render_shell');
+const { buildToc } = require('./lib/build_toc');
 
 const REPO_ROOT = path.resolve(__dirname, '..');
 const PORTAL_DIR = path.join(REPO_ROOT, 'docs_portal');
@@ -43,11 +44,12 @@ function build() {
     const src = path.join(REPO_ROOT, doc.source);
     const raw = fs.readFileSync(src, 'utf8');
     const contentHtml = md.render(raw);
+    const tocHtml = buildToc(contentHtml);
     const html = renderShell({
       activeDoc: doc.key,
       title: doc.title,
       contentHtml,
-      tocHtml: '',
+      tocHtml,
       sourcePath: doc.source,
       generatedAt,
     });
