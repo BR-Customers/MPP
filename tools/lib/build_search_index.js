@@ -34,7 +34,7 @@ function buildSearchIndex(renderedDocs) {
         title: titleText,
         requirementId: fdsMatch ? fdsMatch[1].toUpperCase() : '',
         scope: scopeMatch ? scopeMatch[1].toUpperCase().replace(/-/g, '-') : '',
-        body: bodyText.slice(0, 2000),
+        body: bodyText.slice(0, 800),
       });
     }
   }
