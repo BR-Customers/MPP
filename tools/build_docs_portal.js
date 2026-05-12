@@ -9,6 +9,7 @@ const markdownItAttrs = require('markdown-it-attrs');
 const crossDocLink = require('./markdown_plugins/cross_doc_link');
 const { parseDmTables } = require('./lib/parse_dm_tables');
 const { parseOirMap } = require('./lib/parse_oir_map');
+const { buildSearchIndex } = require('./lib/build_search_index');
 
 const REPO_ROOT = path.resolve(__dirname, '..');
 const PORTAL_DIR = path.join(REPO_ROOT, 'docs_portal');
@@ -60,11 +61,13 @@ function build() {
   const oirRaw = fs.readFileSync(path.join(REPO_ROOT, 'MPP_MES_Open_Issues_Register.md'), 'utf8');
   const { reqToOpenOis } = parseOirMap(oirRaw);
 
+  const renderedDocs = [];
   for (const doc of DOCS) {
     const src = path.join(REPO_ROOT, doc.source);
     const raw = fs.readFileSync(src, 'utf8');
     const md = buildMd({ currentDoc: doc.key, knownTables, reqToOpenOis });
     const contentHtml = md.render(raw);
+    renderedDocs.push({ key: doc.key, title: doc.title, html: contentHtml });
     const tocHtml = buildToc(contentHtml);
     const html = renderShell({
       activeDoc: doc.key,
@@ -76,6 +79,19 @@ function build() {
     });
     fs.writeFileSync(path.join(PORTAL_DIR, doc.out), html, 'utf8');
   }
+
+  // Search index
+  const { payload } = buildSearchIndex(renderedDocs);
+  fs.writeFileSync(
+    path.join(PORTAL_DIR, 'search-index.json'),
+    JSON.stringify(payload),
+    'utf8'
+  );
+
+  // Vendor minisearch into assets
+  const miniSearchSrc = path.join(REPO_ROOT, 'node_modules', 'minisearch', 'dist', 'umd', 'index.js');
+  fs.mkdirSync(ASSETS_DEST, { recursive: true });
+  fs.copyFileSync(miniSearchSrc, path.join(ASSETS_DEST, 'minisearch.min.js'));
 
   // erd.html — iframe wrapper
   const erdHtml = renderShell({

@@ -342,3 +342,35 @@ test('data-model.html contains schema-prefixed anchors', () => {
   assert.match(html, /id="parts-operationtemplate"/);
   assert.match(html, /id="lots-shippinglabel"/);
 });
+
+const { buildSearchIndex } = require('./lib/build_search_index');
+
+test('buildSearchIndex extracts section-level entries with doc + scope + body', () => {
+  const renderedDocs = [
+    {
+      key: 'fds',
+      title: 'FDS',
+      html: '<h2 id="s1">Section One <span class="scope-pill scope-mvp">MVP</span></h2><p>Body of section one mentioning <a id="fds-05-009">FDS-05-009</a>.</p><h2 id="s2">Section Two</h2><p>Stuff.</p>',
+    },
+  ];
+  const { docs } = buildSearchIndex(renderedDocs);
+  assert.strictEqual(docs.length, 2);
+  const first = docs.find((d) => d.id === 'fds.html#s1');
+  assert.strictEqual(first.doc, 'fds');
+  assert.strictEqual(first.title, 'Section One');
+  assert.strictEqual(first.scope, 'MVP');
+  assert.match(first.body, /Body of section one/);
+  assert.strictEqual(first.requirementId, 'FDS-05-009');
+});
+
+test('build_docs_portal emits search-index.json with >= 200 entries', () => {
+  execSync('node tools/build_docs_portal.js', { cwd: REPO_ROOT, stdio: 'pipe' });
+  const raw = JSON.parse(fs.readFileSync(path.join(PORTAL_DIR, 'search-index.json'), 'utf8'));
+  assert.ok(raw.docs.length >= 200, `expected >=200 entries, got ${raw.docs.length}`);
+  assert.ok(raw.index, 'serialized MiniSearch index present');
+  assert.ok(raw.options, 'MiniSearch options present');
+});
+
+test('build_docs_portal copies minisearch.min.js into assets', () => {
+  assert.ok(fs.existsSync(path.join(PORTAL_DIR, 'assets', 'minisearch.min.js')));
+});
