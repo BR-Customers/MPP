@@ -129,3 +129,20 @@ test('heading_permalinks preserves an existing id (markdown-it-attrs cooperation
   // The slug-based id should NOT appear
   assert.doesNotMatch(html, /id="my-heading"/);
 });
+
+const anchorFdsReq = require('./markdown_plugins/anchor_fds_req');
+
+test('anchor_fds_req wraps **FDS-XX-NNN** in an anchor', () => {
+  const md = new MdLib();
+  md.use(anchorFdsReq);
+  const html = md.render('Some text **FDS-05-009** more text.');
+  assert.match(html, /<a[^>]*id="fds-05-009"[^>]*>[\s\S]*FDS-05-009[\s\S]*<\/a>/);
+  assert.match(html, /<strong>FDS-05-009<\/strong>/);
+});
+
+test('anchor_fds_req leaves plain text matches alone', () => {
+  const md = new MdLib();
+  md.use(anchorFdsReq);
+  const html = md.render('See FDS-05-009 for details.');
+  assert.doesNotMatch(html, /id="fds-05-009"/);
+});

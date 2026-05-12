@@ -35,6 +35,7 @@ function buildMd(opts = {}) {
   const md = new MarkdownIt({ html: true, linkify: false, typographer: false });
   md.use(markdownItAttrs);
   md.use(headingPermalinks);
+  md.use(require('./markdown_plugins/anchor_fds_req'));
   return md;
 }
 
