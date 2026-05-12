@@ -2,113 +2,172 @@
   "custom": {},
   "params": {},
   "props": {
-    "defaultSize": { "width": 1280, "height": 42 }
+    "defaultSize": {
+      "height": 42,
+      "width": 1280
+    }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": { "name": "root" },
-    "props": {
-      "direction": "row",
-      "alignItems": "center",
-      "style": { "classes": "header" }
-    },
     "children": [
       {
-        "type": "ia.display.label",
-        "meta": { "name": "HeaderLogo" },
-        "position": { "basis": "auto" },
         "events": {
           "dom": {
             "onClick": {
-              "config": { "page": "/" },
+              "config": {
+                "page": "/"
+              },
               "scope": "C",
               "type": "nav"
             }
           }
         },
-        "props": {
-          "text": "MPP",
-          "style": { "classes": "header-logo", "cursor": "pointer" }
-        }
-      },
-      {
-        "type": "ia.container.flex",
-        "meta": { "name": "HeaderDivider" },
-        "position": { "basis": "auto" },
-        "props": { "style": { "classes": "header-divider" } }
-      },
-      {
-        "type": "ia.display.label",
-        "meta": { "name": "HeaderTitle" },
-        "position": { "basis": "auto" },
-        "props": {
-          "text": "Configuration Tool",
-          "style": { "classes": "header-title" }
-        }
-      },
-      {
-        "type": "ia.container.flex",
-        "meta": { "name": "HeaderSpacer" },
-        "position": { "grow": 1 },
-        "props": { "style": { "classes": "header-spacer" } }
-      },
-      {
-        "type": "ia.container.flex",
-        "meta": { "name": "HeaderRight" },
-        "position": { "basis": "auto" },
-        "props": {
-          "direction": "row",
-          "alignItems": "center",
-          "style": { "classes": "header-right" }
+        "meta": {
+          "name": "HeaderLogo"
         },
+        "props": {
+          "style": {
+            "classes": "header-logo",
+            "cursor": "pointer"
+          },
+          "text": "MPP"
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": {
+          "name": "HeaderDivider"
+        },
+        "props": {
+          "style": {
+            "classes": "header-divider"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "meta": {
+          "name": "HeaderTitle"
+        },
+        "props": {
+          "style": {
+            "classes": "header-title"
+          },
+          "text": "Configuration Tool"
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": {
+          "name": "HeaderSpacer"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "style": {
+            "classes": "header-spacer"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
         "children": [
           {
-            "type": "ia.display.icon",
-            "meta": { "name": "ThemeToggle" },
-            "position": { "basis": "auto" },
+            "meta": {
+              "name": "ThemeToggle"
+            },
             "props": {
               "path": "material/wb_sunny",
-              "style": { "classes": "theme-toggle", "cursor": "pointer" }
-            }
+              "style": {
+                "classes": "theme-toggle",
+                "cursor": "pointer"
+              }
+            },
+            "type": "ia.display.icon"
           },
           {
-            "type": "ia.display.label",
-            "meta": { "name": "UserAvatar" },
-            "position": { "basis": "auto" },
+            "meta": {
+              "name": "UserAvatar"
+            },
             "propConfig": {
               "props.text": {
                 "binding": {
-                  "type": "expr",
                   "config": {
-                    "expression": "if({session.props.auth.user.userName} = null || len({session.props.auth.user.userName}) = 0, '??', upper(left({session.props.auth.user.userName}, 1) + substring({session.props.auth.user.userName}, indexOf({session.props.auth.user.userName}, ' ')+1, 1)))"
-                  }
+                    "expression": "if({session.props.auth.user.userName} \u003d null || len({session.props.auth.user.userName}) \u003d 0, \u0027??\u0027, upper(left({session.props.auth.user.userName}, 1) + substring({session.props.auth.user.userName}, indexOf({session.props.auth.user.userName}, \u0027 \u0027)+1, 1)))"
+                  },
+                  "type": "expr"
                 }
               }
             },
-            "props": { "style": { "classes": "user-avatar" } }
+            "props": {
+              "style": {
+                "classes": "user-avatar"
+              }
+            },
+            "type": "ia.display.label"
           },
           {
-            "type": "ia.display.label",
-            "meta": { "name": "UserInfo" },
-            "position": { "basis": "auto" },
+            "meta": {
+              "name": "UserInfo"
+            },
             "propConfig": {
               "props.text": {
                 "binding": {
-                  "type": "property",
-                  "config": { "path": "session.props.auth.user.userName" },
+                  "config": {
+                    "path": "session.props.auth.user.userName"
+                  },
                   "transforms": [
                     {
-                      "type": "expression",
-                      "expression": "if({value} = null || len({value}) = 0, 'Sign In', {value})"
+                      "expression": "if({value} \u003d null || len({value}) \u003d 0, \u0027Sign In\u0027, {value})",
+                      "type": "expression"
                     }
-                  ]
+                  ],
+                  "type": "property"
                 }
               }
             },
-            "props": { "style": { "classes": "user-info" } }
+            "props": {
+              "style": {
+                "classes": "user-info"
+              }
+            },
+            "type": "ia.display.label"
           }
-        ]
+        ],
+        "meta": {
+          "name": "HeaderRight"
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "classes": "header-right"
+          }
+        },
+        "type": "ia.container.flex"
       }
-    ]
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "classes": "header"
+      }
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "mpp-toast",
+          "pageScope": false,
+          "script": "\t# implement your handler here\n\tBlueRidge.Common.Notify._handle(self, payload)",
+          "sessionScope": true,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
   }
 }

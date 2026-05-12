@@ -2,7 +2,8 @@
   "custom": {
     "activeCategory": "",
     "activeScreen": "BlueRidge/Views/Landing",
-    "navPanelOpen": false
+    "navPanelOpen": false,
+    "toastInstances": []
   },
   "propConfig": {
     "props.auth": {
@@ -67,11 +68,11 @@
     }
   },
   "props": {
-    "address": "10.20.11.157",
+    "address": "127.0.0.1",
     "device": {},
     "geolocation": {},
     "locale": "en-US",
     "offline": {},
-    "timeZoneId": "America/Los_Angeles"
+    "timeZoneId": "America/Indianapolis"
   }
 }

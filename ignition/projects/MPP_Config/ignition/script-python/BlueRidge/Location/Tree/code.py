@@ -73,6 +73,8 @@ def buildTree(rootId, expandDepth=2, defaultIcon="mpp/factory"):
         defName  = ds.getValueAt(r, colIdx["DefinitionName"])
         typeName = ds.getValueAt(r, colIdx["TypeName"])
         iconPath = ds.getValueAt(r, colIdx["Icon"]) or defaultIcon
+        description = ds.getValueAt(r, colIdx['Description']) 
+        sortOrder = ds.getValueAt(r, colIdx["SortOrder"])
 
         node = {
             "label": name,
@@ -88,7 +90,9 @@ def buildTree(rootId, expandDepth=2, defaultIcon="mpp/factory"):
                 "name":           name,
                 "definitionName": defName,
                 "typeName":       typeName,
-                "depth":          depth
+                "depth":          depth,
+                "description":	  description,
+                "sortOrder":	  sortOrder
             },
             "items": []
         }
@@ -101,6 +105,47 @@ def buildTree(rootId, expandDepth=2, defaultIcon="mpp/factory"):
             nodes[parentId]["items"].append(node)
 
     return [rootNode] if rootNode else []
+
+
+def resolveSelectedId(items, selection):
+    """
+    Resolve the Tree component's path-based selection to the underlying
+    Location.Id stored in each node's data.id. Used from the Tree's
+    onSelectionChange event to set view.custom.selectedId, which then
+    drives the location/Get and location/AttributesByLocation bindings.
+
+    The Tree component's props.selection is a list of paths; each path is
+    typically a list of integer indices (e.g. [0, 0, 0]) walking down the
+    tree. A string form ("0/0/0") is also tolerated.
+
+    Args:
+        items (list):     Tree's props.items (list returned by buildTree).
+        selection (list): Tree's props.selection (list of paths).
+
+    Returns:
+        long, or None when nothing is selected or the path is unreachable.
+    """
+    if not items or not selection:
+        return None
+
+    path = selection[0]
+    if isinstance(path, str):
+        try:
+            path = [int(p) for p in path.split("/") if p != ""]
+        except ValueError:
+            return None
+    if not path:
+        return None
+
+    node = {"items": items}
+    try:
+        for idx in path:
+            node = node["items"][idx]
+    except (IndexError, KeyError, TypeError):
+        return None
+
+    data = node.get("data") if isinstance(node, dict) else None
+    return data.get("id") if isinstance(data, dict) else None
 
 
 # =============================================================================

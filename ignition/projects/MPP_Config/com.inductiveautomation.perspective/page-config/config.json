@@ -4,13 +4,9 @@
       "title": "Home",
       "viewPath": "BlueRidge/Views/Home/Landing"
     },
-    "/plant": {
-      "title": "Plant Hierarchy",
-      "viewPath": "BlueRidge/Views/Location/PlantHierarchy"
-    },
-    "/quality-specs": {
-      "title": "Quality Specs",
-      "viewPath": "BlueRidge/Views/Quality/QualitySpecs"
+    "/audit-log": {
+      "title": "Audit Log",
+      "viewPath": "BlueRidge/Views/Audit/AuditLog"
     },
     "/defect-codes": {
       "title": "Defect Codes",
@@ -20,47 +16,51 @@
       "title": "Downtime Codes",
       "viewPath": "BlueRidge/Views/Oee/DowntimeCodes"
     },
-    "/audit-log": {
-      "title": "Audit Log",
-      "viewPath": "BlueRidge/Views/Audit/AuditLog"
-    },
     "/failure-log": {
       "title": "Failure Log",
       "viewPath": "BlueRidge/Views/Audit/FailureLog"
+    },
+    "/plant": {
+      "title": "Plant Hierarchy",
+      "viewPath": "BlueRidge/Views/Location/PlantHierarchy"
+    },
+    "/quality-specs": {
+      "title": "Quality Specs",
+      "viewPath": "BlueRidge/Views/Quality/QualitySpecs"
     }
   },
   "sharedDocks": {
     "cornerPriority": "top-bottom",
-    "top": [
-      {
-        "id": "header",
-        "anchor": "fixed",
-        "viewPath": "BlueRidge/Views/Containers/Header",
-        "size": 42,
-        "show": "visible",
-        "content": "push",
-        "modal": false,
-        "resizable": false,
-        "handle": "hide",
-        "iconUrl": "",
-        "viewParams": {},
-        "autoBreakpoint": 480
-      }
-    ],
     "left": [
       {
-        "id": "sidebar",
         "anchor": "fixed",
-        "viewPath": "BlueRidge/Views/Containers/Sidebar",
-        "size": 260,
-        "show": "visible",
+        "autoBreakpoint": 480,
         "content": "push",
-        "modal": false,
-        "resizable": false,
         "handle": "hide",
         "iconUrl": "",
+        "id": "sidebar",
+        "modal": false,
+        "resizable": false,
+        "show": "visible",
+        "size": 260,
         "viewParams": {},
-        "autoBreakpoint": 480
+        "viewPath": "BlueRidge/Views/Containers/Sidebar"
+      }
+    ],
+    "top": [
+      {
+        "anchor": "fixed",
+        "autoBreakpoint": 480,
+        "content": "push",
+        "handle": "hide",
+        "iconUrl": "",
+        "id": "header",
+        "modal": false,
+        "resizable": false,
+        "show": "visible",
+        "size": 42,
+        "viewParams": {},
+        "viewPath": "BlueRidge/Views/Containers/Header"
       }
     ]
   }
