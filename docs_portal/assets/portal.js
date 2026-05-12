@@ -89,11 +89,24 @@
     function getIndex() {
       if (!indexPromise) {
         indexPromise = fetch('search-index.json')
-          .then((r) => r.json())
+          .then((r) => {
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.json();
+          })
           .then((raw) => {
             // eslint-disable-next-line no-undef
             const idx = MiniSearch.loadJSON(JSON.stringify(raw.index), raw.options);
             return { idx, byId: new Map(raw.docs.map((d) => [d.id, d])) };
+          })
+          .catch((err) => {
+            const isFileProto = window.location.protocol === 'file:';
+            const hint = isFileProto
+              ? 'Chrome and Edge block fetch() from file:// URLs. Run `npm run serve:portal` (or any local HTTP server) and open the portal via http://localhost:8080/ instead.'
+              : `Failed to load search-index.json: ${err.message}`;
+            results.innerHTML = `<div class="search-result" style="cursor: default;"><div>Search unavailable</div><div class="snippet">${hint}</div></div>`;
+            // Re-throw so subsequent calls don't reuse the failed promise
+            indexPromise = null;
+            throw err;
           });
       }
       return indexPromise;

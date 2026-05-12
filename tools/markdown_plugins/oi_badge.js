@@ -5,8 +5,9 @@ module.exports = function oiBadge(md, opts = {}) {
   const map = opts.reqToOpenOis || new Map();
   function badgeHtmlFor(ois) {
     return ois.map((id) => {
-      const n = id.replace(/^OI-/, '').toLowerCase();
-      return `<a class="oi-badge" href="oir.html#oi-${n}">🔓 ${id}</a>`;
+      // id is "OI-XX" or "UJ-XX"; heading_permalinks emits the canonical
+      // lowercased anchor (oi-XX / uj-XX) on the OIR headings.
+      return `<a class="oi-badge" href="oir.html#${id.toLowerCase()}">🔓 ${id}</a>`;
     }).join('');
   }
   const installer = (state) => {

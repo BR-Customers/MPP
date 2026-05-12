@@ -406,10 +406,19 @@ test('cross-doc OI links from FDS resolve to canonical OIR anchors', () => {
   const fds = fs.readFileSync(path.join(PORTAL_DIR, 'fds.html'), 'utf8');
   const oir = fs.readFileSync(path.join(PORTAL_DIR, 'oir.html'), 'utf8');
   // Find every cross-doc OI href in FDS, then verify the matching anchor exists in OIR
-  const hrefs = [...fds.matchAll(/href="oir\.html#(oi-\d{2}|uj-\d{2})"/g)].map((m) => m[1]);
+  const hrefs = [...fds.matchAll(/href="oir\.html#([\w-]+)"/g)].map((m) => m[1]);
   assert.ok(hrefs.length > 0, 'expected at least one cross-doc OI href in FDS');
   const unique = [...new Set(hrefs)];
   for (const slug of unique) {
     assert.match(oir, new RegExp(`id="${slug}"`), `OIR must have id="${slug}" for FDS cross-doc link`);
   }
+});
+
+test('oi_badge generates correct href for UJ items (not oi-uj-XX)', () => {
+  const md = new MdLib();
+  md.use(headingPermalinks);
+  md.use(oiBadge, { reqToOpenOis: new Map([['FDS-07-018', ['UJ-05']]]) });
+  const html = md.render('#### FDS-07-018 — Sort Cage Scope Boundary\n');
+  assert.match(html, /href="oir\.html#uj-05"/);
+  assert.doesNotMatch(html, /href="oir\.html#oi-uj-05"/);
 });

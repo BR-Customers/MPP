@@ -10,6 +10,7 @@
   },
   "scripts": {
     "build:portal": "node tools/build_docs_portal.js",
-    "test:portal": "node --test tools/build_docs_portal.test.js"
+    "test:portal": "node --test tools/build_docs_portal.test.js",
+    "serve:portal": "npx http-server docs_portal -o"
   }
 }
