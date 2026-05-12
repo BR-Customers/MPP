@@ -223,3 +223,47 @@ test('cross_doc_link skips text inside existing links and code', () => {
   // Should NOT have wrapped either with the cross-doc href
   assert.doesNotMatch(html, /<a[^>]*href="oir\.html#oi-35"[^>]*>OI-35<\/a><\/code>/);
 });
+
+const { parseOirMap } = require('./lib/parse_oir_map');
+
+test('parseOirMap collects open OIs and maps requirements to them', () => {
+  const sample = `# OIR
+## OI-35 Architecture Decision Gate
+**Status:** Open
+
+Affects FDS-11-011 and FDS-05-009.
+
+## OI-12 MaxParts relocation
+**Status:** Resolved
+
+Affects FDS-05-009.
+
+## OI-32 Material allocation
+**Status:** Open
+
+Affects FDS-08-001.
+`;
+  const { openIds, reqToOpenOis } = parseOirMap(sample);
+  assert.deepStrictEqual([...openIds].sort(), ['OI-32', 'OI-35']);
+  assert.deepStrictEqual(reqToOpenOis.get('FDS-11-011').sort(), ['OI-35']);
+  assert.deepStrictEqual(reqToOpenOis.get('FDS-05-009').sort(), ['OI-35']);  // OI-12 is Resolved, excluded
+  assert.deepStrictEqual(reqToOpenOis.get('FDS-08-001').sort(), ['OI-32']);
+});
+
+const oiBadge = require('./markdown_plugins/oi_badge');
+
+test('oi_badge appends 🔓 OI-XX after **FDS-XX-NNN** when in the open map', () => {
+  const md = new MdLib();
+  md.use(require('./markdown_plugins/anchor_fds_req'));
+  md.use(oiBadge, { reqToOpenOis: new Map([['FDS-05-009', ['OI-35']]]) });
+  const html = md.render('**FDS-05-009** SHALL …');
+  assert.match(html, /<a[^>]*class="oi-badge"[^>]*href="oir\.html#oi-35"[^>]*>🔓 OI-35<\/a>/);
+});
+
+test('oi_badge does not badge requirements without open OIs', () => {
+  const md = new MdLib();
+  md.use(require('./markdown_plugins/anchor_fds_req'));
+  md.use(oiBadge, { reqToOpenOis: new Map() });
+  const html = md.render('**FDS-05-009** SHALL …');
+  assert.doesNotMatch(html, /oi-badge/);
+});

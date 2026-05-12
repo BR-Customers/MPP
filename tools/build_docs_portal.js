@@ -8,6 +8,7 @@ const headingPermalinks = require('./markdown_plugins/heading_permalinks');
 const markdownItAttrs = require('markdown-it-attrs');
 const crossDocLink = require('./markdown_plugins/cross_doc_link');
 const { parseDmTables } = require('./lib/parse_dm_tables');
+const { parseOirMap } = require('./lib/parse_oir_map');
 
 const REPO_ROOT = path.resolve(__dirname, '..');
 const PORTAL_DIR = path.join(REPO_ROOT, 'docs_portal');
@@ -33,12 +34,13 @@ function copyDir(src, dest) {
   }
 }
 
-function buildMd({ currentDoc, knownTables } = {}) {
+function buildMd({ currentDoc, knownTables, reqToOpenOis } = {}) {
   const md = new MarkdownIt({ html: true, linkify: false, typographer: false });
   md.use(markdownItAttrs);
   md.use(headingPermalinks);
   md.use(require('./markdown_plugins/anchor_fds_req'));
   md.use(require('./markdown_plugins/scope_pill'));
+  md.use(require('./markdown_plugins/oi_badge'), { reqToOpenOis: reqToOpenOis || new Map() });
   md.use(crossDocLink, { currentDoc, knownTables: knownTables || new Map() });
   return md;
 }
@@ -50,12 +52,15 @@ function build() {
   const dmRaw = fs.readFileSync(path.join(REPO_ROOT, 'MPP_MES_DATA_MODEL.md'), 'utf8');
   const knownTables = parseDmTables(dmRaw);
 
+  const oirRaw = fs.readFileSync(path.join(REPO_ROOT, 'MPP_MES_Open_Issues_Register.md'), 'utf8');
+  const { reqToOpenOis } = parseOirMap(oirRaw);
+
   const generatedAt = new Date().toISOString();
 
   for (const doc of DOCS) {
     const src = path.join(REPO_ROOT, doc.source);
     const raw = fs.readFileSync(src, 'utf8');
-    const md = buildMd({ currentDoc: doc.key, knownTables });
+    const md = buildMd({ currentDoc: doc.key, knownTables, reqToOpenOis });
     const contentHtml = md.render(raw);
     const tocHtml = buildToc(contentHtml);
     const html = renderShell({
