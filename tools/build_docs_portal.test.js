@@ -166,3 +166,24 @@ test('scope_pill leaves unrelated inline code alone', () => {
   assert.match(html, /<code>Parts\.Item<\/code>/);
   assert.doesNotMatch(html, /scope-pill/);
 });
+
+const { parseDmTables } = require('./lib/parse_dm_tables');
+
+test('parseDmTables extracts Schema.TableName from Data Model headings', () => {
+  const sample = `# Data Model
+## 2. Location Schema
+### Location
+### LocationAttribute
+## 3. Parts Schema
+### OperationTemplate
+### ContainerConfig
+## 4. Lots Schema
+### Lot
+`;
+  const map = parseDmTables(sample);
+  assert.ok(map.has('Location.Location'));
+  assert.ok(map.has('Parts.OperationTemplate'));
+  assert.ok(map.has('Parts.ContainerConfig'));
+  assert.ok(map.has('Lots.Lot'));
+  assert.strictEqual(map.get('Parts.OperationTemplate'), 'parts-operationtemplate');
+});
