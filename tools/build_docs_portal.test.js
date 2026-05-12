@@ -374,3 +374,29 @@ test('build_docs_portal emits search-index.json with >= 200 entries', () => {
 test('build_docs_portal copies minisearch.min.js into assets', () => {
   assert.ok(fs.existsSync(path.join(PORTAL_DIR, 'assets', 'minisearch.min.js')));
 });
+
+test('end-to-end: key anchors resolve in generated HTML', () => {
+  execSync('node tools/build_docs_portal.js', { cwd: REPO_ROOT, stdio: 'pipe' });
+  const fds = fs.readFileSync(path.join(PORTAL_DIR, 'fds.html'), 'utf8');
+  const dm = fs.readFileSync(path.join(PORTAL_DIR, 'data-model.html'), 'utf8');
+  const oir = fs.readFileSync(path.join(PORTAL_DIR, 'oir.html'), 'utf8');
+
+  // Known requirement that exists in v1.0 FDS
+  assert.match(fds, /id="fds-05-009"/);
+  // Schema-prefixed DM anchors
+  assert.match(dm, /id="parts-operationtemplate"/);
+  assert.match(dm, /id="lots-shippinglabel"/);
+  // OI-35 anchor — heading_permalinks slugifies the full heading text, so
+  // the id begins with "oi-35" followed by the rest of the slug
+  assert.match(oir, /id="oi-35[^"]*"/);
+});
+
+test('OI badge appears on at least one FDS requirement', () => {
+  const fds = fs.readFileSync(path.join(PORTAL_DIR, 'fds.html'), 'utf8');
+  assert.match(fds, /class="oi-badge"/, 'expected at least one inline OI badge on FDS page');
+});
+
+test('search-index.json size budget < 500 KB uncompressed', () => {
+  const stat = fs.statSync(path.join(PORTAL_DIR, 'search-index.json'));
+  assert.ok(stat.size < 500 * 1024, `search-index.json grew to ${stat.size} bytes`);
+});
