@@ -91,23 +91,9 @@ ERD pending refresh for v1.9j–m additions:
 
 Per-schema tabs are the source of truth and remain canonical until next regen.
 
-### Internal Docs Portal — design approved, awaiting plan + build
+### Internal Docs Portal — ✅ landed 2026-05-12
 
-Design spec at **`docs/superpowers/specs/2026-05-12-docs-portal-design.md`** —
-self-contained static HTML portal that consolidates FDS + Data Model + OIR +
-ERD into one browsable, searchable internal reference. Approved 2026-05-12.
-
-**Resumption steps** (whoever picks this up next):
-
-1. Read the spec.
-2. Invoke `superpowers:writing-plans` to convert it into a phased
-   implementation plan (the spec's §15 sketches the phasing).
-3. Build via `superpowers:executing-plans` or straight through.
-
-Key decisions already locked in the spec — do not re-litigate without cause:
-markdown stays authoritative; Node + markdown-it + custom plugins generator;
-multi-page output under `docs_portal/`; ERD iframed (no rewrite); MiniSearch
-cross-doc index; dark theme matching ERD palette.
+Initial v1 build at `docs_portal/`. See "Recent Change Narrative" entry below for details.
 
 ### Non-blocking polish
 
@@ -170,6 +156,35 @@ Phase G capability snapshot: `Meeting_Notes/2026-04-22_Phase_G_Capabilities_Summ
 ## Recent Change Narrative
 
 A timeline of session-by-session changes. Most recent first.
+
+### 2026-05-12 — Internal Docs Portal landed
+
+Built and shipped the v1 internal docs portal — a self-contained static HTML site at `docs_portal/` that consolidates **FDS + Data Model + OIR + ERD** into one browsable, searchable surface for the Blue Ridge team. Internal-only; does NOT replace the `.docx` deliverables to MPP.
+
+**What's in v1:**
+
+- Four pages: `fds.html`, `data-model.html`, `oir.html`, `erd.html` (the ERD is iframed — no rewrite), plus an `index.html` meta-refresh to FDS.
+- Shared shell: sticky header nav, sticky TOC sidebar with `IntersectionObserver`-driven active-section highlight, dark theme matching the ERD palette (`#0f1117` bg / `#6c8aff` accent).
+- Cross-doc full-text search via **MiniSearch** — section-level granularity (every h2 + h3), ~277 entries, ~470 KB serialized index, lazy-loaded into a modal triggered by `🔍` button or `/` key.
+- Six custom markdown-it plugins:
+  1. `heading_permalinks` — adds clickable `#` chips on h2/h3/h4, canonicalizes FDS-XX-NNN and OI-XX/UJ-XX heading ids
+  2. `anchor_fds_req` — wraps bold-inline `**FDS-XX-NNN**` references in section anchors
+  3. `scope_pill` — backticked scope tags (`MVP`, `CONDITIONAL`, etc.) render as colored badges
+  4. `cross_doc_link` — bare `FDS-XX-NNN`, `OI-XX`, `UJ-XX`, `Schema.Table`, `(FRS X.Y.Z)` refs in body text auto-link across docs (only for known schema tables, validated against a pre-parsed allowlist)
+  5. `oi_badge` — inline 🔓 OI-XX chip on FDS h4 requirements that an open OI references (8 live badges from the 6 open OIs)
+  6. `schema_table_anchor` — Data Model only, gives table h3s schema-prefixed slugs (`parts-operationtemplate`) so cross_doc_link's expected anchors actually resolve
+
+**How to rebuild:** `npm run build:portal` (alias for `node tools/build_docs_portal.js`). Idempotent — wipes and rebuilds `docs_portal/`. Test suite: `npm run test:portal` (38 tests across the generator + plugins + smoke tests).
+
+**Spec + plan:** `docs/superpowers/specs/2026-05-12-docs-portal-design.md` (approved 2026-05-12) and `docs/superpowers/plans/2026-05-12-docs-portal.md` (17 tasks, executed via subagent-driven development).
+
+**Three plan deviations corrected during build:**
+
+1. `buildToc` regex strip left scope-pill text in TOC labels — added a span-strip pre-pass. Same issue with permalink `#` chips — added an anchor-strip pre-pass.
+2. The FDS source uses `#### FDS-XX-NNN — Title` h4 headings, not `**FDS-XX-NNN**` bold inline (plan got this inverted). Both `heading_permalinks` and `oi_badge` were extended to recognize the h4 form. 8 live OI badges now appear on FDS.
+3. The OIR's `### OI-XX — long description` headings were producing slugified ids that didn't match the bare `oir.html#oi-35` hrefs the cross-doc plugins generate. Added OIR-pattern canonicalization to `heading_permalinks` (mirrors the FDS pattern handling).
+
+Each plan correction landed as a small `fix(portal):` commit so the chain is auditable.
 
 ### 2026-05-07 — MPP custom Perspective icon library landed
 
