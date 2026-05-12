@@ -1,6 +1,6 @@
 # MPP MES — Project Status
 
-**Last updated:** 2026-05-07
+**Last updated:** 2026-05-12
 
 This file holds the **volatile** state of the project — current doc versions, active blockers, recent change narrative, and the next-session briefing. Durable identity, document map, architecture, and conventions live in `CLAUDE.md`.
 
@@ -90,6 +90,24 @@ ERD pending refresh for v1.9j–m additions:
 - `Parts.OperationTemplate.RequiresSubLotSplit`
 
 Per-schema tabs are the source of truth and remain canonical until next regen.
+
+### Internal Docs Portal — design approved, awaiting plan + build
+
+Design spec at **`docs/superpowers/specs/2026-05-12-docs-portal-design.md`** —
+self-contained static HTML portal that consolidates FDS + Data Model + OIR +
+ERD into one browsable, searchable internal reference. Approved 2026-05-12.
+
+**Resumption steps** (whoever picks this up next):
+
+1. Read the spec.
+2. Invoke `superpowers:writing-plans` to convert it into a phased
+   implementation plan (the spec's §15 sketches the phasing).
+3. Build via `superpowers:executing-plans` or straight through.
+
+Key decisions already locked in the spec — do not re-litigate without cause:
+markdown stays authoritative; Node + markdown-it + custom plugins generator;
+multi-page output under `docs_portal/`; ERD iframed (no rewrite); MiniSearch
+cross-doc index; dark theme matching ERD palette.
 
 ### Non-blocking polish
 
