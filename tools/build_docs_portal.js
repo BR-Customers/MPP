@@ -36,6 +36,7 @@ function buildMd(opts = {}) {
   md.use(markdownItAttrs);
   md.use(headingPermalinks);
   md.use(require('./markdown_plugins/anchor_fds_req'));
+  md.use(require('./markdown_plugins/scope_pill'));
   return md;
 }
 

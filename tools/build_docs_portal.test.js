@@ -146,3 +146,23 @@ test('anchor_fds_req leaves plain text matches alone', () => {
   const html = md.render('See FDS-05-009 for details.');
   assert.doesNotMatch(html, /id="fds-05-009"/);
 });
+
+const scopePill = require('./markdown_plugins/scope_pill');
+
+test('scope_pill renders backticked MVP/CONDITIONAL/etc. as colored spans', () => {
+  const md = new MdLib();
+  md.use(scopePill);
+  for (const tag of ['MVP', 'MVP-EXPANDED', 'CONDITIONAL', 'FUTURE']) {
+    const html = md.render(`Scope: \`${tag}\` here`);
+    const cls = `scope-${tag.toLowerCase()}`;
+    assert.match(html, new RegExp(`<span class="scope-pill ${cls}">${tag}</span>`));
+  }
+});
+
+test('scope_pill leaves unrelated inline code alone', () => {
+  const md = new MdLib();
+  md.use(scopePill);
+  const html = md.render('Path: `Parts.Item`');
+  assert.match(html, /<code>Parts\.Item<\/code>/);
+  assert.doesNotMatch(html, /scope-pill/);
+});
