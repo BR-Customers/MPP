@@ -4,6 +4,8 @@ const path = require('node:path');
 const MarkdownIt = require('markdown-it');
 const { renderShell } = require('./lib/render_shell');
 const { buildToc } = require('./lib/build_toc');
+const headingPermalinks = require('./markdown_plugins/heading_permalinks');
+const markdownItAttrs = require('markdown-it-attrs');
 
 const REPO_ROOT = path.resolve(__dirname, '..');
 const PORTAL_DIR = path.join(REPO_ROOT, 'docs_portal');
@@ -29,8 +31,11 @@ function copyDir(src, dest) {
   }
 }
 
-function buildMd() {
-  return new MarkdownIt({ html: true, linkify: false, typographer: false });
+function buildMd(opts = {}) {
+  const md = new MarkdownIt({ html: true, linkify: false, typographer: false });
+  md.use(markdownItAttrs);
+  md.use(headingPermalinks);
+  return md;
 }
 
 function build() {

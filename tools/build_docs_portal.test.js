@@ -74,3 +74,38 @@ test('build script emits fds.html with shell + parsed markdown', () => {
   assert.match(html, /<header class="portal-header"/);
   assert.match(html, /<main[^>]*>[\s\S]*<h1[\s\S]*MPP MES[\s\S]*<\/h1>/i);
 });
+
+const { slugify } = require('./lib/slugify');
+
+test('slugify lowercases, hyphenates, strips punctuation', () => {
+  assert.strictEqual(slugify('5.9 Sub-LOT Split'), '5-9-sub-lot-split');
+  assert.strictEqual(slugify('FDS-05-009 SHALL …'), 'fds-05-009-shall');
+  assert.strictEqual(slugify('Parts.OperationTemplate'), 'parts-operationtemplate');
+});
+
+test('slugify de-dupes within a document', () => {
+  const seen = new Map();
+  assert.strictEqual(slugify('X', seen), 'x');
+  assert.strictEqual(slugify('X', seen), 'x-2');
+  assert.strictEqual(slugify('X', seen), 'x-3');
+});
+
+const MdLib = require('markdown-it');
+const headingPermalinks = require('./markdown_plugins/heading_permalinks');
+
+test('heading_permalinks adds id + permalink anchor to h2/h3', () => {
+  const md = new MdLib();
+  md.use(headingPermalinks);
+  const html = md.render('## My Section\n\n### Sub one\n');
+  assert.match(html, /<h2[^>]*id="my-section"/);
+  assert.match(html, /<a[^>]*class="heading-permalink"[^>]*href="#my-section"/);
+  assert.match(html, /<h3[^>]*id="sub-one"/);
+});
+
+test('heading_permalinks de-dupes within a render pass', () => {
+  const md = new MdLib();
+  md.use(headingPermalinks);
+  const html = md.render('## Same\n\n## Same\n');
+  assert.match(html, /id="same"/);
+  assert.match(html, /id="same-2"/);
+});
