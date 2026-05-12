@@ -386,9 +386,10 @@ test('end-to-end: key anchors resolve in generated HTML', () => {
   // Schema-prefixed DM anchors
   assert.match(dm, /id="parts-operationtemplate"/);
   assert.match(dm, /id="lots-shippinglabel"/);
-  // OI-35 anchor — heading_permalinks slugifies the full heading text, so
-  // the id begins with "oi-35" followed by the rest of the slug
-  assert.match(oir, /id="oi-35[^"]*"/);
+  // OI-35 anchor — heading_permalinks now canonicalizes to bare oi-XX id
+  assert.match(oir, /id="oi-35"/);
+  // UJ anchors also canonicalize
+  assert.match(oir, /id="uj-05"/);
 });
 
 test('OI badge appears on at least one FDS requirement', () => {
@@ -399,4 +400,16 @@ test('OI badge appears on at least one FDS requirement', () => {
 test('search-index.json size budget < 500 KB uncompressed', () => {
   const stat = fs.statSync(path.join(PORTAL_DIR, 'search-index.json'));
   assert.ok(stat.size < 500 * 1024, `search-index.json grew to ${stat.size} bytes`);
+});
+
+test('cross-doc OI links from FDS resolve to canonical OIR anchors', () => {
+  const fds = fs.readFileSync(path.join(PORTAL_DIR, 'fds.html'), 'utf8');
+  const oir = fs.readFileSync(path.join(PORTAL_DIR, 'oir.html'), 'utf8');
+  // Find every cross-doc OI href in FDS, then verify the matching anchor exists in OIR
+  const hrefs = [...fds.matchAll(/href="oir\.html#(oi-\d{2}|uj-\d{2})"/g)].map((m) => m[1]);
+  assert.ok(hrefs.length > 0, 'expected at least one cross-doc OI href in FDS');
+  const unique = [...new Set(hrefs)];
+  for (const slug of unique) {
+    assert.match(oir, new RegExp(`id="${slug}"`), `OIR must have id="${slug}" for FDS cross-doc link`);
+  }
 });
