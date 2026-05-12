@@ -267,3 +267,27 @@ test('oi_badge does not badge requirements without open OIs', () => {
   const html = md.render('**FDS-05-009** SHALL …');
   assert.doesNotMatch(html, /oi-badge/);
 });
+
+test('heading_permalinks: h4 FDS-XX-NNN heading gets fds-XX-NNN id', () => {
+  const md = new MdLib();
+  md.use(headingPermalinks);
+  const html = md.render('#### FDS-05-009 — Some Title\n');
+  assert.match(html, /<h4[^>]*id="fds-05-009"/);
+  // Permalink chip points at the canonical anchor
+  assert.match(html, /<a[^>]*class="heading-permalink"[^>]*href="#fds-05-009"/);
+});
+
+test('heading_permalinks: non-FDS h4 falls back to slugify', () => {
+  const md = new MdLib();
+  md.use(headingPermalinks);
+  const html = md.render('#### Plain h4 title\n');
+  assert.match(html, /<h4[^>]*id="plain-h4-title"/);
+});
+
+test('oi_badge fires on h4 FDS headings with open OIs', () => {
+  const md = new MdLib();
+  md.use(headingPermalinks);
+  md.use(oiBadge, { reqToOpenOis: new Map([['FDS-05-009', ['OI-35']]]) });
+  const html = md.render('#### FDS-05-009 — Some Title\n');
+  assert.match(html, /<a[^>]*class="oi-badge"[^>]*href="oir\.html#oi-35"[^>]*>🔓 OI-35<\/a>/);
+});

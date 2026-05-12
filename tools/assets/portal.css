@@ -148,7 +148,8 @@ code, pre { font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace; }
   transition: opacity 0.15s;
 }
 .portal-main h2:hover .heading-permalink,
-.portal-main h3:hover .heading-permalink { opacity: 1; }
+.portal-main h3:hover .heading-permalink,
+.portal-main h4:hover .heading-permalink { opacity: 1; }
 .heading-permalink:hover { color: var(--accent); }
 
 /* Scope pills (Plugin 6.2) */

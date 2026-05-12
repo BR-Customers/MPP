@@ -1,18 +1,32 @@
 const { slugify } = require('../lib/slugify');
 
+const RE_FDS_HEADING = /^(FDS-(\d{2})-(\d{3}))\b/;
+
 module.exports = function headingPermalinks(md) {
   md.core.ruler.push('heading_permalinks', (state) => {
     const seen = new Map();
     for (let i = 0; i < state.tokens.length; i++) {
       const tok = state.tokens[i];
       if (tok.type !== 'heading_open') continue;
-      if (tok.tag !== 'h2' && tok.tag !== 'h3') continue;
+      if (tok.tag !== 'h2' && tok.tag !== 'h3' && tok.tag !== 'h4') continue;
       const inline = state.tokens[i + 1];
       if (!inline || inline.type !== 'inline') continue;
       const text = inline.content;
       const existingId = tok.attrGet('id');
-      const id = existingId || slugify(text, seen);
-      if (!existingId) tok.attrSet('id', id);
+      let id;
+      if (existingId) {
+        id = existingId;
+      } else {
+        const m = RE_FDS_HEADING.exec(text.trim());
+        if (m) {
+          // Canonical FDS requirement slug — keep separate dedup track so
+          // 'fds-05-009' isn't mangled by slugify's seen Map collisions.
+          id = `fds-${m[2]}-${m[3]}`;
+        } else {
+          id = slugify(text, seen);
+        }
+        tok.attrSet('id', id);
+      }
       // Append a permalink anchor as the last inline child.
       const linkOpen = new state.Token('html_inline', '', 0);
       linkOpen.content = ` <a class="heading-permalink" href="#${id}" aria-label="Permalink">#</a>`;
