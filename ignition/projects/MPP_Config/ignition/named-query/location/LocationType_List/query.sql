@@ -1,0 +1,1 @@
+EXEC Location.LocationType_List

@@ -1,14 +1,5 @@
 {
   "custom": {
-    "OLD_Selected_View": {
-      "code": "DC-007",
-      "description": "400-ton Toshiba die cast press, Bay 3",
-      "name": "DC Machine #7",
-      "parent": "Die Cast (Area)",
-      "schemaName": "DieCastMachine",
-      "sortOrder": 3,
-      "typeBadge": "Cell • DieCastMachine"
-    },
     "selected": {
       "code": "MACHSHOP",
       "definitionName": "Production Area",
@@ -23,9 +14,6 @@
   },
   "params": {},
   "propConfig": {
-    "custom.OLD_Selected_View": {
-      "persistent": true
-    },
     "custom.attributes": {
       "binding": {
         "config": {
@@ -147,6 +135,17 @@
             "type": "ia.display.label"
           },
           {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\n\t\tid\u003d\"mpp-loc-type-editor\",\n\t\tview\u003d\"BlueRidge/Components/Popups/LocationTypeEditor\",\n\t\tmodal\u003dTrue,\n\t\tdraggable\u003dFalse,\n\t\tshowCloseIcon\u003dFalse,\n\t\tresizable\u003dFalse,\n\t\toverlayDismiss\u003dFalse,\n\t\tviewportBound\u003dTrue\n\t)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
             "meta": {
               "name": "LocationTypeEditorButton",
               "tooltip": {
@@ -694,7 +693,7 @@
                                           "dom": {
                                             "onClick": {
                                               "config": {
-                                                "script": "\ttry:\n\t\tsystem.db.execQuery(\u0027location/MoveSortOrderUp\u0027, {\u0027LocationID\u0027:self.view.custom.selected.id,\u0027UserID\u0027:2})\n\t\t#UserID is hardcoded for dev perposes. will be updated later\n\t\tself.view.refreshBinding(\"custom.tree\")\n\t\tBlueRidge.Common.Notify.toast(\u0027Moved up\u0027, \u0027Reordered \u0027 + self.view.custom.selected.name, \u0027success\u0027)\n\texcept Exception as e:\n\t\tBlueRidge.Common.Notify.toast(\u0027Move failed\u0027, str(e), \u0027error\u0027)\n"
+                                                "script": "\tresult \u003d BlueRidge.Location.Location.handleMoveUp(self.view.custom.selected)\n\tif result:\n\t\tself.view.custom.tree \u003d result[\"tree\"]\n\t\tself.view.custom.selectedPath \u003d result[\"selectedPath\"]\n\t\tself.view.custom.selected \u003d result[\"selected\"]"
                                               },
                                               "scope": "G",
                                               "type": "script"
@@ -720,7 +719,7 @@
                                           "dom": {
                                             "onClick": {
                                               "config": {
-                                                "script": "\ttry:\n\t\tsystem.db.execQuery(\u0027location/MoveSortOrderDown\u0027, {\u0027LocationID\u0027:self.view.custom.selected.id,\u0027UserID\u0027:2})\n\t\t#UserID is hardcoded for dev perposes. will be updated later\n\t\tself.view.refreshBinding(\"custom.tree\")\n\t\tBlueRidge.Common.Notify.toast(\u0027Moved down\u0027, \u0027Reordered \u0027 + self.view.custom.selected.name, \u0027success\u0027)\n\texcept Exception as e:\n\t\tBlueRidge.Common.Notify.toast(\u0027Move failed\u0027, str(e), \u0027error\u0027)"
+                                                "script": "\tresult \u003d BlueRidge.Location.Location.handleMoveDown(self.view.custom.selected)\n\tif result:\n\t\tself.view.custom.tree \u003d result[\"tree\"]\n\t\tself.view.custom.selectedPath \u003d result[\"selectedPath\"]\n\t\tself.view.custom.selected \u003d result[\"selected\"]"
                                               },
                                               "scope": "G",
                                               "type": "script"

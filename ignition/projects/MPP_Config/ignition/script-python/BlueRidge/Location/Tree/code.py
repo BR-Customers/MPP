@@ -107,6 +107,78 @@ def buildTree(rootId, expandDepth=2, defaultIcon="mpp/factory"):
     return [rootNode] if rootNode else []
 
 
+def findPathById(items, targetId):
+    """
+    Walk the tree depth-first; return the path-string of the node whose
+    data.id equals targetId. Path format matches the Perspective Tree
+    component's selection (slash-separated indices, e.g. "0/0/1").
+
+    Use when a tree-mutating action (move, add, deprecate, parent-change)
+    needs to keep the same logical entity selected even though its position
+    in the tree has shifted. Pair with the freshly-rebuilt items returned
+    by buildTree; do NOT call this against a stale `view.custom.tree` after
+    `refreshBinding` because the binding refresh is async.
+
+    Args:
+        items (list):    Tree's props.items (list returned by buildTree).
+        targetId (long): data.id to search for.
+
+    Returns:
+        str or None: Path string ("0/0/1"), or None when not found.
+    """
+    if not items or targetId is None:
+        return None
+
+    def walk(nodes, prefix):
+        for i, node in enumerate(nodes):
+            currentPath = prefix + [i]
+            data = node.get("data") if isinstance(node, dict) else None
+            if data and data.get("id") == targetId:
+                return currentPath
+            children = node.get("items") if isinstance(node, dict) else None
+            if children:
+                found = walk(children, currentPath)
+                if found is not None:
+                    return found
+        return None
+
+    pathList = walk(items, [])
+    return "/".join(str(i) for i in pathList) if pathList is not None else None
+
+
+def getNodeData(items, pathStr):
+    """
+    Resolve a slash-separated path string ("0/0/1") into the items tree
+    and return the matching node's `data` dict.
+
+    Used together with findPathById after a tree-mutating action to extract
+    the entity's fresh data for view.custom.selected. The Tree component's
+    bidirectional writeback to view.custom.selected doesn't reliably fire
+    when items are replaced from script (only on user-click selection
+    changes), so the caller pushes the new entity dict explicitly.
+
+    Args:
+        items (list):  Tree's props.items (list returned by buildTree).
+        pathStr (str): Slash-separated path string ("0/0/1").
+
+    Returns:
+        dict or None: node.data at the path, or None when the path doesn't
+                      resolve. Shape matches what the Tree component would
+                      have placed in selectionData[0].value.
+    """
+    if not items or not pathStr:
+        return None
+    node = {"items": items}
+    try:
+        for idx in pathStr.split("/"):
+            node = node["items"][int(idx)]
+    except (IndexError, KeyError, TypeError, ValueError):
+        return None
+    if isinstance(node, dict):
+        return node.get("data")
+    return None
+
+
 def resolveSelectedId(items, selection):
     """
     Resolve the Tree component's path-based selection to the underlying

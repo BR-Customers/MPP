@@ -1,0 +1,265 @@
+-- =============================================
+-- File:         0002_LocationType/040_LocationTypeDefinition_Deprecate.sql
+-- Author:       Blue Ridge Automation
+-- Created:      2026-05-13
+-- Description:
+--   Tests for Location.LocationTypeDefinition_Deprecate.
+--   Covers: happy path with child cascade, FK guard against active
+--   Location.Location rows, idempotent re-deprecate (Status=1), not-found
+--   rejection, required-param rejection, audit trail.
+--
+--   Pre-conditions:
+--     - Migrations 0001..0014 applied
+--     - Seed LocationType + LocationTypeDefinition + Location.Location
+--     - DieCastMachine (Code='DieCastMachine') has 3 active Location rows
+--       in the seed -- used for the FK-guard rejection test
+--     - Bootstrap user Id=1
+--     - Test framework deployed
+-- =============================================
+
+EXEC test.BeginTestFile @FileName = N'0002_LocationType/040_LocationTypeDefinition_Deprecate.sql';
+GO
+
+-- =============================================
+-- Setup: create a fresh LocationTypeDefinition with children via SaveAll
+--        so we can deprecate it without disturbing seed data.
+-- =============================================
+DECLARE @CellId BIGINT = (SELECT Id FROM Location.LocationType WHERE Code = N'Cell');
+DECLARE @SetupJson NVARCHAR(MAX) = N'[
+    {"Id":null,"AttributeName":"AttrA","DataType":"INT"},
+    {"Id":null,"AttributeName":"AttrB","DataType":"NVARCHAR"}
+]';
+DECLARE @CreatedId BIGINT;
+
+CREATE TABLE #Setup (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #Setup
+EXEC Location.LocationTypeDefinition_SaveAll
+    @Id              = NULL,
+    @LocationTypeId  = @CellId,
+    @Code            = N'TestDepDef',
+    @Name            = N'Test Deprecate Definition',
+    @AppUserId       = 1,
+    @AttributesJson  = @SetupJson;
+SELECT @CreatedId = NewId FROM #Setup;
+DROP TABLE #Setup;
+GO
+
+-- =============================================
+-- Test 1: Happy path -- deprecate fresh definition, children cascade
+-- =============================================
+DECLARE @CreatedId BIGINT = (SELECT Id FROM Location.LocationTypeDefinition WHERE Code = N'TestDepDef');
+DECLARE @S BIT, @M NVARCHAR(500);
+DECLARE @SStr NVARCHAR(1);
+
+CREATE TABLE #R1 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #R1
+EXEC Location.LocationTypeDefinition_Deprecate
+    @Id        = @CreatedId,
+    @AppUserId = 1;
+SELECT @S = Status, @M = Message FROM #R1;
+DROP TABLE #R1;
+
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual
+    @TestName = N'Happy path: Status=1',
+    @Expected = N'1',
+    @Actual   = @SStr;
+
+EXEC test.Assert_Contains
+    @TestName    = N'Happy path: Message mentions cascade count',
+    @HaystackStr = @M,
+    @NeedleStr   = N'cascaded';
+
+-- Parent has DeprecatedAt set
+DECLARE @ParentDepAt DATETIME2(3);
+SELECT @ParentDepAt = DeprecatedAt FROM Location.LocationTypeDefinition WHERE Id = @CreatedId;
+DECLARE @ParentDepIsSet BIT = CASE WHEN @ParentDepAt IS NOT NULL THEN 1 ELSE 0 END;
+EXEC test.Assert_IsTrue
+    @TestName  = N'Happy path: parent DeprecatedAt is set',
+    @Condition = @ParentDepIsSet;
+
+-- All 2 children also deprecated -> 0 active
+DECLARE @ActiveChildCount INT;
+SELECT @ActiveChildCount = COUNT(*) FROM Location.LocationAttributeDefinition
+WHERE LocationTypeDefinitionId = @CreatedId AND DeprecatedAt IS NULL;
+EXEC test.Assert_RowCount
+    @TestName      = N'Happy path: 0 active children after cascade',
+    @ExpectedCount = 0,
+    @ActualCount   = @ActiveChildCount;
+
+-- Total children (active + deprecated) still 2
+DECLARE @TotalChildCount INT;
+SELECT @TotalChildCount = COUNT(*) FROM Location.LocationAttributeDefinition
+WHERE LocationTypeDefinitionId = @CreatedId;
+EXEC test.Assert_RowCount
+    @TestName      = N'Happy path: 2 total children (rows not deleted, just deprecated)',
+    @ExpectedCount = 2,
+    @ActualCount   = @TotalChildCount;
+GO
+
+-- =============================================
+-- Test 2: Idempotent re-deprecate -- Status=1, Already deprecated
+-- =============================================
+DECLARE @CreatedId BIGINT = (SELECT Id FROM Location.LocationTypeDefinition WHERE Code = N'TestDepDef');
+DECLARE @S BIT, @M NVARCHAR(500);
+DECLARE @SStr NVARCHAR(1);
+
+CREATE TABLE #R2 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #R2
+EXEC Location.LocationTypeDefinition_Deprecate
+    @Id        = @CreatedId,
+    @AppUserId = 1;
+SELECT @S = Status, @M = Message FROM #R2;
+DROP TABLE #R2;
+
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual
+    @TestName = N'Re-deprecate already-deprecated: Status=1 (idempotent)',
+    @Expected = N'1',
+    @Actual   = @SStr;
+EXEC test.Assert_IsEqual
+    @TestName = N'Re-deprecate already-deprecated: Message = Already deprecated.',
+    @Expected = N'Already deprecated.',
+    @Actual   = @M;
+GO
+
+-- =============================================
+-- Test 3: FK guard -- DieCastMachine has 3 active Location rows, reject
+-- =============================================
+DECLARE @DieCastDefId BIGINT;
+SELECT @DieCastDefId = Id FROM Location.LocationTypeDefinition WHERE Code = N'DieCastMachine';
+DECLARE @S BIT, @M NVARCHAR(500);
+DECLARE @SStr NVARCHAR(1);
+
+CREATE TABLE #R3 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #R3
+EXEC Location.LocationTypeDefinition_Deprecate
+    @Id        = @DieCastDefId,
+    @AppUserId = 1;
+SELECT @S = Status, @M = Message FROM #R3;
+DROP TABLE #R3;
+
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual
+    @TestName = N'FK guard against active Locations: Status=0',
+    @Expected = N'0',
+    @Actual   = @SStr;
+EXEC test.Assert_Contains
+    @TestName    = N'FK guard: Message mentions cannot deprecate',
+    @HaystackStr = @M,
+    @NeedleStr   = N'Cannot deprecate';
+EXEC test.Assert_Contains
+    @TestName    = N'FK guard: Message mentions 3 active Locations',
+    @HaystackStr = @M,
+    @NeedleStr   = N'3 active Location';
+
+-- Verify DieCastMachine is still active (rejection did not mutate)
+DECLARE @StillActive BIT;
+SELECT @StillActive = CASE WHEN DeprecatedAt IS NULL THEN 1 ELSE 0 END
+FROM Location.LocationTypeDefinition WHERE Id = @DieCastDefId;
+EXEC test.Assert_IsTrue
+    @TestName  = N'FK guard: DieCastMachine still active after rejection',
+    @Condition = @StillActive;
+GO
+
+-- =============================================
+-- Test 4: Not found -- Id 99999 doesn't exist
+-- =============================================
+DECLARE @S BIT, @M NVARCHAR(500);
+DECLARE @SStr NVARCHAR(1);
+
+CREATE TABLE #R4 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #R4
+EXEC Location.LocationTypeDefinition_Deprecate
+    @Id        = 99999,
+    @AppUserId = 1;
+SELECT @S = Status, @M = Message FROM #R4;
+DROP TABLE #R4;
+
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual
+    @TestName = N'Not found: Status=0',
+    @Expected = N'0',
+    @Actual   = @SStr;
+EXEC test.Assert_IsEqual
+    @TestName = N'Not found: Message',
+    @Expected = N'LocationTypeDefinition not found.',
+    @Actual   = @M;
+GO
+
+-- =============================================
+-- Test 5: Required param missing (@Id NULL)
+-- =============================================
+DECLARE @S BIT, @M NVARCHAR(500);
+DECLARE @SStr NVARCHAR(1);
+
+CREATE TABLE #R5 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #R5
+EXEC Location.LocationTypeDefinition_Deprecate
+    @Id        = NULL,
+    @AppUserId = 1;
+SELECT @S = Status, @M = Message FROM #R5;
+DROP TABLE #R5;
+
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual
+    @TestName = N'Required param missing: Status=0',
+    @Expected = N'0',
+    @Actual   = @SStr;
+EXEC test.Assert_IsEqual
+    @TestName = N'Required param missing: Message',
+    @Expected = N'Required parameter missing.',
+    @Actual   = @M;
+GO
+
+-- =============================================
+-- Test 6: Audit trail -- success Deprecate logged to ConfigLog,
+--                       rejections logged to FailureLog
+-- =============================================
+DECLARE @ConfigCount INT;
+SELECT @ConfigCount = COUNT(*)
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType let ON let.Id = cl.LogEntityTypeId
+INNER JOIN Audit.LogEventType  evt ON evt.Id = cl.LogEventTypeId
+WHERE let.Code = N'LocationTypeDef'
+  AND evt.Code = N'Deprecated';
+
+-- At least 1 successful Deprecate audit row from Test 1
+DECLARE @HasConfig BIT = CASE WHEN @ConfigCount >= 1 THEN 1 ELSE 0 END;
+EXEC test.Assert_IsTrue
+    @TestName  = N'Audit ConfigLog: at least 1 Deprecate audit row',
+    @Condition = @HasConfig;
+
+DECLARE @FailureCount INT;
+SELECT @FailureCount = COUNT(*)
+FROM Audit.FailureLog fl
+INNER JOIN Audit.LogEntityType let ON let.Id = fl.LogEntityTypeId
+INNER JOIN Audit.LogEventType  evt ON evt.Id = fl.LogEventTypeId
+WHERE let.Code = N'LocationTypeDef'
+  AND evt.Code = N'Deprecated';
+
+-- At least 3 failure-log rows from tests 3 (FK guard), 4 (not found), 5 (param missing)
+DECLARE @HasFailures BIT = CASE WHEN @FailureCount >= 3 THEN 1 ELSE 0 END;
+EXEC test.Assert_IsTrue
+    @TestName  = N'Audit FailureLog: at least 3 rejection rows',
+    @Condition = @HasFailures;
+GO
+
+-- =============================================
+-- Cleanup: remove the deprecated test definition + its (deprecated) children
+-- =============================================
+DECLARE @CreatedId BIGINT = (SELECT Id FROM Location.LocationTypeDefinition WHERE Code = N'TestDepDef');
+IF @CreatedId IS NOT NULL
+BEGIN
+    DELETE FROM Location.LocationAttributeDefinition
+    WHERE LocationTypeDefinitionId = @CreatedId;
+    DELETE FROM Location.LocationTypeDefinition
+    WHERE Id = @CreatedId;
+END
+GO
+
+-- =============================================
+-- Final summary
+-- =============================================
+EXEC test.PrintSummary;
+GO

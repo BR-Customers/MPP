@@ -1,7 +1,5 @@
 {
-  "custom": {
-    "dismissAt": null
-  },
+  "custom": {},
   "params": {
     "id": "",
     "level": "info",
@@ -10,6 +8,14 @@
     "ttl": null
   },
   "propConfig": {
+    "custom.dismissAt": {
+      "binding": {
+        "config": {
+          "expression": "if(isNull({view.params.ttl}), null, dateArithmetic(now(0), {view.params.ttl}, \u0027second\u0027))"
+        },
+        "type": "expr"
+      }
+    },
     "custom.shouldClose": {
       "binding": {
         "config": {

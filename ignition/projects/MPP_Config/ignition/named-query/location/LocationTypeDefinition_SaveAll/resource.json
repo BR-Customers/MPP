@@ -1,0 +1,75 @@
+{
+  "scope": "DG",
+  "version": 2,
+  "restricted": false,
+  "overridable": true,
+  "files": [
+    "query.sql"
+  ],
+  "attributes": {
+    "useMaxReturnSize": false,
+    "autoBatchEnabled": false,
+    "fallbackValue": "",
+    "maxReturnSize": 100,
+    "cacheUnit": "SEC",
+    "type": "Query",
+    "enabled": true,
+    "cacheAmount": 1,
+    "cacheEnabled": false,
+    "database": "MPP",
+    "fallbackEnabled": false,
+    "lastModificationSignature": "",
+    "permissions": [
+      {
+        "zone": "",
+        "role": ""
+      }
+    ],
+    "lastModification": {
+      "actor": "jacques",
+      "timestamp": "2026-05-13T12:00:00Z"
+    },
+    "parameters": [
+      {
+        "type": "Parameter",
+        "identifier": "Id",
+        "sqlType": 2
+      },
+      {
+        "type": "Parameter",
+        "identifier": "LocationTypeId",
+        "sqlType": 2
+      },
+      {
+        "type": "Parameter",
+        "identifier": "Code",
+        "sqlType": -9
+      },
+      {
+        "type": "Parameter",
+        "identifier": "Name",
+        "sqlType": -9
+      },
+      {
+        "type": "Parameter",
+        "identifier": "Icon",
+        "sqlType": -9
+      },
+      {
+        "type": "Parameter",
+        "identifier": "Description",
+        "sqlType": -9
+      },
+      {
+        "type": "Parameter",
+        "identifier": "AppUserId",
+        "sqlType": 2
+      },
+      {
+        "type": "Parameter",
+        "identifier": "AttributesJson",
+        "sqlType": -9
+      }
+    ]
+  }
+}
