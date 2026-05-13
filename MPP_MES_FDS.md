@@ -4,8 +4,8 @@
 **Project:** Madison Precision Products MES Replacement
 **Prepared By:** Blue Ridge Automation
 **Client:** Madison Precision Products, Inc. (Madison, IN)
-**Version:** 1.0 — Customer Review Release
-**Date:** 2026-05-04
+**Version:** 1.1 — Customer Review Release
+**Date:** 2026-05-12
 
 ---
 
@@ -32,21 +32,57 @@ Comments may be returned as annotations on the Word document, an annotated PDF, 
 
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
+| 1.1 | 2026-05-12 | Blue Ridge Automation | **Customer Acceptance signature page added.** Replaces the v1.0 stub Approval table with a formal Customer Acceptance section: numbered acceptance statement (design intent, scope boundary, open-items acknowledgement, Phase 0 workshop carve-out, change control, reference-document handling), separate Prepared-By (Blue Ridge) and Accepted-By (MPP) signature blocks, and a Conditions or Exceptions register. No design-content changes elsewhere in the document. |
 | 1.0 | 2026-05-04 | Blue Ridge Automation | **First release for customer review.** Consolidates all pre-release working-session edits (v0.1 through v0.11p) into a single customer-facing release. Covers all 16 sections — System Architecture, Plant Model & Location Hierarchy, Master Data, User Identity / Authentication / Elevation, LOT Lifecycle & Genealogy, Production Execution, Container Management & Shipping, Quality & Hold, Downtime Tracking, PLC/OPC Integration, Audit & Logging, Reporting, External System Interfaces, Data Migration, Deployment & Commissioning, Identifier Sequences — plus appendices (machine list, downtime codes, defect codes, OPC tag map, MIP touchpoints, FRS crosswalk, scope matrix crosswalk, paper-sheet mapping). The embedded Open Items Register at the end of this document carries the **6 items still requiring resolution** (OI-32, OI-33, OI-34, OI-35, UJ-05, UJ-19) — these gate either Arc 2 SQL build or specific design sections and need MPP customer validation or Blue Ridge architecture review before commencement. |
 
 > Granular pre-release history (v0.1 through v0.11p — every working-session edit captured) is preserved in `MPP_MES_FDS_CHANGELOG.docx` as the design-evolution record. From v1.0 forward, revisions are tracked in this in-document table.
 
 ---
 
-## Approval
+## Customer Acceptance
+
+This page records formal acceptance of the MPP MES Functional Design Specification, Document **FDS-MPP-MES-001**, Version **1.1**, dated **2026-05-12**, by the parties below.
+
+### Acceptance Statement
+
+By signing this page, the signatory acknowledges that they have reviewed this Functional Design Specification and agree to the following:
+
+1. **Design intent.** The design described herein accurately reflects the requirements set out in the Flexware FRS v1.0 (3/15/2024) for the in-scope items defined in the MPP Scope Matrix, and constitutes Blue Ridge Automation's authoritative design basis for the implementation phase.
+2. **Scope boundary.** The MVP and MVP-EXPANDED items defined in §1.3 (Scope Matrix Cross-Reference) and elaborated in Sections 2 through 16 represent the complete delivery scope of this engagement, except where CONDITIONAL items have been separately approved in writing. Items tagged FUTURE are designed-for in the data model but are explicitly out of delivery scope for this phase.
+3. **Open items.** Six items remain Open at the time of this acceptance — **OI-32** (Material Allocation operator screen), **OI-33** (AIM pool empty-pool hard-fail), **OI-34** (production schedule leverage), **OI-35** (long-horizon scaling, retention, and archiving), **UJ-05** (Sort Cage serial migration), and **UJ-19** (Productivity DB replacement report set). Signature on this page does **not** constitute resolution of these items. Each requires explicit resolution by its named owner before the affected section can be considered closed. Resolution of **OI-35** is a hard prerequisite to commencement of Arc 2 Phase 1 SQL build.
+4. **Phase 0 Customer Validation Workshop.** A customer-validation workshop with MPP remains required before Arc 2 Phase 1 SQL build commences, covering the eight Track-A items listed in the project status record (FDS-06-030 BIT-flag enumeration, historical data migration, ShotCount semantics, Workstation `DefaultScreen` + `ConfirmationMethod` seeding, Honda AIM Hold/Update contract detail, label template scope, OI-32 framing, OI-33 customer validation). Acceptance of this FDS does not waive that workshop.
+5. **Change control.** Any change to design, scope, schedule, or deliverable list following this acceptance requires a written change request signed by signatories of equivalent authority to those accepting this document. Verbal agreements, email threads, and meeting notes are not sufficient to alter the design baseline.
+6. **Reference documents.** This FDS references the companion documents listed in the Scope Statement (Data Model, ERD, User Journeys, Phased Plans, Seeding Registry, SQL Best Practices). Changes to those companion documents that materially affect this FDS will be reflected in a subsequent revision of this document.
+
+### Prepared By — Blue Ridge Automation
 
 | Role | Name | Signature | Date |
 |---|---|---|---|
-| Blue Ridge — Project Lead | | | |
-| MPP — Engineering | | | |
-| MPP — Production Control | | | |
-| MPP — Quality | | | |
-| MPP — IT | | | |
+| Project Lead | | | |
+| Solutions Engineer (Document Author) | Jacques Potgieter | | |
+
+### Accepted By — Madison Precision Products, Inc.
+
+| Role | Name | Signature | Date |
+|---|---|---|---|
+| Engineering | | | |
+| Production Control | | | |
+| Quality | | | |
+| Information Technology | | | |
+| Operations / Plant Management | | | |
+
+### Conditions or Exceptions
+
+Signatories may record exceptions to specific FDS requirements, sections, or scope items in the space below. Exceptions noted here become an addendum to this FDS and carry the same authority as the document body. Attach additional pages if the space below is insufficient.
+
+| # | Section / Requirement ID | Exception or Condition | Signatory Initials |
+|---|---|---|---|
+| 1 |  |  |  |
+| 2 |  |  |  |
+| 3 |  |  |  |
+| 4 |  |  |  |
+| 5 |  |  |  |
+| 6 |  |  |  |
 
 ---
 
