@@ -177,6 +177,70 @@ SELECT @NewId AS OutputId  -- this is what you want to read
 
 …will hand the caller the *data rows* (or, with OUTPUT params declared, the OUTPUT row) and silently drop everything else. The status-row pattern above sidesteps this entirely by returning exactly one result set per proc.
 
+## Bundled mutations — `SaveAll` for parent + dependent children
+
+The default mutation shape is one proc per action: `Add<Entity>`, `Update<Entity>`, `Deprecate<Entity>`. That works cleanly when an entity stands alone or when its child rows can be edited independently.
+
+For entities whose children are not independently editable — where the parent and its children form a single editing unit, saved together or not at all — use a **`SaveAll` proc** that takes the parent fields plus a JSON array of children, and reconciles them in one transaction.
+
+### When to use
+
+| The case | Pattern |
+|---|---|
+| Entity has no children, or children are independently CRUD'd elsewhere | Separate `Add<Entity>` / `Update<Entity>` / `Deprecate<Entity>` |
+| Children are a tightly coupled part of the parent — created together, edited together on one screen, never edited in isolation | One `Save<Entity>All` proc + a single Save button |
+
+Reach for `SaveAll` only when the children genuinely cannot live without the parent's editing context — definition rows for a type, line items on a document, attribute schemas. Don't use it just to save a script round-trip.
+
+### Shape
+
+`SaveAll` takes:
+
+- **Parent identity:** `@Id BIGINT = NULL` (NULL = create, non-NULL = update). On update, immutable parent keys (e.g., `Code`, `<ParentType>Id`) must match the existing row; the proc rejects mismatches with `Status='ERROR'`.
+- **Parent fields:** the same fields a separate Update proc would take.
+- **`@AppUserId BIGINT`** for audit.
+- **`@<Children>Json NVARCHAR(MAX) = N'[]'`** — desired-state JSON array of child rows. Each element has `{Id: long|null, ...child fields}`. Children with no `Id` are new; matching `Id` is an update; active children whose `Id` is missing from the incoming array are deprecated. `SortOrder` is derived from the array index (1-based).
+
+Returns the same status row shape as any mutation proc: `SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;` (`@NewId` is the parent's `Id` — newly assigned on create, echoed back on update).
+
+### Reconciliation rules
+
+In update mode, the proc walks the incoming JSON array against currently active children and performs three set operations:
+
+| Set | Action |
+|---|---|
+| Active child whose `Id` is **not** in incoming | DEPRECATE |
+| Incoming row whose `Id` matches an active child | UPDATE |
+| Incoming row with `Id = NULL` | INSERT |
+
+All three sets execute inside the same transaction. Any failure rolls back the parent and every child change together. A filtered `UNIQUE` index on the natural child key (e.g., `(<ParentId>, <ChildName>) WHERE DeprecatedAt IS NULL`) is the safety net against racing saves.
+
+### Script-side shape
+
+```python
+def handleSaveAll(meta, children, userId=None):
+    if userId is None:
+        userId = <integrator>.Common.Util._currentAppUserId()
+    params = {
+        "Id":            meta.get("Id"),
+        # ...parent fields...
+        "AppUserId":     userId,
+        "ChildrenJson":  system.util.jsonEncode(children or []),
+    }
+    return <integrator>.Common.Db.execMutation("<group>/save<Entity>All", params)
+```
+
+Caller routes the result through `Common.Ui.notifyResult` like any other mutation. After a successful save, the caller typically re-runs the relevant `execList` calls to refresh both the parent's display row and the children's table.
+
+### Why not separate procs with view-side transactional bracketing
+
+Ignition does not expose multi-NQ transactional bracketing as a first-class primitive. Splitting `SaveAll` into separate `Add/Update<Parent>` + per-child `Add/Update/Deprecate<Child>` calls means either:
+
+- **No transaction across calls** — partial-failure leaves the parent updated but children in a half-applied state. Operator sees a confusing toast about "row 3 failed" and no obvious recovery path.
+- **Optimistic patch logic** in the view (try parent, then each child, roll back the parent on any child failure) — fragile, untestable, easy to get wrong, leaks DB-shape concerns into UI code.
+
+`SaveAll` lives in one proc precisely because the rollback path is already SQL's strong suit. The cost is a slightly larger proc; the win is correctness under partial failure.
+
 ## Cache config for read-heavy lookup tables
 
 For NQs that hit slow-changing reference data (defect codes, downtime reasons, location types), enable gateway-side caching:

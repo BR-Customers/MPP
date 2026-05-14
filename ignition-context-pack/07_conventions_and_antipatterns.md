@@ -344,11 +344,18 @@ eval(script + ".add('{0}')".format(uuid))
 
 Brittle, security-smell, breaks IDE refactoring, untyped, kills any "find usages" search. **Better:** explicit handler functions, or a message-based dispatch where the button publishes `system.perspective.sendMessage("save", payload)` and the view that owns the data subscribes.
 
-### Upsert procs (one proc handles INSERT and UPDATE)
+### Upsert procs (one proc handles INSERT and UPDATE of the *same* entity)
 
-`add<Entity>` is called by both `add()` and `update()` script functions, distinguishing between insert and update by whether the ID is null or not. Hides intent in the proc, complicates the SQL, makes the result-row contract ambiguous (do we have a `NewId` or not?).
+`add<Entity>` is called by both `add()` and `update()` script functions, distinguishing between insert and update on a stand-alone entity by whether the ID is null. Hides intent in the proc, complicates the SQL, makes the result-row contract ambiguous (do we have a `NewId` or not?), and forces every caller to know it's calling an upsert.
 
 **Better:** separate `Add<Entity>` and `Update<Entity>` procs / NQs. Each has a clear contract: Add returns `Status`+`Message`+`NewId`, Update returns `Status`+`Message`.
+
+**Not the same thing — `SaveAll` for parent + dependent children.** A `SaveAll<Parent>` proc that takes parent fields plus a JSON array of children and reconciles them in one transaction (insert-on-null-id / update-on-match / deprecate-on-absent) is a different pattern and is *not* an upsert anti-pattern. The distinction:
+
+- **Upsert:** one proc handles "insert OR update *one entity*" — the caller pretends it doesn't know which. Hides intent. Avoid.
+- **SaveAll:** one proc handles "save *this parent with these children* atomically" — the caller knows it's editing the whole bundle. Explicit. Use it when children are tightly coupled to the parent and never edited in isolation.
+
+See `04_named_queries.md` → "Bundled mutations — `SaveAll` for parent + dependent children" for the full pattern.
 
 ### Multi-line Python pasted into `view.json` event configs
 
