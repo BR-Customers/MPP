@@ -10,11 +10,11 @@ The content is technology-specific (Ignition 8.3 file-based projects, Perspectiv
 |---|---|
 | `01_project_layout.md` | Filesystem shape of a file-based 8.3 project. `resource.json` metadata model, scope codes, project inheritance. |
 | `02_perspective_views.md` | `view.json` structure: top-level keys, component tree, bindings, events, style classes, page-config router, session props, common idioms. |
-| `03_script_python.md` | `script-python` package layout, standard CRUD module shape, logging idiom, Util helpers (`extractQualifiedValues`, `convertWrapperObjectToJson`), data-shape conventions for UI bindings. |
-| `04_named_queries.md` | Named-query layout, thin `EXEC` wrapper convention, `sqlType` codes, dataset → `list[dict]` consumption, status-row mutation pattern. |
+| `03_script_python.md` | `script-python` package layout, standard CRUD module shape, `Common.Db` / `Common.Ui` / `Common.Util` helper implementations (`execList`, `execOne`, `execMutation`, `notifyResult`, `log`, `_currentAppUserId`, `extractQualifiedValues`, `convertWrapperObjectToJson`), data-shape conventions for UI bindings. |
+| `04_named_queries.md` | Named-query layout, thin `EXEC` wrapper convention, `sqlType` codes, dataset → `list[dict]` consumption, default status-row mutation pattern. |
 | `05_lifecycle_and_timers.md` | Project lifecycle scripts (`startup`, `shutdown`, `update`) and timer-script structure. |
 | `06_component_quirks.md` | DevTools-verified specifics: actual DOM class names, format-token differences between components, table-component virtualized DOM, value type quirks. |
-| `07_conventions_and_antipatterns.md` | Naming and layout rules ("root" container, no `psc-` prefix, `position.display` for conditional flex visibility, underscore folder convention). Plus anti-patterns to flag rather than silently propagate. |
+| `07_conventions_and_antipatterns.md` | View authoring rules ("root" container, no `psc-` prefix, `position.display` for conditional flex visibility, underscore folder convention, no drag-and-drop). Save semantics (`editDraft` + explicit Save, no auto-save, no nav guard, dirty indicator). Versioned-entity workflow (Draft / Published / Deprecated, optimistic locking via `RowVersion`, `EffectiveFrom` scheduled-publish). Audit user attribution via `session.custom.appUserId`. Mutation feedback via `notifyResult`. Anti-patterns to flag rather than silently propagate. |
 
 Read in order if you're new to Ignition projects. Skim by topic if you're solving a specific problem.
 
@@ -61,9 +61,10 @@ For one-off prompts in a chat-style interface, paste the specific section you ne
 
 When asking an agent to do Ignition work, name the relevant files explicitly. The agent will infer how to apply them, but stating the rule prevents drift:
 
-- **"Build a new Perspective view"** — specify "follow the `view.json` structure in `02_perspective_views.md` and the conventions in `07_conventions_and_antipatterns.md`. Top-level component keeps `meta.name: "root"`. Reference style classes by suffix only (no `psc-` prefix). Use `position.display` for conditional flex visibility."
-- **"Add a CRUD module"** — "follow the standard module shape in `03_script_python.md`. Mirror the `getAll` / `getOne` / `add` / `update` / `archive` surface."
-- **"Add a named query"** — "thin `EXEC` wrapper per `04_named_queries.md`. If this is a mutation, return the status-row shape (`Status` / `Message` / `NewId`) and consume it as documented."
+- **"Build a new Perspective view"** — "follow the `view.json` structure in `02_perspective_views.md` and the conventions in `07_conventions_and_antipatterns.md`. Top-level component keeps `meta.name: "root"`. Reference style classes by suffix only (no `psc-` prefix). Use `position.display` for conditional flex visibility. Form inputs bind bidirectionally to `view.custom.editDraft.*` — never auto-save on writeback."
+- **"Add a CRUD module"** — "follow the standard module shape in `03_script_python.md`. Mirror the `getAll` / `getOne` / `add` / `update` / `deprecate` surface. Entity scripts call `<integrator>.Common.Db.*` helpers, never `system.db.*` directly. Pass `@AppUserId` via `Common.Util._currentAppUserId()`. Pass `@RowVersion` on Update / Deprecate for optimistic locking."
+- **"Add a named query"** — "thin `EXEC` wrapper per `04_named_queries.md`. Mutations follow the status-row pattern (`SELECT @Status, @Message, @NewId`) and are consumed via `Common.Db.execMutation`. No OUTPUT params."
+- **"Wire up a Save button"** — "follow Save semantics in `07_conventions_and_antipatterns.md`: Save is an explicit user click that reads `view.custom.editDraft`, calls the entity script's `update` / `add`, routes the result through `Common.Ui.notifyResult`, commits `selected = editDraft` on success, sends `refreshTrigger`. No auto-save on bindings, no nav guard, dirty indicator via expression."
 - **"Fix table styling"** — "table component DOM is virtualized — consult `06_component_quirks.md` for actual class names before writing CSS selectors."
 
 ## Versioning + portability

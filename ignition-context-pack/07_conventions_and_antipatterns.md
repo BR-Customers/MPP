@@ -104,6 +104,194 @@ Every entry in `page-config/config.json` should include a `title` field. The bro
 
 Pages where the title varies with selection (e.g., editors that show the current entity's name) MAY override `page.title` at runtime via session script, but the static fallback in `page-config` should still be present.
 
+### No drag-and-drop
+
+Sortable lists use up / down arrow buttons, not HTML5 drag-and-drop. Touch screens on the plant floor handle taps reliably and drags poorly; the same UI works in both keyboard-driven and touch-driven contexts; it is also far easier to test deterministically.
+
+Arrow clicks mutate `editDraft.<list>` ordering locally; Save commits the new order (see "Save semantics" below).
+
+## Save semantics — `editDraft` with an explicit Save button
+
+The DB is touched only when the user explicitly clicks **Save**. Form inputs mutate a local `editDraft` object — never the source-of-truth `selected` or the DB.
+
+### The pattern
+
+Every editing surface (Add modal, Edit modal, in-place editor pane) maintains two view-level custom properties:
+
+```json
+"custom": {
+  "selected":  {},   // the currently selected entity, as last loaded from DB
+  "editDraft": {}    // in-flight edits; form components bind bidirectionally to this
+}
+```
+
+When the user selects a row:
+
+```python
+self.view.custom.selected  = selected_row
+self.view.custom.editDraft = dict(selected_row)   # shallow copy
+```
+
+Form components (text fields, dropdowns, checkboxes) bind bidirectionally to `editDraft.<field>` paths (see `02_perspective_views.md` → "Bidirectional binding"). **Edits to `editDraft` do not write to the DB.**
+
+Save:
+
+```python
+result = <integrator>.<Domain>.<Entity>.update(self.view.custom.editDraft)
+<integrator>.Common.Ui.notifyResult(result, successText="Saved")
+if result["Status"] == "OK":
+    self.view.custom.selected = dict(self.view.custom.editDraft)
+    system.perspective.sendMessage("refreshTrigger")
+```
+
+Cancel:
+
+```python
+self.view.custom.editDraft = dict(self.view.custom.selected)
+```
+
+### Universal rules
+
+1. **Zero auto-save.** No bound checkbox, dropdown, arrow click, or toggle writes to the DB on its own. Every database write is the result of an explicit click on a Save (or Save-equivalent: Publish, Deprecate) button.
+2. **No navigation guard.** Switching to a different entity (clicking another row) silently replaces `editDraft` with the new entity's data. The dirty indicator is the warning — modal interrupts disrupt workflow more than they help.
+3. **Multi-tab forms share one `editDraft`.** Editors with multiple tabs (e.g., Item Master with several tabs per item) keep one `editDraft` across tabs. Tab switches do not commit. Save persists changes from every tab together. Switching to a different *entity* discards all of it.
+4. **Up / Down arrows mutate `editDraft` ordering only.** Reordering a list (e.g., Route steps) updates `editDraft.steps[]` order locally; Save commits the new order. There is no `_MoveUp` / `_MoveDown` proc called per click.
+5. **Toggle controls (`IsActive`, etc.) do not auto-save.** They flip a property on `editDraft`; Save commits.
+
+### Dirty indicator
+
+Whenever `editDraft != selected`, display a visual cue — no popup, no nav block, no DB call:
+
+```json
+"propConfig": {
+  "props.text": {
+    "binding": {
+      "type": "expr",
+      "config": { "expression": "if({view.custom.editDraft} != {view.custom.selected}, '● Unsaved changes', '')" }
+    }
+  }
+}
+```
+
+## Mutation feedback — route every result through `notifyResult`
+
+Every mutation in the UI ends with one call to `<integrator>.Common.Ui.notifyResult(result, successText, errorText=None)`. The helper inspects `result["Status"]` and sends a `"notify"` Perspective message to the shared `NotificationBanner` view — green toast on success, red toast on failure with the proc's `Message` text.
+
+Wire this into the Save event after the mutation call:
+
+```python
+result = <integrator>.Items.Item.update(self.view.custom.editDraft)
+<integrator>.Common.Ui.notifyResult(result, successText="Saved")
+if result["Status"] == "OK":
+    ...
+```
+
+`NotificationBanner` (a project-shared view subscribed to message `"notify"`) is mounted once in the top dock or session-overlay container. Payload contract: `{type, text, durationMs?}`. See `03_script_python.md` → "Common.Ui" for the helper implementation and banner behavior.
+
+**Don't reimplement notification logic per screen.** A button that calls `notifyResult` should never also do `system.perspective.sendMessage(...)` for the same outcome — that's a sign someone bypassed the helper. Fix the bypass; don't double-route.
+
+## Versioned-entity workflow — Draft / Published / Deprecated
+
+For configuration entities that need version history (e.g., recipes, route templates, BOMs, quality specs), use a three-state lifecycle on the row itself rather than a parallel "drafts" table.
+
+### State machine
+
+| State | DB shape | Buttons shown |
+|---|---|---|
+| **Draft** | `PublishedAt IS NULL AND DeprecatedAt IS NULL` | Discard, Save, Publish |
+| **Published** | `PublishedAt IS NOT NULL AND DeprecatedAt IS NULL` | Edit, Deprecate |
+| **Deprecated** | `DeprecatedAt IS NOT NULL` | (view only) |
+
+Transitions:
+
+- **Editing a Published version** creates a new Draft row with `VersionNumber + 1` (procedure: `<Entity>_CreateNewVersion`).
+- **Saving a Draft** mutates the Draft row in place — no new row per Save.
+- **Publishing a Draft** sets its `PublishedAt = getdate()` and stamps `DeprecatedAt = getdate()` on the previous Published version.
+- **Discarding a Draft** hard-deletes that row (the only legitimate `DELETE`).
+- **Published → Deprecated** is the only forward path from Published other than Edit.
+- A Published version cannot be un-Published; correct mistakes by Editing (creates a new Draft) or Deprecating.
+
+### Edit-when-Draft-already-exists
+
+If a user clicks **Edit** on a Published version and a Draft for the same logical entity already exists (created by them or someone else), present a dialog before opening the editor:
+
+```
+A draft already exists for this Route
+
+Draft v4 — last edited 2 days ago by Jen Lewis
+
+○ Continue editing existing Draft
+○ Start fresh from current Published
+  (Draft v4 will be discarded)
+
+                              [Cancel] [Continue]
+```
+
+Default selection: "Continue editing existing Draft." If "Start fresh" is chosen, the existing Draft is discarded (hard-deleted) before the new Draft row is created from the Published version.
+
+The check happens in the entity script's `getCurrentDraft(logicalId)` call before opening the editor. The dialog appears only if a Draft is found.
+
+### Validation timing
+
+| Action | Validation level | Rationale |
+|---|---|---|
+| Save (on Draft) | None at proc level. UI may flag missing-required-fields visually. | Drafts may be incomplete — saving partial work is the whole point. |
+| Publish | Full validation in the proc. Returns `Status='ERROR'` with a specific `Message` if any rule fails. | Publishing means "this version goes live" — must be complete. |
+| Deprecate | Minimal — proc checks current state is Published. | Deprecation rarely fails; the main check is state. |
+
+The UI may preflight-validate Publish (e.g., disable the Publish button until required fields are populated) for UX. The proc remains authoritative — a clickable button is not a guarantee the Publish will succeed.
+
+### Optimistic locking via `RowVersion`
+
+Every versioned-entity table carries a `RowVersion BIGINT` column (or SQL Server's native `rowversion`, projected to `BIGINT` for JDBC). Every Update proc:
+
+1. Accepts `@RowVersion` as a parameter.
+2. Compares it to the row's current `RowVersion` before applying changes.
+3. On mismatch: returns `Status='ERROR', Message='This record was modified by another user. Please reload and try again.'` — surfaced via the standard `notifyResult` path.
+4. On match: applies changes, increments `RowVersion`, returns `Status='OK'`.
+
+Views load `RowVersion` with the row, never touch it during editing, and pass it through on save. `editDraft.RowVersion` is the same value as `selected.RowVersion`.
+
+### `EffectiveFrom` (scheduled-publish) constraint
+
+When a versioned entity needs to be published *in advance* of going live, add an `EffectiveFrom DATE` column distinct from `PublishedAt DATETIME2(3)`:
+
+| Column | Type | Meaning |
+|---|---|---|
+| `PublishedAt` | `DATETIME2(3)` | When the user clicked Publish. Set by the Publish proc. |
+| `EffectiveFrom` | `DATE` | When the version becomes operationally active. User-chosen at Publish time. |
+
+Constraint: `EffectiveFrom >= cast(getdate() as date)` at Publish time. Validated in the proc; the UI also disables the Publish button when the picker date is in the past. UI default: today's date.
+
+Plant-floor consumption queries filter by `PublishedAt IS NOT NULL AND DeprecatedAt IS NULL AND EffectiveFrom <= today`, taking the highest `VersionNumber` that satisfies all three.
+
+**Future-effective badge** — Published rows where `EffectiveFrom > today` show a small badge in the list view:
+
+```
+v4   Published    Effective 06/15
+v3   Published    (current)
+v2   Deprecated
+```
+
+Bound via expression:
+
+```
+if({row.EffectiveFrom} > today(), 'Effective ' + dateFormat({row.EffectiveFrom}, 'MM/dd'), '')
+```
+
+## Audit user attribution — `session.custom.appUserId`
+
+At login, resolve the operator's identity (typically from an AD lookup or initials-based attribution) into an internal `AppUserId` and store it on the session:
+
+```python
+# In a login flow:
+self.session.custom.appUserId = <integrator>.Common.User.resolveByAd(self.session.props.auth.user.userName)
+```
+
+Every mutation passes this to the proc as `@AppUserId`. Entity scripts inject it via `<integrator>.Common.Util._currentAppUserId()` so views never have to remember.
+
+Why a resolved internal id (not the AD username): the database uses `BIGINT FK → AppUser.Id` for all author columns. Resolving once at login amortizes the AD lookup and gives the rest of the application a stable, type-safe identifier.
+
 ## Folder naming conventions
 
 ### Underscore-prefix component folders are per-component, not per-domain

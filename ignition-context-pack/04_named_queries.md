@@ -102,66 +102,80 @@ When in doubt, set the parameter in the Designer NQ editor and copy the resultin
 
 ## Calling pattern from script-python
 
-```python
-def getAllItems():
-    results = system.db.execQuery("items/getAllItems")
-    headers = list(results.getColumnNames())
-    return [dict(zip(headers, row)) for row in results]
+Entity scripts go through the `<integrator>.Common.Db.*` helpers (see `03_script_python.md`) — they don't call `system.db.execQuery` directly. The helpers own the `dict(zip(headers, row))` idiom so every entity script reads cleanly:
 
-def addItem(data):
-    if isinstance(data, str):
-        data = system.util.jsonDecode(data)
+```python
+# Reads
+def getAll():
+    return <integrator>.Common.Db.execList("items/getAllItems")
+
+def getOne(itemId):
+    return <integrator>.Common.Db.execOne("items/getItem", {"ItemId": itemId})
+
+# Mutation — returns the proc's status dict {Status, Message, NewId}
+def add(data):
     params = {
-        'partNumber':   data.get('partNumber'),
-        'description':  data.get('description'),
-        'userId':       data.get('userId'),
+        "PartNumber":  data.get("PartNumber"),
+        "Description": data.get("Description"),
+        "AppUserId":   <integrator>.Common.Util._currentAppUserId(),
     }
-    return system.db.execQuery("items/addItem", params)
+    return <integrator>.Common.Db.execMutation("items/addItem", params)
 ```
 
-The `dict(zip(headers, row))` idiom converts an Ignition Dataset → `list[dict]` in two lines. Wrap it in a `Common.Db.execList(nq, params)` helper if your project pulls many lists; otherwise inline is fine.
+Why not inline the `dict(zip(...))` here: a project that pulls many lists ends up with that idiom in 50+ places, and it's the only place where cross-cutting concerns (logging the call, auditing the user, wrapping transient retries) can be added. Centralize it once in `Common.Db`.
 
-## Mutation result patterns
+## Mutation result pattern — single-row status SELECT
 
-Stored procedures that need to communicate success / failure / new-id back to the caller have a few options:
-
-### Option A — exception on failure, no return shape
-
-The proc raises (`RAISERROR` in SQL Server) on any failure. The NQ call throws to script-python and the caller wraps in try/except. Success cases need no return shape.
-
-Simple, but every "expected" failure (validation rejections, FK violations) becomes an exception, which conflates business outcomes with system errors.
-
-### Option B — single-row status SELECT at the end
-
-Every mutation proc declares local `@Status`, `@Message`, `@NewId` variables and ends each exit path with:
+**Default pattern.** Every mutation proc (Add / Update / Deprecate) declares local `@Status`, `@Message`, `@NewId` variables and ends each exit path with a single-row SELECT:
 
 ```sql
 SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
 ```
 
-(`@NewId` only on Insert procs that allocate identity; Update / Deprecate procs return `Status` + `Message` only.)
+(`@NewId` is included only on Insert procs that allocate identity; Update / Deprecate procs SELECT `@Status` + `@Message` only.)
 
-Script-side consumption:
+**Caller consumption** — through `Common.Db.execMutation`:
 
 ```python
-def addItem(data):
-    params = { ... }
-    results = system.db.execQuery("items/addItem", params)
-    headers = list(results.getColumnNames())
-    rows = [dict(zip(headers, row)) for row in results]
-    return rows[0] if rows else {"Status": "ERROR", "Message": "no rows returned"}
+result = <integrator>.Common.Db.execMutation("items/addItem", params)
+# result is a plain dict:
+#   {"Status": "OK",    "Message": "Item created",   "NewId": 4172}
+#   {"Status": "ERROR", "Message": "Duplicate part", "NewId": None}
+
+if result["Status"] == "OK":
+    # success path — NewId is available if the proc returned it
+    ...
+else:
+    # business-rule failure — surface result["Message"] to the UI
+    ...
 ```
 
-The caller then checks `result["Status"] == "OK"` and surfaces `result["Message"]` to the UI on error.
+This pattern separates expected failure from exceptional failure cleanly:
 
-This pattern handles expected-failure (validation) and exceptional-failure (SQL error → `RAISERROR`) cleanly:
+- **Validation / business-rule failure** → proc sets `@Status='ERROR'`, populates `@Message`, falls through to the final SELECT, returns normally. Caller surfaces `Message` to the UI via `Common.Ui.notifyResult`. Not an exception.
+- **System error / programming bug** → proc `RAISERROR` propagates as a `system.db` exception. Caller may wrap in try/except for logging, but typically doesn't need to.
 
-- Validation / business-rule failure → proc returns a row with `Status='ERROR'`, never raises. Caller surfaces `Message` to the UI.
-- System error / programming bug → proc `RAISERROR` propagates as a `system.db` exception. Caller may wrap in try/except for logging.
+The plain-dict result shape (keys match the proc's SELECT aliases) means adding a new column to the proc — e.g., `@AffectedRows` for batch operations — automatically appears in the caller's result without changing any helper code.
 
-### Option C — JDBC OUTPUT params
+### Why not exceptions for all failures
 
-**Avoid in Ignition.** The Ignition JDBC driver reads OUTPUT params as the first result set and ignores subsequent SELECTs. If your proc wants to return both data rows and an output ID, use option B (status SELECT at end) instead. OUTPUT params are silent failure waiting to happen.
+The naive alternative is to `RAISERROR` on every failure (validation, FK violation, anything) and let the script catch. Two problems:
+
+- Every "expected" failure becomes an exception in the script and in the gateway logs, which conflates business outcomes with system errors.
+- The proc has no clean way to return a structured message for the UI — the exception text is what the caller gets, and exception text isn't designed for end-user display.
+
+Use exceptions for things the operator can't fix (programming bugs, DB unavailable). Use the status row for things they can (duplicate part number, missing required field, stale RowVersion).
+
+### Why not JDBC OUTPUT params
+
+**Avoid OUTPUT params in Ignition.** The Ignition JDBC driver reads OUTPUT params as the first result set and ignores subsequent SELECTs. A proc that does:
+
+```sql
+SELECT ...data rows...
+SELECT @NewId AS OutputId  -- this is what you want to read
+```
+
+…will hand the caller the *data rows* (or, with OUTPUT params declared, the OUTPUT row) and silently drop everything else. The status-row pattern above sidesteps this entirely by returning exactly one result set per proc.
 
 ## Cache config for read-heavy lookup tables
 

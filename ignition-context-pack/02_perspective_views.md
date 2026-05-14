@@ -231,20 +231,34 @@ Per-view `permissions.securityLevels` covers the whole view. For per-button or p
 
 Tooltip's enable bound to the negation, so the disabled button shows "You don't have permissions" on hover.
 
-## Bidirectional binding + writeback
+## Bidirectional binding — for `editDraft` form fields, not auto-save
 
-For inline-edit fields:
+Bidirectional bindings let a form input (text field, dropdown, checkbox) write back into a custom property as the user types. Use this on `editDraft.*` fields so the form mutates draft state without touching the DB:
 
 ```json
-"custom.editDraft": {
-  "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.selected" } },
-  "onChange": {
-    "script": "if origin == 'BindingWriteback':\n    project.MyDomain.MyEntity.update(self.custom.editDraft)"
+// Text-field component bound bidirectionally to the draft's Description
+"propConfig": {
+  "props.text": {
+    "binding": {
+      "type": "property",
+      "config": { "bidirectional": true, "path": "view.custom.editDraft.Description" }
+    }
   }
 }
 ```
 
-Always check `origin == 'BindingWriteback'` to distinguish user-initiated writes from upstream prop changes; otherwise the handler will recurse on every load.
+Every form field on the editor binds bidirectionally into `view.custom.editDraft`. The DB is touched only when the user clicks Save — never on each keystroke or dropdown change.
+
+**Anti-pattern — auto-save on writeback:**
+
+```json
+// DON'T do this — turns every keystroke into a DB write
+"onChange": {
+  "script": "if origin == 'BindingWriteback':\n    project.MyDomain.MyEntity.update(self.custom.editDraft)"
+}
+```
+
+Calling `.update(...)` from an `onChange` handler is a misuse of `BindingWriteback` — it conflates "the user typed something" with "the user wants to commit." Use an explicit Save button instead (see `07_conventions_and_antipatterns.md` → "Save semantics"). The `origin == 'BindingWriteback'` guard is still useful for genuinely reactive UI work (e.g., recomputing a derived field locally when a source field changes) — just not for triggering DB writes.
 
 ## Inter-component messaging
 
