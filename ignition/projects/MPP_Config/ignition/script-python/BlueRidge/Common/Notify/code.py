@@ -39,7 +39,7 @@
 logger = system.util.getLogger("BlueRidge.Common.Notify")
 
 # ---- Tunables -------------------------------------------------------------
-DEFAULT_TTL_SEC = 8
+DEFAULT_TTL_SEC = 5
 MAX_VISIBLE     = 5
 STACK_TOP_START = 10        # px from top of viewport for first toast
 STACK_TOP_STEP  = 110       # px between stacked toasts

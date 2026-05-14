@@ -32,13 +32,13 @@
     "parameters": [
       {
         "type": "Parameter",
-        "identifier": "Id",
-        "sqlType": 2
+        "identifier": "id",
+        "sqlType": 3
       },
       {
         "type": "Parameter",
-        "identifier": "AppUserId",
-        "sqlType": 2
+        "identifier": "appUserId",
+        "sqlType": 3
       }
     ]
   }

@@ -138,8 +138,8 @@ Save:
 
 ```python
 result = <integrator>.<Domain>.<Entity>.update(self.view.custom.editDraft)
-<integrator>.Common.Ui.notifyResult(result, successText="Saved")
-if result["Status"] == "OK":
+<integrator>.Common.Ui.notifyResult(result, successTitle="Saved")
+if result.get("Status"):
     self.view.custom.selected = dict(self.view.custom.editDraft)
     system.perspective.sendMessage("refreshTrigger")
 ```
@@ -175,20 +175,47 @@ Whenever `editDraft != selected`, display a visual cue — no popup, no nav bloc
 
 ## Mutation feedback — route every result through `notifyResult`
 
-Every mutation in the UI ends with one call to `<integrator>.Common.Ui.notifyResult(result, successText, errorText=None)`. The helper inspects `result["Status"]` and sends a `"notify"` Perspective message to the shared `NotificationBanner` view — green toast on success, red toast on failure with the proc's `Message` text.
+Every mutation in the UI ends with one call to `<integrator>.Common.Ui.notifyResult(result, successTitle, successMsg=None, errorTitle=None)`. The helper inspects `result["Status"]` (truthy = success, falsy = business-rule failure) and fires a toast via `<integrator>.Common.Notify.toast` — success toast with `successTitle`/`successMsg` on success, error toast carrying the proc's `Message` on failure.
 
 Wire this into the Save event after the mutation call:
 
 ```python
 result = <integrator>.Items.Item.update(self.view.custom.editDraft)
-<integrator>.Common.Ui.notifyResult(result, successText="Saved")
-if result["Status"] == "OK":
+<integrator>.Common.Ui.notifyResult(result, successTitle="Saved")
+if result.get("Status"):
     ...
 ```
 
-`NotificationBanner` (a project-shared view subscribed to message `"notify"`) is mounted once in the top dock or session-overlay container. Payload contract: `{type, text, durationMs?}`. See `03_script_python.md` → "Common.Ui" for the helper implementation and banner behavior.
+The toast surface (popup-per-toast, top-right FIFO max 5, errors persist, non-errors auto-dismiss) is documented in `03_script_python.md` → "Common.Notify". Payload contract: `{title, message, level, ttl}` where `level` is one of `success` / `info` / `warning` / `error`.
 
 **Don't reimplement notification logic per screen.** A button that calls `notifyResult` should never also do `system.perspective.sendMessage(...)` for the same outcome — that's a sign someone bypassed the helper. Fix the bypass; don't double-route.
+
+## Mode discriminator on shared add/edit popups
+
+When the same popup view serves both Add and Edit modes (one editor, two entry points), an **explicit `view.custom.mode` prop** reads more clearly than `editDraft.Id == null` checks scattered through bindings:
+
+```
+view.custom.mode: "view" | "create" | "update"
+```
+
+- `"view"` — no entity selected; details panel hidden
+- `"create"` — new entity being authored; `selected.meta` is `None`, `editDraft.meta.Id` is `None`, Deprecate button hidden
+- `"update"` — existing entity being edited; `selected.meta` populated, `editDraft.meta.Id` set, Deprecate button visible
+
+Bindings that depend on the mode reference `view.custom.mode` directly:
+
+```json
+"position.display": {
+  "binding": {
+    "type": "expr",
+    "config": { "expression": "{view.custom.mode} = \"update\"" }
+  }
+}
+```
+
+The discriminator is set explicitly in the click handlers that transition between modes (selecting a definition → `mode = "update"`; clicking +Add → `mode = "create"`; deprecating → `mode = "view"`). `editDraft.Id == null` is still the underlying truth, but the named mode prop is what bindings and operators see.
+
+This is OPTIONAL. For editors that only ever serve one purpose (always Edit, or always Add), an explicit mode prop is overhead. Reach for it when the same view does both.
 
 ## Versioned-entity workflow — Draft / Published / Deprecated
 
@@ -236,7 +263,7 @@ The check happens in the entity script's `getCurrentDraft(logicalId)` call befor
 | Action | Validation level | Rationale |
 |---|---|---|
 | Save (on Draft) | None at proc level. UI may flag missing-required-fields visually. | Drafts may be incomplete — saving partial work is the whole point. |
-| Publish | Full validation in the proc. Returns `Status='ERROR'` with a specific `Message` if any rule fails. | Publishing means "this version goes live" — must be complete. |
+| Publish | Full validation in the proc. Returns `Status=0` with a specific `Message` if any rule fails. | Publishing means "this version goes live" — must be complete. |
 | Deprecate | Minimal — proc checks current state is Published. | Deprecation rarely fails; the main check is state. |
 
 The UI may preflight-validate Publish (e.g., disable the Publish button until required fields are populated) for UX. The proc remains authoritative — a clickable button is not a guarantee the Publish will succeed.
@@ -247,8 +274,8 @@ Every versioned-entity table carries a `RowVersion BIGINT` column (or SQL Server
 
 1. Accepts `@RowVersion` as a parameter.
 2. Compares it to the row's current `RowVersion` before applying changes.
-3. On mismatch: returns `Status='ERROR', Message='This record was modified by another user. Please reload and try again.'` — surfaced via the standard `notifyResult` path.
-4. On match: applies changes, increments `RowVersion`, returns `Status='OK'`.
+3. On mismatch: returns `Status=0, Message='This record was modified by another user. Please reload and try again.'` — surfaced via the standard `notifyResult` path.
+4. On match: applies changes, increments `RowVersion`, returns `Status=1`.
 
 Views load `RowVersion` with the row, never touch it during editing, and pass it through on save. `editDraft.RowVersion` is the same value as `selected.RowVersion`.
 

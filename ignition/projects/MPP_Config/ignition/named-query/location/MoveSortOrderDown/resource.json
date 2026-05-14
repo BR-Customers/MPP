@@ -18,22 +18,27 @@
     "cacheEnabled": false,
     "database": "MPP",
     "fallbackEnabled": false,
+    "lastModificationSignature": "",
     "permissions": [
       {
         "zone": "",
         "role": ""
       }
     ],
+    "lastModification": {
+      "actor": "jacques",
+      "timestamp": "2026-05-14T12:00:00Z"
+    },
     "parameters": [
       {
         "type": "Parameter",
-        "identifier": "LocationID",
-        "sqlType": 2
+        "identifier": "locationId",
+        "sqlType": 3
       },
       {
         "type": "Parameter",
-        "identifier": "UserID",
-        "sqlType": 2
+        "identifier": "userId",
+        "sqlType": 3
       }
     ]
   }

@@ -3,39 +3,39 @@
 #
 # Author:           Blue Ridge Automation
 # Created:          2026-05-13
-# Version:          1.0
+# Version:          1.1
 #
 # Description:
-#   Session-derived attribution accessors. Today returns a hardcoded dev
-#   AppUser.Id so write-actions can attribute audit rows without blocking
-#   on the security build-out. Once initials-presence + AD elevation are
-#   wired in, the accessor resolves from session context so call sites
-#   do not have to change.
+#   Session-derived attribution accessors. Today this module is a thin
+#   re-export of BlueRidge.Common.Util._currentAppUserId so existing call
+#   sites that imported BlueRidge.Common.Session keep working while new
+#   code calls Util directly.
+#
+#   Once initials-presence + AD elevation are wired in, the underlying
+#   Util._currentAppUserId resolves from session.custom.appUserId and
+#   this shim still returns the correct value -- no caller changes.
 #
 # Public surface:
 #   getCurrentUserId()  -> long (AppUser.Id for the active session)
 #
 # Change Log:
-#   2026-05-13 - 1.0 - Initial dev placeholder (returns _DEV_USER_ID)
+#   2026-05-13 - 1.0 - Initial dev placeholder (returns hardcoded id)
+#   2026-05-14 - 1.1 - Delegates to BlueRidge.Common.Util._currentAppUserId
+#                      so the dev fallback + future session resolution
+#                      live in one place.
 # =============================================================================
-
-# Dev placeholder. Replace the body of getCurrentUserId() once initials-presence
-# and AD elevation are wired in; do NOT change the public surface.
-_DEV_USER_ID = 2
 
 
 def getCurrentUserId():
     """
     AppUser.Id attribution for the active session.
 
-    Today: returns a hardcoded dev value (AppUser.Id = 2). Pass the
-    returned id straight into any proc's @AppUserId parameter.
-
-    Once the security work lands, this accessor will resolve from session
-    context (initials -> AppUser.Id lookup with AD-elevation override)
-    without requiring any caller change.
+    Thin shim around BlueRidge.Common.Util._currentAppUserId. New code
+    should call Util directly; this remains so existing call sites keep
+    working.
 
     Returns:
-        long: AppUser.Id of the current user.
+        long: AppUser.Id of the current user. Dev fallback while
+              initials/AD wiring is pending.
     """
-    return _DEV_USER_ID
+    return BlueRidge.Common.Util._currentAppUserId()

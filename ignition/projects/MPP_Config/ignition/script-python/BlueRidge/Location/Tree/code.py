@@ -1,30 +1,49 @@
 # =============================================================================
-# Project Library:  BlueRidge.Location.Tree.buildTree(rootId, expandDepth=2, defaultIcon="material/place")
-
+# Project Library:  BlueRidge.Location.Tree
+#
 # Author:           Blue Ridge Automation
 # Created:          2026-04-13
-# Version:          1.0
+# Version:          1.1
 #
 # Description:
-#   Builds a Perspective Tree component JSON structure from the
-#   Location.Location_GetTree stored procedure.
+#   Helpers for the PlantHierarchy view's Perspective Tree component.
 #
-#   Called from a session property binding (or view custom property) that
-#   feeds a Perspective Tree's `props.items`.
+#   buildTree(rootId, expandDepth, defaultIcon)
+#       Builds the Tree.props.items JSON structure from the
+#       Location.Location_GetTree stored proc result, in one forward
+#       pass (the proc returns rows in depth-first order via its SortPath
+#       column, so each row's parent is already in the working dict by
+#       the time it is processed).
+#
+#   findPathById(items, targetId)
+#       Walk the tree depth-first; return the slash-separated path string
+#       (e.g. "0/0/1") of the node whose data.id equals targetId. Used
+#       after tree-mutating actions to re-anchor selection on the entity
+#       even when its path shifted.
+#
+#   getNodeData(items, pathStr)
+#       Resolve a path string into the items tree and return that node's
+#       data dict. Paired with findPathById to push the moved entity's
+#       fresh data into view.custom.selected.
+#
+#   resolveSelectedId(items, selection)
+#       Convert the Tree component's path-based selection (list of paths
+#       or path strings) to the underlying Location.Id stored in
+#       data.id of the selected node.
 #
 # Dependencies:
-#   - Named Query at "Location/GetTree" wrapping EXEC Location.Location_GetTree
+#   - NQ at "location/GetTree" wrapping EXEC Location.Location_GetTree
 #       Parameter: rootId (Long)
-#       Query text:
-#           DECLARE @s BIT, @m NVARCHAR(500);
-#           EXEC Location.Location_GetTree
-#               @RootLocationId = :rootId
 #
-#   - The GetTree proc returns rows in depth-first order via its SortPath
-#     column, which is what makes the single-pass assembly below correct.
+# Layer:
+#   View -> BlueRidge.Location.Tree (this module)
+#        -> BlueRidge.Common.Db.execList
 #
 # Change Log:
 #   2026-04-13 - 1.0 - Initial version
+#   2026-05-14 - 1.1 - Route buildTree through Common.Db.execList;
+#                      header rewritten to standard module shape;
+#                      default-icon docstring corrected to mpp/factory.
 # =============================================================================
 
 
@@ -33,68 +52,59 @@ def buildTree(rootId, expandDepth=2, defaultIcon="mpp/factory"):
     Build a Perspective Tree component JSON structure from the
     Location.Location_GetTree stored procedure.
 
-    Relies on the GetTree proc returning rows in depth-first order
-    (via its SortPath column), so each row's parent is guaranteed
-    to have been processed already - enabling a single forward pass.
+    Relies on the GetTree proc returning rows in depth-first order (via its
+    SortPath column), so each row's parent is guaranteed to have been
+    processed already -- enabling a single forward pass.
 
     Args:
         rootId (long):     Location.Id to use as the tree root.
         expandDepth (int): Nodes at depth < expandDepth start expanded.
-                           Default 2 (Enterprise + Site expanded, Areas
+                           Default 2 (Enterprise + Site expanded; Areas
                            and below collapsed).
         defaultIcon (str): Fallback icon path when
                            LocationTypeDefinition.Icon is NULL.
 
     Returns:
         list: A list containing the root node dict (Perspective Tree expects
-              a list at top level). Returns [] on missing rootId or empty result.
+              a list at top level). Returns [] on missing rootId or empty
+              result.
     """
+    BlueRidge.Common.Util.log("rootId=%s expandDepth=%s" % (rootId, expandDepth))
     if rootId is None:
         return []
 
-    ds = system.db.runNamedQuery("location/GetTree", {"rootId": rootId})
-    if ds is None or ds.getRowCount() == 0:
+    rows = BlueRidge.Common.Db.execList("location/GetTree", {"rootId": rootId})
+    if not rows:
         return []
-
-    # Build column-name -> index map once (faster than name lookup per cell).
-    colIdx = {}
-    for i in range(ds.getColumnCount()):
-        colIdx[ds.getColumnName(i)] = i
 
     nodes = {}        # locationId -> node dict
     rootNode = None
 
-    for r in range(ds.getRowCount()):
-        locId    = ds.getValueAt(r, colIdx["Id"])
-        parentId = ds.getValueAt(r, colIdx["ParentLocationId"])
-        name     = ds.getValueAt(r, colIdx["Name"])
-        code     = ds.getValueAt(r, colIdx["Code"])
-        depth    = ds.getValueAt(r, colIdx["Depth"])
-        defName  = ds.getValueAt(r, colIdx["DefinitionName"])
-        typeName = ds.getValueAt(r, colIdx["TypeName"])
-        iconPath = ds.getValueAt(r, colIdx["Icon"]) or defaultIcon
-        description = ds.getValueAt(r, colIdx['Description']) 
-        sortOrder = ds.getValueAt(r, colIdx["SortOrder"])
+    for r in rows:
+        locId    = r.get("Id")
+        parentId = r.get("ParentLocationId")
+        depth    = r.get("Depth")
+        iconPath = r.get("Icon") or defaultIcon
 
         node = {
-            "label": name,
+            "label": r.get("Name"),
             "expanded": depth < expandDepth,
             "icon": {
                 "path":  iconPath,
                 "color": "--mpp-text-primary",
-                "style": {}
+                "style": {},
             },
             "data": {
                 "id":             locId,
-                "code":           code,
-                "name":           name,
-                "definitionName": defName,
-                "typeName":       typeName,
+                "code":           r.get("Code"),
+                "name":           r.get("Name"),
+                "definitionName": r.get("DefinitionName"),
+                "typeName":       r.get("TypeName"),
                 "depth":          depth,
-                "description":	  description,
-                "sortOrder":	  sortOrder
+                "description":    r.get("Description"),
+                "sortOrder":      r.get("SortOrder"),
             },
-            "items": []
+            "items": [],
         }
         nodes[locId] = node
 
@@ -153,7 +163,7 @@ def getNodeData(items, pathStr):
 
     Used together with findPathById after a tree-mutating action to extract
     the entity's fresh data for view.custom.selected. The Tree component's
-    bidirectional writeback to view.custom.selected doesn't reliably fire
+    bidirectional writeback to view.custom.selected does not reliably fire
     when items are replaced from script (only on user-click selection
     changes), so the caller pushes the new entity dict explicitly.
 
@@ -162,9 +172,9 @@ def getNodeData(items, pathStr):
         pathStr (str): Slash-separated path string ("0/0/1").
 
     Returns:
-        dict or None: node.data at the path, or None when the path doesn't
-                      resolve. Shape matches what the Tree component would
-                      have placed in selectionData[0].value.
+        dict or None: node.data at the path, or None when the path does
+                      not resolve. Shape matches what the Tree component
+                      would have placed in selectionData[0].value.
     """
     if not items or not pathStr:
         return None
@@ -218,23 +228,3 @@ def resolveSelectedId(items, selection):
 
     data = node.get("data") if isinstance(node, dict) else None
     return data.get("id") if isinstance(data, dict) else None
-
-
-# =============================================================================
-# Wiring notes (for the Perspective view, not part of the library):
-#
-# Option A - Binding transform on tree.props.items:
-#     Bind tree.props.items to view.custom.rootLocationId with a Script Transform:
-#
-#         def transform(self, value, quality, timestamp):
-#             return shared.locations.buildTree(value)
-#
-# Option B - Property change script on rootLocationId:
-#
-#         def valueChanged(self, previousValue, currentValue, origin, missedEvents):
-#             self.getSibling("Tree").props.items = \
-#                 shared.locations.buildTree(currentValue.value)
-#
-# Downstream: tree.props.selection[0].data.id is the selected Location.Id,
-# ready to feed into Location.Get or any other per-location named query.
-# =============================================================================

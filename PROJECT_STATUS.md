@@ -1,6 +1,6 @@
 # MPP MES — Project Status
 
-**Last updated:** 2026-05-13
+**Last updated:** 2026-05-14
 
 This file holds the **volatile** state of the project — current doc versions, active blockers, recent change narrative, and the next-session briefing. Durable identity, document map, architecture, and conventions live in `CLAUDE.md`.
 
@@ -96,15 +96,15 @@ Per-schema tabs are the source of truth and remain canonical until next regen.
 
 Initial v1 build at `docs_portal/`. See "Recent Change Narrative" entry below for details.
 
-### LocationTypeEditor modal — 🟡 IN-PROGRESS (2026-05-13)
+### LocationTypeEditor modal — 🟡 IN-PROGRESS (convention rectification landed 2026-05-14, Designer smoke-test pending)
 
-Full vertical stack scaffolded (SQL + NQs + entity scripts + views + cog-button wiring), tests green, gateway scanned, but end-of-day smoke-test in Designer still has unresolved issues. **What's known to work:** SQL build (907/907 tests). What's pending verification next session: Designer-side modal rendering, tier dropdown → definitions repeater flow, save round-trip, deprecate FK guard surfacing in UI. See "Recent Change Narrative" entry below for the full surface and the failure modes hit + fixed during the day.
+Full vertical stack scaffolded 2026-05-13. Convention-rectification pass landed 2026-05-14 — entity scripts retrofitted through `Common.Db`/`Common.Util`/`Common.Ui`, view restructured to `editDraft`/`selected` pattern with dirty indicator + Cancel button, NQs normalized to camelCase + Designer-canonical sqlType enum. **Pending verification next session:** Designer-side modal rendering with the new pattern (tier dropdown → definitions list → details panel → Save with dirty indicator → Cancel revert → Deprecate FK guard). 907/907 SQL tests still passing.
 
 ### Non-blocking polish
 
 - Memory file revision-history-format trim: applied to FDS only; not yet to Data Model + OIR.
 - FDS-06-028 wording sharpen — WO Auto-Finish (§6.10) prose still mentions "camera-count mode" pre-tray-reframe. Low priority.
-- **Latent NQ v1 schema bug:** at least `location/Get/resource.json` is `version: 1`; Designer 8.3.5 NPEs when opening v1 NQ resources. Other v1 NQs in the project may exist. Worth a cleanup-pass bump-to-v2 when convenient. See `feedback_ignition_nq_resource_schema.md` memory.
+- ~~**Latent NQ v1 schema bug:** at least `location/Get/resource.json` is `version: 1`~~ — resolved 2026-05-14 (bumped to v2 with corrected sqlType enum). See `feedback_ignition_nq_resource_schema.md` memory for the empirically-verified Designer sqlType table.
 
 ---
 
@@ -133,7 +133,7 @@ Items genuinely gating downstream work, by owner:
 - **Configuration Tool (Arc 1):** Phases 1–8 + G.1–G.5 + 0013 corrections + 0014 LocationTypeDefinition CRUD support complete. **907/907 tests passing** across 22+ test suites.
 - **SQL artifacts:** `/sql/` folder, **14 versioned migrations + 218 repeatable procs.** PowerShell reset script `Reset-DevDatabase.ps1` auto-discovers and runs all scripts via `sqlcmd.exe`. Tested on SQL Server 2025.
 - **Plant Floor (Arc 2):** Mockup landed at `mockup/plantFloor.html` (12 terminal/lot routes + Home Page). SQL not yet started — gated on Phase 0.
-- **Ignition project (live build, Arc 1):** Phase 1 Location pipeline, toast notifications, scan helper landed 2026-05-12. PlantHierarchy view: tree-selection re-anchor pattern + move arrows wired through `BlueRidge.Common.Action.runMutation`. **LocationTypeEditor modal IN-PROGRESS as of 2026-05-13** — SQL + NQs + entity scripts + views all scaffolded and gateway-deployed, but still has Designer-side issues at end of day (see "Outstanding for Next Session"). Cog button on PlantHierarchy wired to open the modal.
+- **Ignition project (live build, Arc 1):** Phase 1 Location pipeline + toasts + scan helper landed 2026-05-12. LocationTypeEditor full stack 2026-05-13. **Convention rectification 2026-05-14** — `Common.Db`/`Common.Util`/`Common.Ui` layer built, `Common.Action` deleted, 5 entity scripts retrofitted through Common helpers, LocationTypeEditor view restructured to `editDraft`/`selected` pattern + dirty indicator + Cancel, all NQs normalized (camelCase identifiers, Designer-canonical sqlType enum, v2 schema). Designer smoke-test pending. See "Recent Change Narrative" entry.
 - **Seed data loading:** CSVs ready in `reference/seed_data/` (876 rows total). `machines.csv` not yet loaded; MPP parts list not yet provided; `defect_codes.csv` not yet loaded; `downtime_reason_codes.csv` has bulk-load proc but not yet invoked.
 
 ---
@@ -162,6 +162,80 @@ Phase G capability snapshot: `Meeting_Notes/2026-04-22_Phase_G_Capabilities_Summ
 ## Recent Change Narrative
 
 A timeline of session-by-session changes. Most recent first.
+
+### 2026-05-14 — Convention rectification per Hunter's pack updates
+
+Hunter merged in pack updates (`hunter/explore` → `main` fast-forward, commits `784a981` / `591da53` / `cf0fb42` / `fc534bf`) that source the `ignition-context-pack/` from `MPP_MES_CONFIG_TOOL_FRONTEND_CONVENTIONS.md` v1.2 and document the `SaveAll` bundled pattern. Our 2026-05-12/13 Ignition work was built against the older pack and deviated in several places. Today's session rectified the deviations as a coordinated four-phase pass.
+
+Decision sheet: `Meeting_Notes/2026-05-14_Convention_Rectification_Review.md` (line-by-line response document with Jacques's per-item decisions).
+
+**Phase 1 — Foundation built (Common helpers):**
+
+- **`BlueRidge.Common.Db`** — `execList` / `execOne` / `execMutation`. Only layer that calls `system.db.runNamedQuery`. Handles BIT Status convention.
+- **`BlueRidge.Common.Util`** — `log` (inspect-frame auto-fill of calling module + function), `_currentAppUserId` (reads `session.custom.appUserId` with dev fallback to AppUser.Id 2), `extractQualifiedValues`, `convertWrapperObjectToJson`.
+- **`BlueRidge.Common.Ui.notifyResult(result, successTitle, successMsg, errorTitle)`** — routes mutation result to toast.
+- **`BlueRidge.Common.Notify.toast`** — `DEFAULT_TTL_SEC` 8 → 5 per C1 decision.
+- **`BlueRidge.Common.Action`** deleted (was the parallel-universe `execMutation` that mixed DB + toast).
+- **`BlueRidge.Common.Session.getCurrentUserId`** now a thin shim over `Common.Util._currentAppUserId`.
+
+**Phase 2 — Entity scripts retrofitted + NQ casings normalized:**
+
+- 5 entity scripts (`Location.Location`, `Location.Tree`, `Location.LocationType`, `Location.LocationTypeDefinition`, `Location.LocationAttributeDefinition`) rewritten to route every DB call through `Common.Db.*`. All `system.db.*` direct calls eliminated outside `Common.Db`. Per-module logger declarations removed; replaced with direct `Common.Util.log(...)` calls. 5 copies of local `_rowsToDicts` helper deleted.
+- Module surface standardized per pack convention: `listByType` → `getAll`, `listByDefinition` → `getAll`, `listAll` → `getAll`, `get` → `getOne`. Custom domain handlers (`handleMoveUp`/`handleMoveDown`/`handleSaveAll`/`handleDeprecate`/factories) kept per Jacques's A4 decision ("standard is starting point, not complete list").
+- 9 NQ files normalized: parameter identifiers → camelCase (`LocationID`/`UserID`/`Id`/`AppUserId` → `locationId`/`userId`/`id`/`appUserId`); query.sql `:placeholder` references updated to match.
+- `Get/resource.json` bumped v1 → v2 schema (was the latent Designer-NPE bug flagged 2026-05-13).
+- `print ds` stripped from `Location.code.py:124` (B1); `Tree.code.py` header rewritten to standard module shape (B2).
+
+**Phase 3 — LocationTypeEditor view restructured to editDraft/selected pattern:**
+
+- `view.custom.meta` + `view.custom.attributesDraft` → `view.custom.selected` (baseline) + `view.custom.editDraft` (in-flight), each carrying `{meta, attributes}`.
+- All form bindings repointed to `editDraft.meta.*`; attributes repeater binding to `editDraft.attributes`.
+- 4 message handlers (`definitionClick`, `attrDraftUpdate`, `attrDraftRemove`, `attrDraftMove`) rewritten to mutate `editDraft.attributes` and maintain the `selected` baseline on selection changes.
+- 5 inline scripts rewritten (Save, Deprecate, +Add Definition, +Add Attribute, TierDropdown onChange) for the new state shape.
+- **New:** dirty indicator label bound to `if({view.custom.editDraft} != {view.custom.selected}, "● Unsaved changes", "")` per pack universal rule.
+- **New:** Cancel button in DetailsHeader — reverts `editDraft = dict(selected)` in update mode; resets to view mode in create mode; hidden when no pending changes.
+- Save handler does proper deep-copy commit on success (`selected = {meta: dict(...), attributes: [dict(a) for a in ...]}`) so the dirty indicator clears.
+
+**Phase 4 — Pack contributions + memory updates (two-way street):**
+
+- **`ignition-context-pack/03_script_python.md`**: `execMutation` updated for BIT Status convention; full SP shape (`DECLARE @Status BIT = 0`) baked in verbatim. `notifyResult` signature updated. **New `Common.Notify` section** documenting popup-per-toast surface (top-right FIFO max 5, errors persist, non-errors auto-dismiss 5s — supersedes the single-banner pattern; toast is now THE standard, no variant). `runNamedQuery` vs `execQuery` clarified.
+- **`ignition-context-pack/04_named_queries.md`**: Status-row pattern rewritten with verbatim SP shape. **sqlType section rewritten** with the empirically-verified Designer-canonical enum table (Int1/Int2/Int4/Int8/Float4/Float8/Boolean/String/DateTime/ByteArray = 0/1/2/3/4/5/6/7/8/20) — explicit warning that `java.sql.Types` codes are irrelevant. NQ v2 schema section added.
+- **`ignition-context-pack/07_conventions_and_antipatterns.md`**: mutation feedback section updated for toast; **new "Mode discriminator on shared add/edit popups" section** (C4); all `Status='OK'`/`'ERROR'` references updated to BIT 1/0.
+- **`ignition-context-pack/02_perspective_views.md`**: **new "Tree mutations — return `{items, selectedPath, selected}`" section** (C2) documenting our re-anchor pattern and the `Tree.props.selection` writeback misfire workaround.
+- **`ignition-context-pack/00_README.md`**: file-13 / file-14 descriptions updated.
+
+**sqlType correction (A9 → empirical resolution):**
+
+Initial reading of A9 had me writing `sqlType: 2` for BIGINT (based on observing existing Designer-saved NQs with that code). Jacques provided an empirical reference (Designer-saved NQ with one parameter of every type) that revealed **Designer uses its own internal type enum, NOT `java.sql.Types`**:
+
+| sqlType | Designer name | DB type |
+|---|---|---|
+| 0 / 1 / 2 / 3 | Int1 / Int2 / Int4 / Int8 | TINYINT / SMALLINT / INTEGER / **BIGINT** |
+| 4 / 5 | Float4 / Float8 | REAL / FLOAT |
+| 6 | Boolean | BIT |
+| 7 | String | **NVARCHAR / VARCHAR** |
+| 8 | DateTime | DATETIME |
+| 20 | ByteArray | VARBINARY |
+
+Existing Designer-saved NQs in the project had BIGINT params with `sqlType: 2` (Int4) — that was a UI selection mistake by whoever created them; SQL Server's INT → BIGINT silent coercion meant the procs worked anyway. All NQ resource.json files corrected: BIGINT params `2` → `3`, NVARCHAR params `-9` → `7`. Memory entry `feedback_ignition_nq_resource_schema.md` updated with the full Designer enum.
+
+**Memory entries added/updated:**
+
+- UPDATED `feedback_ignition_nq_resource_schema.md` — full Designer sqlType enum table; corrects earlier "sqlType 2 for BIGINT" claim.
+
+**Files touched (42 total):**
+
+- 3 new Common modules (Db, Ui, Util) — 6 files
+- 1 deleted module (Action) — 2 files
+- 9 NQ folders modified (resource.json + query.sql each)
+- 5 entity scripts rewritten
+- 1 view (LocationTypeEditor) restructured
+- 5 pack files updated
+- 1 PROJECT_STATUS.md updated
+- 1 memory file updated
+- 1 review markdown added to Meeting_Notes/
+
+**Next pickup:** smoke-test the LocationTypeEditor modal in Designer end-to-end (tier select, definition pick, edit fields with dirty indicator, Cancel revert, Save commit, Add Definition flow, Add Attribute flow, Deprecate FK guard).
 
 ### 2026-05-13 — LocationTypeEditor modal: full vertical stack scaffolded (WIP)
 

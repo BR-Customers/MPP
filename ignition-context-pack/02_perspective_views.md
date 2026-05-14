@@ -267,3 +267,53 @@ Calling `.update(...)` from an `onChange` handler is a misuse of `BindingWriteba
 ## Conditional visibility on flex children
 
 For binding-driven visibility on a child of a flex container, bind `position.display` (sets `display: none` — element removed from layout entirely) rather than `meta.visible` (sets `visibility: hidden` — element still occupies layout space). See `07_conventions_and_antipatterns.md` for the full rule.
+
+## Tree mutations — return `{items, selectedPath, selected}` so the view applies all three atomically
+
+The Perspective Tree component (`ia.display.tree`) has a known limitation: when `props.items` is replaced programmatically (e.g., after a move / add / deprecate that rebuilds the tree), `props.selection`'s bidirectional writeback to `view.custom.selected` **does not reliably fire**. The user-click selection flow writes through; programmatic items replacement does not.
+
+The fix is to have the entity script's mutation handler do all three things and return them together:
+
+1. Rebuild the items tree.
+2. Find the new path string for the moved/added entity's id.
+3. Look up the entity's fresh data at that path.
+
+```python
+# script-python/<integrator>/<Domain>/<Entity>/code.py
+
+def handleMoveUp(selected, userId=None, ...):
+    if userId is None:
+        userId = <integrator>.Common.Util._currentAppUserId()
+
+    result = <integrator>.Common.Db.execMutation(
+        "<group>/moveSortOrderUp",
+        {"id": selected.get("id"), "userId": userId},
+    )
+    <integrator>.Common.Ui.notifyResult(result, successTitle="Moved up")
+    if not result.get("Status"):
+        return None
+
+    items       = <integrator>.<Domain>.Tree.buildTree(rootId, expandDepth, defaultIcon)
+    newPath     = <integrator>.<Domain>.Tree.findPathById(items, selected.get("id"))
+    newSelected = <integrator>.<Domain>.Tree.getNodeData(items, newPath)
+    return {"tree": items, "selectedPath": newPath, "selected": newSelected}
+```
+
+The view event applies all three writes atomically:
+
+```json
+"events": {
+  "component": {
+    "onActionPerformed": {
+      "type": "script", "scope": "G",
+      "config": {
+        "script": "result = <integrator>.<Domain>.<Entity>.handleMoveUp(self.view.custom.selected)\nif result:\n\tself.view.custom.tree = result[\"tree\"]\n\tself.view.custom.selectedPath = result[\"selectedPath\"]\n\tself.view.custom.selected = result[\"selected\"]"
+      }
+    }
+  }
+}
+```
+
+`view.custom.tree` flows into `Tree.props.items`; `view.custom.selectedPath` flows into `Tree.props.selection`; `view.custom.selected` is the source of truth for the entity's current data (the details panel binds to deep paths like `view.custom.selected.name`).
+
+This pattern generalizes to any tree-mutating action: move (up/down), parent-change (re-anchor under different parent), add (new node, jump selection to it), deprecate (drop node, clear selection). The three-write return keeps the tree, the selection cursor, and the details panel aligned even when `Tree.props.selection`'s writeback misfires.

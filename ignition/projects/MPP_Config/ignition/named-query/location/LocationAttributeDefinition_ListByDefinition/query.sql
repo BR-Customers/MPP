@@ -1,1 +1,2 @@
-EXEC Location.LocationAttributeDefinition_ListByDefinition @LocationTypeDefinitionId = :LocationTypeDefinitionId
+EXEC Location.LocationAttributeDefinition_ListByDefinition
+    @LocationTypeDefinitionId = :locationTypeDefinitionId

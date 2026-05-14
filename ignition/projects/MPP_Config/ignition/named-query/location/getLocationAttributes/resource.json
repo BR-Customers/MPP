@@ -18,7 +18,7 @@
     "cacheEnabled": false,
     "database": "MPP",
     "fallbackEnabled": false,
-    "lastModificationSignature": "c1fbb878fa317db8e3a2418224ede25663f8af9e88beffbb69f2d535159670c6",
+    "lastModificationSignature": "",
     "permissions": [
       {
         "zone": "",
@@ -32,8 +32,8 @@
     "parameters": [
       {
         "type": "Parameter",
-        "identifier": "LocationID",
-        "sqlType": 2
+        "identifier": "locationId",
+        "sqlType": 3
       }
     ]
   }

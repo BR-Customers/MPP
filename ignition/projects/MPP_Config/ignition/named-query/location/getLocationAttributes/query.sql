@@ -1,3 +1,2 @@
-
-EXECUTE [Location].[LocationAttribute_GetByLocation] 
-   @LocationId = :LocationID 
+EXEC Location.LocationAttribute_GetByLocation
+    @LocationId = :locationId

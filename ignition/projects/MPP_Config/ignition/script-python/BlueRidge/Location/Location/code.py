@@ -3,62 +3,53 @@
 #
 # Author:           Blue Ridge Automation
 # Created:          2026-05-12
-# Version:          1.2
+# Version:          1.3
 #
 # Description:
 #   Entity-script for Location.Location and its attribute values.
 #
-#   Read surface (Phase 1):
-#       get(locationId)                  -> dict | None
+#   Read surface:
+#       getOne(locationId)               -> dict | None
 #       getAttributesByLocation(locId)   -> list[dict]
 #
 #   Write surface (sort-order actions):
 #       handleMoveUp(selected, userId=None, ...)   -> dict | None
 #       handleMoveDown(selected, userId=None, ...) -> dict | None
 #
-#       On success the move handlers return {"tree": [...], "selectedPath": "..."} —
-#       the freshly-rebuilt tree plus the new path of the moved entity. The
-#       view event applies both to view.custom.tree and view.custom.selectedPath
-#       so the visual selection follows the entity through the swap.
+#       On success the move handlers return
+#           {"tree": [...], "selectedPath": "0/0/1", "selected": {...}}
+#       so the view can write all three view.custom props atomically.
+#       The Tree component's bidirectional writeback to view.custom.selected
+#       does not fire reliably when items are replaced programmatically,
+#       so the caller pushes the new entity dict explicitly.
 #
-#   Remaining write-side (add / update / deprecate / setAttribute) is still
-#   out of scope here — those arrive with the JSON-payload save proc planned
-#   for Phase 2. They will follow the same refresh-and-reanchor return shape.
+#   Remaining write-side (add / update / deprecate / setAttribute) is
+#   still out of scope here.
 #
 # Layer:
 #   View -> BlueRidge.Location.Location (this module)
-#        -> BlueRidge.Common.Action.runMutation  (status-row + toast wrapper)
-#        -> BlueRidge.Location.Tree.buildTree    (post-mutation tree rebuild)
-#        -> BlueRidge.Location.Tree.findPathById (entity -> path re-anchor)
-#        -> system.db.execQuery                  (Ignition NQ engine)
+#        -> BlueRidge.Common.Db.execList / execOne / execMutation
+#        -> BlueRidge.Common.Ui.notifyResult
+#        -> BlueRidge.Location.Tree.buildTree / findPathById / getNodeData
 #   Views never call system.db.* directly.
 #
 # Change Log:
-#   2026-05-12 - 1.0 - Initial read-only version (get, getAttributesByLocation)
+#   2026-05-12 - 1.0 - Initial read-only version
 #   2026-05-13 - 1.1 - Added handleMoveUp / handleMoveDown via Common.Action
-#   2026-05-13 - 1.2 - Move handlers return {tree, selectedPath} so the view
-#                      re-anchors selection on the entity instead of the path
-#   2026-05-13 - 1.3 - Return also includes "selected" (the new entity dict)
-#                      because Tree bidirectional writeback to view.custom.selected
-#                      doesn't fire reliably on programmatic items updates
+#   2026-05-13 - 1.2 - Move handlers return {tree, selectedPath} for re-anchor
+#   2026-05-13 - 1.3 - Return also includes "selected" (entity dict)
+#   2026-05-14 - 1.4 - Rename get -> getOne; route through Common.Db.*
+#                      and Common.Ui.notifyResult (Common.Action removed);
+#                      drop local _rowsToDicts; replace per-module logger;
+#                      strip debug `print ds`; NQ params camelCased.
 # =============================================================================
 
-logger = system.util.getLogger("BlueRidge.Location.Location")
 
-
-def _rowsToDicts(ds):
-    """Ignition Dataset -> list of {columnName: value} dicts."""
-    if ds is None or ds.getRowCount() == 0:
-        return []
-    headers = list(ds.getColumnNames())
-    return [dict(zip(headers, row)) for row in ds]
-
-
-def get(locationId):
+def getOne(locationId):
     """
-    Returns a single Location row by Id, joined to its type-definition / type
-    names. Result is a dict with the fields the PlantHierarchy detail panel
-    binds against, plus the raw DB columns for any future write path.
+    Returns a single Location row by Id, joined to its type-definition /
+    type names. Result is a dict with the fields the PlantHierarchy detail
+    panel binds against, plus the raw DB columns for any future write path.
 
     Args:
         locationId (long): PK of the Location to retrieve. None / 0 -> None.
@@ -71,20 +62,17 @@ def get(locationId):
         locationTypeDefinitionId, typeBadge, schemaName, parent,
         icon, deprecatedAt.
     """
+    BlueRidge.Common.Util.log("locationId=%s" % locationId)
     if locationId is None or locationId == 0:
         return None
 
-    ds = system.db.runNamedQuery("location/Get", {"id": locationId})
-    rows = _rowsToDicts(ds)
-    if not rows:
-        logger.debugf("get(%s) not found", locationId)
+    r = BlueRidge.Common.Db.execOne("location/Get", {"id": locationId})
+    if not r:
         return None
 
-    r = rows[0]
-    # Composite labels the view binds to directly.
-    typeBadge   = "%s • %s" % (r.get("LocationTypeName"),
-                                    r.get("LocationTypeDefinitionName"))
-    schemaName  = r.get("LocationTypeDefinitionName") or ""
+    typeBadge  = "%s • %s" % (r.get("LocationTypeName"),
+                                   r.get("LocationTypeDefinitionName"))
+    schemaName = r.get("LocationTypeDefinitionName") or ""
 
     return {
         "id":                       r.get("Id"),
@@ -113,16 +101,15 @@ def getAttributesByLocation(locationId):
         locationId (long): FK to Location. None / 0 -> [].
 
     Returns:
-        list[dict] — empty list if no attributes (or no selection).
+        list[dict] -- empty list if no attributes (or no selection).
     """
+    BlueRidge.Common.Util.log("locationId=%s" % locationId)
     if locationId is None or locationId == 0:
         return []
-
-#    ds = system.db.runNamedQuery("location/getLocationAttributes",
-#                                 {"LocationId": locationId})
-    ds = system.db.execQuery("location/getLocationAttributes", {"LocationID": locationId})
-    print ds
-    rows = _rowsToDicts(ds)
+    rows = BlueRidge.Common.Db.execList(
+        "location/getLocationAttributes",
+        {"locationId": locationId},
+    )
     n = len(rows)
     return [
         {
@@ -147,37 +134,36 @@ def handleMoveUp(selected, userId=None,
     the freshly-rebuilt tree and the entity's new path so the view can
     re-anchor its selection on the entity rather than the (now-stale) path.
 
-    Wraps the location/MoveSortOrderUp NQ via Common.Action so the standard
-    toast feedback fires automatically based on the proc's status row.
-
     Args:
         selected (dict): The view's selected-location dict. Must carry
                          keys 'id' and 'name'.
         userId (long):   Override for the AppUser.Id attribution. Defaults
-                         to BlueRidge.Common.Session.getCurrentUserId().
+                         to BlueRidge.Common.Util._currentAppUserId().
         treeRootId,
         treeExpandDepth,
         treeDefaultIcon: buildTree args used for the post-mutation rebuild.
-                         Defaults match the PlantHierarchy view's binding;
-                         override if a different view consumes this helper.
 
     Returns:
         dict or None:
-            On success: {"tree": [...], "selectedPath": "0/0/0"} for the
-                        view to apply atomically.
-            On validation failure or exception: None — toast already fired,
-                                                view leaves its state alone.
+            On success: {"tree": [...], "selectedPath": "0/0/0", "selected": {...}}
+                        for the view to apply atomically.
+            On failure: None -- toast already fired by Common.Ui.notifyResult.
     """
+    BlueRidge.Common.Util.log("selected=%s" % selected)
     if userId is None:
-        userId = BlueRidge.Common.Session.getCurrentUserId()
-    success = BlueRidge.Common.Action.runMutation(
+        userId = BlueRidge.Common.Util._currentAppUserId()
+
+    result = BlueRidge.Common.Db.execMutation(
         "location/MoveSortOrderUp",
-        {"LocationID": selected.get("id"), "UserID": userId},
+        {"locationId": selected.get("id"), "userId": userId},
+    )
+    BlueRidge.Common.Ui.notifyResult(
+        result,
         successTitle = "Moved up",
         successMsg   = "Reordered " + (selected.get("name") or ""),
         errorTitle   = "Move failed",
     )
-    if not success:
+    if not result.get("Status"):
         return None
     return _refreshAfterMutation(selected.get("id"),
                                  treeRootId, treeExpandDepth, treeDefaultIcon)
@@ -189,16 +175,21 @@ def handleMoveDown(selected, userId=None,
     Move a Location down one position among its active siblings. Sibling
     of handleMoveUp; see that function for argument / return semantics.
     """
+    BlueRidge.Common.Util.log("selected=%s" % selected)
     if userId is None:
-        userId = BlueRidge.Common.Session.getCurrentUserId()
-    success = BlueRidge.Common.Action.runMutation(
+        userId = BlueRidge.Common.Util._currentAppUserId()
+
+    result = BlueRidge.Common.Db.execMutation(
         "location/MoveSortOrderDown",
-        {"LocationID": selected.get("id"), "UserID": userId},
+        {"locationId": selected.get("id"), "userId": userId},
+    )
+    BlueRidge.Common.Ui.notifyResult(
+        result,
         successTitle = "Moved down",
         successMsg   = "Reordered " + (selected.get("name") or ""),
         errorTitle   = "Move failed",
     )
-    if not success:
+    if not result.get("Status"):
         return None
     return _refreshAfterMutation(selected.get("id"),
                                  treeRootId, treeExpandDepth, treeDefaultIcon)
@@ -206,15 +197,15 @@ def handleMoveDown(selected, userId=None,
 
 def _refreshAfterMutation(targetId, rootId, expandDepth, defaultIcon):
     """Re-build the location tree post-mutation, find the new path for the
-       given location id, and look up the entity's fresh data at that path.
+       given location id, look up the entity's fresh data at that path.
 
        Returns {"tree": [...], "selectedPath": str|None, "selected": dict|None}.
 
        The view applies all three writes (custom.tree, custom.selectedPath,
        custom.selected) so the tree, the selection cursor, and the Location
        Details panel stay aligned. The selected dict is the source of truth
-       for the deep bindings (sortOrder, name, code, ...) — the Tree
-       component's bidirectional writeback to custom.selected doesn't fire
+       for the deep bindings (sortOrder, name, code, ...) -- the Tree
+       component's bidirectional writeback to custom.selected does not fire
        reliably on programmatic items updates, so we push it directly."""
     items       = BlueRidge.Location.Tree.buildTree(rootId, expandDepth, defaultIcon)
     newPath     = BlueRidge.Location.Tree.findPathById(items, targetId)

@@ -1,1 +1,2 @@
-EXEC Location.LocationTypeDefinition_List @LocationTypeId = :LocationTypeId
+EXEC Location.LocationTypeDefinition_List
+    @LocationTypeId = :locationTypeId

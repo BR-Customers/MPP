@@ -32,8 +32,8 @@
     "parameters": [
       {
         "type": "Parameter",
-        "identifier": "LocationTypeId",
-        "sqlType": 2
+        "identifier": "locationTypeId",
+        "sqlType": 3
       }
     ]
   }
