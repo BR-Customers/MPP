@@ -1,0 +1,135 @@
+{
+  "custom": {},
+  "params": {
+    "text": "text",
+    "value": true
+  },
+  "propConfig": {
+    "params.text": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.value": {
+      "paramDirection": "inout",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 50,
+      "width": 300
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "FlexContainer"
+            },
+            "position": {
+              "basis": "40px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.style.backgroundColor": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.value"
+                  },
+                  "transforms": [
+                    {
+                      "fallback": "#000000",
+                      "inputType": "scalar",
+                      "mappings": [
+                        {
+                          "input": true,
+                          "output": "--indicator"
+                        },
+                        {
+                          "input": false,
+                          "output": "#AAAAAA"
+                        }
+                      ],
+                      "outputType": "scalar",
+                      "type": "map"
+                    }
+                  ],
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "borderBottomLeftRadius": 25,
+                "borderBottomRightRadius": 25,
+                "borderStyle": "solid",
+                "borderTopLeftRadius": 25,
+                "borderTopRightRadius": 25
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "Label"
+            },
+            "position": {
+              "basis": "45px",
+              "grow": 1
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.text"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "marginLeft": 10
+              }
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": {
+          "name": "FlexContainer"
+        },
+        "position": {
+          "basis": "200px"
+        },
+        "props": {
+          "style": {
+            "padding": 5
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column"
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "OneShotButton",
+          "pageScope": true,
+          "script": "\trecv_messageID \u003d payload[\"messageID\"]\n\tvalue \u003d payload[\"value\"]\n\tmessageID \u003d self.view.params.messageID\n#\tsystem.perspective.print(\"OneShotButton Message Handler: {}\".format(payload))\n\tview \u003d self.view.params.view\n#\tsystem.perspective.print(\"OneShotButton Message Handler: {}\".format(view))\n\tif value !\u003d view and recv_messageID \u003d\u003d messageID:\n\t\tself.view.params.value \u003d value\n#\t\tsystem.perspective.print(\"OneShotButton Message Handler: {}\".format(\"Updating value\"))",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

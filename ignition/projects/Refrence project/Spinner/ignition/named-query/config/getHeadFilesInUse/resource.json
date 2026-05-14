@@ -1,0 +1,40 @@
+{
+  "scope": "DG",
+  "version": 2,
+  "restricted": false,
+  "overridable": true,
+  "files": [
+    "query.sql"
+  ],
+  "attributes": {
+    "useMaxReturnSize": false,
+    "autoBatchEnabled": false,
+    "fallbackValue": "",
+    "maxReturnSize": 100,
+    "cacheUnit": "SEC",
+    "type": "Query",
+    "enabled": true,
+    "cacheAmount": 1,
+    "cacheEnabled": false,
+    "database": "Jasper",
+    "fallbackEnabled": false,
+    "lastModificationSignature": "da5a3e42f4204ced47d93bed4b93ef67a43807e903b45e603b0062f0a5e17209",
+    "permissions": [
+      {
+        "zone": "",
+        "role": ""
+      }
+    ],
+    "lastModification": {
+      "actor": "jlewis",
+      "timestamp": "2026-02-09T20:25:35Z"
+    },
+    "parameters": [
+      {
+        "type": "Parameter",
+        "identifier": "headFileUUID",
+        "sqlType": 7
+      }
+    ]
+  }
+}

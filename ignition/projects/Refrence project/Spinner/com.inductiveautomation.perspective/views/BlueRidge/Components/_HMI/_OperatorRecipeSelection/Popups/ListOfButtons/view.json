@@ -1,0 +1,131 @@
+{
+  "custom": {},
+  "events": {
+    "system": {
+      "onShutdown": {
+        "config": {
+          "script": "\tsystem.perspective.sendMessage(\u0027canProceedSelections\u0027, payload \u003d {\u0027bool\u0027: True})"
+        },
+        "scope": "G",
+        "type": "script"
+      },
+      "onStartup": {
+        "config": {
+          "script": "\tsystem.perspective.sendMessage(\u0027canProceedSelections\u0027, payload \u003d {\u0027bool\u0027: False})"
+        },
+        "scope": "G",
+        "type": "script"
+      }
+    }
+  },
+  "params": {
+    "Selection": "value",
+    "options": [
+      {
+        "active": false,
+        "headConfigUUID": "B0822569-54FC-F011-8CBF-000C2986FE9B",
+        "headUUID": "1345D738-AEFB-F011-8CBF-000C2986FE9B",
+        "lastEdited": {
+          "$": [
+            "ts",
+            192,
+            1770936812650
+          ],
+          "$ts": 1769609992503
+        },
+        "lastEditedBy": "jlewis",
+        "name": "New Head Config"
+      },
+      {
+        "active": false,
+        "headConfigUUID": "237D4BCB-58FC-F011-8CBF-000C2986FE9B",
+        "headUUID": "1345D738-AEFB-F011-8CBF-000C2986FE9B",
+        "lastEdited": {
+          "$": [
+            "ts",
+            192,
+            1770936812650
+          ],
+          "$ts": 1769611875190
+        },
+        "lastEditedBy": "jlewis",
+        "name": "New Head Config"
+      },
+      {
+        "active": false,
+        "headConfigUUID": "CB7BDDF7-79FC-F011-8CBF-000C2986FE9B",
+        "headUUID": "1345D738-AEFB-F011-8CBF-000C2986FE9B",
+        "lastEdited": {
+          "$": [
+            "ts",
+            192,
+            1770936812650
+          ],
+          "$ts": 1769626123820
+        },
+        "lastEditedBy": "jlewis",
+        "name": "New Head Config"
+      }
+    ]
+  },
+  "propConfig": {
+    "params.Selection": {
+      "paramDirection": "output",
+      "persistent": true
+    },
+    "params.options": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 311,
+      "width": 679
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "Buttons"
+        },
+        "position": {
+          "basis": "320px",
+          "grow": 1
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "config": {
+                "path": "view.params.options"
+              },
+              "transforms": [
+                {
+                  "code": "\tparts \u003d []\n\tfor i in range(len(value)):\n\t\tparts.append(\n\t\t{\n  \t\t\t\"instanceStyle\": {\n    \t\t\"classes\": \"\"\n  \t\t},\n\t  \t\t\"instancePosition\": {},\n\t  \t\t\"Selected\": False,\n\t  \t\t\"Part\": value[i][\u0027name\u0027],\n\t  \t\t\"PartUUID\": value[i][\u0027headConfigUUID\u0027]\n\t\t})\n\treturn parts",
+                  "type": "script"
+                }
+              ],
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "alignContent": "space-around",
+          "alignItems": "center",
+          "justify": "space-evenly",
+          "path": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_Parts/PartButton",
+          "wrap": "wrap"
+        },
+        "type": "ia.display.flex-repeater"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column"
+    },
+    "type": "ia.container.flex"
+  }
+}

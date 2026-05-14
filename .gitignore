@@ -45,7 +45,7 @@ reference/seed_data/_appendix_*_raw.txt
 .superpowers/
 
 # Ignition reference/scratch projects (not part of the deliverable)
-ignition/projects/Refrence project/Spinner/
+#ignition/projects/Refrence project/Spinner/
 
 # SQL test runner output
 sql/tests/test_output.txt

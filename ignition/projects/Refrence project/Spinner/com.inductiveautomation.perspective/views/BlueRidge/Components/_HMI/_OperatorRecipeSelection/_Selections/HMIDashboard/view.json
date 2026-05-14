@@ -1,0 +1,499 @@
+{
+  "custom": {
+    "Selections": [
+      {
+        "selected": true,
+        "widgetUUID": "3ac09495-8d00-4922-9315-1ce0c5c41e08"
+      },
+      {
+        "selected": true,
+        "widgetUUID": "2a85260d-0e77-4603-bb89-5d8dda80811b"
+      },
+      {
+        "selected": true,
+        "widgetUUID": "bb45991c-915a-41a7-ad07-2270dab0a2f3"
+      },
+      {
+        "selected": true,
+        "widgetUUID": "93b9b504-17e1-45d6-aa9b-96ad351267e4"
+      },
+      {
+        "selected": true,
+        "widgetUUID": "9ca5d34a-7735-45d7-880a-f264258747b5"
+      },
+      {
+        "selected": true,
+        "widgetUUID": "838bb679-1fb3-4229-b931-7383b36eb708"
+      },
+      {
+        "selected": true,
+        "widgetUUID": "5b42d5e0-dec6-4b21-93c8-9a834e1859c1"
+      },
+      {
+        "selected": true,
+        "widgetUUID": "78f7d55f-9c97-4810-ab7c-2f069526ce53"
+      }
+    ],
+    "operationDetails": {
+      "active": true,
+      "headConfigUUID": "13223405-66FC-F011-8CBF-000C2986FE9B",
+      "headFileUUID": "C2607AD4-87FC-F011-8CBF-000C2986FE9B",
+      "headOperationUUID": "744D8391-9A07-F111-8CBF-000C2986FE9B",
+      "lastEdited": {
+        "$": [
+          "ts",
+          192,
+          1775654866803
+        ],
+        "$ts": 1770994409263
+      },
+      "lastEditedBy": "hkraft",
+      "multiSelectable": true,
+      "name": "Select Seats",
+      "operationTypeUUID": "36BE37ED-B606-4F1A-B523-D1D29400DF75",
+      "widgets": [
+        {
+          "classes": "",
+          "hFrac": 0.13999999999999996,
+          "viewParams": {
+            "buttonIndex": "3ac09495-8d00-4922-9315-1ce0c5c41e08"
+          },
+          "viewPath": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_HeadWidgets/CircleButton",
+          "wFrac": 0.13999999999999996,
+          "xFrac": 0.05225969645868468,
+          "yFrac": 0.3704494382022472
+        },
+        {
+          "classes": "",
+          "hFrac": 0.09999999999999996,
+          "viewParams": {
+            "buttonIndex": "2a85260d-0e77-4603-bb89-5d8dda80811b"
+          },
+          "viewPath": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_HeadWidgets/CircleButton",
+          "wFrac": 0.09999999999999996,
+          "xFrac": 0.17344013490725127,
+          "yFrac": 0.38932584269662923
+        },
+        {
+          "classes": "",
+          "hFrac": 0.13999999999999996,
+          "viewParams": {
+            "buttonIndex": "bb45991c-915a-41a7-ad07-2270dab0a2f3"
+          },
+          "viewPath": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_HeadWidgets/CircleButton",
+          "wFrac": 0.13999999999999996,
+          "xFrac": 0.2765430016863407,
+          "yFrac": 0.36932584269662927
+        },
+        {
+          "classes": "",
+          "hFrac": 0.09999999999999996,
+          "viewParams": {
+            "buttonIndex": "93b9b504-17e1-45d6-aa9b-96ad351267e4"
+          },
+          "viewPath": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_HeadWidgets/CircleButton",
+          "wFrac": 0.09999999999999996,
+          "xFrac": 0.39688026981450253,
+          "yFrac": 0.38932584269662923
+        },
+        {
+          "classes": "",
+          "hFrac": 0.13999999999999996,
+          "viewParams": {
+            "buttonIndex": "9ca5d34a-7735-45d7-880a-f264258747b5"
+          },
+          "viewPath": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_HeadWidgets/CircleButton",
+          "wFrac": 0.13999999999999996,
+          "xFrac": 0.49913996627318724,
+          "yFrac": 0.36932584269662927
+        },
+        {
+          "classes": "",
+          "hFrac": 0.09999999999999996,
+          "viewParams": {
+            "buttonIndex": "838bb679-1fb3-4229-b931-7383b36eb708"
+          },
+          "viewPath": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_HeadWidgets/CircleButton",
+          "wFrac": 0.09999999999999996,
+          "xFrac": 0.6220067453625633,
+          "yFrac": 0.38932584269662923
+        },
+        {
+          "classes": "",
+          "hFrac": 0.13999999999999996,
+          "viewParams": {
+            "buttonIndex": "5b42d5e0-dec6-4b21-93c8-9a834e1859c1"
+          },
+          "viewPath": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_HeadWidgets/CircleButton",
+          "wFrac": 0.13999999999999996,
+          "xFrac": 0.7234232715008432,
+          "yFrac": 0.3704494382022472
+        },
+        {
+          "classes": "",
+          "hFrac": 0.09999999999999996,
+          "viewParams": {
+            "buttonIndex": "78f7d55f-9c97-4810-ab7c-2f069526ce53"
+          },
+          "viewPath": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_HeadWidgets/CircleButton",
+          "wFrac": 0.09999999999999996,
+          "xFrac": 0.8446037099494098,
+          "yFrac": 0.38932584269662923
+        }
+      ]
+    }
+  },
+  "events": {
+    "system": {
+      "onStartup": {
+        "config": {
+          "script": "\tif self.session.custom.hMISelections.process \u003d\u003d \u0027new\u0027:\n\t\tsystem.perspective.sendMessage(\u0027selectAll\u0027)"
+        },
+        "scope": "G",
+        "type": "script"
+      }
+    }
+  },
+  "params": {
+    "headOperation": "744D8391-9A07-F111-8CBF-000C2986FE9B"
+  },
+  "propConfig": {
+    "custom.Selections": {
+      "binding": {
+        "config": {
+          "path": "view.custom.operationDetails.widgets"
+        },
+        "transforms": [
+          {
+            "code": "\tselections \u003d []\n\tfor w in value:\n\t\tselections.append({\u0027widgetUUID\u0027: w[\u0027viewParams\u0027][\u0027buttonIndex\u0027], \u0027selected\u0027:0})\n\treturn selections",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      },
+      "onChange": {
+        "enabled": null,
+        "script": "\tselectedButtons \u003d self.session.custom.hMISelections.selectedButtons\n\tfound \u003d False\n\tfor i in range(len(selectedButtons)):\n\t\tif selectedButtons[i][\u0027operationUUID\u0027] \u003d\u003d self.custom.operationDetails.headOperationUUID:\n\t\t\tselectedButtons[i][\u0027selections\u0027] \u003d currentValue.value\n\t\t\tfound \u003d True\n\tif not found:\n\t\tselectedButtons.append({\u0027operationUUID\u0027: self.custom.operationDetails.headOperationUUID, \u0027selections\u0027: currentValue.value})"
+      },
+      "persistent": true
+    },
+    "custom.operationDetails": {
+      "binding": {
+        "config": {
+          "path": "view.params.headOperation"
+        },
+        "transforms": [
+          {
+            "code": "\treturn BlueRidge.Config.HeadConfig.getHeadOperation(value)[0]",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "params.headOperation": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 688,
+      "width": 977
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "HeadDashboard"
+        },
+        "position": {
+          "basis": "320px",
+          "grow": 1
+        },
+        "propConfig": {
+          "props.params.Head": {
+            "binding": {
+              "config": {
+                "path": "view.custom.operationDetails.headFileUUID"
+              },
+              "type": "property"
+            }
+          },
+          "props.params.operation": {
+            "binding": {
+              "config": {
+                "path": "view.custom.operationDetails.operationTypeUUID"
+              },
+              "type": "property"
+            }
+          },
+          "props.params.widgets": {
+            "binding": {
+              "config": {
+                "path": "view.custom.operationDetails.widgets"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "params": {
+            "configMode": false,
+            "height": 650,
+            "width": 800
+          },
+          "path": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_Selections/HeadDashboard"
+        },
+        "type": "ia.display.view"
+      },
+      {
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(\u0027selectAll\u0027)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "Select"
+            },
+            "position": {
+              "grow": 0.1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.operationDetails.multiSelectable"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "BlueRidge/Components/actionButtonRound"
+              },
+              "text": "Select All New"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(\u0027coreAll\u0027)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "Core"
+            },
+            "position": {
+              "grow": 0.1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.operationDetails.multiSelectable"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "BlueRidge/Components/coreButtonRound"
+              },
+              "text": "Select All Core"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(\u0027deselectAll\u0027)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "Deselect"
+            },
+            "position": {
+              "grow": 0.1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.operationDetails.multiSelectable"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "BlueRidge/Components/dangerButtonRound"
+              },
+              "text": "Deselect All"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Label"
+                },
+                "position": {
+                  "basis": "50px"
+                },
+                "props": {
+                  "style": {
+                    "borderBottomStyle": "hidden",
+                    "borderLeftStyle": "solid",
+                    "borderRightStyle": "solid",
+                    "borderTopStyle": "solid",
+                    "classes": "BlueRidge/boldTitleMedium"
+                  },
+                  "text": "N - New Seat"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Label_0"
+                },
+                "position": {
+                  "basis": "50px"
+                },
+                "props": {
+                  "style": {
+                    "borderBottomStyle": "hidden",
+                    "borderLeftStyle": "solid",
+                    "borderRightStyle": "solid",
+                    "borderTopStyle": "solid",
+                    "classes": "BlueRidge/boldTitleMedium"
+                  },
+                  "text": "C - Core Seat"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Label_1"
+                },
+                "position": {
+                  "basis": "50px"
+                },
+                "props": {
+                  "style": {
+                    "borderStyle": "solid",
+                    "classes": "BlueRidge/boldTitleMedium"
+                  },
+                  "text": "X - Not Selected"
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "FlexContainer"
+            },
+            "position": {
+              "grow": 0.6
+            },
+            "props": {
+              "direction": "column",
+              "justify": "center"
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Buttons"
+        },
+        "position": {
+          "basis": "125px",
+          "grow": 0.15
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "path": "view.custom.operationDetails.multiSelectable"
+              },
+              "enabled": false,
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "justify": "space-around"
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "justify": "space-around"
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "selectionMade",
+          "pageScope": true,
+          "script": "\n\tfor b in self.view.custom.Selections:\n\t\t\n\t\tif b[\u0027widgetUUID\u0027] \u003d\u003d payload[\u0027buttonIndex\u0027]:\n\t\t\t\n\t\t\tb[\u0027selected\u0027] \u003d payload[\u0027selected\u0027]\n\t\telif b[\u0027widgetUUID\u0027] !\u003d payload[\u0027buttonIndex\u0027] and self.view.custom.operationDetails.multiSelectable \u003d\u003d False:\n\t\t\tsystem.perspective.sendMessage(\u0027deselected\u0027, payload \u003d {\u0027index\u0027: b[\u0027widgetUUID\u0027]})\n\t\t\tb[\u0027selected\u0027] \u003d 0",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "selectAll",
+          "pageScope": true,
+          "script": "\tfor b in self.view.custom.Selections:\n\t\tb[\u0027selected\u0027] \u003d 1",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "deselectAll",
+          "pageScope": true,
+          "script": "\tfor b in self.view.custom.Selections:\n\t\tb[\u0027selected\u0027] \u003d 0",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "coreAll",
+          "pageScope": true,
+          "script": "\tfor b in self.view.custom.Selections:\n\t\tb[\u0027selected\u0027] \u003d 2",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

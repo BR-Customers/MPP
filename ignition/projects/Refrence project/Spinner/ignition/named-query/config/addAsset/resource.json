@@ -1,0 +1,75 @@
+{
+  "scope": "DG",
+  "version": 2,
+  "restricted": false,
+  "overridable": true,
+  "files": [
+    "query.sql"
+  ],
+  "attributes": {
+    "useMaxReturnSize": false,
+    "autoBatchEnabled": false,
+    "fallbackValue": "",
+    "maxReturnSize": 100,
+    "cacheUnit": "SEC",
+    "type": "UpdateQuery",
+    "enabled": true,
+    "cacheAmount": 1,
+    "cacheEnabled": false,
+    "database": "",
+    "fallbackEnabled": false,
+    "lastModificationSignature": "9c53fb764a8f0f3e31336c386e6f30d29b3eaa877d5cca129ce952acfa2e4e46",
+    "permissions": [
+      {
+        "zone": "",
+        "role": ""
+      }
+    ],
+    "lastModification": {
+      "actor": "hkraft",
+      "timestamp": "2026-03-17T14:11:41Z"
+    },
+    "parameters": [
+      {
+        "type": "Parameter",
+        "identifier": "name",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "hostname",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "lastActivated",
+        "sqlType": 8
+      },
+      {
+        "type": "Parameter",
+        "identifier": "equipmentUUID",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "assetUUID",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "active",
+        "sqlType": 6
+      },
+      {
+        "type": "Parameter",
+        "identifier": "lastEdited",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "lastEditedBy",
+        "sqlType": 7
+      }
+    ]
+  }
+}

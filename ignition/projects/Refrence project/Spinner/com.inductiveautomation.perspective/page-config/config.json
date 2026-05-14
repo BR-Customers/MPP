@@ -1,0 +1,93 @@
+{
+  "pages": {
+    "/": {
+      "title": "Jasper Recipe Management",
+      "viewPath": "BlueRidge/Views/Home"
+    },
+    "/assetmodel": {
+      "title": "Asset Model",
+      "viewPath": "BlueRidge/Views/Config/EnterpriseManagement"
+    },
+    "/headconfig": {
+      "docks": {
+        "right": [
+          {
+            "anchor": "fixed",
+            "autoBreakpoint": 480,
+            "content": "cover",
+            "handle": "hide",
+            "iconUrl": "",
+            "id": "ButtonConfig",
+            "modal": false,
+            "resizable": false,
+            "show": "onDemand",
+            "size": 250,
+            "viewParams": {},
+            "viewPath": "BlueRidge/Components/_Recipe/Docks/ButtonConfig"
+          }
+        ]
+      },
+      "title": "",
+      "viewPath": "BlueRidge/Views/Recipe/HeadConfig"
+    },
+    "/hmi/cncloader": {
+      "title": "CNC Loader",
+      "viewPath": "BlueRidge/Views/HMI/CNCLoader"
+    },
+    "/hmi/cncloader/recipeselection": {
+      "title": "CNC Loader",
+      "viewPath": "BlueRidge/Components/_HMI/_CNCLoader/RecipeSelections"
+    },
+    "/hmi/cncloader/recipesubmission": {
+      "title": "CNC Loader",
+      "viewPath": "BlueRidge/Components/_HMI/_CNCLoader/RecipeSubmission"
+    },
+    "/hmi/cncloader/runcomplete": {
+      "title": "CNC Loader",
+      "viewPath": "BlueRidge/Components/_HMI/_CNCLoader/RunComplete"
+    },
+    "/hmi/head": {
+      "title": "HMI",
+      "viewPath": "BlueRidge/Views/HMI/HMI"
+    },
+    "/recipe": {
+      "title": "Recipe Management",
+      "viewPath": "BlueRidge/Views/Recipe/RecipeManagement"
+    }
+  },
+  "sharedDocks": {
+    "cornerPriority": "top-bottom",
+    "left": [
+      {
+        "anchor": "fixed",
+        "autoBreakpoint": 480,
+        "content": "cover",
+        "handle": "hide",
+        "iconUrl": "",
+        "id": "menu",
+        "modal": false,
+        "resizable": false,
+        "show": "onDemand",
+        "size": 210,
+        "viewParams": {},
+        "viewPath": "BlueRidge/Views/Menu"
+      }
+    ],
+    "top": [
+      {
+        "anchor": "fixed",
+        "autoBreakpoint": 480,
+        "content": "push",
+        "handle": "hide",
+        "iconUrl": "",
+        "id": "header",
+        "modal": false,
+        "resizable": false,
+        "show": "visible",
+        "size": 58,
+        "viewParams": {},
+        "viewPath": "BlueRidge/Views/Header"
+      }
+    ]
+  }
+}

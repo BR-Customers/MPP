@@ -1,0 +1,114 @@
+{
+  "custom": {
+    "selected": false
+  },
+  "params": {
+    "headOperationUUID": "value",
+    "name": "value"
+  },
+  "propConfig": {
+    "custom.selected": {
+      "binding": {
+        "config": {
+          "path": "session.custom.hMISelections.selectedOperation"
+        },
+        "transforms": [
+          {
+            "code": "\tif self.params.headOperationUUID in value:\n\t\treturn True\n\telse:\n\t\treturn False",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "params.headOperationUUID": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.name": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 141,
+      "width": 319
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tselected \u003d self.view.custom.selected\n\tif not selected:\n\t\tself.session.custom.hMISelections.selectedOperation.append(self.view.params.headOperationUUID)\n\t\t\n\telse:\n\t\tself.session.custom.hMISelections.selectedOperation.pop(self.session.custom.hMISelections.selectedOperation.index(self.view.params.headOperationUUID))\n\tself.view.custom.selected \u003d not selected\n\tself.session.custom.hMISelections.selectedButtons \u003d []\n\n\tsystem.perspective.print(self.session.custom.hMISelections.selectedOperation)"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "Button"
+        },
+        "position": {
+          "basis": "34px",
+          "grow": 1
+        },
+        "propConfig": {
+          "props.style.classes": {
+            "binding": {
+              "config": {
+                "path": "view.custom.selected"
+              },
+              "overlayOptOut": true,
+              "transforms": [
+                {
+                  "fallback": "BlueRidge/Components/actionButtonRound",
+                  "inputType": "scalar",
+                  "mappings": [
+                    {
+                      "input": true,
+                      "output": "BlueRidge/Components/actionButtonRound"
+                    },
+                    {
+                      "input": false,
+                      "output": "BlueRidge/Components/dangerButtonRound"
+                    }
+                  ],
+                  "outputType": "scalar",
+                  "type": "map"
+                }
+              ],
+              "type": "property"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.name"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontSize": 20
+          }
+        },
+        "type": "ia.input.button"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column"
+    },
+    "type": "ia.container.flex"
+  }
+}

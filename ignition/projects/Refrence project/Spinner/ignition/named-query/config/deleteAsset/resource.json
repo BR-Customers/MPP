@@ -1,0 +1,40 @@
+{
+  "scope": "DG",
+  "version": 2,
+  "restricted": false,
+  "overridable": true,
+  "files": [
+    "query.sql"
+  ],
+  "attributes": {
+    "useMaxReturnSize": false,
+    "autoBatchEnabled": false,
+    "fallbackValue": "",
+    "maxReturnSize": 100,
+    "cacheUnit": "SEC",
+    "type": "UpdateQuery",
+    "enabled": true,
+    "cacheAmount": 1,
+    "cacheEnabled": false,
+    "database": "",
+    "fallbackEnabled": false,
+    "lastModificationSignature": "d9405108bb1b39d7156e7d5e80c240443d96b51b50508556e1a03e2cb9d35c63",
+    "permissions": [
+      {
+        "zone": "",
+        "role": ""
+      }
+    ],
+    "lastModification": {
+      "actor": "hkraft",
+      "timestamp": "2026-03-17T14:11:41Z"
+    },
+    "parameters": [
+      {
+        "type": "Parameter",
+        "identifier": "UUID",
+        "sqlType": 7
+      }
+    ]
+  }
+}

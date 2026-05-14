@@ -1,0 +1,1316 @@
+{
+  "custom": {
+    "cylinderOptions": [],
+    "engineOperation": [],
+    "engineOptions": [
+      {
+        "engineUUID": "9B63AF05-09AA-4C5C-A7AC-E28011432FD3",
+        "equipmentUUID": "5C417B4C-41DE-492B-8694-931BE8859681",
+        "key": "8713CB09-81A3-4FE5-94AB-D27AFCB8F99B",
+        "messageID": "Engine",
+        "text": "6.2L V8 FORD",
+        "value": "",
+        "view": "9B63AF05-09AA-4C5C-A7AC-E28011432FD3"
+      }
+    ],
+    "millingFilter": [
+      {
+        "active": true,
+        "hmiView": null,
+        "lastEdited": {
+          "$": [
+            "ts",
+            192,
+            1760116635405
+          ],
+          "$ts": 1750360609893
+        },
+        "lastEditedBy": "rpulliam",
+        "name": "Mill",
+        "notes": "This is a note",
+        "operationTypeUUID": "1439B533-B574-4B5B-AE8F-41580D8832D1"
+      }
+    ],
+    "millingOptions": null,
+    "operationFilter": [
+      {
+        "active": true,
+        "hmiView": "0",
+        "lastEdited": {
+          "$": [
+            "ts",
+            192,
+            1760116635405
+          ],
+          "$ts": 1752065792323
+        },
+        "lastEditedBy": "rpulliam",
+        "name": "Bore",
+        "notes": "Another Boring Note",
+        "operationTypeUUID": "3CDCCEF9-A094-479C-8D13-B6BC3E38217C"
+      }
+    ],
+    "operationOptions": null,
+    "pageToShow": "Operation",
+    "rerunMode": false,
+    "triggerRefresh": true
+  },
+  "params": {},
+  "permissions": {
+    "securityLevels": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "children": [],
+                "name": "JET-Administrator"
+              },
+              {
+                "children": [],
+                "name": "JET-Operator"
+              },
+              {
+                "children": [],
+                "name": "JET-RecipeAdmin"
+              }
+            ],
+            "name": "Roles"
+          }
+        ],
+        "name": "Authenticated"
+      }
+    ],
+    "type": "AnyOf"
+  },
+  "propConfig": {
+    "custom.cylinderOptions": {
+      "binding": {
+        "config": {
+          "path": "view.custom.selectedData.Operation"
+        },
+        "transforms": [
+          {
+            "code": "\tif value and value !\u003d0 and value !\u003d1:\n\t\tselectedValue \u003d 0\n\t\tif self.custom.rerunMode:\n\t\t\tselectedValue \u003d self.custom.selectedData.Cylinder\n\t\tresp \u003d [\n\t\t  {\n\t\t    \"key\": 1,\n\t\t    \"messageID\": \"Cylinder\",\n\t\t    \"text\": \"All\",\n\t\t    \"type\": \"\",\n\t\t    \"value\": selectedValue,\n\t\t    \"view\": 1\n\t\t  },\n\t\t  {\n\t\t    \"key\": 2,\n\t\t    \"messageID\": \"Cylinder\",\n\t\t    \"text\": \"Custom Selection\",\n\t\t    \"type\": \"\",\n\t\t    \"value\": selectedValue,\n\t\t    \"view\": 2\n\t\t  }\n\t\t]\n\telif value \u003d\u003d 1:\n\t\tresp \u003d [{\n\t\t    \"key\": 3,\n\t\t    \"messageID\": \"Cylinder\",\n\t\t    \"text\": \"None\",\n\t\t    \"type\": \"\",\n\t\t    \"value\": 3,\n\t\t    \"view\": 3\n\t\t }]\n\telse:\n\t\tresp\u003d[]\n\treturn resp",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.engineOperation": {
+      "binding": {
+        "config": {
+          "path": "view.custom.selectedData.Engine"
+        },
+        "transforms": [
+          {
+            "code": "#\tresp \u003d BlueRidge.HMI.CNCLoader.Engine.getEngines()\n\toneEngine \u003d value\n\textensionTypeUUID \u003d self.session.custom.equipment.extension\n\tresp \u003d BlueRidge.HMI.CNCLoader.OperationEngine.getOperationEngines()\n\n\toesformyengine \u003d []\n\topsformyengine \u003d []\n\tavailableEngineOps \u003d []\n\tfor oe in resp:\n\t\tif oe[\u0027engineUUID\u0027]\u003d\u003doneEngine: #find all operations for my engine\n\t\t\toesformyengine.append(oe)\n\t\t\topsformyengine.append(oe[\u0027operationUUID\u0027])\n\tfor op in opsformyengine:\n\t\tresp \u003d BlueRidge.HMI.CNCLoader.Operation.getOne(op)\n\t\tif resp.get(\u0027available\u0027):\n\t\t\tavailableEngineOps.append(resp)\n#\tBlueRidge.HMI.CNCLoader.ParameterList.getAll(engineOperationUUID)\n\tfor op in availableEngineOps:\n\t\tkey \u003d op[\u0027key\u0027]\n\t\tparamLists \u003d BlueRidge.HMI.CNCLoader.ParameterList.getAll(key)\n\t\tparamList \u003d next((p for p in paramLists if p.get(\u0027extensionTypeUUID\u0027) \u003d\u003d extensionTypeUUID), None)\n\t\top[\u0027verified\u0027] \u003d paramList.get(\u0027verified\u0027)\n#\t\tverifiedAndAvailableEngineOps \u003d [pl for pl in paramLists if pl.get(\u0027verified\u0027)]\n\t\t\n\tfor op in availableEngineOps:\n\t\top[\u0027messageID\u0027] \u003d \u0027Operation\u0027\n\treturn availableEngineOps",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.engineOptions": {
+      "binding": {
+        "config": {
+          "struct": {
+            "key": "{session.custom.equipment.key}",
+            "triggerRefresh": "{view.custom.triggerRefresh}"
+          },
+          "waitOnAll": true
+        },
+        "transforms": [
+          {
+            "code": "\tresp \u003d BlueRidge.HMI.CNCLoader.EquipmentEngine.getAll(value[\u0027key\u0027])\n\trerunMode\u003dself.custom.rerunMode\n\tselectedEngine \u003d self.custom.selectedData.Engine\n\tfor r in resp:\n\t\tr[\u0027messageID\u0027] \u003d \u0027Engine\u0027\n\t\tr[\u0027view\u0027] \u003d r[\u0027engineUUID\u0027]\n\t\tif rerunMode:\n\t\t\tr[\u0027value\u0027] \u003d selectedEngine\n\tif rerunMode:\n\t\tresp \u003d [r for r in resp if r.get(\u0027engineUUID\u0027)\u003d\u003dselectedEngine]\n\tresp.sort(key\u003dlambda x: x[\u0027text\u0027])\n\treturn resp",
+            "type": "script"
+          }
+        ],
+        "type": "expr-struct"
+      },
+      "persistent": true
+    },
+    "custom.millingFilter": {
+      "binding": {
+        "config": {
+          "path": "view.custom.triggerRefresh"
+        },
+        "transforms": [
+          {
+            "expression": "runScript(\u0027BlueRidge.HMI.CNCLoader.OperationType.getOperationTypes\u0027,0)",
+            "type": "expression"
+          },
+          {
+            "code": "\tupdated_list \u003d [item for item in value if \u0027mil\u0027 in item[\u0027name\u0027].lower()]\n\treturn updated_list",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.millingOptions": {
+      "binding": {
+        "config": {
+          "struct": {
+            "cylinder": "{view.custom.selectedData.Cylinder}",
+            "eos": "{view.custom.engineOperation}"
+          },
+          "waitOnAll": true
+        },
+        "transforms": [
+          {
+            "code": "\tif value[\u0027cylinder\u0027] and value[\u0027cylinder\u0027] !\u003d0:\n\t\tselectedValue \u003d 0\n\t\tif self.custom.rerunMode:\n\t\t\tselectedValue \u003d self.custom.selectedData.Milling\t\n\t\toperationFilter \u003d self.custom.millingFilter\n\t\tif operationFilter:\n\t#\t\tsystem.perspective.print(\u0027operationFilter: {}\u0027.format(operationFilter))\n\t\t\ttypeFilterKey \u003d operationFilter[0].operationTypeUUID\n\t\t\tbuttons \u003d []\n#\t\t\teos \u003d self.custom.engineOperation\n\t\t\teos \u003d value[\u0027eos\u0027]\n#\t\t\tsystem.perspective.print(\u0027eos:{}\u0027.format(eos))\n\t\t\tfor v in eos:\n#\t\t\t\tsystem.perspective.print(\u0027v:{}\u0027.format(v))\n\t\t\t\tif v.get(\u0027type\u0027) \u003d\u003d typeFilterKey and v.get(\u0027available\u0027) and v.get(\u0027verified\u0027):\n#\t\t\t\t\tsystem.perspective.print(\u0027passedv:{} \u0027.format(v))\n\t\t\t\t\tbuttons.append({\n\t\t\t\t\t\t\"view\": v.get(\u0027key\u0027),\n\t\t\t\t\t\t\"messageID\": \"Milling\",\n\t\t\t\t\t\t\"text\": v.get(\u0027name\u0027),\n\t\t\t\t\t\t\"value\": selectedValue,\n\t\t\t\t\t\t\"key\": v.get(\u0027key\u0027)\n\t\t\t\t\t})\n\t\t\tbuttons.sort(key\u003dlambda x: x[\u0027text\u0027])\n\t\t\tbuttons.append({\n\t\t\t    \"key\": 3,\n\t\t\t    \"messageID\": \"Milling-Custom\",\n\t\t\t    \"text\": \"Custom Selection\",\n\t\t\t    \"type\": \"\",\n\t\t\t    \"value\": selectedValue,\n\t\t\t    \"view\": 3\n\t\t\t  })\n\t\t\tbuttons.append({\n\t\t\t    \"key\": 2,\n\t\t\t    \"messageID\": \"Milling\",\n\t\t\t    \"text\": \"None\",\n\t\t\t    \"type\": \"\",\n\t\t\t    \"value\": selectedValue,\n\t\t\t    \"view\": 2\n\t\t\t  })\n\t\t\treturn buttons",
+            "type": "script"
+          }
+        ],
+        "type": "expr-struct"
+      },
+      "persistent": true
+    },
+    "custom.operationFilter": {
+      "binding": {
+        "config": {
+          "path": "view.custom.triggerRefresh"
+        },
+        "transforms": [
+          {
+            "expression": "runScript(\u0027BlueRidge.HMI.CNCLoader.OperationType.getOperationTypes\u0027,0)",
+            "type": "expression"
+          },
+          {
+            "code": "\tupdated_list \u003d [item for item in value if \u0027bor\u0027 in item[\u0027name\u0027].lower()]\n\treturn updated_list",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.operationOptions": {
+      "binding": {
+        "config": {
+          "path": "view.custom.engineOperation"
+        },
+        "transforms": [
+          {
+            "code": "\toperationFilter \u003d self.custom.operationFilter\n\tif len(value)\u003e0:\n\t\tif operationFilter: #Should always be. Limit results to BORE operations\n\t#\t\tsystem.perspective.print(\u0027operationFilter: {}\u0027.format(operationFilter))\n\t\t\ttypeFilterKey \u003d operationFilter[0].operationTypeUUID\n\t\t\tbuttons \u003d []\n\t\t\tselectedValue \u003d \u0027\u0027\n\t\t\tfor v in value:\n\t\t\t\tif v.get(\u0027type\u0027) \u003d\u003d typeFilterKey and v.get(\u0027verified\u0027):\n\t\t\t\t\tif self.custom.rerunMode:\n\t\t\t\t\t\tselectedValue \u003d self.custom.selectedData.Operation\n\t\t\t\t\tbuttons.append({\n\t\t\t\t\t\t\"view\": v.get(\u0027key\u0027),\n\t\t\t\t\t\t\"messageID\": v.get(\u0027messageID\u0027),\n\t\t\t\t\t\t\"text\": v.get(\u0027name\u0027),\n\t\t\t\t\t\t\"value\": selectedValue,\n\t\t\t\t\t\t\"key\": v.get(\u0027key\u0027)\n\t\t\t\t\t})\n\t\t\tbuttons.sort(key\u003dlambda x: x[\u0027text\u0027])\n\t\t\tbuttons.append({\n\t\t\t\t\t\t\"view\": 2,\n\t\t\t\t\t\t\"messageID\": \u0027Operation-Custom\u0027,\n\t\t\t\t\t\t\"text\": \u0027Custom Selection\u0027,\n\t\t\t\t\t\t\"value\": selectedValue,\n\t\t\t\t\t\t\"key\": 2\n\t\t\t\t\t})\n\t\t\tbuttons.append({\n\t\t\t\t\t\t\"view\": 1,\n\t\t\t\t\t\t\"messageID\": \u0027Operation\u0027,\n\t\t\t\t\t\t\"text\": \u0027None\u0027,\n\t\t\t\t\t\t\"value\": selectedValue,\n\t\t\t\t\t\t\"key\": 1\n\t\t\t\t\t})\n\t\t\treturn buttons",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.pageToShow": {
+      "binding": {
+        "config": {
+          "path": "view.custom.selection"
+        },
+        "enabled": false,
+        "transforms": [
+          {
+            "expression": "if(len({value}),(len({value}) - len(replace({value}, \"/\", \"\"))),\"\")",
+            "type": "expression"
+          },
+          {
+            "fallback": "",
+            "inputType": "scalar",
+            "mappings": [
+              {
+                "input": 0,
+                "output": "Plant"
+              },
+              {
+                "input": 1,
+                "output": "Equipment"
+              },
+              {
+                "input": 2,
+                "output": "Asset"
+              }
+            ],
+            "outputType": "scalar",
+            "type": "map"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.rerunMode": {
+      "binding": {
+        "config": {
+          "bidirectional": true,
+          "path": "session.custom.rerun"
+        },
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.selectedData": {
+      "binding": {
+        "config": {
+          "path": "view.custom.triggerRefresh"
+        },
+        "transforms": [
+          {
+            "code": "\tif self.session.custom.rerun:\n\t\tvalue \u003d self.session.custom.selectedData\n\telse:\n\t\tvalue\u003d{\n\t\t  \"Cylinder\": 0,\n\t\t  \"Engine\": 0,\n\t\t  \"Milling\": 0,\n\t\t  \"Operation\": 0,\n\t\t}\n\treturn value",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      }
+    },
+    "custom.triggerRefresh": {
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 1000
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Icon"
+            },
+            "position": {
+              "basis": "75px"
+            },
+            "props": {
+              "path": "material/backup",
+              "style": {
+                "marginLeft": 20,
+                "marginRight": 20
+              }
+            },
+            "type": "ia.display.icon"
+          },
+          {
+            "meta": {
+              "name": "Label"
+            },
+            "position": {
+              "basis": "50px",
+              "grow": 1
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "\u0027CNC Loader - Recipe Selection: \u0027+{session.custom.equipment.name}"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "BlueRidge/boldTextLarge"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "Rerun"
+            },
+            "position": {
+              "basis": "120px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.rerunMode"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "backgroundColor": "#FFFF00",
+                "color": "#000000",
+                "fontWeight": "bold",
+                "margin": 20,
+                "textAlign": "center"
+              },
+              "text": "RE-RUN MODE"
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "basis": "75px"
+        },
+        "props": {
+          "style": {
+            "classes": "BlueRidge/Header/Header"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "BlueRidge/boldTitleMedium"
+                      },
+                      "text": "Select Engine Option"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "events": {
+                      "dom": {
+                        "onClick": {
+                          "config": {
+                            "draggable": true,
+                            "id": "Filter",
+                            "modal": false,
+                            "overlayDismiss": false,
+                            "resizable": true,
+                            "showCloseIcon": true,
+                            "type": "open",
+                            "viewPath": "BlueRidge/Components/_Recipe/Popups/Filter",
+                            "viewportBound": false
+                          },
+                          "scope": "C",
+                          "type": "popup"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "name": "Icon"
+                    },
+                    "position": {
+                      "basis": "30px",
+                      "display": false
+                    },
+                    "props": {
+                      "path": "material/filter_list"
+                    },
+                    "type": "ia.display.icon"
+                  }
+                ],
+                "meta": {
+                  "name": "FlexContainer"
+                },
+                "position": {
+                  "basis": "50px",
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "BlueRidge/Header/Header",
+                    "padding": 10
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "basis": "25px",
+                      "display": false,
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Select Engine Option"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "FlexRepeater"
+                        },
+                        "position": {
+                          "basis": "320px",
+                          "grow": 1
+                        },
+                        "propConfig": {
+                          "props.instances": {
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.engineOptions"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "direction": "column",
+                          "elementStyle": {
+                            "marginBottom": 10
+                          },
+                          "path": "BlueRidge/Components/_HMI/_CNCLoader/ButtonOfLists_Oneshot",
+                          "useDefaultViewWidth": false
+                        },
+                        "scripts": {
+                          "customMethods": [],
+                          "extensionFunctions": null,
+                          "messageHandlers": [
+                            {
+                              "messageType": "OneShotButtonEngine",
+                              "pageScope": true,
+                              "script": "\t# implement your handler here",
+                              "sessionScope": false,
+                              "viewScope": false
+                            }
+                          ]
+                        },
+                        "type": "ia.display.flex-repeater"
+                      }
+                    ],
+                    "meta": {
+                      "name": "FlexContainer"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "paddingBottom": 10,
+                        "paddingLeft": 10,
+                        "paddingRight": 10,
+                        "paddingTop": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "ListOfButton"
+                },
+                "position": {
+                  "basis": "250px",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "marginBottom": 5
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "SelectEngine"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "backgroundColor": "#AAAAAA",
+                "margin": 10
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "BlueRidge/boldTitleMedium"
+                      },
+                      "text": "Select Bore Option"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "events": {
+                      "dom": {
+                        "onClick": {
+                          "config": {
+                            "draggable": true,
+                            "id": "Filter",
+                            "modal": false,
+                            "overlayDismiss": false,
+                            "resizable": true,
+                            "showCloseIcon": true,
+                            "type": "open",
+                            "viewPath": "BlueRidge/Components/_Recipe/Popups/Filter",
+                            "viewportBound": false
+                          },
+                          "scope": "C",
+                          "type": "popup"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "name": "Icon"
+                    },
+                    "position": {
+                      "basis": "30px",
+                      "display": false
+                    },
+                    "props": {
+                      "path": "material/filter_list"
+                    },
+                    "type": "ia.display.icon"
+                  },
+                  {
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "config": {
+                            "script": "\tpayload \u003d {}\n\tpayload[\"messageID\"] \u003d \u0027Operation-Custom\u0027\n\tpayload[\"value\"] \u003d -1\n\tmessageType \u003d \u0027OneShotButton\u0027\n\tsystem.perspective.sendMessage(messageType, payload)\n\tself.session.custom.selectedBore \u003d 0\n#\tpayload \u003d {}\n#\tpayload[\"messageID\"] \u003d \u0027Operation\u0027\n#\tpayload[\"value\"] \u003d 0\n#\tmessageType \u003d \u0027OneShotButton\u0027\n#\tsystem.perspective.sendMessage(messageType, payload)"
+                          },
+                          "scope": "G",
+                          "type": "script"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "name": "Button"
+                    },
+                    "position": {
+                      "basis": "80px"
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "{view.custom.selectedData.Operation-Custom} \u0026\u0026 {view.custom.selectedData.Operation-Custom}!\u003d0"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "BlueRidge/Components/greyButtonRound"
+                      },
+                      "text": "Cancel"
+                    },
+                    "type": "ia.input.button"
+                  }
+                ],
+                "meta": {
+                  "name": "FlexContainer"
+                },
+                "position": {
+                  "basis": "50px",
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "BlueRidge/Header/Header",
+                    "padding": 10
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "basis": "25px",
+                      "display": false,
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Select Engine Option"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "FlexRepeater"
+                        },
+                        "position": {
+                          "basis": "320px",
+                          "grow": 1
+                        },
+                        "propConfig": {
+                          "props.instances": {
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.operationOptions"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "direction": "column",
+                          "elementStyle": {
+                            "marginBottom": 10
+                          },
+                          "path": "BlueRidge/Components/_HMI/_CNCLoader/ButtonOfLists_Oneshot",
+                          "useDefaultViewWidth": false
+                        },
+                        "type": "ia.display.flex-repeater"
+                      }
+                    ],
+                    "meta": {
+                      "name": "FlexContainer"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "paddingBottom": 10,
+                        "paddingLeft": 10,
+                        "paddingRight": 10,
+                        "paddingTop": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "ListOfButton"
+                },
+                "position": {
+                  "basis": "250px",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "marginBottom": 5
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "SelectBore"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "backgroundColor": "#AAAAAA",
+                "margin": 10
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "BlueRidge/boldTitleMedium"
+                      },
+                      "text": "Select Cylinder Option"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "events": {
+                      "dom": {
+                        "onClick": {
+                          "config": {
+                            "draggable": true,
+                            "id": "Filter",
+                            "modal": false,
+                            "overlayDismiss": false,
+                            "resizable": true,
+                            "showCloseIcon": true,
+                            "type": "open",
+                            "viewPath": "BlueRidge/Components/_Recipe/Popups/Filter",
+                            "viewportBound": false
+                          },
+                          "scope": "C",
+                          "type": "popup"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "name": "Icon"
+                    },
+                    "position": {
+                      "basis": "30px",
+                      "display": false
+                    },
+                    "props": {
+                      "path": "material/filter_list"
+                    },
+                    "type": "ia.display.icon"
+                  },
+                  {
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "config": {
+                            "script": "#\tpayload \u003d {}\n#\tpayload[\"messageID\"] \u003d \u0027Cylinder-Custom\u0027\n#\tpayload[\"value\"] \u003d 0\n#\tmessageType \u003d \u0027OneShotButton\u0027\n#\tsystem.perspective.sendMessage(messageType, payload)\n\tpayload \u003d {}\n\tpayload[\"messageID\"] \u003d \u0027Cylinder\u0027\n\tpayload[\"value\"] \u003d 0\n\tmessageType \u003d \u0027OneShotButton\u0027\n\tsystem.perspective.sendMessage(messageType, payload)\n\tself.session.custom.selectedCylinders \u003d []"
+                          },
+                          "scope": "G",
+                          "type": "script"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "name": "Button"
+                    },
+                    "position": {
+                      "basis": "80px"
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "{view.custom.selectedData.Cylinder}\u003d2"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "BlueRidge/Components/greyButtonRound"
+                      },
+                      "text": "Cancel"
+                    },
+                    "type": "ia.input.button"
+                  }
+                ],
+                "meta": {
+                  "name": "FlexContainer"
+                },
+                "position": {
+                  "basis": "50px",
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "BlueRidge/Header/Header",
+                    "padding": 10
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "basis": "25px",
+                      "display": false,
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Select Engine Option"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "FlexRepeater"
+                        },
+                        "position": {
+                          "basis": "320px",
+                          "grow": 1
+                        },
+                        "propConfig": {
+                          "props.instances": {
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.cylinderOptions"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "direction": "column",
+                          "elementStyle": {
+                            "marginBottom": 10
+                          },
+                          "path": "BlueRidge/Components/_HMI/_CNCLoader/ButtonOfLists_Oneshot",
+                          "useDefaultViewWidth": false
+                        },
+                        "type": "ia.display.flex-repeater"
+                      }
+                    ],
+                    "meta": {
+                      "name": "FlexContainer"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "paddingBottom": 10,
+                        "paddingLeft": 10,
+                        "paddingRight": 10,
+                        "paddingTop": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "ListOfButton"
+                },
+                "position": {
+                  "basis": "250px",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "marginBottom": 5
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "SelectCylinder"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "backgroundColor": "#AAAAAA",
+                "margin": 10
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "BlueRidge/boldTitleMedium"
+                      },
+                      "text": "Select Milling"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "events": {
+                      "dom": {
+                        "onClick": {
+                          "config": {
+                            "draggable": true,
+                            "id": "Filter",
+                            "modal": false,
+                            "overlayDismiss": false,
+                            "resizable": true,
+                            "showCloseIcon": true,
+                            "type": "open",
+                            "viewPath": "BlueRidge/Components/_Recipe/Popups/Filter",
+                            "viewportBound": false
+                          },
+                          "scope": "C",
+                          "type": "popup"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "name": "Icon"
+                    },
+                    "position": {
+                      "basis": "30px",
+                      "display": false
+                    },
+                    "props": {
+                      "path": "material/filter_list"
+                    },
+                    "type": "ia.display.icon"
+                  },
+                  {
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "config": {
+                            "script": "\tpayload \u003d {}\n\tpayload[\"messageID\"] \u003d \u0027Milling-Custom\u0027\n\tpayload[\"value\"] \u003d -1\n\tmessageType \u003d \u0027OneShotButton\u0027\n\tsystem.perspective.sendMessage(messageType, payload)\n\tself.session.custom.selectedMill \u003d 0\n#\tpayload \u003d {}\n#\tpayload[\"messageID\"] \u003d \u0027Milling\u0027\n#\tpayload[\"value\"] \u003d 0\n#\tmessageType \u003d \u0027OneShotButton\u0027\n#\tsystem.perspective.sendMessage(messageType, payload)"
+                          },
+                          "scope": "G",
+                          "type": "script"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "name": "Button"
+                    },
+                    "position": {
+                      "basis": "80px"
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "{view.custom.selectedData.Milling-Custom} \u0026\u0026 {view.custom.selectedData.Milling-Custom}!\u003d0"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "BlueRidge/Components/greyButtonRound"
+                      },
+                      "text": "Cancel"
+                    },
+                    "type": "ia.input.button"
+                  }
+                ],
+                "meta": {
+                  "name": "FlexContainer"
+                },
+                "position": {
+                  "basis": "50px",
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "BlueRidge/Header/Header",
+                    "padding": 10
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "basis": "25px",
+                      "display": false,
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Select Engine Option"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "FlexRepeater"
+                        },
+                        "position": {
+                          "basis": "320px",
+                          "grow": 1
+                        },
+                        "propConfig": {
+                          "props.instances": {
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.millingOptions"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "direction": "column",
+                          "elementStyle": {
+                            "marginBottom": 10
+                          },
+                          "path": "BlueRidge/Components/_HMI/_CNCLoader/ButtonOfLists_Oneshot",
+                          "useDefaultViewWidth": false
+                        },
+                        "type": "ia.display.flex-repeater"
+                      }
+                    ],
+                    "meta": {
+                      "name": "FlexContainer"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "paddingBottom": 10,
+                        "paddingLeft": 10,
+                        "paddingRight": 10,
+                        "paddingTop": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "ListOfButton"
+                },
+                "position": {
+                  "basis": "250px",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "marginBottom": 5
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "SelectMilling"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "backgroundColor": "#AAAAAA",
+                "margin": 10
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "400px"
+        },
+        "props": {
+          "alignItems": "flex-start",
+          "style": {
+            "classes": "BlueRidge/Menu/Menu",
+            "padding": 30
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tselectedData \u003d {\n\t  \"Engine\": 0,\n\t  \"Operation\": 0,\n\t  \"Cylinder\": 0,\n\t  \"Milling\": 0,\n\t}\n\tif self.view.custom.rerunMode:\n\t\tselectedData[\u0027Engine\u0027] \u003d self.view.custom.selectedData.Engine\n#\tself.view.custom.selectedData \u003d selectedData\n\tself.session.custom.selectedData \u003d selectedData\n\tself.session.custom.selectedCylinders \u003d []\n\tself.session.custom.selectedBore \u003d 0\n\tself.session.custom.selectedMill \u003d 0\n#\tselectedData \u003d self.session.custom.selectedData\n#\tselectedCylinders \u003d self.session.custom.selectedCylinders\n#\tsystem.perspective.print(\u0027selectedData: {}\u0027.format(selectedData))\n#\tsystem.perspective.print(\u0027selectedCylinders: {}\u0027.format(selectedCylinders))\n\ttrigger \u003d self.view.custom.triggerRefresh\n\tself.view.custom.triggerRefresh \u003d not trigger"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "Cancel"
+                },
+                "position": {
+                  "basis": "200px"
+                },
+                "props": {
+                  "style": {
+                    "classes": "BlueRidge/Components/dangerButtonRound",
+                    "margin": 10
+                  },
+                  "text": "Cancel Submission"
+                },
+                "type": "ia.input.button"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": [
+                      {
+                        "config": {
+                          "script": "\tparams\u003d{\"key\":self.view.custom.selectedData.Engine}\n\tcylinder \u003d self.view.custom.selectedData.Cylinder\n\tselectedCylinders \u003d self.session.custom.selectedCylinders\n#\tsystem.perspective.print(selectedCylinders)\n\tif cylinder \u003d\u003d 2 and (len(selectedCylinders) \u003d\u003d 0): # or self.view.custom.rerunMode):\n\t\tselectedData \u003d self.view.custom.selectedData\n\t\tself.session.custom.selectedData \u003d selectedData\n\t\tsystem.perspective.openPopup(\"BlockConfig\", \"BlueRidge/Components/_HMI/_CNCLoader/Popups/BlockConfig\", params)\n\telse:\n\t\tselectedData \u003d self.view.custom.selectedData\n\t\tself.session.custom.selectedData \u003d selectedData\n\t\tsystem.perspective.navigate(\"/hmi/cncloader/recipesubmission\")"
+                        },
+                        "scope": "G",
+                        "type": "script"
+                      },
+                      {
+                        "config": {
+                          "draggable": true,
+                          "id": "BlockConfig",
+                          "modal": false,
+                          "overlayDismiss": false,
+                          "resizable": true,
+                          "showCloseIcon": true,
+                          "type": "open",
+                          "viewParams": {
+                            "key": "{view.custom.selectedData.Engine}"
+                          },
+                          "viewPath": "BlueRidge/Components/_HMI/_CNCLoader/Popups/BlockConfig",
+                          "viewportBound": false
+                        },
+                        "enabled": false,
+                        "scope": "C",
+                        "type": "popup"
+                      }
+                    ]
+                  }
+                },
+                "meta": {
+                  "name": "Submit"
+                },
+                "position": {
+                  "basis": "200px"
+                },
+                "propConfig": {
+                  "props.enabled": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.selectedData"
+                      },
+                      "transforms": [
+                        {
+                          "code": "\tselectedData \u003d value\n#\tengine \u003d selectedData[\u0027Engine\u0027]\n#\tcylinder \u003d selectedData[\u0027Cylinder\u0027]\n#\treturn (engine!\u003d0 and cylinder!\u003d0)\n#\treturn  not all(value \u003d\u003d 0 for value in selectedData.values())\n\treturn all(value !\u003d 0 for value in selectedData.values())\n",
+                          "type": "script"
+                        }
+                      ],
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "BlueRidge/Components/actionButtonRound",
+                    "margin": 10
+                  },
+                  "text": "Go to Submission"
+                },
+                "type": "ia.input.button"
+              }
+            ],
+            "meta": {
+              "name": "FlexContainer"
+            },
+            "position": {
+              "basis": "70px"
+            },
+            "props": {
+              "justify": "center"
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Footer"
+        },
+        "position": {
+          "basis": "200px",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "BlueRidge/Menu/Menu"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column"
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "refreshTrigger",
+          "pageScope": true,
+          "script": "\ttrigger \u003d self.view.custom.triggerRefresh\n\tself.view.custom.triggerRefresh \u003d not trigger\n\tself.view.custom.selectedData \u003d \u0027\u0027",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "OneShotButton",
+          "pageScope": true,
+          "script": "#\tsystem.perspective.print(payload)\n\tmessageID \u003d payload[\"messageID\"]\n\tvalue \u003d payload[\"value\"]\n\tself.view.custom.selectedData[messageID] \u003d value\n\t\n\tparams\u003d{\"key\":self.view.custom.selectedData.Engine}\n\tcylinder \u003d self.view.custom.selectedData.Cylinder\n\tselectedCylinders \u003d self.session.custom.selectedCylinders\n#\tsystem.perspective.print(selectedCylinders)\n\tif value \u003d\u003d 2 and messageID \u003d\u003d \u0027Cylinder\u0027 and (len(selectedCylinders) \u003d\u003d 0): # or self.view.custom.rerunMode):\n\t\tselectedData \u003d self.view.custom.selectedData\n\t\tself.session.custom.selectedData \u003d selectedData\n\t\tsystem.perspective.openPopup(\"BlockConfig\", \"BlueRidge/Components/_HMI/_CNCLoader/Popups/BlockConfig\", params)\n\tif value \u003d\u003d 2 and messageID \u003d\u003d \u0027Operation-Custom\u0027:\n\t\tselectedData \u003d self.view.custom.selectedData\n\t\tself.session.custom.selectedData \u003d selectedData\n\t\tparams\u003d{\"key\":self.view.custom.selectedData.Operation}\n\t\tsystem.perspective.openPopup(\"CustomBore\", \"BlueRidge/Components/_HMI/_CNCLoader/Popups/CustomBore\", params)\n\tif value \u003d\u003d 3 and messageID \u003d\u003d \u0027Milling-Custom\u0027:\n\t\tselectedData \u003d self.view.custom.selectedData\n\t\tself.session.custom.selectedData \u003d selectedData\n\t\tparams\u003d{\"key\":self.view.custom.selectedData.Milling}\n\t\tsystem.perspective.openPopup(\"CustomMill\", \"BlueRidge/Components/_HMI/_CNCLoader/Popups/CustomMill\", params)",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "filterUpdate",
+          "pageScope": true,
+          "script": "\tself.view.custom.filter \u003d payload",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

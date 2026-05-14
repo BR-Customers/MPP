@@ -1,0 +1,147 @@
+{
+  "custom": {
+    "fileInUse": [],
+    "headFileUUID": null,
+    "image": "value",
+    "name": null
+  },
+  "params": {
+    "rowData": "value",
+    "value": "value"
+  },
+  "propConfig": {
+    "custom.fileInUse": {
+      "binding": {
+        "config": {
+          "parameters": {
+            "headFileUUID": "{view.custom.headFileUUID}"
+          },
+          "queryPath": "config/getHeadFilesInUse",
+          "returnFormat": "json"
+        },
+        "type": "query"
+      },
+      "persistent": true
+    },
+    "custom.headFileUUID": {
+      "binding": {
+        "config": {
+          "expression": "{view.params.rowData}[\u0027headFileUUID\u0027]"
+        },
+        "overlayOptOut": true,
+        "type": "expr"
+      },
+      "persistent": true
+    },
+    "custom.image": {
+      "binding": {
+        "config": {
+          "path": "view.params.value"
+        },
+        "overlayOptOut": true,
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.name": {
+      "binding": {
+        "config": {
+          "expression": "{view.params.rowData}[\u0027fileName\u0027]"
+        },
+        "overlayOptOut": true,
+        "type": "expr"
+      },
+      "persistent": true
+    },
+    "params.rowData": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.value": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 31,
+      "width": 260
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tfileName \u003d self.view.custom.name\n\tparameters \u003d {\n\t\t\u0027headFileUUID\u0027: self.view.custom.headFileUUID\n\t}\n\tsystem.perspective.openPopup(\"headImagePreview\", \"BlueRidge/Components/_Config/Popups/HeadImagePreview\", params \u003d parameters, title \u003d fileName, position \u003d {\u0027width\u0027:500, \u0027height\u0027:450}, showCloseIcon \u003d True, draggable \u003d True, resizable \u003d True)"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "Preview"
+        },
+        "position": {
+          "basis": "45%"
+        },
+        "props": {
+          "style": {
+            "backgroundColor": "#2b78b1",
+            "classes": "BlueRidge/Components/actionButtonRound"
+          },
+          "text": "Preview Image"
+        },
+        "type": "ia.input.button"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "draggable": true,
+                "id": "deleteHeadFile",
+                "modal": false,
+                "overlayDismiss": false,
+                "resizable": true,
+                "showCloseIcon": true,
+                "type": "open",
+                "viewParams": {
+                  "data": "{view.custom.headFileUUID}",
+                  "fileInUse": "{view.custom.fileInUse}"
+                },
+                "viewPath": "BlueRidge/Components/_Config/Popups/DeleteHeadFile",
+                "viewportBound": false
+              },
+              "scope": "C",
+              "type": "popup"
+            }
+          }
+        },
+        "meta": {
+          "name": "Delete"
+        },
+        "position": {
+          "basis": "45%"
+        },
+        "props": {
+          "style": {
+            "classes": "BlueRidge/Components/dangerButtonRound"
+          },
+          "text": "Delete"
+        },
+        "type": "ia.input.button"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "justify": "space-evenly"
+    },
+    "type": "ia.container.flex"
+  }
+}

@@ -1,0 +1,441 @@
+{
+  "custom": {
+    "hasRun": true,
+    "selectedDepth": 1,
+    "status": "Changes Made, Resend File"
+  },
+  "events": {
+    "system": {
+      "onStartup": {
+        "config": {
+          "script": "\tself.custom.status \u003d \u0027Changes Made, Resend File\u0027"
+        },
+        "scope": "G",
+        "type": "script"
+      }
+    }
+  },
+  "params": {},
+  "propConfig": {
+    "custom.hasRun": {
+      "persistent": true
+    },
+    "custom.selectedDepth": {
+      "persistent": true
+    },
+    "custom.status": {
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 838,
+      "width": 1121
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Label"
+            },
+            "position": {
+              "basis": "50px",
+              "display": false
+            },
+            "props": {
+              "style": {
+                "classes": "BlueRidge/boldTitleSmall",
+                "fontSize": 30,
+                "textAlign": "center"
+              },
+              "text": "Depth"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "children": [
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.custom.selectedDepth \u003d 1\n\tself.session.custom.hMISelections.depth.variable \u003d \u0027Q1640\u0027"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "Depth1"
+                },
+                "position": {
+                  "basis": "100px"
+                },
+                "propConfig": {
+                  "props.style.classes": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.selectedDepth"
+                      },
+                      "overlayOptOut": true,
+                      "transforms": [
+                        {
+                          "fallback": "BlueRidge/Components/dangerButtonRound",
+                          "inputType": "scalar",
+                          "mappings": [
+                            {
+                              "input": 1,
+                              "output": "BlueRidge/Components/actionButtonRound"
+                            }
+                          ],
+                          "outputType": "scalar",
+                          "type": "map"
+                        }
+                      ],
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "fontSize": 20
+                  },
+                  "text": "2nd Run"
+                },
+                "type": "ia.input.button"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.custom.selectedDepth \u003d 2\n\tself.session.custom.hMISelections.depth.variable \u003d \u0027Q1650\u0027\n\t"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "Depth2"
+                },
+                "position": {
+                  "basis": "100px"
+                },
+                "propConfig": {
+                  "props.style.classes": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.selectedDepth"
+                      },
+                      "overlayOptOut": true,
+                      "transforms": [
+                        {
+                          "fallback": "BlueRidge/Components/dangerButtonRound",
+                          "inputType": "scalar",
+                          "mappings": [
+                            {
+                              "input": 2,
+                              "output": "BlueRidge/Components/actionButtonRound"
+                            }
+                          ],
+                          "outputType": "scalar",
+                          "type": "map"
+                        }
+                      ],
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "fontSize": 20
+                  },
+                  "text": "3rd Run"
+                },
+                "type": "ia.input.button"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.custom.selectedDepth \u003d 3\n\tself.session.custom.hMISelections.depth.variable \u003d \u0027Q1660\u0027"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "Depth3"
+                },
+                "position": {
+                  "basis": "100px"
+                },
+                "propConfig": {
+                  "props.style.classes": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.selectedDepth"
+                      },
+                      "overlayOptOut": true,
+                      "transforms": [
+                        {
+                          "fallback": "BlueRidge/Components/dangerButtonRound",
+                          "inputType": "scalar",
+                          "mappings": [
+                            {
+                              "input": 3,
+                              "output": "BlueRidge/Components/actionButtonRound"
+                            }
+                          ],
+                          "outputType": "scalar",
+                          "type": "map"
+                        }
+                      ],
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "fontSize": 20
+                  },
+                  "text": "4th Run"
+                },
+                "type": "ia.input.button"
+              }
+            ],
+            "meta": {
+              "name": "FlexContainer"
+            },
+            "position": {
+              "basis": "100px",
+              "display": false
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "{session.custom.hMISelections.process} !\u003d \u0027new\u0027"
+                  },
+                  "enabled": false,
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "justify": "space-around",
+              "style": {
+                "marginTop": 25
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Top"
+        },
+        "position": {
+          "basis": "200px",
+          "grow": 0.35
+        },
+        "props": {
+          "direction": "column"
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "TopSpacer"
+            },
+            "position": {
+              "grow": 0.2
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tfrom java.lang import String,Byte\n\tlogger \u003d system.util.getLogger(\"SpinnerOPC\")\n\t\n\tcncFile \u003d BlueRidge.HMI.HeadHMI.File.generateCNCFile(self.session.custom.hMISelections)\n\t\n\tconn \u003d \"SpinnerCNC\"\n\t# Use EXACT NodeIds from Ignition OPC UA Browser (including namespace!)\n\tdir_objectId \u003d system.tag.readBlocking([\u0027[default]VARSFileId\u0027])[0].value\n\topenFileId   \u003d \"i\u003d11580\"\n\treadFileId \u003d \"i\u003d11585\"\n\twriteFileId  \u003d \"i\u003d11588\"\n\tcloseFileId  \u003d \"i\u003d11583\"\n\t\n\t# What you want the file to be called on the Heidenhain side:\n\tfile_name \u003d \"VARS.h\"   # or cncFile.get(\"filename\") if you want dynamic naming\n\t\n\tcontent \u003d cncFile.get(\"content\", \"\")\n\tsystem.perspective.print(str(self.session.custom.hMISelections))\n\tsystem.perspective.print(str(content))\n\t\n\tdata_list \u003d String(content).getBytes(\"utf-8\")  # Byte[] (0-255)\n\t\n\tMODE_WRITE \u003d BlueRidge.Config.Util.bitsToBytes([0,1])  # common \"write\" mode; confirm in method signature/docs\n\n\thandle \u003d None\n\t\n\tif dir_objectId \u003d\u003d \u0027MissingFile\u0027:\n\t\ttry:\n\t\t\tncId \u003d system.tag.readBlocking([\u0027[default]NC_ProgId\u0027])[0].value\n\t\t\tcreatedFile \u003d system.opcua.callMethod(conn, ncId, \u0027i\u003d13390\u0027, [file_name, False])\n\t\t\tdir_objectId \u003d createdFile[2][0]\n\t\texcept:\n\t\t\tlogger.info(\u0027Create file failed\u0027)\n\t\n\ttry:\n\t    # Open(fileName:String, mode:Byte) -\u003e handle\n\t    open_result \u003d system.opcua.callMethod(conn, dir_objectId, openFileId, [7])\n\t    logger.info(str(open_result))\n\t    handle \u003d tuple(open_result)[2][0]\n\t\n\t    logger.info(\"Opened %r, handle\u003d%r, result:%s\" % (file_name, handle,str(open_result)))\n\n\t    system.opcua.callMethod(conn, dir_objectId, writeFileId, [handle, data_list])\n\t    logger.info(\"Wrote %s bytes\" % (data_list))\n\t    self.view.custom.status \u003d \u0027File Sent\u0027\n\texcept:\n\t\tself.view.custom.status \u003d \u0027File Send Failed\u0027\n\tfinally:\n\t    if handle is not None:\n\t        try:\n\t            # Close(handle)\n\t            system.opcua.callMethod(conn, dir_objectId, closeFileId, [handle])\n\t            logger.info(\"Closed handle %r\" % handle)\n\t        except Exception as e:\n\t            logger.error(\"Close failed: %s\" % e)"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "Button_0"
+                },
+                "position": {
+                  "basis": "80px",
+                  "grow": 0.15
+                },
+                "props": {
+                  "style": {
+                    "classes": "BlueRidge/Components/actionButtonRound",
+                    "fontSize": 25
+                  },
+                  "text": "Process Cylinder Head"
+                },
+                "type": "ia.input.button"
+              }
+            ],
+            "meta": {
+              "name": "Buttons"
+            },
+            "position": {
+              "grow": 0.6
+            },
+            "props": {
+              "justify": "space-around"
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Label"
+                },
+                "position": {
+                  "basis": "435px"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "\u0027Status: \u0027+{view.custom.status}"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "BlueRidge/boldTitleMedium"
+                  }
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "BottomSpacer"
+            },
+            "position": {
+              "grow": 0.2
+            },
+            "props": {
+              "justify": "center"
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Middle"
+        },
+        "position": {
+          "basis": "200px",
+          "grow": 0.3
+        },
+        "props": {
+          "direction": "column"
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "draggable": false,
+                        "id": "RunComplete",
+                        "modal": false,
+                        "overlayDismiss": false,
+                        "resizable": false,
+                        "showCloseIcon": true,
+                        "type": "open",
+                        "viewPath": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/Popups/RunComplete",
+                        "viewportBound": false
+                      },
+                      "scope": "C",
+                      "type": "popup"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "Button_0"
+                },
+                "position": {
+                  "basis": "150px"
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.hasRun"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "BlueRidge/Components/greyButtonRound",
+                    "fontSize": 25
+                  },
+                  "text": "Run Results"
+                },
+                "type": "ia.input.button"
+              }
+            ],
+            "meta": {
+              "name": "Buttons"
+            },
+            "position": {
+              "basis": "300px"
+            },
+            "props": {
+              "direction": "column",
+              "justify": "center"
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Bottom"
+        },
+        "position": {
+          "basis": "200px",
+          "grow": 0.3
+        },
+        "props": {
+          "justify": "center"
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column"
+    },
+    "type": "ia.container.flex"
+  }
+}

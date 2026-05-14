@@ -1,0 +1,86 @@
+{
+  "scope": "DG",
+  "version": 2,
+  "restricted": false,
+  "overridable": true,
+  "files": [
+    "query.sql"
+  ],
+  "attributes": {
+    "useMaxReturnSize": false,
+    "autoBatchEnabled": false,
+    "fallbackValue": "",
+    "maxReturnSize": 100,
+    "cacheUnit": "SEC",
+    "type": "UpdateQuery",
+    "enabled": true,
+    "cacheAmount": 1,
+    "cacheEnabled": false,
+    "database": "",
+    "fallbackEnabled": false,
+    "lastModificationSignature": "e4552a0eaa10fe3cef2ee8477dc65e330aad6a3f74700475314a4d808e71a0e5",
+    "permissions": [
+      {
+        "zone": "",
+        "role": ""
+      }
+    ],
+    "lastModification": {
+      "actor": "hkraft",
+      "timestamp": "2026-03-17T14:11:41Z"
+    },
+    "syntaxProvider": "class com.adbs.syntax.UniversalSyntaxProvider",
+    "parameters": [
+      {
+        "type": "Parameter",
+        "identifier": "name",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "active",
+        "sqlType": 6
+      },
+      {
+        "type": "Parameter",
+        "identifier": "lastEdited",
+        "sqlType": 8
+      },
+      {
+        "type": "Parameter",
+        "identifier": "lastEditedBy",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "HMI",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "fileName",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "extensionTypeUUID",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "plantUUID",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "equipmentUUID",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "hostname",
+        "sqlType": 7
+      }
+    ]
+  }
+}

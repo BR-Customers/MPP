@@ -1,0 +1,70 @@
+{
+  "scope": "DG",
+  "version": 2,
+  "restricted": false,
+  "overridable": true,
+  "files": [
+    "query.sql"
+  ],
+  "attributes": {
+    "useMaxReturnSize": false,
+    "autoBatchEnabled": false,
+    "fallbackValue": "",
+    "maxReturnSize": 100,
+    "cacheUnit": "SEC",
+    "type": "UpdateQuery",
+    "enabled": true,
+    "cacheAmount": 1,
+    "cacheEnabled": false,
+    "database": "",
+    "fallbackEnabled": false,
+    "lastModificationSignature": "85c2908b52a42a831df6bb8b23df6de141bc42b5514dfc146649df325b5dc7f1",
+    "permissions": [
+      {
+        "zone": "",
+        "role": ""
+      }
+    ],
+    "lastModification": {
+      "actor": "hkraft",
+      "timestamp": "2026-03-17T14:11:41Z"
+    },
+    "parameters": [
+      {
+        "type": "Parameter",
+        "identifier": "name",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "programNameFormat",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "extension",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "active",
+        "sqlType": 6
+      },
+      {
+        "type": "Parameter",
+        "identifier": "lastEdited",
+        "sqlType": 8
+      },
+      {
+        "type": "Parameter",
+        "identifier": "lastEditedBy",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "extensionTypeUUID",
+        "sqlType": 7
+      }
+    ]
+  }
+}

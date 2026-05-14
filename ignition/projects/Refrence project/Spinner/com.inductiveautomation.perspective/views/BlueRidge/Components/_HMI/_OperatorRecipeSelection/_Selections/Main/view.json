@@ -1,0 +1,447 @@
+{
+  "custom": {
+    "process": "new"
+  },
+  "params": {},
+  "propConfig": {
+    "custom.process": {
+      "binding": {
+        "config": {
+          "path": "session.custom.hMISelections.process"
+        },
+        "type": "property"
+      },
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 827,
+      "width": 1069
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "Left"
+        },
+        "position": {
+          "basis": "200px",
+          "grow": 0.25
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.session.custom.hMISelections.process \u003d \u0027new\u0027\n\tself.session.custom.hMISelections.depth.value \u003d 0"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "NewPart"
+                },
+                "position": {
+                  "grow": 0.2
+                },
+                "propConfig": {
+                  "props.style.classes": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.process} \u003d \u0027new\u0027"
+                      },
+                      "transforms": [
+                        {
+                          "fallback": "BlueRidge/Components/dangerButtonRound",
+                          "inputType": "scalar",
+                          "mappings": [
+                            {
+                              "input": false,
+                              "output": "BlueRidge/Components/dangerButtonRound"
+                            },
+                            {
+                              "input": true,
+                              "output": "BlueRidge/Components/actionButtonRound"
+                            }
+                          ],
+                          "outputType": "scalar",
+                          "type": "map"
+                        }
+                      ],
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "fontSize": 25
+                  },
+                  "text": "New Part Loaded"
+                },
+                "type": "ia.input.button"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.session.custom.hMISelections.process \u003d \u0027rework\u0027\n\tself.session.custom.hMISelections.depth.value \u003d 1"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "Rework"
+                },
+                "position": {
+                  "grow": 0.2
+                },
+                "propConfig": {
+                  "props.style.classes": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.process} \u003d \u0027rework\u0027"
+                      },
+                      "transforms": [
+                        {
+                          "fallback": "BlueRidge/Components/dangerButtonRound",
+                          "inputType": "scalar",
+                          "mappings": [
+                            {
+                              "input": false,
+                              "output": "BlueRidge/Components/dangerButtonRound"
+                            },
+                            {
+                              "input": true,
+                              "output": "BlueRidge/Components/actionButtonRound"
+                            }
+                          ],
+                          "outputType": "scalar",
+                          "type": "map"
+                        }
+                      ],
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "fontSize": 25
+                  },
+                  "text": "Rework"
+                },
+                "type": "ia.input.button"
+              }
+            ],
+            "meta": {
+              "name": "FlexContainer"
+            },
+            "position": {
+              "grow": 0.2
+            },
+            "props": {
+              "direction": "column",
+              "justify": "space-around"
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Middle"
+        },
+        "position": {
+          "basis": "200px",
+          "grow": 0.5
+        },
+        "props": {
+          "alignContent": "center",
+          "justify": "space-around"
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "LeftSpacer",
+              "visible": false
+            },
+            "position": {
+              "grow": 0.1
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "grow": 0.25
+                    },
+                    "props": {
+                      "style": {
+                        "fontSize": 25
+                      },
+                      "text": "Part Validation",
+                      "textStyle": {
+                        "textAlign": "center"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "Button_0"
+                    },
+                    "position": {
+                      "basis": "34px",
+                      "grow": 0.075
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "BlueRidge/Components/actionButtonRound",
+                        "fontSize": 20
+                      },
+                      "text": "Validate Probe and Fixture"
+                    },
+                    "type": "ia.input.button"
+                  },
+                  {
+                    "meta": {
+                      "name": "Button_1"
+                    },
+                    "position": {
+                      "basis": "34px",
+                      "grow": 0.075
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "BlueRidge/Components/actionButtonRound",
+                        "fontSize": 20
+                      },
+                      "text": "Validate Part Fixture"
+                    },
+                    "type": "ia.input.button"
+                  },
+                  {
+                    "meta": {
+                      "name": "Button_2"
+                    },
+                    "position": {
+                      "basis": "34px",
+                      "grow": 0.075
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "BlueRidge/Components/actionButtonRound",
+                        "fontSize": 20
+                      },
+                      "text": "Validate Part Probe"
+                    },
+                    "type": "ia.input.button"
+                  },
+                  {
+                    "meta": {
+                      "name": "Button_3"
+                    },
+                    "position": {
+                      "basis": "34px",
+                      "grow": 0.075
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "BlueRidge/Components/actionButtonRound",
+                        "fontSize": 20
+                      },
+                      "text": "Calibrate Part Probe"
+                    },
+                    "type": "ia.input.button"
+                  },
+                  {
+                    "meta": {
+                      "name": "Button_4"
+                    },
+                    "position": {
+                      "basis": "34px",
+                      "grow": 0.075
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "BlueRidge/Components/actionButtonRound",
+                        "fontSize": 20
+                      },
+                      "text": "Unclamp Part"
+                    },
+                    "type": "ia.input.button"
+                  },
+                  {
+                    "meta": {
+                      "name": "Button_5"
+                    },
+                    "position": {
+                      "basis": "34px",
+                      "grow": 0.075
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "BlueRidge/Components/actionButtonRound",
+                        "fontSize": 20
+                      },
+                      "text": "Clamp Part"
+                    },
+                    "type": "ia.input.button"
+                  }
+                ],
+                "meta": {
+                  "name": "FlexContainer"
+                },
+                "position": {
+                  "basis": "50px",
+                  "display": false,
+                  "grow": 0.5
+                },
+                "props": {
+                  "direction": "column",
+                  "justify": "space-evenly",
+                  "style": {
+                    "backgroundColor": "#54FF4E4F"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tprobed \u003d self.session.custom.hMISelections.probed.value\n\tif probed \u003d\u003d 1:\n\t\tself.session.custom.hMISelections.probed.value \u003d 0\n\telse:\n\t\tself.session.custom.hMISelections.probed.value \u003d 1"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "Probed"
+                },
+                "position": {
+                  "basis": "100px"
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "path": "session.custom.hMISelections.process"
+                      },
+                      "transforms": [
+                        {
+                          "fallback": true,
+                          "inputType": "scalar",
+                          "mappings": [
+                            {
+                              "input": "new",
+                              "output": false
+                            }
+                          ],
+                          "outputType": "scalar",
+                          "type": "map"
+                        }
+                      ],
+                      "type": "property"
+                    }
+                  },
+                  "props.style.classes": {
+                    "binding": {
+                      "config": {
+                        "path": "session.custom.hMISelections.probed.value"
+                      },
+                      "overlayOptOut": true,
+                      "transforms": [
+                        {
+                          "fallback": "BlueRidge/Components/dangerButtonRound",
+                          "inputType": "scalar",
+                          "mappings": [
+                            {
+                              "input": 1,
+                              "output": "BlueRidge/Components/actionButtonRound"
+                            }
+                          ],
+                          "outputType": "scalar",
+                          "type": "map"
+                        }
+                      ],
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "fontSize": 20
+                  },
+                  "text": "Already Probed"
+                },
+                "type": "ia.input.button"
+              }
+            ],
+            "meta": {
+              "name": "PartValidation"
+            },
+            "position": {
+              "basis": "50px",
+              "grow": 0.8
+            },
+            "props": {
+              "direction": "column",
+              "justify": "center"
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "RightSpacer",
+              "visible": false
+            },
+            "position": {
+              "grow": 0.1
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Right"
+        },
+        "position": {
+          "basis": "200px",
+          "grow": 0.25
+        },
+        "props": {
+          "justify": "center"
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "justify": "center"
+    },
+    "type": "ia.container.flex"
+  }
+}

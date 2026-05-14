@@ -1,0 +1,61 @@
+{
+  "scope": "DG",
+  "version": 2,
+  "restricted": false,
+  "overridable": true,
+  "files": [
+    "query.sql"
+  ],
+  "attributes": {
+    "useMaxReturnSize": false,
+    "autoBatchEnabled": false,
+    "fallbackValue": "",
+    "maxReturnSize": 100,
+    "cacheUnit": "SEC",
+    "type": "UpdateQuery",
+    "enabled": true,
+    "cacheAmount": 1,
+    "cacheEnabled": false,
+    "database": "",
+    "fallbackEnabled": false,
+    "lastModificationSignature": "985105ef3dfbd3399cbf9dae0fe37eadf4dd046d66b89c400ca5f3de76ed82b7",
+    "permissions": [
+      {
+        "zone": "",
+        "role": ""
+      }
+    ],
+    "lastModification": {
+      "actor": "hkraft",
+      "timestamp": "2026-03-17T14:11:41Z"
+    },
+    "syntaxProvider": "class com.adbs.syntax.UniversalSyntaxProvider",
+    "parameters": [
+      {
+        "type": "Parameter",
+        "identifier": "name",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "lastEdited",
+        "sqlType": 8
+      },
+      {
+        "type": "Parameter",
+        "identifier": "lastEditedBy",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "reasonUUID",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "engineUUID",
+        "sqlType": 7
+      }
+    ]
+  }
+}

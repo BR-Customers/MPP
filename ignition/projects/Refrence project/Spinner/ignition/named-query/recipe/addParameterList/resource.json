@@ -1,0 +1,75 @@
+{
+  "scope": "DG",
+  "version": 2,
+  "restricted": false,
+  "overridable": true,
+  "files": [
+    "query.sql"
+  ],
+  "attributes": {
+    "useMaxReturnSize": false,
+    "autoBatchEnabled": false,
+    "fallbackValue": "",
+    "maxReturnSize": 100,
+    "cacheUnit": "SEC",
+    "type": "UpdateQuery",
+    "enabled": true,
+    "cacheAmount": 1,
+    "cacheEnabled": false,
+    "database": "",
+    "fallbackEnabled": false,
+    "lastModificationSignature": "47c19e3462cb18af0da60834990d6ddc830cf4970329bdc657a2202994c13859",
+    "permissions": [
+      {
+        "zone": "",
+        "role": ""
+      }
+    ],
+    "lastModification": {
+      "actor": "hkraft",
+      "timestamp": "2026-03-17T14:11:40Z"
+    },
+    "parameters": [
+      {
+        "type": "Parameter",
+        "identifier": "name",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "active",
+        "sqlType": 6
+      },
+      {
+        "type": "Parameter",
+        "identifier": "lastEdited",
+        "sqlType": 8
+      },
+      {
+        "type": "Parameter",
+        "identifier": "lastEditedBy",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "parameterListUUID",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "validated",
+        "sqlType": 6
+      },
+      {
+        "type": "Parameter",
+        "identifier": "engineOperationUUID",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "extensionTypeUUID",
+        "sqlType": 7
+      }
+    ]
+  }
+}

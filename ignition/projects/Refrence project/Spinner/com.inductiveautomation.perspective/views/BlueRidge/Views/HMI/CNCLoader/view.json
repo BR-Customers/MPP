@@ -1,0 +1,334 @@
+{
+  "custom": {
+    "asset": {
+      "available": true,
+      "equipmentUUID": "D26F8BAD-7495-480B-9AFC-4E9277B5BCED",
+      "ip": "",
+      "key": "2ADB498B-022A-4F17-A9C9-71B84196E9FD",
+      "name": "TXT Asset",
+      "type": "Asset"
+    },
+    "equipment": {
+      "available": true,
+      "extension": "2B73EF83-F77A-4F24-A66D-7E0649EEC320",
+      "filename": "filename.txt",
+      "hmi": "1",
+      "ip": "Hostname",
+      "key": "D26F8BAD-7495-480B-9AFC-4E9277B5BCED",
+      "name": "TXT Equipment",
+      "plantUUID": "48A4E0B4-8A35-4D50-97C2-A9328B7E2C11",
+      "type": "Equipment"
+    },
+    "instance": "2ADB498B-022A-4F17-A9C9-71B84196E9FD",
+    "instances": [
+      {
+        "active": true,
+        "assetUUID": "F9C7035F-F724-4402-8F2A-0F4DBF0F2188",
+        "equipmentUUID": "5C417B4C-41DE-492B-8694-931BE8859681",
+        "hostname": "",
+        "label": "Mazak 575 HMI",
+        "lastActivated": {
+          "$": [
+            "ts",
+            192,
+            1770850203454
+          ],
+          "$ts": 1764786899433
+        },
+        "lastEdited": {
+          "$": [
+            "ts",
+            192,
+            1770850203454
+          ],
+          "$ts": 1764786899433
+        },
+        "lastEditedBy": "rpulliam",
+        "name": "Mazak 575 HMI",
+        "value": "F9C7035F-F724-4402-8F2A-0F4DBF0F2188"
+      },
+      {
+        "active": true,
+        "assetUUID": "2ADB498B-022A-4F17-A9C9-71B84196E9FD",
+        "equipmentUUID": "D26F8BAD-7495-480B-9AFC-4E9277B5BCED",
+        "hostname": "",
+        "label": "TXT Asset",
+        "lastActivated": {
+          "$": [
+            "ts",
+            192,
+            1770850203454
+          ],
+          "$ts": 1764786894810
+        },
+        "lastEdited": {
+          "$": [
+            "ts",
+            192,
+            1770850203454
+          ],
+          "$ts": 1764786894810
+        },
+        "lastEditedBy": "rpulliam",
+        "name": "TXT Asset",
+        "value": "2ADB498B-022A-4F17-A9C9-71B84196E9FD"
+      }
+    ],
+    "registered": true
+  },
+  "params": {},
+  "propConfig": {
+    "custom.asset": {
+      "binding": {
+        "config": {
+          "path": "view.custom.instance"
+        },
+        "transforms": [
+          {
+            "expression": "runScript(\u0027BlueRidge.HMI.CNCLoader.Asset.getOne\u0027,0,{value})",
+            "type": "expression"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.equipment": {
+      "binding": {
+        "config": {
+          "path": "view.custom.asset.equipmentUUID"
+        },
+        "transforms": [
+          {
+            "expression": "runScript(\u0027BlueRidge.HMI.CNCLoader.Equipment.getOne\u0027,0,{value})",
+            "type": "expression"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.instance": {
+      "persistent": true
+    },
+    "custom.instances": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\u0027BlueRidge.HMI.CNCLoader.Asset.getAll\u0027,0)"
+        },
+        "transforms": [
+          {
+            "code": "\tfor v in value:\n\t\tv[\u0027value\u0027]\u003dv[\u0027assetUUID\u0027]\n\t\tv[\u0027label\u0027]\u003dv[\u0027name\u0027]\n\t\n\thostnames \u003d [v for v in value if v[\u0027hostname\u0027]\u003d\u003dself.session.props.host]\n\tif len(hostnames) \u003d\u003d 1:\n\t\tinstance \u003d hostnames[0][\u0027assetUUID\u0027]\n\t\tself.custom.instance \u003d instance\n\t\tself.custom.registered \u003d True\n\t\n\treturn value\n\t",
+            "type": "script"
+          }
+        ],
+        "type": "expr"
+      },
+      "persistent": true
+    },
+    "custom.registered": {
+      "persistent": true
+    }
+  },
+  "props": {},
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "FlexContainer_1"
+        },
+        "position": {
+          "grow": 1
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": [
+                  {
+                    "config": {
+                      "script": "\tself.session.custom.rerun \u003d False\n\tself.session.custom.selectedCylinders \u003d []\n\tself.session.custom.selectedData \u003d {}\n\tself.session.custom.equipment \u003d self.view.custom.equipment\n\tsystem.perspective.navigate(\u0027/hmi/cncloader/recipeselection\u0027)"
+                    },
+                    "scope": "G",
+                    "type": "script"
+                  },
+                  {
+                    "config": {
+                      "page": "/hmi/cncloader/recipeselection"
+                    },
+                    "enabled": false,
+                    "scope": "C",
+                    "type": "nav"
+                  }
+                ]
+              }
+            },
+            "meta": {
+              "name": "Button"
+            },
+            "position": {
+              "basis": "200px"
+            },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.custom.registered} \u0026\u0026 (isAuthorized(false, \"Authenticated/Roles/JET-RecipeAdmin\", \"Authenticated/Roles/JET-Administrator\", \"Authenticated/Roles/JET-Operator\"))"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "BlueRidge/Components/actionButtonRound"
+              },
+              "text": "BEGIN"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "FlexContainer"
+        },
+        "position": {
+          "basis": "75px"
+        },
+        "props": {
+          "justify": "center"
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Dropdown"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "propConfig": {
+                  "props.enabled": {
+                    "binding": {
+                      "config": {
+                        "expression": "!{view.custom.registered}"
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.options": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.instances"
+                      },
+                      "type": "property"
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.instance"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "margin": 20
+                  }
+                },
+                "type": "ia.input.dropdown"
+              },
+              {
+                "events": {
+                  "dom": {
+                    "onClick": {
+                      "config": {
+                        "script": "\tasset \u003d self.view.custom.asset\n\thost \u003d self.session.props.host\n\tasset[\u0027ip\u0027] \u003d host\n\tresp \u003d BlueRidge.HMI.CNCLoader.Asset.update(asset)\n\tif resp \u003d\u003d -1:\n\t\tself.session.custom.rerun \u003d False\n\t\tself.session.custom.selectedCylinders \u003d []\n\t\tself.session.custom.selectedData \u003d {}\n\t\tself.session.custom.equipment \u003d self.view.custom.equipment\n\t\tsystem.perspective.navigate(\u0027/hmi/cncloader/recipeselection\u0027)"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "Button"
+                },
+                "position": {
+                  "basis": "34px"
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "!{view.custom.registered}"
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.enabled": {
+                    "binding": {
+                      "config": {
+                        "expression": "!(isNull({view.custom.instance}) || {view.custom.instance} \u003d \u0027\u0027) \u0026\u0026 \r\n\t(isAuthorized(false, \"Authenticated/Roles/JET-RecipeAdmin\", \"Authenticated/Roles/JET-Administrator\"))"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "BlueRidge/Components/actionButtonRound",
+                    "marginLeft": 20,
+                    "marginRight": 20
+                  },
+                  "text": "Register"
+                },
+                "type": "ia.input.button"
+              }
+            ],
+            "meta": {
+              "name": "FlexContainer"
+            },
+            "position": {
+              "basis": "300px"
+            },
+            "props": {
+              "direction": "column"
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "FlexContainer_0"
+        },
+        "position": {
+          "basis": "20%"
+        },
+        "props": {
+          "alignItems": "flex-start",
+          "justify": "center"
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "backgroundImage": "url(\"/system/images/JET/2024 JET Background 6.jpg\")",
+        "backgroundSize": "100% 100%"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

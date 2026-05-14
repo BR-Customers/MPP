@@ -1,0 +1,1376 @@
+{
+  "custom": {
+    "availableEngines": [
+      {
+        "available": true,
+        "key": "DBFB9B83-9C36-4A72-A433-43DB483BCA42",
+        "text": "Hemi V8",
+        "value": "",
+        "view": "DBFB9B83-9C36-4A72-A433-43DB483BCA42"
+      },
+      {
+        "available": true,
+        "key": "BEB5D728-86BC-4A73-BA97-AE4DC1E3700F",
+        "text": "Flat 4",
+        "value": "",
+        "view": "BEB5D728-86BC-4A73-BA97-AE4DC1E3700F"
+      },
+      {
+        "available": true,
+        "key": "9B63AF05-09AA-4C5C-A7AC-E28011432FD3",
+        "text": "6.2L V8 FORD",
+        "value": "",
+        "view": "9B63AF05-09AA-4C5C-A7AC-E28011432FD3"
+      }
+    ],
+    "fileTypeKey": "0EA5333F-9831-41E1-866A-B226674298DC",
+    "fileTypes": [
+      {
+        "key": "0EA5333F-9831-41E1-866A-B226674298DC",
+        "text": ".EIN",
+        "value": "",
+        "view": "0EA5333F-9831-41E1-866A-B226674298DC"
+      },
+      {
+        "key": "2B73EF83-F77A-4F24-A66D-7E0649EEC320",
+        "text": ".TXT",
+        "value": "",
+        "view": "2B73EF83-F77A-4F24-A66D-7E0649EEC320"
+      },
+      {
+        "key": "16EF8355-1977-4448-9A84-B345904154D4",
+        "text": ".h",
+        "value": "",
+        "view": "16EF8355-1977-4448-9A84-B345904154D4"
+      }
+    ],
+    "operationEngine": {},
+    "operationEngines": [],
+    "operationTypes": [
+      {
+        "label": "Mill",
+        "value": "1439B533-B574-4B5B-AE8F-41580D8832D1"
+      },
+      {
+        "label": "Probe",
+        "value": "D1D41ED8-70CE-4045-A17B-834652DDAC74"
+      },
+      {
+        "label": "Bore",
+        "value": "3CDCCEF9-A094-479C-8D13-B6BC3E38217C"
+      }
+    ],
+    "paramData": {},
+    "paramLists": [],
+    "parameters": [],
+    "routine": {},
+    "selectedData": 0,
+    "selectedParameter": [],
+    "selectedRow": null,
+    "selectedTab": 0,
+    "tabData": [
+      {
+        "viewParams": {
+          "text": ".EIN",
+          "verified": null
+        },
+        "viewPath": "BlueRidge/Components/_Recipe/_Operation/tabData"
+      },
+      {
+        "viewParams": {
+          "text": ".TXT",
+          "verified": null
+        },
+        "viewPath": "BlueRidge/Components/_Recipe/_Operation/tabData"
+      },
+      {
+        "viewParams": {
+          "text": ".h",
+          "verified": null
+        },
+        "viewPath": "BlueRidge/Components/_Recipe/_Operation/tabData"
+      }
+    ],
+    "tableData": [],
+    "triggerRefresh": false
+  },
+  "params": {
+    "operation": {
+      "available": false,
+      "engines": [],
+      "key": "",
+      "name": "",
+      "type": ""
+    }
+  },
+  "propConfig": {
+    "custom.availableEngines": {
+      "binding": {
+        "config": {
+          "path": "view.params.operation"
+        },
+        "transforms": [
+          {
+            "code": "\tengineOperationUUID \u003d self.params.operation.key\n\tresp \u003d BlueRidge.Recipe.Util.getAvailableEngines(engineOperationUUID)\n\treturn resp",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.currentType": {
+      "persistent": false
+    },
+    "custom.fileTypeKey": {
+      "binding": {
+        "config": {
+          "expression": "{view.custom.fileTypes}[{view.custom.selectedTab}][\u0027key\u0027]"
+        },
+        "type": "expr"
+      },
+      "persistent": true
+    },
+    "custom.fileTypes": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Recipe.ExtensionType.getAll\",0)"
+        },
+        "transforms": [
+          {
+            "code": "\tvalue.sort(key\u003dlambda x: x[\u0027text\u0027])\n\treturn value",
+            "type": "script"
+          }
+        ],
+        "type": "expr"
+      },
+      "persistent": true
+    },
+    "custom.operationEngine": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\u0027BlueRidge.Recipe.OperationEngine.getOne\u0027,0,{view.custom.selectedData})"
+        },
+        "type": "expr"
+      },
+      "persistent": true
+    },
+    "custom.operationEngines": {
+      "binding": {
+        "config": {
+          "path": "view.custom.triggerRefresh"
+        },
+        "transforms": [
+          {
+            "expression": "runScript(\u0027BlueRidge.Recipe.OperationEngine.getAll\u0027,0,{view.params.operation.key})",
+            "type": "expression"
+          },
+          {
+            "code": "\tvalue.sort(key\u003dlambda x: x[\u0027text\u0027])\n\treturn value",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.operationTypes": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\u0027BlueRidge.Recipe.Util.getOperationTypes\u0027,0)"
+        },
+        "type": "expr"
+      },
+      "persistent": true
+    },
+    "custom.paramData": {
+      "persistent": true
+    },
+    "custom.paramData.opKey": {
+      "binding": {
+        "config": {
+          "path": "view.params.operation.key"
+        },
+        "type": "property"
+      }
+    },
+    "custom.paramData.typeKey": {
+      "binding": {
+        "config": {
+          "path": "view.custom.fileTypeKey"
+        },
+        "type": "property"
+      }
+    },
+    "custom.paramLists": {
+      "binding": {
+        "config": {
+          "struct": {
+            "refreshTrigger": "{view.custom.triggerRefresh}",
+            "value": "{view.params.operation.key}"
+          },
+          "waitOnAll": true
+        },
+        "transforms": [
+          {
+            "expression": "runScript(\u0027BlueRidge.Recipe.ParameterList.getAll\u0027,0,{value}[\u0027value\u0027])",
+            "type": "expression"
+          }
+        ],
+        "type": "expr-struct"
+      },
+      "persistent": true
+    },
+    "custom.parameters": {
+      "binding": {
+        "config": {
+          "struct": {
+            "key": "{view.custom.routine.key}",
+            "triggerRefresh": "{view.custom.triggerRefresh}"
+          },
+          "waitOnAll": true
+        },
+        "transforms": [
+          {
+            "expression": "runScript(\"BlueRidge.Recipe.EngineParameter.getAll\",0,{value}[\u0027key\u0027])",
+            "type": "expression"
+          },
+          {
+            "code": "#\tnot_verified \u003d [True for v in value if v[\u0027Verified\u0027]\u003d\u003dFalse]\n\tverified \u003d [v.get(\u0027Verified\u0027) for v in value]\n\tif False in verified:\n\t\tself.custom.routine.verified \u003d False\n\treturn value",
+            "type": "script"
+          }
+        ],
+        "type": "expr-struct"
+      },
+      "persistent": true
+    },
+    "custom.routine": {
+      "binding": {
+        "config": {
+          "struct": {
+            "fileTypeKey": "{view.custom.fileTypeKey}",
+            "paramLists": "{view.custom.paramLists}"
+          },
+          "waitOnAll": true
+        },
+        "transforms": [
+          {
+            "code": "\textensionTypeUUID \u003d value[\u0027fileTypeKey\u0027]\n\tparamLists \u003d value[\u0027paramLists\u0027]\n\tresp \u003d {}\n\tif paramLists:\n\t\tfor paramList in paramLists:\n\t\t\tif paramList[\u0027extensionTypeUUID\u0027] \u003d\u003d extensionTypeUUID:\n\t\t\t\tresp \u003d paramList\n\treturn resp",
+            "type": "script"
+          }
+        ],
+        "type": "expr-struct"
+      },
+      "onChange": {
+        "enabled": null,
+        "script": "#\tnewRoutineData \u003d BlueRidge.Recipe.Util.convertWrapperObjectToJson(self.custom.routine)\n#\tif newRoutineData:\n#\t\tnormilizedNew  \u003d sorted(newRoutineData.items())\n#\t\t\n#\t\tfileTypeKey \u003d self.custom.fileTypeKey\n#\t\tfileTypeParameter \u003d self.custom.parameters[\u0027Key{}\u0027.format(fileTypeKey)]\n#\t\toldRoutineData \u003d BlueRidge.Recipe.Util.convertWrapperObjectToJson(fileTypeParameter[\u0027routine\u0027])\n#\t\tnormilizedOld  \u003d sorted(oldRoutineData.items())\n#\t\t\n#\t#\tsystem.perspective.print(\u0027old:{0}, new:{1}\u0027.format(normilizedOld,normilizedNew))\n#\t\tif normilizedOld !\u003d normilizedNew:\n#\t\t\tself.custom.parameters[\u0027Key{}\u0027.format(fileTypeKey)][\u0027routine\u0027]\u003dnewRoutineData\n#\t#\t\tsystem.perspective.print(\u0027Not the same\u0027)\n#\t\telse:\n#\t#\t\tsystem.perspective.print(\u0027Same data\u0027)\n#\t\t\tpass\n#\tsystem.perspective.print(origin)\n\n##AutoSave Script\n#\tif origin \u003d\u003d \u0027BindingWriteback\u0027 or origin \u003d\u003d \u0027Script\u0027:\n#\t\tdata \u003d self.custom.routine\n#\t\tdata \u003d BlueRidge.Config.Util.convertWrapperObjectToJson(data)\n#\t\tdata[\u0027user\u0027]\u003dself.session.props.auth.user.userName\n##\t\tsystem.perspective.print(data)\n#\t\tresp \u003d BlueRidge.Recipe.ParameterList.update(data)\n#\t\tif resp \u003d\u003d -1:\n##\t\t\tsystem.perspective.sendMessage(\"refreshTrigger\")\n#\t\t\tself.custom.triggerRefresh \u003d not self.custom.triggerRefresh\n#\t\t\tpass\n\n#Script to cause pramList to be unverified if name changed\n#\tsystem.perspective.print(origin)\n\tif origin \u003d\u003d \u0027BindingWriteback\u0027:\n\t\tparamLists \u003d self.custom.paramLists\n\t\tselectedList \u003d self.custom.routine\n\t\tif paramLists:\n\t\t\tfor paramList in paramLists:\n\t\t\t\tif paramList[\u0027key\u0027] \u003d\u003d selectedList[\u0027key\u0027]:\n\t\t\t\t\tif paramList[\u0027name\u0027] !\u003d selectedList[\u0027name\u0027]:\n\t\t\t\t\t\tself.custom.routine.verified \u003d False"
+      },
+      "persistent": true
+    },
+    "custom.selectedData": {
+      "persistent": true
+    },
+    "custom.selectedParameter": {
+      "onChange": {
+        "enabled": null,
+        "script": "\tselectedParameters \u003d BlueRidge.Recipe.Util.convertWrapperObjectToJson(self.custom.selectedParameter)\n\tif len(selectedParameters) \u003d\u003d 1: \n\t\ttry:\n\t\t\tprev_key \u003d previousValue.value[0].value[\u0027key\u0027].value\n\t\t\tcurr_key \u003d currentValue.value[0].value[\u0027key\u0027].value\n\t\texcept:\n\t\t\tprev_key \u003d 0\n\t\t\tcurr_key \u003d 1\n\t\tif prev_key \u003d\u003d curr_key: #cell change made, not a new row selected\n\t\t\tselectedParameter \u003d selectedParameters[0] #changed data\n\t\t\tparameters \u003d self.custom.parameters # list of old data\n\t\t\t\n\t\t\tprev \u003d {}\n\t\t\tcurr \u003d {}\n\t\t\tprev[\u0027Name\u0027] \u003d previousValue.value[0].value[\u0027Name\u0027].value\n\t\t\tcurr[\u0027Name\u0027] \u003d currentValue.value[0].value[\u0027Name\u0027].value\n\t\t\tprev[\u0027Value\u0027] \u003d previousValue.value[0].value[\u0027Value\u0027].value\n\t\t\tcurr[\u0027Value\u0027] \u003d currentValue.value[0].value[\u0027Value\u0027].value\n\t\t\tprev[\u0027Macro Variable\u0027] \u003d previousValue.value[0].value[\u0027Macro Variable\u0027].value\n\t\t\tcurr[\u0027Macro Variable\u0027] \u003d currentValue.value[0].value[\u0027Macro Variable\u0027].value\n\t\t\tprev[\u0027Assignment\u0027] \u003d previousValue.value[0].value[\u0027Assignment\u0027].value\n\t\t\tcurr[\u0027Assignment\u0027] \u003d currentValue.value[0].value[\u0027Assignment\u0027].value\n#\t\t\tsystem.perspective.print(\u0027prev:{}\u0027.format(prev))\n#\t\t\tsystem.perspective.print(\u0027curr:{}\u0027.format(curr))\n\t\t\t\n\t\t\tif type(prev[\u0027Value\u0027])!\u003dtype(curr[\u0027Value\u0027]):\n\t\t\t\ttry:\n\t\t\t\t\tprev[\u0027Value\u0027] \u003d float(prev[\u0027Value\u0027])\n\t\t\t\t\tcurr[\u0027Value\u0027] \u003d float(curr[\u0027Value\u0027])\n\t\t\t\texcept:\n\t\t\t\t\tsystem.perspective.print(\"Value must be a number\")\n\t\t\t\n\t\t\tif prev !\u003d curr: # only update on editable table data\n\t\t\t\tfor i, parameter in enumerate(parameters):\n\t\t\t\t\tif parameter[\u0027key\u0027] \u003d\u003d curr_key: #find the right parameter\n\t\t\t\t\t\tselectedParameter[\u0027Verified\u0027] \u003d False\n\t\t\t\t\t\tparameters[i] \u003d selectedParameter #replace old data with new data\n#\t\t\t\t\t\tsystem.perspective.print(\u0027Updating parameters from selectedParameter\u0027)\n\t\t\t\tself.custom.parameters \u003d parameters\n\t\t\t\tself.custom.routine.verified \u003d False"
+      },
+      "persistent": true
+    },
+    "custom.selectedRow": {
+      "persistent": true
+    },
+    "custom.selectedTab": {
+      "persistent": true
+    },
+    "custom.tabData": {
+      "binding": {
+        "config": {
+          "struct": {
+            "fileTypes": "{view.custom.fileTypes}",
+            "paramLists": "{view.custom.paramLists}"
+          },
+          "waitOnAll": true
+        },
+        "transforms": [
+          {
+            "code": "\tresp \u003d []\n#\ttabFormat \u003d {\u0027viewPath\u0027:\u0027\u0027, \u0027viewParams\u0027:{\u0027text\u0027:\u0027TabName\u0027,\u0027verified\u0027:False}}\n\tparamLists \u003d value[\u0027paramLists\u0027]\n\tfileTypes \u003d value[\u0027fileTypes\u0027]\n#\tfileTypes.sort(key\u003dlambda x: x[\u0027text\u0027])\n\tfor fileType in fileTypes:\n\t\ttext \u003d fileType[\u0027text\u0027]\n\t\textensionTypeUUID \u003d fileType[\u0027key\u0027]\n\t\tverified \u003d next((p[\u0027verified\u0027] for p in paramLists if p[\u0027extensionTypeUUID\u0027]\u003d\u003dextensionTypeUUID),None)\n\t\tresp.append({\u0027viewPath\u0027:\u0027BlueRidge/Components/_Recipe/_Operation/tabData\u0027, \u0027viewParams\u0027:{\u0027text\u0027:text,\u0027verified\u0027:verified}})\n\treturn resp",
+            "type": "script"
+          }
+        ],
+        "type": "expr-struct"
+      },
+      "persistent": true
+    },
+    "custom.tableData": {
+      "binding": {
+        "config": {
+          "path": "view.custom.parameters"
+        },
+        "type": "property"
+      },
+      "onChange": {
+        "enabled": false,
+        "script": "#\tnewTableData1 \u003d BlueRidge.Recipe.Util.convertWrapperObjectToJson(currentValue.value)\n\tnewTableData \u003d BlueRidge.Recipe.Util.convertWrapperObjectToJson(self.custom.tableData)\n\tif newTableData:\n\t\tnormilizedNew  \u003d sorted([sorted(d.items()) for d in newTableData])\n\t\t\n\t\tfileTypeKey \u003d self.custom.fileTypeKey\n\t\tfileTypeParameter \u003d self.custom.parameters[\u0027Key{}\u0027.format(fileTypeKey)]\n\t\toldTableData \u003d BlueRidge.Recipe.Util.convertWrapperObjectToJson(fileTypeParameter[\u0027tableData\u0027])\n\t\tnormilizedOld  \u003d sorted([sorted(d.items()) for d in oldTableData])\n\t\t\n\t#\tsystem.perspective.print(\u0027old:{0}, new:{1}\u0027.format(normilizedOld,normilizedNew))\n\t\tif normilizedOld !\u003d normilizedNew:\n\t\t\tself.custom.parameters[\u0027Key{}\u0027.format(fileTypeKey)][\u0027tableData\u0027]\u003dnewTableData\n\t#\t\tsystem.perspective.print(\u0027Not the same\u0027)\n\t\telse:\n\t#\t\tsystem.perspective.print(\u0027Same data\u0027)\n\t\t\tpass"
+      },
+      "persistent": true
+    },
+    "custom.triggerRefresh": {
+      "persistent": true
+    },
+    "params.operation": {
+      "onChange": {
+        "enabled": false,
+        "script": "\tif origin \u003d\u003d \u0027BindingWriteback\u0027:\n\t\tprev_name \u003d previousValue.getValue()[\u0027name\u0027].value\n\t\tcurr_name \u003d currentValue.getValue()[\u0027name\u0027].value\n\t\tdata \u003d self.params.operation\n\t\tdata \u003d BlueRidge.Recipe.Util.convertWrapperObjectToJson(data)\n\t\tdata[\u0027user\u0027]\u003dself.session.props.auth.user.userName\n\t\tresp \u003d BlueRidge.Recipe.Operation.update(data)\n\t\tif len(resp) \u003e 0:\n\t\t\tif prev_name \u003d\u003d curr_name:\n\t\t\t\tself.custom.triggerRefresh \u003d not self.custom.triggerRefresh\n\t\t\telse:\n\t\t\t\tsystem.perspective.sendMessage(\"refreshTrigger\")"
+      },
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 802,
+      "width": 1152
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Icon"
+            },
+            "position": {
+              "basis": "50px"
+            },
+            "props": {
+              "path": "material/receipt",
+              "style": {
+                "marginLeft": 15,
+                "marginRight": 15
+              }
+            },
+            "type": "ia.display.icon"
+          },
+          {
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "basis": "50px",
+              "grow": 1
+            },
+            "props": {
+              "text": "Recipe Management",
+              "textStyle": {
+                "classes": "BlueRidge/boldTextLarge"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "children": [
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "#\toperation \u003d self.view.params.operation\n#\tparameters \u003d self.view.custom.parameters\n#\toperationEngines \u003d self.view.custom.operationEngines\n\t\n\tdata \u003d self.view.params.operation\n\tdata \u003d BlueRidge.Recipe.Util.convertWrapperObjectToJson(data)\n\tdata[\u0027user\u0027]\u003dself.session.props.auth.user.userName\n\tresp \u003d BlueRidge.Recipe.Operation.update(data)\n\tif resp \u003d\u003d -1:\n\t\tpass\n\n\tdata \u003d self.view.custom.routine\n\tdata \u003d BlueRidge.Config.Util.convertWrapperObjectToJson(data)\n\tdata[\u0027user\u0027]\u003dself.session.props.auth.user.userName\n\tresp \u003d BlueRidge.Recipe.ParameterList.update(data)\n\tif resp \u003d\u003d -1:\n#\t\tself.custom.triggerRefresh \u003d not self.custom.triggerRefresh\n\t\tpass\n\t\n\tdatas \u003d self.view.custom.parameters\n\tdatas \u003d BlueRidge.Recipe.Util.convertWrapperObjectToJson(datas)\n\tfor data in datas:\n\t\tdata \u003d BlueRidge.Recipe.Util.convertWrapperObjectToJson(data)\n\t\tdata[\u0027user\u0027]\u003dself.session.props.auth.user.userName\n\t\tresp \u003d BlueRidge.Recipe.EngineParameter.update(data)\n\t\tif resp \u003d\u003d -1:\n\t\t\tpass\n\t\n\tsystem.perspective.sendMessage(\"refreshTrigger\")\n\t\n\t\n#\tprev_name \u003d previousValue.getValue()[\u0027name\u0027].value\n#\tcurr_name \u003d currentValue.getValue()[\u0027name\u0027].value\n\t\t\n\t\t\n"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "Save"
+                },
+                "position": {
+                  "basis": "34px",
+                  "grow": 1
+                },
+                "props": {
+                  "text": "Save Changes"
+                },
+                "type": "ia.input.button"
+              }
+            ],
+            "meta": {
+              "name": "FlexContainer"
+            },
+            "position": {
+              "basis": "150px"
+            },
+            "props": {
+              "style": {
+                "padding": 7
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "basis": "50px"
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "Label"
+                        },
+                        "position": {
+                          "basis": "25px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Engines"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "FlexRepeater"
+                            },
+                            "propConfig": {
+                              "props.instances": {
+                                "binding": {
+                                  "config": {
+                                    "path": "view.custom.operationEngines"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "direction": "column",
+                              "elementStyle": {
+                                "marginBottom": 10
+                              },
+                              "path": "BlueRidge/Components/_Recipe/_Operation/ButtonOfLists_Oneshot",
+                              "useDefaultViewWidth": false
+                            },
+                            "type": "ia.display.flex-repeater"
+                          },
+                          {
+                            "events": {
+                              "dom": {
+                                "onClick": {
+                                  "config": {
+                                    "script": "\tsystem.perspective.sendMessage(\"OneShotButton\", 0)"
+                                  },
+                                  "scope": "G",
+                                  "type": "script"
+                                }
+                              }
+                            },
+                            "meta": {
+                              "name": "FlexContainer"
+                            },
+                            "position": {
+                              "grow": 1
+                            },
+                            "type": "ia.container.flex"
+                          }
+                        ],
+                        "meta": {
+                          "name": "FlexContainer"
+                        },
+                        "position": {
+                          "grow": 1
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "backgroundColor": "#FFFFFF",
+                            "paddingBottom": 10,
+                            "paddingLeft": 10,
+                            "paddingRight": 10,
+                            "paddingTop": 10
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "ListOfButton"
+                    },
+                    "position": {
+                      "basis": "250px",
+                      "grow": 1
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "marginBottom": 5
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "events": {
+                          "component": {
+                            "onActionPerformed": [
+                              {
+                                "config": {
+                                  "draggable": true,
+                                  "id": "addEngine",
+                                  "modal": false,
+                                  "overlayDismiss": false,
+                                  "resizable": true,
+                                  "showCloseIcon": true,
+                                  "type": "open",
+                                  "viewParams": {
+                                    "data": "{view.custom.availableEngines}",
+                                    "script": "{view.params.script}"
+                                  },
+                                  "viewPath": "BlueRidge/Components/_Recipe/Popups/AddEngine",
+                                  "viewportBound": false
+                                },
+                                "scope": "C",
+                                "type": "popup"
+                              },
+                              {
+                                "config": {
+                                  "script": "\tscript \u003d self.view.params.script.replace(\u0027/\u0027,\u0027.\u0027)\n\tdata \u003d self.view.params.data\n\tfunction \u003d \u0027add\u0027\n#\tsystem.perspective.print(script+\u0027.{0}({1})\u0027.format(function,data))\n\teval(script+\".{0}(\u0027{1}\u0027)\".format(function,data))\n\tsystem.perspective.sendMessage(\"refreshTrigger\")"
+                                },
+                                "enabled": false,
+                                "scope": "G",
+                                "type": "script"
+                              }
+                            ]
+                          }
+                        },
+                        "meta": {
+                          "name": "AddButton"
+                        },
+                        "position": {
+                          "basis": "100px"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "BlueRidge/Components/actionButtonRound",
+                            "marginRight": 10
+                          },
+                          "text": "Add"
+                        },
+                        "type": "ia.input.button"
+                      },
+                      {
+                        "events": {
+                          "component": {
+                            "onActionPerformed": [
+                              {
+                                "config": {
+                                  "draggable": true,
+                                  "id": "confirm",
+                                  "modal": false,
+                                  "overlayDismiss": false,
+                                  "resizable": true,
+                                  "showCloseIcon": true,
+                                  "title": "Archive",
+                                  "type": "open",
+                                  "viewParams": {
+                                    "data": "{view.custom.operationEngine}",
+                                    "script": "BlueRidge/Recipe/OperationEngine"
+                                  },
+                                  "viewPath": "BlueRidge/Components/_Recipe/Popups/Confirm",
+                                  "viewportBound": false
+                                },
+                                "scope": "C",
+                                "type": "popup"
+                              },
+                              {
+                                "config": {
+                                  "script": "\tscript \u003d self.view.params.script.replace(\u0027/\u0027,\u0027.\u0027)\n\tdata \u003d self.view.params.data\n\tfunction \u003d \u0027archive\u0027\n#\tsystem.perspective.print(script+\u0027.{0}({1})\u0027.format(function,data))\n\teval(script+\".{0}(\u0027{1}\u0027)\".format(function,data))\n\tsystem.perspective.sendMessage(\"refreshTrigger\")"
+                                },
+                                "enabled": false,
+                                "scope": "G",
+                                "type": "script"
+                              }
+                            ]
+                          }
+                        },
+                        "meta": {
+                          "name": "ArchiveButton"
+                        },
+                        "position": {
+                          "basis": "100px"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "BlueRidge/Components/dangerButtonRound"
+                          },
+                          "text": "Archive"
+                        },
+                        "type": "ia.input.button"
+                      }
+                    ],
+                    "meta": {
+                      "name": "AddArchiveButtons"
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "justify": "space-evenly",
+                      "style": {
+                        "marginBottom": 5,
+                        "paddingLeft": 10,
+                        "paddingRight": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "LeftBottom"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "borderStyle": "solid",
+                    "borderWidth": 2,
+                    "paddingLeft": 10,
+                    "paddingRight": 10
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "Left"
+            },
+            "position": {
+              "basis": "250px"
+            },
+            "props": {
+              "direction": "column"
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "Label"
+                            },
+                            "position": {
+                              "basis": "25px"
+                            },
+                            "props": {
+                              "text": "Name"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "TextField"
+                            },
+                            "position": {
+                              "grow": 1
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.params.operation.name"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "type": "ia.input.text-field"
+                          }
+                        ],
+                        "meta": {
+                          "name": "TextEntryField"
+                        },
+                        "position": {
+                          "basis": "50px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "marginBottom": 5
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "Label"
+                            },
+                            "position": {
+                              "basis": "25px"
+                            },
+                            "props": {
+                              "text": "Operation Type"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "Dropdown"
+                            },
+                            "position": {
+                              "basis": "25px"
+                            },
+                            "propConfig": {
+                              "props.options": {
+                                "binding": {
+                                  "config": {
+                                    "path": "view.custom.operationTypes"
+                                  },
+                                  "type": "property"
+                                }
+                              },
+                              "props.value": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.params.operation.type"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "type": "ia.input.dropdown"
+                          }
+                        ],
+                        "meta": {
+                          "name": "DropdownField"
+                        },
+                        "position": {
+                          "basis": "50px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "marginBottom": 5
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "meta": {
+                          "name": "Spacer"
+                        },
+                        "position": {
+                          "basis": "50px"
+                        },
+                        "props": {
+                          "style": {
+                            "marginBottom": 5
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "TopLeft"
+                    },
+                    "position": {
+                      "basis": "250px"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "paddingLeft": 10,
+                        "paddingRight": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "Spacer"
+                        },
+                        "position": {
+                          "basis": "11px"
+                        },
+                        "props": {
+                          "style": {
+                            "marginBottom": 5
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tdata \u003d self.view.params.operation\n\tdata \u003d system.util.jsonEncode(data)\n\tresp \u003d BlueRidge.Recipe.Operation.update(data)\n#\tsystem.perspective.print(\"Update Button: {}\".format(resp))\n\tif resp \u003d\u003d \u0027success\u0027:\n\t\tsystem.perspective.sendMessage(\"refreshTrigger\")"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "Update"
+                        },
+                        "position": {
+                          "basis": "34px",
+                          "display": false
+                        },
+                        "props": {
+                          "text": "Update"
+                        },
+                        "type": "ia.input.button"
+                      }
+                    ],
+                    "meta": {
+                      "name": "TopCenter"
+                    },
+                    "position": {
+                      "basis": "250px"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "paddingLeft": 10,
+                        "paddingRight": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "Checkbox"
+                        },
+                        "position": {
+                          "basis": "50px"
+                        },
+                        "propConfig": {
+                          "props.selected": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.params.operation.available"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "marginBottom": 5
+                          },
+                          "text": "Available",
+                          "textPosition": "left",
+                          "uncheckedIcon": {
+                            "color": {
+                              "enabled": "#555555"
+                            }
+                          }
+                        },
+                        "type": "ia.input.checkbox"
+                      },
+                      {
+                        "meta": {
+                          "name": "Spacer"
+                        },
+                        "position": {
+                          "basis": "50px"
+                        },
+                        "props": {
+                          "style": {
+                            "marginBottom": 5
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "TopRight"
+                    },
+                    "position": {
+                      "basis": "250px",
+                      "grow": 1
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "paddingLeft": 10,
+                        "paddingRight": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "Top"
+                },
+                "position": {
+                  "basis": "250px"
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "Label"
+                        },
+                        "position": {
+                          "basis": "200px",
+                          "grow": 1
+                        },
+                        "props": {
+                          "text": "Parameters"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "children": [
+                          {
+                            "events": {
+                              "component": {
+                                "onActionPerformed": [
+                                  {
+                                    "config": {
+                                      "script": "#\tparameters \u003d self.view.custom.parameters\n#\tfileTypeKey \u003d self.view.custom.fileTypeKey\n#\ttableData \u003d parameters[\u0027Key{}\u0027.format(fileTypeKey)][\u0027tableData\u0027]\n##\tnextParamKey \u003d len(tableData)+1\n#\tnewParameter \u003d {\n#      \"Name\": \"Name\",\n#      \"Verified\": False,\n#      \"Value\": 0,\n#      \"Macro Variable\": \"Var\"\n#    }\n#\t\n#\ttableData.append(newParameter)\n#\tparameters[\u0027Key{}\u0027.format(fileTypeKey)][\u0027tableData\u0027] \u003d tableData\n\tdata \u003d {}\n\tdata[\u0027parameterListUUID\u0027] \u003d self.view.custom.routine.key\n\tdata[\u0027user\u0027] \u003d self.session.props.auth.user.userName\n#\tself.view.custom.routine.verified \u003d False\n\tresp \u003d BlueRidge.Recipe.EngineParameter.add(data)\n\tif resp \u003d\u003d -1:\n\t\tself.view.custom.triggerRefresh \u003d not self.view.custom.triggerRefresh\n\t\tpass"
+                                    },
+                                    "scope": "G",
+                                    "type": "script"
+                                  },
+                                  {
+                                    "config": {
+                                      "draggable": true,
+                                      "id": "addEngine",
+                                      "modal": false,
+                                      "overlayDismiss": false,
+                                      "resizable": true,
+                                      "showCloseIcon": true,
+                                      "type": "open",
+                                      "viewParams": {
+                                        "data": "{view.custom.availableEngines}",
+                                        "script": "{view.params.script}"
+                                      },
+                                      "viewPath": "BlueRidge/Components/_Recipe/Popups/AddEngine",
+                                      "viewportBound": false
+                                    },
+                                    "enabled": false,
+                                    "scope": "C",
+                                    "type": "popup"
+                                  }
+                                ]
+                              }
+                            },
+                            "meta": {
+                              "name": "AddButton"
+                            },
+                            "position": {
+                              "basis": "100px"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "BlueRidge/Components/actionButtonRound",
+                                "marginRight": 10
+                              },
+                              "text": "Add"
+                            },
+                            "type": "ia.input.button"
+                          },
+                          {
+                            "events": {
+                              "component": {
+                                "onActionPerformed": [
+                                  {
+                                    "config": {
+                                      "draggable": true,
+                                      "id": "confirm",
+                                      "modal": false,
+                                      "overlayDismiss": false,
+                                      "resizable": true,
+                                      "showCloseIcon": true,
+                                      "title": "Archive",
+                                      "type": "open",
+                                      "viewParams": {
+                                        "data": "{view.custom.selectedParameter}",
+                                        "script": "BlueRidge/Recipe/EngineParameter"
+                                      },
+                                      "viewPath": "BlueRidge/Components/_Recipe/Popups/Confirm",
+                                      "viewportBound": false
+                                    },
+                                    "scope": "C",
+                                    "type": "popup"
+                                  },
+                                  {
+                                    "config": {
+                                      "script": "\tscript \u003d self.view.params.script.replace(\u0027/\u0027,\u0027.\u0027)\n\tdata \u003d self.view.params.data\n\tfunction \u003d \u0027archive\u0027\n#\tsystem.perspective.print(script+\u0027.{0}({1})\u0027.format(function,data))\n\teval(script+\".{0}(\u0027{1}\u0027)\".format(function,data))\n\tsystem.perspective.sendMessage(\"refreshTrigger\")"
+                                    },
+                                    "enabled": false,
+                                    "scope": "G",
+                                    "type": "script"
+                                  }
+                                ]
+                              }
+                            },
+                            "meta": {
+                              "name": "ArchiveButton"
+                            },
+                            "position": {
+                              "basis": "100px"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "BlueRidge/Components/dangerButtonRound"
+                              },
+                              "text": "Archive"
+                            },
+                            "type": "ia.input.button"
+                          }
+                        ],
+                        "meta": {
+                          "name": "AddArchiveButtons"
+                        },
+                        "position": {
+                          "basis": "250px"
+                        },
+                        "props": {
+                          "alignItems": "center",
+                          "justify": "space-evenly",
+                          "style": {
+                            "paddingLeft": 10,
+                            "paddingRight": 10
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "Header"
+                    },
+                    "position": {
+                      "basis": "35px"
+                    },
+                    "props": {
+                      "alignItems": "flex-end",
+                      "style": {
+                        "marginBottom": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "events": {
+                          "dom": {
+                            "onClick": {
+                              "config": {
+                                "script": "#\tself.view.custom.selectedRow \u003d -1\n#\tself.view.custom.triggerRefresh \u003d not self.view.custom.triggerRefresh\n\tpass"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "TabContainer"
+                        },
+                        "position": {
+                          "basis": "36px",
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.currentTabIndex": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.selectedTab"
+                              },
+                              "type": "property"
+                            }
+                          },
+                          "props.tabs": {
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.tabData"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "borderStyle": "solid",
+                            "borderWidth": 0
+                          },
+                          "tabSize": {
+                            "height": 34,
+                            "width": 150
+                          },
+                          "tabStyle": {
+                            "active": {
+                              "backgroundColor": "#FAFAFB"
+                            }
+                          }
+                        },
+                        "type": "ia.container.tab"
+                      },
+                      {
+                        "meta": {
+                          "name": "EmbeddedView"
+                        },
+                        "position": {
+                          "grow": 1
+                        },
+                        "propConfig": {
+                          "props.params.parameter": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.selectedParameter"
+                              },
+                              "type": "property"
+                            }
+                          },
+                          "props.params.routine": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.routine"
+                              },
+                              "type": "property"
+                            }
+                          },
+                          "props.params.selectedRow": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.selectedRow"
+                              },
+                              "type": "property"
+                            }
+                          },
+                          "props.params.tableData": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.tableData"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "path": "BlueRidge/Components/_Recipe/_Operation/Parameters",
+                          "style": {
+                            "borderStyle": "solid",
+                            "borderWidth": 0
+                          }
+                        },
+                        "type": "ia.display.view"
+                      },
+                      {
+                        "children": [
+                          {
+                            "events": {
+                              "component": {
+                                "onActionPerformed": {
+                                  "config": {
+                                    "script": "#\tsystem.perspective.print(\u0027running\u0027)\n\tparameters \u003d self.view.custom.parameters\n\tparameterList \u003d self.view.custom.routine\n#\tsystem.perspective.print(\u0027parameterList1: {}\u0027.format(parameterList))\n\tselectedParameter \u003d [\n\t  {\n\t    \"Verified\": \"\",\n\t    \"Value\": \"\",\n\t    \"Macro Variable\": \"\",\n\t    \"parameterListUUID\": \"\",\n\t    \"key\": \"\",\n\t    \"Name\": \"\"\n\t  }\n\t]\n\tself.view.custom.selectedParameter \u003d selectedParameter\n\tself.view.custom.selectedRow \u003d None\n\tself.view.custom.routine[\u0027verified\u0027] \u003d True\n\tparameterList[\u0027verified\u0027] \u003d True\n#\tsystem.perspective.print(\u0027parameterList2: {}\u0027.format(parameterList))\n\tBlueRidge.Recipe.ParameterList.update(parameterList)\n#\tsystem.perspective.print(\u0027verified:{}\u0027.format(self.view.custom.routine[\u0027verified\u0027]))\n\tfor i in range(len(parameters)):\n\t\tparameters[i][\u0027Verified\u0027] \u003d True\n\t\tself.view.custom.parameters[i].Verified \u003d True\n\t\tBlueRidge.Recipe.EngineParameter.update(parameters[i])\n\t\t\n\tself.view.custom.triggerRefresh \u003d not self.view.custom.triggerRefresh\n#\tsystem.perspective.sendMessage(\u0027refreshTrigger\u0027)"
+                                  },
+                                  "scope": "G",
+                                  "type": "script"
+                                }
+                              }
+                            },
+                            "meta": {
+                              "name": "Validate"
+                            },
+                            "position": {
+                              "basis": "150px"
+                            },
+                            "propConfig": {
+                              "props.enabled": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "isAuthorized(false, \"Authenticated/Roles/JET-RecipeAdmin\")"
+                                  },
+                                  "type": "expr"
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "BlueRidge/Components/attentionButtonRound"
+                              },
+                              "text": "Validate"
+                            },
+                            "type": "ia.input.button"
+                          }
+                        ],
+                        "meta": {
+                          "name": "FlexContainer"
+                        },
+                        "position": {
+                          "basis": "34px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "justify": "flex-end",
+                          "style": {
+                            "margin": 10
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "Body"
+                    },
+                    "position": {
+                      "basis": "34px",
+                      "grow": 1
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "borderStyle": "solid",
+                        "borderWidth": 2
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "Bottom"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "marginBottom": 0,
+                    "marginRight": 10,
+                    "paddingLeft": 10
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "Right"
+            },
+            "position": {
+              "basis": "250px",
+              "grow": 1
+            },
+            "props": {
+              "direction": "column"
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "52px",
+          "grow": 1
+        },
+        "props": {
+          "style": {
+            "borderStyle": "solid",
+            "borderWidth": 3,
+            "paddingBottom": 10,
+            "paddingLeft": 10,
+            "paddingRight": 10,
+            "paddingTop": 10
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "backgroundColor": "#AAAAAA"
+      }
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "refreshTrigger",
+          "pageScope": true,
+          "script": "\ttrigger \u003d self.view.custom.triggerRefresh\n\tself.view.custom.triggerRefresh \u003d not trigger",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "OneShotButton",
+          "pageScope": true,
+          "script": "\tself.view.custom.selectedData \u003d payload",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "addEngine",
+          "pageScope": true,
+          "script": "\tdata \u003d payload\n#\taddEngine \u003d BlueRidge.Recipe.OperationEngine.getOne(addEngineKey)\n#\tcurrentEngines \u003d self.view.custom.operationEngines\n#\tcurrentEngines.append(addEngine)\n#\tself.view.custom.operationEngines \u003d currentEngines\n\tdata[\u0027operationUUID\u0027] \u003d self.view.params.operation.key\n\tresp \u003d BlueRidge.Recipe.OperationEngine.add(data)\n\tif resp \u003d\u003d -1:\n\t\tself.view.custom.triggerRefresh \u003d not self.view.custom.triggerRefresh\n\t\tpass",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "archiveButton",
+          "pageScope": true,
+          "script": "\tfrom org.python.core import PyArray\n\t\n\tif type(payload) \u003d\u003d PyArray:\n\t\tparam \u003d payload[0]\n\t\t#system.perspective.print(param)\n\telif type(payload) \u003d\u003d dict:\n\t\tif \u0027messageType\u0027 in payload.keys():\n\t\t\tremoveKey \u003d payload[\u0027key\u0027]\n\t#\t\toperations \u003d self.view.custom.instances\n\t\t\toperationEngines \u003d self.view.custom.operationEngines\n\t\t\tnew_operationEngines \u003d [d for d in operationEngines if d.get(\u0027key\u0027) !\u003d removeKey]\n\t\t\tself.view.custom.operationEngines \u003d new_operationEngines\n\t\t\tself.view.custom.selectedData \u003d 0\n\telse:\n\t\tpass\n\n#\t[\n#  {\n#    \"Verified\": \"\",\n#    \"Value\": 9.25,\n#    \"Macro Variable\": \"#613\",\n#    \"Name\": \"Min Deck Height21\"\n#  }\n#]",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "UpdateAssignment",
+          "pageScope": true,
+          "script": "\trow \u003d payload.get(\u0027row\u0027)\n\tvalue \u003d payload.get(\u0027value\u0027)\n\tself.view.custom.selectedParameter[0][\u0027Assignment\u0027] \u003d value",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "custom": {},
+  "params": {
+    "headFileUUID": "value",
+    "headOperationUUID": "value",
+    "widgets": "value"
+  },
+  "propConfig": {
+    "params.headFileUUID": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.headOperationUUID": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.widgets": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 547,
+      "width": 1176
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "HeadDashboard"
+        },
+        "position": {
+          "basis": "320px",
+          "grow": 1
+        },
+        "propConfig": {
+          "props.params.Head": {
+            "binding": {
+              "config": {
+                "path": "view.params.headFileUUID"
+              },
+              "overlayOptOut": true,
+              "type": "property"
+            }
+          },
+          "props.params.operation": {
+            "binding": {
+              "config": {
+                "path": "view.params.headOperationUUID"
+              },
+              "type": "property"
+            }
+          },
+          "props.params.widgets": {
+            "binding": {
+              "config": {
+                "path": "view.params.widgets"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "params": {
+            "configMode": true,
+            "height": 600,
+            "width": 800
+          },
+          "path": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_Selections/HeadDashboard"
+        },
+        "type": "ia.display.view"
+      },
+      {
+        "meta": {
+          "name": "WidgetList"
+        },
+        "position": {
+          "basis": "75px",
+          "grow": 0.1
+        },
+        "props": {
+          "path": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_HeadWidgets/WidgetsList"
+        },
+        "type": "ia.display.view"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "key": "value"
+    },
+    "type": "ia.container.flex"
+  }
+}

@@ -1,0 +1,427 @@
+{
+  "custom": {
+    "CurrentScreen": {
+      "Header": "Select a Part",
+      "Params": [
+        {}
+      ],
+      "ScreenPath": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_Selections/Parts"
+    },
+    "PageNumber": 0,
+    "Screens": [
+      {
+        "Header": "Select a Part",
+        "Params": [
+          {}
+        ],
+        "ScreenPath": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_Selections/Parts"
+      },
+      {
+        "Header": "Process Head",
+        "Params": [
+          {}
+        ],
+        "ScreenPath": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_Selections/Final"
+      }
+    ],
+    "canProceed": true,
+    "selectedPartScreens": []
+  },
+  "events": {
+    "system": {
+      "onStartup": {
+        "config": {
+          "script": "\tself.session.custom.hMISelections.process \u003d \u0027new\u0027\n\tself.session.custom.hMISelections.selectedButtons \u003d []\n\tself.session.custom.hMISelections.selectedOperation \u003d []\n\tself.session.custom.hMISelections.selectedPart \u003d \u0027\u0027\n\tself.session.custom.hMISelections.depth.value \u003d 0"
+        },
+        "scope": "G",
+        "type": "script"
+      }
+    }
+  },
+  "params": {},
+  "propConfig": {
+    "custom.CurrentScreen": {
+      "binding": {
+        "config": {
+          "path": "view.custom.PageNumber"
+        },
+        "transforms": [
+          {
+            "code": "\treturn self.custom.Screens[value]",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.PageNumber": {
+      "persistent": true
+    },
+    "custom.Screens": {
+      "binding": {
+        "config": {
+          "path": "view.custom.selectedPartScreens"
+        },
+        "overlayOptOut": true,
+        "transforms": [
+          {
+            "code": "\tscreens \u003d [\n\t  {\n\t    \"Header\": \"Select a Part\",\n\t    \"Params\": [\n\t      {}\n\t    ],\n\t    \"ScreenPath\": \"BlueRidge/Components/_HMI/_OperatorRecipeSelection/_Selections/Parts\"\n\t  },\n#\t  {\n#\t    \"Header\": \"Main Process\",\n#\t    \"Params\": [\n#\t      {}\n#\t    ],\n#\t    \"ScreenPath\": \"BlueRidge/Components/_HMI/_OperatorRecipeSelection/_Selections/Main\"\n#\t  },\n#\t  {\n#\t    \"Header\": \"Select Operation(s)\",\n#\t    \"Params\": [\n#\t      {}\n#\t    ],\n#\t    \"ScreenPath\": \"BlueRidge/Components/_HMI/_OperatorRecipeSelection/_Selections/Operations\"\n#\t  }\n\t]\n\tfor op in value:\n\t\tscreens.append(\n\t\t\t{\n\t\t    \"Header\": op[\u0027name\u0027],\n\t\t    \"Params\": [\n\t\t      {\n\t\t        \"headOperation\": op[\u0027headOperationUUID\u0027]\n\t\t      }\n\t\t    ],\n\t\t    \"ScreenPath\": \"BlueRidge/Components/_HMI/_OperatorRecipeSelection/_Selections/HMIDashboard\"\n\t\t  }\n\t\t  )\n\tscreens.append(\n\t\t{\n\t    \"Header\": \u0027Process Head\u0027,\n\t    \"Params\": [\n\t      {}\n\t    ],\n\t    \"ScreenPath\": \"BlueRidge/Components/_HMI/_OperatorRecipeSelection/_Selections/Final\"\n\t  }\n\t  )\n\treturn screens",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.canProceed": {
+      "persistent": true
+    },
+    "custom.selectedPartScreens": {
+      "binding": {
+        "config": {
+          "path": "session.custom.hMISelections.selectedOperation"
+        },
+        "transforms": [
+          {
+            "code": "\toperationScreens \u003d []\n\tfor opp in value:\n\t\ttry :\n\t\t\tscreens \u003d BlueRidge.Config.HeadConfig.getHeadOperations(self.session.custom.hMISelections.selectedPart, opp)\n\t\t\tfor screen in screens:\n\t\t\t\toperationScreens.append(screen)\n\t\texcept:\n\t\t\tscreens \u003d []\n\treturn operationScreens",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 1229,
+      "width": 1569
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Label"
+            },
+            "position": {
+              "basis": "50px"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.CurrentScreen.Header"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "backgroundColor": "#EBEBEB",
+                "padding": 15
+              },
+              "textStyle": {
+                "fontSize": 50
+              }
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "grow": 0.1
+        },
+        "props": {
+          "alignItems": "center",
+          "direction": "column",
+          "justify": "space-around"
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "EmbeddedView"
+            },
+            "position": {
+              "basis": "320px",
+              "grow": 0.75
+            },
+            "propConfig": {
+              "props.params": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.CurrentScreen.Params"
+                  },
+                  "transforms": [
+                    {
+                      "code": "\treturn value[0]",
+                      "type": "script"
+                    }
+                  ],
+                  "type": "property"
+                }
+              },
+              "props.path": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.CurrentScreen.ScreenPath"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "type": "ia.display.view"
+          }
+        ],
+        "meta": {
+          "name": "Selections"
+        },
+        "position": {
+          "basis": "200px",
+          "grow": 0.8
+        },
+        "props": {
+          "justify": "center"
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "TopSpacer"
+                },
+                "position": {
+                  "grow": 0.25
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.custom.PageNumber -\u003d 1\n\t"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "Button"
+                },
+                "position": {
+                  "grow": 0.4
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.PageNumber}!\u003d 0"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "image": {
+                    "icon": {
+                      "path": "material/arrow_back_ios"
+                    }
+                  },
+                  "style": {
+                    "classes": "BlueRidge/Components/dangerButtonRound",
+                    "fontSize": 25
+                  },
+                  "text": "Previous"
+                },
+                "type": "ia.input.button"
+              },
+              {
+                "meta": {
+                  "name": "BottomSpacer"
+                },
+                "position": {
+                  "grow": 0.25
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "Previous"
+            },
+            "position": {
+              "basis": "80px",
+              "grow": 0.25
+            },
+            "props": {
+              "direction": "column",
+              "justify": "space-between"
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "Logo"
+            },
+            "position": {
+              "basis": "339px"
+            },
+            "props": {
+              "fit": {
+                "mode": "contain"
+              },
+              "source": "/system/images/JET/jasperengineslogo100associateownedwhitetext.png",
+              "style": {
+                "margin": "2px"
+              }
+            },
+            "type": "ia.display.image"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "TopSpacer"
+                },
+                "position": {
+                  "grow": 0.25
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.custom.PageNumber +\u003d 1"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "Button"
+                },
+                "position": {
+                  "grow": 0.4
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.PageNumber} !\u003d len({view.custom.Screens})-1"
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.enabled": {
+                    "binding": {
+                      "config": {
+                        "expression": "{session.custom.hMISelections.selectedPart} !\u003d \u0027\u0027 \u0026\u0026 {view.custom.canProceed}"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "alignContent": "center",
+                  "alignItems": "center",
+                  "direction": "row",
+                  "image": {
+                    "icon": {
+                      "path": "material/arrow_forward_ios"
+                    },
+                    "position": "right"
+                  },
+                  "style": {
+                    "classes": "BlueRidge/Components/actionButtonRound",
+                    "fontSize": 25
+                  },
+                  "text": "Next"
+                },
+                "type": "ia.input.button"
+              },
+              {
+                "meta": {
+                  "name": "BottomSpacer"
+                },
+                "position": {
+                  "grow": 0.25
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "Next"
+            },
+            "position": {
+              "basis": "80px",
+              "grow": 0.25
+            },
+            "props": {
+              "direction": "column",
+              "justify": "space-around"
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Navigation"
+        },
+        "position": {
+          "basis": "200px",
+          "grow": 0.1
+        },
+        "props": {
+          "alignContent": "center",
+          "justify": "space-evenly"
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "BlueRidge/Menu/Menu"
+      }
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "restartHMI",
+          "pageScope": true,
+          "script": "\tself.view.custom.PageNumber \u003d 0\n\t",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "canProceedSelections",
+          "pageScope": true,
+          "script": "\tself.view.custom.canProceed \u003d payload[\u0027bool\u0027]",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

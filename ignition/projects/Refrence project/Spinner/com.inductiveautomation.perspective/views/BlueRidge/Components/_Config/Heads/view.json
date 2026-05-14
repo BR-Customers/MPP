@@ -1,0 +1,2817 @@
+{
+  "custom": {
+    "currentType": "E064A911-50FC-F011-8CBF-000C2986FE9B",
+    "files": null,
+    "flexRepeaterRefresh": false,
+    "headConfigList": null,
+    "infoToSave": {},
+    "instance": null,
+    "instances": [
+      {
+        "available": true,
+        "key": "44116C4B-7208-F111-8CBF-000C2986FE9B",
+        "text": "Gen V",
+        "value": "",
+        "view": "44116C4B-7208-F111-8CBF-000C2986FE9B"
+      }
+    ],
+    "reason": [
+      {
+        "Last Edited": "Thu Apr 02 2026 11:23:09 GMT-0400 (Eastern Daylight Time)",
+        "Last Edited By": "hkraft",
+        "Name": "New Reason",
+        "key": "552F7AEE-585C-4B13-8EB7-20409BD7BF45"
+      }
+    ],
+    "selectedConfig": null,
+    "selectedConfigName": "",
+    "selectedData": 0,
+    "tableData": [
+      {
+        "Last Edited": {
+          "$": [
+            "ts",
+            0,
+            1775197936645
+          ],
+          "$ts": 1775143389550
+        },
+        "Last Edited By": "hkraft",
+        "Name": "New Reason",
+        "key": "552F7AEE-585C-4B13-8EB7-20409BD7BF45"
+      },
+      {
+        "Last Edited": {
+          "$": [
+            "ts",
+            0,
+            1775197936645
+          ],
+          "$ts": 1749826096133
+        },
+        "Last Edited By": "rpulliam",
+        "Name": null,
+        "key": "260A68AE-7551-4235-918E-61962D776B68"
+      },
+      {
+        "Last Edited": {
+          "$": [
+            "ts",
+            0,
+            1775197936645
+          ],
+          "$ts": 1749826164797
+        },
+        "Last Edited By": "rpulliam",
+        "Name": null,
+        "key": "E6A26CD2-554C-41EB-B5C2-992330C004C6"
+      },
+      {
+        "Last Edited": {
+          "$": [
+            "ts",
+            0,
+            1775197936645
+          ],
+          "$ts": 1749826033393
+        },
+        "Last Edited By": "rpulliam",
+        "Name": "New Reason",
+        "key": "D0EE7553-2EC2-4279-92BD-C7F035914AEE"
+      },
+      {
+        "Last Edited": {
+          "$": [
+            "ts",
+            0,
+            1775197936645
+          ],
+          "$ts": 1749824088903
+        },
+        "Last Edited By": "rpulliam",
+        "Name": "New Reason",
+        "key": "A13BDF5D-73C5-4C61-9900-DC4CC5B3897C"
+      },
+      {
+        "Last Edited": {
+          "$": [
+            "ts",
+            0,
+            1775197936645
+          ],
+          "$ts": 1749826069203
+        },
+        "Last Edited By": "rpulliam",
+        "Name": null,
+        "key": "4A662D27-8892-412B-97D1-E08EDF86E6DF"
+      },
+      {
+        "Last Edited": {
+          "$": [
+            "ts",
+            0,
+            1775197936645
+          ],
+          "$ts": 1749826031573
+        },
+        "Last Edited By": "rpulliam",
+        "Name": null,
+        "key": "ACD6E3D5-4541-4CF5-A170-EA07EA615F88"
+      }
+    ],
+    "triggerRefresh": false
+  },
+  "params": {},
+  "propConfig": {
+    "custom.files": {
+      "binding": {
+        "config": {
+          "path": "view.custom.instance.configs"
+        },
+        "transforms": [
+          {
+            "code": "\tif value:\n\t\treturn BlueRidge.Config.HeadConfig.getHeadFiles(self.custom.selectedConfig)\n\t",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.flexRepeaterRefresh": {
+      "persistent": true
+    },
+    "custom.headConfigList": {
+      "binding": {
+        "config": {
+          "path": "view.custom.instance.configs"
+        },
+        "transforms": [
+          {
+            "code": "\treturn self.getChild(\"root\").getHeadConfigList()",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.infoToSave": {
+      "persistent": true
+    },
+    "custom.infoToSave.active": {
+      "binding": {
+        "config": {
+          "path": "view.custom.instance.available"
+        },
+        "type": "property"
+      }
+    },
+    "custom.infoToSave.extensionTypeUUID": {
+      "binding": {
+        "config": {
+          "path": "view.custom.instance.extensionTypeUUID"
+        },
+        "type": "property"
+      }
+    },
+    "custom.infoToSave.headConfigName": {
+      "binding": {
+        "config": {
+          "path": "view.custom.selectedConfigName"
+        },
+        "type": "property"
+      }
+    },
+    "custom.infoToSave.headConfigUUID": {
+      "binding": {
+        "config": {
+          "path": "view.custom.selectedConfig"
+        },
+        "type": "property"
+      }
+    },
+    "custom.infoToSave.headName": {
+      "binding": {
+        "config": {
+          "path": "view.custom.instance.name"
+        },
+        "type": "property"
+      }
+    },
+    "custom.infoToSave.headUUID": {
+      "binding": {
+        "config": {
+          "path": "view.custom.selectedData"
+        },
+        "type": "property"
+      }
+    },
+    "custom.infoToSave.user": {
+      "binding": {
+        "config": {
+          "path": "session.props.auth.user.userName"
+        },
+        "type": "property"
+      }
+    },
+    "custom.instance": {
+      "binding": {
+        "config": {
+          "path": "view.custom.triggerRefresh"
+        },
+        "transforms": [
+          {
+            "expression": "runScript(\u0027BlueRidge.Config.HeadConfig.getOne\u0027,0,{view.custom.selectedData})",
+            "type": "expression"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.instances": {
+      "binding": {
+        "config": {
+          "path": "view.custom.triggerRefresh"
+        },
+        "transforms": [
+          {
+            "expression": "runScript(\u0027BlueRidge.Config.HeadConfig.getAll\u0027,0)",
+            "type": "expression"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.reason": {
+      "onChange": {
+        "enabled": null,
+        "script": "\tif origin \u003d\u003d \u0027BindingWriteback\u0027:\n\t\tdata \u003d self.custom.reason\n\t\tif data:\n\t\t\tdata \u003d BlueRidge.Config.Util.convertWrapperObjectToJson(data)\n#\t\t\tsystem.perspective.print(\u0027Running Change Script1 {}\u0027.format(data))\n\t\t\tdata \u003d data[0]\n#\t\t\tsystem.perspective.print(\u0027Running Change Script2 {}\u0027.format(data))\n\t\t\tdata[\u0027user\u0027]\u003dself.session.props.auth.user.userName\n#\t\t\tsystem.perspective.print(\u0027Running Change Script3 {}\u0027.format(data))\n\t#\t\tsystem.perspective.print(data)\n\t\t\tresp \u003d BlueRidge.Config.FailureReason.update(data)\n\t\t\tif resp \u003d\u003d -1:\n#\t\t\t\tsystem.perspective.sendMessage(\"refreshTrigger\")\n\t\t\t\tpass"
+      },
+      "persistent": true
+    },
+    "custom.selectedConfig": {
+      "onChange": {
+        "enabled": null,
+        "script": "\tself.refreshBinding(\"custom.files\")"
+      },
+      "persistent": true
+    },
+    "custom.selectedConfigName": {
+      "persistent": true
+    },
+    "custom.selectedData": {
+      "persistent": true
+    },
+    "custom.tableData": {
+      "binding": {
+        "config": {
+          "path": "view.custom.triggerRefresh"
+        },
+        "transforms": [
+          {
+            "expression": "runScript(\"BlueRidge.Config.FailureReason.getAll\",0,{view.custom.selectedConfig})",
+            "type": "expression"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.triggerRefresh": {
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 700,
+      "width": 1920
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Icon"
+            },
+            "position": {
+              "basis": "50px"
+            },
+            "props": {
+              "path": "material/dashboard",
+              "style": {
+                "marginLeft": 15,
+                "marginRight": 15
+              }
+            },
+            "type": "ia.display.icon"
+          },
+          {
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "basis": "50px",
+              "grow": 1
+            },
+            "props": {
+              "text": "Heads",
+              "textStyle": {
+                "classes": "BlueRidge/boldTextLarge"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "children": [
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "#\tinstances \u003d self.view.custom.instances\n##\ttableData \u003d self.view.custom.tableData\n#\tinstance \u003d self.view.custom.instance\n#\treassignedNumbers \u003d self.view.custom.reassignedNumbers\n#\t\n#\tinstance \u003d BlueRidge.Config.Util.convertWrapperObjectToJson(instance)\n#\tassignedNumbers \u003d [item for sublist in reassignedNumbers for item in sublist]\n#\tinstance[\u0027assignedNumbers\u0027] \u003d assignedNumbers[:instance[\"cylinderCount\"]]\n#\t\n#\tdata \u003d {\u0027instances\u0027:instances,\u0027instance\u0027:instance}\n#\tsystem.perspective.print(\"Save data: {}\".format(data))\n#\tresp \u003d BlueRidge.Config.BlockConfig.update(data)\n#\tsystem.perspective.print(\"Save resp: {}\".format(resp))\n#\tif resp \u003d\u003d \u0027success\u0027:\n#\t\tsystem.perspective.sendMessage(\"refreshTrigger\")\n#\t\n#\tdata \u003d self.view.custom.instance\n#\tdata \u003d BlueRidge.Config.Util.convertWrapperObjectToJson(data)\n#\t\n#\treassignedNumbers \u003d self.view.custom.reassignedNumbers\n#\tassignedNumbers \u003d [item for sublist in reassignedNumbers for item in sublist]\n#\tdata[\u0027assignedNumbers\u0027] \u003d assignedNumbers[:data[\"cylinderCount\"]]\n#\t\n#\tdata[\u0027user\u0027]\u003dself.session.props.auth.user.userName\n#\tresp \u003d BlueRidge.Config.BlockConfig.update(data)\n\t\n#\tself.view.getChild(\"root\").saveNewConfiguration()\n#\n#\tsystem.perspective.sendMessage(\"refreshTrigger\")"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "Save"
+                },
+                "position": {
+                  "basis": "34px",
+                  "display": false,
+                  "grow": 1
+                },
+                "props": {
+                  "enabled": false,
+                  "text": "Save Changes"
+                },
+                "type": "ia.input.button"
+              }
+            ],
+            "meta": {
+              "name": "FlexContainer"
+            },
+            "position": {
+              "basis": "150px"
+            },
+            "props": {
+              "style": {
+                "padding": 7
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "basis": "50px"
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "basis": "25px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Head Groups"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "FlexRepeater"
+                        },
+                        "propConfig": {
+                          "props.instances": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.instances"
+                              },
+                              "type": "property"
+                            }
+                          },
+                          "props.instances[2].value": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.currentType"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "direction": "column",
+                          "elementStyle": {
+                            "marginBottom": 10
+                          },
+                          "path": "BlueRidge/Components/_Config/_Heads/HeadGroupButton",
+                          "useDefaultViewWidth": false
+                        },
+                        "type": "ia.display.flex-repeater"
+                      },
+                      {
+                        "events": {
+                          "dom": {
+                            "onClick": {
+                              "config": {
+                                "script": "\tsystem.perspective.sendMessage(\"OneShotButton\", 0)\n\tsystem.perspective.sendMessage(\"HeadGroupButton\", payload\u003d{\u0027view\u0027:0})"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "FlexContainer"
+                        },
+                        "position": {
+                          "grow": 1
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "FlexContainer"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "backgroundColor": "#FFFFFF",
+                        "paddingBottom": 10,
+                        "paddingLeft": 10,
+                        "paddingRight": 10,
+                        "paddingTop": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "ListOfButton"
+                },
+                "position": {
+                  "basis": "250px",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "marginBottom": 5
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "config": {
+                            "draggable": true,
+                            "id": "addHead",
+                            "modal": false,
+                            "overlayDismiss": false,
+                            "resizable": true,
+                            "showCloseIcon": true,
+                            "type": "open",
+                            "viewPath": "BlueRidge/Components/_Config/Popups/AddHead",
+                            "viewportBound": false
+                          },
+                          "scope": "C",
+                          "type": "popup"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "name": "Add"
+                    },
+                    "position": {
+                      "basis": "90px"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "BlueRidge/Components/actionButtonRound"
+                      },
+                      "text": "Add"
+                    },
+                    "type": "ia.input.button"
+                  },
+                  {
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "config": {
+                            "draggable": true,
+                            "id": "deleteHead",
+                            "modal": false,
+                            "overlayDismiss": false,
+                            "resizable": true,
+                            "showCloseIcon": true,
+                            "type": "open",
+                            "viewParams": {
+                              "data": "{view.custom.selectedData}"
+                            },
+                            "viewPath": "BlueRidge/Components/_Config/Popups/DeleteHead",
+                            "viewportBound": false
+                          },
+                          "scope": "C",
+                          "type": "popup"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "name": "Delete"
+                    },
+                    "position": {
+                      "basis": "90px"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "BlueRidge/Components/dangerButtonRound"
+                      },
+                      "text": "Delete"
+                    },
+                    "type": "ia.input.button"
+                  }
+                ],
+                "meta": {
+                  "name": "AddDeleteButtons"
+                },
+                "position": {
+                  "basis": "50px"
+                },
+                "props": {
+                  "alignItems": "center",
+                  "justify": "center"
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "Left"
+            },
+            "position": {
+              "basis": "250px"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "borderStyle": "solid",
+                "borderWidth": 2,
+                "paddingLeft": 10,
+                "paddingRight": 10
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "Label"
+                            },
+                            "position": {
+                              "basis": "25px"
+                            },
+                            "props": {
+                              "text": "Group Name"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "TextField"
+                            },
+                            "position": {
+                              "display": false,
+                              "grow": 1
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "path": "view.custom.instance.name"
+                                  },
+                                  "overlayOptOut": true,
+                                  "transforms": [
+                                    {
+                                      "code": "\tif value:\n\t\treturn value\n\telse:\n\t\treturn \u0027\u0027",
+                                      "type": "script"
+                                    }
+                                  ],
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "enabled": false
+                            },
+                            "type": "ia.input.text-field"
+                          },
+                          {
+                            "meta": {
+                              "name": "EmbeddedView"
+                            },
+                            "propConfig": {
+                              "props.params.originalValue": {
+                                "binding": {
+                                  "config": {
+                                    "path": "view.custom.infoToSave.headName"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "params": {
+                                "confirmationMessageHandler": "HeadGroupRenameConfirm",
+                                "newValue": null,
+                                "newValueConfirmation": false,
+                                "textStyle": {
+                                  "classes": "animated-content"
+                                }
+                              },
+                              "path": "BlueRidge/Components/_Config/_Heads/InputFieldWithRevert"
+                            },
+                            "type": "ia.display.view"
+                          }
+                        ],
+                        "meta": {
+                          "name": "Name"
+                        },
+                        "position": {
+                          "basis": "50px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "marginBottom": 5
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "Label"
+                            },
+                            "position": {
+                              "basis": "25px"
+                            },
+                            "props": {
+                              "text": "HMI Aspect Ration(Default: 16:9)"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "TextField"
+                            },
+                            "position": {
+                              "grow": 1
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.instance.aspectRatio"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "type": "ia.input.text-field"
+                          }
+                        ],
+                        "meta": {
+                          "name": "AspectRatio"
+                        },
+                        "position": {
+                          "basis": "50px",
+                          "display": false,
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "marginBottom": 5
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "meta": {
+                          "name": "Spacer"
+                        },
+                        "position": {
+                          "basis": "50px"
+                        },
+                        "props": {
+                          "style": {
+                            "marginBottom": 5
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "TopLeft"
+                    },
+                    "position": {
+                      "basis": "300px"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "paddingLeft": 10,
+                        "paddingRight": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "Spacer"
+                        },
+                        "position": {
+                          "basis": "11px"
+                        },
+                        "props": {
+                          "style": {
+                            "marginBottom": 5
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tdata \u003d BlueRidge.Config.Util.convertWrapperObjectToJson(self.view.custom.instance)\n\treassignedNumbers \u003d self.view.custom.reassignedNumbers\n\tassignedNumbers \u003d [item for sublist in reassignedNumbers for item in sublist]\n\tdata[\u0027assignedNumbers\u0027] \u003d assignedNumbers[:data[\"cylinderCount\"]]\n\tresp \u003d BlueRidge.Config.BlockConfig.update(data)\n\tif resp \u003d\u003d \u0027success\u0027:\n\t\tsystem.perspective.sendMessage(\"refreshTrigger\")"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "Update"
+                        },
+                        "position": {
+                          "basis": "34px",
+                          "display": false
+                        },
+                        "props": {
+                          "text": "Update"
+                        },
+                        "type": "ia.input.button"
+                      }
+                    ],
+                    "meta": {
+                      "name": "TopCenter"
+                    },
+                    "position": {
+                      "basis": "320px"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "paddingLeft": 10,
+                        "paddingRight": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "AvailableWithRevert"
+                        },
+                        "position": {
+                          "basis": "50px"
+                        },
+                        "propConfig": {
+                          "props.params.originalValue": {
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.instance.available"
+                              },
+                              "overlayOptOut": true,
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "params": {
+                            "confirmationMessageHandler": "ActiveChangeConfirm",
+                            "newValue": null,
+                            "newValueConfirmation": false,
+                            "textStyle": {
+                              "classes": "animated-content"
+                            }
+                          },
+                          "path": "BlueRidge/Components/_Config/_Heads/CheckboxWithRevert"
+                        },
+                        "type": "ia.display.view"
+                      },
+                      {
+                        "meta": {
+                          "name": "Checkbox"
+                        },
+                        "position": {
+                          "basis": "50px",
+                          "display": false
+                        },
+                        "propConfig": {
+                          "props.selected": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.instance.available"
+                              },
+                              "overlayOptOut": true,
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "marginBottom": 5
+                          },
+                          "text": "Available",
+                          "textPosition": "left",
+                          "uncheckedIcon": {
+                            "color": {
+                              "enabled": "#555555"
+                            }
+                          }
+                        },
+                        "type": "ia.input.checkbox"
+                      },
+                      {
+                        "meta": {
+                          "name": "Spacer"
+                        },
+                        "position": {
+                          "basis": "50px"
+                        },
+                        "props": {
+                          "style": {
+                            "marginBottom": 5
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "TopRight"
+                    },
+                    "position": {
+                      "basis": "250px"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "paddingLeft": 10,
+                        "paddingRight": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "Top"
+                },
+                "position": {
+                  "basis": "75px"
+                },
+                "props": {
+                  "justify": "space-between"
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "Label"
+                        },
+                        "position": {
+                          "basis": "200px",
+                          "grow": 1
+                        },
+                        "props": {
+                          "text": "Head Configurations"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "children": [
+                          {
+                            "events": {
+                              "component": {
+                                "onActionPerformed": {
+                                  "config": {
+                                    "draggable": true,
+                                    "id": "addHeadConfig",
+                                    "modal": false,
+                                    "overlayDismiss": false,
+                                    "resizable": true,
+                                    "showCloseIcon": true,
+                                    "type": "open",
+                                    "viewParams": {
+                                      "data": "{view.custom.selectedData}"
+                                    },
+                                    "viewPath": "BlueRidge/Components/_Config/Popups/AddHeadConfig",
+                                    "viewportBound": false
+                                  },
+                                  "scope": "C",
+                                  "type": "popup"
+                                }
+                              }
+                            },
+                            "meta": {
+                              "name": "Add"
+                            },
+                            "position": {
+                              "basis": "90px"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "BlueRidge/Components/actionButtonRound"
+                              },
+                              "text": "Add"
+                            },
+                            "type": "ia.input.button"
+                          },
+                          {
+                            "events": {
+                              "component": {
+                                "onActionPerformed": {
+                                  "config": {
+                                    "draggable": true,
+                                    "id": "deleteHeadConfig",
+                                    "modal": false,
+                                    "overlayDismiss": false,
+                                    "resizable": true,
+                                    "showCloseIcon": true,
+                                    "type": "open",
+                                    "viewParams": {
+                                      "data": "{view.custom.selectedConfig}"
+                                    },
+                                    "viewPath": "BlueRidge/Components/_Config/Popups/DeleteHeadConfig",
+                                    "viewportBound": false
+                                  },
+                                  "scope": "C",
+                                  "type": "popup"
+                                }
+                              }
+                            },
+                            "meta": {
+                              "name": "Delete"
+                            },
+                            "position": {
+                              "basis": "90px"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "BlueRidge/Components/dangerButtonRound"
+                              },
+                              "text": "Delete"
+                            },
+                            "type": "ia.input.button"
+                          }
+                        ],
+                        "meta": {
+                          "name": "AddDeleteButtons"
+                        },
+                        "position": {
+                          "basis": "50px",
+                          "grow": 1
+                        },
+                        "props": {
+                          "alignItems": "center",
+                          "justify": "flex-end"
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "Header"
+                    },
+                    "position": {
+                      "basis": "35px"
+                    },
+                    "props": {
+                      "alignItems": "flex-end",
+                      "style": {
+                        "marginBottom": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "Heads"
+                        },
+                        "position": {
+                          "basis": "80px"
+                        },
+                        "propConfig": {
+                          "props.views": {
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.headConfigList"
+                              },
+                              "overlayOptOut": true,
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "appearance": {
+                            "arrows": {
+                              "next": {
+                                "fillColor": "#007DBC"
+                              },
+                              "previous": {
+                                "fillColor": "#007DBC"
+                              }
+                            },
+                            "dots": {
+                              "enabled": false
+                            },
+                            "slidesToShow": 4
+                          }
+                        },
+                        "type": "ia.display.carousel"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "Label"
+                            },
+                            "position": {
+                              "basis": "25px"
+                            },
+                            "props": {
+                              "text": "Configuration Name"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "TextField"
+                            },
+                            "position": {
+                              "display": false,
+                              "grow": 1
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.selectedConfigName"
+                                  },
+                                  "overlayOptOut": true,
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "enabled": false
+                            },
+                            "type": "ia.input.text-field"
+                          },
+                          {
+                            "meta": {
+                              "name": "EmbeddedView"
+                            },
+                            "propConfig": {
+                              "props.params.originalValue": {
+                                "binding": {
+                                  "config": {
+                                    "path": "view.custom.selectedConfigName"
+                                  },
+                                  "overlayOptOut": true,
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "params": {
+                                "confirmationMessageHandler": "HeadConfigRenameConfirm",
+                                "newValue": "",
+                                "newValueConfirmation": false,
+                                "textStyle": {
+                                  "classes": "animated-content"
+                                }
+                              },
+                              "path": "BlueRidge/Components/_Config/_Heads/InputFieldWithRevert"
+                            },
+                            "type": "ia.display.view"
+                          }
+                        ],
+                        "meta": {
+                          "name": "Name"
+                        },
+                        "position": {
+                          "basis": "50px",
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.selectedConfig"
+                              },
+                              "overlayOptOut": true,
+                              "transforms": [
+                                {
+                                  "code": "\tif value \u003d\u003d 0 or value \u003d\u003d None:\n\t\treturn False\n\telse:\n\t\treturn True",
+                                  "type": "script"
+                                }
+                              ],
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "marginBottom": 5
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "meta": {
+                          "name": "NoConfigSelected"
+                        },
+                        "position": {
+                          "basis": "500px",
+                          "grow": 1
+                        },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.selectedConfig"
+                              },
+                              "overlayOptOut": true,
+                              "transforms": [
+                                {
+                                  "code": "\tif value \u003d\u003d 0 or value \u003d\u003d None:\n\t\treturn True\n\telse:\n\t\treturn False",
+                                  "type": "script"
+                                }
+                              ],
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "path": "BlueRidge/Components/_Config/_Heads/NoConfigSelected"
+                        },
+                        "type": "ia.display.view"
+                      },
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "children": [
+                                  {
+                                    "meta": {
+                                      "name": "Label"
+                                    },
+                                    "position": {
+                                      "basis": "25px"
+                                    },
+                                    "props": {
+                                      "text": "Head Files"
+                                    },
+                                    "type": "ia.display.label"
+                                  },
+                                  {
+                                    "events": {
+                                      "component": {
+                                        "onFileReceived": {
+                                          "config": {
+                                            "script": "\timport base64\n\tname \u003d event.file.name\n\timage \u003d base64.b64encode(event.file.getBytes())\n\tfileType \u003d name.split(\u0027.\u0027)[-1]\n\tdata \u003d {\u0027fileType\u0027: fileType, \u0027fileName\u0027:name, \u0027fileData\u0027:image, \u0027user\u0027:self.session.props.auth.user.userName, \u0027headConfigUUID\u0027:self.view.custom.selectedConfig}\n\tBlueRidge.Config.HeadConfig.addHeadFile(data)\n\tsystem.perspective.sendMessage(\"refreshTrigger\")"
+                                          },
+                                          "scope": "G",
+                                          "type": "script"
+                                        }
+                                      }
+                                    },
+                                    "meta": {
+                                      "name": "FileUpload"
+                                    },
+                                    "position": {
+                                      "basis": "40px"
+                                    },
+                                    "props": {
+                                      "maxUploads": 2,
+                                      "supportedFileTypes": [
+                                        "png",
+                                        "jpg"
+                                      ]
+                                    },
+                                    "type": "ia.input.fileupload"
+                                  }
+                                ],
+                                "meta": {
+                                  "name": "HeadFile"
+                                },
+                                "position": {
+                                  "basis": "50px",
+                                  "shrink": 0
+                                },
+                                "props": {
+                                  "direction": "column",
+                                  "style": {
+                                    "marginBottom": 5
+                                  }
+                                },
+                                "type": "ia.container.flex"
+                              },
+                              {
+                                "events": {
+                                  "component": {
+                                    "onEditCellCommit": {
+                                      "config": {
+                                        "script": "\trowIndex \u003d event.rowIndex\n\timageData \u003d self.props.data\n\tfileName \u003d event.value\n\tfileType \u003d imageData[rowIndex][\u0027fileType\u0027]\n\tfileData \u003d imageData[rowIndex][\u0027fileData\u0027]\n\theadFileUUID \u003d imageData[rowIndex][\u0027headFileUUID\u0027]\n\theadConfigUUID \u003d imageData[rowIndex][\u0027headConfigUUID\u0027]\n\tuser \u003d self.session.props.auth.user.userName\n\t\n\tdata \u003d {\n\t\t\u0027fileName\u0027: fileName,\n\t\t\u0027fileType\u0027: fileType,\n\t\t\u0027fileData\u0027: fileData,\n\t\t\u0027headFileUUID\u0027: headFileUUID,\n\t\t\u0027headConfigUUID\u0027: headConfigUUID,\n\t\t\u0027user\u0027: user\n\t}\n\t\n\tBlueRidge.Config.HeadConfig.updateHeadFile(data)\n\tsystem.perspective.sendMessage(\"refreshTrigger\")"
+                                      },
+                                      "scope": "G",
+                                      "type": "script"
+                                    }
+                                  }
+                                },
+                                "meta": {
+                                  "name": "Table"
+                                },
+                                "position": {
+                                  "basis": "400px",
+                                  "grow": 1
+                                },
+                                "propConfig": {
+                                  "props.data": {
+                                    "binding": {
+                                      "config": {
+                                        "path": "view.custom.files"
+                                      },
+                                      "overlayOptOut": true,
+                                      "type": "property"
+                                    }
+                                  }
+                                },
+                                "props": {
+                                  "columns": [
+                                    {
+                                      "align": "center",
+                                      "boolean": "checkbox",
+                                      "dateFormat": "MM/DD/YYYY",
+                                      "editable": true,
+                                      "field": "fileName",
+                                      "filter": {
+                                        "boolean": {
+                                          "condition": ""
+                                        },
+                                        "date": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "enabled": false,
+                                        "number": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "string": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "visible": "on-hover"
+                                      },
+                                      "footer": {
+                                        "align": "center",
+                                        "justify": "left",
+                                        "style": {
+                                          "classes": ""
+                                        },
+                                        "title": ""
+                                      },
+                                      "header": {
+                                        "align": "center",
+                                        "justify": "left",
+                                        "style": {
+                                          "classes": ""
+                                        },
+                                        "title": "File Name"
+                                      },
+                                      "justify": "auto",
+                                      "nullFormat": {
+                                        "includeNullStrings": false,
+                                        "nullFormatValue": "",
+                                        "strict": false
+                                      },
+                                      "number": "value",
+                                      "numberFormat": "0,0.##",
+                                      "progressBar": {
+                                        "bar": {
+                                          "color": "",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        },
+                                        "max": 100,
+                                        "min": 0,
+                                        "track": {
+                                          "color": "",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        },
+                                        "value": {
+                                          "enabled": true,
+                                          "format": "0,0.##",
+                                          "justify": "center",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        }
+                                      },
+                                      "render": "auto",
+                                      "resizable": true,
+                                      "sort": "none",
+                                      "sortable": true,
+                                      "strictWidth": false,
+                                      "style": {
+                                        "classes": ""
+                                      },
+                                      "toggleSwitch": {
+                                        "color": {
+                                          "selected": "",
+                                          "unselected": ""
+                                        }
+                                      },
+                                      "viewParams": {},
+                                      "viewPath": "",
+                                      "visible": true,
+                                      "width": ""
+                                    },
+                                    {
+                                      "align": "center",
+                                      "boolean": "checkbox",
+                                      "dateFormat": "MM/DD/YYYY",
+                                      "editable": false,
+                                      "field": "fileData",
+                                      "filter": {
+                                        "boolean": {
+                                          "condition": ""
+                                        },
+                                        "date": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "enabled": false,
+                                        "number": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "string": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "visible": "on-hover"
+                                      },
+                                      "footer": {
+                                        "align": "center",
+                                        "justify": "left",
+                                        "style": {
+                                          "classes": ""
+                                        },
+                                        "title": ""
+                                      },
+                                      "header": {
+                                        "align": "center",
+                                        "justify": "left",
+                                        "style": {
+                                          "classes": ""
+                                        },
+                                        "title": ""
+                                      },
+                                      "justify": "auto",
+                                      "nullFormat": {
+                                        "includeNullStrings": false,
+                                        "nullFormatValue": "",
+                                        "strict": false
+                                      },
+                                      "number": "value",
+                                      "numberFormat": "0,0.##",
+                                      "progressBar": {
+                                        "bar": {
+                                          "color": "",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        },
+                                        "max": 100,
+                                        "min": 0,
+                                        "track": {
+                                          "color": "",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        },
+                                        "value": {
+                                          "enabled": true,
+                                          "format": "0,0.##",
+                                          "justify": "center",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        }
+                                      },
+                                      "render": "auto",
+                                      "resizable": true,
+                                      "sort": "none",
+                                      "sortable": true,
+                                      "strictWidth": false,
+                                      "style": {
+                                        "classes": ""
+                                      },
+                                      "toggleSwitch": {
+                                        "color": {
+                                          "selected": "",
+                                          "unselected": ""
+                                        }
+                                      },
+                                      "viewParams": {},
+                                      "viewPath": "",
+                                      "visible": false,
+                                      "width": ""
+                                    },
+                                    {
+                                      "align": "center",
+                                      "boolean": "checkbox",
+                                      "dateFormat": "MM/DD/YYYY",
+                                      "editable": false,
+                                      "field": "lastEdited",
+                                      "filter": {
+                                        "boolean": {
+                                          "condition": ""
+                                        },
+                                        "date": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "enabled": false,
+                                        "number": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "string": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "visible": "on-hover"
+                                      },
+                                      "footer": {
+                                        "align": "center",
+                                        "justify": "left",
+                                        "style": {
+                                          "classes": ""
+                                        },
+                                        "title": ""
+                                      },
+                                      "header": {
+                                        "align": "center",
+                                        "justify": "left",
+                                        "style": {
+                                          "classes": ""
+                                        },
+                                        "title": "Last Edited"
+                                      },
+                                      "justify": "auto",
+                                      "nullFormat": {
+                                        "includeNullStrings": false,
+                                        "nullFormatValue": "",
+                                        "strict": false
+                                      },
+                                      "number": "value",
+                                      "numberFormat": "0,0.##",
+                                      "progressBar": {
+                                        "bar": {
+                                          "color": "",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        },
+                                        "max": 100,
+                                        "min": 0,
+                                        "track": {
+                                          "color": "",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        },
+                                        "value": {
+                                          "enabled": true,
+                                          "format": "0,0.##",
+                                          "justify": "center",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        }
+                                      },
+                                      "render": "auto",
+                                      "resizable": true,
+                                      "sort": "none",
+                                      "sortable": true,
+                                      "strictWidth": false,
+                                      "style": {
+                                        "classes": ""
+                                      },
+                                      "toggleSwitch": {
+                                        "color": {
+                                          "selected": "",
+                                          "unselected": ""
+                                        }
+                                      },
+                                      "viewParams": {},
+                                      "viewPath": "",
+                                      "visible": true,
+                                      "width": ""
+                                    },
+                                    {
+                                      "align": "center",
+                                      "boolean": "checkbox",
+                                      "dateFormat": "MM/DD/YYYY",
+                                      "editable": false,
+                                      "field": "lastEditedBy",
+                                      "filter": {
+                                        "boolean": {
+                                          "condition": ""
+                                        },
+                                        "date": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "enabled": false,
+                                        "number": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "string": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "visible": "on-hover"
+                                      },
+                                      "footer": {
+                                        "align": "center",
+                                        "justify": "left",
+                                        "style": {
+                                          "classes": ""
+                                        },
+                                        "title": ""
+                                      },
+                                      "header": {
+                                        "align": "center",
+                                        "justify": "left",
+                                        "style": {
+                                          "classes": ""
+                                        },
+                                        "title": "Last Edited By"
+                                      },
+                                      "justify": "auto",
+                                      "nullFormat": {
+                                        "includeNullStrings": false,
+                                        "nullFormatValue": "",
+                                        "strict": false
+                                      },
+                                      "number": "value",
+                                      "numberFormat": "0,0.##",
+                                      "progressBar": {
+                                        "bar": {
+                                          "color": "",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        },
+                                        "max": 100,
+                                        "min": 0,
+                                        "track": {
+                                          "color": "",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        },
+                                        "value": {
+                                          "enabled": true,
+                                          "format": "0,0.##",
+                                          "justify": "center",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        }
+                                      },
+                                      "render": "auto",
+                                      "resizable": true,
+                                      "sort": "none",
+                                      "sortable": true,
+                                      "strictWidth": false,
+                                      "style": {
+                                        "classes": ""
+                                      },
+                                      "toggleSwitch": {
+                                        "color": {
+                                          "selected": "",
+                                          "unselected": ""
+                                        }
+                                      },
+                                      "viewParams": {},
+                                      "viewPath": "",
+                                      "visible": true,
+                                      "width": ""
+                                    },
+                                    {
+                                      "align": "center",
+                                      "boolean": "checkbox",
+                                      "dateFormat": "MM/DD/YYYY",
+                                      "editable": false,
+                                      "field": "fileType",
+                                      "filter": {
+                                        "boolean": {
+                                          "condition": ""
+                                        },
+                                        "date": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "enabled": false,
+                                        "number": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "string": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "visible": "on-hover"
+                                      },
+                                      "footer": {
+                                        "align": "center",
+                                        "justify": "left",
+                                        "style": {
+                                          "classes": ""
+                                        },
+                                        "title": ""
+                                      },
+                                      "header": {
+                                        "align": "center",
+                                        "justify": "left",
+                                        "style": {
+                                          "classes": ""
+                                        },
+                                        "title": ""
+                                      },
+                                      "justify": "auto",
+                                      "nullFormat": {
+                                        "includeNullStrings": false,
+                                        "nullFormatValue": "",
+                                        "strict": false
+                                      },
+                                      "number": "value",
+                                      "numberFormat": "0,0.##",
+                                      "progressBar": {
+                                        "bar": {
+                                          "color": "",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        },
+                                        "max": 100,
+                                        "min": 0,
+                                        "track": {
+                                          "color": "",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        },
+                                        "value": {
+                                          "enabled": true,
+                                          "format": "0,0.##",
+                                          "justify": "center",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        }
+                                      },
+                                      "render": "auto",
+                                      "resizable": true,
+                                      "sort": "none",
+                                      "sortable": true,
+                                      "strictWidth": false,
+                                      "style": {
+                                        "classes": ""
+                                      },
+                                      "toggleSwitch": {
+                                        "color": {
+                                          "selected": "",
+                                          "unselected": ""
+                                        }
+                                      },
+                                      "viewParams": {},
+                                      "viewPath": "",
+                                      "visible": false,
+                                      "width": ""
+                                    },
+                                    {
+                                      "align": "center",
+                                      "boolean": "checkbox",
+                                      "dateFormat": "MM/DD/YYYY",
+                                      "editable": false,
+                                      "field": "headFileUUID",
+                                      "filter": {
+                                        "boolean": {
+                                          "condition": ""
+                                        },
+                                        "date": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "enabled": false,
+                                        "number": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "string": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "visible": "on-hover"
+                                      },
+                                      "footer": {
+                                        "align": "center",
+                                        "justify": "left",
+                                        "style": {
+                                          "classes": ""
+                                        },
+                                        "title": ""
+                                      },
+                                      "header": {
+                                        "align": "center",
+                                        "justify": "left",
+                                        "style": {
+                                          "classes": ""
+                                        },
+                                        "title": ""
+                                      },
+                                      "justify": "auto",
+                                      "nullFormat": {
+                                        "includeNullStrings": false,
+                                        "nullFormatValue": "",
+                                        "strict": false
+                                      },
+                                      "number": "value",
+                                      "numberFormat": "0,0.##",
+                                      "progressBar": {
+                                        "bar": {
+                                          "color": "",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        },
+                                        "max": 100,
+                                        "min": 0,
+                                        "track": {
+                                          "color": "",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        },
+                                        "value": {
+                                          "enabled": true,
+                                          "format": "0,0.##",
+                                          "justify": "center",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        }
+                                      },
+                                      "render": "auto",
+                                      "resizable": true,
+                                      "sort": "none",
+                                      "sortable": true,
+                                      "strictWidth": false,
+                                      "style": {
+                                        "classes": ""
+                                      },
+                                      "toggleSwitch": {
+                                        "color": {
+                                          "selected": "",
+                                          "unselected": ""
+                                        }
+                                      },
+                                      "viewParams": {},
+                                      "viewPath": "",
+                                      "visible": false,
+                                      "width": ""
+                                    },
+                                    {
+                                      "align": "center",
+                                      "boolean": "checkbox",
+                                      "dateFormat": "MM/DD/YYYY",
+                                      "editable": false,
+                                      "field": "headConfigUUID",
+                                      "filter": {
+                                        "boolean": {
+                                          "condition": ""
+                                        },
+                                        "date": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "enabled": false,
+                                        "number": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "string": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "visible": "on-hover"
+                                      },
+                                      "footer": {
+                                        "align": "center",
+                                        "justify": "left",
+                                        "style": {
+                                          "classes": ""
+                                        },
+                                        "title": ""
+                                      },
+                                      "header": {
+                                        "align": "center",
+                                        "justify": "left",
+                                        "style": {
+                                          "classes": ""
+                                        },
+                                        "title": ""
+                                      },
+                                      "justify": "auto",
+                                      "nullFormat": {
+                                        "includeNullStrings": false,
+                                        "nullFormatValue": "",
+                                        "strict": false
+                                      },
+                                      "number": "value",
+                                      "numberFormat": "0,0.##",
+                                      "progressBar": {
+                                        "bar": {
+                                          "color": "",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        },
+                                        "max": 100,
+                                        "min": 0,
+                                        "track": {
+                                          "color": "",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        },
+                                        "value": {
+                                          "enabled": true,
+                                          "format": "0,0.##",
+                                          "justify": "center",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        }
+                                      },
+                                      "render": "auto",
+                                      "resizable": true,
+                                      "sort": "none",
+                                      "sortable": true,
+                                      "strictWidth": false,
+                                      "style": {
+                                        "classes": ""
+                                      },
+                                      "toggleSwitch": {
+                                        "color": {
+                                          "selected": "",
+                                          "unselected": ""
+                                        }
+                                      },
+                                      "viewParams": {},
+                                      "viewPath": "",
+                                      "visible": false,
+                                      "width": ""
+                                    },
+                                    {
+                                      "align": "center",
+                                      "boolean": "checkbox",
+                                      "dateFormat": "MM/DD/YYYY",
+                                      "editable": false,
+                                      "field": "fileData",
+                                      "filter": {
+                                        "boolean": {
+                                          "condition": ""
+                                        },
+                                        "date": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "enabled": false,
+                                        "number": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "string": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "visible": "on-hover"
+                                      },
+                                      "footer": {
+                                        "align": "center",
+                                        "justify": "left",
+                                        "style": {
+                                          "classes": ""
+                                        },
+                                        "title": ""
+                                      },
+                                      "header": {
+                                        "align": "center",
+                                        "justify": "left",
+                                        "style": {
+                                          "classes": ""
+                                        },
+                                        "title": " "
+                                      },
+                                      "justify": "auto",
+                                      "nullFormat": {
+                                        "includeNullStrings": false,
+                                        "nullFormatValue": "",
+                                        "strict": false
+                                      },
+                                      "number": "value",
+                                      "numberFormat": "0,0.##",
+                                      "progressBar": {
+                                        "bar": {
+                                          "color": "",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        },
+                                        "max": 100,
+                                        "min": 0,
+                                        "track": {
+                                          "color": "",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        },
+                                        "value": {
+                                          "enabled": true,
+                                          "format": "0,0.##",
+                                          "justify": "center",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        }
+                                      },
+                                      "render": "view",
+                                      "resizable": true,
+                                      "sort": "none",
+                                      "sortable": false,
+                                      "strictWidth": false,
+                                      "style": {
+                                        "classes": ""
+                                      },
+                                      "toggleSwitch": {
+                                        "color": {
+                                          "selected": "",
+                                          "unselected": ""
+                                        }
+                                      },
+                                      "viewParams": {
+                                        "rowData": "",
+                                        "value": ""
+                                      },
+                                      "viewPath": "BlueRidge/Components/_Config/_Heads/HeadFileActions",
+                                      "visible": true,
+                                      "width": ""
+                                    }
+                                  ],
+                                  "pager": {
+                                    "bottom": false
+                                  }
+                                },
+                                "type": "ia.display.table"
+                              }
+                            ],
+                            "meta": {
+                              "name": "Files"
+                            },
+                            "position": {
+                              "basis": "200px",
+                              "grow": 1
+                            },
+                            "props": {
+                              "direction": "column"
+                            },
+                            "type": "ia.container.flex"
+                          },
+                          {
+                            "children": [
+                              {
+                                "children": [
+                                  {
+                                    "meta": {
+                                      "name": "Label"
+                                    },
+                                    "position": {
+                                      "basis": "200px",
+                                      "grow": 1
+                                    },
+                                    "props": {
+                                      "text": "Re-Run/Failure Reasons"
+                                    },
+                                    "type": "ia.display.label"
+                                  },
+                                  {
+                                    "meta": {
+                                      "name": "EmbeddedView"
+                                    },
+                                    "position": {
+                                      "basis": "250px"
+                                    },
+                                    "propConfig": {
+                                      "props.params.data": {
+                                        "binding": {
+                                          "config": {
+                                            "struct": {
+                                              "engineUUID": "{view.custom.selectedConfig}",
+                                              "reason": "{view.custom.reason}"
+                                            },
+                                            "waitOnAll": true
+                                          },
+                                          "transforms": [
+                                            {
+                                              "code": "\tdata \u003d {}\n\tif len(value[\u0027reason\u0027])\u003e0: #archive\n\t\tdata \u003d value[\u0027reason\u0027][0]\n\telse: #add\n\t\tdata[\u0027engineUUID\u0027]\u003dvalue[\u0027engineUUID\u0027]\n\treturn data",
+                                              "type": "script"
+                                            }
+                                          ],
+                                          "type": "expr-struct"
+                                        }
+                                      }
+                                    },
+                                    "props": {
+                                      "params": {
+                                        "script": "BlueRidge/Config/FailureReason"
+                                      },
+                                      "path": "BlueRidge/Components/_Config/AddArchiveButtons"
+                                    },
+                                    "type": "ia.display.view"
+                                  }
+                                ],
+                                "meta": {
+                                  "name": "Header"
+                                },
+                                "position": {
+                                  "basis": "35px"
+                                },
+                                "props": {
+                                  "alignItems": "flex-end",
+                                  "style": {
+                                    "marginBottom": 10
+                                  }
+                                },
+                                "type": "ia.container.flex"
+                              },
+                              {
+                                "events": {
+                                  "component": {
+                                    "onEditCellCommit": {
+                                      "config": {
+                                        "script": "\tvalueToSet \u003d event.value\n\tself.props.data[event.row][event.column] \u003d valueToSet"
+                                      },
+                                      "scope": "G",
+                                      "type": "script"
+                                    }
+                                  }
+                                },
+                                "meta": {
+                                  "name": "Table"
+                                },
+                                "position": {
+                                  "basis": "400px",
+                                  "grow": 1
+                                },
+                                "propConfig": {
+                                  "props.data": {
+                                    "binding": {
+                                      "config": {
+                                        "bidirectional": true,
+                                        "path": "view.custom.tableData"
+                                      },
+                                      "type": "property"
+                                    }
+                                  },
+                                  "props.selection.data": {
+                                    "binding": {
+                                      "config": {
+                                        "bidirectional": true,
+                                        "path": "view.custom.reason"
+                                      },
+                                      "type": "property"
+                                    }
+                                  }
+                                },
+                                "props": {
+                                  "columns": [
+                                    {
+                                      "align": "center",
+                                      "boolean": "checkbox",
+                                      "dateFormat": "MM/DD/YYYY",
+                                      "editable": true,
+                                      "field": "Name",
+                                      "filter": {
+                                        "boolean": {
+                                          "condition": ""
+                                        },
+                                        "date": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "enabled": false,
+                                        "number": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "string": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "visible": "on-hover"
+                                      },
+                                      "footer": {
+                                        "align": "center",
+                                        "justify": "left",
+                                        "style": {
+                                          "classes": ""
+                                        },
+                                        "title": ""
+                                      },
+                                      "header": {
+                                        "align": "center",
+                                        "justify": "left",
+                                        "style": {
+                                          "classes": ""
+                                        },
+                                        "title": ""
+                                      },
+                                      "justify": "auto",
+                                      "nullFormat": {
+                                        "includeNullStrings": false,
+                                        "nullFormatValue": "",
+                                        "strict": false
+                                      },
+                                      "number": "value",
+                                      "numberFormat": "0,0.##",
+                                      "progressBar": {
+                                        "bar": {
+                                          "color": "",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        },
+                                        "max": 100,
+                                        "min": 0,
+                                        "track": {
+                                          "color": "",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        },
+                                        "value": {
+                                          "enabled": true,
+                                          "format": "0,0.##",
+                                          "justify": "center",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        }
+                                      },
+                                      "render": "auto",
+                                      "resizable": true,
+                                      "sort": "none",
+                                      "sortable": true,
+                                      "strictWidth": false,
+                                      "style": {
+                                        "classes": ""
+                                      },
+                                      "toggleSwitch": {
+                                        "color": {
+                                          "selected": "",
+                                          "unselected": ""
+                                        }
+                                      },
+                                      "viewParams": {},
+                                      "viewPath": "",
+                                      "visible": true,
+                                      "width": ""
+                                    },
+                                    {
+                                      "align": "center",
+                                      "boolean": "checkbox",
+                                      "dateFormat": "MM/DD/YYYY",
+                                      "editable": false,
+                                      "field": "Last Edited By",
+                                      "filter": {
+                                        "boolean": {
+                                          "condition": ""
+                                        },
+                                        "date": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "enabled": false,
+                                        "number": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "string": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "visible": "on-hover"
+                                      },
+                                      "footer": {
+                                        "align": "center",
+                                        "justify": "left",
+                                        "style": {
+                                          "classes": ""
+                                        },
+                                        "title": ""
+                                      },
+                                      "header": {
+                                        "align": "center",
+                                        "justify": "left",
+                                        "style": {
+                                          "classes": ""
+                                        },
+                                        "title": ""
+                                      },
+                                      "justify": "auto",
+                                      "nullFormat": {
+                                        "includeNullStrings": false,
+                                        "nullFormatValue": "",
+                                        "strict": false
+                                      },
+                                      "number": "value",
+                                      "numberFormat": "0,0.##",
+                                      "progressBar": {
+                                        "bar": {
+                                          "color": "",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        },
+                                        "max": 100,
+                                        "min": 0,
+                                        "track": {
+                                          "color": "",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        },
+                                        "value": {
+                                          "enabled": true,
+                                          "format": "0,0.##",
+                                          "justify": "center",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        }
+                                      },
+                                      "render": "auto",
+                                      "resizable": true,
+                                      "sort": "none",
+                                      "sortable": true,
+                                      "strictWidth": false,
+                                      "style": {
+                                        "classes": ""
+                                      },
+                                      "toggleSwitch": {
+                                        "color": {
+                                          "selected": "",
+                                          "unselected": ""
+                                        }
+                                      },
+                                      "viewParams": {},
+                                      "viewPath": "",
+                                      "visible": true,
+                                      "width": ""
+                                    },
+                                    {
+                                      "align": "center",
+                                      "boolean": "checkbox",
+                                      "dateFormat": "MM/DD/YYYY HH:mm:ss",
+                                      "editable": false,
+                                      "field": "Last Edited",
+                                      "filter": {
+                                        "boolean": {
+                                          "condition": ""
+                                        },
+                                        "date": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "enabled": false,
+                                        "number": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "string": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "visible": "on-hover"
+                                      },
+                                      "footer": {
+                                        "align": "center",
+                                        "justify": "left",
+                                        "style": {
+                                          "classes": ""
+                                        },
+                                        "title": ""
+                                      },
+                                      "header": {
+                                        "align": "center",
+                                        "justify": "left",
+                                        "style": {
+                                          "classes": ""
+                                        },
+                                        "title": ""
+                                      },
+                                      "justify": "auto",
+                                      "nullFormat": {
+                                        "includeNullStrings": false,
+                                        "nullFormatValue": "",
+                                        "strict": false
+                                      },
+                                      "number": "value",
+                                      "numberFormat": "0,0.##",
+                                      "progressBar": {
+                                        "bar": {
+                                          "color": "",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        },
+                                        "max": 100,
+                                        "min": 0,
+                                        "track": {
+                                          "color": "",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        },
+                                        "value": {
+                                          "enabled": true,
+                                          "format": "0,0.##",
+                                          "justify": "center",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        }
+                                      },
+                                      "render": "auto",
+                                      "resizable": true,
+                                      "sort": "none",
+                                      "sortable": true,
+                                      "strictWidth": false,
+                                      "style": {
+                                        "classes": ""
+                                      },
+                                      "toggleSwitch": {
+                                        "color": {
+                                          "selected": "",
+                                          "unselected": ""
+                                        }
+                                      },
+                                      "viewParams": {},
+                                      "viewPath": "",
+                                      "visible": true,
+                                      "width": ""
+                                    },
+                                    {
+                                      "align": "center",
+                                      "boolean": "checkbox",
+                                      "dateFormat": "MM/DD/YYYY",
+                                      "editable": false,
+                                      "field": "key",
+                                      "filter": {
+                                        "boolean": {
+                                          "condition": ""
+                                        },
+                                        "date": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "enabled": false,
+                                        "number": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "string": {
+                                          "condition": "",
+                                          "value": ""
+                                        },
+                                        "visible": "on-hover"
+                                      },
+                                      "footer": {
+                                        "align": "center",
+                                        "justify": "left",
+                                        "style": {
+                                          "classes": ""
+                                        },
+                                        "title": ""
+                                      },
+                                      "header": {
+                                        "align": "center",
+                                        "justify": "left",
+                                        "style": {
+                                          "classes": ""
+                                        },
+                                        "title": ""
+                                      },
+                                      "justify": "auto",
+                                      "nullFormat": {
+                                        "includeNullStrings": false,
+                                        "nullFormatValue": "",
+                                        "strict": false
+                                      },
+                                      "number": "value",
+                                      "numberFormat": "0,0.##",
+                                      "progressBar": {
+                                        "bar": {
+                                          "color": "",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        },
+                                        "max": 100,
+                                        "min": 0,
+                                        "track": {
+                                          "color": "",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        },
+                                        "value": {
+                                          "enabled": true,
+                                          "format": "0,0.##",
+                                          "justify": "center",
+                                          "style": {
+                                            "classes": ""
+                                          }
+                                        }
+                                      },
+                                      "render": "auto",
+                                      "resizable": true,
+                                      "sort": "none",
+                                      "sortable": true,
+                                      "strictWidth": false,
+                                      "style": {
+                                        "classes": ""
+                                      },
+                                      "toggleSwitch": {
+                                        "color": {
+                                          "selected": "",
+                                          "unselected": ""
+                                        }
+                                      },
+                                      "viewParams": {},
+                                      "viewPath": "",
+                                      "visible": false,
+                                      "width": ""
+                                    }
+                                  ],
+                                  "selection": {
+                                    "selectedRow": 0
+                                  }
+                                },
+                                "type": "ia.display.table"
+                              }
+                            ],
+                            "meta": {
+                              "name": "ReRunReasons"
+                            },
+                            "position": {
+                              "basis": "200px",
+                              "grow": 1
+                            },
+                            "props": {
+                              "direction": "column"
+                            },
+                            "type": "ia.container.flex"
+                          }
+                        ],
+                        "meta": {
+                          "name": "Tables"
+                        },
+                        "position": {
+                          "basis": "500px"
+                        },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.selectedConfig"
+                              },
+                              "overlayOptOut": true,
+                              "transforms": [
+                                {
+                                  "code": "\tif value \u003d\u003d 0 or value \u003d\u003d None:\n\t\treturn False\n\telse:\n\t\treturn True",
+                                  "type": "script"
+                                }
+                              ],
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "Body"
+                    },
+                    "position": {
+                      "basis": "200px",
+                      "grow": 1
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "padding": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "Bottom"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "marginBottom": 10,
+                    "marginRight": 10,
+                    "paddingLeft": 10
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "Right"
+            },
+            "position": {
+              "basis": "250px",
+              "grow": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.selectedData"
+                  },
+                  "overlayOptOut": true,
+                  "transforms": [
+                    {
+                      "code": "\tif value \u003d\u003d 0 or value \u003d\u003d None:\n\t\treturn False\n\telse:\n\t\treturn True",
+                      "type": "script"
+                    }
+                  ],
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "direction": "column"
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "NoGroupSelected"
+            },
+            "position": {
+              "basis": "750px",
+              "grow": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.selectedData"
+                  },
+                  "overlayOptOut": true,
+                  "transforms": [
+                    {
+                      "code": "\tif value \u003d\u003d 0 or value \u003d\u003d None:\n\t\treturn True\n\telse:\n\t\treturn False",
+                      "type": "script"
+                    }
+                  ],
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "path": "BlueRidge/Components/_Config/_Heads/NoGroupSelected"
+            },
+            "type": "ia.display.view"
+          }
+        ],
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "52px",
+          "grow": 1
+        },
+        "props": {
+          "style": {
+            "borderStyle": "solid",
+            "borderWidth": 3,
+            "paddingBottom": 10,
+            "paddingLeft": 10,
+            "paddingRight": 10,
+            "paddingTop": 10
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "backgroundColor": "#AAAAAA"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "getHeadConfigList",
+          "params": [],
+          "script": "\tviewPath \u003d \"BlueRidge/Components/_Config/_Heads/HeadButton\"\n\tinitialList \u003d self.view.custom.instance.configs\n\tviews \u003d []\n\tfor config in initialList:\n\t\tsettings \u003d {\n\t\t\t\u0027viewPath\u0027: viewPath,\n\t\t\t\u0027viewParams\u0027:{\u0027name\u0027:config[\u0027name\u0027], \u0027value\u0027:config[\u0027headConfigUUID\u0027]},\n\t\t\t\u0027direction\u0027: \u0027row\u0027,\n\t\t\t\u0027justify\u0027: \u0027flex-start\u0027,\n\t\t\t\u0027alignItems\u0027: \u0027flex-start\u0027\n\t\t}\n\t\tviews.append(settings)\n\t\n\treturn views"
+        },
+        {
+          "name": "getHeadFilesArray",
+          "params": [],
+          "script": "\tinitialList \u003d self.view.custom.files\n\tviews \u003d []\n\tfor image in initialList:\n\t\tsettings \u003d {\n\t\t\t\u0027name\u0027: image[\u0027fileName\u0027],\n\t\t\t\u0027image\u0027: image[\u0027fileData\u0027]\n\t\t}\n\t\tviews.append(settings)\n\t\n\treturn views"
+        },
+        {
+          "name": "saveNewConfiguration",
+          "params": [],
+          "script": "\tallData \u003d self.view.custom.infoToSave\n\tupdateHeadData \u003d {\n\t\t\u0027headUUID\u0027: allData[\u0027headUUID\u0027],\n\t\t\u0027name\u0027: allData[\u0027headName\u0027],\n\t\t\u0027user\u0027: allData[\u0027user\u0027],\n\t\t\u0027active\u0027: allData[\u0027active\u0027]\n\t}\n\t\n\tupdateConfigData \u003d {\n\t\t\u0027headUUID\u0027: allData[\u0027headUUID\u0027],\n\t\t\u0027headConfigUUID\u0027: allData[\u0027headConfigUUID\u0027],\n\t\t\u0027name\u0027: allData[\u0027headConfigName\u0027],\n\t\t\u0027user\u0027: allData[\u0027user\u0027],\n\t\t\u0027active\u0027: allData[\u0027active\u0027]\n\t}\n\tsystem.perspective.print(updateConfigData)\n\theadResp \u003d BlueRidge.Config.HeadConfig.updateHeadGroup(updateHeadData)\n\tconfigResp \u003d BlueRidge.Config.HeadConfig.updateHeadConfig(updateConfigData)\n\t\n\tif headResp \u003d\u003d -1 and configResp \u003d\u003d -1:\n\t\treturn \"Saved successfully\"\n\telif headResp \u003d\u003d -1 and configResp !\u003d -1:\n\t\treturn \"Config save failed\"\n\telif headResp !\u003d -1 and configResp \u003d\u003d -1:\n\t\treturn \"Head group save failed\"\n\telse:\n\t\treturn \"Save failed\""
+        },
+        {
+          "name": "saveHeadGroup",
+          "params": [],
+          "script": "\tallData \u003d self.view.custom.infoToSave\n\tupdateHeadData \u003d {\n\t\t\u0027headUUID\u0027: allData[\u0027headUUID\u0027],\n\t\t\u0027name\u0027: allData[\u0027headName\u0027],\n\t\t\u0027user\u0027: allData[\u0027user\u0027],\n\t\t\u0027active\u0027: allData[\u0027active\u0027],\n\t\t\u0027extensionTypeUUID\u0027: allData[\u0027extensionTypeUUID\u0027]\n\t}\n\t\n\theadResp \u003d BlueRidge.Config.HeadConfig.updateHeadGroup(updateHeadData)"
+        },
+        {
+          "name": "saveHeadConfig",
+          "params": [],
+          "script": "\tallData \u003d self.view.custom.infoToSave\n\tupdateConfigData \u003d {\n\t\t\u0027headUUID\u0027: allData[\u0027headUUID\u0027],\n\t\t\u0027headConfigUUID\u0027: allData[\u0027headConfigUUID\u0027],\n\t\t\u0027name\u0027: allData[\u0027headConfigName\u0027],\n\t\t\u0027user\u0027: allData[\u0027user\u0027],\n\t\t\u0027active\u0027: allData[\u0027active\u0027]\n\t}\n\t\n\tconfigResp \u003d BlueRidge.Config.HeadConfig.updateHeadConfig(updateConfigData)"
+        },
+        {
+          "name": "formatExtensionTypesForDropdown",
+          "params": [
+            "types"
+          ],
+          "script": "\toptions \u003d []\n\tfor item in types:\n\t\toption \u003d {\n\t\t\t\u0027label\u0027: item[\u0027name\u0027],\n\t\t\t\u0027value\u0027: item[\u0027extensionTypeUUID\u0027]\n\t\t}\n\t\toptions.append(option)\n\t\n\treturn options"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "refreshTrigger",
+          "pageScope": true,
+          "script": "\ttrigger \u003d self.view.custom.triggerRefresh\n\tself.view.custom.triggerRefresh \u003d not trigger",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "OneShotButton",
+          "pageScope": true,
+          "script": "\tself.view.custom.selectedData \u003d payload",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "HeadConfigButton",
+          "pageScope": true,
+          "script": "\tself.view.custom.selectedConfigName \u003d payload[\u0027name\u0027]\n\tself.view.custom.selectedConfig \u003d payload[\u0027value\u0027]\n\ttrigger \u003d self.view.custom.triggerRefresh\n\tself.view.custom.triggerRefresh \u003d not trigger",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "HeadGroupButton",
+          "pageScope": true,
+          "script": "\tself.view.custom.selectedConfig \u003d None\n\tself.view.custom.selectedConfigName \u003d \u0027\u0027\n\tself.view.custom.selectedData \u003d payload[\u0027view\u0027]\n\ttrigger \u003d self.view.custom.triggerRefresh\n\tself.view.custom.triggerRefresh \u003d not trigger",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "HeadGroupRenameConfirm",
+          "pageScope": true,
+          "script": "\tself.view.custom.infoToSave.headName \u003d payload[\u0027newValue\u0027]\n\tself.saveHeadGroup()\n\ttrigger \u003d self.view.custom.triggerRefresh\n\tself.view.custom.triggerRefresh \u003d not trigger",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "HeadConfigRenameConfirm",
+          "pageScope": true,
+          "script": "\tself.view.custom.selectedConfigName \u003d payload[\u0027newValue\u0027]\n\tself.saveHeadConfig()\n\ttrigger \u003d self.view.custom.triggerRefresh\n\tself.view.custom.triggerRefresh \u003d not trigger",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "ActiveChangeConfirm",
+          "pageScope": true,
+          "script": "\tself.view.custom.instance.available \u003d payload[\u0027newValue\u0027]\n\tif self.view.custom.selectedConfig:\n\t\tself.saveNewConfiguration()\n\telse:\n\t\tself.saveHeadGroup()\n\ttrigger \u003d self.view.custom.triggerRefresh\n\tself.view.custom.triggerRefresh \u003d not trigger",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "ExtensionTypeChange",
+          "pageScope": true,
+          "script": "\tself.view.custom.infoToSave.extensionTypeUUID \u003d payload[\u0027newValue\u0027]\n\tself.saveHeadGroup()\n\ttrigger \u003d self.view.custom.triggerRefresh\n\tself.view.custom.triggerRefresh \u003d not trigger",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

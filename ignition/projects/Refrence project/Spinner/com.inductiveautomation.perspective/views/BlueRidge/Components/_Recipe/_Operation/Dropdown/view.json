@@ -1,0 +1,181 @@
+{
+  "custom": {
+    "options": [
+      {
+        "label": "None",
+        "value": null
+      },
+      {
+        "label": "Cylinder 1",
+        "value": 1
+      },
+      {
+        "label": "Cylinder 2",
+        "value": 2
+      },
+      {
+        "label": "Cylinder 3",
+        "value": 3
+      },
+      {
+        "label": "Cylinder 4",
+        "value": 4
+      },
+      {
+        "label": "Cylinder 5",
+        "value": 5
+      },
+      {
+        "label": "Cylinder 6",
+        "value": 6
+      },
+      {
+        "label": "Cylinder 7",
+        "value": 7
+      },
+      {
+        "label": "Cylinder 8",
+        "value": 8
+      },
+      {
+        "label": "Cylinder 9",
+        "value": 9
+      },
+      {
+        "label": "Cylinder 10",
+        "value": 10
+      },
+      {
+        "label": "Bore Tool 1",
+        "value": 100
+      },
+      {
+        "label": "Bore Tool 2",
+        "value": 101
+      },
+      {
+        "label": "Bore Tool 3",
+        "value": 102
+      },
+      {
+        "label": "Bore Tool 4",
+        "value": 103
+      },
+      {
+        "label": "Bore Tool 5",
+        "value": 104
+      },
+      {
+        "label": "Bore Tool 6",
+        "value": 105
+      },
+      {
+        "label": "Bore Tool 7",
+        "value": 106
+      },
+      {
+        "label": "Bore Tool 8",
+        "value": 107
+      },
+      {
+        "label": "Mill Option 1",
+        "value": 200
+      },
+      {
+        "label": "Mill Option 2",
+        "value": 201
+      },
+      {
+        "label": "Mill Option 3",
+        "value": 202
+      }
+    ],
+    "value": ""
+  },
+  "params": {
+    "rowIndex": "",
+    "value": ""
+  },
+  "propConfig": {
+    "custom.options": {
+      "persistent": true
+    },
+    "custom.value": {
+      "binding": {
+        "config": {
+          "bidirectional": true,
+          "path": "view.params.value"
+        },
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "params.rowIndex": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.value": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 36,
+      "width": 200
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tpayload \u003d {\u0027row\u0027:self.view.params.rowIndex, \u0027value\u0027:self.props.value}\n\tsystem.perspective.sendMessage(\u0027UpdateAssignment\u0027, payload)"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "Dropdown"
+        },
+        "position": {
+          "basis": "36px",
+          "grow": 1
+        },
+        "propConfig": {
+          "props.options": {
+            "binding": {
+              "config": {
+                "path": "view.custom.options"
+              },
+              "type": "property"
+            }
+          },
+          "props.value": {
+            "binding": {
+              "config": {
+                "path": "view.custom.value"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "maxMenuHeight": 500
+        },
+        "type": "ia.input.dropdown"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column"
+    },
+    "type": "ia.container.flex"
+  }
+}

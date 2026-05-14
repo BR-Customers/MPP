@@ -1,0 +1,99 @@
+{
+  "custom": {},
+  "params": {
+    "assignedNumber": 12
+  },
+  "propConfig": {
+    "params.assignedNumber": {
+      "paramDirection": "inout",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 100,
+      "width": 100
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "NumericEntryField"
+            },
+            "position": {
+              "basis": "40px"
+            },
+            "propConfig": {
+              "props.value": {
+                "binding": {
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.params.assignedNumber"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "containerStyle": {
+                "borderBottomLeftRadius": "50%",
+                "borderBottomRightRadius": "50%",
+                "borderColor": "#FFFFFF00",
+                "borderStyle": "solid",
+                "borderTopLeftRadius": "50%",
+                "borderTopRightRadius": "50%",
+                "borderWidth": 4,
+                "textAlign": "center"
+              },
+              "format": "0,0",
+              "spinner": {
+                "enabled": false
+              },
+              "style": {
+                "borderBottomLeftRadius": "50%",
+                "borderBottomRightRadius": "50%",
+                "borderStyle": "none",
+                "borderTopLeftRadius": "50%",
+                "borderTopRightRadius": "50%",
+                "paddingBottom": 6,
+                "paddingTop": 6,
+                "textAlign": "center"
+              }
+            },
+            "type": "ia.input.numeric-entry-field"
+          }
+        ],
+        "meta": {
+          "name": "FlexContainer"
+        },
+        "position": {
+          "basis": "200px",
+          "grow": 1
+        },
+        "props": {
+          "alignItems": "center",
+          "justify": "space-around",
+          "style": {
+            "backgroundColor": "#AAAAAA",
+            "borderBottomLeftRadius": "50%",
+            "borderBottomRightRadius": "50%",
+            "borderTopLeftRadius": "50%",
+            "borderTopRightRadius": "50%",
+            "margin": 10
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column"
+    },
+    "type": "ia.container.flex"
+  }
+}

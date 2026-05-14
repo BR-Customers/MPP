@@ -1,0 +1,1 @@
+EXEC config.getHeads

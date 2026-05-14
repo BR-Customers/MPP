@@ -1,0 +1,112 @@
+{
+  "custom": {},
+  "params": {},
+  "props": {},
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "DashboardConfig"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "path": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/DashboardConfig",
+          "style": {
+            "classes": "BlueRidge/Menu/Menu"
+          }
+        },
+        "type": "ia.display.view"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "TopSpacer"
+            },
+            "position": {
+              "grow": 0.4
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Reset"
+                },
+                "position": {
+                  "grow": 0.4
+                },
+                "props": {
+                  "style": {
+                    "classes": "BlueRidge/Components/dangerButtonRound",
+                    "fontSize": 25
+                  },
+                  "text": "Reset"
+                },
+                "type": "ia.input.button"
+              },
+              {
+                "meta": {
+                  "name": "Save"
+                },
+                "position": {
+                  "grow": 0.4
+                },
+                "props": {
+                  "style": {
+                    "classes": "BlueRidge/Components/actionButtonRound",
+                    "fontSize": 25
+                  },
+                  "text": "Save"
+                },
+                "type": "ia.input.button"
+              }
+            ],
+            "meta": {
+              "name": "Buttons"
+            },
+            "position": {
+              "grow": 0.2
+            },
+            "props": {
+              "justify": "space-evenly"
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "BottomSpacer"
+            },
+            "position": {
+              "grow": 0.4
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "FlexContainer"
+        },
+        "position": {
+          "grow": 0.15
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "BlueRidge/Menu/Menu"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column"
+    },
+    "type": "ia.container.flex"
+  }
+}

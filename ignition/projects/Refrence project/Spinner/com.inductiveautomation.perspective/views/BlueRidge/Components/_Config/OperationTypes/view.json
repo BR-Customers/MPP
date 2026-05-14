@@ -1,0 +1,727 @@
+{
+  "custom": {
+    "instance": {
+      "available": false,
+      "key": "",
+      "name": "",
+      "notes": "",
+      "selectionScreen": "",
+      "type": "operationType"
+    },
+    "instances": [
+      {
+        "key": "3CDCCEF9-A094-479C-8D13-B6BC3E38217C",
+        "text": "Bore",
+        "value": "",
+        "view": "3CDCCEF9-A094-479C-8D13-B6BC3E38217C"
+      },
+      {
+        "key": "1439B533-B574-4B5B-AE8F-41580D8832D1",
+        "text": "Mill",
+        "value": "",
+        "view": "1439B533-B574-4B5B-AE8F-41580D8832D1"
+      },
+      {
+        "key": "D1D41ED8-70CE-4045-A17B-834652DDAC74",
+        "text": "Probe",
+        "value": "",
+        "view": "D1D41ED8-70CE-4045-A17B-834652DDAC74"
+      }
+    ],
+    "selectedData": 0,
+    "triggerRefresh": false
+  },
+  "params": {},
+  "propConfig": {
+    "custom.currentType": {
+      "persistent": false
+    },
+    "custom.instance": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\u0027BlueRidge.Config.OperationType.getOne\u0027,0,{view.custom.selectedData})"
+        },
+        "type": "expr"
+      },
+      "onChange": {
+        "enabled": false,
+        "script": "\tif origin \u003d\u003d \u0027BindingWriteback\u0027:\n\t\tdata \u003d self.custom.instance\n\t\tdata \u003d BlueRidge.Config.Util.convertWrapperObjectToJson(data)\n\t\tdata[\u0027user\u0027]\u003dself.session.props.auth.user.userName\n#\t\tsystem.perspective.print(data)\n\t\tresp \u003d BlueRidge.Config.OperationType.update(data)\n\t\tif resp \u003d\u003d -1:\n\t\t\tsystem.perspective.sendMessage(\"refreshTrigger\")\n\t\t\tpass"
+      },
+      "persistent": true
+    },
+    "custom.instances": {
+      "binding": {
+        "config": {
+          "path": "view.custom.triggerRefresh"
+        },
+        "transforms": [
+          {
+            "expression": "runScript(\u0027BlueRidge.Config.OperationType.getAll\u0027,0)",
+            "type": "expression"
+          },
+          {
+            "code": "\tvalue.sort(key\u003dlambda x: x[\u0027text\u0027])\n\treturn value",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.selectedData": {
+      "binding": {
+        "config": {
+          "path": "view.custom.triggerRefresh"
+        },
+        "enabled": false,
+        "transforms": [
+          {
+            "expression": "0",
+            "type": "expression"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.triggerRefresh": {
+      "persistent": true
+    }
+  },
+  "props": {},
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Icon"
+            },
+            "position": {
+              "basis": "50px"
+            },
+            "props": {
+              "path": "material/content_cut",
+              "style": {
+                "marginLeft": 15,
+                "marginRight": 15
+              }
+            },
+            "type": "ia.display.icon"
+          },
+          {
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "basis": "50px",
+              "grow": 1
+            },
+            "props": {
+              "text": "Operation Types",
+              "textStyle": {
+                "classes": "BlueRidge/boldTextLarge"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "children": [
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "#\tinstances \u003d self.view.custom.instances\n##\ttableData \u003d self.view.custom.tableData\n#\tinstance \u003d self.view.custom.instance\n#\t\n#\tdata \u003d {\u0027instances\u0027:instances,\u0027instance\u0027:instance}\n#\tsystem.perspective.print(\"Save data: {}\".format(data))\n#\tresp \u003d BlueRidge.Config.OperationType.update(data)\n#\tsystem.perspective.print(\"Save resp: {}\".format(resp))\n#\tif resp \u003d\u003d \u0027success\u0027:\n#\t\tsystem.perspective.sendMessage(\"refreshTrigger\")\n\t\n\tdata \u003d self.view.custom.instance\n\tdata \u003d BlueRidge.Config.Util.convertWrapperObjectToJson(data)\n\tdata[\u0027user\u0027]\u003dself.session.props.auth.user.userName\n\tresp \u003d BlueRidge.Config.OperationType.update(data)\n\n\tsystem.perspective.sendMessage(\"refreshTrigger\")\n"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "Save"
+                },
+                "position": {
+                  "basis": "34px",
+                  "grow": 1
+                },
+                "props": {
+                  "text": "Save Changes"
+                },
+                "type": "ia.input.button"
+              }
+            ],
+            "meta": {
+              "name": "FlexContainer"
+            },
+            "position": {
+              "basis": "150px"
+            },
+            "props": {
+              "style": {
+                "padding": 7
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "basis": "50px"
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "basis": "25px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Types"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "FlexRepeater"
+                        },
+                        "propConfig": {
+                          "props.instances": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.instances"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "direction": "column",
+                          "elementStyle": {
+                            "marginBottom": 10
+                          },
+                          "path": "BlueRidge/Components/_Config/ButtonOfLists_Oneshot",
+                          "useDefaultViewWidth": false
+                        },
+                        "type": "ia.display.flex-repeater"
+                      },
+                      {
+                        "events": {
+                          "dom": {
+                            "onClick": {
+                              "config": {
+                                "script": "\tsystem.perspective.sendMessage(\"OneShotButton\", 0)"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "FlexContainer"
+                        },
+                        "position": {
+                          "grow": 1
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "FlexContainer"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "backgroundColor": "#FFFFFF",
+                        "paddingBottom": 10,
+                        "paddingLeft": 10,
+                        "paddingRight": 10,
+                        "paddingTop": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "ListOfButton"
+                },
+                "position": {
+                  "basis": "250px",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "marginBottom": 5
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "EmbeddedView"
+                },
+                "position": {
+                  "basis": "50px"
+                },
+                "propConfig": {
+                  "props.params.data": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.instance"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "params": {
+                    "script": "BlueRidge/Config/OperationType"
+                  },
+                  "path": "BlueRidge/Components/_Config/AddArchiveButtons"
+                },
+                "type": "ia.display.view"
+              }
+            ],
+            "meta": {
+              "name": "Left"
+            },
+            "position": {
+              "basis": "250px"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "borderStyle": "solid",
+                "borderWidth": 2,
+                "paddingLeft": 10,
+                "paddingRight": 10
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "Label"
+                            },
+                            "position": {
+                              "basis": "25px"
+                            },
+                            "props": {
+                              "text": "Name"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "TextField"
+                            },
+                            "position": {
+                              "grow": 1
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.instance.name"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "type": "ia.input.text-field"
+                          }
+                        ],
+                        "meta": {
+                          "name": "TextEntryField"
+                        },
+                        "position": {
+                          "basis": "50px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "marginBottom": 5
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "Label"
+                            },
+                            "position": {
+                              "basis": "25px"
+                            },
+                            "props": {
+                              "text": "Selection Screen"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "Dropdown"
+                            },
+                            "position": {
+                              "basis": "25px"
+                            },
+                            "propConfig": {
+                              "props.options": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "runScript(\u0027BlueRidge.Config.Util.getSelectionScreens\u0027,0)"
+                                  },
+                                  "type": "expr"
+                                }
+                              },
+                              "props.value": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.instance.selectionScreen"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "type": "ia.input.dropdown"
+                          }
+                        ],
+                        "meta": {
+                          "name": "DropdownField"
+                        },
+                        "position": {
+                          "basis": "50px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "marginBottom": 5
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "Label"
+                            },
+                            "position": {
+                              "basis": "25px"
+                            },
+                            "props": {
+                              "text": "Notes"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "TextArea"
+                            },
+                            "position": {
+                              "basis": "75px"
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.instance.notes"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "type": "ia.input.text-area"
+                          }
+                        ],
+                        "meta": {
+                          "name": "TextAreaField"
+                        },
+                        "position": {
+                          "basis": "100px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "marginBottom": 5
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "meta": {
+                          "name": "Spacer"
+                        },
+                        "position": {
+                          "basis": "50px"
+                        },
+                        "props": {
+                          "style": {
+                            "marginBottom": 5
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "TopLeft"
+                    },
+                    "position": {
+                      "basis": "250px"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "paddingLeft": 10,
+                        "paddingRight": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "Spacer"
+                        },
+                        "position": {
+                          "basis": "11px"
+                        },
+                        "props": {
+                          "style": {
+                            "marginBottom": 5
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tdata \u003d self.view.custom.instance\n\tdata \u003d system.util.jsonEncode(data)\n\tresp \u003d BlueRidge.Config.OperationType.update(data)\n\tsystem.perspective.print(\"Update Button: {}\".format(resp))\n\tif resp \u003d\u003d \u0027success\u0027:\n\t\tsystem.perspective.sendMessage(\"refreshTrigger\")"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "Update"
+                        },
+                        "position": {
+                          "basis": "34px",
+                          "display": false
+                        },
+                        "props": {
+                          "text": "Update"
+                        },
+                        "type": "ia.input.button"
+                      }
+                    ],
+                    "meta": {
+                      "name": "TopCenter"
+                    },
+                    "position": {
+                      "basis": "250px"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "paddingLeft": 10,
+                        "paddingRight": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "Checkbox"
+                        },
+                        "position": {
+                          "basis": "50px"
+                        },
+                        "propConfig": {
+                          "props.selected": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.instance.available"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "marginBottom": 5
+                          },
+                          "text": "Available",
+                          "textPosition": "left",
+                          "uncheckedIcon": {
+                            "color": {
+                              "enabled": "#555555"
+                            }
+                          }
+                        },
+                        "type": "ia.input.checkbox"
+                      },
+                      {
+                        "meta": {
+                          "name": "Spacer"
+                        },
+                        "position": {
+                          "basis": "50px"
+                        },
+                        "props": {
+                          "style": {
+                            "marginBottom": 5
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "TopRight"
+                    },
+                    "position": {
+                      "basis": "250px",
+                      "grow": 1
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "paddingLeft": 10,
+                        "paddingRight": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "Top"
+                },
+                "position": {
+                  "basis": "250px"
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "Bottom"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "marginBottom": 10,
+                    "marginRight": 10,
+                    "paddingLeft": 10
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "Right"
+            },
+            "position": {
+              "basis": "250px",
+              "grow": 1
+            },
+            "props": {
+              "direction": "column"
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "52px",
+          "grow": 1
+        },
+        "props": {
+          "style": {
+            "borderStyle": "solid",
+            "borderWidth": 3,
+            "paddingBottom": 10,
+            "paddingLeft": 10,
+            "paddingRight": 10,
+            "paddingTop": 10
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "backgroundColor": "#AAAAAA"
+      }
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "refreshTrigger",
+          "pageScope": true,
+          "script": "\ttrigger \u003d self.view.custom.triggerRefresh\n\tself.view.custom.triggerRefresh \u003d not trigger",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "OneShotButton",
+          "pageScope": true,
+          "script": "\tself.view.custom.selectedData \u003d payload",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "custom": {},
+  "params": {
+    "direction": "forward"
+  },
+  "propConfig": {
+    "params.direction": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 429,
+      "width": 694
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "Arrow"
+        },
+        "position": {
+          "height": 1.3809,
+          "rotate": {},
+          "width": 0.564,
+          "x": 0.1836,
+          "y": -0.1875
+        },
+        "propConfig": {
+          "position.rotate.angle": {
+            "binding": {
+              "config": {
+                "path": "view.params.direction"
+              },
+              "transforms": [
+                {
+                  "fallback": "90deg",
+                  "inputType": "scalar",
+                  "mappings": [
+                    {
+                      "input": "forward",
+                      "output": "90deg"
+                    },
+                    {
+                      "input": "backward",
+                      "output": "270deg"
+                    }
+                  ],
+                  "outputType": "scalar",
+                  "type": "map"
+                }
+              ],
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "elements": [
+            {
+              "d": "M201,0 l199,387 -90,0 0,607 -220,0 0,-607 -90,0 201,-387z\n",
+              "fill": {
+                "paint": "#FBF42E"
+              },
+              "name": "path",
+              "stroke": {
+                "paint": "#4c4c4c",
+                "width": "2"
+              },
+              "type": "path"
+            }
+          ],
+          "preserveAspectRatio": "xMidYMax",
+          "style": {
+            "cursor": "pointer"
+          },
+          "viewBox": "0 0 400 994"
+        },
+        "type": "ia.shapes.svg"
+      },
+      {
+        "meta": {
+          "name": "Label"
+        },
+        "position": {
+          "height": 0.0802,
+          "rotate": {
+            "anchor": "144% 50%"
+          },
+          "width": 0.1763,
+          "x": 0.3778,
+          "y": 0.4621
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.direction"
+              },
+              "transforms": [
+                {
+                  "fallback": "Next",
+                  "inputType": "scalar",
+                  "mappings": [
+                    {
+                      "input": "forward",
+                      "output": "Next"
+                    },
+                    {
+                      "input": "backward",
+                      "output": "Previous"
+                    }
+                  ],
+                  "outputType": "scalar",
+                  "type": "map"
+                }
+              ],
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "textStyle": {
+            "fontSize": 50,
+            "fontWeight": "bold"
+          }
+        },
+        "type": "ia.display.label"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "mode": "percent"
+    },
+    "type": "ia.container.coord"
+  }
+}

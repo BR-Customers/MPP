@@ -1,0 +1,251 @@
+{
+  "custom": {},
+  "params": {
+    "MultiSelect": true
+  },
+  "propConfig": {
+    "params.MultiSelect": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 577,
+      "width": 886
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Seat 6"
+            },
+            "position": {
+              "height": 0.17,
+              "width": 0.105,
+              "x": 0.7691,
+              "y": 0.3077
+            },
+            "props": {
+              "primary": false,
+              "style": {
+                "borderBottomLeftRadius": 500,
+                "borderBottomRightRadius": 500,
+                "borderTopLeftRadius": 500,
+                "borderTopRightRadius": 500,
+                "classes": "BlueRidge/Components/actionButtonRound"
+              },
+              "text": ""
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "meta": {
+              "name": "Seat 4"
+            },
+            "position": {
+              "height": 0.17,
+              "width": 0.105,
+              "x": 0.4991,
+              "y": 0.3105
+            },
+            "props": {
+              "primary": false,
+              "style": {
+                "borderBottomLeftRadius": 500,
+                "borderBottomRightRadius": 500,
+                "borderTopLeftRadius": 500,
+                "borderTopRightRadius": 500,
+                "classes": "BlueRidge/Components/dangerButtonRound"
+              },
+              "text": "X"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "meta": {
+              "name": "Seat 2"
+            },
+            "position": {
+              "height": 0.17,
+              "width": 0.105,
+              "x": 0.2257,
+              "y": 0.3115
+            },
+            "props": {
+              "primary": false,
+              "style": {
+                "borderBottomLeftRadius": 500,
+                "borderBottomRightRadius": 500,
+                "borderTopLeftRadius": 500,
+                "borderTopRightRadius": 500,
+                "classes": "BlueRidge/Components/dangerButtonRound"
+              },
+              "text": "X"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "meta": {
+              "name": "Seat 1"
+            },
+            "position": {
+              "height": 0.1425,
+              "width": 0.0865,
+              "x": 0.1143,
+              "y": 0.3337
+            },
+            "props": {
+              "primary": false,
+              "style": {
+                "borderBottomLeftRadius": 500,
+                "borderBottomRightRadius": 500,
+                "borderTopLeftRadius": 500,
+                "borderTopRightRadius": 500,
+                "classes": "BlueRidge/Components/dangerButtonRound"
+              },
+              "text": "X"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "meta": {
+              "name": "Seat 3"
+            },
+            "position": {
+              "height": 0.1425,
+              "width": 0.0865,
+              "x": 0.3878,
+              "y": 0.3327
+            },
+            "props": {
+              "primary": false,
+              "style": {
+                "borderBottomLeftRadius": 500,
+                "borderBottomRightRadius": 500,
+                "borderTopLeftRadius": 500,
+                "borderTopRightRadius": 500,
+                "classes": "BlueRidge/Components/dangerButtonRound"
+              },
+              "text": "X"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "meta": {
+              "name": "Seat 5"
+            },
+            "position": {
+              "height": 0.1425,
+              "width": 0.0865,
+              "x": 0.6601,
+              "y": 0.3311
+            },
+            "props": {
+              "primary": false,
+              "style": {
+                "borderBottomLeftRadius": 500,
+                "borderBottomRightRadius": 500,
+                "borderTopLeftRadius": 500,
+                "borderTopRightRadius": 500,
+                "classes": "BlueRidge/Components/dangerButtonRound"
+              },
+              "text": "X"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "CoordinateContainer"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "aspectRatio": "16:9",
+          "mode": "percent",
+          "style": {
+            "backgroundImage": "url(\"/system/images/JET/6 Cylinder Head.svg\")",
+            "backgroundPosition": "center",
+            "backgroundRepeat": "no-repeat"
+          }
+        },
+        "type": "ia.container.coord"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Select"
+            },
+            "position": {
+              "grow": 0.1
+            },
+            "props": {
+              "style": {
+                "classes": "BlueRidge/Components/actionButtonRound"
+              },
+              "text": "Select All"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "meta": {
+              "name": "Deselect"
+            },
+            "position": {
+              "grow": 0.1
+            },
+            "props": {
+              "style": {
+                "classes": "BlueRidge/Components/dangerButtonRound"
+              },
+              "text": "Deselect All"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "meta": {
+              "name": "FlexContainer"
+            },
+            "position": {
+              "grow": 0.6
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Buttons"
+        },
+        "position": {
+          "grow": 0.15
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "path": "view.params.MultiSelect"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "justify": "space-around"
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "justify": "space-around"
+    },
+    "type": "ia.container.flex"
+  }
+}

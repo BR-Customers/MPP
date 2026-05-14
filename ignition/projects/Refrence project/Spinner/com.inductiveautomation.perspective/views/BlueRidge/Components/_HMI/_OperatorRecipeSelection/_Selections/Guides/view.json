@@ -1,0 +1,594 @@
+{
+  "custom": {
+    "Selections": []
+  },
+  "params": {
+    "MultiSelect": true
+  },
+  "propConfig": {
+    "custom.Selections": {
+      "persistent": true
+    },
+    "custom.Selections[0]": {
+      "persistent": true
+    },
+    "params.MultiSelect": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 577,
+      "width": 886
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "custom": {
+              "index": 6
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(\u0027handleSelection\u0027, {\u0027index\u0027: self.custom.index})"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "Guide 6"
+            },
+            "position": {
+              "height": 0.0642,
+              "width": 0.0377,
+              "x": 0.8105,
+              "y": 0.3952
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "config": {
+                    "path": "this.props.text"
+                  },
+                  "transforms": [
+                    {
+                      "fallback": "BlueRidge/Components/actionButtonRound",
+                      "inputType": "scalar",
+                      "mappings": [
+                        {
+                          "input": "X",
+                          "output": "BlueRidge/Components/dangerButtonRound"
+                        }
+                      ],
+                      "outputType": "scalar",
+                      "type": "map"
+                    }
+                  ],
+                  "type": "property"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.Selections"
+                  },
+                  "transforms": [
+                    {
+                      "code": "\ttry:\n\t\tidx \u003d value.index(self.custom.index)\n\t\treturn \u0027\u0027\n\texcept ValueError:\n\t\treturn \u0027X\u0027",
+                      "type": "script"
+                    }
+                  ],
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "primary": false,
+              "style": {
+                "borderBottomLeftRadius": 500,
+                "borderBottomRightRadius": 500,
+                "borderTopLeftRadius": 500,
+                "borderTopRightRadius": 500
+              }
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "custom": {
+              "index": 1
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\t\tsystem.perspective.sendMessage(\u0027handleSelection\u0027, {\u0027index\u0027: self.custom.index})"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "Guide 1"
+            },
+            "position": {
+              "height": 0.067,
+              "width": 0.0393,
+              "x": 0.1358,
+              "y": 0.3931
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "config": {
+                    "path": "this.props.text"
+                  },
+                  "transforms": [
+                    {
+                      "fallback": "BlueRidge/Components/actionButtonRound",
+                      "inputType": "scalar",
+                      "mappings": [
+                        {
+                          "input": "X",
+                          "output": "BlueRidge/Components/dangerButtonRound"
+                        }
+                      ],
+                      "outputType": "scalar",
+                      "type": "map"
+                    }
+                  ],
+                  "type": "property"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.Selections"
+                  },
+                  "transforms": [
+                    {
+                      "code": "\ttry:\n\t\tidx \u003d value.index(self.custom.index)\n\t\treturn \u0027\u0027\n\texcept ValueError:\n\t\treturn \u0027X\u0027",
+                      "type": "script"
+                    }
+                  ],
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "primary": false,
+              "style": {
+                "borderBottomLeftRadius": 500,
+                "borderBottomRightRadius": 500,
+                "borderTopLeftRadius": 500,
+                "borderTopRightRadius": 500
+              }
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "custom": {
+              "index": 2
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\t\tsystem.perspective.sendMessage(\u0027handleSelection\u0027, {\u0027index\u0027: self.custom.index})"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "Guide 2"
+            },
+            "position": {
+              "height": 0.0698,
+              "width": 0.0393,
+              "x": 0.2614,
+              "y": 0.3897
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "config": {
+                    "path": "this.props.text"
+                  },
+                  "transforms": [
+                    {
+                      "fallback": "BlueRidge/Components/actionButtonRound",
+                      "inputType": "scalar",
+                      "mappings": [
+                        {
+                          "input": "X",
+                          "output": "BlueRidge/Components/dangerButtonRound"
+                        }
+                      ],
+                      "outputType": "scalar",
+                      "type": "map"
+                    }
+                  ],
+                  "type": "property"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.Selections"
+                  },
+                  "transforms": [
+                    {
+                      "code": "\ttry:\n\t\tidx \u003d value.index(self.custom.index)\n\t\treturn \u0027\u0027\n\texcept ValueError:\n\t\treturn \u0027X\u0027",
+                      "type": "script"
+                    }
+                  ],
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "primary": false,
+              "style": {
+                "borderBottomLeftRadius": 500,
+                "borderBottomRightRadius": 500,
+                "borderTopLeftRadius": 500,
+                "borderTopRightRadius": 500
+              }
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "custom": {
+              "index": 3
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\t\tsystem.perspective.sendMessage(\u0027handleSelection\u0027, {\u0027index\u0027: self.custom.index})"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "Guide 3"
+            },
+            "position": {
+              "height": 0.067,
+              "width": 0.0393,
+              "x": 0.4108,
+              "y": 0.3925
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "config": {
+                    "path": "this.props.text"
+                  },
+                  "transforms": [
+                    {
+                      "fallback": "BlueRidge/Components/actionButtonRound",
+                      "inputType": "scalar",
+                      "mappings": [
+                        {
+                          "input": "X",
+                          "output": "BlueRidge/Components/dangerButtonRound"
+                        }
+                      ],
+                      "outputType": "scalar",
+                      "type": "map"
+                    }
+                  ],
+                  "type": "property"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.Selections"
+                  },
+                  "transforms": [
+                    {
+                      "code": "\ttry:\n\t\tidx \u003d value.index(self.custom.index)\n\t\treturn \u0027\u0027\n\texcept ValueError:\n\t\treturn \u0027X\u0027",
+                      "type": "script"
+                    }
+                  ],
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "primary": false,
+              "style": {
+                "borderBottomLeftRadius": 500,
+                "borderBottomRightRadius": 500,
+                "borderTopLeftRadius": 500,
+                "borderTopRightRadius": 500
+              }
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "custom": {
+              "index": 4
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\t\tsystem.perspective.sendMessage(\u0027handleSelection\u0027, {\u0027index\u0027: self.custom.index})"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "Guide 4"
+            },
+            "position": {
+              "height": 0.067,
+              "width": 0.0393,
+              "x": 0.5366,
+              "y": 0.3842
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "config": {
+                    "path": "this.props.text"
+                  },
+                  "transforms": [
+                    {
+                      "fallback": "BlueRidge/Components/actionButtonRound",
+                      "inputType": "scalar",
+                      "mappings": [
+                        {
+                          "input": "X",
+                          "output": "BlueRidge/Components/dangerButtonRound"
+                        }
+                      ],
+                      "outputType": "scalar",
+                      "type": "map"
+                    }
+                  ],
+                  "type": "property"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.Selections"
+                  },
+                  "transforms": [
+                    {
+                      "code": "\ttry:\n\t\tidx \u003d value.index(self.custom.index)\n\t\treturn \u0027\u0027\n\texcept ValueError:\n\t\treturn \u0027X\u0027",
+                      "type": "script"
+                    }
+                  ],
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "primary": false,
+              "style": {
+                "borderBottomLeftRadius": 500,
+                "borderBottomRightRadius": 500,
+                "borderTopLeftRadius": 500,
+                "borderTopRightRadius": 500
+              }
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "custom": {
+              "index": 5
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\t\tsystem.perspective.sendMessage(\u0027handleSelection\u0027, {\u0027index\u0027: self.custom.index})"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "Guide 5"
+            },
+            "position": {
+              "height": 0.067,
+              "width": 0.0393,
+              "x": 0.6829,
+              "y": 0.3953
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "config": {
+                    "path": "this.props.text"
+                  },
+                  "transforms": [
+                    {
+                      "fallback": "BlueRidge/Components/actionButtonRound",
+                      "inputType": "scalar",
+                      "mappings": [
+                        {
+                          "input": "X",
+                          "output": "BlueRidge/Components/dangerButtonRound"
+                        }
+                      ],
+                      "outputType": "scalar",
+                      "type": "map"
+                    }
+                  ],
+                  "type": "property"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.Selections"
+                  },
+                  "transforms": [
+                    {
+                      "code": "\ttry:\n\t\tidx \u003d value.index(self.custom.index)\n\t\treturn \u0027\u0027\n\texcept ValueError:\n\t\treturn \u0027X\u0027",
+                      "type": "script"
+                    }
+                  ],
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "primary": false,
+              "style": {
+                "borderBottomLeftRadius": 500,
+                "borderBottomRightRadius": 500,
+                "borderTopLeftRadius": 500,
+                "borderTopRightRadius": 500
+              }
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "Head"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "aspectRatio": "16:9",
+          "mode": "percent",
+          "style": {
+            "backgroundImage": "url(\"/system/images/JET/6 Cylinder Head.svg\")",
+            "backgroundPosition": "center",
+            "backgroundRepeat": "no-repeat"
+          }
+        },
+        "type": "ia.container.coord"
+      },
+      {
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tbuttons \u003d self.parent.getSibling(\u0027Head\u0027).children\n\tself.view.custom.Selections \u003d []\n\tfor i in range(len(buttons)):\n\t\t\n\t\tself.view.custom.Selections.append(i+1)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "Select"
+            },
+            "position": {
+              "grow": 0.1
+            },
+            "props": {
+              "style": {
+                "classes": "BlueRidge/Components/actionButtonRound"
+              },
+              "text": "Select All"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.custom.Selections \u003d []"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "Deselect"
+            },
+            "position": {
+              "grow": 0.1
+            },
+            "props": {
+              "style": {
+                "classes": "BlueRidge/Components/dangerButtonRound"
+              },
+              "text": "Deselect All"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "meta": {
+              "name": "FlexContainer"
+            },
+            "position": {
+              "grow": 0.6
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Buttons"
+        },
+        "position": {
+          "grow": 0.15
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "path": "view.params.MultiSelect"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "justify": "space-around"
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "justify": "space-around"
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "handleSelection",
+          "pageScope": true,
+          "script": "\tselections \u003d self.view.custom.Selections\n\ttry:\n\t\tidx \u003d selections.index(payload[\u0027index\u0027])\n\t\tselections.pop(idx)\n\texcept ValueError:\n\t\tif self.view.params.MultiSelect:\n\t\t\tselections.append(payload[\u0027index\u0027])\n\t\telse:\n\t\t\tself.view.custom.Selections \u003d [payload[\u0027index\u0027]]",
+          "sessionScope": false,
+          "viewScope": true
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "scope": "DG",
+  "version": 2,
+  "restricted": false,
+  "overridable": true,
+  "files": [
+    "query.sql"
+  ],
+  "attributes": {
+    "useMaxReturnSize": false,
+    "autoBatchEnabled": false,
+    "fallbackValue": "",
+    "maxReturnSize": 100,
+    "cacheUnit": "SEC",
+    "type": "UpdateQuery",
+    "enabled": true,
+    "cacheAmount": 1,
+    "cacheEnabled": false,
+    "database": "",
+    "fallbackEnabled": false,
+    "lastModificationSignature": "0a61ae90a087fdf035755a07bd4517d0c20befb3619557f4563f56ac016e8737",
+    "permissions": [
+      {
+        "zone": "",
+        "role": ""
+      }
+    ],
+    "lastModification": {
+      "actor": "jlewis",
+      "timestamp": "2026-01-29T17:29:04Z"
+    },
+    "parameters": [
+      {
+        "type": "Parameter",
+        "identifier": "headConfigUUID",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "fileName",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "fileData",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "lastEdited",
+        "sqlType": 8
+      },
+      {
+        "type": "Parameter",
+        "identifier": "lastEditedBy",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "headFileUUID",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "fileType",
+        "sqlType": 7
+      }
+    ]
+  }
+}

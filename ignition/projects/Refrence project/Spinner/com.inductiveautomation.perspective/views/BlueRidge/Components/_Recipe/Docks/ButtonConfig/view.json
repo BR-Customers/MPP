@@ -1,0 +1,783 @@
+{
+  "custom": {
+    "buttonIndex": {},
+    "defaultValue": null,
+    "extensionType": "0EA5333F-9831-41E1-866A-B226674298DC",
+    "extensionTypeList": [
+      {
+        "label": ".TXT",
+        "value": "2B73EF83-F77A-4F24-A66D-7E0649EEC320"
+      },
+      {
+        "label": ".EIN",
+        "value": "0EA5333F-9831-41E1-866A-B226674298DC"
+      },
+      {
+        "label": ".h",
+        "value": "16EF8355-1977-4448-9A84-B345904154D4"
+      }
+    ],
+    "notSelectedValue": "",
+    "operationType": "value",
+    "selectedValue": "",
+    "selectedVariable": "",
+    "useDefault": true,
+    "variables": null,
+    "widgetConfig": null
+  },
+  "params": {},
+  "propConfig": {
+    "custom.buttonIndex": {
+      "binding": {
+        "config": {
+          "path": "session.custom.buttonConfigDock.buttonIndex"
+        },
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.defaultValue": {
+      "binding": {
+        "config": {
+          "parameters": {
+            "parameter": "{view.custom.selectedVariable}"
+          },
+          "queryPath": "recipe/getHeadParameterDefault",
+          "returnFormat": "scalar"
+        },
+        "type": "query"
+      },
+      "persistent": true
+    },
+    "custom.extensionType": {
+      "persistent": true
+    },
+    "custom.extensionTypeList": {
+      "binding": {
+        "config": {
+          "queryPath": "recipe/getExtensionTypes",
+          "returnFormat": "json"
+        },
+        "transforms": [
+          {
+            "code": "\ttypes \u003d []\n\tfor extype in value:\n\t\tif extype.active \u003d\u003d True:\n\t\t\ttypes.append({\u0027label\u0027: extype.name,\u0027value\u0027: extype.extensionTypeUUID})\n\treturn types",
+            "type": "script"
+          }
+        ],
+        "type": "query"
+      },
+      "persistent": true
+    },
+    "custom.notSelectedValue": {
+      "binding": {
+        "config": {
+          "path": "view.custom.widgetConfig[0].notSelectedValue"
+        },
+        "transforms": [
+          {
+            "expression": "if(isBad({value}), \u0027\u0027, {value})",
+            "type": "expression"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.operationType": {
+      "binding": {
+        "config": {
+          "path": "session.custom.buttonConfigDock.headOperationUUID"
+        },
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.selectedValue": {
+      "binding": {
+        "config": {
+          "path": "view.custom.widgetConfig[0].selectedValue"
+        },
+        "transforms": [
+          {
+            "expression": "if(isBad({value}), \u0027\u0027, {value})",
+            "type": "expression"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.selectedVariable": {
+      "binding": {
+        "config": {
+          "path": "view.custom.widgetConfig[0].selectedVariable"
+        },
+        "transforms": [
+          {
+            "expression": "if(isBad({value}), \u0027\u0027, {value})",
+            "type": "expression"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.useDefault": {
+      "binding": {
+        "config": {
+          "path": "view.custom.widgetConfig[0].usesDefault"
+        },
+        "transforms": [
+          {
+            "expression": "if(isBad({value}), true, {value})",
+            "type": "expression"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.variables": {
+      "binding": {
+        "config": {
+          "parameters": {
+            "extensionType": "{view.custom.extensionType}",
+            "operationType": "{session.custom.buttonConfigDock.headOperationUUID}"
+          },
+          "queryPath": "recipe/getVariables",
+          "returnFormat": "json"
+        },
+        "overlayOptOut": true,
+        "type": "query"
+      },
+      "persistent": true
+    },
+    "custom.widgetConfig": {
+      "binding": {
+        "config": {
+          "parameters": {
+            "extensionTypeUUID": "{view.custom.extensionType}",
+            "headWidgetUUID": "{view.custom.buttonIndex}"
+          },
+          "queryPath": "config/getHeadWidget",
+          "returnFormat": "json"
+        },
+        "type": "query"
+      },
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 932,
+      "width": 300
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Header"
+            },
+            "position": {
+              "basis": "130px",
+              "grow": 1
+            },
+            "props": {
+              "text": "Button Config"
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "basis": "35px"
+        },
+        "props": {
+          "style": {
+            "classes": "BlueRidge/boldTitleLarge BlueRidge/Menu/All_Header",
+            "overflow": "hidden"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "meta": {
+          "name": "Dropdown"
+        },
+        "position": {
+          "basis": "36px"
+        },
+        "propConfig": {
+          "props.options": {
+            "binding": {
+              "config": {
+                "path": "view.custom.extensionTypeList"
+              },
+              "type": "property"
+            }
+          },
+          "props.value": {
+            "binding": {
+              "config": {
+                "bidirectional": true,
+                "path": "view.custom.extensionType"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "type": "ia.input.dropdown"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "VariableLabel"
+            },
+            "position": {
+              "basis": "50px"
+            },
+            "props": {
+              "style": {
+                "classes": "BlueRidge/boldTitleMedium"
+              },
+              "text": "Variable Assignment"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "VariableDropdown"
+            },
+            "position": {
+              "basis": "50px"
+            },
+            "propConfig": {
+              "props.options": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.variables"
+                  },
+                  "overlayOptOut": true,
+                  "type": "property"
+                }
+              },
+              "props.value": {
+                "binding": {
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.selectedVariable"
+                  },
+                  "overlayOptOut": true,
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "marginBottom": 25
+              }
+            },
+            "type": "ia.input.dropdown"
+          },
+          {
+            "meta": {
+              "name": "SelectedLabel"
+            },
+            "position": {
+              "basis": "50px"
+            },
+            "props": {
+              "style": {
+                "classes": "BlueRidge/boldTitleMedium"
+              },
+              "text": "Value Assigned When Selected"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "SelectedValue"
+            },
+            "position": {
+              "basis": "50px"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.selectedValue"
+                  },
+                  "overlayOptOut": true,
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "marginBottom": 25
+              }
+            },
+            "type": "ia.input.text-field"
+          },
+          {
+            "meta": {
+              "name": "UseDefault"
+            },
+            "position": {
+              "basis": "50px"
+            },
+            "propConfig": {
+              "props.selected": {
+                "binding": {
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.useDefault"
+                  },
+                  "overlayOptOut": true,
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "marginBottom": 25
+              },
+              "text": "Use variable default when not selected"
+            },
+            "type": "ia.input.checkbox"
+          },
+          {
+            "meta": {
+              "name": "UnselectedLabel"
+            },
+            "position": {
+              "basis": "50px"
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "!{view.custom.useDefault}"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "BlueRidge/boldTitleMedium"
+              },
+              "text": "Value Assigned When Not Selected"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "UnselectedValue"
+            },
+            "position": {
+              "basis": "50px"
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "!{view.custom.useDefault}"
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.notSelectedValue"
+                  },
+                  "overlayOptOut": true,
+                  "type": "property"
+                }
+              }
+            },
+            "type": "ia.input.text-field"
+          }
+        ],
+        "meta": {
+          "name": "VariableAssignments"
+        },
+        "position": {
+          "basis": "200px",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "options": [
+            {
+              "label": ".TXT",
+              "value": "2B73EF83-F77A-4F24-A66D-7E0649EEC320"
+            },
+            {
+              "label": ".EIN",
+              "value": "0EA5333F-9831-41E1-866A-B226674298DC"
+            },
+            {
+              "label": ".h",
+              "value": "16EF8355-1977-4448-9A84-B345904154D4"
+            }
+          ],
+          "value": "16EF8355-1977-4448-9A84-B345904154D4"
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(\u0027widgetMoved\u0027, {\u0027axis\u0027: \u0027yFrac\u0027, \u0027amount\u0027: -0.005, \u0027index\u0027: self.view.custom.buttonIndex})"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "Up"
+            },
+            "position": {
+              "basis": "50px"
+            },
+            "props": {
+              "image": {
+                "icon": {
+                  "path": "material/keyboard_arrow_up"
+                }
+              },
+              "style": {
+                "marginBottom": 5,
+                "marginLeft": 75,
+                "marginRight": 75
+              },
+              "text": ""
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "children": [
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tsystem.perspective.sendMessage(\u0027widgetMoved\u0027, {\u0027axis\u0027: \u0027xFrac\u0027, \u0027amount\u0027: -0.005, \u0027index\u0027: self.view.custom.buttonIndex})"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "Left"
+                },
+                "position": {
+                  "basis": "80px",
+                  "grow": 1
+                },
+                "props": {
+                  "image": {
+                    "icon": {
+                      "path": "material/keyboard_arrow_left"
+                    }
+                  },
+                  "style": {
+                    "marginRight": 2.5
+                  },
+                  "text": ""
+                },
+                "type": "ia.input.button"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tsystem.perspective.sendMessage(\u0027widgetMoved\u0027, {\u0027axis\u0027: \u0027xFrac\u0027, \u0027amount\u0027: 0.005, \u0027index\u0027: self.view.custom.buttonIndex})"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "Right"
+                },
+                "position": {
+                  "basis": "80px",
+                  "grow": 1
+                },
+                "props": {
+                  "image": {
+                    "icon": {
+                      "path": "material/keyboard_arrow_right"
+                    }
+                  },
+                  "style": {
+                    "marginLeft": 2.5
+                  },
+                  "text": ""
+                },
+                "type": "ia.input.button"
+              }
+            ],
+            "meta": {
+              "name": "Horizontal"
+            },
+            "position": {
+              "basis": "50px"
+            },
+            "props": {
+              "style": {
+                "marginLeft": 5,
+                "marginRight": 5
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(\u0027widgetMoved\u0027, {\u0027axis\u0027: \u0027yFrac\u0027, \u0027amount\u0027: 0.005, \u0027index\u0027: self.view.custom.buttonIndex})"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "Down"
+            },
+            "position": {
+              "basis": "50px"
+            },
+            "props": {
+              "image": {
+                "icon": {
+                  "path": "material/keyboard_arrow_down"
+                }
+              },
+              "style": {
+                "marginBottom": 5,
+                "marginLeft": 75,
+                "marginRight": 75,
+                "marginTop": 5
+              },
+              "text": ""
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "children": [
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tsystem.perspective.sendMessage(\u0027widgetResized\u0027, {\u0027amount\u0027: 0.01, \u0027index\u0027: self.view.custom.buttonIndex})"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "Increase"
+                },
+                "position": {
+                  "basis": "80px",
+                  "grow": 1
+                },
+                "props": {
+                  "image": {
+                    "icon": {
+                      "path": "material/add"
+                    }
+                  },
+                  "text": ""
+                },
+                "type": "ia.input.button"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tsystem.perspective.sendMessage(\u0027widgetResized\u0027, {\u0027amount\u0027: -0.01, \u0027index\u0027: self.view.custom.buttonIndex})"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "Decrease"
+                },
+                "position": {
+                  "basis": "80px",
+                  "grow": 1
+                },
+                "props": {
+                  "image": {
+                    "icon": {
+                      "path": "material/horizontal_rule"
+                    }
+                  },
+                  "text": ""
+                },
+                "type": "ia.input.button"
+              }
+            ],
+            "meta": {
+              "name": "Size"
+            },
+            "position": {
+              "basis": "60px"
+            },
+            "props": {
+              "style": {
+                "marginBottom": 10
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "WidgetModification"
+        },
+        "position": {
+          "basis": "300px"
+        },
+        "props": {
+          "direction": "column",
+          "justify": "flex-end"
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tparams \u003d {\n\t\t\u0027selectedVariable\u0027: self.view.custom.selectedVariable if self.view.custom.selectedVariable !\u003d \u0027\u0027 else None,\n\t\t\u0027selectedValue\u0027: self.view.custom.selectedValue,\n\t\t\u0027headWidgetUUID\u0027: self.view.custom.buttonIndex,\n\t\t\u0027headOperationUUID\u0027: self.view.custom.operationType,\n\t\t\u0027extensionTypeUUID\u0027: self.view.custom.extensionType,\n\t\t\u0027usesDefault\u0027: self.view.custom.useDefault\n\t\t}\n\t\n\tif(self.view.custom.useDefault):\n\t\tparams[\u0027notSelectedValue\u0027] \u003d self.view.custom.defaultValue\n\telse:\n\t\tparams[\u0027notSelectedValue\u0027] \u003d self.view.custom.notSelectedValue\n\t\t\n\tsystem.perspective.print(str(params))\n\tsystem.db.execUpdate(\u0027config/addHeadWidget\u0027, parameters \u003d params)\n\tsystem.perspective.sendMessage(\u0027doneEditing\u0027, payload \u003d {\u0027buttonIndex\u0027: self.view.custom.buttonIndex})\n\tsystem.perspective.sendMessage(\u0027widgetSaved\u0027)\n\tself.session.custom.buttonConfigDock.isOpen \u003d False\n\tself.session.custom.buttonConfigDock.buttonIndex \u003d \u0027\u0027\n\tself.view.custom.notSelectedValue \u003d \u0027\u0027\n\tself.view.custom.selectedValue \u003d \u0027\u0027\n\tself.view.custom.selectedVariable \u003d \u0027\u0027\n\tself.view.custom.useDefault \u003d True\n\tsystem.perspective.closeDock(\u0027ButtonConfig\u0027)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "Save"
+            },
+            "position": {
+              "basis": "125px"
+            },
+            "props": {
+              "style": {
+                "classes": "BlueRidge/Components/actionButtonRound"
+              },
+              "text": "Save"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(\u0027doneEditing\u0027, payload \u003d {\u0027buttonIndex\u0027: self.view.custom.buttonIndex})\n\tsystem.perspective.sendMessage(\u0027deleteButton\u0027, payload \u003d {\u0027buttonIndex\u0027: self.view.custom.buttonIndex})\n\tsystem.db.execUpdate(\u0027config/deleteHeadWidget\u0027, parameters \u003d {\u0027headWidgetUUID\u0027:self.view.custom.buttonIndex})\n\tself.session.custom.buttonConfigDock.isOpen \u003d False\n\tself.session.custom.buttonConfigDock.buttonIndex \u003d \u0027\u0027\n\tself.view.custom.notSelectedValue \u003d \u0027\u0027\n\tself.view.custom.selectedValue \u003d \u0027\u0027\n\tself.view.custom.selectedVariable \u003d \u0027\u0027\n\tself.view.custom.useDefault \u003d True\n\tsystem.perspective.closeDock(\u0027ButtonConfig\u0027)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "Delete"
+            },
+            "position": {
+              "basis": "125px"
+            },
+            "props": {
+              "options": [],
+              "style": {
+                "classes": "BlueRidge/Components/dangerButtonRound"
+              },
+              "text": "Delete",
+              "value": ""
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "Buttons"
+        },
+        "position": {
+          "basis": "50px"
+        },
+        "props": {
+          "justify": "space-around"
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\u0027doneEditing\u0027, payload \u003d {\u0027buttonIndex\u0027: self.view.custom.buttonIndex})\n\tself.session.custom.buttonConfigDock.isOpen \u003d False\n\tself.session.custom.buttonConfigDock.buttonIndex \u003d \u0027\u0027\n\tself.view.custom.notSelectedValue \u003d \u0027\u0027\n\tself.view.custom.selectedValue \u003d \u0027\u0027\n\tself.view.custom.selectedVariable \u003d \u0027\u0027\n\tself.view.custom.useDefault \u003d True\n\tsystem.perspective.closeDock(\"ButtonConfig\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "Cancel"
+        },
+        "position": {
+          "basis": "34px"
+        },
+        "props": {
+          "style": {
+            "backgroundColor": "#177DB1",
+            "classes": "BlueRidge/Components/actionButtonRound"
+          },
+          "text": "Cancel"
+        },
+        "type": "ia.input.button"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "borderStyle": "inset",
+        "classes": "BlueRidge/Menu/Menu"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

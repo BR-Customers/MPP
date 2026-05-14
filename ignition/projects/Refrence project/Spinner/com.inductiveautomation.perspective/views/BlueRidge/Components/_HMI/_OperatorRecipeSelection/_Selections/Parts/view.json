@@ -1,0 +1,242 @@
+{
+  "custom": {
+    "headGroups": [
+      {
+        "options": [
+          {
+            "active": true,
+            "headConfigUUID": "4F315955-7208-F111-8CBF-000C2986FE9B",
+            "headUUID": "44116C4B-7208-F111-8CBF-000C2986FE9B",
+            "lastEdited": {
+              "$": [
+                "ts",
+                192,
+                1775654579964
+              ],
+              "$ts": 1770942271877
+            },
+            "lastEditedBy": "hkraft",
+            "name": "80450"
+          },
+          {
+            "active": true,
+            "headConfigUUID": "23E37063-7208-F111-8CBF-000C2986FE9B",
+            "headUUID": "44116C4B-7208-F111-8CBF-000C2986FE9B",
+            "lastEdited": {
+              "$": [
+                "ts",
+                192,
+                1775654579964
+              ],
+              "$ts": 1770942296160
+            },
+            "lastEditedBy": "hkraft",
+            "name": "80460"
+          },
+          {
+            "active": true,
+            "headConfigUUID": "ACCF5D8E-8E0E-F111-8CBF-000C2986FE9B",
+            "headUUID": "44116C4B-7208-F111-8CBF-000C2986FE9B",
+            "lastEdited": {
+              "$": [
+                "ts",
+                192,
+                1775654579964
+              ],
+              "$ts": 1771614104123
+            },
+            "lastEditedBy": "hkraft",
+            "name": "80451"
+          }
+        ],
+        "partType": "Gen V"
+      }
+    ],
+    "operation": null,
+    "selectedPart": "None"
+  },
+  "params": {
+    "Parts": [
+      {
+        "Options": [
+          834510,
+          834540
+        ],
+        "PartType": "Gen 3/4"
+      },
+      {
+        "Options": [
+          835460,
+          835480
+        ],
+        "PartType": "Gen V"
+      },
+      {
+        "Options": [
+          835460,
+          835480
+        ],
+        "PartType": "Gen V"
+      },
+      {
+        "Options": [
+          835460,
+          835480
+        ],
+        "PartType": "Gen V"
+      },
+      {
+        "Options": [
+          835460,
+          835480
+        ],
+        "PartType": "Gen V"
+      },
+      {
+        "Options": [
+          835460,
+          835480
+        ],
+        "PartType": "Gen V"
+      }
+    ]
+  },
+  "propConfig": {
+    "custom.headGroups": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\u0027BlueRidge.Config.HeadConfig.getHeads\u0027,0)"
+        },
+        "transforms": [
+          {
+            "code": "\theadGroups \u003d []\n\tfor group in value:\n\t\tname \u003d group[\u0027name\u0027]\n\t\theads \u003d BlueRidge.Config.HeadConfig.getHeadConfigs(group[\u0027headUUID\u0027])\n\t\theadGroups.append({\u0027partType\u0027: name, \u0027options\u0027: heads})\n\treturn headGroups",
+            "type": "script"
+          }
+        ],
+        "type": "expr"
+      },
+      "persistent": true
+    },
+    "custom.operation": {
+      "binding": {
+        "config": {
+          "parameters": {
+            "head": "{session.custom.hMISelections.selectedPart}"
+          },
+          "queryPath": "recipe/getOperationsByHead",
+          "returnFormat": "json"
+        },
+        "overlayOptOut": true,
+        "transforms": [
+          {
+            "code": "\ttry:\n\t\tif(value[0][\u0027headOperationUUID\u0027] not in self.session.custom.hMISelections.selectedOperation):\n\t\t\tself.session.custom.hMISelections.selectedOperation.append(value[0][\u0027headOperationUUID\u0027])\n\texcept:\n\t\tpass\n\treturn value",
+            "type": "script"
+          }
+        ],
+        "type": "query"
+      },
+      "persistent": true
+    },
+    "custom.selectedPart": {
+      "binding": {
+        "config": {
+          "path": "session.custom.hMISelections.selectedPart"
+        },
+        "transforms": [
+          {
+            "code": "\treturn BlueRidge.Config.HeadConfig.getOneHeadConfig(value)[0][\u0027name\u0027] if value !\u003d \u0027\u0027 else \u0027None\u0027",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "params.Parts": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 583,
+      "width": 985
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "FlexRepeater"
+        },
+        "position": {
+          "basis": "320px",
+          "grow": 1
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "config": {
+                "path": "view.custom.headGroups"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "alignContent": "space-around",
+          "alignItems": "center",
+          "justify": "space-around",
+          "path": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/ButtonListSelect",
+          "wrap": "wrap"
+        },
+        "type": "ia.display.flex-repeater"
+      },
+      {
+        "meta": {
+          "name": "Label"
+        },
+        "position": {
+          "basis": "32px"
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "expression": "\u0027Selected Part: \u0027 + {view.custom.selectedPart}"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "BlueRidge/boldTitleMedium"
+          }
+        },
+        "type": "ia.display.label"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "justify": "space-around"
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "headSelected",
+          "pageScope": true,
+          "script": "\tself.view.custom.selectedPart \u003d payload[\u0027part\u0027]",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

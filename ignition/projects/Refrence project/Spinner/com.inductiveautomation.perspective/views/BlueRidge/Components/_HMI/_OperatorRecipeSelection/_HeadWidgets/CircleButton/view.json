@@ -1,0 +1,230 @@
+{
+  "custom": {
+    "isEditing": false,
+    "selected": 0
+  },
+  "params": {
+    "buttonIndex": "n",
+    "configMode": false,
+    "isPreview": false
+  },
+  "propConfig": {
+    "custom.isEditing": {
+      "binding": {
+        "config": {
+          "path": "view.params.isPreview"
+        },
+        "enabled": false,
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.selected": {
+      "binding": {
+        "config": {
+          "path": "view.params.configMode"
+        },
+        "transforms": [
+          {
+            "fallback": 0,
+            "inputType": "scalar",
+            "mappings": [
+              {
+                "input": true,
+                "output": 1
+              }
+            ],
+            "outputType": "scalar",
+            "type": "map"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "params.buttonIndex": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.configMode": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.isPreview": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 244,
+      "width": 295
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tif not self.view.params.configMode:\n\t\tselection \u003d self.view.custom.selected\n\t\tif selection \u003d\u003d 2:\n\t\t\tself.view.custom.selected \u003d 0\n\t\t\tselection \u003d 0\n\t\telse:\n\t\t\tself.view.custom.selected \u003d selection +1\n\t\t\tselection \u003d selection +1\n\t\tsystem.perspective.sendMessage(\u0027selectionMade\u0027, {\u0027selected\u0027: selection, \u0027buttonIndex\u0027:self.view.params.buttonIndex})"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "Button"
+        },
+        "position": {
+          "height": 0.9,
+          "width": 0.9,
+          "x": 0.05,
+          "y": 0.05
+        },
+        "propConfig": {
+          "props.style.classes": {
+            "binding": {
+              "config": {
+                "struct": {
+                  "isPreview": "{view.params.isPreview}",
+                  "selected": "{view.custom.selected}"
+                },
+                "waitOnAll": false
+              },
+              "transforms": [
+                {
+                  "code": "\tif value[\u0027isPreview\u0027]:\n\t\treturn \"BlueRidge/Components/previewGhost BlueRidge/Components/actionButtonRound\"\n\telse:\n\t\tif value[\u0027selected\u0027] \u003d\u003d 1:\n\t\t\treturn \"BlueRidge/Components/actionButtonRound\"\n\t\telif value[\u0027selected\u0027] \u003d\u003d 0:\n\t\t\treturn \"BlueRidge/Components/dangerButtonRound\" \n\t\telse:\n\t\t\treturn\"BlueRidge/Components/coreButtonRound\"",
+                  "type": "script"
+                }
+              ],
+              "type": "expr-struct"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "struct": {
+                  "isPreview": "{view.params.isPreview}",
+                  "selected": "{view.custom.selected}"
+                },
+                "waitOnAll": false
+              },
+              "transforms": [
+                {
+                  "expression": "if({value}[\u0027isPreview\u0027], \u0027\u0027, if({value}[\u0027selected\u0027] \u003d 2, \u0027C\u0027, if({value}[\u0027selected\u0027] \u003d 1, \u0027N\u0027, \u0027X\u0027)))",
+                  "type": "expression"
+                }
+              ],
+              "type": "expr-struct"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "borderBottomLeftRadius": 500,
+            "borderBottomRightRadius": 500,
+            "borderTopLeftRadius": 500,
+            "borderTopRightRadius": 500,
+            "fontSize": 30
+          }
+        },
+        "type": "ia.input.button"
+      }
+    ],
+    "events": {
+      "system": {
+        "onStartup": {
+          "config": {
+            "script": "\tif self.session.custom.hMISelections.process \u003d\u003d \u0027new\u0027:\n\t\tif not self.view.params.configMode:\n\t\t\tsystem.perspective.sendMessage(\u0027selectionMade\u0027, {\u0027selected\u0027: True, \u0027buttonIndex\u0027:self.view.params.buttonIndex})\n\t\tself.view.custom.selected \u003d True"
+          },
+          "scope": "G",
+          "type": "script"
+        }
+      }
+    },
+    "meta": {
+      "name": "root"
+    },
+    "propConfig": {
+      "props.style.classes": {
+        "binding": {
+          "config": {
+            "path": "view.custom.isEditing"
+          },
+          "transforms": [
+            {
+              "fallback": "",
+              "inputType": "scalar",
+              "mappings": [
+                {
+                  "input": true,
+                  "output": "BlueRidge/Components/editingBox"
+                }
+              ],
+              "outputType": "scalar",
+              "type": "map"
+            }
+          ],
+          "type": "property"
+        }
+      }
+    },
+    "props": {
+      "aspectRatio": "1:1",
+      "mode": "percent",
+      "style": {}
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "isEditing",
+          "pageScope": true,
+          "script": "\t\n\tif payload[\u0027buttonIndex\u0027] \u003d\u003d self.view.params.buttonIndex:\n\t\tself.view.custom.isEditing \u003d True\n\t",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "doneEditing",
+          "pageScope": true,
+          "script": "\tif payload[\u0027buttonIndex\u0027] \u003d\u003d self.view.params.buttonIndex:\n\t\tself.view.custom.isEditing \u003d False",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "deselectAll",
+          "pageScope": true,
+          "script": "\tself.view.custom.selected \u003d 0",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "selectAll",
+          "pageScope": true,
+          "script": "\tself.view.custom.selected \u003d 1",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "coreAll",
+          "pageScope": true,
+          "script": "\tself.view.custom.selected \u003d 2",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "deselected",
+          "pageScope": true,
+          "script": "\tif payload[\u0027index\u0027] \u003d\u003d self.view.params.buttonIndex:\n\t\tself.view.custom.selected \u003d 0",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.coord"
+  }
+}

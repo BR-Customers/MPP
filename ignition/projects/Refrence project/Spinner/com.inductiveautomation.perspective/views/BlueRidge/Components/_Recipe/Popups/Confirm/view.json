@@ -1,0 +1,185 @@
+{
+  "custom": {},
+  "params": {
+    "data": "value",
+    "message": "",
+    "script": "value"
+  },
+  "propConfig": {
+    "params.data": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.message": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.script": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 300,
+      "width": 400
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Label_0"
+            },
+            "position": {
+              "basis": "50px",
+              "display": false
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.data"
+                  },
+                  "transforms": [
+                    {
+                      "expression": "\"Item to be archived: \"+runScript(\"BlueRidge.Recipe.Util.extractQualifiedValues\",0,{value})",
+                      "type": "expression"
+                    }
+                  ],
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "BlueRidge/boldTitleSmall"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "Label"
+            },
+            "position": {
+              "basis": "50px",
+              "grow": 1
+            },
+            "props": {
+              "text": "Are you sure?",
+              "textStyle": {
+                "classes": "BlueRidge/boldTitleLarge"
+              }
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": {
+          "name": "Top"
+        },
+        "position": {
+          "basis": "200px",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "justify": "center"
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "draggable": true,
+                    "id": "confirm",
+                    "modal": false,
+                    "overlayDismiss": false,
+                    "resizable": true,
+                    "showCloseIcon": true,
+                    "type": "close",
+                    "viewPath": "BlueRidge/Components/Popups/Confirm",
+                    "viewportBound": false
+                  },
+                  "scope": "C",
+                  "type": "popup"
+                }
+              }
+            },
+            "meta": {
+              "name": "CancelButton"
+            },
+            "position": {
+              "basis": "100px"
+            },
+            "props": {
+              "style": {
+                "classes": "BlueRidge/Components/dangerButtonRound"
+              },
+              "text": "Cancel"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tscript \u003d self.view.params.script.replace(\u0027/\u0027,\u0027.\u0027)\n\titemType \u003d script.split(\u0027.\u0027)[-1]\n\tdata \u003d BlueRidge.Recipe.Util.convertWrapperObjectToJson(self.view.params.data)\n\tif itemType \u003d\u003d \u0027EngineParameter\u0027 or itemType \u003d\u003d \u0027HeadParameter\u0027:\n\t\tfor d in data:\n\t\t\tkey \u003d d.get(\u0027key\u0027)\n\t\t\tfunction \u003d \u0027archive\u0027\n#\t\t\tsystem.perspective.print(script+\u0027.{0}({1})\u0027.format(function,key))\n\t\t\tresp \u003d eval(script+\".{0}(\u0027{1}\u0027)\".format(function,key))\n\t\t\tif resp \u003d\u003d -1:\n\t\t\t\tcontinue\n\t\tsystem.perspective.sendMessage(\"refreshTrigger\")\n\t\tsystem.perspective.closePopup(\u0027confirm\u0027)\n\telse:\n\t\tkey \u003d data.get(\u0027key\u0027)\n\t\tif key:\n\t\t\tdata \u003d key\n\t\tif script:\n\t\t\tfunction \u003d \u0027archive\u0027\n\t\t#\tsystem.perspective.print(script+\u0027.{0}({1})\u0027.format(function,data))\n\t\t\tresp \u003d eval(script+\".{0}(\u0027{1}\u0027)\".format(function,data))\n\t\t\tif resp \u003d\u003d -1:\n\t\t\t\tsystem.perspective.sendMessage(\"refreshTrigger\")\n\t\t\t\tsystem.perspective.closePopup(\u0027confirm\u0027)\n\t\n\tif self.view.params.message !\u003d None or self.view.params.message !\u003d \"\":\n\t\tsystem.perspective.sendMessage(self.view.params.message)\n\t\tsystem.perspective.closePopup(\u0027confirm\u0027)\n\n#\telse:\n#\t\tsystem.perspective.sendMessage(\u0027archiveButton\u0027, data)\n#\t\tsystem.perspective.closePopup(\u0027confirm\u0027)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "YesButton"
+            },
+            "position": {
+              "basis": "100px"
+            },
+            "props": {
+              "style": {
+                "classes": "BlueRidge/Components/actionButtonRound"
+              },
+              "text": "Yes"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "Middle"
+        },
+        "position": {
+          "basis": "34px"
+        },
+        "props": {
+          "justify": "space-evenly"
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "meta": {
+          "name": "Bottom"
+        },
+        "position": {
+          "basis": "100px"
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column"
+    },
+    "type": "ia.container.flex"
+  }
+}

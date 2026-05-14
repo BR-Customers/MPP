@@ -1,0 +1,70 @@
+{
+  "scope": "DG",
+  "version": 2,
+  "restricted": false,
+  "overridable": true,
+  "files": [
+    "query.sql"
+  ],
+  "attributes": {
+    "useMaxReturnSize": false,
+    "autoBatchEnabled": false,
+    "fallbackValue": "",
+    "maxReturnSize": 100,
+    "cacheUnit": "SEC",
+    "type": "UpdateQuery",
+    "enabled": true,
+    "cacheAmount": 1,
+    "cacheEnabled": false,
+    "database": "",
+    "fallbackEnabled": false,
+    "lastModificationSignature": "0b6563ed14876abd99028ad5f031c495c2087f4012c5ef9a5c1436e0266ef1b6",
+    "permissions": [
+      {
+        "zone": "",
+        "role": ""
+      }
+    ],
+    "lastModification": {
+      "actor": "hkraft",
+      "timestamp": "2026-02-11T18:20:10Z"
+    },
+    "parameters": [
+      {
+        "type": "Parameter",
+        "identifier": "headWidgetUUID",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "headOperationUUID",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "extensionTypeUUID",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "notSelectedValue",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "selectedValue",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "selectedVariable",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "usesDefault",
+        "sqlType": 6
+      }
+    ]
+  }
+}

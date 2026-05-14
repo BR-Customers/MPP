@@ -1,0 +1,1 @@
+EXEC recipe.getOperationsByHead @headUUID = :head

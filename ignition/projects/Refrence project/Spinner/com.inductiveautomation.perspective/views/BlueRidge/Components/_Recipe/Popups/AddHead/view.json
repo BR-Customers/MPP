@@ -1,0 +1,292 @@
+{
+  "custom": {
+    "dropdownOptions": [
+      {
+        "label": "Hemi V8",
+        "value": "DBFB9B83-9C36-4A72-A433-43DB483BCA42"
+      },
+      {
+        "label": "Flat 4",
+        "value": "BEB5D728-86BC-4A73-BA97-AE4DC1E3700F"
+      }
+    ],
+    "scripttype": "",
+    "selectedData": "",
+    "type": ""
+  },
+  "params": {
+    "data": [
+      {
+        "key": "DBFB9B83-9C36-4A72-A433-43DB483BCA42",
+        "operationUUID": "4830B433-389B-4D62-BBC9-925A39114A1F",
+        "text": "Hemi V8",
+        "value": "",
+        "view": "DBFB9B83-9C36-4A72-A433-43DB483BCA42"
+      },
+      {
+        "key": "BEB5D728-86BC-4A73-BA97-AE4DC1E3700F",
+        "operationUUID": "4830B433-389B-4D62-BBC9-925A39114A1F",
+        "text": "Flat 4",
+        "value": "",
+        "view": "BEB5D728-86BC-4A73-BA97-AE4DC1E3700F"
+      }
+    ],
+    "script": ""
+  },
+  "propConfig": {
+    "custom.dropdownOptions": {
+      "binding": {
+        "config": {
+          "path": "view.params.data"
+        },
+        "transforms": [
+          {
+            "code": "\toptions \u003d [{\u0027value\u0027:i[\u0027key\u0027],\u0027label\u0027:i[\u0027text\u0027]} for i in value]\n#\t[{\u0027value\u0027:value,\u0027label\u0027:label}]\n\treturn options",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.selectedData": {
+      "persistent": true
+    },
+    "custom.type": {
+      "binding": {
+        "config": {
+          "path": "view.params.script"
+        },
+        "transforms": [
+          {
+            "expression": "right({value},len({value}) - max(lastIndexOf({value}, \".\"),lastIndexOf({value}, \"/\")) - 1)",
+            "type": "expression"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "params.data": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.script": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 300,
+      "width": 400
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Label_0"
+            },
+            "position": {
+              "basis": "50px"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.type"
+                  },
+                  "transforms": [
+                    {
+                      "expression": "\"Item to add: \"+ \"Head\"",
+                      "type": "expression"
+                    }
+                  ],
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "BlueRidge/boldTitleSmall"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Dropdown"
+                },
+                "position": {
+                  "basis": "200px"
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.type}\u003d\"OperationEngine\""
+                      },
+                      "enabled": false,
+                      "type": "expr"
+                    }
+                  },
+                  "props.options": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.dropdownOptions"
+                      },
+                      "type": "property"
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.selectedData"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "type": "ia.input.dropdown"
+              }
+            ],
+            "meta": {
+              "name": "FlexContainer"
+            },
+            "position": {
+              "basis": "36px"
+            },
+            "props": {
+              "justify": "center"
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "Label"
+            },
+            "position": {
+              "basis": "50px",
+              "grow": 1
+            },
+            "props": {
+              "text": "Are you sure?",
+              "textStyle": {
+                "classes": "BlueRidge/boldTitleLarge"
+              }
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": {
+          "name": "Top"
+        },
+        "position": {
+          "basis": "200px",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "justify": "center"
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "draggable": true,
+                    "id": "addHead",
+                    "modal": false,
+                    "overlayDismiss": false,
+                    "resizable": true,
+                    "showCloseIcon": true,
+                    "type": "close",
+                    "viewPath": "BlueRidge/Components/_Recipe/Popups/AddHead",
+                    "viewportBound": false
+                  },
+                  "scope": "C",
+                  "type": "popup"
+                }
+              }
+            },
+            "meta": {
+              "name": "CancelButton"
+            },
+            "position": {
+              "basis": "100px"
+            },
+            "props": {
+              "style": {
+                "classes": "BlueRidge/Components/dangerButtonRound"
+              },
+              "text": "Cancel"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tdata \u003d {}\n\tdata[\u0027headUUID\u0027] \u003d self.view.custom.selectedData\n#\tsystem.perspective.print(data)\n\tsystem.perspective.sendMessage(\u0027addHead\u0027,data)\n\tsystem.perspective.sendMessage(\u0027refreshTrigger\u0027)\n\tsystem.perspective.closePopup(\u0027addHead\u0027)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "YesButton"
+            },
+            "position": {
+              "basis": "100px"
+            },
+            "props": {
+              "style": {
+                "classes": "BlueRidge/Components/actionButtonRound"
+              },
+              "text": "Yes"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "Middle"
+        },
+        "position": {
+          "basis": "34px"
+        },
+        "props": {
+          "justify": "space-evenly"
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "meta": {
+          "name": "Bottom"
+        },
+        "position": {
+          "basis": "100px"
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column"
+    },
+    "type": "ia.container.flex"
+  }
+}

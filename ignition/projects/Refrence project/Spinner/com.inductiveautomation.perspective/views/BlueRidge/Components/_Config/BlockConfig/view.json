@@ -1,0 +1,883 @@
+{
+  "custom": {
+    "instance": {
+      "assignedNumbers": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "available": true,
+      "bankCount": 2,
+      "cylinderCount": 8,
+      "key": "53306ABC-606D-48F2-B8A9-56B82974B7DF",
+      "name": "8 Cylinder",
+      "type": "blockConfig"
+    },
+    "instances": [
+      {
+        "available": false,
+        "key": "726FF090-CD2B-41D7-8A0D-E548CC40D8C2",
+        "text": "12 Cylinder",
+        "value": "",
+        "view": "726FF090-CD2B-41D7-8A0D-E548CC40D8C2"
+      },
+      {
+        "available": true,
+        "key": "5CEE4113-478C-41B8-BD90-362E0EB5AF9F",
+        "text": "4 Cylinder",
+        "value": "",
+        "view": "5CEE4113-478C-41B8-BD90-362E0EB5AF9F"
+      },
+      {
+        "available": false,
+        "key": "D3913D6A-9C15-4ABE-A14B-5EAA3D72454C",
+        "text": "6 Cylinder",
+        "value": "",
+        "view": "D3913D6A-9C15-4ABE-A14B-5EAA3D72454C"
+      },
+      {
+        "available": true,
+        "key": "53306ABC-606D-48F2-B8A9-56B82974B7DF",
+        "text": "8 Cylinder",
+        "value": "",
+        "view": "53306ABC-606D-48F2-B8A9-56B82974B7DF"
+      },
+      {
+        "available": true,
+        "key": "7DDFFD70-203D-4584-A86A-F2007EC0E967",
+        "text": "8 Cylinder R",
+        "value": "",
+        "view": "7DDFFD70-203D-4584-A86A-F2007EC0E967"
+      }
+    ],
+    "reassignedNumbers": [
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        2
+      ]
+    ],
+    "selectedData": "53306ABC-606D-48F2-B8A9-56B82974B7DF",
+    "triggerRefresh": true
+  },
+  "params": {},
+  "propConfig": {
+    "custom.currentBlock": {
+      "persistent": false
+    },
+    "custom.currentType": {
+      "persistent": false
+    },
+    "custom.instance": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\u0027BlueRidge.Config.BlockConfig.getOne\u0027,0,{view.custom.selectedData})"
+        },
+        "type": "expr"
+      },
+      "onChange": {
+        "enabled": false,
+        "script": "#\tsystem.perspective.print(\u0027{}\u0027.format(origin))\n\tif origin \u003d\u003d \u0027BindingWriteback\u0027: # or origin \u003d\u003d \u0027Script\u0027:\n\t\tdata \u003d self.custom.instance\n\t\tdata \u003d BlueRidge.Config.Util.convertWrapperObjectToJson(data)\n\t\tdata[\u0027user\u0027]\u003dself.session.props.auth.user.userName\n\t\tresp \u003d BlueRidge.Config.BlockConfig.update(data)\n\t\tif resp \u003d\u003d -1:\n\t\t\tsystem.perspective.sendMessage(\"refreshTrigger\")\n\t\t\tpass"
+      },
+      "persistent": true
+    },
+    "custom.instances": {
+      "binding": {
+        "config": {
+          "path": "view.custom.triggerRefresh"
+        },
+        "transforms": [
+          {
+            "expression": "runScript(\u0027BlueRidge.Config.BlockConfig.getAll\u0027,0)",
+            "type": "expression"
+          },
+          {
+            "code": "\tvalue.sort(key\u003dlambda x: x[\u0027text\u0027])\n\treturn value",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.reassignedNumbers": {
+      "onChange": {
+        "enabled": false,
+        "script": "\tsystem.perspective.print(origin)\n\tinstance \u003d self.custom.instance\n\treassignedNumbers \u003d self.custom.reassignedNumbers\n\t\n\tinstance \u003d BlueRidge.Config.Util.convertWrapperObjectToJson(instance)\n\tassignedNumbers \u003d [item for sublist in reassignedNumbers for item in sublist]\n\tinstance[\u0027assignedNumbers\u0027] \u003d assignedNumbers[:instance[\"cylinderCount\"]]\n#\tsystem.perspective.print(\u0027ChangeScript: {}\u0027.format(assignedNumbers))\n#\tself.custom.instance.assignedNumbers \u003d assignedNumbers\n#\tdata \u003d self.custom.instance\n#\tdata \u003d BlueRidge.Config.Util.convertWrapperObjectToJson(data)\n\tinstance[\u0027user\u0027]\u003dself.session.props.auth.user.userName\n\tresp \u003d BlueRidge.Config.BlockConfig.update(instance)\n\tif resp \u003d\u003d -1:\n#\t\tsystem.perspective.sendMessage(\"refreshTrigger\")\n\t\tpass\n\t\n\t"
+      },
+      "persistent": true
+    },
+    "custom.selectedData": {
+      "binding": {
+        "config": {
+          "path": "view.custom.triggerRefresh"
+        },
+        "enabled": false,
+        "transforms": [
+          {
+            "expression": "0",
+            "type": "expression"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.triggerRefresh": {
+      "persistent": true
+    }
+  },
+  "props": {},
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Icon"
+            },
+            "position": {
+              "basis": "50px"
+            },
+            "props": {
+              "path": "material/center_focus_strong",
+              "style": {
+                "marginLeft": 15,
+                "marginRight": 15
+              }
+            },
+            "type": "ia.display.icon"
+          },
+          {
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "basis": "50px",
+              "grow": 1
+            },
+            "props": {
+              "text": "Engine Block Configuration",
+              "textStyle": {
+                "classes": "BlueRidge/boldTextLarge"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "children": [
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "#\tinstances \u003d self.view.custom.instances\n##\ttableData \u003d self.view.custom.tableData\n#\tinstance \u003d self.view.custom.instance\n#\treassignedNumbers \u003d self.view.custom.reassignedNumbers\n#\t\n#\tinstance \u003d BlueRidge.Config.Util.convertWrapperObjectToJson(instance)\n#\tassignedNumbers \u003d [item for sublist in reassignedNumbers for item in sublist]\n#\tinstance[\u0027assignedNumbers\u0027] \u003d assignedNumbers[:instance[\"cylinderCount\"]]\n#\t\n#\tdata \u003d {\u0027instances\u0027:instances,\u0027instance\u0027:instance}\n#\tsystem.perspective.print(\"Save data: {}\".format(data))\n#\tresp \u003d BlueRidge.Config.BlockConfig.update(data)\n#\tsystem.perspective.print(\"Save resp: {}\".format(resp))\n#\tif resp \u003d\u003d \u0027success\u0027:\n#\t\tsystem.perspective.sendMessage(\"refreshTrigger\")\n\t\n\tdata \u003d self.view.custom.instance\n\tdata \u003d BlueRidge.Config.Util.convertWrapperObjectToJson(data)\n\t\n\treassignedNumbers \u003d self.view.custom.reassignedNumbers\n\tassignedNumbers \u003d [item for sublist in reassignedNumbers for item in sublist]\n\tdata[\u0027assignedNumbers\u0027] \u003d assignedNumbers[:data[\"cylinderCount\"]]\n\t\n\tdata[\u0027user\u0027]\u003dself.session.props.auth.user.userName\n\tresp \u003d BlueRidge.Config.BlockConfig.update(data)\n\n\tsystem.perspective.sendMessage(\"refreshTrigger\")"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "Save"
+                },
+                "position": {
+                  "basis": "34px",
+                  "grow": 1
+                },
+                "props": {
+                  "text": "Save Changes"
+                },
+                "type": "ia.input.button"
+              }
+            ],
+            "meta": {
+              "name": "FlexContainer"
+            },
+            "position": {
+              "basis": "150px"
+            },
+            "props": {
+              "style": {
+                "padding": 7
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "basis": "50px"
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "basis": "25px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Block Configurations"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "FlexRepeater"
+                        },
+                        "propConfig": {
+                          "props.instances": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.instances"
+                              },
+                              "type": "property"
+                            }
+                          },
+                          "props.instances[2].value": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.currentType"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "direction": "column",
+                          "elementStyle": {
+                            "marginBottom": 10
+                          },
+                          "path": "BlueRidge/Components/_Config/ButtonOfLists_Oneshot",
+                          "useDefaultViewWidth": false
+                        },
+                        "type": "ia.display.flex-repeater"
+                      },
+                      {
+                        "events": {
+                          "dom": {
+                            "onClick": {
+                              "config": {
+                                "script": "\tsystem.perspective.sendMessage(\"OneShotButton\", 0)"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "FlexContainer"
+                        },
+                        "position": {
+                          "grow": 1
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "FlexContainer"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "backgroundColor": "#FFFFFF",
+                        "paddingBottom": 10,
+                        "paddingLeft": 10,
+                        "paddingRight": 10,
+                        "paddingTop": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "ListOfButton"
+                },
+                "position": {
+                  "basis": "250px",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "marginBottom": 5
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "EmbeddedView"
+                },
+                "position": {
+                  "basis": "50px"
+                },
+                "propConfig": {
+                  "props.params.data": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.instance"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "params": {
+                    "script": "BlueRidge/Config/BlockConfig"
+                  },
+                  "path": "BlueRidge/Components/_Config/AddArchiveButtons"
+                },
+                "type": "ia.display.view"
+              }
+            ],
+            "meta": {
+              "name": "Left"
+            },
+            "position": {
+              "basis": "250px"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "borderStyle": "solid",
+                "borderWidth": 2,
+                "paddingLeft": 10,
+                "paddingRight": 10
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "Label"
+                            },
+                            "position": {
+                              "basis": "25px"
+                            },
+                            "props": {
+                              "text": "Name"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "TextField"
+                            },
+                            "position": {
+                              "grow": 1
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.instance.name"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "type": "ia.input.text-field"
+                          }
+                        ],
+                        "meta": {
+                          "name": "TextEntryField"
+                        },
+                        "position": {
+                          "basis": "50px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "marginBottom": 5
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "Label"
+                            },
+                            "position": {
+                              "basis": "25px"
+                            },
+                            "props": {
+                              "text": "Cylinder Count"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "NumericEntryField"
+                            },
+                            "position": {
+                              "basis": "25px",
+                              "grow": 1
+                            },
+                            "propConfig": {
+                              "props.value": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.instance.cylinderCount"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "align": "left",
+                              "format": "0,0",
+                              "inputBounds": {
+                                "maximum": 20,
+                                "minimum": 0
+                              }
+                            },
+                            "type": "ia.input.numeric-entry-field"
+                          }
+                        ],
+                        "meta": {
+                          "name": "NumericEntryField"
+                        },
+                        "position": {
+                          "basis": "50px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "marginBottom": 5
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "Label"
+                            },
+                            "position": {
+                              "basis": "25px"
+                            },
+                            "props": {
+                              "text": "Bank Count"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "NumericEntryField"
+                            },
+                            "position": {
+                              "basis": "25px",
+                              "grow": 1
+                            },
+                            "propConfig": {
+                              "props.value": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.instance.bankCount"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "align": "left",
+                              "format": "0,0",
+                              "inputBounds": {
+                                "maximum": 20,
+                                "minimum": 0
+                              }
+                            },
+                            "type": "ia.input.numeric-entry-field"
+                          }
+                        ],
+                        "meta": {
+                          "name": "NumericEntryField_0"
+                        },
+                        "position": {
+                          "basis": "50px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "marginBottom": 5
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "meta": {
+                          "name": "Spacer"
+                        },
+                        "position": {
+                          "basis": "50px"
+                        },
+                        "props": {
+                          "style": {
+                            "marginBottom": 5
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "TopLeft"
+                    },
+                    "position": {
+                      "basis": "250px"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "paddingLeft": 10,
+                        "paddingRight": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "Spacer"
+                        },
+                        "position": {
+                          "basis": "11px"
+                        },
+                        "props": {
+                          "style": {
+                            "marginBottom": 5
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tdata \u003d BlueRidge.Config.Util.convertWrapperObjectToJson(self.view.custom.instance)\n\treassignedNumbers \u003d self.view.custom.reassignedNumbers\n\tassignedNumbers \u003d [item for sublist in reassignedNumbers for item in sublist]\n\tdata[\u0027assignedNumbers\u0027] \u003d assignedNumbers[:data[\"cylinderCount\"]]\n\tresp \u003d BlueRidge.Config.BlockConfig.update(data)\n\tif resp \u003d\u003d \u0027success\u0027:\n\t\tsystem.perspective.sendMessage(\"refreshTrigger\")"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "Update"
+                        },
+                        "position": {
+                          "basis": "34px",
+                          "display": false
+                        },
+                        "props": {
+                          "text": "Update"
+                        },
+                        "type": "ia.input.button"
+                      }
+                    ],
+                    "meta": {
+                      "name": "TopCenter"
+                    },
+                    "position": {
+                      "basis": "250px"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "paddingLeft": 10,
+                        "paddingRight": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "Checkbox"
+                        },
+                        "position": {
+                          "basis": "50px"
+                        },
+                        "propConfig": {
+                          "props.selected": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.instance.available"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "marginBottom": 5
+                          },
+                          "text": "Available",
+                          "textPosition": "left",
+                          "uncheckedIcon": {
+                            "color": {
+                              "enabled": "#555555"
+                            }
+                          }
+                        },
+                        "type": "ia.input.checkbox"
+                      },
+                      {
+                        "meta": {
+                          "name": "Spacer"
+                        },
+                        "position": {
+                          "basis": "50px"
+                        },
+                        "props": {
+                          "style": {
+                            "marginBottom": 5
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "TopRight"
+                    },
+                    "position": {
+                      "basis": "250px",
+                      "grow": 1
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "paddingLeft": 10,
+                        "paddingRight": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "Top"
+                },
+                "position": {
+                  "basis": "200px"
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "Label"
+                        },
+                        "position": {
+                          "basis": "200px",
+                          "grow": 1
+                        },
+                        "props": {
+                          "text": "Cylinder Assignment"
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "Header"
+                    },
+                    "position": {
+                      "basis": "35px"
+                    },
+                    "props": {
+                      "alignItems": "flex-end",
+                      "style": {
+                        "marginBottom": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "FlexRepeater"
+                        },
+                        "position": {
+                          "basis": "200px",
+                          "grow": 1
+                        },
+                        "propConfig": {
+                          "props.instances": {
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.instance"
+                              },
+                              "transforms": [
+                                {
+                                  "code": "\treturn BlueRidge.Config.BlockConfig.getBanks(value)",
+                                  "type": "script"
+                                }
+                              ],
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "direction": "column",
+                          "elementStyle": {
+                            "marginBottom": 10
+                          },
+                          "path": "BlueRidge/Components/_Config/_BlockConfig/BankOfCylinders"
+                        },
+                        "type": "ia.display.flex-repeater"
+                      }
+                    ],
+                    "meta": {
+                      "name": "FlexContainer"
+                    },
+                    "position": {
+                      "basis": "200px",
+                      "grow": 1
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "padding": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "Bottom"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "marginBottom": 10,
+                    "marginRight": 10,
+                    "paddingLeft": 10
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "Right"
+            },
+            "position": {
+              "basis": "250px",
+              "grow": 1
+            },
+            "props": {
+              "direction": "column"
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "52px",
+          "grow": 1
+        },
+        "props": {
+          "style": {
+            "borderStyle": "solid",
+            "borderWidth": 3,
+            "paddingBottom": 10,
+            "paddingLeft": 10,
+            "paddingRight": 10,
+            "paddingTop": 10
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "backgroundColor": "#AAAAAA"
+      }
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "refreshTrigger",
+          "pageScope": true,
+          "script": "\ttrigger \u003d self.view.custom.triggerRefresh\n\tself.view.custom.triggerRefresh \u003d not trigger",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "OneShotButton",
+          "pageScope": true,
+          "script": "\tself.view.custom.selectedData \u003d payload",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "reassignedNumbers",
+          "pageScope": true,
+          "script": "#\tsystem.perspective.print(\"reassignedNumber: payload:{}\".format(payload))\n\tbankNumber \u003d payload[0]\n\tbankReassignedNumbers \u003d payload[1]\n#\tsystem.perspective.print(\"reassignedNumber: bank:{0}, numbers:{1}\".format(bankNumber,bankReassignedNumbers))\n\treassignedNumbers \u003d self.view.custom.reassignedNumbers\n\tif 0\u003c\u003dbankNumber\u003clen(reassignedNumbers):\n\t\treassignedNumbers[bankNumber] \u003d bankReassignedNumbers\n\telse:\n\t\treassignedNumbers.insert(bankNumber, bankReassignedNumbers)\n\tself.view.custom.reassignedNumbers \u003d reassignedNumbers\n\t",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

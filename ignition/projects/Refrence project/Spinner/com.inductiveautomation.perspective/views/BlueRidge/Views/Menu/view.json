@@ -1,0 +1,324 @@
+{
+  "custom": {},
+  "params": {},
+  "props": {
+    "defaultSize": {
+      "width": 260
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "Label_0"
+        },
+        "position": {
+          "basis": "21px",
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "classes": "BlueRidge/Menu/All_Header"
+          },
+          "text": "General",
+          "textStyle": {
+            "classes": "centered-text-with-lines BlueRidge/Components/Apex/textCenterAlign/bold/textMedium"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": {
+          "name": "Features"
+        },
+        "position": {
+          "basis": "144px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.items[0].style.fontWeight": {
+            "binding": {
+              "config": {
+                "path": "page.props.path"
+              },
+              "transforms": [
+                {
+                  "expression": "if ({value} \u003d {this.props.items[0].target}, \"bold\", \"normal\")",
+                  "type": "expression"
+                }
+              ],
+              "type": "property"
+            }
+          },
+          "props.items[1].enabled": {
+            "binding": {
+              "config": {
+                "expression": "isAuthorized(false, \"Authenticated/Roles/JET-RecipeAdmin\", \"Authenticated/Roles/JET-Administrator\", \"Authenticated/Roles/JET-Operator\")"
+              },
+              "type": "expr"
+            }
+          },
+          "props.items[1].style.fontWeight": {
+            "binding": {
+              "config": {
+                "path": "page.props.path"
+              },
+              "transforms": [
+                {
+                  "expression": "if ({value} \u003d {this.props.items[1].target}, \"bold\", \"normal\")",
+                  "type": "expression"
+                }
+              ],
+              "type": "property"
+            }
+          },
+          "props.items[2].enabled": {
+            "binding": {
+              "config": {
+                "expression": "isAuthorized(false, \"Authenticated/Roles/JET-RecipeAdmin\", \"Authenticated/Roles/JET-Administrator\", \"Authenticated/Roles/JET-Operator\")"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "backActionStyle": {
+            "classes": "BlueRidge/Menu/All_Header"
+          },
+          "backActionText": "All Features",
+          "itemStyle": {
+            "classes": "BlueRidge/Menu/Item"
+          },
+          "items": [
+            {
+              "items": [],
+              "label": {
+                "icon": {
+                  "path": "material/home"
+                },
+                "text": "Home"
+              },
+              "navIcon": {},
+              "showHeader": false,
+              "style": {
+                "classes": ""
+              },
+              "target": "/"
+            },
+            {
+              "backActionText": "",
+              "items": [],
+              "label": {
+                "icon": {
+                  "path": "material/cloud_upload"
+                },
+                "text": "CNC Loader"
+              },
+              "navIcon": {
+                "color": "",
+                "path": ""
+              },
+              "resetOnClick": false,
+              "showHeader": true,
+              "style": {
+                "classes": ""
+              },
+              "target": "/hmi/cncloader",
+              "visible": true
+            },
+            {
+              "backActionText": "",
+              "items": [],
+              "label": {
+                "icon": {
+                  "path": "material/add_to_queue"
+                },
+                "text": "HMI"
+              },
+              "navIcon": {
+                "color": "",
+                "path": ""
+              },
+              "resetOnClick": false,
+              "showHeader": true,
+              "style": {
+                "classes": "",
+                "fontWeight": "normal"
+              },
+              "target": "/hmi/head",
+              "visible": true
+            }
+          ],
+          "style": {
+            "classes": "BlueRidge/Menu/Menu"
+          }
+        },
+        "type": "ia.navigation.menutree"
+      },
+      {
+        "meta": {
+          "name": "Label"
+        },
+        "position": {
+          "basis": "21px",
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "classes": "BlueRidge/Menu/All_Header"
+          },
+          "text": "Config",
+          "textStyle": {
+            "classes": "centered-text-with-lines BlueRidge/Components/Apex/textCenterAlign/bold/textMedium"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": {
+          "name": "Features_0"
+        },
+        "position": {
+          "basis": "195px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.items[0].enabled": {
+            "binding": {
+              "config": {
+                "expression": "isAuthorized(false,\"Authenticated/Roles/JET-Administrator\")"
+              },
+              "type": "expr"
+            }
+          },
+          "props.items[0].style.fontWeight": {
+            "binding": {
+              "config": {
+                "path": "page.props.path"
+              },
+              "transforms": [
+                {
+                  "expression": "if ({value} \u003d {this.props.items[0].target}, \"bold\", \"normal\")",
+                  "type": "expression"
+                }
+              ],
+              "type": "property"
+            }
+          },
+          "props.items[1].enabled": {
+            "binding": {
+              "config": {
+                "expression": "isAuthorized(false, \"Authenticated/Roles/JET-RecipeAdmin\", \"Authenticated/Roles/JET-Administrator\")"
+              },
+              "type": "expr"
+            }
+          },
+          "props.items[2].enabled": {
+            "binding": {
+              "config": {
+                "expression": "isAuthorized(false, \"Authenticated/Roles/JET-RecipeAdmin\", \"Authenticated/Roles/JET-Administrator\")"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "backActionStyle": {
+            "classes": "BlueRidge/Menu/All_Header"
+          },
+          "backActionText": "All Features",
+          "itemStyle": {
+            "classes": "BlueRidge/Menu/Item"
+          },
+          "items": [
+            {
+              "items": [],
+              "label": {
+                "icon": {
+                  "path": "material/apartment"
+                },
+                "text": "Asset Model"
+              },
+              "navIcon": {},
+              "showHeader": false,
+              "style": {
+                "classes": ""
+              },
+              "target": "/assetmodel"
+            },
+            {
+              "backActionText": "",
+              "items": [],
+              "label": {
+                "icon": {
+                  "path": "material/receipt"
+                },
+                "text": "Recipe Management"
+              },
+              "navIcon": {
+                "color": "",
+                "path": ""
+              },
+              "resetOnClick": false,
+              "showHeader": true,
+              "style": {
+                "classes": "",
+                "fontWeight": "normal"
+              },
+              "target": "/recipe",
+              "visible": true
+            },
+            {
+              "backActionText": "",
+              "items": [],
+              "label": {
+                "icon": {
+                  "path": "material/control_point_duplicate"
+                },
+                "text": "Head Op Config"
+              },
+              "navIcon": {
+                "color": "",
+                "path": ""
+              },
+              "resetOnClick": false,
+              "showHeader": true,
+              "style": {
+                "classes": "",
+                "fontWeight": "normal"
+              },
+              "target": "/headconfig",
+              "visible": true
+            }
+          ],
+          "style": {
+            "classes": "BlueRidge/Menu/Menu"
+          }
+        },
+        "type": "ia.navigation.menutree"
+      }
+    ],
+    "events": {
+      "dom": {
+        "onBlur": {
+          "config": {
+            "script": "\n\tsystem.perspective.closeDock(\"menu\")"
+          },
+          "scope": "G",
+          "type": "script"
+        }
+      }
+    },
+    "meta": {
+      "name": "root",
+      "tabIndex": 1
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "BlueRidge/Menu/Menu"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

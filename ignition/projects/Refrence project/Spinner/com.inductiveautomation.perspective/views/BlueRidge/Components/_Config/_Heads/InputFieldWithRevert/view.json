@@ -1,0 +1,171 @@
+{
+  "custom": {
+    "changeDetected": false
+  },
+  "params": {
+    "confirmationMessageHandler": "value",
+    "newValue": "value",
+    "newValueConfirmation": false,
+    "originalValue": "value",
+    "textStyle": {
+      "classes": "animated-content"
+    }
+  },
+  "propConfig": {
+    "custom.changeDetected": {
+      "binding": {
+        "config": {
+          "expression": "{view.params.originalValue} !\u003d {view.params.newValue}"
+        },
+        "type": "expr"
+      },
+      "persistent": true
+    },
+    "params.confirmationMessageHandler": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.newValue": {
+      "paramDirection": "output",
+      "persistent": true
+    },
+    "params.newValueConfirmation": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.originalValue": {
+      "onChange": {
+        "enabled": null,
+        "script": "\tself.params.newValue \u003d currentValue.value"
+      },
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.textStyle": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 69,
+      "width": 358
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "TextField"
+        },
+        "position": {
+          "basis": "32px",
+          "grow": 5,
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.style": {
+            "binding": {
+              "config": {
+                "path": "view.params.textStyle"
+              },
+              "type": "property"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "bidirectional": true,
+                "path": "view.params.newValue"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "deferUpdates": false,
+          "rejectUpdatesWhileFocused": false
+        },
+        "type": "ia.input.text-field"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\t\n\tsystem.perspective.sendMessage(\n\t\tself.view.params.confirmationMessageHandler,\n\t\t{\"previousValue\":self.view.params.originalValue,\n\t\t\"newValue\":self.view.params.newValue\n\t\t}\n\t)\n"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "Button",
+          "tooltip": {
+            "enabled": true,
+            "text": "Accept Changes"
+          }
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.basis": {
+            "binding": {
+              "config": {
+                "expression": "if({this.position.grow} \u003d 1, \"30px\",\"0px\")"
+              },
+              "type": "expr"
+            }
+          },
+          "position.grow": {
+            "binding": {
+              "config": {
+                "path": "view.custom.changeDetected"
+              },
+              "transforms": [
+                {
+                  "expression": "toInt({value})",
+                  "type": "expression"
+                }
+              ],
+              "type": "property"
+            }
+          },
+          "props.enabled": {
+            "binding": {
+              "config": {
+                "path": "view.custom.changeDetected"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "image": {
+            "icon": {
+              "color": "#FFFFFF",
+              "path": "material/check"
+            }
+          },
+          "style": {
+            "backgroundColor": "#28C33B",
+            "classes": "animated-button"
+          },
+          "text": ""
+        },
+        "type": "ia.input.button"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "style": {
+        "classes": "container"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "custom": {},
+  "params": {
+    "text": "Button",
+    "view": "value"
+  },
+  "propConfig": {
+    "params.text": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.view": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 34,
+      "width": 300
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": [
+              {
+                "config": {
+                  "script": "#\tsystem.perspective.navigate(\u0027/hmi/cncloader/recipeselection\u0027)\n\tview \u003d self.view.params.view\n#\tsystem.perspective.print(view)\n\tsystem.perspective.sendMessage(\u0027navigate\u0027,view)"
+                },
+                "scope": "G",
+                "type": "script"
+              },
+              {
+                "config": {
+                  "page": "{view.params.view}"
+                },
+                "enabled": false,
+                "scope": "C",
+                "type": "nav"
+              }
+            ]
+          }
+        },
+        "meta": {
+          "name": "Button"
+        },
+        "position": {
+          "basis": "34px",
+          "grow": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.text"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "image": {
+            "icon": {
+              "path": "material/chevron_right"
+            },
+            "position": "right"
+          }
+        },
+        "type": "ia.input.button"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column"
+    },
+    "type": "ia.container.flex"
+  }
+}

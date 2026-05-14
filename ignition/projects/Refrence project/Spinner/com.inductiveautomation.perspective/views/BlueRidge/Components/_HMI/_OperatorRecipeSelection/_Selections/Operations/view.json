@@ -1,0 +1,123 @@
+{
+  "custom": {
+    "headGroups": null
+  },
+  "params": {
+    "Parts": [
+      {
+        "Options": [
+          834510,
+          834540
+        ],
+        "PartType": "Gen 3/4"
+      },
+      {
+        "Options": [
+          835460,
+          835480
+        ],
+        "PartType": "Gen V"
+      },
+      {
+        "Options": [
+          835460,
+          835480
+        ],
+        "PartType": "Gen V"
+      },
+      {
+        "Options": [
+          835460,
+          835480
+        ],
+        "PartType": "Gen V"
+      },
+      {
+        "Options": [
+          835460,
+          835480
+        ],
+        "PartType": "Gen V"
+      },
+      {
+        "Options": [
+          835460,
+          835480
+        ],
+        "PartType": "Gen V"
+      }
+    ]
+  },
+  "propConfig": {
+    "custom.headGroups": {
+      "binding": {
+        "config": {
+          "parameters": {
+            "head": "{session.custom.hMISelections.selectedPart}"
+          },
+          "queryPath": "recipe/getOperationsByHead",
+          "returnFormat": "json"
+        },
+        "overlayOptOut": true,
+        "transforms": [
+          {
+            "code": "\ttry:\n\t\tself.session.custom.hMISelections.selectedOperation.append(value[0][\u0027headOperationUUID\u0027])\n\texcept:\n\t\tpass\n\treturn value",
+            "type": "script"
+          }
+        ],
+        "type": "query"
+      },
+      "persistent": true
+    },
+    "params.Parts": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 583,
+      "width": 985
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "FlexRepeater"
+        },
+        "position": {
+          "basis": "320px",
+          "grow": 1
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "config": {
+                "path": "view.custom.headGroups"
+              },
+              "overlayOptOut": true,
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "alignContent": "space-around",
+          "alignItems": "center",
+          "justify": "space-around",
+          "path": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_Selections/OperationButton",
+          "wrap": "wrap"
+        },
+        "type": "ia.display.flex-repeater"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "justify": "space-around"
+    },
+    "type": "ia.container.flex"
+  }
+}

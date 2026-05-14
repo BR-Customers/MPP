@@ -1,0 +1,670 @@
+{
+  "custom": {
+    "currentType": "Probing - All",
+    "filter": "",
+    "instance": {
+      "aspectRatio": "",
+      "available": true,
+      "configs": [
+        {
+          "active": true,
+          "headConfigUUID": "B110433E-F36B-1410-867B-0089BD1F4857",
+          "headUUID": "44116C4B-7208-F111-8CBF-000C2986FE9B",
+          "lastEdited": {
+            "$": [
+              "ts",
+              192,
+              1773176083229
+            ],
+            "$ts": 1773162287150
+          },
+          "lastEditedBy": "hkraft",
+          "name": "834510"
+        },
+        {
+          "active": true,
+          "headConfigUUID": "B710433E-F36B-1410-867B-0089BD1F4857",
+          "headUUID": "44116C4B-7208-F111-8CBF-000C2986FE9B",
+          "lastEdited": {
+            "$": [
+              "ts",
+              192,
+              1773176083229
+            ],
+            "$ts": 1773162418690
+          },
+          "lastEditedBy": "hkraft",
+          "name": "835480"
+        }
+      ],
+      "extensionTypeUUID": null,
+      "name": "Gen V"
+    },
+    "instances": [
+      {
+        "available": true,
+        "key": "44116C4B-7208-F111-8CBF-000C2986FE9B",
+        "text": "Gen V",
+        "value": "",
+        "view": "44116C4B-7208-F111-8CBF-000C2986FE9B"
+      }
+    ],
+    "operation": null,
+    "pageToShow": "Operation",
+    "selectedConfig": null,
+    "selectedConfigName": "",
+    "selectedData": "44116C4B-7208-F111-8CBF-000C2986FE9B",
+    "triggerRefresh": true
+  },
+  "params": {},
+  "permissions": {
+    "securityLevels": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "children": [],
+                "name": "JET-Administrator"
+              },
+              {
+                "children": [],
+                "name": "JET-RecipeAdmin"
+              }
+            ],
+            "name": "Roles"
+          }
+        ],
+        "name": "Authenticated"
+      }
+    ],
+    "type": "AnyOf"
+  },
+  "propConfig": {
+    "custom.currentType": {
+      "persistent": true
+    },
+    "custom.filter": {
+      "persistent": true
+    },
+    "custom.instance": {
+      "binding": {
+        "config": {
+          "path": "view.custom.triggerRefresh"
+        },
+        "overlayOptOut": true,
+        "transforms": [
+          {
+            "code": "\treturn BlueRidge.Config.HeadConfig.getOne(self.view.custom.selectedData)",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      },
+      "onChange": {
+        "enabled": false,
+        "script": "\tif origin \u003d\u003d \u0027BindingWriteback\u0027:\n\t\tdata \u003d self.custom.instance\n\t\tdata \u003d BlueRidge.Recipe.Util.convertWrapperObjectToJson(data)\n\t\tdata[\u0027user\u0027]\u003dself.session.props.auth.user.userName\n\t\tresp \u003d BlueRidge.Recipe.Operation.update(data)\n\t\tif resp \u003d\u003d -1:\n\t\t\tsystem.perspective.sendMessage(\"refreshTrigger\")\n\t\t\tpass"
+      },
+      "persistent": true
+    },
+    "custom.instances": {
+      "binding": {
+        "config": {
+          "path": "view.custom.triggerRefresh"
+        },
+        "transforms": [
+          {
+            "expression": "runScript(\u0027BlueRidge.Config.HeadConfig.getAll\u0027,0)",
+            "type": "expression"
+          },
+          {
+            "code": "\tvalue.sort(key\u003dlambda x: x[\u0027text\u0027])\n\treturn value",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.pageToShow": {
+      "binding": {
+        "config": {
+          "path": "view.custom.selectedData"
+        },
+        "transforms": [
+          {
+            "expression": "if({value}!\u003d0,\"Operation\",\"\")",
+            "type": "expression"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.selectedData": {
+      "persistent": true
+    },
+    "custom.triggerRefresh": {
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 1000
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Label"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "props": {
+                  "style": {
+                    "classes": "BlueRidge/boldTextLarge"
+                  },
+                  "text": "Head Groups"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "events": {
+                  "dom": {
+                    "onClick": {
+                      "config": {
+                        "draggable": true,
+                        "id": "Filter",
+                        "modal": false,
+                        "overlayDismiss": false,
+                        "resizable": true,
+                        "showCloseIcon": true,
+                        "type": "open",
+                        "viewPath": "BlueRidge/Components/_Recipe/Popups/Filter",
+                        "viewportBound": false
+                      },
+                      "scope": "C",
+                      "type": "popup"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "Icon"
+                },
+                "position": {
+                  "basis": "30px"
+                },
+                "propConfig": {
+                  "props.color": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.filter"
+                      },
+                      "transforms": [
+                        {
+                          "expression": "if({value}\u003d\u0027\u0027,\u0027black\u0027,\u0027#00FF00\u0027)",
+                          "type": "expression"
+                        }
+                      ],
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "path": "material/filter_list"
+                },
+                "type": "ia.display.icon"
+              }
+            ],
+            "meta": {
+              "name": "FlexContainer"
+            },
+            "position": {
+              "basis": "50px",
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "overflow": "hidden",
+                "padding": 10
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Label"
+                },
+                "position": {
+                  "basis": "25px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.filter"
+                      },
+                      "transforms": [
+                        {
+                          "code": "\t#filter \u003d {\u0027typeFilter\u0027:typeFilter,\u0027engineFilter\u0027:engineFilter}\n\tif value and value !\u003d 0:\n\t\ttypeFilter \u003d value[\u0027typeFilter\u0027]\n\t\tengineFilter \u003d value[\u0027engineFilter\u0027]\n\t\toptype \u003d BlueRidge.Config.OperationType.getOne(typeFilter)\n\t\tentype \u003d BlueRidge.Config.Engine.getOne(engineFilter)\n\t\topName \u003d optype.get(\u0027name\u0027)\n\t\tenName \u003d entype.get(\u0027name\u0027)\n\t\tresp \u003d \u0027Filter: \u0027\n\t\tif opName:\n\t\t\tresp +\u003d \u0027{} \u0027.format(opName)\n\t\tif enName:\n\t\t\tresp +\u003d \u0027{}\u0027.format(enName)\n\telse:\n\t\tresp \u003d \u0027\u0027\n\treturn resp",
+                          "type": "script"
+                        }
+                      ],
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "paddingRight": 20,
+                    "textAlign": "right"
+                  }
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "FlexRepeater"
+                    },
+                    "propConfig": {
+                      "props.instances": {
+                        "binding": {
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.instances"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "column",
+                      "elementStyle": {
+                        "marginBottom": 10
+                      },
+                      "path": "BlueRidge/Components/_Config/_Heads/HeadGroupButton",
+                      "useDefaultViewWidth": false
+                    },
+                    "type": "ia.display.flex-repeater"
+                  },
+                  {
+                    "events": {
+                      "dom": {
+                        "onClick": {
+                          "config": {
+                            "script": "#\tsystem.perspective.sendMessage(\"OneShotButtonOperation\", 0)\n\tsystem.perspective.sendMessage(\"HeadGroupButton\", {\u0027view\u0027:0})"
+                          },
+                          "scope": "G",
+                          "type": "script"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "name": "FlexContainer"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "FlexContainer"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "paddingBottom": 10,
+                    "paddingLeft": 10,
+                    "paddingRight": 10,
+                    "paddingTop": 10
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "ListOfButton"
+            },
+            "position": {
+              "basis": "250px",
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "marginBottom": 5
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": [
+                      {
+                        "config": {
+                          "script": "\toperations \u003d self.view.custom.instances\n\tnextOpKey \u003d len(operations)+1\n\tnewOperation \u003d {\n\t  \"type\": \"\",\n\t  \"view\": nextOpKey,\n\t  \"messageType\": \"OneShotButtonOperation\",\n\t  \"text\": \"New Operation\",\n\t  \"value\": nextOpKey,\n\t  \"key\": nextOpKey\n\t}\n\toperations.append(newOperation)\n\tself.view.custom.instances \u003d operations"
+                        },
+                        "scope": "G",
+                        "type": "script"
+                      },
+                      {
+                        "config": {
+                          "draggable": true,
+                          "id": "AddToAssetModel",
+                          "modal": false,
+                          "overlayDismiss": false,
+                          "resizable": true,
+                          "showCloseIcon": true,
+                          "type": "open",
+                          "viewParams": {
+                            "data": "{view.params.data}",
+                            "script": "{view.params.script}"
+                          },
+                          "viewPath": "BlueRidge/Components/_Recipe/Popups/AddToAssetModel",
+                          "viewportBound": false
+                        },
+                        "enabled": false,
+                        "scope": "C",
+                        "type": "popup"
+                      }
+                    ]
+                  }
+                },
+                "meta": {
+                  "name": "AddButton"
+                },
+                "position": {
+                  "basis": "100px"
+                },
+                "props": {
+                  "style": {
+                    "classes": "BlueRidge/Components/actionButtonRound"
+                  },
+                  "text": "Add"
+                },
+                "type": "ia.input.button"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": [
+                      {
+                        "config": {
+                          "draggable": true,
+                          "id": "confirm",
+                          "modal": false,
+                          "overlayDismiss": false,
+                          "resizable": true,
+                          "showCloseIcon": true,
+                          "title": "Archive",
+                          "type": "open",
+                          "viewParams": {
+                            "data": "{view.custom.operation}",
+                            "script": "{view.params.script}"
+                          },
+                          "viewPath": "BlueRidge/Components/_Recipe/Popups/Confirm",
+                          "viewportBound": false
+                        },
+                        "scope": "C",
+                        "type": "popup"
+                      },
+                      {
+                        "config": {
+                          "script": "\tscript \u003d self.view.params.script.replace(\u0027/\u0027,\u0027.\u0027)\n\tdata \u003d self.view.params.data\n\tfunction \u003d \u0027archive\u0027\n#\tsystem.perspective.print(script+\u0027.{0}({1})\u0027.format(function,data))\n\teval(script+\".{0}(\u0027{1}\u0027)\".format(function,data))\n\tsystem.perspective.sendMessage(\"refreshTrigger\")"
+                        },
+                        "enabled": false,
+                        "scope": "G",
+                        "type": "script"
+                      }
+                    ]
+                  }
+                },
+                "meta": {
+                  "name": "ArchiveButton"
+                },
+                "position": {
+                  "basis": "100px"
+                },
+                "props": {
+                  "style": {
+                    "classes": "BlueRidge/Components/dangerButtonRound"
+                  },
+                  "text": "Archive"
+                },
+                "type": "ia.input.button"
+              }
+            ],
+            "meta": {
+              "name": "AddArchiveButtons"
+            },
+            "position": {
+              "basis": "50px",
+              "display": false
+            },
+            "props": {
+              "alignItems": "center",
+              "justify": "space-evenly",
+              "style": {
+                "paddingLeft": 10,
+                "paddingRight": 10
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "EmbeddedView"
+            },
+            "position": {
+              "basis": "50px",
+              "display": false
+            },
+            "propConfig": {
+              "props.params.data": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.operation"
+                  },
+                  "overlayOptOut": true,
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "params": {
+                "script": "BlueRidge/Recipe/Operation"
+              },
+              "path": "BlueRidge/Components/_Recipe/AddArchiveButtons"
+            },
+            "type": "ia.display.view"
+          }
+        ],
+        "meta": {
+          "name": "LeftSide"
+        },
+        "position": {
+          "basis": "250px",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "BlueRidge/Menu/Menu"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Label"
+            },
+            "position": {
+              "basis": "32px",
+              "grow": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.custom.pageToShow} \u003d \"\""
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "backgroundColor": "#AAAAAA",
+                "textAlign": "center"
+              },
+              "text": "Select an item on the left"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "Operation"
+            },
+            "position": {
+              "basis": "320px",
+              "grow": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.pageToShow"
+                  },
+                  "transforms": [
+                    {
+                      "expression": "{value}\u003d{this.meta.name}",
+                      "type": "expression"
+                    }
+                  ],
+                  "type": "property"
+                }
+              },
+              "props.params.configs": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.instance.configs"
+                  },
+                  "overlayOptOut": true,
+                  "type": "property"
+                }
+              },
+              "props.params.headUUID": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.selectedData"
+                  },
+                  "overlayOptOut": true,
+                  "type": "property"
+                },
+                "persistent": true
+              },
+              "props.params.operation": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.operation"
+                  },
+                  "enabled": false,
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "params": {
+                "headUUID": "44116C4B-7208-F111-8CBF-000C2986FE9B",
+                "operation": {
+                  "available": false,
+                  "engines": [],
+                  "key": "",
+                  "name": "",
+                  "type": ""
+                }
+              },
+              "path": "BlueRidge/Components/_Recipe/HeadConfigurations"
+            },
+            "type": "ia.display.view"
+          }
+        ],
+        "meta": {
+          "name": "RightSide"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "direction": "column"
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "refreshTrigger",
+          "pageScope": true,
+          "script": "\tselectedData \u003d self.view.custom.selectedData\n\ttrigger \u003d self.view.custom.triggerRefresh\n\tself.view.custom.triggerRefresh \u003d not trigger\n#\tself.view.custom.selectedData \u003d \u0027\u0027\t\n\tif selectedData:\n\t\tsystem.perspective.sendMessage(\u0027OneShotButtonOperation\u0027, selectedData)",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "OneShotButtonOperation",
+          "pageScope": false,
+          "script": "\tself.view.custom.selectedData \u003d payload",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "filterUpdate",
+          "pageScope": true,
+          "script": "\tself.view.custom.filter \u003d payload\n\tsystem.perspective.sendMessage(\"refreshTrigger\")",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "archiveButton",
+          "pageScope": true,
+          "script": "\tif type(payload) \u003d\u003d dict:\n\t\tif \u0027type\u0027 in payload.keys():\n\t\t\tremoveKey \u003d payload[\u0027key\u0027]\n\t\t\toperations \u003d self.view.custom.instances\n\t\t\tnew_operations \u003d [d for d in operations if d.get(\u0027key\u0027) !\u003d removeKey]\n\t\t\tself.view.custom.instances \u003d new_operations\n\t\t\tself.view.custom.selectedData \u003d 0",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "HeadGroupButton",
+          "pageScope": true,
+          "script": "\tself.view.custom.selectedData \u003d payload[\u0027view\u0027]\n\tsystem.perspective.sendMessage(\"HeadConfigButton\", {\u0027view\u0027:0, \u0027text\u0027:0})\n\ttrigger \u003d self.view.custom.triggerRefresh\n\tself.view.custom.triggerRefresh \u003d not trigger\n\ttrigger \u003d self.view.custom.triggerRefresh\n\tself.view.custom.triggerRefresh \u003d not trigger",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

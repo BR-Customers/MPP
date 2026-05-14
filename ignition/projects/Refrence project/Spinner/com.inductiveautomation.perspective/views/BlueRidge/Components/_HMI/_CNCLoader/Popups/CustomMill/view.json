@@ -1,0 +1,447 @@
+{
+  "custom": {
+    "OperationParams": "",
+    "selected": 0
+  },
+  "params": {
+    "key": ""
+  },
+  "propConfig": {
+    "custom.OperationParams": {
+      "binding": {
+        "config": {
+          "path": "view.params.key"
+        },
+        "transforms": [
+          {
+            "code": "\t#Get ParamList\n\textensionTypeUUID \u003d self.session.custom.equipment.extension\n\tOperationParameterLists \u003d BlueRidge.HMI.CNCLoader.ParameterList.getAll(value)\n\tOperationParameterList \u003d next((v for v in OperationParameterLists if v[\u0027extensionTypeUUID\u0027] \u003d\u003d extensionTypeUUID),None)\n\tif OperationParameterList: \n\t\tOperationParameterListUUID \u003d OperationParameterList[\u0027key\u0027]\n\t\tOperationParameters \u003d BlueRidge.HMI.CNCLoader.EngineParameter.getAll(OperationParameterListUUID)\n\t\treturn OperationParameters\n\treturn value",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.selected": {
+      "binding": {
+        "config": {
+          "path": "session.custom.selectedMill"
+        },
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "params.key": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 400,
+      "width": 650
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Label_0"
+            },
+            "position": {
+              "basis": "50px"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.data"
+                  },
+                  "enabled": false,
+                  "transforms": [
+                    {
+                      "expression": "\"Item to be archived: \"+runScript(\"BlueRidge.Recipe.Util.extractQualifiedValues\",0,{value})",
+                      "type": "expression"
+                    }
+                  ],
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "BlueRidge/boldTitleLarge"
+              },
+              "text": "Custom Selection"
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": {
+          "name": "Top"
+        },
+        "position": {
+          "basis": "50px"
+        },
+        "props": {
+          "direction": "column",
+          "justify": "center"
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Choice1"
+                    },
+                    "position": {
+                      "basis": "40px"
+                    },
+                    "propConfig": {
+                      "meta.visible": {
+                        "binding": {
+                          "config": {
+                            "expression": "{this.props.params.text}!\u003dnull"
+                          },
+                          "type": "expr"
+                        }
+                      },
+                      "props.params.text": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.OperationParams"
+                          },
+                          "transforms": [
+                            {
+                              "code": "\tfor param in value:\n\t\tif param[\u0027Assignment\u0027] \u003d\u003d self.props.params.view:\n\t\t\treturn param[\u0027Name\u0027]",
+                              "type": "script"
+                            }
+                          ],
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "params": {
+                        "messageID": "CustomMill",
+                        "type": "",
+                        "value": 0,
+                        "view": 200
+                      },
+                      "path": "BlueRidge/Components/_HMI/_CNCLoader/ButtonOfLists_Oneshot",
+                      "useDefaultViewWidth": true
+                    },
+                    "type": "ia.display.view"
+                  },
+                  {
+                    "meta": {
+                      "name": "Choice2"
+                    },
+                    "position": {
+                      "basis": "40px"
+                    },
+                    "propConfig": {
+                      "meta.visible": {
+                        "binding": {
+                          "config": {
+                            "expression": "{this.props.params.text}!\u003dnull"
+                          },
+                          "type": "expr"
+                        }
+                      },
+                      "props.params.text": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.OperationParams"
+                          },
+                          "transforms": [
+                            {
+                              "code": "\tfor param in value:\n\t\tif param[\u0027Assignment\u0027] \u003d\u003d self.props.params.view:\n\t\t\treturn param[\u0027Name\u0027]",
+                              "type": "script"
+                            }
+                          ],
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "params": {
+                        "messageID": "CustomMill",
+                        "type": "",
+                        "value": 0,
+                        "view": 201
+                      },
+                      "path": "BlueRidge/Components/_HMI/_CNCLoader/ButtonOfLists_Oneshot",
+                      "useDefaultViewWidth": true
+                    },
+                    "type": "ia.display.view"
+                  },
+                  {
+                    "meta": {
+                      "name": "Choice3"
+                    },
+                    "position": {
+                      "basis": "40px"
+                    },
+                    "propConfig": {
+                      "meta.visible": {
+                        "binding": {
+                          "config": {
+                            "expression": "{this.props.params.text}!\u003dnull"
+                          },
+                          "type": "expr"
+                        }
+                      },
+                      "props.params.text": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.OperationParams"
+                          },
+                          "transforms": [
+                            {
+                              "code": "\tfor param in value:\n\t\tif param[\u0027Assignment\u0027] \u003d\u003d self.props.params.view:\n\t\t\treturn param[\u0027Name\u0027]",
+                              "type": "script"
+                            }
+                          ],
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "params": {
+                        "messageID": "CustomMill",
+                        "type": "",
+                        "value": 0,
+                        "view": 202
+                      },
+                      "path": "BlueRidge/Components/_HMI/_CNCLoader/ButtonOfLists_Oneshot",
+                      "useDefaultViewWidth": true
+                    },
+                    "type": "ia.display.view"
+                  }
+                ],
+                "meta": {
+                  "name": "TopRight"
+                },
+                "position": {
+                  "basis": "320px"
+                },
+                "props": {
+                  "alignItems": "center",
+                  "direction": "column",
+                  "justify": "space-evenly"
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "Top"
+            },
+            "position": {
+              "basis": "200px"
+            },
+            "props": {
+              "justify": "center"
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Label"
+                },
+                "position": {
+                  "basis": "50px",
+                  "grow": 1
+                },
+                "props": {
+                  "style": {
+                    "textAlign": "center"
+                  },
+                  "text": "Please select an operation first!"
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "FlexContainer"
+            },
+            "position": {
+              "basis": "50px",
+              "grow": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "len({view.params.key})\u003c2"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Middle"
+        },
+        "position": {
+          "basis": "250px",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column"
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": [
+                  {
+                    "config": {
+                      "script": "\tvalue \u003d 0\n\tmessageID \u003d \"Milling-Custom\"\n\tmessage \u003d {\"messageID\":messageID,\"value\":value,}\n\tsystem.perspective.sendMessage(\u0027OneShotButton\u0027, message)\n\tsystem.perspective.closePopup(\u0027CustomMill\u0027)"
+                    },
+                    "scope": "G",
+                    "type": "script"
+                  },
+                  {
+                    "config": {
+                      "draggable": true,
+                      "id": "BlockConfig",
+                      "modal": false,
+                      "overlayDismiss": false,
+                      "resizable": true,
+                      "showCloseIcon": true,
+                      "type": "close",
+                      "viewPath": "BlueRidge/Components/_HMI/_CNCLoader/Popups/CustomMill",
+                      "viewportBound": false
+                    },
+                    "enabled": false,
+                    "scope": "C",
+                    "type": "popup"
+                  }
+                ]
+              }
+            },
+            "meta": {
+              "name": "CancelButton"
+            },
+            "position": {
+              "basis": "150px"
+            },
+            "props": {
+              "style": {
+                "classes": "BlueRidge/Components/dangerButtonRound"
+              },
+              "text": "Cancel Selection"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": [
+                  {
+                    "config": {
+                      "script": "\tselected \u003d self.view.custom.selected\n\tself.session.custom.selectedMill \u003d selected\n\tsystem.perspective.closePopup(\u0027CustomMill\u0027)"
+                    },
+                    "scope": "G",
+                    "type": "script"
+                  },
+                  {
+                    "config": {
+                      "page": "/hmi/cncloader/recipesubmission"
+                    },
+                    "enabled": false,
+                    "scope": "C",
+                    "type": "nav"
+                  },
+                  {
+                    "config": {
+                      "draggable": true,
+                      "id": "BlockConfig",
+                      "modal": false,
+                      "overlayDismiss": false,
+                      "resizable": true,
+                      "showCloseIcon": true,
+                      "type": "close",
+                      "viewPath": "BlueRidge/Components/_HMI/_CNCLoader/Popups/BlockConfig",
+                      "viewportBound": false
+                    },
+                    "enabled": false,
+                    "scope": "C",
+                    "type": "popup"
+                  },
+                  {
+                    "config": {
+                      "script": "#\tscript \u003d self.view.params.script.replace(\u0027/\u0027,\u0027.\u0027)\n\tdata \u003d BlueRidge.Recipe.Util.convertWrapperObjectToJson(self.view.params.data)\n\tfunction \u003d \u0027archive\u0027\n#\tsystem.perspective.print(script+\u0027.{0}({1})\u0027.format(function,data))\n#\tresp \u003d eval(script+\".{0}(\u0027{1}\u0027)\".format(function,data))\n\tif resp \u003d\u003d \u0027success\u0027:\n\t\tsystem.perspective.sendMessage(\"refreshTrigger\")\n\t\tsystem.perspective.closePopup(\u0027BlockConfig\u0027)"
+                    },
+                    "enabled": false,
+                    "scope": "G",
+                    "type": "script"
+                  }
+                ]
+              }
+            },
+            "meta": {
+              "name": "YesButton"
+            },
+            "position": {
+              "basis": "150px"
+            },
+            "props": {
+              "style": {
+                "classes": "BlueRidge/Components/actionButtonRound"
+              },
+              "text": "Confirm Selection"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "Bottom"
+        },
+        "position": {
+          "basis": "50px"
+        },
+        "props": {
+          "alignItems": "flex-start",
+          "justify": "space-evenly"
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column"
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "OneShotButton",
+          "pageScope": true,
+          "script": "#\tsystem.perspective.print(payload)\n\tmessageID \u003d payload[\"messageID\"]\n\tvalue \u003d payload[\"value\"]\n\tself.view.custom.selected \u003d value",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

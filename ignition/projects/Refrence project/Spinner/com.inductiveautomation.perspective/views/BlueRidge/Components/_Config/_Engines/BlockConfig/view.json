@@ -1,0 +1,110 @@
+{
+  "custom": {
+    "blockConfig": {
+      "assignedNumbers": [
+        4,
+        3,
+        2,
+        1
+      ],
+      "available": true,
+      "bankCount": 1,
+      "cylinderCount": 4,
+      "key": "5CEE4113-478C-41B8-BD90-362E0EB5AF9F",
+      "name": "4 Cylinder",
+      "type": "blockConfig"
+    },
+    "selectedCylinders": [
+      [
+        1,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0
+      ]
+    ]
+  },
+  "params": {
+    "key": "5CEE4113-478C-41B8-BD90-362E0EB5AF9F"
+  },
+  "propConfig": {
+    "custom.blockConfig": {
+      "binding": {
+        "config": {
+          "path": "view.params.key"
+        },
+        "transforms": [
+          {
+            "expression": "runScript(\u0027BlueRidge.Config.BlockConfig.getOne\u0027,0,{value})",
+            "type": "expression"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.selectedCylinders": {
+      "persistent": true
+    },
+    "params.key": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 120,
+      "width": 200
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "FlexRepeater"
+        },
+        "position": {
+          "basis": "200px",
+          "grow": 1
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "config": {
+                "path": "view.custom.blockConfig"
+              },
+              "transforms": [
+                {
+                  "code": "\treturn BlueRidge.Config.BlockConfig.getBanks(value)",
+                  "type": "script"
+                }
+              ],
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "elementStyle": {
+            "marginBottom": 10
+          },
+          "path": "BlueRidge/Components/_Config/_Engines/_BlockConfig/BankOfCylinders"
+        },
+        "type": "ia.display.flex-repeater"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "justify": "flex-end"
+    },
+    "type": "ia.container.flex"
+  }
+}

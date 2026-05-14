@@ -1,0 +1,191 @@
+{
+  "custom": {
+    "getCylindersData": {
+      "bankAssignedNumbers": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "bankCount": 1,
+      "bankNumber": 1,
+      "bankSelections": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "cylinderCount": 4,
+      "key": "5CEE4113-478C-41B8-BD90-362..."
+    },
+    "instances": [
+      {
+        "assignedNumber": 1,
+        "selected": 0
+      },
+      {
+        "assignedNumber": 2,
+        "selected": 0
+      },
+      {
+        "assignedNumber": 3,
+        "selected": 0
+      },
+      {
+        "assignedNumber": 4,
+        "selected": 0
+      }
+    ]
+  },
+  "params": {
+    "bankAssignedNumbers": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "bankCount": 1,
+    "bankNumber": 1,
+    "bankSelections": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "cylinderCount": 4,
+    "example_data": {
+      "bankAssignedNumbers": [
+        4,
+        3,
+        2,
+        1
+      ],
+      "bankCount": 1,
+      "bankNumber": 1,
+      "cylinderCount": 4,
+      "key": "5CEE4113-478C-41B8-BD90-362E0EB5AF9F"
+    },
+    "key": "5CEE4113-478C-41B8-BD90-362..."
+  },
+  "propConfig": {
+    "custom.getCylindersData": {
+      "binding": {
+        "config": {
+          "struct": {
+            "bankAssignedNumbers": "{view.params.bankAssignedNumbers}",
+            "bankCount": "{view.params.bankCount}",
+            "bankNumber": "{view.params.bankNumber}",
+            "bankSelections": "{view.params.bankSelections}",
+            "cylinderCount": "{view.params.cylinderCount}",
+            "key": "{view.params.key}"
+          },
+          "waitOnAll": true
+        },
+        "type": "expr-struct"
+      },
+      "persistent": true
+    },
+    "custom.instances": {
+      "binding": {
+        "config": {
+          "path": "view.custom.getCylindersData"
+        },
+        "transforms": [
+          {
+            "code": "\treturn BlueRidge.HMI.CNCLoader.BlockConfig.getCylinders(value)",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      },
+      "onChange": {
+        "enabled": null,
+        "script": "\tif origin \u003d\u003d \u0027BindingWriteback\u0027:\n\t\tbankNumber \u003d self.view.params.bankNumber\n\t\tinstances \u003d currentValue.value\n#\t\tsystem.perspective.print(\u0027instances: {}\u0027.format(instances))\n\t\tbankSelectedCylinders \u003d [instance.value.get(\u0027selected\u0027).value for instance in instances]\n\t\n#\t\tsystem.perspective.print(\u0027bankNumber: {}\u0027.format(bankNumber))\n#\t\tsystem.perspective.print(\u0027bankSelectedCylinders: {}\u0027.format(bankSelectedCylinders))\n\t\tsystem.perspective.sendMessage(\"selectCylinders\",{\u0027bankNumber\u0027:bankNumber-1,\u0027bankSelectedCylinders\u0027:bankSelectedCylinders})"
+      },
+      "persistent": true
+    },
+    "params.bankAssignedNumbers": {
+      "paramDirection": "inout",
+      "persistent": true
+    },
+    "params.bankCount": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.bankNumber": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.bankSelections": {
+      "paramDirection": "inout",
+      "persistent": true
+    },
+    "params.cylinderCount": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.example_data": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.key": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "props.defaultSize.width": {
+      "binding": {
+        "config": {
+          "expression": "floor({view.params.cylinderCount}/{view.params.bankCount})*100"
+        },
+        "type": "expr"
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 100
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "FlexRepeater"
+        },
+        "position": {
+          "basis": "100px",
+          "grow": 1
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "config": {
+                "bidirectional": true,
+                "path": "view.custom.instances"
+              },
+              "type": "property"
+            },
+            "onChange": {
+              "enabled": null,
+              "script": "\tif origin \u003d\u003d \u0027BindingWriteback\u0027:\n\t\tbankNumber \u003d self.view.params.bankNumber\n\t\tinstances \u003d currentValue.value\n\t\tbankSelectedCylinders \u003d [instance.value[\u0027selected\u0027].value for instance in instances]\n\t\n\t\tsystem.perspective.print(\u0027bankNumber: {}\u0027.format(bankNumber))\n\t\tsystem.perspective.print(\u0027bankSelectedCylinders: {}\u0027.format(bankSelectedCylinders))\n#\t\tsystem.perspective.sendMessage(\"selectCylinders\",{\u0027bankNumber\u0027:bankNumber-1,\u0027bankSelectedCylinders\u0027:bankSelectedCylinders})"
+            }
+          }
+        },
+        "props": {
+          "path": "BlueRidge/Components/_HMI/_CNCLoader/Popups/_BlockConfig/CylinderOfBank",
+          "style": {
+            "backgroundColor": "--callToAction"
+          }
+        },
+        "type": "ia.display.flex-repeater"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column"
+    },
+    "type": "ia.container.flex"
+  }
+}

@@ -1,0 +1,227 @@
+{
+  "custom": {
+    "changeDetected": true
+  },
+  "params": {
+    "confirmationMessageHandler": "value",
+    "newValue": "0EA5333F-9831-41E1-866A-B226674298DC",
+    "newValueConfirmation": false,
+    "options": [
+      {
+        "label": ".JPG",
+        "value": "89E76621-46FA-4DB8-A832-05F6344D63B0"
+      },
+      {
+        "label": ".TXT",
+        "value": "2B73EF83-F77A-4F24-A66D-7E0649EEC320"
+      },
+      {
+        "label": ".EIN",
+        "value": "0EA5333F-9831-41E1-866A-B226674298DC"
+      },
+      {
+        "label": ".CNC",
+        "value": "16EF8355-1977-4448-9A84-B345904154D4"
+      }
+    ],
+    "originalValue": false,
+    "textStyle": {
+      "classes": "animated-content"
+    }
+  },
+  "propConfig": {
+    "custom.changeDetected": {
+      "binding": {
+        "config": {
+          "expression": "{view.params.originalValue} !\u003d {view.params.newValue}"
+        },
+        "type": "expr"
+      },
+      "persistent": true
+    },
+    "params.confirmationMessageHandler": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.newValue": {
+      "paramDirection": "output",
+      "persistent": true
+    },
+    "params.newValueConfirmation": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.options": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.originalValue": {
+      "onChange": {
+        "enabled": null,
+        "script": "\tself.params.newValue \u003d currentValue.value"
+      },
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.textStyle": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 69,
+      "width": 358
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "TextField"
+        },
+        "position": {
+          "basis": "32px",
+          "display": false,
+          "grow": 5,
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.style": {
+            "binding": {
+              "config": {
+                "path": "view.params.textStyle"
+              },
+              "type": "property"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "bidirectional": true,
+                "path": "view.params.newValue"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "deferUpdates": false,
+          "rejectUpdatesWhileFocused": false
+        },
+        "type": "ia.input.text-field"
+      },
+      {
+        "meta": {
+          "name": "Dropdown"
+        },
+        "position": {
+          "basis": "256px",
+          "grow": 5
+        },
+        "propConfig": {
+          "props.options": {
+            "binding": {
+              "config": {
+                "path": "view.params.options"
+              },
+              "type": "property"
+            }
+          },
+          "props.value": {
+            "binding": {
+              "config": {
+                "bidirectional": true,
+                "path": "view.params.newValue"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "animated-content"
+          }
+        },
+        "type": "ia.input.dropdown"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\t\n\tsystem.perspective.sendMessage(\n\t\tself.view.params.confirmationMessageHandler,\n\t\t{\"previousValue\":self.view.params.originalValue,\n\t\t\"newValue\":self.view.params.newValue\n\t\t}\n\t)\n"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "Button",
+          "tooltip": {
+            "enabled": true,
+            "text": "Accept Changes"
+          }
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.basis": {
+            "binding": {
+              "config": {
+                "expression": "if({this.position.grow} \u003d 1, \"45px\",\"0px\")"
+              },
+              "type": "expr"
+            }
+          },
+          "position.grow": {
+            "binding": {
+              "config": {
+                "path": "view.custom.changeDetected"
+              },
+              "transforms": [
+                {
+                  "expression": "toInt({value})",
+                  "type": "expression"
+                }
+              ],
+              "type": "property"
+            }
+          },
+          "props.enabled": {
+            "binding": {
+              "config": {
+                "path": "view.custom.changeDetected"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "image": {
+            "icon": {
+              "color": "#FFFFFF",
+              "path": "material/check"
+            }
+          },
+          "style": {
+            "backgroundColor": "#28C33B",
+            "classes": "animated-button",
+            "color": "#FFFFFF"
+          },
+          "text": ""
+        },
+        "type": "ia.input.button"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "justify": "flex-end"
+    },
+    "type": "ia.container.flex"
+  }
+}

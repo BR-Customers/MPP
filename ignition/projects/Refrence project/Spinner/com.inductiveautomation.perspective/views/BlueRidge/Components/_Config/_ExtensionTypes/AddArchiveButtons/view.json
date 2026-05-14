@@ -1,0 +1,153 @@
+{
+  "custom": {
+    "archiveUUID": "3"
+  },
+  "params": {
+    "data": {
+      "available": true,
+      "key": 3,
+      "name": "Milling",
+      "notes": "Short text description",
+      "selectionScreen": 1
+    },
+    "script": ""
+  },
+  "propConfig": {
+    "custom.archiveUUID": {
+      "binding": {
+        "config": {
+          "expression": "toStr({view.params.data.key})"
+        },
+        "type": "expr"
+      },
+      "persistent": true
+    },
+    "params.data": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.script": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 35,
+      "width": 300
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": [
+              {
+                "config": {
+                  "draggable": true,
+                  "id": "addExtensionType",
+                  "modal": false,
+                  "overlayDismiss": false,
+                  "resizable": true,
+                  "showCloseIcon": true,
+                  "type": "open",
+                  "viewParams": {
+                    "data": "{view.params.data}",
+                    "script": "{view.params.script}"
+                  },
+                  "viewPath": "BlueRidge/Components/_Config/Popups/AddExtensionType",
+                  "viewportBound": false
+                },
+                "scope": "C",
+                "type": "popup"
+              },
+              {
+                "config": {
+                  "script": "\tscript \u003d self.view.params.script.replace(\u0027/\u0027,\u0027.\u0027)\n\tdata \u003d self.view.params.data\n\tfunction \u003d \u0027add\u0027\n#\tsystem.perspective.print(script+\u0027.{0}({1})\u0027.format(function,data))\n\teval(script+\".{0}(\u0027{1}\u0027)\".format(function,data))\n\tsystem.perspective.sendMessage(\"refreshTrigger\")"
+                },
+                "enabled": false,
+                "scope": "G",
+                "type": "script"
+              }
+            ]
+          }
+        },
+        "meta": {
+          "name": "AddButton"
+        },
+        "position": {
+          "basis": "100px"
+        },
+        "props": {
+          "style": {
+            "classes": "BlueRidge/Components/actionButtonRound"
+          },
+          "text": "Add"
+        },
+        "type": "ia.input.button"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": [
+              {
+                "config": {
+                  "draggable": true,
+                  "id": "archiveExtensionType",
+                  "modal": false,
+                  "overlayDismiss": false,
+                  "resizable": true,
+                  "showCloseIcon": true,
+                  "title": "Archive",
+                  "type": "open",
+                  "viewParams": {
+                    "data": "{view.custom.archiveUUID}",
+                    "script": "{view.params.script}"
+                  },
+                  "viewPath": "BlueRidge/Components/_Config/Popups/ArchiveExtensionType",
+                  "viewportBound": false
+                },
+                "scope": "C",
+                "type": "popup"
+              },
+              {
+                "config": {
+                  "script": "\tscript \u003d self.view.params.script.replace(\u0027/\u0027,\u0027.\u0027)\n\tdata \u003d self.view.params.data\n\tfunction \u003d \u0027archive\u0027\n#\tsystem.perspective.print(script+\u0027.{0}({1})\u0027.format(function,data))\n\teval(script+\".{0}(\u0027{1}\u0027)\".format(function,data))\n\tsystem.perspective.sendMessage(\"refreshTrigger\")"
+                },
+                "enabled": false,
+                "scope": "G",
+                "type": "script"
+              }
+            ]
+          }
+        },
+        "meta": {
+          "name": "ArchiveButton"
+        },
+        "position": {
+          "basis": "100px"
+        },
+        "props": {
+          "style": {
+            "classes": "BlueRidge/Components/dangerButtonRound"
+          },
+          "text": "Archive"
+        },
+        "type": "ia.input.button"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "justify": "space-evenly",
+      "style": {
+        "paddingLeft": 10,
+        "paddingRight": 10
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

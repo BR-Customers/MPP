@@ -1,0 +1,85 @@
+{
+  "scope": "DG",
+  "version": 2,
+  "restricted": false,
+  "overridable": true,
+  "files": [
+    "query.sql"
+  ],
+  "attributes": {
+    "useMaxReturnSize": false,
+    "autoBatchEnabled": false,
+    "fallbackValue": "",
+    "maxReturnSize": 100,
+    "cacheUnit": "SEC",
+    "type": "UpdateQuery",
+    "enabled": true,
+    "cacheAmount": 1,
+    "cacheEnabled": false,
+    "database": "",
+    "fallbackEnabled": false,
+    "lastModificationSignature": "12a55e8651646eaf539319ed91a57fd34a881c24e3d16b0a3eec17cafc7d53d3",
+    "permissions": [
+      {
+        "zone": "",
+        "role": ""
+      }
+    ],
+    "lastModification": {
+      "actor": "hkraft",
+      "timestamp": "2026-03-17T14:11:40Z"
+    },
+    "parameters": [
+      {
+        "type": "Parameter",
+        "identifier": "name",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "extensionTypeUUID",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "parameterDefaultUUID",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "parameterUUID",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "macroVariable",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "macroValue",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "lastEdited",
+        "sqlType": 8
+      },
+      {
+        "type": "Parameter",
+        "identifier": "lastEditedBy",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "operationTypeUUID",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "assignedCylinder",
+        "sqlType": 3
+      }
+    ]
+  }
+}

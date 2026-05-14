@@ -1,0 +1,131 @@
+{
+  "custom": {},
+  "params": {
+    "messageID": "",
+    "text": "Button",
+    "type": "",
+    "value": "value",
+    "view": "value"
+  },
+  "propConfig": {
+    "params.messageID": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.text": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.type": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.value": {
+      "onChange": {
+        "enabled": null,
+        "script": "\tvalue \u003d currentValue.value\n\tview \u003d self.params.view\n\tmessageID \u003d self.params.messageID\n\tmessage \u003d {\"messageID\":messageID,\"value\":value,}\n\tif value \u003d\u003d view:\n\t\tsystem.perspective.sendMessage(\u0027OneShotButton\u0027, message)"
+      },
+      "paramDirection": "inout",
+      "persistent": true
+    },
+    "params.view": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 40,
+      "width": 300
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "OneShotButton"
+        },
+        "position": {
+          "basis": "40px"
+        },
+        "propConfig": {
+          "props.readyState.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.text"
+              },
+              "type": "property"
+            }
+          },
+          "props.setValue": {
+            "binding": {
+              "config": {
+                "path": "view.params.view"
+              },
+              "type": "property"
+            }
+          },
+          "props.value": {
+            "binding": {
+              "config": {
+                "bidirectional": true,
+                "path": "view.params.value"
+              },
+              "type": "property"
+            }
+          },
+          "props.writingState.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.text"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "readyState": {
+            "icon": {
+              "style": {
+                "height": "24px",
+                "width": "2rem"
+              }
+            }
+          },
+          "writingState": {
+            "icon": {
+              "style": {
+                "height": "24px",
+                "width": "2rem"
+              }
+            },
+            "style": {
+              "backgroundColor": "#28C33B"
+            }
+          }
+        },
+        "type": "ia.input.oneshotbutton"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column"
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "OneShotButton",
+          "pageScope": true,
+          "script": "\trecv_messageID \u003d payload[\"messageID\"]\n\tvalue \u003d payload[\"value\"]\n\tmessageID \u003d self.view.params.messageID\n#\tsystem.perspective.print(\"OneShotButton Message Handler: {}\".format(payload))\n\tview \u003d self.view.params.view\n#\tsystem.perspective.print(\"OneShotButton Message Handler: {}\".format(view))\n\tif value !\u003d view and recv_messageID \u003d\u003d messageID:\n\t\tself.view.params.value \u003d value\n#\t\tsystem.perspective.print(\"OneShotButton Message Handler: {}\".format(\"Updating value\"))",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

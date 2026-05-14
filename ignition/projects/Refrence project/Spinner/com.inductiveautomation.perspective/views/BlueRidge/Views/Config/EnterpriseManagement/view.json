@@ -1,0 +1,822 @@
+{
+  "custom": {
+    "items": [
+      {
+        "data": {
+          "key": "5ACE07E2-5072-4563-A5A7-2CC453579CD0"
+        },
+        "expanded": true,
+        "icon": {
+          "color": "",
+          "path": "material/apartment",
+          "style": {}
+        },
+        "items": [
+          {
+            "data": {
+              "key": "5C417B4C-41DE-492B-8694-931BE8859681"
+            },
+            "expanded": true,
+            "icon": {
+              "color": "",
+              "path": "material/settings_applications",
+              "style": {}
+            },
+            "items": [
+              {
+                "data": {
+                  "key": "F9C7035F-F724-4402-8F2A-0F4DBF0F2188"
+                },
+                "expanded": false,
+                "icon": {
+                  "color": "",
+                  "path": "material/tablet_mac",
+                  "style": {}
+                },
+                "items": [],
+                "label": "Mazak 575 HMI"
+              }
+            ],
+            "label": "Mazak 575"
+          }
+        ],
+        "label": "TestPlant"
+      },
+      {
+        "data": {
+          "key": "48A4E0B4-8A35-4D50-97C2-A9328B7E2C11"
+        },
+        "expanded": true,
+        "icon": {
+          "color": "",
+          "path": "material/apartment",
+          "style": {}
+        },
+        "items": [
+          {
+            "data": {
+              "key": "D26F8BAD-7495-480B-9AFC-4E9277B5BCED"
+            },
+            "expanded": true,
+            "icon": {
+              "color": "",
+              "path": "material/settings_applications",
+              "style": {}
+            },
+            "items": [
+              {
+                "data": {
+                  "key": "2ADB498B-022A-4F17-A9C9-71B84196E9FD"
+                },
+                "expanded": false,
+                "icon": {
+                  "color": "",
+                  "path": "material/tablet_mac",
+                  "style": {}
+                },
+                "items": [],
+                "label": "TXT Asset"
+              },
+              {
+                "data": {
+                  "key": "BE72269C-053E-481F-8819-9C9F1579083F"
+                },
+                "expanded": false,
+                "icon": {
+                  "color": "",
+                  "path": "material/tablet_mac",
+                  "style": {}
+                },
+                "items": [],
+                "label": "New Asset"
+              }
+            ],
+            "label": "TXT Equipment"
+          }
+        ],
+        "label": "TestPlant2"
+      }
+    ],
+    "key": 0,
+    "pageToShow": "",
+    "selectedData": null,
+    "selection": "",
+    "triggerRefresh": true
+  },
+  "params": {},
+  "permissions": {
+    "securityLevels": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "children": [],
+                "name": "JET-Administrator"
+              },
+              {
+                "children": [],
+                "name": "JET-RecipeAdmin"
+              }
+            ],
+            "name": "Roles"
+          }
+        ],
+        "name": "Authenticated"
+      }
+    ],
+    "type": "AnyOf"
+  },
+  "propConfig": {
+    "custom.items": {
+      "binding": {
+        "config": {
+          "path": "view.custom.triggerRefresh"
+        },
+        "transforms": [
+          {
+            "expression": "runScript(\"BlueRidge.Config.AssetModel.getAll()\",0)",
+            "type": "expression"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.key": {
+      "persistent": true
+    },
+    "custom.pageToShow": {
+      "binding": {
+        "config": {
+          "path": "view.custom.selection"
+        },
+        "enabled": false,
+        "transforms": [
+          {
+            "expression": "if(len({value})\u003e0,(len({value}) - len(replace({value}, \"/\", \"\"))),\"\")",
+            "type": "expression"
+          },
+          {
+            "fallback": "",
+            "inputType": "scalar",
+            "mappings": [
+              {
+                "input": 0,
+                "output": "Plant"
+              },
+              {
+                "input": 1,
+                "output": "Equipment"
+              },
+              {
+                "input": 2,
+                "output": "Asset"
+              }
+            ],
+            "outputType": "scalar",
+            "type": "map"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.selectedData": {
+      "binding": {
+        "config": {
+          "path": "view.custom.key"
+        },
+        "transforms": [
+          {
+            "expression": "runScript(concat(\"BlueRidge.Config.\",{view.custom.pageToShow},\".getOne\"),0,{value})",
+            "type": "expression"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.selection": {
+      "onChange": {
+        "enabled": null,
+        "script": "\tvalue \u003d currentValue.value\n\tif value:\n\t\tpageNum \u003d len(value) - len(value.split(\u0027/\u0027))\n\t\tif pageNum \u003d\u003d 0:\n\t\t\tpage \u003d \"Plant\"\n\t\telif pageNum \u003d\u003d 1:\n\t\t\tpage \u003d \"Equipment\"\n\t\telif pageNum \u003d\u003d 2:\n\t\t\tpage \u003d \"Asset\"\n\t\telse:\n\t\t\tpage \u003d \"\"\n\t\tself.custom.pageToShow \u003d page"
+      },
+      "persistent": true
+    },
+    "custom.triggerRefresh": {
+      "persistent": true
+    }
+  },
+  "props": {},
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "EmbeddedView"
+            },
+            "position": {
+              "basis": "50px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.params.data": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.selectedData"
+                  },
+                  "overlayOptOut": true,
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "params": {
+                "script": "BlueRidge.Config.AssetModel"
+              },
+              "path": "BlueRidge/Components/_Config/AddArchiveButtons"
+            },
+            "type": "ia.display.view"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Tree"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "propConfig": {
+                  "props.items": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.items"
+                      },
+                      "type": "property"
+                    }
+                  },
+                  "props.selectionData[0].value.key": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.key"
+                      },
+                      "type": "property"
+                    }
+                  },
+                  "props.selection[0]": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.selection"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "appearance": {
+                    "defaultNodeIcons": {
+                      "collapsed": {
+                        "path": "material/folder"
+                      },
+                      "empty": {
+                        "path": "material/stop"
+                      },
+                      "expanded": {
+                        "path": "material/folder_open"
+                      }
+                    },
+                    "expandIcons": {
+                      "collapsed": {
+                        "path": "material/arrow_right"
+                      },
+                      "expanded": {
+                        "path": "material/arrow_drop_down"
+                      }
+                    }
+                  },
+                  "selection": [
+                    null
+                  ],
+                  "selectionData": [
+                    {
+                      "itemPath": "0",
+                      "value": {}
+                    }
+                  ]
+                },
+                "type": "ia.display.tree"
+              }
+            ],
+            "meta": {
+              "name": "EquipmentTree"
+            },
+            "props": {
+              "direction": "column"
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tself.view.custom.selection \u003d \"\"\n\tself.view.custom.key \u003d 0\n\tself.view.custom.pageToShow \u003d \"\""
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "Spacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.custom.selection \u003d \"\"\n\tself.view.custom.pageToShow \u003d \"ExtensionTypes\"\n\tsystem.perspective.sendMessage(\"OneShotButton\", 0)\n\t"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "Button"
+            },
+            "position": {
+              "basis": "34px"
+            },
+            "props": {
+              "style": {
+                "marginBottom": 10,
+                "marginLeft": 10,
+                "marginRight": 10
+              },
+              "text": "Extension Types"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.custom.selection \u003d \"\"\n\tself.view.custom.pageToShow \u003d \"OperationTypes\"\n\tsystem.perspective.sendMessage(\"OneShotButton\", 0)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "Button_2"
+            },
+            "position": {
+              "basis": "34px"
+            },
+            "props": {
+              "style": {
+                "marginBottom": 10,
+                "marginLeft": 10,
+                "marginRight": 10
+              },
+              "text": "Operation Types"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.custom.selection \u003d \"\"\n\tself.view.custom.pageToShow \u003d \"Engines\"\n\tsystem.perspective.sendMessage(\"OneShotButton\", 0)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "Button_0"
+            },
+            "position": {
+              "basis": "34px"
+            },
+            "props": {
+              "style": {
+                "marginBottom": 10,
+                "marginLeft": 10,
+                "marginRight": 10
+              },
+              "text": "Engines"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.custom.selection \u003d \"\"\n\tself.view.custom.pageToShow \u003d \"BlockConfig\"\n\tsystem.perspective.sendMessage(\"OneShotButton\", 0)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "Button_1"
+            },
+            "position": {
+              "basis": "34px"
+            },
+            "props": {
+              "style": {
+                "marginBottom": 10,
+                "marginLeft": 10,
+                "marginRight": 10
+              },
+              "text": "Engine Block Configs"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.custom.selection \u003d \"\"\n\tself.view.custom.pageToShow \u003d \"Heads\"\n\tsystem.perspective.sendMessage(\"OneShotButton\", 0)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "Button_3"
+            },
+            "position": {
+              "basis": "34px"
+            },
+            "props": {
+              "style": {
+                "marginBottom": 10,
+                "marginLeft": 10,
+                "marginRight": 10
+              },
+              "text": "Heads"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "LeftSide"
+        },
+        "position": {
+          "basis": "250px",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "BlueRidge/Menu/Menu"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Plant"
+            },
+            "position": {
+              "basis": "320px",
+              "grow": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.pageToShow"
+                  },
+                  "transforms": [
+                    {
+                      "expression": "{value}\u003d{this.meta.name}",
+                      "type": "expression"
+                    }
+                  ],
+                  "type": "property"
+                }
+              },
+              "props.params.key": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.key"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "path": "BlueRidge/Components/_Config/Plant"
+            },
+            "type": "ia.display.view"
+          },
+          {
+            "meta": {
+              "name": "Equipment"
+            },
+            "position": {
+              "basis": "320px",
+              "grow": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.pageToShow"
+                  },
+                  "transforms": [
+                    {
+                      "expression": "{value}\u003d{this.meta.name}",
+                      "type": "expression"
+                    }
+                  ],
+                  "type": "property"
+                }
+              },
+              "props.params.key": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.key"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "path": "BlueRidge/Components/_Config/Equipment"
+            },
+            "type": "ia.display.view"
+          },
+          {
+            "meta": {
+              "name": "Asset"
+            },
+            "position": {
+              "basis": "320px",
+              "grow": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.pageToShow"
+                  },
+                  "transforms": [
+                    {
+                      "expression": "{value}\u003d{this.meta.name}",
+                      "type": "expression"
+                    }
+                  ],
+                  "type": "property"
+                }
+              },
+              "props.params.key": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.key"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "path": "BlueRidge/Components/_Config/Asset"
+            },
+            "type": "ia.display.view"
+          },
+          {
+            "meta": {
+              "name": "ExtensionTypes"
+            },
+            "position": {
+              "basis": "320px",
+              "grow": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.pageToShow"
+                  },
+                  "transforms": [
+                    {
+                      "expression": "{value}\u003d{this.meta.name}",
+                      "type": "expression"
+                    }
+                  ],
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "path": "BlueRidge/Components/_Config/ExtensionTypes"
+            },
+            "type": "ia.display.view"
+          },
+          {
+            "meta": {
+              "name": "Engines"
+            },
+            "position": {
+              "basis": "320px",
+              "grow": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.pageToShow"
+                  },
+                  "transforms": [
+                    {
+                      "expression": "{value}\u003d{this.meta.name}",
+                      "type": "expression"
+                    }
+                  ],
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "path": "BlueRidge/Components/_Config/Engines"
+            },
+            "type": "ia.display.view"
+          },
+          {
+            "meta": {
+              "name": "Label"
+            },
+            "position": {
+              "basis": "32px",
+              "grow": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.custom.pageToShow} \u003d \"\""
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "backgroundColor": "#AAAAAA",
+                "textAlign": "center"
+              },
+              "text": "Select an item on the left"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "BlockConfig"
+            },
+            "position": {
+              "basis": "320px",
+              "grow": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.pageToShow"
+                  },
+                  "transforms": [
+                    {
+                      "expression": "{value}\u003d{this.meta.name}",
+                      "type": "expression"
+                    }
+                  ],
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "path": "BlueRidge/Components/_Config/BlockConfig"
+            },
+            "type": "ia.display.view"
+          },
+          {
+            "meta": {
+              "name": "OperationTypes"
+            },
+            "position": {
+              "basis": "320px",
+              "grow": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.pageToShow"
+                  },
+                  "transforms": [
+                    {
+                      "expression": "{value}\u003d{this.meta.name}",
+                      "type": "expression"
+                    }
+                  ],
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "path": "BlueRidge/Components/_Config/OperationTypes"
+            },
+            "type": "ia.display.view"
+          },
+          {
+            "meta": {
+              "name": "Heads"
+            },
+            "position": {
+              "basis": "320px",
+              "grow": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.pageToShow"
+                  },
+                  "transforms": [
+                    {
+                      "expression": "{value}\u003d{this.meta.name}",
+                      "type": "expression"
+                    }
+                  ],
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "path": "BlueRidge/Components/_Config/Heads"
+            },
+            "type": "ia.display.view"
+          }
+        ],
+        "meta": {
+          "name": "RightSide"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "direction": "column"
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "refreshTrigger",
+          "pageScope": true,
+          "script": "\ttrigger \u003d self.view.custom.triggerRefresh\n\tself.view.custom.triggerRefresh \u003d not trigger",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "navigate",
+          "pageScope": true,
+          "script": "\tsystem.perspective.navigate(payload)",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

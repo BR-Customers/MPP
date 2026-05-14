@@ -1,0 +1,430 @@
+{
+  "custom": {
+    "HeadImage": null,
+    "previewWidget": {},
+    "widgets": [
+      {
+        "classes": "",
+        "hFrac": 0.13999999999999996,
+        "viewParams": {
+          "buttonIndex": "3ac09495-8d00-4922-9315-1ce0c5c41e08"
+        },
+        "viewPath": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_HeadWidgets/CircleButton",
+        "wFrac": 0.13999999999999996,
+        "xFrac": 0.05225969645868468,
+        "yFrac": 0.3704494382022472
+      },
+      {
+        "classes": "",
+        "hFrac": 0.09999999999999996,
+        "viewParams": {
+          "buttonIndex": "2a85260d-0e77-4603-bb89-5d8dda80811b"
+        },
+        "viewPath": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_HeadWidgets/CircleButton",
+        "wFrac": 0.09999999999999996,
+        "xFrac": 0.17344013490725127,
+        "yFrac": 0.38932584269662923
+      },
+      {
+        "classes": "",
+        "hFrac": 0.13999999999999996,
+        "viewParams": {
+          "buttonIndex": "bb45991c-915a-41a7-ad07-2270dab0a2f3"
+        },
+        "viewPath": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_HeadWidgets/CircleButton",
+        "wFrac": 0.13999999999999996,
+        "xFrac": 0.2765430016863407,
+        "yFrac": 0.36932584269662927
+      },
+      {
+        "classes": "",
+        "hFrac": 0.09999999999999996,
+        "viewParams": {
+          "buttonIndex": "93b9b504-17e1-45d6-aa9b-96ad351267e4"
+        },
+        "viewPath": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_HeadWidgets/CircleButton",
+        "wFrac": 0.09999999999999996,
+        "xFrac": 0.39688026981450253,
+        "yFrac": 0.38932584269662923
+      },
+      {
+        "classes": "",
+        "hFrac": 0.13999999999999996,
+        "viewParams": {
+          "buttonIndex": "9ca5d34a-7735-45d7-880a-f264258747b5"
+        },
+        "viewPath": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_HeadWidgets/CircleButton",
+        "wFrac": 0.13999999999999996,
+        "xFrac": 0.49913996627318724,
+        "yFrac": 0.36932584269662927
+      },
+      {
+        "classes": "",
+        "hFrac": 0.09999999999999996,
+        "viewParams": {
+          "buttonIndex": "838bb679-1fb3-4229-b931-7383b36eb708"
+        },
+        "viewPath": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_HeadWidgets/CircleButton",
+        "wFrac": 0.09999999999999996,
+        "xFrac": 0.6220067453625633,
+        "yFrac": 0.38932584269662923
+      },
+      {
+        "classes": "",
+        "hFrac": 0.13999999999999996,
+        "viewParams": {
+          "buttonIndex": "5b42d5e0-dec6-4b21-93c8-9a834e1859c1"
+        },
+        "viewPath": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_HeadWidgets/CircleButton",
+        "wFrac": 0.13999999999999996,
+        "xFrac": 0.7234232715008432,
+        "yFrac": 0.3704494382022472
+      },
+      {
+        "classes": "",
+        "hFrac": 0.09999999999999996,
+        "viewParams": {
+          "buttonIndex": "78f7d55f-9c97-4810-ab7c-2f069526ce53"
+        },
+        "viewPath": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_HeadWidgets/CircleButton",
+        "wFrac": 0.09999999999999996,
+        "xFrac": 0.8446037099494098,
+        "yFrac": 0.38932584269662923
+      }
+    ]
+  },
+  "params": {
+    "Head": "",
+    "configMode": true,
+    "height": 600,
+    "operation": "value",
+    "widgets": [
+      {
+        "classes": "",
+        "hFrac": 0.13999999999999996,
+        "viewParams": {
+          "buttonIndex": "3ac09495-8d00-4922-9315-1ce0c5c41e08"
+        },
+        "viewPath": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_HeadWidgets/CircleButton",
+        "wFrac": 0.13999999999999996,
+        "xFrac": 0.05225969645868468,
+        "yFrac": 0.3704494382022472
+      },
+      {
+        "classes": "",
+        "hFrac": 0.09999999999999996,
+        "viewParams": {
+          "buttonIndex": "2a85260d-0e77-4603-bb89-5d8dda80811b"
+        },
+        "viewPath": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_HeadWidgets/CircleButton",
+        "wFrac": 0.09999999999999996,
+        "xFrac": 0.17344013490725127,
+        "yFrac": 0.38932584269662923
+      },
+      {
+        "classes": "",
+        "hFrac": 0.13999999999999996,
+        "viewParams": {
+          "buttonIndex": "bb45991c-915a-41a7-ad07-2270dab0a2f3"
+        },
+        "viewPath": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_HeadWidgets/CircleButton",
+        "wFrac": 0.13999999999999996,
+        "xFrac": 0.2765430016863407,
+        "yFrac": 0.36932584269662927
+      },
+      {
+        "classes": "",
+        "hFrac": 0.09999999999999996,
+        "viewParams": {
+          "buttonIndex": "93b9b504-17e1-45d6-aa9b-96ad351267e4"
+        },
+        "viewPath": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_HeadWidgets/CircleButton",
+        "wFrac": 0.09999999999999996,
+        "xFrac": 0.39688026981450253,
+        "yFrac": 0.38932584269662923
+      },
+      {
+        "classes": "",
+        "hFrac": 0.13999999999999996,
+        "viewParams": {
+          "buttonIndex": "9ca5d34a-7735-45d7-880a-f264258747b5"
+        },
+        "viewPath": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_HeadWidgets/CircleButton",
+        "wFrac": 0.13999999999999996,
+        "xFrac": 0.49913996627318724,
+        "yFrac": 0.36932584269662927
+      },
+      {
+        "classes": "",
+        "hFrac": 0.09999999999999996,
+        "viewParams": {
+          "buttonIndex": "838bb679-1fb3-4229-b931-7383b36eb708"
+        },
+        "viewPath": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_HeadWidgets/CircleButton",
+        "wFrac": 0.09999999999999996,
+        "xFrac": 0.6220067453625633,
+        "yFrac": 0.38932584269662923
+      },
+      {
+        "classes": "",
+        "hFrac": 0.13999999999999996,
+        "viewParams": {
+          "buttonIndex": "5b42d5e0-dec6-4b21-93c8-9a834e1859c1"
+        },
+        "viewPath": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_HeadWidgets/CircleButton",
+        "wFrac": 0.13999999999999996,
+        "xFrac": 0.7234232715008432,
+        "yFrac": 0.3704494382022472
+      },
+      {
+        "classes": "",
+        "hFrac": 0.09999999999999996,
+        "viewParams": {
+          "buttonIndex": "78f7d55f-9c97-4810-ab7c-2f069526ce53"
+        },
+        "viewPath": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_HeadWidgets/CircleButton",
+        "wFrac": 0.09999999999999996,
+        "xFrac": 0.8446037099494098,
+        "yFrac": 0.38932584269662923
+      }
+    ],
+    "width": 800
+  },
+  "propConfig": {
+    "custom.HeadImage": {
+      "binding": {
+        "config": {
+          "parameters": {
+            "headFileUUID": "{view.params.Head}"
+          },
+          "queryPath": "config/getHeadFileByUUID"
+        },
+        "overlayOptOut": true,
+        "type": "query"
+      },
+      "persistent": true
+    },
+    "custom.previewWidget": {
+      "persistent": true
+    },
+    "custom.widgets": {
+      "binding": {
+        "config": {
+          "path": "view.params.widgets"
+        },
+        "overlayOptOut": true,
+        "type": "property"
+      },
+      "onChange": {
+        "enabled": false,
+        "script": "\tsystem.perspective.sendMessage(\"updateWidgets\", payload \u003d {\u0027widgets\u0027: self.custom.widgets})"
+      },
+      "persistent": true
+    },
+    "params.Head": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.configMode": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.height": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.operation": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.widgets": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.width": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 549,
+      "width": 1067
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "events": {
+          "component": {
+            "onInstanceClicked": {
+              "config": {
+                "script": "\tif self.view.params.configMode:\n\t\tsystem.perspective.print(self.session.custom.buttonConfigDock.isOpen)\n\t\tif self.session.custom.buttonConfigDock.isOpen !\u003d True:\n\t\t\tparameters \u003d {\u0027buttonIndex\u0027: event.params.buttonIndex}\n\t\t\tsystem.perspective.sendMessage(\u0027isEditing\u0027, payload \u003d parameters)\n\t\t\tself.session.custom.buttonConfigDock.headOperationUUID \u003d self.view.params.operation\n\t\t\tself.session.custom.buttonConfigDock.isOpen \u003d bool(True)\n\t\t\tself.session.custom.buttonConfigDock.buttonIndex \u003d event.params.buttonIndex\n\t\t\tsystem.perspective.openDock(\u0027ButtonConfig\u0027)"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          },
+          "dom": {
+            "onMouseMove": {
+              "config": {
+                "script": "\t\n\ttry:\n\t\tlogger \u003d system.util.getLogger(\"DashboardCanvas\")\n\t\tsession \u003d self.session\n\t\tpayload \u003d session.custom.get(\"DragPayload\", {}) or {}\n\t\n\t\tif not payload.get(\"active\", False):\n\t\t\treturn\n\t\n\t\tviewPath \u003d payload.get(\"viewPath\", \"\")\n\t\tif not viewPath:\n\t\t\treturn\n\t\n\t\t# View Canvas size in px\n\t\tcanvasWidth \u003d 1186.0\n\t\tcanvasHeight \u003d 890.0\n\t\t# Mouse position relative to component (prefer offsetX/Y)\n\t\tx \u003d event.clientX -529\n\t\ty \u003d event.clientY -150\n\t\n\t\twFrac \u003d payload[\"w\"]\n\t\thFrac \u003d payload[\"h\"]\n\t\n\t\t# Normalize to 0..1\n\t\txFrac \u003d float(x / canvasWidth)\n\t\tyFrac \u003d float(y / canvasHeight)\n\t\t\n\t\t# Clamp so widget stays inside canvas (center based)\n\t\thalfW \u003d float(wFrac / 2.0)\n\t\thalfH \u003d float(hFrac / 2.0)\n\t\n#\t\tif xFrac \u003c halfW:\n#\t\t\txFrac \u003d halfW\n#\t\telif xFrac \u003e (1.0 - halfW):\n#\t\t\txFrac \u003d 1.0 - halfW\n#\t\n#\t\tif yFrac \u003c halfH:\n#\t\t\tyFrac \u003d halfH\n#\t\telif yFrac \u003e (1.0 - halfH):\n#\t\t\tyFrac \u003d 1.0 - halfH\n\t\n\t\tself.view.custom.previewWidget \u003d {\n\t\t\t\"viewPath\": viewPath,\n\t\t\t\"xFrac\": xFrac-(wFrac/2),\n\t\t\t\"yFrac\": yFrac-(hFrac/2),\n\t\t\t\"wFrac\": wFrac,\n\t\t\t\"hFrac\": hFrac,\n\t\t\t\"viewParams\": {},\n\t\t\t\"classes\": \"\"\n\t\t}\n\t\n\texcept Exception as e:\n\t\tsystem.util.getLogger(\"DashboardCanvas\").error(\"Error updating preview: %s\" % (str(e)))"
+              },
+              "scope": "G",
+              "type": "script"
+            },
+            "onMouseUp": {
+              "config": {
+                "script": "\timport uuid\n\tlogger \u003d system.util.getLogger(\"DashboardCanvas\")\n\t\n\ttry:\n\t    session \u003d self.session\n\t    payload \u003d session.custom.get(\"DragPayload\", {}) or {}\n\t\n\t    if not payload.get(\"active\", False):\n\t        return\n\t\n\t    # Make a safe copy of the preview widget (avoid mutating a backing map in-place)\n\t    preview \u003d dict(self.view.custom.get(\"previewWidget\", {}) or {})\n\t    viewPath \u003d preview.get(\"viewPath\", \"\")\n\t\n\t    # If preview didn\u0027t build, don\u0027t place anything\n\t    if not viewPath:\n\t        session.custom.DragPayload \u003d {\"active\": False, \"viewPath\": \"\"}\n\t        self.view.custom.previewWidget \u003d {}\n\t        return\n\t\n\t    # ✅ Ensure viewParams exists + set UUID at key \"index\"\n\t    viewParams \u003d dict(preview.get(\"viewParams\", {}) or {})\n\t    viewParams[\"buttonIndex\"] \u003d str(uuid.uuid4())   # or uuid.uuid4().hex if you want no hyphens\n\t    preview[\"viewParams\"] \u003d viewParams\n\t\n\t    # Add the preview widget permanently\n\t    widgets \u003d list(self.view.custom.get(\"widgets\", []) or [])\n\t    widgets.append(preview)\n\t    self.view.custom.widgets \u003d widgets\n\t    system.perspective.sendMessage(\"updateWidgets\", payload \u003d {\u0027widgets\u0027: widgets})\n\t\n\t    logger.info(\"Preview Widget (with UUID index): %s\" % (preview))\n\t\n\t    # Reset drag state and clear preview\n\t    session.custom.DragPayload \u003d {\"active\": False, \"viewPath\": \"\"}\n\t    self.view.custom.previewWidget \u003d {}\n\t\n\t    logger.info(\"Widget placed: %s\" % (viewPath))\n\t\n\texcept Exception as e:\n\t    logger.error(\"Error finalizing widget: %s\" % (str(e)))"
+              },
+              "scope": "G",
+              "type": "script"
+            },
+            "onWheel": {
+              "config": {
+                "script": "\tself.session.custom.DragPayload.w +\u003d event.deltaY/10000.0\n\tself.session.custom.DragPayload.h +\u003d event.deltaY/10000.0"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "ViewCanvas"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "config": {
+                "struct": {
+                  "previewWidget": "{view.custom.previewWidget}",
+                  "widgets": "{view.custom.widgets}"
+                },
+                "waitOnAll": false
+              },
+              "overlayOptOut": true,
+              "transforms": [
+                {
+                  "code": "\t# value is previewWidget because this binding is on view.custom.previewWidget\n\tpreviewWidget \u003d value[\u0027previewWidget\u0027]\n\t\n\twidgets \u003d list(value[\u0027widgets\u0027])\n\t\n\t# Base design size (fallback if we can\u0027t read canvas size)\n\n\t\n\tdef widgetToInstance(widgetDict, index, isPreview):\n\t\t\"\"\"\n\t\tAuthor: Ignition GPT\n\t\tDate: 12/03/2025\n\t\tConverts a dashboard widget definition into a View Canvas instance,\n\t\tusing normalized center-based coordinates and size.\n\t\n\t\tArgs:\n\t\t\twidgetDict (dict): Widget definition from view.custom.widgets or previewWidget.\n\t\t\tindex (int): Index of widget in list, or -1 for preview.\n\t\t\tisPreview (bool): True if this is the live preview instance.\n\t\n\t\tReturns:\n\t\t\tdict: Instance configuration for the View Canvas.\n\t\t\"\"\"\n\t\tlogger \u003d system.util.getLogger(\"CanvasTransform\")\n\t\n\t\ttry:\n\t\t\tviewPath \u003d widgetDict[\"viewPath\"]\n\t\n\t\t\t# Normalized position and size (center-based)\n\t\t\txFrac \u003d float(widgetDict.get(\"xFrac\", 0.5))\n\t\t\tyFrac \u003d float(widgetDict.get(\"yFrac\", 0.5))\n\t\t\twFrac \u003d float(widgetDict.get(\"wFrac\", 0.1))\n\t\t\thFrac \u003d float(widgetDict.get(\"hFrac\", 0.1))\n\t\n\t\t\t# Convert to pixel size\n\t\t\twidth \u003d wFrac \n\t\t\theight \u003d hFrac \n\t\n\t\t\t# Convert to top-left in pixels (since View Canvas uses top/left)\n\t\t\tleft \u003d xFrac\n\t\t\ttop \u003d yFrac \n\t\n\t\t\tclasses \u003d widgetDict.get(\"classes\", \"\")\n\t\t\t\n\t\t\treturn {\n\t\t\t\t\"viewPath\": viewPath,\n\t\t\t\t\"position\": \"absolute\",\n\t\t\t\t\"left\": str(left*100) + \"%\",\n\t\t\t\t\"top\": str(top*100) + \"%\",\n\t\t\t\t\"width\": str(width*100) + \"%\",\n\t\t\t\t\"height\": str(height*100) + \"%\",\n\t\t\t\t\"viewParams\": {\n\t\t\t\t\t\"buttonIndex\": widgetDict.get(\u0027viewParams\u0027,{}).get(\u0027buttonIndex\u0027,{}) if (widgetDict.get(\u0027viewParams\u0027,{}) !\u003d {}) else index,\n\t\t\t\t\t\"isPreview\": bool(isPreview),\n\t\t\t\t\t\"configMode\": self.view.params.configMode\n\t\t\t\t},\n\t\t\t\t\"style\": {\n\t\t\t\t\t\"classes\": classes\n\t\t\t\t}\n\t\t\t}\n\t\texcept Exception as e:\n\t\t\tlogger.error(\"Widget transform error: %s\" % (str(e)))\n\t\t\treturn None\n\t\n\t\n\tresult \u003d []\n\t\n\t# Permanent widgets\n\tfor i, w in enumerate(widgets):\n\t\tinstance \u003d widgetToInstance(w, i, False)\n\t\tif instance is not None:\n\t\t\tresult.append(instance)\n\t\n\t# Live preview widget\n\tif previewWidget:\n\t\tinstance \u003d widgetToInstance(previewWidget, -1, True)\n\t\tif instance is not None:\n\t\t\tresult.append(instance)\n\t\n\treturn result",
+                  "type": "script"
+                }
+              ],
+              "type": "expr-struct"
+            }
+          },
+          "props.style.backgroundImage": {
+            "binding": {
+              "config": {
+                "expression": "\u0027url(data:image/\u0027+{view.custom.HeadImage}[\"filetype\"]+\u0027;base64,\u0027+{view.custom.HeadImage}[\"fileData\"]+\u0027)\u0027"
+              },
+              "overlayOptOut": true,
+              "type": "expr"
+            }
+          },
+          "props.style.height": {
+            "binding": {
+              "config": {
+                "path": "view.params.height"
+              },
+              "type": "property"
+            }
+          },
+          "props.style.transform": {
+            "binding": {
+              "config": {
+                "struct": {
+                  "defaultSize": "{view.props.defaultSize}",
+                  "height": "{view.params.height}",
+                  "primaryView": "{page.props.dimensions.primaryView}",
+                  "width": "{view.params.width}"
+                },
+                "waitOnAll": true
+              },
+              "transforms": [
+                {
+                  "code": "\ttry:\n\t\tif value.primaryView.height \u003e 0:\n\t\t\ttransform \u003d \u0027scale(%s)\u0027 % min(1.0*value.primaryView.height/value.height, 1.0*value.primaryView.width/value.width)\n\t\telse:\n\t\t\ttransform \u003d \u0027scale(%s)\u0027 % min(1.0*value.defaultSize.height/value.height, 1.0*value.defaultSize.width/value.width)\n\texcept:\n\t\ttransform \u003d \u0027scale(1)\u0027\n\t\t\n\treturn transform\n\t",
+                  "type": "script"
+                }
+              ],
+              "type": "expr-struct"
+            }
+          },
+          "props.style.width": {
+            "binding": {
+              "config": {
+                "path": "view.params.width"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "enableTransitions": false,
+          "style": {
+            "backgroundPosition": "center",
+            "backgroundRepeat": "no-repeat",
+            "backgroundSize": "contain",
+            "overflow": "hidden"
+          },
+          "transitionSettings": {
+            "duration": "1s",
+            "timingFunction": "linear"
+          },
+          "useDefaultViewHeight": false,
+          "useDefaultViewWidth": false
+        },
+        "type": "ia.display.viewcanvas"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignContent": "center",
+      "alignItems": "center",
+      "direction": "column",
+      "justify": "center",
+      "style": {
+        "overflow": "hidden"
+      }
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "deleteButton",
+          "pageScope": true,
+          "script": "\ti \u003d \u0027\u0027\n\tfor index, w in enumerate(self.view.custom.widgets):\n\t\t\n\t\tif dict(w[\u0027viewParams\u0027])[\u0027buttonIndex\u0027] \u003d\u003d payload[\u0027buttonIndex\u0027]:\n\t\t\ti \u003d index\n\t\t\t\n\t\n\tself.view.custom.widgets.pop(i)\n\tsystem.perspective.sendMessage(\"updateWidgets\", payload \u003d {\u0027widgets\u0027: self.view.custom.widgets})\n\tself.getChild(\"ViewCanvas\").refreshBinding(\u0027props.instances\u0027)",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "widgetMoved",
+          "pageScope": true,
+          "script": "\taxis \u003d payload[\u0027axis\u0027]\n\tamount \u003d payload[\u0027amount\u0027]\n\tindex \u003d payload[\u0027index\u0027]\n\tfor w in self.view.custom.widgets:\n\t\tif w[\u0027viewParams\u0027][\u0027buttonIndex\u0027] \u003d\u003d index:\n\t\t\tw[axis] +\u003d amount",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "widgetResized",
+          "pageScope": true,
+          "script": "\tindex \u003d payload[\u0027index\u0027]\n\tamount \u003d payload[\u0027amount\u0027]\n\tfor w in self.view.custom.widgets:\n\t\tif w[\u0027viewParams\u0027][\u0027buttonIndex\u0027] \u003d\u003d index:\n\t\t\tw[\u0027hFrac\u0027] +\u003d amount\n\t\t\tw[\u0027wFrac\u0027] +\u003d amount",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "widgetSaved",
+          "pageScope": true,
+          "script": "\tsystem.perspective.sendMessage(\"updateWidgets\", payload \u003d {\u0027widgets\u0027: self.view.custom.widgets})",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

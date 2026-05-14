@@ -1,0 +1,168 @@
+{
+  "custom": {},
+  "params": {},
+  "props": {},
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "Top"
+        },
+        "position": {
+          "basis": "200px",
+          "grow": 0.35
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "TopSpacer"
+            },
+            "position": {
+              "grow": 0.2
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Button"
+                },
+                "position": {
+                  "basis": "80px",
+                  "grow": 0.15
+                },
+                "props": {
+                  "style": {
+                    "classes": "BlueRidge/Components/actionButtonRound",
+                    "fontSize": 25
+                  },
+                  "text": "Ream Valve Guides and Cut Seats"
+                },
+                "type": "ia.input.button"
+              },
+              {
+                "meta": {
+                  "name": "Label"
+                },
+                "position": {
+                  "basis": "50px",
+                  "grow": 0.15
+                },
+                "props": {
+                  "style": {
+                    "fontSize": 25,
+                    "textAlign": "center"
+                  },
+                  "text": "And/Or"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Button_0"
+                },
+                "position": {
+                  "basis": "80px",
+                  "grow": 0.15
+                },
+                "props": {
+                  "style": {
+                    "classes": "BlueRidge/Components/actionButtonRound",
+                    "fontSize": 25
+                  },
+                  "text": "Mill Thermostat Surface"
+                },
+                "type": "ia.input.button"
+              },
+              {
+                "meta": {
+                  "name": "Label_0"
+                },
+                "position": {
+                  "basis": "50px",
+                  "grow": 0.15
+                },
+                "props": {
+                  "style": {
+                    "fontSize": 25,
+                    "textAlign": "center"
+                  },
+                  "text": "And/Or"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Button_1"
+                },
+                "position": {
+                  "basis": "80px",
+                  "grow": 0.15
+                },
+                "props": {
+                  "style": {
+                    "classes": "BlueRidge/Components/actionButtonRound",
+                    "fontSize": 25
+                  },
+                  "text": "Mill Top of Head"
+                },
+                "type": "ia.input.button"
+              }
+            ],
+            "meta": {
+              "name": "Buttons"
+            },
+            "position": {
+              "grow": 0.6
+            },
+            "props": {
+              "justify": "space-around"
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "BottomSpacer"
+            },
+            "position": {
+              "grow": 0.2
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Middle"
+        },
+        "position": {
+          "basis": "200px",
+          "grow": 0.3
+        },
+        "props": {
+          "direction": "column"
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "meta": {
+          "name": "Bottom"
+        },
+        "position": {
+          "basis": "200px",
+          "grow": 0.35
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column"
+    },
+    "type": "ia.container.flex"
+  }
+}

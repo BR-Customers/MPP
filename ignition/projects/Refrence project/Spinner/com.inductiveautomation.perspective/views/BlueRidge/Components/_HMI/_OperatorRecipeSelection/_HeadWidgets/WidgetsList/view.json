@@ -1,0 +1,60 @@
+{
+  "custom": {
+    "widgetViewPath": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_HeadWidgets/CircleButton"
+  },
+  "params": {},
+  "propConfig": {
+    "custom.widgetViewPath": {
+      "binding": {
+        "config": {
+          "path": "/root/CircleButton.props.path"
+        },
+        "type": "property"
+      },
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 599,
+      "width": 396
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "events": {
+          "dom": {
+            "onMouseDown": {
+              "config": {
+                "script": "\ttry:\n\t\tsession \u003d self.session\n\t\tsession.custom.DragPayload \u003d {\n\t\t\t\"active\": True,\n\t\t\t\"viewPath\": self.view.custom.widgetViewPath,\n\t\t\t\"x\": event.pageX,\n\t\t\t\"y\": event.pageY,\n\t\t\t\"w\": 0.2,\n\t\t\t\"h\": 0.2\n\t\t}\n\texcept Exception as e:\n\t\tsystem.util.getLogger(\"DragStart\").error(\"Error setting drag payload: %s\" % (e.message))"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "CircleButton"
+        },
+        "position": {
+          "basis": "320px"
+        },
+        "props": {
+          "path": "BlueRidge/Components/_HMI/_OperatorRecipeSelection/_HeadWidgets/CircleButton",
+          "style": {
+            "cursor": "grab"
+          }
+        },
+        "type": "ia.display.view"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column"
+    },
+    "type": "ia.container.flex"
+  }
+}

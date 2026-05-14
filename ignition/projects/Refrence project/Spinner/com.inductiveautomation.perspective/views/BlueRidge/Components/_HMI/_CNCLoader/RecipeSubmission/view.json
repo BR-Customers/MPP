@@ -1,0 +1,809 @@
+{
+  "custom": {
+    "extentionType": "0EA5333F-9831-41E1-866A-B226674298DC",
+    "preview": false,
+    "program": null,
+    "programData": {
+      "equipmentUUID": {
+        "available": true,
+        "extension": "0EA5333F-9831-41E1-866A-B226674298DC",
+        "filename": "50.EIN",
+        "hmi": "1",
+        "ip": "192.168.1.2",
+        "key": "5C417B4C-41DE-492B-8694-931BE8859681",
+        "name": "Mazak 575",
+        "plantUUID": "5ACE07E2-5072-4563-A5A7-2CC453579CD0",
+        "type": "Equipment"
+      },
+      "extensionTypeUUID": "0EA5333F-9831-41E1-866A-B226674298DC",
+      "rerunMode": false,
+      "selectedBore": 0,
+      "selectedCylinders": [],
+      "selectedData": {
+        "Cylinder": 0,
+        "Engine": 0,
+        "Milling": 0,
+        "Operation": 0
+      },
+      "selectedMill": 0
+    },
+    "rerunMode": false,
+    "selectedAssignedNumbers": [],
+    "selectedCylinders": [],
+    "selectionsMade": [
+      {
+        "text": "",
+        "value": true
+      },
+      {
+        "text": "Bore: None",
+        "value": false
+      },
+      {
+        "text": "Cylinders:[]",
+        "value": false
+      },
+      {
+        "text": "",
+        "value": true
+      }
+    ],
+    "triggerRefresh": false
+  },
+  "params": {},
+  "permissions": {
+    "securityLevels": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "children": [],
+                "name": "JET-Administrator"
+              },
+              {
+                "children": [],
+                "name": "JET-Operator"
+              },
+              {
+                "children": [],
+                "name": "JET-RecipeAdmin"
+              }
+            ],
+            "name": "Roles"
+          }
+        ],
+        "name": "Authenticated"
+      }
+    ],
+    "type": "AnyOf"
+  },
+  "propConfig": {
+    "custom.extentionType": {
+      "binding": {
+        "config": {
+          "path": "session.custom.equipment.extension"
+        },
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.preview": {
+      "binding": {
+        "config": {
+          "path": "view.custom.triggerRefresh"
+        },
+        "transforms": [
+          {
+            "expression": "false",
+            "type": "expression"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.program": {
+      "binding": {
+        "config": {
+          "path": "view.custom.programData"
+        },
+        "transforms": [
+          {
+            "expression": "runScript(\u0027BlueRidge.HMI.CNCLoader.Recipe.createRecipe\u0027,0,{value})",
+            "type": "expression"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.programData": {
+      "binding": {
+        "config": {
+          "struct": {
+            "equipmentUUID": "{session.custom.equipment}",
+            "extensionTypeUUID": "{view.custom.extentionType}",
+            "rerunMode": "{view.custom.rerunMode}",
+            "selectedBore": "{session.custom.selectedBore}",
+            "selectedCylinders": "{session.custom.selectedCylinders}",
+            "selectedData": "{view.custom.selectedData}",
+            "selectedMill": "{session.custom.selectedMill}"
+          },
+          "waitOnAll": true
+        },
+        "type": "expr-struct"
+      },
+      "persistent": true
+    },
+    "custom.rerunMode": {
+      "binding": {
+        "config": {
+          "bidirectional": true,
+          "path": "session.custom.rerun"
+        },
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.selectedAssignedNumbers": {
+      "persistent": true
+    },
+    "custom.selectedCylinders": {
+      "binding": {
+        "config": {
+          "path": "session.custom.selectedCylinders"
+        },
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.selectedData": {
+      "binding": {
+        "config": {
+          "path": "session.custom.selectedData"
+        },
+        "type": "property"
+      }
+    },
+    "custom.selectionsMade": {
+      "binding": {
+        "config": {
+          "path": "view.custom.selectedData"
+        },
+        "transforms": [
+          {
+            "code": "#\tsystem.perspective.print(value)\n\tengineKey \u003d value[\"Engine\"]\n\toperationKey \u003d value[\"Operation\"]\n\tcylinderKey \u003d value[\"Cylinder\"]\n\tmillingKey \u003d value[\"Milling\"]\n\n\tboreOperationParams \u003d []\n\textensionTypeUUID \u003d self.session.custom.equipment.extension\n\tOperationParameterLists \u003d BlueRidge.HMI.CNCLoader.ParameterList.getAll(operationKey)\n\tOperationParameterList \u003d next((v for v in OperationParameterLists if v[\u0027extensionTypeUUID\u0027] \u003d\u003d extensionTypeUUID),None)\n\tif OperationParameterList: \n\t\tOperationParameterListUUID \u003d OperationParameterList[\u0027key\u0027]\n\t\tboreOperationParams \u003d BlueRidge.HMI.CNCLoader.EngineParameter.getAll(OperationParameterListUUID)\n\t\n\tmillOperationParams \u003d []\n\tOperationParameterLists \u003d BlueRidge.HMI.CNCLoader.ParameterList.getAll(millingKey)\n\tOperationParameterList \u003d next((v for v in OperationParameterLists if v[\u0027extensionTypeUUID\u0027] \u003d\u003d extensionTypeUUID),None)\n\tif OperationParameterList: \n\t\tOperationParameterListUUID \u003d OperationParameterList[\u0027key\u0027]\n\t\tmillOperationParams \u003d BlueRidge.HMI.CNCLoader.EngineParameter.getAll(OperationParameterListUUID)\n\t\n\tresp \u003d []\n\tengine \u003d BlueRidge.HMI.CNCLoader.Engine.getOne(engineKey)\n\tengineName \u003d engine[\u0027name\u0027]\n\tblockConfig \u003d engine[\u0027blockConfig\u0027]\n\tresp.append({\u0027text\u0027:engineName,\u0027value\u0027:True})\n\toperationName \u003d BlueRidge.HMI.CNCLoader.Operation.getOne(operationKey).get(\u0027name\u0027)\n\t\n\tif not operationName:\n\t\toperationName \u003d \u0027Bore: None\u0027\n\t\tresp.append({\u0027text\u0027:operationName,\u0027value\u0027:False})\n\telse:\n\t\tselectedValue \u003d self.session.custom.selectedBore\n\t\tif selectedValue:\n\t\t\tselectedLabel \u003d next((i[\"Name\"] for i in boreOperationParams if i[\"Assignment\"] \u003d\u003d selectedValue), None)\n\t\t\toperationName \u003d operationName+\u0027 - %s\u0027 % (selectedLabel)\n\t\tresp.append({\u0027text\u0027:operationName,\u0027value\u0027:True})\n\t\n\tif cylinderKey \u003d\u003d 1:\n\t\tresp.append({\u0027text\u0027:\"Cylinders: All\",\u0027value\u0027:True})\n\t\tselectedAssignedNumbers \u003d []\n\telse:\n\t\tselectedCylinders \u003d self.custom.selectedCylinders\n\t\tassignedNumbers \u003d BlueRidge.HMI.CNCLoader.BlockConfig.getOne(blockConfig)[\u0027assignedNumbers\u0027]\n\t\tselectedCylindersFlat \u003d [item for sublist in selectedCylinders for item in sublist]\n\t\tselectedAssignedNumbers\u003d[num for sel, num in zip(selectedCylindersFlat, assignedNumbers) if bool(sel)]\n\t\tresp.append({\u0027text\u0027:\"Cylinders:{}\".format(selectedAssignedNumbers),\u0027value\u0027:False})\n\t\tself.custom.selectedAssignedNumbers \u003d selectedAssignedNumbers\n\t\n\tif millingKey \u003d\u003d 2:\n\t\tresp.append({\u0027text\u0027:\u0027Milling: None\u0027,\u0027value\u0027:False})\n\telse:\n\t\tmillingName \u003d BlueRidge.HMI.CNCLoader.Operation.getOne(millingKey)[\u0027name\u0027]\n\t\tselectedValue \u003d self.session.custom.selectedMill\n\t\tif selectedValue:\n\t\t\tselectedLabel \u003d next((i[\"Name\"] for i in millOperationParams if i[\"Assignment\"] \u003d\u003d selectedValue), None)\n\t\t\tmillingName \u003d millingName+\u0027 - %s\u0027 % (selectedLabel)\n\t\tresp.append({\u0027text\u0027:millingName,\u0027value\u0027:True})\n\treturn resp",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.triggerRefresh": {
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 1000
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Icon"
+            },
+            "position": {
+              "basis": "75px"
+            },
+            "props": {
+              "path": "material/backup",
+              "style": {
+                "marginLeft": 20,
+                "marginRight": 20
+              }
+            },
+            "type": "ia.display.icon"
+          },
+          {
+            "meta": {
+              "name": "Label"
+            },
+            "position": {
+              "basis": "50px",
+              "grow": 1
+            },
+            "props": {
+              "style": {
+                "classes": "BlueRidge/boldTextLarge"
+              },
+              "text": "CNC Loader - Recipe Submission"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "Rerun"
+            },
+            "position": {
+              "basis": "120px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.rerunMode"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "backgroundColor": "#FFFF00",
+                "color": "#000000",
+                "fontWeight": "bold",
+                "margin": 20,
+                "textAlign": "center"
+              },
+              "text": "RE-RUN MODE"
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "basis": "75px"
+        },
+        "props": {
+          "style": {
+            "classes": "BlueRidge/Header/Header"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "BlueRidge/boldTitleMedium"
+                      },
+                      "text": "Selections Made"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "events": {
+                      "dom": {
+                        "onClick": {
+                          "config": {
+                            "draggable": true,
+                            "id": "Filter",
+                            "modal": false,
+                            "overlayDismiss": false,
+                            "resizable": true,
+                            "showCloseIcon": true,
+                            "type": "open",
+                            "viewPath": "BlueRidge/Components/_Recipe/Popups/Filter",
+                            "viewportBound": false
+                          },
+                          "scope": "C",
+                          "type": "popup"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "name": "Icon"
+                    },
+                    "position": {
+                      "basis": "30px",
+                      "display": false
+                    },
+                    "props": {
+                      "path": "material/filter_list"
+                    },
+                    "type": "ia.display.icon"
+                  }
+                ],
+                "meta": {
+                  "name": "FlexContainer"
+                },
+                "position": {
+                  "basis": "50px",
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "BlueRidge/Header/Header",
+                    "padding": 10
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "basis": "25px",
+                      "display": false,
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Select Engine Option"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "FlexRepeater"
+                        },
+                        "position": {
+                          "basis": "320px",
+                          "grow": 1
+                        },
+                        "propConfig": {
+                          "props.instances": {
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.selectionsMade"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "direction": "column",
+                          "elementStyle": {
+                            "marginBottom": 10
+                          },
+                          "path": "BlueRidge/Components/_HMI/_CNCLoader/LabelOfLists",
+                          "useDefaultViewWidth": false
+                        },
+                        "scripts": {
+                          "customMethods": [],
+                          "extensionFunctions": null,
+                          "messageHandlers": [
+                            {
+                              "messageType": "OneShotButtonEngine",
+                              "pageScope": true,
+                              "script": "\t# implement your handler here",
+                              "sessionScope": false,
+                              "viewScope": false
+                            }
+                          ]
+                        },
+                        "type": "ia.display.flex-repeater"
+                      }
+                    ],
+                    "meta": {
+                      "name": "FlexContainer"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "paddingBottom": 10,
+                        "paddingLeft": 10,
+                        "paddingRight": 10,
+                        "paddingTop": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "ListOfLabels"
+                },
+                "position": {
+                  "basis": "260px",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "backgroundColor": "#AAAAAA",
+                    "marginBottom": 5
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tpreview \u003d self.view.custom.preview\n\tself.view.custom.preview \u003d not preview"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "Button"
+                },
+                "position": {
+                  "basis": "34px"
+                },
+                "propConfig": {
+                  "meta.visible": {
+                    "binding": {
+                      "config": {
+                        "expression": "isAuthorized(false, \"Authenticated/Roles/JET-Administrator\")"
+                      },
+                      "enabled": false,
+                      "type": "expr"
+                    }
+                  },
+                  "props.enabled": {
+                    "binding": {
+                      "config": {
+                        "expression": "isAuthorized(false, \"Authenticated/Roles/JET-RecipeAdmin\", \"Authenticated/Roles/JET-Administrator\")"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "margin": 10
+                  },
+                  "text": "Preview Program"
+                },
+                "type": "ia.input.button"
+              }
+            ],
+            "meta": {
+              "name": "SelectionsMade"
+            },
+            "position": {
+              "basis": "25%"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "margin": 10
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "basis": "25px"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "BlueRidge/boldTitleMedium"
+                      },
+                      "text": "The following selections have been made."
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "Label_0"
+                    },
+                    "position": {
+                      "basis": "25px"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "BlueRidge/boldTitleMedium"
+                      },
+                      "text": "Please review selections and submit."
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "FlexContainer"
+                },
+                "position": {
+                  "basis": "310px",
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "justify": "center",
+                  "style": {
+                    "classes": "BlueRidge/boldTitleMedium",
+                    "padding": 10
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "TextDirections"
+            },
+            "position": {
+              "grow": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "!{view.custom.preview}"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "backgroundColor": "#AAAAAA",
+                "margin": 10
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "basis": "25px"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "BlueRidge/boldTitleMedium"
+                      },
+                      "text": "Program Preview:"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "TextArea"
+                    },
+                    "position": {
+                      "basis": "160px",
+                      "grow": 1
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.program"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "BlueRidge/boldTitleMedium",
+                        "textAlign": "left"
+                      }
+                    },
+                    "type": "ia.input.text-area"
+                  }
+                ],
+                "meta": {
+                  "name": "FlexContainer"
+                },
+                "position": {
+                  "basis": "310px",
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "BlueRidge/boldTitleMedium",
+                    "padding": 10
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "ProgramPreview"
+            },
+            "position": {
+              "grow": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.preview"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "backgroundColor": "#AAAAAA",
+                "margin": 10
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "450px"
+        },
+        "props": {
+          "alignItems": "flex-start",
+          "style": {
+            "classes": "BlueRidge/Menu/Menu",
+            "padding": 30
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": [
+                      {
+                        "config": {
+                          "script": "\tdata \u003d {\"text\": self.view.custom.program,\n\t\t\u0027filename\u0027:self.session.custom.equipment.filename,\n\t\t}\n\tresp \u003d BlueRidge.HMI.CNCLoader.Recipe.saveRecipe(data)\n\tif resp \u003d\u003d -1:\n\t\tsystem.perspective.navigate(\u0027/hmi/cncloader/runcomplete\u0027)"
+                        },
+                        "scope": "G",
+                        "type": "script"
+                      },
+                      {
+                        "config": {
+                          "page": "/hmi/cncloader/runcomplete"
+                        },
+                        "enabled": false,
+                        "scope": "C",
+                        "type": "nav"
+                      }
+                    ]
+                  }
+                },
+                "meta": {
+                  "name": "Button_0"
+                },
+                "position": {
+                  "basis": "50px",
+                  "grow": 1
+                },
+                "props": {
+                  "style": {
+                    "classes": "BlueRidge/Components/actionButtonRound",
+                    "margin": 10
+                  },
+                  "text": "SUBMIT"
+                },
+                "type": "ia.input.button"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": [
+                      {
+                        "config": {
+                          "script": "#\ttrigger \u003d self.view.custom.triggerRefresh\n#\tself.view.custom.triggerRefresh \u003d not trigger\n\tselectedData \u003d {\n\t  \"Engine\": 0,\n\t  \"Operation\": 0,\n\t  \"Cylinder\": 0,\n\t  \"Milling\": 0,\n\t}\n\tif self.view.custom.rerunMode:\n\t\tselectedData[\u0027Engine\u0027] \u003d self.view.custom.selectedData.Engine\n\tself.session.custom.selectedData \u003d selectedData\n\tself.session.custom.selectedCylinders \u003d []\n\tself.session.custom.selectedBore \u003d 0\n\tself.session.custom.selectedMill \u003d 0\n#\tselectedData \u003d self.session.custom.selectedData\n#\tselectedCylinders \u003d self.session.custom.selectedCylinders\n#\tsystem.perspective.print(\u0027selectedData: {}\u0027.format(selectedData))\n#\tsystem.perspective.print(\u0027selectedCylinders: {}\u0027.format(selectedCylinders))\n\tsystem.perspective.navigate(\u0027/hmi/cncloader/recipeselection\u0027)"
+                        },
+                        "scope": "G",
+                        "type": "script"
+                      },
+                      {
+                        "config": {
+                          "page": "/hmi/cncloader/recipeselection"
+                        },
+                        "enabled": false,
+                        "scope": "C",
+                        "type": "nav"
+                      }
+                    ]
+                  }
+                },
+                "meta": {
+                  "name": "Button"
+                },
+                "position": {
+                  "basis": "50px",
+                  "grow": 1
+                },
+                "props": {
+                  "style": {
+                    "classes": "BlueRidge/Components/dangerButtonRound",
+                    "margin": 10
+                  },
+                  "text": "CANCEL"
+                },
+                "type": "ia.input.button"
+              }
+            ],
+            "meta": {
+              "name": "FlexContainer"
+            },
+            "position": {
+              "basis": "150px"
+            },
+            "props": {
+              "direction": "column"
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Lower"
+        },
+        "position": {
+          "basis": "200px",
+          "grow": 1
+        },
+        "props": {
+          "alignItems": "flex-start",
+          "justify": "center",
+          "style": {
+            "classes": "BlueRidge/Menu/Menu"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column"
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "refreshTrigger",
+          "pageScope": true,
+          "script": "\ttrigger \u003d self.view.custom.triggerRefresh\n\tself.view.custom.triggerRefresh \u003d not trigger\n\tself.view.custom.selectedData \u003d \u0027\u0027",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

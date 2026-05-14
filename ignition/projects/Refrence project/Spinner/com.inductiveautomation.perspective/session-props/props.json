@@ -1,0 +1,155 @@
+{
+  "custom": {
+    "DragPayload": {
+      "active": false,
+      "viewPath": ""
+    },
+    "buttonConfigDock": {
+      "buttonIndex": {},
+      "headOperationUUID": "value",
+      "isOpen": false
+    },
+    "equipment": {
+      "available": true,
+      "extension": "2B73EF83-F77A-4F24-A66D-7E0649EEC320",
+      "filename": "filename.txt",
+      "hmi": "1",
+      "ip": "Hostname",
+      "key": "D26F8BAD-7495-480B-9AFC-4E9277B5BCED",
+      "name": "TXT Equipment",
+      "plantUUID": "48A4E0B4-8A35-4D50-97C2-A9328B7E2C11",
+      "type": "Equipment"
+    },
+    "hMISelections": {
+      "depth": {
+        "value": 0,
+        "variable": "Q1640"
+      },
+      "extensionType": "16EF8355-1977-4448-9A84-B345904154D4",
+      "probed": {
+        "value": 0,
+        "variable": "QL2"
+      },
+      "process": "new",
+      "selectedButtons": [
+        {
+          "operationUUID": "744D8391-9A07-F111-8CBF-000C2986FE9B",
+          "selections": [
+            {
+              "selected": true,
+              "widgetUUID": "3ac09495-8d00-4922-9315-1ce0c5c41e08"
+            },
+            {
+              "selected": true,
+              "widgetUUID": "2a85260d-0e77-4603-bb89-5d8dda80811b"
+            },
+            {
+              "selected": true,
+              "widgetUUID": "bb45991c-915a-41a7-ad07-2270dab0a2f3"
+            },
+            {
+              "selected": true,
+              "widgetUUID": "93b9b504-17e1-45d6-aa9b-96ad351267e4"
+            },
+            {
+              "selected": true,
+              "widgetUUID": "9ca5d34a-7735-45d7-880a-f264258747b5"
+            },
+            {
+              "selected": true,
+              "widgetUUID": "838bb679-1fb3-4229-b931-7383b36eb708"
+            },
+            {
+              "selected": true,
+              "widgetUUID": "5b42d5e0-dec6-4b21-93c8-9a834e1859c1"
+            },
+            {
+              "selected": true,
+              "widgetUUID": "78f7d55f-9c97-4810-ab7c-2f069526ce53"
+            }
+          ]
+        }
+      ],
+      "selectedOperation": [],
+      "selectedPart": ""
+    },
+    "rerun": false,
+    "selectedBore": 0,
+    "selectedCylinders": [],
+    "selectedData": {},
+    "selectedMill": 0
+  },
+  "propConfig": {
+    "props.auth": {
+      "access": "PRIVATE",
+      "persistent": false
+    },
+    "props.device.accelerometer": {
+      "access": "SYSTEM",
+      "persistent": false
+    },
+    "props.device.identifier": {
+      "access": "SYSTEM",
+      "persistent": false
+    },
+    "props.device.timezone": {
+      "access": "SYSTEM",
+      "persistent": false
+    },
+    "props.device.type": {
+      "access": "SYSTEM",
+      "persistent": false
+    },
+    "props.device.userAgent": {
+      "access": "SYSTEM",
+      "persistent": false
+    },
+    "props.gateway": {
+      "access": "SYSTEM",
+      "persistent": false
+    },
+    "props.geolocation.data": {
+      "access": "SYSTEM",
+      "persistent": false
+    },
+    "props.geolocation.permissionGranted": {
+      "access": "SYSTEM",
+      "persistent": false
+    },
+    "props.host": {
+      "access": "SYSTEM",
+      "persistent": false
+    },
+    "props.id": {
+      "access": "SYSTEM",
+      "persistent": false
+    },
+    "props.lastActivity": {
+      "access": "SYSTEM",
+      "persistent": false
+    },
+    "props.offline.capable": {
+      "access": "SYSTEM",
+      "persistent": false
+    },
+    "props.offline.enabled": {
+      "access": "SYSTEM",
+      "persistent": false
+    },
+    "props.offline.lastSynced": {
+      "access": "SYSTEM",
+      "persistent": false
+    }
+  },
+  "props": {
+    "address": "10.20.11.157",
+    "appBar": {
+      "togglePosition": "hidden"
+    },
+    "device": {},
+    "geolocation": {},
+    "locale": "en-US",
+    "offline": {},
+    "timeZoneId": "America/Indianapolis"
+  }
+}

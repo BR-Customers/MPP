@@ -1,0 +1,109 @@
+{
+  "custom": {
+    "selected": false
+  },
+  "params": {
+    "Part": 834510,
+    "PartUUID": "value"
+  },
+  "propConfig": {
+    "custom.selected": {
+      "binding": {
+        "config": {
+          "expression": "if({session.custom.hMISelections.selectedPart} \u003d {view.params.PartUUID}, true, false)"
+        },
+        "overlayOptOut": true,
+        "type": "expr"
+      },
+      "persistent": true
+    },
+    "params.Part": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.PartUUID": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 64,
+      "width": 180
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tselected \u003d self.view.custom.selected\n\tself.view.custom.selected \u003d not selected\n\tself.session.custom.hMISelections.selectedPart \u003d self.view.params.PartUUID\n\tself.session.custom.hMISelections.selectedOperation \u003d []\n\tself.session.custom.hMISelections.selectedButtons \u003d []\n\tself.session.custom.hMISelections.process \u003d \u0027new\u0027\n\tsystem.perspective.sendMessage(\u0027headSelected\u0027, {\u0027part\u0027: self.view.params.Part})\n\tsystem.perspective.closePopup(\u0027ListOfButtons\u0027)"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "Button"
+        },
+        "position": {
+          "basis": "34px",
+          "grow": 1
+        },
+        "propConfig": {
+          "props.style.classes": {
+            "binding": {
+              "config": {
+                "path": "view.custom.selected"
+              },
+              "overlayOptOut": true,
+              "transforms": [
+                {
+                  "fallback": "BlueRidge/Components/dangerButtonRound",
+                  "inputType": "scalar",
+                  "mappings": [
+                    {
+                      "input": false,
+                      "output": "BlueRidge/Components/dangerButtonRound"
+                    },
+                    {
+                      "input": true,
+                      "output": "BlueRidge/Components/actionButtonRound"
+                    }
+                  ],
+                  "outputType": "scalar",
+                  "type": "map"
+                }
+              ],
+              "type": "property"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.Part"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontSize": 20
+          }
+        },
+        "type": "ia.input.button"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column"
+    },
+    "type": "ia.container.flex"
+  }
+}

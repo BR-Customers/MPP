@@ -1,0 +1,143 @@
+{
+  "custom": {
+    "getCylindersData": {
+      "bankAssignedNumbers": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "bankCount": 2,
+      "bankNumber": 1,
+      "bankSelections": [
+        1,
+        0,
+        0,
+        0
+      ],
+      "cylinderCount": 5,
+      "key": 1
+    }
+  },
+  "params": {
+    "bankAssignedNumbers": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "bankCount": 2,
+    "bankNumber": 1,
+    "bankSelections": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "cylinderCount": 5,
+    "key": 1
+  },
+  "propConfig": {
+    "custom.getCylindersData": {
+      "binding": {
+        "config": {
+          "struct": {
+            "bankAssignedNumbers": "{view.params.bankAssignedNumbers}",
+            "bankCount": "{view.params.bankCount}",
+            "bankNumber": "{view.params.bankNumber}",
+            "bankSelections": "{view.params.bankSelections}",
+            "cylinderCount": "{view.params.cylinderCount}",
+            "key": "{view.params.key}"
+          },
+          "waitOnAll": true
+        },
+        "type": "expr-struct"
+      },
+      "persistent": true
+    },
+    "params.bankAssignedNumbers": {
+      "paramDirection": "inout",
+      "persistent": true
+    },
+    "params.bankCount": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.bankNumber": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.bankSelections": {
+      "paramDirection": "inout",
+      "persistent": true
+    },
+    "params.cylinderCount": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.key": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "props.defaultSize.width": {
+      "binding": {
+        "config": {
+          "expression": "floor({view.params.cylinderCount}/{view.params.bankCount})*50"
+        },
+        "type": "expr"
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 50
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "FlexRepeater"
+        },
+        "position": {
+          "basis": "100px",
+          "grow": 1
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "config": {
+                "path": "view.custom.getCylindersData"
+              },
+              "transforms": [
+                {
+                  "code": "\treturn BlueRidge.Config.BlockConfig.getCylinders(value)",
+                  "type": "script"
+                }
+              ],
+              "type": "property"
+            },
+            "onChange": {
+              "enabled": false,
+              "script": "#\tsystem.perspective.print(\"bank instances: {}\".format(currentValue.value))\n\tbankNumber \u003d self.view.params.bankNumber\n\tinstances \u003d currentValue.value\n#\tsystem.perspective.print(instances)\n\tbankSelectedCylinders \u003d [instance.value[\u0027selected\u0027].value for instance in instances]\n#\tsystem.perspective.print(bankSelectedCylinders)\n\tsystem.perspective.sendMessage(\"selectCylinders\",{\u0027bankNumber\u0027:bankNumber-1,\u0027bankSelectedCylinders\u0027:bankSelectedCylinders})"
+            }
+          }
+        },
+        "props": {
+          "path": "BlueRidge/Components/_Config/_Engines/_BlockConfig/CylinderOfBank",
+          "style": {
+            "backgroundColor": "--callToAction"
+          }
+        },
+        "type": "ia.display.flex-repeater"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column"
+    },
+    "type": "ia.container.flex"
+  }
+}

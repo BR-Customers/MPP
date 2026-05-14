@@ -1,0 +1,7 @@
+{
+  "title": "Spinner",
+  "description": "Jasper Engine and Transmission CNC Recipe Managment Applicaiton",
+  "enabled": true,
+  "inheritable": false,
+  "parent": ""
+}

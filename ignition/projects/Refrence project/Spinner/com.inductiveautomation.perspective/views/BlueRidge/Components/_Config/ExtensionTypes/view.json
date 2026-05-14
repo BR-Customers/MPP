@@ -1,0 +1,1602 @@
+{
+  "custom": {
+    "instance": null,
+    "instances": [
+      {
+        "available": true,
+        "key": "0EA5333F-9831-41E1-866A-B226674298DC",
+        "text": ".EIN",
+        "value": "",
+        "view": "0EA5333F-9831-41E1-866A-B226674298DC"
+      },
+      {
+        "available": false,
+        "key": "89E76621-46FA-4DB8-A832-05F6344D63B0",
+        "text": ".JPG",
+        "value": "",
+        "view": "89E76621-46FA-4DB8-A832-05F6344D63B0"
+      },
+      {
+        "available": true,
+        "key": "2B73EF83-F77A-4F24-A66D-7E0649EEC320",
+        "text": ".TXT",
+        "value": "",
+        "view": "2B73EF83-F77A-4F24-A66D-7E0649EEC320"
+      },
+      {
+        "available": true,
+        "key": "16EF8355-1977-4448-9A84-B345904154D4",
+        "text": ".h",
+        "value": "",
+        "view": "16EF8355-1977-4448-9A84-B345904154D4"
+      }
+    ],
+    "operationTypes": null,
+    "paramDefault": [],
+    "parameterDefaults": [],
+    "selectedData": 0,
+    "selectedOperationType": null,
+    "selectedTab": -1,
+    "tableData": [],
+    "triggerRefresh": false
+  },
+  "params": {},
+  "propConfig": {
+    "custom.currentType": {
+      "persistent": false
+    },
+    "custom.instance": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\u0027BlueRidge.Config.ExtensionType.getOne\u0027,0,{view.custom.selectedData})"
+        },
+        "type": "expr"
+      },
+      "onChange": {
+        "enabled": false,
+        "script": "\tif origin \u003d\u003d \u0027BindingWriteback\u0027:\n\t\tdata \u003d self.custom.instance\n\t\tdata \u003d BlueRidge.Config.Util.convertWrapperObjectToJson(data)\n\t\tdata[\u0027user\u0027]\u003dself.session.props.auth.user.userName\n#\t\tsystem.perspective.print(data)\n\t\tresp \u003d BlueRidge.Config.ExtensionType.update(data)\n\t\tif resp \u003d\u003d -1:\n\t\t\tsystem.perspective.sendMessage(\"refreshTrigger\")\n\t\t\tpass"
+      },
+      "persistent": true
+    },
+    "custom.instance.extension": {
+      "onChange": {
+        "enabled": null,
+        "script": "\tif currentValue.value[0] !\u003d \u0027.\u0027:\n\t\tself.custom.instance.extension \u003d \u0027.\u0027+currentValue.value"
+      }
+    },
+    "custom.instances": {
+      "binding": {
+        "config": {
+          "path": "view.custom.triggerRefresh"
+        },
+        "transforms": [
+          {
+            "expression": "runScript(\"BlueRidge.Config.ExtensionType.getAll\",0)",
+            "type": "expression"
+          },
+          {
+            "code": "\tvalue.sort(key\u003dlambda x: x[\u0027text\u0027])\n\treturn value",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.operationTypes": {
+      "binding": {
+        "config": {
+          "path": "view.custom.triggerRefresh"
+        },
+        "transforms": [
+          {
+            "expression": "runScript(\u0027BlueRidge.Config.Util.getOperationTypes\u0027,0)",
+            "type": "expression"
+          },
+          {
+            "code": "\tvalue.sort(key\u003dlambda x: x[\u0027text\u0027])\n\treturn value",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.paramDefault": {
+      "onChange": {
+        "enabled": false,
+        "script": "\tif origin \u003d\u003d \u0027BindingWriteback\u0027:\n\t\tdata \u003d self.custom.paramDefault\n\t\tif data:\n\t\t\tdata \u003d BlueRidge.Config.Util.convertWrapperObjectToJson(data)\n#\t\t\tsystem.perspective.print(\u0027Running Change Script1 {}\u0027.format(data))\n\t\t\tdata \u003d data[0]\n#\t\t\tsystem.perspective.print(\u0027Running Change Script2 {}\u0027.format(data))\n\t\t\tdata[\u0027user\u0027]\u003dself.session.props.auth.user.userName\n#\t\t\tsystem.perspective.print(\u0027Running Change Script3 {}\u0027.format(data))\n\t#\t\tsystem.perspective.print(data)\n\t\t\tresp \u003d BlueRidge.Config.ParamDefault.update(data)\n\t\t\tif resp \u003d\u003d -1:\n#\t\t\t\tsystem.perspective.sendMessage(\"refreshTrigger\")\n\t\t\t\tpass"
+      },
+      "persistent": true
+    },
+    "custom.parameterDefaults": {
+      "binding": {
+        "config": {
+          "path": "view.custom.triggerRefresh"
+        },
+        "transforms": [
+          {
+            "expression": "runScript(\"BlueRidge.Config.ParamDefault.getAll\",0,{view.custom.instance.key})",
+            "type": "expression"
+          }
+        ],
+        "type": "property"
+      },
+      "persistent": true
+    },
+    "custom.selectedData": {
+      "persistent": true
+    },
+    "custom.selectedOperationType": {
+      "binding": {
+        "config": {
+          "expression": "{view.custom.operationTypes}[{view.custom.selectedTab}]"
+        },
+        "type": "expr"
+      },
+      "persistent": true
+    },
+    "custom.selectedTab": {
+      "persistent": true
+    },
+    "custom.tableData": {
+      "binding": {
+        "config": {
+          "struct": {
+            "key": "{view.custom.selectedOperationType.key}",
+            "value": "{view.custom.parameterDefaults}"
+          },
+          "waitOnAll": true
+        },
+        "transforms": [
+          {
+            "code": "\tvalue \u003d [v for v in value[\u0027value\u0027] if v[\u0027operationTypeUUID\u0027] \u003d\u003d value[\u0027key\u0027]]\n\treturn value",
+            "type": "script"
+          }
+        ],
+        "type": "expr-struct"
+      },
+      "persistent": true
+    },
+    "custom.triggerRefresh": {
+      "persistent": true
+    }
+  },
+  "props": {},
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Icon"
+            },
+            "position": {
+              "basis": "50px"
+            },
+            "props": {
+              "path": "material/insert_drive_file",
+              "style": {
+                "marginLeft": 15,
+                "marginRight": 15
+              }
+            },
+            "type": "ia.display.icon"
+          },
+          {
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "basis": "50px",
+              "grow": 1
+            },
+            "props": {
+              "text": "Extension Types",
+              "textStyle": {
+                "classes": "BlueRidge/boldTextLarge"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "children": [
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tdata \u003d self.view.custom.instance\n\tdata \u003d BlueRidge.Config.Util.convertWrapperObjectToJson(data)\n\tdata[\u0027user\u0027]\u003dself.session.props.auth.user.userName\n\tresp1 \u003d BlueRidge.Config.ExtensionType.update(data)\n\tif resp1 \u003d\u003d -1:\n\t\tpass\n\t\n\tdatas \u003d self.view.custom.tableData\n\tdatas \u003d BlueRidge.Config.Util.convertWrapperObjectToJson(datas)\n\tfor data in datas:\n\t\tdata \u003d BlueRidge.Config.Util.convertWrapperObjectToJson(data)\n\t\tdata[\u0027user\u0027]\u003dself.session.props.auth.user.userName\n\t\tresp2 \u003d BlueRidge.Config.ParamDefault.update(data)\n\t\tif resp2 \u003d\u003d -1:\n\t\t\tpass\n\t\n\tsystem.perspective.sendMessage(\"refreshTrigger\")"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "Save"
+                },
+                "position": {
+                  "basis": "34px",
+                  "grow": 1
+                },
+                "props": {
+                  "text": "Save Changes"
+                },
+                "type": "ia.input.button"
+              }
+            ],
+            "meta": {
+              "name": "FlexContainer"
+            },
+            "position": {
+              "basis": "150px"
+            },
+            "props": {
+              "style": {
+                "padding": 7
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "basis": "50px"
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "basis": "25px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Extension Types"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "FlexRepeater"
+                        },
+                        "propConfig": {
+                          "props.instances": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.instances"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "direction": "column",
+                          "elementStyle": {
+                            "marginBottom": 10
+                          },
+                          "path": "BlueRidge/Components/_Config/ButtonOfLists_Oneshot",
+                          "useDefaultViewWidth": false
+                        },
+                        "type": "ia.display.flex-repeater"
+                      },
+                      {
+                        "events": {
+                          "dom": {
+                            "onClick": {
+                              "config": {
+                                "script": "\tsystem.perspective.sendMessage(\"OneShotButton\", 0)"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "FlexContainer"
+                        },
+                        "position": {
+                          "grow": 1
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "FlexContainer"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "backgroundColor": "#FFFFFF",
+                        "paddingBottom": 10,
+                        "paddingLeft": 10,
+                        "paddingRight": 10,
+                        "paddingTop": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "ListOfButton"
+                },
+                "position": {
+                  "basis": "250px",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "marginBottom": 5
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "EmbeddedView"
+                },
+                "position": {
+                  "basis": "50px"
+                },
+                "propConfig": {
+                  "props.params.data": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.instance"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "params": {
+                    "script": "BlueRidge.Config.ExtensionType"
+                  },
+                  "path": "BlueRidge/Components/_Config/_ExtensionTypes/AddArchiveButtons"
+                },
+                "type": "ia.display.view"
+              }
+            ],
+            "meta": {
+              "name": "Left"
+            },
+            "position": {
+              "basis": "250px"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "borderStyle": "solid",
+                "borderWidth": 2,
+                "paddingLeft": 10,
+                "paddingRight": 10
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "Label"
+                            },
+                            "position": {
+                              "basis": "25px"
+                            },
+                            "props": {
+                              "text": "Name"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "TextField"
+                            },
+                            "position": {
+                              "grow": 1
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.instance.name"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "type": "ia.input.text-field"
+                          }
+                        ],
+                        "meta": {
+                          "name": "TextEntryField"
+                        },
+                        "position": {
+                          "basis": "50px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "marginBottom": 5
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "Label"
+                            },
+                            "position": {
+                              "basis": "25px"
+                            },
+                            "props": {
+                              "text": "Filename Format"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "Dropdown"
+                            },
+                            "position": {
+                              "basis": "25px"
+                            },
+                            "propConfig": {
+                              "props.options": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "runScript(\u0027BlueRidge.Config.Util.getFileFormats\u0027,0)"
+                                  },
+                                  "type": "expr"
+                                }
+                              },
+                              "props.value": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.instance.format"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "type": "ia.input.dropdown"
+                          }
+                        ],
+                        "meta": {
+                          "name": "DropdownField"
+                        },
+                        "position": {
+                          "basis": "50px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "marginBottom": 5
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "Label"
+                            },
+                            "position": {
+                              "basis": "25px"
+                            },
+                            "props": {
+                              "text": "File Extension"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "TextField"
+                            },
+                            "position": {
+                              "grow": 1
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.instance.extension"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "type": "ia.input.text-field"
+                          }
+                        ],
+                        "meta": {
+                          "name": "TextEntryField_0"
+                        },
+                        "position": {
+                          "basis": "50px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "marginBottom": 5
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "meta": {
+                          "name": "Spacer"
+                        },
+                        "position": {
+                          "basis": "50px"
+                        },
+                        "props": {
+                          "style": {
+                            "marginBottom": 5
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "TopLeft"
+                    },
+                    "position": {
+                      "basis": "250px"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "paddingLeft": 10,
+                        "paddingRight": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "Spacer"
+                        },
+                        "position": {
+                          "basis": "11px"
+                        },
+                        "props": {
+                          "style": {
+                            "marginBottom": 5
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tdata \u003d self.view.custom.instance\n\tdata \u003d system.util.jsonEncode(data)\n\tresp \u003d BlueRidge.Config.ExtensionType.update(data)\n\tsystem.perspective.print(\"Update Button: {}\".format(resp))\n\tif resp \u003d\u003d \u0027success\u0027:\n\t\tsystem.perspective.sendMessage(\"refreshTrigger\")"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "Update"
+                        },
+                        "position": {
+                          "basis": "34px",
+                          "display": false
+                        },
+                        "props": {
+                          "text": "Update"
+                        },
+                        "type": "ia.input.button"
+                      }
+                    ],
+                    "meta": {
+                      "name": "TopCenter"
+                    },
+                    "position": {
+                      "basis": "250px"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "paddingLeft": 10,
+                        "paddingRight": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "Checkbox"
+                        },
+                        "position": {
+                          "basis": "50px",
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.selected": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.instance.available"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "marginBottom": 5
+                          },
+                          "text": "Available",
+                          "textPosition": "left",
+                          "uncheckedIcon": {
+                            "color": {
+                              "enabled": "#555555"
+                            }
+                          }
+                        },
+                        "type": "ia.input.checkbox"
+                      },
+                      {
+                        "meta": {
+                          "name": "Spacer"
+                        },
+                        "position": {
+                          "basis": "50px"
+                        },
+                        "props": {
+                          "style": {
+                            "marginBottom": 5
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "TopRight"
+                    },
+                    "position": {
+                      "basis": "250px",
+                      "grow": 1
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "paddingLeft": 10,
+                        "paddingRight": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "Top"
+                },
+                "position": {
+                  "basis": "200px"
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "Label"
+                        },
+                        "position": {
+                          "basis": "200px",
+                          "grow": 1
+                        },
+                        "props": {
+                          "text": "Parameter Defaults"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "EmbeddedView"
+                        },
+                        "position": {
+                          "basis": "250px"
+                        },
+                        "propConfig": {
+                          "props.params.data": {
+                            "binding": {
+                              "config": {
+                                "struct": {
+                                  "extensionTypeUUID": "{view.custom.selectedData}",
+                                  "operationTypeUUID": "{view.custom.selectedOperationType.key}",
+                                  "paramDefault": "{view.custom.paramDefault}"
+                                },
+                                "waitOnAll": true
+                              },
+                              "transforms": [
+                                {
+                                  "code": "#\tdata \u003d {}\n##\tif len(value[\u0027paramDefault\u0027])\u003e0: #archive\n##\t\tdata \u003d value[\u0027paramDefault\u0027][0]\n###\t\tdata \u003d system.util.jsonEncode(data)\n##\telse: #add\n##\t\tdata[\u0027extensionTypeUUID\u0027]\u003dvalue[\u0027extensionTypeUUID\u0027]\n##\t\tdata[\u0027operationTypeUUID\u0027]\u003dvalue[\u0027operationTypeUUID\u0027]\n#\tdata \u003d value[\u0027paramDefault\u0027][0]\n#\tdata[\u0027extensionTypeUUID\u0027]\u003dvalue[\u0027extensionTypeUUID\u0027]\n#\tdata[\u0027operationTypeUUID\u0027]\u003dvalue[\u0027operationTypeUUID\u0027]\n\treturn value",
+                                  "type": "script"
+                                }
+                              ],
+                              "type": "expr-struct"
+                            }
+                          }
+                        },
+                        "props": {
+                          "params": {
+                            "script": "BlueRidge/Config/ParamDefault"
+                          },
+                          "path": "BlueRidge/Components/_Config/_ExtensionTypes/AddArchiveParamDefault"
+                        },
+                        "type": "ia.display.view"
+                      }
+                    ],
+                    "meta": {
+                      "name": "Header"
+                    },
+                    "position": {
+                      "basis": "35px"
+                    },
+                    "props": {
+                      "alignItems": "flex-end",
+                      "style": {
+                        "marginBottom": 10
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "meta": {
+                      "name": "TabContainer"
+                    },
+                    "position": {
+                      "basis": "35px"
+                    },
+                    "propConfig": {
+                      "props.currentTabIndex": {
+                        "binding": {
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.selectedTab"
+                          },
+                          "type": "property"
+                        }
+                      },
+                      "props.tabs": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.operationTypes"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "type": "ia.container.tab"
+                  },
+                  {
+                    "events": {
+                      "component": {
+                        "onEditCellCommit": {
+                          "config": {
+                            "script": "\tvalueToSet \u003d event.value\n\tself.props.data[event.row][event.column] \u003d valueToSet"
+                          },
+                          "scope": "G",
+                          "type": "script"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "name": "Table"
+                    },
+                    "position": {
+                      "basis": "400px",
+                      "grow": 1
+                    },
+                    "propConfig": {
+                      "props.data": {
+                        "binding": {
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.tableData"
+                          },
+                          "type": "property"
+                        }
+                      },
+                      "props.selection.data": {
+                        "binding": {
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.paramDefault"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "columns": [
+                        {
+                          "align": "center",
+                          "boolean": "checkbox",
+                          "dateFormat": "MM/DD/YYYY",
+                          "editable": true,
+                          "field": "Name",
+                          "filter": {
+                            "boolean": {
+                              "condition": ""
+                            },
+                            "date": {
+                              "condition": "",
+                              "value": ""
+                            },
+                            "enabled": false,
+                            "number": {
+                              "condition": "",
+                              "value": ""
+                            },
+                            "string": {
+                              "condition": "",
+                              "value": ""
+                            },
+                            "visible": "on-hover"
+                          },
+                          "footer": {
+                            "align": "center",
+                            "justify": "left",
+                            "style": {
+                              "classes": ""
+                            },
+                            "title": ""
+                          },
+                          "header": {
+                            "align": "center",
+                            "justify": "left",
+                            "style": {
+                              "classes": ""
+                            },
+                            "title": ""
+                          },
+                          "justify": "auto",
+                          "nullFormat": {
+                            "includeNullStrings": false,
+                            "nullFormatValue": "",
+                            "strict": false
+                          },
+                          "number": "value",
+                          "numberFormat": "0,0.##",
+                          "progressBar": {
+                            "bar": {
+                              "color": "",
+                              "style": {
+                                "classes": ""
+                              }
+                            },
+                            "max": 100,
+                            "min": 0,
+                            "track": {
+                              "color": "",
+                              "style": {
+                                "classes": ""
+                              }
+                            },
+                            "value": {
+                              "enabled": true,
+                              "format": "0,0.##",
+                              "justify": "center",
+                              "style": {
+                                "classes": ""
+                              }
+                            }
+                          },
+                          "render": "auto",
+                          "resizable": true,
+                          "sort": "none",
+                          "sortable": true,
+                          "strictWidth": false,
+                          "style": {
+                            "classes": ""
+                          },
+                          "toggleSwitch": {
+                            "color": {
+                              "selected": "",
+                              "unselected": ""
+                            }
+                          },
+                          "viewParams": {},
+                          "viewPath": "",
+                          "visible": true,
+                          "width": ""
+                        },
+                        {
+                          "align": "center",
+                          "boolean": "checkbox",
+                          "dateFormat": "MM/DD/YYYY",
+                          "editable": true,
+                          "field": "Macro Variable",
+                          "filter": {
+                            "boolean": {
+                              "condition": ""
+                            },
+                            "date": {
+                              "condition": "",
+                              "value": ""
+                            },
+                            "enabled": false,
+                            "number": {
+                              "condition": "",
+                              "value": ""
+                            },
+                            "string": {
+                              "condition": "",
+                              "value": ""
+                            },
+                            "visible": "on-hover"
+                          },
+                          "footer": {
+                            "align": "center",
+                            "justify": "left",
+                            "style": {
+                              "classes": ""
+                            },
+                            "title": ""
+                          },
+                          "header": {
+                            "align": "center",
+                            "justify": "left",
+                            "style": {
+                              "classes": ""
+                            },
+                            "title": ""
+                          },
+                          "justify": "auto",
+                          "nullFormat": {
+                            "includeNullStrings": false,
+                            "nullFormatValue": "",
+                            "strict": false
+                          },
+                          "number": "value",
+                          "numberFormat": "0,0.##",
+                          "progressBar": {
+                            "bar": {
+                              "color": "",
+                              "style": {
+                                "classes": ""
+                              }
+                            },
+                            "max": 100,
+                            "min": 0,
+                            "track": {
+                              "color": "",
+                              "style": {
+                                "classes": ""
+                              }
+                            },
+                            "value": {
+                              "enabled": true,
+                              "format": "0,0.##",
+                              "justify": "center",
+                              "style": {
+                                "classes": ""
+                              }
+                            }
+                          },
+                          "render": "auto",
+                          "resizable": true,
+                          "sort": "none",
+                          "sortable": true,
+                          "strictWidth": false,
+                          "style": {
+                            "classes": ""
+                          },
+                          "toggleSwitch": {
+                            "color": {
+                              "selected": "",
+                              "unselected": ""
+                            }
+                          },
+                          "viewParams": {},
+                          "viewPath": "",
+                          "visible": true,
+                          "width": ""
+                        },
+                        {
+                          "align": "center",
+                          "boolean": "checkbox",
+                          "dateFormat": "MM/DD/YYYY",
+                          "editable": true,
+                          "field": "Value",
+                          "filter": {
+                            "boolean": {
+                              "condition": ""
+                            },
+                            "date": {
+                              "condition": "",
+                              "value": ""
+                            },
+                            "enabled": false,
+                            "number": {
+                              "condition": "",
+                              "value": ""
+                            },
+                            "string": {
+                              "condition": "",
+                              "value": ""
+                            },
+                            "visible": "on-hover"
+                          },
+                          "footer": {
+                            "align": "center",
+                            "justify": "left",
+                            "style": {
+                              "classes": ""
+                            },
+                            "title": ""
+                          },
+                          "header": {
+                            "align": "center",
+                            "justify": "left",
+                            "style": {
+                              "classes": ""
+                            },
+                            "title": ""
+                          },
+                          "justify": "auto",
+                          "nullFormat": {
+                            "includeNullStrings": false,
+                            "nullFormatValue": "",
+                            "strict": false
+                          },
+                          "number": "value",
+                          "numberFormat": "0,0.####",
+                          "progressBar": {
+                            "bar": {
+                              "color": "",
+                              "style": {
+                                "classes": ""
+                              }
+                            },
+                            "max": 100,
+                            "min": 0,
+                            "track": {
+                              "color": "",
+                              "style": {
+                                "classes": ""
+                              }
+                            },
+                            "value": {
+                              "enabled": true,
+                              "format": "0,0.##",
+                              "justify": "center",
+                              "style": {
+                                "classes": ""
+                              }
+                            }
+                          },
+                          "render": "auto",
+                          "resizable": true,
+                          "sort": "none",
+                          "sortable": true,
+                          "strictWidth": false,
+                          "style": {
+                            "classes": ""
+                          },
+                          "toggleSwitch": {
+                            "color": {
+                              "selected": "",
+                              "unselected": ""
+                            }
+                          },
+                          "viewParams": {},
+                          "viewPath": "",
+                          "visible": true,
+                          "width": ""
+                        },
+                        {
+                          "align": "center",
+                          "boolean": "checkbox",
+                          "dateFormat": "MM/DD/YYYY",
+                          "editable": true,
+                          "field": "Assignment",
+                          "filter": {
+                            "boolean": {
+                              "condition": ""
+                            },
+                            "date": {
+                              "condition": "",
+                              "value": ""
+                            },
+                            "enabled": false,
+                            "number": {
+                              "condition": "",
+                              "value": ""
+                            },
+                            "string": {
+                              "condition": "",
+                              "value": ""
+                            },
+                            "visible": "on-hover"
+                          },
+                          "footer": {
+                            "align": "center",
+                            "justify": "left",
+                            "style": {
+                              "classes": ""
+                            },
+                            "title": ""
+                          },
+                          "header": {
+                            "align": "center",
+                            "justify": "left",
+                            "style": {
+                              "classes": ""
+                            },
+                            "title": ""
+                          },
+                          "justify": "auto",
+                          "nullFormat": {
+                            "includeNullStrings": false,
+                            "nullFormatValue": "",
+                            "strict": false
+                          },
+                          "number": "value",
+                          "numberFormat": "0,0",
+                          "progressBar": {
+                            "bar": {
+                              "color": "",
+                              "style": {
+                                "classes": ""
+                              }
+                            },
+                            "max": 100,
+                            "min": 0,
+                            "track": {
+                              "color": "",
+                              "style": {
+                                "classes": ""
+                              }
+                            },
+                            "value": {
+                              "enabled": true,
+                              "format": "0,0.##",
+                              "justify": "center",
+                              "style": {
+                                "classes": ""
+                              }
+                            }
+                          },
+                          "render": "auto",
+                          "resizable": true,
+                          "sort": "none",
+                          "sortable": true,
+                          "strictWidth": false,
+                          "style": {
+                            "classes": ""
+                          },
+                          "toggleSwitch": {
+                            "color": {
+                              "selected": "",
+                              "unselected": ""
+                            }
+                          },
+                          "viewParams": [
+                            {
+                              "Cylinder": null,
+                              "Macro Variable": "#692",
+                              "Name": ".01\" OVER BORING TOOL OFFSET",
+                              "Value": 14,
+                              "key": "EA6D7662-8B24-4EE3-A72F-0DBF9F90E8D3",
+                              "operationTypeUUID": "3CDCCEF9-A094-479C-8D13-B6BC3E38217C"
+                            },
+                            {
+                              "Cylinder": null,
+                              "Macro Variable": "#691",
+                              "Name": ".02\" OVER BORING TOOL OFFSET",
+                              "Value": 15,
+                              "key": "F9DC550F-A757-4E31-8203-212DCAF10661",
+                              "operationTypeUUID": "3CDCCEF9-A094-479C-8D13-B6BC3E38217C"
+                            },
+                            {
+                              "Cylinder": null,
+                              "Macro Variable": "#690",
+                              "Name": ".03\" OVER BORING TOOL OFFSET",
+                              "Value": 16,
+                              "key": "8A47C767-227A-4B72-BBA3-46DB4B299B8C",
+                              "operationTypeUUID": "3CDCCEF9-A094-479C-8D13-B6BC3E38217C"
+                            },
+                            {
+                              "Cylinder": null,
+                              "Macro Variable": "#689",
+                              "Name": ".04\" OVER BORING TOOL OFFSET",
+                              "Value": 16,
+                              "key": "9D38F1E4-C6AE-44D9-86C7-4B8DDBA2E17E",
+                              "operationTypeUUID": "3CDCCEF9-A094-479C-8D13-B6BC3E38217C"
+                            },
+                            {
+                              "Cylinder": 1,
+                              "Macro Variable": "#651",
+                              "Name": "RUN CYLINDER 1 1\u003dYES, 0\u003dNO",
+                              "Value": 1,
+                              "key": "0760C05F-3BD0-4885-8F1C-92AE9D83DE6B",
+                              "operationTypeUUID": "3CDCCEF9-A094-479C-8D13-B6BC3E38217C"
+                            },
+                            {
+                              "Cylinder": 2,
+                              "Macro Variable": "#652",
+                              "Name": "RUN CYLINDER 2 1\u003dYES, 0\u003dNO",
+                              "Value": 1,
+                              "key": "E4F71E2F-C67D-4C06-91F0-957FFF9C8A6A",
+                              "operationTypeUUID": "3CDCCEF9-A094-479C-8D13-B6BC3E38217C"
+                            },
+                            {
+                              "Cylinder": 3,
+                              "Macro Variable": "#653",
+                              "Name": "RUN CYLINDER 3 1\u003dYES, 0\u003dNO",
+                              "Value": 1,
+                              "key": "B8DE83DB-B8F5-4ABA-80E6-AD3C01EEB67D",
+                              "operationTypeUUID": "3CDCCEF9-A094-479C-8D13-B6BC3E38217C"
+                            },
+                            {
+                              "Cylinder": 4,
+                              "Macro Variable": "#654",
+                              "Name": "RUN CYLINDER 4 1\u003dYES, 0\u003dNO",
+                              "Value": 1,
+                              "key": "78199D83-4E9F-4A56-9C0E-B706A8E42055",
+                              "operationTypeUUID": "3CDCCEF9-A094-479C-8D13-B6BC3E38217C"
+                            },
+                            {
+                              "Cylinder": 5,
+                              "Macro Variable": "#655",
+                              "Name": "RUN CYLINDER 5 1\u003dYES, 0\u003dNO",
+                              "Value": 1,
+                              "key": "1FDAB643-965D-4092-8779-C116FDDAF65C",
+                              "operationTypeUUID": "3CDCCEF9-A094-479C-8D13-B6BC3E38217C"
+                            },
+                            {
+                              "Cylinder": 6,
+                              "Macro Variable": "#656",
+                              "Name": "RUN CYLINDER 6 1\u003dYES, 0\u003dNO",
+                              "Value": 1,
+                              "key": "2BA51C6F-1DFD-4D3D-B344-C5F3E8B4864A",
+                              "operationTypeUUID": "3CDCCEF9-A094-479C-8D13-B6BC3E38217C"
+                            },
+                            {
+                              "Cylinder": 7,
+                              "Macro Variable": "#657",
+                              "Name": "RUN CYLINDER 7 1\u003dYES, 0\u003dNO",
+                              "Value": 1,
+                              "key": "977CF94D-EEDD-4072-91FC-DC5B5E9CD90F",
+                              "operationTypeUUID": "3CDCCEF9-A094-479C-8D13-B6BC3E38217C"
+                            },
+                            {
+                              "Cylinder": 8,
+                              "Macro Variable": "#658",
+                              "Name": "RUN CYLINDER 8 1\u003dYES, 0\u003dNO",
+                              "Value": 1,
+                              "key": "8E837ECB-AC7C-4262-9411-EC453FA9EADF",
+                              "operationTypeUUID": "3CDCCEF9-A094-479C-8D13-B6BC3E38217C"
+                            }
+                          ],
+                          "viewPath": "BlueRidge/Components/_Config/_ExtensionTypes/Dropdown",
+                          "visible": true,
+                          "width": ""
+                        },
+                        {
+                          "align": "center",
+                          "boolean": "checkbox",
+                          "dateFormat": "MM/DD/YYYY",
+                          "editable": false,
+                          "field": "key",
+                          "filter": {
+                            "boolean": {
+                              "condition": ""
+                            },
+                            "date": {
+                              "condition": "",
+                              "value": ""
+                            },
+                            "enabled": false,
+                            "number": {
+                              "condition": "",
+                              "value": ""
+                            },
+                            "string": {
+                              "condition": "",
+                              "value": ""
+                            },
+                            "visible": "on-hover"
+                          },
+                          "footer": {
+                            "align": "center",
+                            "justify": "left",
+                            "style": {
+                              "classes": ""
+                            },
+                            "title": ""
+                          },
+                          "header": {
+                            "align": "center",
+                            "justify": "left",
+                            "style": {
+                              "classes": ""
+                            },
+                            "title": ""
+                          },
+                          "justify": "auto",
+                          "nullFormat": {
+                            "includeNullStrings": false,
+                            "nullFormatValue": "",
+                            "strict": false
+                          },
+                          "number": "value",
+                          "numberFormat": "0,0.##",
+                          "progressBar": {
+                            "bar": {
+                              "color": "",
+                              "style": {
+                                "classes": ""
+                              }
+                            },
+                            "max": 100,
+                            "min": 0,
+                            "track": {
+                              "color": "",
+                              "style": {
+                                "classes": ""
+                              }
+                            },
+                            "value": {
+                              "enabled": true,
+                              "format": "0,0.##",
+                              "justify": "center",
+                              "style": {
+                                "classes": ""
+                              }
+                            }
+                          },
+                          "render": "auto",
+                          "resizable": true,
+                          "sort": "none",
+                          "sortable": true,
+                          "strictWidth": false,
+                          "style": {
+                            "classes": ""
+                          },
+                          "toggleSwitch": {
+                            "color": {
+                              "selected": "",
+                              "unselected": ""
+                            }
+                          },
+                          "viewParams": {},
+                          "viewPath": "",
+                          "visible": false,
+                          "width": ""
+                        },
+                        {
+                          "align": "center",
+                          "boolean": "checkbox",
+                          "dateFormat": "MM/DD/YYYY",
+                          "editable": false,
+                          "field": "operationTypeUUID",
+                          "filter": {
+                            "boolean": {
+                              "condition": ""
+                            },
+                            "date": {
+                              "condition": "",
+                              "value": ""
+                            },
+                            "enabled": false,
+                            "number": {
+                              "condition": "",
+                              "value": ""
+                            },
+                            "string": {
+                              "condition": "",
+                              "value": ""
+                            },
+                            "visible": "on-hover"
+                          },
+                          "footer": {
+                            "align": "center",
+                            "justify": "left",
+                            "style": {
+                              "classes": ""
+                            },
+                            "title": ""
+                          },
+                          "header": {
+                            "align": "center",
+                            "justify": "left",
+                            "style": {
+                              "classes": ""
+                            },
+                            "title": ""
+                          },
+                          "justify": "auto",
+                          "nullFormat": {
+                            "includeNullStrings": false,
+                            "nullFormatValue": "",
+                            "strict": false
+                          },
+                          "number": "value",
+                          "numberFormat": "0,0.##",
+                          "progressBar": {
+                            "bar": {
+                              "color": "",
+                              "style": {
+                                "classes": ""
+                              }
+                            },
+                            "max": 100,
+                            "min": 0,
+                            "track": {
+                              "color": "",
+                              "style": {
+                                "classes": ""
+                              }
+                            },
+                            "value": {
+                              "enabled": true,
+                              "format": "0,0.##",
+                              "justify": "center",
+                              "style": {
+                                "classes": ""
+                              }
+                            }
+                          },
+                          "render": "auto",
+                          "resizable": true,
+                          "sort": "none",
+                          "sortable": true,
+                          "strictWidth": false,
+                          "style": {
+                            "classes": ""
+                          },
+                          "toggleSwitch": {
+                            "color": {
+                              "selected": "",
+                              "unselected": ""
+                            }
+                          },
+                          "viewParams": {},
+                          "viewPath": "",
+                          "visible": false,
+                          "width": ""
+                        }
+                      ],
+                      "selection": {
+                        "selectedRow": ""
+                      }
+                    },
+                    "type": "ia.display.table"
+                  }
+                ],
+                "meta": {
+                  "name": "Bottom"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "marginBottom": 10,
+                    "marginRight": 10,
+                    "paddingLeft": 10
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "Right"
+            },
+            "position": {
+              "basis": "250px",
+              "grow": 1
+            },
+            "props": {
+              "direction": "column"
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "52px",
+          "grow": 1
+        },
+        "props": {
+          "style": {
+            "borderStyle": "solid",
+            "borderWidth": 3,
+            "paddingBottom": 10,
+            "paddingLeft": 10,
+            "paddingRight": 10,
+            "paddingTop": 10
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "backgroundColor": "#AAAAAA"
+      }
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "refreshTrigger",
+          "pageScope": true,
+          "script": "\ttrigger \u003d self.view.custom.triggerRefresh\n\tself.view.custom.triggerRefresh \u003d not trigger",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "OneShotButton",
+          "pageScope": true,
+          "script": "\tself.view.custom.selectedData \u003d payload",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "UpdateAssignment",
+          "pageScope": true,
+          "script": "\trow \u003d payload.get(\u0027row\u0027)\n\tvalue \u003d payload.get(\u0027value\u0027)\n\ttableData \u003d self.view.custom.tableData\n\tif len(tableData) \u003e\u003d row:\n\t\tself.view.custom.tableData[row].Assignment \u003d value",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

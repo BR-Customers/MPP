@@ -1,0 +1,1 @@
+SELECT DISTINCT equipmentType FROM recipe.operation
