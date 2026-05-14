@@ -1,0 +1,74 @@
+{
+  "custom": {},
+  "params": {
+    "Code": "",
+    "Id": 0
+  },
+  "propConfig": {
+    "params.Code": {
+      "paramDirection": "input"
+    },
+    "params.Id": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 28,
+      "width": 140
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "CodeLabel"
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.Code"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontSize": "11px",
+            "lineHeight": "1",
+            "pointerEvents": "none"
+          }
+        },
+        "type": "ia.display.label"
+      }
+    ],
+    "events": {
+      "dom": {
+        "onClick": {
+          "config": {
+            "script": "\tsystem.perspective.sendMessage(\"definitionClick\", payload\u003d{\"id\": self.view.params.Id}, scope\u003d\"page\")"
+          },
+          "scope": "G",
+          "type": "script"
+        }
+      }
+    },
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "justify": "center",
+      "style": {
+        "classes": "btn btn-sm",
+        "cursor": "pointer",
+        "height": "28px",
+        "padding": "0 12px",
+        "whiteSpace": "nowrap"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

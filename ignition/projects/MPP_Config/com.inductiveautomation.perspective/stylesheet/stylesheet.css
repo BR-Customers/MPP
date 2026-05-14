@@ -1551,9 +1551,106 @@ button {
 
 .psc-toast-success { border-left: 4px solid var(--mpp-state-good-fg); }
 .psc-toast-info    { border-left: 4px solid var(--mpp-accent-70); }
+.psc-toast-warning { border-left: 4px solid var(--mpp-state-warn-fg); }
 .psc-toast-error   { border-left: 4px solid var(--mpp-state-bad-fg); }
 
 .psc-toast-fade { opacity: 0; transition: opacity var(--mpp-transition-normal); }
+
+/* ─── Toast sub-elements ─────────────────────────────────────────── */
+.psc-toast-icon {
+    flex: 0 0 auto;
+    line-height: 1;
+    margin-top: 2px;
+    width: 18px;
+    height: 18px;
+}
+.psc-toast-icon-success { color: var(--mpp-state-good-fg); }
+.psc-toast-icon-info    { color: var(--mpp-accent-70); }
+.psc-toast-icon-warning { color: var(--mpp-state-warn-fg); }
+.psc-toast-icon-error   { color: var(--mpp-state-bad-fg); }
+
+.psc-toast-content {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.psc-toast-title {
+    font-weight: 600;
+    color: var(--mpp-text-primary);
+    line-height: 1.2;
+}
+.psc-toast-msg {
+    color: var(--mpp-text-secondary);
+    font-size: var(--mpp-fs-xs);
+    line-height: 1.3;
+    word-break: break-word;
+}
+
+.psc-toast-close {
+    flex: 0 0 auto;
+    cursor: pointer;
+    color: var(--mpp-text-tertiary);
+    line-height: 1;
+    margin-left: var(--mpp-space-2);
+    opacity: 0.75;
+    transition: opacity var(--mpp-transition-fast);
+}
+.psc-toast-close:hover { opacity: 1; color: var(--mpp-text-primary); }
+
+/* Progress bar — fills the width of the toast on enter, drains over TTL */
+.psc-toast-progress {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    background: transparent;
+    overflow: hidden;
+    border-radius: 0 0 var(--mpp-radius-md) var(--mpp-radius-md);
+}
+.psc-toast-progress::after {
+    content: "";
+    display: block;
+    height: 100%;
+    width: 100%;
+    background: var(--mpp-accent-70);
+    transform-origin: left;
+    animation: psc-toast-progress-drain linear forwards;
+    animation-duration: var(--mpp-toast-ttl, 8s);
+}
+.psc-toast-progress-success::after { background: var(--mpp-state-good-fg); }
+.psc-toast-progress-info::after    { background: var(--mpp-accent-70); }
+.psc-toast-progress-warning::after { background: var(--mpp-state-warn-fg); }
+
+/* Slide-in from the right + fade-out at end of TTL */
+.psc-toast-enter {
+    animation: psc-toast-slide-in 0.28s ease-out both;
+}
+.psc-toast-exit {
+    animation: psc-toast-fade-out 0.22s ease-in forwards;
+}
+@keyframes psc-toast-slide-in {
+    from { transform: translateX(12px); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes psc-toast-fade-out {
+    from { transform: translateX(0);   opacity: 1; }
+    to   { transform: translateX(12px); opacity: 0; }
+}
+@keyframes psc-toast-progress-drain {
+    from { transform: scaleX(1); }
+    to   { transform: scaleX(0); }
+}
+
+/* Hide Perspective's own popup chrome around toasts — we render our own. */
+.ia_popup.psc-toast-popup {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
 
 
 /* ============================================================================

@@ -1,0 +1,186 @@
+{
+  "custom": {},
+  "params": {
+    "id": "",
+    "level": "info",
+    "message": "",
+    "title": "",
+    "ttl": null
+  },
+  "propConfig": {
+    "custom.dismissAt": {
+      "binding": {
+        "config": {
+          "expression": "if(isNull({view.params.ttl}), null, dateArithmetic(now(0), {view.params.ttl}, \u0027second\u0027))"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.shouldClose": {
+      "binding": {
+        "config": {
+          "expression": "if(isNull({view.custom.dismissAt}), false, now(500) \u003e {view.custom.dismissAt})"
+        },
+        "type": "expr"
+      },
+      "onChange": {
+        "enabled": null,
+        "script": "\tif currentValue.value:\n\t\tBlueRidge.Common.Notify._dismiss(self, self.params.id)"
+      }
+    },
+    "params.id": {
+      "paramDirection": "input"
+    },
+    "params.level": {
+      "paramDirection": "input"
+    },
+    "params.message": {
+      "paramDirection": "input"
+    },
+    "params.title": {
+      "paramDirection": "input"
+    },
+    "params.ttl": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 80,
+      "width": 360
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "Icon"
+        },
+        "propConfig": {
+          "props.path": {
+            "binding": {
+              "config": {
+                "expression": "switch(\r\n{view.params.level}, \r\n\u0027success\u0027,\r\n\u0027warning\u0027,\r\n\u0027error\u0027,\r\n\u0027info\u0027,\r\n\u0027mpp/check_circle\u0027, \u0027mpp/warning\u0027, \u0027mpp/cancel\u0027, \u0027material/info\u0027, \u0027material/info\u0027)\r\n"
+              },
+              "type": "expr"
+            }
+          },
+          "props.style.classes": {
+            "binding": {
+              "config": {
+                "expression": "\u0027toast-icon toast-icon-\u0027 + {view.params.level}"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "type": "ia.display.icon"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Title"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.title"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "toast-title"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "Message"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.message"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "toast-msg"
+              }
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": {
+          "name": "Content"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "toast-content"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "events": {
+          "dom": {
+            "onClick": {
+              "config": {
+                "script": "\tBlueRidge.Common.Notify._dismiss(self, self.view.params.id)"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "CloseIcon",
+          "tooltip": {
+            "text": "Dismiss"
+          }
+        },
+        "props": {
+          "path": "mpp/cancel",
+          "style": {
+            "classes": "toast-close"
+          }
+        },
+        "type": "ia.display.icon"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "propConfig": {
+      "props.style.classes": {
+        "binding": {
+          "config": {
+            "expression": "\u0027toast toast-\u0027 + {view.params.level} + \u0027 toast-enter\u0027"
+          },
+          "type": "expr"
+        }
+      }
+    },
+    "props": {
+      "style": {
+        "overflow": "hidden"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

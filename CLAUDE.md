@@ -107,11 +107,23 @@ Stored procedures **SHALL NOT** use `OUTPUT` parameters — the Ignition JDBC dr
 - **One result set per proc.** If two were returned in legacy design, drop the second and use the sibling List proc.
 - **Test pattern:** INSERT-EXEC into a temp table matching the SELECT shape, assert against the temp table.
 
-### Ignition custom Perspective icon library
+### Ignition development reference (general)
 
-Custom icons live at `ignition/icons/mpp/` (mirrors gateway path `data/config/resources/core/com.inductiveautomation.perspective/icons/mpp/`, **Ignition 8.3** layout — different from 8.1's `data/modules/...` path). Sprite is one `mpp.svg` file using IA's wrapped-`<svg id="...">` format; deployment requires `mpp.svg` + `config.json` + `resource.json` together, plus a gateway service restart (Scan File System is unreliable for content modifications inside an existing sprite).
+The `ignition-context-pack/` folder contains a vendor-neutral, DevTools-verified reference for Ignition 8.3 file-based Perspective projects. Read on demand at the level of detail the task needs:
 
-Inside the sprite: viewBox `0 0 24 24` with `<path transform="translate(0 24) scale(0.025)" d="..."/>` to remap from Material Symbols' source font grid. **No `fill` attribute on the path** — Perspective's outer-SVG `fill: currentcolor` cascades only when the path doesn't override; recolor in views via the Icon component's top-level `color` prop or a Style Class with **Text → Color**. Lock spec (Material Symbols Outlined wght 300, grade -25, fill 0, opsz 48 source grid), source URL pattern (`raw.githubusercontent.com/google/material-design-icons` — `fonts.gstatic.com` doesn't expose the `grad` axis), and full deploy + recolor recipe documented in `ignition/icons/README.md`.
+- Project structure questions       → `ignition-context-pack/01_project_layout.md`
+- Perspective view authoring        → `ignition-context-pack/02_perspective_views.md` + `06_component_quirks.md`
+- Jython script modules             → `ignition-context-pack/03_script_python.md`
+- Named queries / DB access         → `ignition-context-pack/04_named_queries.md`
+- Project lifecycle / timers        → `ignition-context-pack/05_lifecycle_and_timers.md`
+- Custom icon libraries             → `ignition-context-pack/08_custom_icon_libraries.md`
+- All view authoring (always read)  → `ignition-context-pack/07_conventions_and_antipatterns.md`
+
+Pack pattern is "read it when relevant, don't preload" — most tasks need only one or two files. Project-specific overlays (this section's MPP-specific subsections) take precedence over the pack where they conflict.
+
+### MPP custom Perspective icon library
+
+The `mpp` icon library lives at `ignition/icons/mpp/` and is referenced from views as `mpp/<icon-name>` (e.g., `mpp/play_arrow`, `mpp/qr_code_scanner`). 34 unique sprites locked against Material Symbols Outlined / wght 300 / grade -25 / opsz 48; the locked set is in `mockup/icons.csv` and the realized library files (with `config.json` + `resource.json`) mirror the gateway path `data/config/resources/core/com.inductiveautomation.perspective/icons/mpp/`. Project-specific deploy + recolor recipe documented in `ignition/icons/README.md`. General 8.3 custom-icon-library mechanics (path layout, viewBox + no-fill rule, Material Symbols GitHub source URL pattern) are in `ignition-context-pack/08_custom_icon_libraries.md` — read that file when extending or troubleshooting any custom icon library.
 
 ### UI
 

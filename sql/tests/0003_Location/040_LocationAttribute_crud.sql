@@ -233,11 +233,12 @@ EXEC test.Assert_IsEqual
 GO
 
 -- =============================================
--- Test 3: GetByLocation -- returns Tonnage with definition metadata
+-- Test 3: GetByLocation -- proc returns one row per active definition;
+--   exactly one row (Tonnage) has a persisted value at this point.
 -- =============================================
 DECLARE @DcmId BIGINT = (SELECT Val FROM #AttrTestIds WHERE KeyName = N'DcmId');
 
-DECLARE @Count INT;
+DECLARE @PersistedCount INT, @TotalCount INT, @AllDefsCount INT;
 DECLARE @AttrName NVARCHAR(100), @DataType NVARCHAR(50), @Uom NVARCHAR(20);
 CREATE TABLE #R (
     Id BIGINT, LocationId BIGINT, LocationAttributeDefinitionId BIGINT,
@@ -247,30 +248,43 @@ CREATE TABLE #R (
     DefaultValue NVARCHAR(200), Uom NVARCHAR(20), SortOrder INT, Description NVARCHAR(500)
 );
 INSERT INTO #R EXEC Location.LocationAttribute_GetByLocation @LocationId = @DcmId;
-SELECT @Count = COUNT(*),
-       @AttrName = MAX(AttributeName),
-       @DataType = MAX(DataType),
-       @Uom = MAX(Uom)
-FROM #R;
+
+SELECT @PersistedCount = COUNT(*),
+       @AttrName       = MAX(AttributeName),
+       @DataType       = MAX(DataType),
+       @Uom            = MAX(Uom)
+FROM #R
+WHERE Id IS NOT NULL;
+
+SELECT @TotalCount = COUNT(*) FROM #R;
 DROP TABLE #R;
 
+SELECT @AllDefsCount = COUNT(*)
+FROM Location.LocationAttributeDefinition
+WHERE LocationTypeDefinitionId = 8 AND DeprecatedAt IS NULL;
+
 EXEC test.Assert_RowCount
-    @TestName      = N'GetByLocation (1 attr): 1 row returned by proc',
+    @TestName      = N'GetByLocation (1 value persisted): 1 row has non-NULL Id',
     @ExpectedCount = 1,
-    @ActualCount   = @Count;
+    @ActualCount   = @PersistedCount;
+
+EXEC test.Assert_RowCount
+    @TestName      = N'GetByLocation: returns one row per active definition for the type',
+    @ExpectedCount = @AllDefsCount,
+    @ActualCount   = @TotalCount;
 
 EXEC test.Assert_IsEqual
-    @TestName = N'GetByLocation (1 attr): AttributeName is Tonnage',
+    @TestName = N'GetByLocation (1 value): persisted AttributeName is Tonnage',
     @Expected = N'Tonnage',
     @Actual   = @AttrName;
 
 EXEC test.Assert_IsEqual
-    @TestName = N'GetByLocation (1 attr): DataType is DECIMAL',
+    @TestName = N'GetByLocation (1 value): persisted DataType is DECIMAL',
     @Expected = N'DECIMAL',
     @Actual   = @DataType;
 
 EXEC test.Assert_IsEqual
-    @TestName = N'GetByLocation (1 attr): Uom is tons',
+    @TestName = N'GetByLocation (1 value): persisted Uom is tons',
     @Expected = N'tons',
     @Actual   = @Uom;
 GO
@@ -314,11 +328,11 @@ CREATE TABLE #R (
     DefaultValue NVARCHAR(200), Uom NVARCHAR(20), SortOrder INT, Description NVARCHAR(500)
 );
 INSERT INTO #R EXEC Location.LocationAttribute_GetByLocation @LocationId = @DcmId;
-SELECT @AttrCount = COUNT(*) FROM #R;
+SELECT @AttrCount = COUNT(*) FROM #R WHERE Id IS NOT NULL;
 DROP TABLE #R;
 
 EXEC test.Assert_RowCount
-    @TestName      = N'GetByLocation (2 attrs): 2 rows returned by proc',
+    @TestName      = N'GetByLocation (2 values persisted): 2 rows have non-NULL Id',
     @ExpectedCount = 2,
     @ActualCount   = @AttrCount;
 
@@ -386,16 +400,18 @@ CREATE TABLE #R (
     DefaultValue NVARCHAR(200), Uom NVARCHAR(20), SortOrder INT, Description NVARCHAR(500)
 );
 INSERT INTO #R EXEC Location.LocationAttribute_GetByLocation @LocationId = @DcmId;
-SELECT @RemainingCount = COUNT(*), @RemainingName = MAX(AttributeName) FROM #R;
+SELECT @RemainingCount = COUNT(*), @RemainingName = MAX(AttributeName)
+FROM #R
+WHERE Id IS NOT NULL;
 DROP TABLE #R;
 
 EXEC test.Assert_RowCount
-    @TestName      = N'GetByLocation after Clear: only 1 row remains',
+    @TestName      = N'GetByLocation after Clear: only 1 persisted value remains',
     @ExpectedCount = 1,
     @ActualCount   = @RemainingCount;
 
 EXEC test.Assert_IsEqual
-    @TestName = N'GetByLocation after Clear: remaining attr is NumberOfCavities',
+    @TestName = N'GetByLocation after Clear: remaining persisted attr is NumberOfCavities',
     @Expected = N'NumberOfCavities',
     @Actual   = @RemainingName;
 GO
