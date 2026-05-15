@@ -125,6 +125,14 @@ Pack pattern is "read it when relevant, don't preload" — most tasks need only 
 
 The `mpp` icon library lives at `ignition/icons/mpp/` and is referenced from views as `mpp/<icon-name>` (e.g., `mpp/play_arrow`, `mpp/qr_code_scanner`). 34 unique sprites locked against Material Symbols Outlined / wght 300 / grade -25 / opsz 48; the locked set is in `mockup/icons.csv` and the realized library files (with `config.json` + `resource.json`) mirror the gateway path `data/config/resources/core/com.inductiveautomation.perspective/icons/mpp/`. Project-specific deploy + recolor recipe documented in `ignition/icons/README.md`. General 8.3 custom-icon-library mechanics (path layout, viewBox + no-fill rule, Material Symbols GitHub source URL pattern) are in `ignition-context-pack/08_custom_icon_libraries.md` — read that file when extending or troubleshooting any custom icon library.
 
+### Ignition file-edit boundary
+
+Edits to **existing** `view.json` files default to Designer, not file edits. File-based edits to existing views are unreliable because (a) Designer's GSON serialization writes `=` / `'` / `<` / `>` as 6-char unicode escapes (`=` etc.) that fight literal-string matching in editing tools, and (b) Designer's in-memory model can conflict with on-disk changes — and its "Files vs Gateway" conflict dialog has confusing semantics that can overwrite disk with Designer's cached state. File-edits are safe for **new** views (no Designer cache yet), stylesheets, named queries, Python scripts, and SQL. See `feedback_ignition_view_edit_boundary.md` and `feedback_ignition_designer_unicode_escapes.md` memories for the specifics.
+
+### Editor close-confirmation pattern
+
+Editors with `view.custom.editDraft` / `view.custom.selected` state and an explicit Save action wire their Close-style buttons (footer Close + header X) through the reusable `BlueRidge/Components/Popups/ConfirmUnsaved` popup. Dirty check first; clean state closes immediately; dirty state opens the popup with Save & Close / Discard & Close / Cancel buttons. User's choice routes back via page-scoped `confirmUnsavedResult` message. Reference impl: LocationTypeEditor. Generalizes to BomEditor / RouteTemplateEditor / QualitySpecEditor. See `project_mpp_confirm_unsaved_pattern.md`.
+
 ### UI
 
 No drag-and-drop anywhere — up/down arrow buttons for all sortable lists.

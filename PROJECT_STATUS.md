@@ -1,6 +1,6 @@
 # MPP MES — Project Status
 
-**Last updated:** 2026-05-14
+**Last updated:** 2026-05-15
 
 This file holds the **volatile** state of the project — current doc versions, active blockers, recent change narrative, and the next-session briefing. Durable identity, document map, architecture, and conventions live in `CLAUDE.md`.
 
@@ -162,6 +162,54 @@ Phase G capability snapshot: `Meeting_Notes/2026-04-22_Phase_G_Capabilities_Summ
 ## Recent Change Narrative
 
 A timeline of session-by-session changes. Most recent first.
+
+### 2026-05-15 — LocationTypeEditor smoke test + close-confirmation dialog
+
+Two commits landed:
+- `f469061` fix(loc-type-editor): dirty indicator + attribute-table alignment
+- `7ab9cd3` feat(loc-type-editor): close-confirmation dialog for unsaved work
+
+**Smoke test — all 8 flows pass.** Tier select, definition pick, edit + dirty indicator, Cancel revert, Save commit (audit verified — `Audit.ConfigLog` rows 251/252 with full pre/post payloads), Add Definition, Add/Remove Attribute, Deprecate (FK guard rejects active-Location references with graceful toast).
+
+**Fixes landed:**
+
+- Attribute row text-field events moved from `events.component.onActionPerformed` (no-op — text-fields don't have Component Events at all) to `events.dom.onBlur` for AttributeName / DefaultValue / Uom / Description. Dirty indicator now fires when user tabs out of any attribute field.
+- AttrTableHeader column basis / grow aligned with AttributeDefinitionRow. ColArrows + ColRemove converted from `ia.display.label` to `ia.container.flex` (empty labels were collapsing despite `basis`).
+- Pulled `min-width: 180px` from `.psc-search-input` — class was overloaded as a generic input look across 24 sites, and the 180px floor was overriding flex sizing in every attribute-row cell.
+
+**New view:**
+
+- `BlueRidge/Components/Popups/ConfirmUnsaved` — parameterised 3-button popup (Save & Close / Discard & Close / Cancel). LocationTypeEditor's CloseIcon + footer CloseButton now dirty-check before closing; if dirty, open this popup; user's choice routes back via page-scoped `confirmUnsavedResult` message handler. Reusable across future editors — see `project_mpp_confirm_unsaved_pattern.md` memory.
+
+**Workflow learning — file-edit boundary established.** view.json edits to existing views are unreliable due to (a) Designer's GSON serialization of `=` / `'` / `<` / `>` as 6-char unicode escapes (`=` etc.) that fight tool JSON-parsing, and (b) Designer's in-memory cache conflicts. The Designer "Files vs Gateway" conflict dialog also has confusing semantics — picking "Gateway" pushed Designer's cached state to disk and overwrote our file edits.
+
+Established split going forward (also added to CLAUDE.md):
+
+| File type | Edit path |
+|---|---|
+| view.json (existing views) | Designer — Claude writes Designer-step instructions |
+| view.json (new views) | File + scan — no Designer cache to conflict with |
+| stylesheet.css | File |
+| Python script modules | File |
+| NQ `query.sql` / `resource.json` | File |
+| SQL migrations / procs | File |
+
+**Cosmetic items still open** (next session):
+
+- TypeBadge `nameForTier` runScript returns NULL — needs gateway-log traceback to diagnose
+- Description input renders literal "null" when DB value is NULL — coalesce missing on read path
+- `â€` garble on em-dash placeholders — UTF-8 / Latin-1 mismatch somewhere in render pipeline
+
+**Memory added/updated:**
+
+- NEW `feedback_ignition_designer_unicode_escapes.md` — Designer 8.3 GSON escape style for `=` / `'` / `<` / `>` and how to match it when file-editing view.json scripts.
+- NEW `project_mpp_confirm_unsaved_pattern.md` — reusable ConfirmUnsaved popup pattern for editors with `editDraft` / `selected` state.
+- UPDATED `feedback_ignition_view_edit_boundary.md` — conflict-resolution dialog learning ("Gateway" overwrites disk with Designer's cache, not the inverse).
+
+**Context pack additions:**
+
+- `02_perspective_views.md` — note on Designer's GSON unicode-escape serialization
+- `07_conventions_and_antipatterns.md` — close-confirmation popup pattern + text-field-events caveat (no Component Events; use `dom.onBlur`)
 
 ### 2026-05-14 — Convention rectification per Hunter's pack updates
 

@@ -158,6 +158,16 @@ self.view.custom.editDraft = dict(self.view.custom.selected)
 4. **Up / Down arrows mutate `editDraft` ordering only.** Reordering a list (e.g., Route steps) updates `editDraft.steps[]` order locally; Save commits the new order. There is no `_MoveUp` / `_MoveDown` proc called per click.
 5. **Toggle controls (`IsActive`, etc.) do not auto-save.** They flip a property on `editDraft`; Save commits.
 
+### Text-field commit fires on `dom.onBlur`, NOT `onActionPerformed`
+
+The Perspective text-field component does NOT expose `onActionPerformed` under Component Events — that event only exists on Component Events for components that have an action notion (button click, dropdown selection, checkbox toggle). Text-fields, in contrast, expose Focus Events (`onFocus`, `onBlur`), Keyboard Events, Text Composition Events, etc.
+
+Wiring `events.component.onActionPerformed` to a text-field is a silent no-op — the script never fires regardless of Enter / blur / value change. This trips up muscle-memory from other components.
+
+For "commit when user finishes editing" on a text-field, use `events.dom.onBlur` instead. It fires when focus leaves the field (tab out, click elsewhere). Same role that `onActionPerformed` plays on dropdowns / checkboxes / buttons.
+
+Live-as-typing alternative: set `props.deferUpdates: false` on the text-field (writeback on every keystroke) and add a `propConfig.onChange` handler on the bound `params.<Field>` (fires per writeback). Higher event volume; only do this when the UI demands instant feedback (e.g., live preview).
+
 ### Dirty indicator
 
 Whenever `editDraft != selected`, display a visual cue — no popup, no nav block, no DB call:
@@ -172,6 +182,47 @@ Whenever `editDraft != selected`, display a visual cue — no popup, no nav bloc
   }
 }
 ```
+
+### Close-confirmation for unsaved work
+
+When an editor view is dismissable (close button, X icon, page navigation), the close path SHOULD check `editDraft != selected` first. If dirty, open a confirmation popup with three actions: **Save & Close**, **Discard & Close**, **Cancel**. The popup is a separate view so it's reusable across every editor in the project.
+
+Recommended popup shape:
+
+```python
+# Close button onClick (script):
+if self.view.custom.editDraft == self.view.custom.selected:
+    system.perspective.closePopup(id="<my-editor-id>")
+else:
+    system.perspective.openPopup(
+        id="<integrator>-confirm-unsaved",
+        view="<integrator>/Components/Popups/ConfirmUnsaved",
+        modal=True,
+        showCloseIcon=False,
+        params={"title": "Unsaved Changes",
+                "message": "You have unsaved changes. Save before closing?"}
+    )
+```
+
+The popup's three buttons fire a page-scoped reply message (e.g., `confirmUnsavedResult`) with `{action: "save" | "discard" | "cancel"}` and close themselves. The editor has a page-scoped message handler that routes the action:
+
+```python
+action = payload.get("action") if payload else None
+if action == "save":
+    result = <integrator>.<Domain>.<Entity>.update(self.view.custom.editDraft)
+    if result and result.get("Status"):
+        system.perspective.closePopup(id="<my-editor-id>")
+    # On Status=0, the save's notifyResult toast surfaces the error and the editor stays open
+elif action == "discard":
+    system.perspective.closePopup(id="<my-editor-id>")
+# action == "cancel" -- editor stays open, nothing to do
+```
+
+Coverage gotchas:
+
+- Wire BOTH the footer Close button (`component.onActionPerformed`) AND the header X icon (`dom.onClick`) — they're often separate components.
+- Leave `overlayDismiss: false` (default) on the editor popup. With overlay-dismiss enabled, clicking outside the modal closes it without firing your guarded handler.
+- The reply message MUST be page-scoped (handler `pageScope: true`) — see "Inter-component messaging" in `02_perspective_views.md` for why view-scope doesn't propagate from popups to their opener.
 
 ## Mutation feedback — route every result through `notifyResult`
 

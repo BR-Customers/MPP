@@ -268,6 +268,37 @@ Calling `.update(...)` from an `onChange` handler is a misuse of `BindingWriteba
 
 For binding-driven visibility on a child of a flex container, bind `position.display` (sets `display: none` — element removed from layout entirely) rather than `meta.visible` (sets `visibility: hidden` — element still occupies layout space). See `07_conventions_and_antipatterns.md` for the full rule.
 
+## JSON serialization — Designer escapes a fixed set of characters as 6-char unicode literals
+
+Ignition Designer (8.3.5, GSON-based writer) Unicode-escapes a fixed set of characters inside JSON string values, even though the JSON spec doesn't require it:
+
+| Char | File bytes (6-char literal) |
+|---|---|
+| `=` | `=` |
+| `'` | `'` |
+| `<` | `<` |
+| `>` | `>` |
+| `&` | `&` |
+
+Other special characters (including `"`, `{`, `}`, `:`, `,`, `.`, slashes, numbers, letters) appear unescaped. The escapes are HTML-safety on by default.
+
+**Practical implication:** when file-editing view.json scripts (event handlers, message handlers, expression bodies) from outside Designer, any tool that searches for literal `=` will miss — the file bytes have the 6-char sequence `=`, not the single character `=`. Build your match patterns with the escape form:
+
+```python
+# Python: in a non-raw string, '\\u003d' is six literal chars
+EQ = '\\u003d'
+needle = '"\\tsystem.perspective.closePopup(id' + EQ + '\\"my-popup\\")"'
+```
+
+```powershell
+# PowerShell -replace pattern: = in a regex source is six literal chars
+$content -replace 'id=\"my-popup\"', 'id=\"new-popup\"'
+```
+
+Both forms work because regex / literal matching operates on the file's bytes, where Designer wrote `=` as the 6-char escape literal.
+
+**When *writing* new view.json content from outside Designer:** use the same `=` form for `=` so the file stays consistent with Designer's output. Literal `=` is functionally valid (the JSON parser converts both to `=`) but Designer will rewrite it to `=` on its next save, causing diff churn.
+
 ## Tree mutations — return `{items, selectedPath, selected}` so the view applies all three atomically
 
 The Perspective Tree component (`ia.display.tree`) has a known limitation: when `props.items` is replaced programmatically (e.g., after a move / add / deprecate that rebuilds the tree), `props.selection`'s bidirectional writeback to `view.custom.selected` **does not reliably fire**. The user-click selection flow writes through; programmatic items replacement does not.
