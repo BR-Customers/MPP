@@ -1,12 +1,20 @@
 {
   "custom": {
-    "definitions": [],
     "editDraft": {
       "attributes": [
         {
           "AttributeName": "IpAddress",
+          "CreatedAt": {
+            "$": [
+              "ts",
+              192,
+              1778853339435
+            ],
+            "$ts": 1778711308733
+          },
           "DataType": "NVARCHAR",
           "DefaultValue": null,
+          "DeprecatedAt": null,
           "Description": "IP address of the terminal",
           "Id": 1,
           "IsRequired": false,
@@ -16,8 +24,17 @@
         },
         {
           "AttributeName": "DefaultPrinter",
+          "CreatedAt": {
+            "$": [
+              "ts",
+              192,
+              1778853339435
+            ],
+            "$ts": 1778711308733
+          },
           "DataType": "NVARCHAR",
           "DefaultValue": null,
+          "DeprecatedAt": null,
           "Description": "Default Zebra printer name",
           "Id": 2,
           "IsRequired": false,
@@ -27,8 +44,17 @@
         },
         {
           "AttributeName": "HasBarcodeScanner",
+          "CreatedAt": {
+            "$": [
+              "ts",
+              192,
+              1778853339435
+            ],
+            "$ts": 1778711308733
+          },
           "DataType": "BIT",
           "DefaultValue": "1",
+          "DeprecatedAt": null,
           "Description": "Whether terminal has a barcode scanner",
           "Id": 3,
           "IsRequired": true,
@@ -51,8 +77,17 @@
       "attributes": [
         {
           "AttributeName": "IpAddress",
+          "CreatedAt": {
+            "$": [
+              "ts",
+              192,
+              1778853339435
+            ],
+            "$ts": 1778711308733
+          },
           "DataType": "NVARCHAR",
           "DefaultValue": null,
+          "DeprecatedAt": null,
           "Description": "IP address of the terminal",
           "Id": 1,
           "IsRequired": false,
@@ -62,8 +97,17 @@
         },
         {
           "AttributeName": "DefaultPrinter",
+          "CreatedAt": {
+            "$": [
+              "ts",
+              192,
+              1778853339435
+            ],
+            "$ts": 1778711308733
+          },
           "DataType": "NVARCHAR",
           "DefaultValue": null,
+          "DeprecatedAt": null,
           "Description": "Default Zebra printer name",
           "Id": 2,
           "IsRequired": false,
@@ -73,8 +117,17 @@
         },
         {
           "AttributeName": "HasBarcodeScanner",
+          "CreatedAt": {
+            "$": [
+              "ts",
+              192,
+              1778853339435
+            ],
+            "$ts": 1778711308733
+          },
           "DataType": "BIT",
           "DefaultValue": "1",
+          "DeprecatedAt": null,
           "Description": "Whether terminal has a barcode scanner",
           "Id": 3,
           "IsRequired": true,
@@ -93,8 +146,7 @@
       }
     },
     "selectedDefId": 7,
-    "tierId": 5,
-    "tiers": []
+    "tierId": 5
   },
   "params": {},
   "propConfig": {
@@ -153,7 +205,7 @@
               "dom": {
                 "onClick": {
                   "config": {
-                    "script": "\tsystem.perspective.closePopup(id=\"mpp-loc-type-editor\")"
+                    "script": "\tsystem.perspective.closePopup(id\u003d\"mpp-loc-type-editor\")"
                   },
                   "scope": "G",
                   "type": "script"
@@ -235,7 +287,7 @@
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\tself.view.custom.selectedDefId = None\n\tself.view.custom.selected = {\"meta\": None, \"attributes\": []}\n\tself.view.custom.editDraft = {\"meta\": None, \"attributes\": []}\n\tself.view.custom.mode = \"view\""
+                        "script": "\tself.view.custom.selectedDefId \u003d None\n\tself.view.custom.selected \u003d {\"meta\": None, \"attributes\": []}\n\tself.view.custom.editDraft \u003d {\"meta\": None, \"attributes\": []}\n\tself.view.custom.mode \u003d \"view\""
                       },
                       "scope": "G",
                       "type": "script"
@@ -332,6 +384,9 @@
                         "shrink": 0
                       },
                       "path": "BlueRidge/Components/DefinitionItem",
+                      "style": {
+                        "gap": "8px"
+                      },
                       "wrap": "wrap"
                     },
                     "type": "ia.display.flex-repeater"
@@ -341,7 +396,7 @@
                       "component": {
                         "onActionPerformed": {
                           "config": {
-                            "script": "\temptyM = BlueRidge.Location.LocationTypeDefinition.emptyMeta(self.view.custom.tierId)\n\tself.view.custom.selected = {\"meta\": None, \"attributes\": []}\n\tself.view.custom.editDraft = {\"meta\": emptyM, \"attributes\": []}\n\tself.view.custom.selectedDefId = None\n\tself.view.custom.mode = \"create\""
+                            "script": "\temptyM \u003d BlueRidge.Location.LocationTypeDefinition.emptyMeta(self.view.custom.tierId)\n\tself.view.custom.selected \u003d {\"meta\": None, \"attributes\": []}\n\tself.view.custom.editDraft \u003d {\"meta\": emptyM, \"attributes\": []}\n\tself.view.custom.selectedDefId \u003d None\n\tself.view.custom.mode \u003d \"create\""
                           },
                           "scope": "G",
                           "type": "script"
@@ -436,7 +491,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "if({view.custom.mode} = \"create\", \"new \" + runScript(\"BlueRidge.Location.LocationType.nameForTier\", 0, {view.custom.tiers}, {view.custom.tierId}), runScript(\"BlueRidge.Location.LocationType.nameForTier\", 0, {view.custom.tiers}, {view.custom.tierId}) + \" • \" + coalesce({view.custom.editDraft.meta.Code}, \"\"))"
+                        "expression": "if({view.custom.mode} \u003d \"create\", \"new \" + runScript(\"BlueRidge.Location.LocationType.nameForTier\", 0, {view.custom.tiers}, {view.custom.tierId}), runScript(\"BlueRidge.Location.LocationType.nameForTier\", 0, {view.custom.tiers}, {view.custom.tierId}) + \" • \" + coalesce({view.custom.editDraft.meta.Code}, \"\"))"
                       },
                       "type": "expr"
                     }
@@ -457,7 +512,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "if({view.custom.editDraft} != {view.custom.selected}, \"● Unsaved changes\", \"\")"
+                        "expression": "if({view.custom.editDraft} !\u003d {view.custom.selected}, \"● Unsaved changes\", \"\")"
                       },
                       "type": "expr"
                     }
@@ -486,7 +541,7 @@
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\tif self.view.custom.mode == \"create\":\n\t\tself.view.custom.selected = {\"meta\": None, \"attributes\": []}\n\t\tself.view.custom.editDraft = {\"meta\": None, \"attributes\": []}\n\t\tself.view.custom.selectedDefId = None\n\t\tself.view.custom.mode = \"view\"\n\telse:\n\t\tsel = self.view.custom.selected or {\"meta\": None, \"attributes\": []}\n\t\tself.view.custom.editDraft = {\n\t\t\t\"meta\":       dict(sel.get(\"meta\")) if sel.get(\"meta\") else None,\n\t\t\t\"attributes\": [dict(a) for a in (sel.get(\"attributes\") or [])]\n\t\t}"
+                        "script": "\tif self.view.custom.mode \u003d\u003d \"create\":\n\t\tself.view.custom.selected \u003d {\"meta\": None, \"attributes\": []}\n\t\tself.view.custom.editDraft \u003d {\"meta\": None, \"attributes\": []}\n\t\tself.view.custom.selectedDefId \u003d None\n\t\tself.view.custom.mode \u003d \"view\"\n\telse:\n\t\tsel \u003d self.view.custom.selected or {\"meta\": None, \"attributes\": []}\n\t\tself.view.custom.editDraft \u003d {\n\t\t\t\"meta\":       dict(sel.get(\"meta\")) if sel.get(\"meta\") else None,\n\t\t\t\"attributes\": [dict(a) for a in (sel.get(\"attributes\") or [])]\n\t\t}"
                       },
                       "scope": "G",
                       "type": "script"
@@ -506,7 +561,7 @@
                   "position.display": {
                     "binding": {
                       "config": {
-                        "expression": "{view.custom.editDraft} != {view.custom.selected}"
+                        "expression": "{view.custom.editDraft} !\u003d {view.custom.selected}"
                       },
                       "type": "expr"
                     }
@@ -525,7 +580,7 @@
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\tdraft = self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\tresult = BlueRidge.Location.LocationTypeDefinition.handleSaveAll(draft.get(\"meta\"), draft.get(\"attributes\"))\n\tif not result:\n\t\treturn\n\t# Refresh definitions list for the parent flex-repeater\n\tself.view.custom.definitions = result[\"definitions\"]\n\tself.view.custom.selectedDefId = result[\"NewId\"]\n\t# Build the new editDraft (meta + Id, refreshed attributes from server)\n\tnewMeta = dict(draft.get(\"meta\") or {})\n\tnewMeta[\"Id\"] = result[\"NewId\"]\n\tnewAttrs = result[\"attributes\"]\n\tself.view.custom.editDraft = {\"meta\": newMeta, \"attributes\": newAttrs}\n\t# Commit baseline so dirty indicator clears\n\tself.view.custom.selected = {\n\t\t\"meta\":       dict(newMeta),\n\t\t\"attributes\": [dict(a) for a in newAttrs]\n\t}\n\tself.view.custom.mode = \"update\""
+                        "script": "\tdraft \u003d self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\tresult \u003d BlueRidge.Location.LocationTypeDefinition.handleSaveAll(draft.get(\"meta\"), draft.get(\"attributes\"))\n\tif not result:\n\t\treturn\n\t# Refresh definitions list for the parent flex-repeater\n\tself.view.custom.definitions \u003d result[\"definitions\"]\n\tself.view.custom.selectedDefId \u003d result[\"NewId\"]\n\t# Build the new editDraft (meta + Id, refreshed attributes from server)\n\tnewMeta \u003d dict(draft.get(\"meta\") or {})\n\tnewMeta[\"Id\"] \u003d result[\"NewId\"]\n\tnewAttrs \u003d result[\"attributes\"]\n\tself.view.custom.editDraft \u003d {\"meta\": newMeta, \"attributes\": newAttrs}\n\t# Commit baseline so dirty indicator clears\n\tself.view.custom.selected \u003d {\n\t\t\"meta\":       dict(newMeta),\n\t\t\"attributes\": [dict(a) for a in newAttrs]\n\t}\n\tself.view.custom.mode \u003d \"update\""
                       },
                       "scope": "G",
                       "type": "script"
@@ -551,7 +606,7 @@
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\tdraft = self.view.custom.editDraft or {}\n\tdefId = (draft.get(\"meta\") or {}).get(\"Id\")\n\tif defId is None:\n\t\treturn\n\tresult = BlueRidge.Location.LocationTypeDefinition.handleDeprecate(defId, self.view.custom.tierId)\n\tif not result:\n\t\treturn\n\tself.view.custom.definitions = result[\"definitions\"]\n\tself.view.custom.selectedDefId = None\n\tself.view.custom.selected = {\"meta\": None, \"attributes\": []}\n\tself.view.custom.editDraft = {\"meta\": None, \"attributes\": []}\n\tself.view.custom.mode = \"view\""
+                        "script": "\tdraft \u003d self.view.custom.editDraft or {}\n\tdefId \u003d (draft.get(\"meta\") or {}).get(\"Id\")\n\tif defId is None:\n\t\treturn\n\tresult \u003d BlueRidge.Location.LocationTypeDefinition.handleDeprecate(defId, self.view.custom.tierId)\n\tif not result:\n\t\treturn\n\tself.view.custom.definitions \u003d result[\"definitions\"]\n\tself.view.custom.selectedDefId \u003d None\n\tself.view.custom.selected \u003d {\"meta\": None, \"attributes\": []}\n\tself.view.custom.editDraft \u003d {\"meta\": None, \"attributes\": []}\n\tself.view.custom.mode \u003d \"view\""
                       },
                       "scope": "G",
                       "type": "script"
@@ -568,7 +623,7 @@
                   "position.display": {
                     "binding": {
                       "config": {
-                        "expression": "{view.custom.mode} = \"update\""
+                        "expression": "{view.custom.mode} \u003d \"update\""
                       },
                       "type": "expr"
                     }
@@ -618,7 +673,7 @@
                       "props.enabled": {
                         "binding": {
                           "config": {
-                            "expression": "{view.custom.mode} = \"create\""
+                            "expression": "{view.custom.mode} \u003d \"create\""
                           },
                           "type": "expr"
                         }
@@ -863,7 +918,7 @@
           "position.display": {
             "binding": {
               "config": {
-                "expression": "{view.custom.mode} != \"view\""
+                "expression": "{view.custom.mode} !\u003d \"view\""
               },
               "type": "expr"
             }
@@ -904,7 +959,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "len({view.custom.editDraft.attributes}) + ' attribute(s)'"
+                        "expression": "len({view.custom.editDraft.attributes}) + \u0027 attribute(s)\u0027"
                       },
                       "type": "expr"
                     }
@@ -932,7 +987,7 @@
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\tdraft = self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\tattrs = list(draft.get(\"attributes\") or [])\n\tattrs.append(BlueRidge.Location.LocationTypeDefinition.emptyAttributeRow())\n\tself.view.custom.editDraft = {\"meta\": draft.get(\"meta\"), \"attributes\": attrs}"
+                        "script": "\tdraft \u003d self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\tattrs \u003d list(draft.get(\"attributes\") or [])\n\tattrs.append(BlueRidge.Location.LocationTypeDefinition.emptyAttributeRow())\n\tself.view.custom.editDraft \u003d {\"meta\": draft.get(\"meta\"), \"attributes\": attrs}"
                       },
                       "scope": "G",
                       "type": "script"
@@ -972,18 +1027,19 @@
                   "name": "ColArrows"
                 },
                 "position": {
-                  "basis": "46px",
+                  "basis": "32px",
                   "shrink": 0
                 },
-                "type": "ia.display.label"
+                "type": "ia.container.flex"
               },
               {
                 "meta": {
                   "name": "ColName"
                 },
                 "position": {
-                  "basis": "0",
-                  "grow": 1
+                  "basis": "64px",
+                  "grow": "01",
+                  "shrink": 0
                 },
                 "props": {
                   "text": "Attribute Name"
@@ -995,7 +1051,7 @@
                   "name": "ColType"
                 },
                 "position": {
-                  "basis": "110px",
+                  "basis": "124px",
                   "shrink": 0
                 },
                 "props": {
@@ -1008,11 +1064,11 @@
                   "name": "ColReq"
                 },
                 "position": {
-                  "basis": "60px",
+                  "basis": "32px",
                   "shrink": 0
                 },
                 "props": {
-                  "text": "Req"
+                  "text": "REQ"
                 },
                 "type": "ia.display.label"
               },
@@ -1021,7 +1077,7 @@
                   "name": "ColDefault"
                 },
                 "position": {
-                  "basis": "90px",
+                  "basis": "80px",
                   "shrink": 0
                 },
                 "props": {
@@ -1034,7 +1090,7 @@
                   "name": "ColUom"
                 },
                 "position": {
-                  "basis": "70px",
+                  "basis": "32px",
                   "shrink": 0
                 },
                 "props": {
@@ -1048,7 +1104,7 @@
                 },
                 "position": {
                   "basis": "0",
-                  "grow": 1.5
+                  "grow": 2.5
                 },
                 "props": {
                   "text": "Description"
@@ -1063,7 +1119,7 @@
                   "basis": "70px",
                   "shrink": 0
                 },
-                "type": "ia.display.label"
+                "type": "ia.container.flex"
               }
             ],
             "meta": {
@@ -1103,7 +1159,7 @@
                   },
                   "transforms": [
                     {
-                      "code": "\trows = value or []\n\tn = len(rows)\n\treturn [\n\t\t{\n\t\t\t\"index\":         i,\n\t\t\t\"totalRows\":     n,\n\t\t\t\"Id\":            r.get(\"Id\"),\n\t\t\t\"AttributeName\": r.get(\"AttributeName\") or \"\",\n\t\t\t\"DataType\":      r.get(\"DataType\") or \"NVARCHAR\",\n\t\t\t\"IsRequired\":    bool(r.get(\"IsRequired\")),\n\t\t\t\"DefaultValue\":  r.get(\"DefaultValue\") or \"\",\n\t\t\t\"Uom\":           r.get(\"Uom\") or \"\",\n\t\t\t\"Description\":   r.get(\"Description\") or \"\"\n\t\t}\n\t\tfor i, r in enumerate(rows)\n\t]",
+                      "code": "\trows \u003d value or []\n\tn \u003d len(rows)\n\treturn [\n\t\t{\n\t\t\t\"index\":         i,\n\t\t\t\"totalRows\":     n,\n\t\t\t\"Id\":            r.get(\"Id\"),\n\t\t\t\"AttributeName\": r.get(\"AttributeName\") or \"\",\n\t\t\t\"DataType\":      r.get(\"DataType\") or \"NVARCHAR\",\n\t\t\t\"IsRequired\":    bool(r.get(\"IsRequired\")),\n\t\t\t\"DefaultValue\":  r.get(\"DefaultValue\") or \"\",\n\t\t\t\"Uom\":           r.get(\"Uom\") or \"\",\n\t\t\t\"Description\":   r.get(\"Description\") or \"\"\n\t\t}\n\t\tfor i, r in enumerate(rows)\n\t]",
                       "type": "script"
                     }
                   ],
@@ -1134,7 +1190,7 @@
           "position.display": {
             "binding": {
               "config": {
-                "expression": "{view.custom.mode} != \"view\""
+                "expression": "{view.custom.mode} !\u003d \"view\""
               },
               "type": "expr"
             }
@@ -1158,7 +1214,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tsystem.perspective.closePopup(id=\"mpp-loc-type-editor\")"
+                    "script": "\tsystem.perspective.closePopup(id\u003d\"mpp-loc-type-editor\")"
                   },
                   "scope": "G",
                   "type": "script"
@@ -1220,28 +1276,28 @@
         {
           "messageType": "definitionClick",
           "pageScope": true,
-          "script": "\tdefId = payload.get(\"id\") if payload else None\n\tif defId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Click error\", \"Definition click had no id; payload=\" + str(payload), \"warning\")\n\t\treturn\n\tfor d in (self.view.custom.definitions or []):\n\t\tif d.get(\"Id\") == defId:\n\t\t\tself.view.custom.selectedDefId = defId\n\t\t\tmeta = BlueRidge.Location.LocationTypeDefinition.metaFromDefinition(d)\n\t\t\tattrs = BlueRidge.Location.LocationAttributeDefinition.getAll(defId)\n\t\t\tself.view.custom.selected = {\n\t\t\t\t\"meta\":       meta,\n\t\t\t\t\"attributes\": attrs\n\t\t\t}\n\t\t\tself.view.custom.editDraft = {\n\t\t\t\t\"meta\":       dict(meta) if meta else None,\n\t\t\t\t\"attributes\": [dict(a) for a in (attrs or [])]\n\t\t\t}\n\t\t\tself.view.custom.mode = \"update\"\n\t\t\treturn\n\tBlueRidge.Common.Notify.toast(\"Stale selection\", \"Definition \" + str(defId) + \" not in current list -- selection ignored.\", \"warning\")",
+          "script": "\tdefId \u003d payload.get(\"id\") if payload else None\n\tif defId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Click error\", \"Definition click had no id; payload\u003d\" + str(payload), \"warning\")\n\t\treturn\n\tfor d in (self.view.custom.definitions or []):\n\t\tif d.get(\"Id\") \u003d\u003d defId:\n\t\t\tself.view.custom.selectedDefId \u003d defId\n\t\t\tmeta \u003d BlueRidge.Location.LocationTypeDefinition.metaFromDefinition(d)\n\t\t\tattrs \u003d BlueRidge.Location.LocationAttributeDefinition.getAll(defId)\n\t\t\tself.view.custom.selected \u003d {\n\t\t\t\t\"meta\":       meta,\n\t\t\t\t\"attributes\": attrs\n\t\t\t}\n\t\t\tself.view.custom.editDraft \u003d {\n\t\t\t\t\"meta\":       dict(meta) if meta else None,\n\t\t\t\t\"attributes\": [dict(a) for a in (attrs or [])]\n\t\t\t}\n\t\t\tself.view.custom.mode \u003d \"update\"\n\t\t\treturn\n\tBlueRidge.Common.Notify.toast(\"Stale selection\", \"Definition \" + str(defId) + \" not in current list -- selection ignored.\", \"warning\")",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "attrDraftUpdate",
           "pageScope": true,
-          "script": "\tidx = payload.get(\"index\")\n\tfield = payload.get(\"field\")\n\tvalue = payload.get(\"value\")\n\tdraft = self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\tattrs = list(draft.get(\"attributes\") or [])\n\tif idx is not None and 0 <= idx < len(attrs):\n\t\trow = dict(attrs[idx])\n\t\trow[field] = value\n\t\tattrs[idx] = row\n\t\tself.view.custom.editDraft = {\"meta\": draft.get(\"meta\"), \"attributes\": attrs}",
+          "script": "\tidx \u003d payload.get(\"index\")\n\tfield \u003d payload.get(\"field\")\n\tvalue \u003d payload.get(\"value\")\n\tdraft \u003d self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\tattrs \u003d list(draft.get(\"attributes\") or [])\n\tif idx is not None and 0 \u003c\u003d idx \u003c len(attrs):\n\t\trow \u003d dict(attrs[idx])\n\t\trow[field] \u003d value\n\t\tattrs[idx] \u003d row\n\t\tself.view.custom.editDraft \u003d {\"meta\": draft.get(\"meta\"), \"attributes\": attrs}",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "attrDraftRemove",
           "pageScope": true,
-          "script": "\tidx = payload.get(\"index\")\n\tdraft = self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\tattrs = list(draft.get(\"attributes\") or [])\n\tif idx is not None and 0 <= idx < len(attrs):\n\t\tattrs.pop(idx)\n\t\tself.view.custom.editDraft = {\"meta\": draft.get(\"meta\"), \"attributes\": attrs}",
+          "script": "\tidx \u003d payload.get(\"index\")\n\tdraft \u003d self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\tattrs \u003d list(draft.get(\"attributes\") or [])\n\tif idx is not None and 0 \u003c\u003d idx \u003c len(attrs):\n\t\tattrs.pop(idx)\n\t\tself.view.custom.editDraft \u003d {\"meta\": draft.get(\"meta\"), \"attributes\": attrs}",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "attrDraftMove",
           "pageScope": true,
-          "script": "\tidx = payload.get(\"index\")\n\tdirection = payload.get(\"direction\")\n\tdraft = self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\tattrs = list(draft.get(\"attributes\") or [])\n\tif idx is None:\n\t\treturn\n\tif direction == \"up\" and idx > 0:\n\t\tattrs[idx-1], attrs[idx] = attrs[idx], attrs[idx-1]\n\telif direction == \"down\" and idx < len(attrs) - 1:\n\t\tattrs[idx+1], attrs[idx] = attrs[idx], attrs[idx+1]\n\tself.view.custom.editDraft = {\"meta\": draft.get(\"meta\"), \"attributes\": attrs}",
+          "script": "\tidx \u003d payload.get(\"index\")\n\tdirection \u003d payload.get(\"direction\")\n\tdraft \u003d self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\tattrs \u003d list(draft.get(\"attributes\") or [])\n\tif idx is None:\n\t\treturn\n\tif direction \u003d\u003d \"up\" and idx \u003e 0:\n\t\tattrs[idx-1], attrs[idx] \u003d attrs[idx], attrs[idx-1]\n\telif direction \u003d\u003d \"down\" and idx \u003c len(attrs) - 1:\n\t\tattrs[idx+1], attrs[idx] \u003d attrs[idx], attrs[idx+1]\n\tself.view.custom.editDraft \u003d {\"meta\": draft.get(\"meta\"), \"attributes\": attrs}",
           "sessionScope": false,
           "viewScope": false
         }

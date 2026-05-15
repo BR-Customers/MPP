@@ -857,7 +857,6 @@ button {
     padding: 6px var(--mpp-space-2);
     color: var(--mpp-text-primary);
     font-size: var(--mpp-fs-sm);
-    min-width: 180px;
     transition: border-color var(--mpp-transition-fast),
                 box-shadow var(--mpp-transition-fast);
 }
