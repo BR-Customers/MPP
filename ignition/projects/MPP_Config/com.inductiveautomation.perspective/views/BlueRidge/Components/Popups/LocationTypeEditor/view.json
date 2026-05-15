@@ -205,7 +205,7 @@
               "dom": {
                 "onClick": {
                   "config": {
-                    "script": "\tsystem.perspective.closePopup(id\u003d\"mpp-loc-type-editor\")"
+                    "script": "\tif self.view.custom.editDraft \u003d\u003d self.view.custom.selected:\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-loc-type-editor\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid\u003d\"mpp-confirm-unsaved\",\n\t\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal\u003dTrue,\n\t\t\tshowCloseIcon\u003dFalse,\n\t\t\tparams\u003d{\n\t\t\t\t\"title\": \"Unsaved Changes\",\n\t\t\t\t\"message\": \"You have unsaved changes to this Location Type Definition. Save before closing?\"\n\t\t\t}\n\t\t)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -1214,7 +1214,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tsystem.perspective.closePopup(id\u003d\"mpp-loc-type-editor\")"
+                    "script": "\tif self.view.custom.editDraft \u003d\u003d self.view.custom.selected:\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-loc-type-editor\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid\u003d\"mpp-confirm-unsaved\",\n\t\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal\u003dTrue,\n\t\t\tshowCloseIcon\u003dFalse,\n\t\t\tparams\u003d{\n\t\t\t\t\"title\": \"Unsaved Changes\",\n\t\t\t\t\"message\": \"You have unsaved changes to this Location Type Definition. Save before closing?\"\n\t\t\t}\n\t\t)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -1298,6 +1298,13 @@
           "messageType": "attrDraftMove",
           "pageScope": true,
           "script": "\tidx \u003d payload.get(\"index\")\n\tdirection \u003d payload.get(\"direction\")\n\tdraft \u003d self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\tattrs \u003d list(draft.get(\"attributes\") or [])\n\tif idx is None:\n\t\treturn\n\tif direction \u003d\u003d \"up\" and idx \u003e 0:\n\t\tattrs[idx-1], attrs[idx] \u003d attrs[idx], attrs[idx-1]\n\telif direction \u003d\u003d \"down\" and idx \u003c len(attrs) - 1:\n\t\tattrs[idx+1], attrs[idx] \u003d attrs[idx], attrs[idx+1]\n\tself.view.custom.editDraft \u003d {\"meta\": draft.get(\"meta\"), \"attributes\": attrs}",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "confirmUnsavedResult",
+          "pageScope": true,
+          "script": "\taction = payload.get(\"action\") if payload else None\n\tif action == \"save\":\n\t\tdraft = self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\t\tresult = BlueRidge.Location.LocationTypeDefinition.handleSaveAll(draft.get(\"meta\"), draft.get(\"attributes\"))\n\t\tif result and result.get(\"Status\"):\n\t\t\tsystem.perspective.closePopup(id=\"mpp-loc-type-editor\")\n\telif action == \"discard\":\n\t\tsystem.perspective.closePopup(id=\"mpp-loc-type-editor\")",
           "sessionScope": false,
           "viewScope": false
         }

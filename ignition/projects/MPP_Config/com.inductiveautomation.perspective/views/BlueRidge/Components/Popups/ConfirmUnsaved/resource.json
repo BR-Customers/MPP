@@ -1,17 +1,15 @@
-﻿{
+{
   "scope": "G",
   "version": 1,
   "restricted": false,
   "overridable": true,
   "files": [
-    "view.json",
-    "thumbnail.png"
+    "view.json"
   ],
   "attributes": {
-    "lastModificationSignature": "",
     "lastModification": {
       "actor": "claude",
-      "timestamp": "2026-05-15T16:06:31Z"
+      "timestamp": "2026-05-15T14:50:00Z"
     }
   }
 }
