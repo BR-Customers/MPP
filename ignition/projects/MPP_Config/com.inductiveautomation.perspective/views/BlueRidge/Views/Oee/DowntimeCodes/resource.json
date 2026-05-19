@@ -8,8 +8,9 @@
   ],
   "attributes": {
     "lastModification": {
-      "actor": "hkraft",
-      "timestamp": "2026-05-07T13:00:00Z"
+      "actor": "claude",
+      "timestamp": "2026-05-19T00:00:00Z",
+      "lastModificationSignature": ""
     }
   }
 }
