@@ -5,7 +5,8 @@
 -- Description:
 --   Tests for Audit.ConfigLog_List.
 --   Covers: date range returning rows, historical range returning
---   0 rows, entity type filter, and invalid entity type filter returns 0 rows.
+--   0 rows, entity type filter, invalid entity type filter returns 0 rows,
+--   @DescriptionLike substring match, and @LogSeverityCode filter.
 --
 --   Pre-conditions:
 --     - Migration 0001 applied (audit lookup seeds present)
@@ -62,20 +63,21 @@ DECLARE @StartDate DATETIME2(3) = DATEADD(HOUR, -1, SYSUTCDATETIME());
 DECLARE @EndDate   DATETIME2(3) = DATEADD(HOUR,  1, SYSUTCDATETIME());
 
 CREATE TABLE #List1 (
-    Id               BIGINT,
-    LoggedAt         DATETIME2(3),
-    UserId           BIGINT,
-    UserDisplayName  NVARCHAR(200),
-    LogSeverityId    BIGINT,
-    LogSeverityCode  NVARCHAR(50),
-    LogEventTypeId   BIGINT,
-    LogEventTypeName  NVARCHAR(100),
-    LogEntityTypeId   BIGINT,
+    Id                BIGINT,
+    LoggedAt          DATETIME2(3),
+    UserId            BIGINT,
+    UserDisplayName   NVARCHAR(200),
+    LogEntityTypeCode NVARCHAR(50),
     LogEntityTypeName NVARCHAR(100),
-    EntityId         BIGINT,
-    Description      NVARCHAR(500),
-    OldValue         NVARCHAR(MAX),
-    NewValue         NVARCHAR(MAX)
+    EntityId          BIGINT,
+    LogEventTypeId    BIGINT,
+    LogEventTypeCode  NVARCHAR(50),
+    LogSeverityId     BIGINT,
+    LogSeverityCode   NVARCHAR(50),
+    Description       NVARCHAR(500),
+    OldValue          NVARCHAR(MAX),
+    NewValue          NVARCHAR(MAX),
+    TotalCount        INT
 );
 
 INSERT INTO #List1
@@ -83,7 +85,7 @@ EXEC Audit.ConfigLog_List
     @StartDate         = @StartDate,
     @EndDate           = @EndDate,
     @LogEntityTypeCode = NULL,
-    @FilterAppUserId   = NULL;
+    @AppUserId         = NULL;
 
 -- Assert 1a: at least the 3 setup rows are present in results
 DECLARE @SetupCount  INT = (
@@ -111,20 +113,21 @@ DECLARE @StartDate DATETIME2(3) = CAST(N'2020-01-01T00:00:00.000' AS DATETIME2(3
 DECLARE @EndDate   DATETIME2(3) = CAST(N'2020-01-02T00:00:00.000' AS DATETIME2(3));
 
 CREATE TABLE #List2 (
-    Id               BIGINT,
-    LoggedAt         DATETIME2(3),
-    UserId           BIGINT,
-    UserDisplayName  NVARCHAR(200),
-    LogSeverityId    BIGINT,
-    LogSeverityCode  NVARCHAR(50),
-    LogEventTypeId   BIGINT,
-    LogEventTypeName  NVARCHAR(100),
-    LogEntityTypeId   BIGINT,
+    Id                BIGINT,
+    LoggedAt          DATETIME2(3),
+    UserId            BIGINT,
+    UserDisplayName   NVARCHAR(200),
+    LogEntityTypeCode NVARCHAR(50),
     LogEntityTypeName NVARCHAR(100),
-    EntityId         BIGINT,
-    Description      NVARCHAR(500),
-    OldValue         NVARCHAR(MAX),
-    NewValue         NVARCHAR(MAX)
+    EntityId          BIGINT,
+    LogEventTypeId    BIGINT,
+    LogEventTypeCode  NVARCHAR(50),
+    LogSeverityId     BIGINT,
+    LogSeverityCode   NVARCHAR(50),
+    Description       NVARCHAR(500),
+    OldValue          NVARCHAR(MAX),
+    NewValue          NVARCHAR(MAX),
+    TotalCount        INT
 );
 
 INSERT INTO #List2
@@ -132,7 +135,7 @@ EXEC Audit.ConfigLog_List
     @StartDate         = @StartDate,
     @EndDate           = @EndDate,
     @LogEntityTypeCode = NULL,
-    @FilterAppUserId   = NULL;
+    @AppUserId         = NULL;
 
 -- Assert 2a: 0 rows returned (empty result is not an error)
 DECLARE @HistCount INT = (SELECT COUNT(*) FROM #List2);
@@ -153,20 +156,21 @@ DECLARE @StartDate DATETIME2(3) = DATEADD(HOUR, -1, SYSUTCDATETIME());
 DECLARE @EndDate   DATETIME2(3) = DATEADD(HOUR,  1, SYSUTCDATETIME());
 
 CREATE TABLE #List3 (
-    Id               BIGINT,
-    LoggedAt         DATETIME2(3),
-    UserId           BIGINT,
-    UserDisplayName  NVARCHAR(200),
-    LogSeverityId    BIGINT,
-    LogSeverityCode  NVARCHAR(50),
-    LogEventTypeId   BIGINT,
-    LogEventTypeName  NVARCHAR(100),
-    LogEntityTypeId   BIGINT,
+    Id                BIGINT,
+    LoggedAt          DATETIME2(3),
+    UserId            BIGINT,
+    UserDisplayName   NVARCHAR(200),
+    LogEntityTypeCode NVARCHAR(50),
     LogEntityTypeName NVARCHAR(100),
-    EntityId         BIGINT,
-    Description      NVARCHAR(500),
-    OldValue         NVARCHAR(MAX),
-    NewValue         NVARCHAR(MAX)
+    EntityId          BIGINT,
+    LogEventTypeId    BIGINT,
+    LogEventTypeCode  NVARCHAR(50),
+    LogSeverityId     BIGINT,
+    LogSeverityCode   NVARCHAR(50),
+    Description       NVARCHAR(500),
+    OldValue          NVARCHAR(MAX),
+    NewValue          NVARCHAR(MAX),
+    TotalCount        INT
 );
 
 INSERT INTO #List3
@@ -174,7 +178,7 @@ EXEC Audit.ConfigLog_List
     @StartDate         = @StartDate,
     @EndDate           = @EndDate,
     @LogEntityTypeCode = N'AppUser',
-    @FilterAppUserId   = NULL;
+    @AppUserId         = NULL;
 
 -- Assert 3a: setup AppUser rows are present in filtered result
 DECLARE @AppUserCount INT = (
@@ -223,20 +227,21 @@ DECLARE @StartDate DATETIME2(3) = DATEADD(HOUR, -1, SYSUTCDATETIME());
 DECLARE @EndDate   DATETIME2(3) = DATEADD(HOUR,  1, SYSUTCDATETIME());
 
 CREATE TABLE #List4 (
-    Id               BIGINT,
-    LoggedAt         DATETIME2(3),
-    UserId           BIGINT,
-    UserDisplayName  NVARCHAR(200),
-    LogSeverityId    BIGINT,
-    LogSeverityCode  NVARCHAR(50),
-    LogEventTypeId   BIGINT,
-    LogEventTypeName  NVARCHAR(100),
-    LogEntityTypeId   BIGINT,
+    Id                BIGINT,
+    LoggedAt          DATETIME2(3),
+    UserId            BIGINT,
+    UserDisplayName   NVARCHAR(200),
+    LogEntityTypeCode NVARCHAR(50),
     LogEntityTypeName NVARCHAR(100),
-    EntityId         BIGINT,
-    Description      NVARCHAR(500),
-    OldValue         NVARCHAR(MAX),
-    NewValue         NVARCHAR(MAX)
+    EntityId          BIGINT,
+    LogEventTypeId    BIGINT,
+    LogEventTypeCode  NVARCHAR(50),
+    LogSeverityId     BIGINT,
+    LogSeverityCode   NVARCHAR(50),
+    Description       NVARCHAR(500),
+    OldValue          NVARCHAR(MAX),
+    NewValue          NVARCHAR(MAX),
+    TotalCount        INT
 );
 
 INSERT INTO #List4
@@ -244,7 +249,7 @@ EXEC Audit.ConfigLog_List
     @StartDate         = @StartDate,
     @EndDate           = @EndDate,
     @LogEntityTypeCode = N'BOGUS_ENTITY_TYPE',
-    @FilterAppUserId   = NULL;
+    @AppUserId         = NULL;
 
 -- Assert 4a: 0 rows returned for invalid entity type code
 DECLARE @RowCount4 INT = (SELECT COUNT(*) FROM #List4);
@@ -257,7 +262,94 @@ DROP TABLE #List4;
 GO
 
 -- =============================================
+-- Test: @DescriptionLike substring match + @LogSeverityCode filter
+-- =============================================
+EXEC Audit.Audit_LogConfigChange
+    @AppUserId         = 1,
+    @LogEntityTypeCode = N'Location',
+    @EntityId          = NULL,
+    @LogEventTypeCode  = N'Created',
+    @LogSeverityCode   = N'Info',
+    @Description       = N'Location created for SaveAll harness',
+    @OldValue          = NULL,
+    @NewValue          = N'{}';
+EXEC Audit.Audit_LogConfigChange
+    @AppUserId         = 1,
+    @LogEntityTypeCode = N'Location',
+    @EntityId          = NULL,
+    @LogEventTypeCode  = N'Updated',
+    @LogSeverityCode   = N'Warning',
+    @Description       = N'Unrelated config event',
+    @OldValue          = NULL,
+    @NewValue          = N'{}';
+GO
+
+DECLARE @Start DATETIME2(3) = DATEADD(MINUTE, -5, SYSUTCDATETIME());
+DECLARE @End   DATETIME2(3) = SYSUTCDATETIME();
+CREATE TABLE #CL_Like (
+    Id                BIGINT,
+    LoggedAt          DATETIME2(3),
+    UserId            BIGINT,
+    UserDisplayName   NVARCHAR(200),
+    LogEntityTypeCode NVARCHAR(50),
+    LogEntityTypeName NVARCHAR(100),
+    EntityId          BIGINT,
+    LogEventTypeId    BIGINT,
+    LogEventTypeCode  NVARCHAR(50),
+    LogSeverityId     BIGINT,
+    LogSeverityCode   NVARCHAR(50),
+    Description       NVARCHAR(500),
+    OldValue          NVARCHAR(MAX),
+    NewValue          NVARCHAR(MAX),
+    TotalCount        INT
+);
+INSERT INTO #CL_Like EXEC Audit.ConfigLog_List
+    @StartDate       = @Start,
+    @EndDate         = @End,
+    @DescriptionLike = N'SaveAll';
+
+DECLARE @LikeCount INT;
+SELECT @LikeCount = COUNT(*) FROM #CL_Like;
+DECLARE @LikeCountStr NVARCHAR(10) = CAST(@LikeCount AS NVARCHAR(10));
+EXEC test.Assert_IsEqual
+    @TestName = N'ConfigLog_List @DescriptionLike: only matching row returned',
+    @Expected = N'1',
+    @Actual   = @LikeCountStr;
+DROP TABLE #CL_Like;
+
+CREATE TABLE #CL_Sev (
+    Id                BIGINT,
+    LoggedAt          DATETIME2(3),
+    UserId            BIGINT,
+    UserDisplayName   NVARCHAR(200),
+    LogEntityTypeCode NVARCHAR(50),
+    LogEntityTypeName NVARCHAR(100),
+    EntityId          BIGINT,
+    LogEventTypeId    BIGINT,
+    LogEventTypeCode  NVARCHAR(50),
+    LogSeverityId     BIGINT,
+    LogSeverityCode   NVARCHAR(50),
+    Description       NVARCHAR(500),
+    OldValue          NVARCHAR(MAX),
+    NewValue          NVARCHAR(MAX),
+    TotalCount        INT
+);
+INSERT INTO #CL_Sev EXEC Audit.ConfigLog_List
+    @StartDate       = @Start,
+    @EndDate         = @End,
+    @LogSeverityCode = N'Warning';
+
+DECLARE @SevCount INT;
+SELECT @SevCount = COUNT(*) FROM #CL_Sev WHERE LogSeverityCode = N'Warning';
+DECLARE @SevCondition BIT = CAST(IIF(@SevCount >= 1, 1, 0) AS BIT);
+EXEC test.Assert_IsTrue
+    @TestName  = N'ConfigLog_List @LogSeverityCode: returns at least one Warning row',
+    @Condition = @SevCondition;
+DROP TABLE #CL_Sev;
+GO
+
+-- =============================================
 -- Final summary
 -- =============================================
-EXEC test.PrintSummary;
+EXEC test.EndTestFile;
 GO
