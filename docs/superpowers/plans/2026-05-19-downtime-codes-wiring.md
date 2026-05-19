@@ -110,40 +110,42 @@ ignition/projects/MPP_Config/com.inductiveautomation.perspective/views/BlueRidge
 
 - [ ] **Step 1: Write `DowntimeReasonCode_List` query.sql + resource.json**
 
-`query.sql` (adjust `@ProcParam` names to match what Task 1 confirmed):
+`query.sql` (proc has no `@SearchText` — search is filtered client-side in the entity script):
 
 ```sql
 EXEC Oee.DowntimeReasonCode_List
     @AreaLocationId       = :areaLocationId,
     @DowntimeReasonTypeId = :downtimeReasonTypeId,
-    @SearchText           = :searchText,
     @IncludeDeprecated    = :includeDeprecated
 ```
 
-`resource.json`:
+`resource.json` (mirror the canonical project NQ shape — note `database: "MPP"`, the `lastModificationSignature: ""` placeholder, and the `lastModification` block):
 
 ```json
 {
   "scope": "DG",
   "version": 2,
+  "restricted": false,
+  "overridable": true,
   "files": ["query.sql"],
   "attributes": {
+    "useMaxReturnSize": false,
+    "autoBatchEnabled": false,
+    "fallbackValue": "",
+    "maxReturnSize": 100,
+    "cacheUnit": "SEC",
     "type": "Query",
     "enabled": true,
-    "database": "",
-    "useMaxReturnSize": false,
-    "maxReturnSize": 100,
-    "autoBatchEnabled": false,
-    "cacheEnabled": false,
     "cacheAmount": 1,
-    "cacheUnit": "SEC",
+    "cacheEnabled": false,
+    "database": "MPP",
     "fallbackEnabled": false,
-    "fallbackValue": "",
+    "lastModificationSignature": "",
     "permissions": [{ "zone": "", "role": "" }],
+    "lastModification": { "actor": "claude", "timestamp": "2026-05-19T00:00:00Z" },
     "parameters": [
       { "type": "Parameter", "identifier": "areaLocationId",       "sqlType": 3 },
       { "type": "Parameter", "identifier": "downtimeReasonTypeId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "searchText",           "sqlType": 7 },
       { "type": "Parameter", "identifier": "includeDeprecated",    "sqlType": 6 }
     ]
   }
@@ -165,6 +167,8 @@ EXEC Oee.DowntimeReasonCode_Get @Id = :id
   { "type": "Parameter", "identifier": "id", "sqlType": 3 }
 ]
 ```
+
+**For all subsequent NQs (Steps 3–6 below):** the `resource.json` outer shape is identical to Step 1 — only the `parameters` array differs. Always include `"database": "MPP"`, `"lastModificationSignature": ""`, and the `lastModification` block with today's timestamp.
 
 - [ ] **Step 3: Write `DowntimeReasonCode_Create`**
 
@@ -247,12 +251,12 @@ EXEC Oee.DowntimeReasonCode_Deprecate
 EXEC Oee.DowntimeReasonType_List
 ```
 
-`resource.json` — same shape but `parameters: []`. Consider enabling caching since the 6 types never change at runtime:
+`resource.json` — same shape but `parameters: []`, and enable 30-min caching since the 6 types never change at runtime. The cache fields override the Step 1 defaults:
 
 ```json
-"cacheEnabled": true,
-"cacheAmount": 30,
 "cacheUnit": "MIN",
+"cacheAmount": 30,
+"cacheEnabled": true,
 ...
 "parameters": []
 ```
@@ -387,24 +391,35 @@ def search(filters=None):
     """List DowntimeReasonCode rows filtered by the supplied dict.
 
        filters keys (all optional):
-         areaLocationId        BIGINT or None
-         downtimeReasonTypeId  BIGINT or None
-         searchText            string or None (LIKE on Code + Description in proc)
-         includeDeprecated     bool (default False)"""
+         areaLocationId        BIGINT or None  (server-side filter via proc)
+         downtimeReasonTypeId  BIGINT or None  (server-side filter via proc)
+         includeDeprecated     bool, default False (server-side filter via proc)
+         searchText            string or None  (CLIENT-side filter applied here;
+                                                 the proc itself has no @SearchText)"""
     BlueRidge.Common.Util.log("filters=%s" % filters)
     f = _u(filters) or {}
     params = {
         "areaLocationId":       f.get("areaLocationId"),
         "downtimeReasonTypeId": f.get("downtimeReasonTypeId"),
-        "searchText":           f.get("searchText"),
         "includeDeprecated":    bool(f.get("includeDeprecated", False)),
     }
     try:
-        return BlueRidge.Common.Db.execList("oee/DowntimeReasonCode_List", params)
+        rows = BlueRidge.Common.Db.execList("oee/DowntimeReasonCode_List", params)
     except Exception as e:
         BlueRidge.Common.Util.log("ERROR %s" % str(e))
         BlueRidge.Common.Notify.toast("Failed to load downtime codes", str(e), "error")
         return []
+
+    # Client-side search filter (proc has no @SearchText param).
+    # 353-row max set; in-process filter on Code + Description is trivial.
+    needle = (f.get("searchText") or "").strip().lower()
+    if not needle:
+        return rows
+    return [
+        r for r in rows
+        if needle in (r.get("Code") or "").lower()
+        or needle in (r.get("Description") or "").lower()
+    ]
 
 
 def getOne(id):
