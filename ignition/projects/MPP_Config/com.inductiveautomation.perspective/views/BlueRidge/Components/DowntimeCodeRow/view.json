@@ -112,6 +112,14 @@
         "type": "ia.input.button",
         "meta": { "name": "EditButton" },
         "position": { "basis": "80px", "shrink": 0 },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "!{view.params.deprecated}" }
+            }
+          }
+        },
         "props": { "text": "Edit", "style": { "classes": "btn btn-sm" } },
         "events": {
           "component": {
