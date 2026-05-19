@@ -1,0 +1,75 @@
+{
+  "custom": {},
+  "params": {
+    "label":       "",
+    "count":       0,
+    "filterField": "",
+    "filterValue": ""
+  },
+  "propConfig": {
+    "params.label":       { "paramDirection": "input" },
+    "params.count":       { "paramDirection": "input" },
+    "params.filterField": { "paramDirection": "input" },
+    "params.filterValue": { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "width": 320, "height": 32 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "cursor":       "pointer",
+        "gap":          "10px",
+        "padding":      "6px 12px"
+      }
+    },
+    "events": {
+      "dom": {
+        "onClick": {
+          "type": "script", "scope": "G",
+          "config": {
+            "script": "\tsystem.perspective.sendMessage(\"applyFilterFromTile\", payload={\"field\": self.view.params.filterField, \"value\": self.view.params.filterValue}, scope=\"page\")"
+          }
+        }
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Label" },
+        "position": { "basis": "0", "grow": 1 },
+        "propConfig": {
+          "props.text": { "binding": { "type": "property", "config": { "path": "view.params.label" } } }
+        },
+        "props": {
+          "style": {
+            "color":        "var(--mpp-text-primary)",
+            "fontSize":     "12px",
+            "overflow":     "hidden",
+            "textOverflow": "ellipsis",
+            "whiteSpace":   "nowrap"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Count" },
+        "position": { "basis": "auto", "shrink": 0 },
+        "propConfig": {
+          "props.text": { "binding": { "type": "property", "config": { "path": "view.params.count" } } }
+        },
+        "props": {
+          "style": {
+            "color":     "var(--mpp-text-secondary)",
+            "fontSize":  "11px",
+            "fontWeight": "600"
+          }
+        }
+      }
+    ]
+  }
+}
