@@ -1,6 +1,7 @@
 {
   "custom": {},
   "params": {
+    "id": null,
     "code": "",
     "description": "",
     "area": "",
@@ -9,6 +10,7 @@
     "selected": false
   },
   "propConfig": {
+    "params.id":          { "paramDirection": "input" },
     "params.code":        { "paramDirection": "input" },
     "params.description": { "paramDirection": "input" },
     "params.area":        { "paramDirection": "input" },
@@ -102,7 +104,18 @@
         "type": "ia.input.button",
         "meta": { "name": "EditButton" },
         "position": { "basis": "80px", "shrink": 0 },
-        "props": { "text": "Edit", "style": { "classes": "btn btn-sm" } }
+        "props": { "text": "Edit", "style": { "classes": "btn btn-sm" } },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "C",
+              "config": {
+                "script": "\tsystem.perspective.openPopup(id=\"mpp-downtime-code-editor\", view=\"BlueRidge/Components/Popups/DowntimeCodeEditor\", modal=True, showCloseIcon=False, params={\"mode\": \"update\", \"editId\": self.view.params.id})"
+              }
+            }
+          }
+        }
       }
     ]
   }
