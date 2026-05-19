@@ -3,7 +3,7 @@
 #
 # Author:           Blue Ridge Automation
 # Created:          2026-05-12
-# Version:          1.5
+# Version:          1.6
 #
 # Description:
 #   Entity-script for Location.Location and its attribute values.
@@ -12,6 +12,7 @@
 #       getOne(locationId)               -> dict | None
 #       getAttributesByLocation(locId)   -> list[dict]
 #       getAllAreas(includeAll=False)     -> list[{label, value}]
+#       listByTier(tierCode)             -> list[dict]
 #
 #   Write surface (sort-order actions):
 #       handleMoveUp(selected, userId=None, ...)   -> dict | None
@@ -59,6 +60,9 @@
 #                      and Common.Ui.notifyResult (Common.Action removed);
 #                      drop local _rowsToDicts; replace per-module logger;
 #                      strip debug `print ds`; NQ params camelCased.
+#   2026-05-19 - 1.6 - Add listByTier(tierCode) — generic tier-scoped read via
+#                      location/Location_ListByTier NQ; first consumer: Defect
+#                      Codes Area dropdown.
 #   2026-05-19 - 1.5 - Add getAllAreas(includeAll=False) for Area-tier dropdown;
 #                      filters HierarchyLevel==2 client-side from GetTree flat result.
 #   2026-05-18 - 1.4 - Editor write surface: emptyMeta, metaFromLocation,
@@ -169,6 +173,34 @@ def getAllAreas(includeAll=False):
     if includeAll:
         out.insert(0, {"label": "All Areas", "value": None})
     return out
+
+
+def listByTier(tierCode):
+    """Returns active Locations whose LocationType.Code matches tierCode.
+    Used by tier-scoped dropdowns (Area dropdown on Defect Codes,
+    Cell dropdown on Tool Assignment, etc.).
+
+    Args:
+        tierCode (str): one of 'Enterprise', 'Site', 'Area', 'WorkCenter',
+                         'Cell', 'Workstation' (per Location.LocationType seed).
+
+    Returns:
+        list[dict]: rows with Id, Code, Name, LocationTypeDefinitionId,
+                    ParentLocationId, SortOrder, DeprecatedAt.
+                    Empty if tierCode is unknown.
+    """
+    BlueRidge.Common.Util.log("tierCode=%s" % tierCode)
+    if not tierCode:
+        return []
+    try:
+        return BlueRidge.Common.Db.execList(
+            "location/Location_ListByTier",
+            {"tierCode": tierCode},
+        )
+    except Exception as e:
+        BlueRidge.Common.Util.log("listByTier failed: %s" % str(e))
+        BlueRidge.Common.Notify.toast("Could not load locations", str(e), "error")
+        return []
 
 
 def _u(value):
