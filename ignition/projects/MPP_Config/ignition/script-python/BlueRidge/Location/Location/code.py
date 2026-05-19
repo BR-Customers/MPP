@@ -60,7 +60,7 @@
 #                      drop local _rowsToDicts; replace per-module logger;
 #                      strip debug `print ds`; NQ params camelCased.
 #   2026-05-19 - 1.5 - Add getAllAreas(includeAll=False) for Area-tier dropdown;
-#                      filters HierarchyLevel==3 client-side from GetTree flat result.
+#                      filters HierarchyLevel==2 client-side from GetTree flat result.
 #   2026-05-18 - 1.4 - Editor write surface: emptyMeta, metaFromLocation,
 #                      eligibleTypes, eligibleDefinitions, buildAttributesForType,
 #                      beginCreate, handleSaveAll, handleDeprecate. Wraps
