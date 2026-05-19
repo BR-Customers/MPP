@@ -139,8 +139,19 @@ def filterAndMapRows(allRows, searchText):
     Description against searchText. Maps DB column names to the
     DefectCodeRow view-param shape. Returns list[dict] ready for
     Repeater.props.instances.
+
+    Accepts allRows as either list[dict] (entity-script output) OR
+    a Dataset (Ignition custom-prop layer may coerce stored lists
+    back to Dataset when read via expression). Defensive at entry.
     """
-    allRows = _u(allRows) or []
+    allRows = _u(allRows)
+    if allRows is None:
+        return []
+    # If allRows is a Dataset (has getColumnNames + getRowCount),
+    # convert to list[dict] so the .get() row access below works.
+    if hasattr(allRows, "getColumnNames") and hasattr(allRows, "getRowCount"):
+        headers = list(allRows.getColumnNames())
+        allRows = [dict(zip(headers, row)) for row in allRows]
     s = (_u(searchText) or "").strip().lower()
     out = []
     for r in allRows:
