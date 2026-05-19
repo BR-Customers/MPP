@@ -11,7 +11,8 @@
     "rows": [],
     "totalCount": 0,
     "topReasons": [],
-    "topProcs": []
+    "topProcs": [],
+    "_initFired": false
   },
   "params": {},
   "propConfig": {
@@ -32,6 +33,18 @@
     },
     "custom.filter.searchText": {
       "persistent": true
+    },
+    "custom._initFired": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "now(0) != null"
+        }
+      },
+      "onChange": {
+        "enabled": true,
+        "script": "\t# Fires once on view-load (now(0) is single-eval -> binding evaluates true).\n\t# Calls resetFilter which seeds dates + runs Apply.\n\tif previousValue and previousValue.value != currentValue.value:\n\t\tself.view.resetFilter()"
+      }
     }
   },
   "props": {
@@ -844,9 +857,7 @@
           "script": "\timport system\n\tnow = system.date.now()\n\tself.view.custom.filter = {\n\t\t\"startDate\":      system.date.addDays(now, -7),\n\t\t\"endDate\":        now,\n\t\t\"entityTypeCode\": None,\n\t\t\"procedureName\":  None,\n\t\t\"appUserId\":      None,\n\t\t\"searchText\":     \"\"\n\t}\n\tself.applySearch()"
         }
       ],
-      "extensionFunctions": {
-        "onStartup": "\tself.resetFilter()"
-      },
+      "extensionFunctions": null,
       "messageHandlers": [
         {
           "messageType": "applyFilterFromTile",

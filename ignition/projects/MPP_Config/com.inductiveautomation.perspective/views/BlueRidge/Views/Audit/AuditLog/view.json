@@ -9,7 +9,8 @@
       "searchText": ""
     },
     "rows": [],
-    "totalCount": 0
+    "totalCount": 0,
+    "_initFired": false
   },
   "params": {},
   "propConfig": {
@@ -30,23 +31,47 @@
     },
     "custom.filter.searchText": {
       "persistent": true
+    },
+    "custom._initFired": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "now(0) != null"
+        }
+      },
+      "onChange": {
+        "enabled": true,
+        "script": "\t# Fires once on view-load (now(0) is single-eval -> binding evaluates true).\n\t# Calls resetFilter which seeds dates + runs Apply.\n\tif previousValue and previousValue.value != currentValue.value:\n\t\tself.view.resetFilter()"
+      }
     }
   },
   "props": {
-    "defaultSize": { "width": 1280, "height": 720 }
+    "defaultSize": {
+      "width": 1280,
+      "height": 720
+    }
   },
   "root": {
     "type": "ia.container.flex",
-    "meta": { "name": "root" },
+    "meta": {
+      "name": "root"
+    },
     "props": {
       "direction": "column",
-      "style": { "classes": "screen-active" }
+      "style": {
+        "classes": "screen-active"
+      }
     },
     "children": [
       {
         "type": "ia.display.view",
-        "meta": { "name": "TitleBar" },
-        "position": { "basis": "auto", "shrink": 0 },
+        "meta": {
+          "name": "TitleBar"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
         "props": {
           "path": "BlueRidge/Components/Common/TitleBar",
           "params": {
@@ -57,8 +82,12 @@
       },
       {
         "type": "ia.container.flex",
-        "meta": { "name": "MainSplit" },
-        "position": { "grow": 1 },
+        "meta": {
+          "name": "MainSplit"
+        },
+        "position": {
+          "grow": 1
+        },
         "props": {
           "direction": "row",
           "style": {
@@ -69,41 +98,73 @@
         "children": [
           {
             "type": "ia.container.flex",
-            "meta": { "name": "FilterSidebar" },
-            "position": { "basis": "220px", "shrink": 0 },
+            "meta": {
+              "name": "FilterSidebar"
+            },
+            "position": {
+              "basis": "220px",
+              "shrink": 0
+            },
             "props": {
               "direction": "column",
-              "style": { "classes": "filter-sidebar" }
+              "style": {
+                "classes": "filter-sidebar"
+              }
             },
             "children": [
               {
                 "type": "ia.container.flex",
-                "meta": { "name": "FilterPanel" },
-                "position": { "basis": "auto" },
+                "meta": {
+                  "name": "FilterPanel"
+                },
+                "position": {
+                  "basis": "auto"
+                },
                 "props": {
                   "direction": "column",
-                  "style": { "classes": "filter-panel" }
+                  "style": {
+                    "classes": "filter-panel"
+                  }
                 },
                 "children": [
                   {
                     "type": "ia.container.flex",
-                    "meta": { "name": "StartDateField" },
-                    "position": { "basis": "auto" },
-                    "props": { "direction": "column", "style": { "gap": "4px" } },
+                    "meta": {
+                      "name": "StartDateField"
+                    },
+                    "position": {
+                      "basis": "auto"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "4px"
+                      }
+                    },
                     "children": [
                       {
                         "type": "ia.display.label",
-                        "meta": { "name": "StartDateLabel" },
-                        "position": { "basis": "auto" },
+                        "meta": {
+                          "name": "StartDateLabel"
+                        },
+                        "position": {
+                          "basis": "auto"
+                        },
                         "props": {
                           "text": "Start Date",
-                          "style": { "classes": "label-eyebrow" }
+                          "style": {
+                            "classes": "label-eyebrow"
+                          }
                         }
                       },
                       {
                         "type": "ia.input.date-time-input",
-                        "meta": { "name": "StartDateInput" },
-                        "position": { "basis": "auto" },
+                        "meta": {
+                          "name": "StartDateInput"
+                        },
+                        "position": {
+                          "basis": "auto"
+                        },
                         "propConfig": {
                           "props.value": {
                             "binding": {
@@ -115,29 +176,51 @@
                             }
                           }
                         },
-                        "props": { "format": "YYYY-MM-DD", "pickerType": "date" }
+                        "props": {
+                          "format": "YYYY-MM-DD",
+                          "pickerType": "date"
+                        }
                       }
                     ]
                   },
                   {
                     "type": "ia.container.flex",
-                    "meta": { "name": "EndDateField" },
-                    "position": { "basis": "auto" },
-                    "props": { "direction": "column", "style": { "gap": "4px" } },
+                    "meta": {
+                      "name": "EndDateField"
+                    },
+                    "position": {
+                      "basis": "auto"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "4px"
+                      }
+                    },
                     "children": [
                       {
                         "type": "ia.display.label",
-                        "meta": { "name": "EndDateLabel" },
-                        "position": { "basis": "auto" },
+                        "meta": {
+                          "name": "EndDateLabel"
+                        },
+                        "position": {
+                          "basis": "auto"
+                        },
                         "props": {
                           "text": "End Date",
-                          "style": { "classes": "label-eyebrow" }
+                          "style": {
+                            "classes": "label-eyebrow"
+                          }
                         }
                       },
                       {
                         "type": "ia.input.date-time-input",
-                        "meta": { "name": "EndDateInput" },
-                        "position": { "basis": "auto" },
+                        "meta": {
+                          "name": "EndDateInput"
+                        },
+                        "position": {
+                          "basis": "auto"
+                        },
                         "propConfig": {
                           "props.value": {
                             "binding": {
@@ -149,29 +232,51 @@
                             }
                           }
                         },
-                        "props": { "format": "YYYY-MM-DD", "pickerType": "date" }
+                        "props": {
+                          "format": "YYYY-MM-DD",
+                          "pickerType": "date"
+                        }
                       }
                     ]
                   },
                   {
                     "type": "ia.container.flex",
-                    "meta": { "name": "EntityTypeField" },
-                    "position": { "basis": "auto" },
-                    "props": { "direction": "column", "style": { "gap": "4px" } },
+                    "meta": {
+                      "name": "EntityTypeField"
+                    },
+                    "position": {
+                      "basis": "auto"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "4px"
+                      }
+                    },
                     "children": [
                       {
                         "type": "ia.display.label",
-                        "meta": { "name": "EntityTypeLabel" },
-                        "position": { "basis": "auto" },
+                        "meta": {
+                          "name": "EntityTypeLabel"
+                        },
+                        "position": {
+                          "basis": "auto"
+                        },
                         "props": {
                           "text": "Entity Type",
-                          "style": { "classes": "label-eyebrow" }
+                          "style": {
+                            "classes": "label-eyebrow"
+                          }
                         }
                       },
                       {
                         "type": "ia.input.dropdown",
-                        "meta": { "name": "EntityTypeDropdown" },
-                        "position": { "basis": "auto" },
+                        "meta": {
+                          "name": "EntityTypeDropdown"
+                        },
+                        "position": {
+                          "basis": "auto"
+                        },
                         "propConfig": {
                           "props.options": {
                             "binding": {
@@ -197,29 +302,52 @@
                             }
                           }
                         },
-                        "props": { "style": { "classes": "select" } }
+                        "props": {
+                          "style": {
+                            "classes": "select"
+                          }
+                        }
                       }
                     ]
                   },
                   {
                     "type": "ia.container.flex",
-                    "meta": { "name": "SeverityField" },
-                    "position": { "basis": "auto" },
-                    "props": { "direction": "column", "style": { "gap": "4px" } },
+                    "meta": {
+                      "name": "SeverityField"
+                    },
+                    "position": {
+                      "basis": "auto"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "4px"
+                      }
+                    },
                     "children": [
                       {
                         "type": "ia.display.label",
-                        "meta": { "name": "SeverityLabel" },
-                        "position": { "basis": "auto" },
+                        "meta": {
+                          "name": "SeverityLabel"
+                        },
+                        "position": {
+                          "basis": "auto"
+                        },
                         "props": {
                           "text": "Severity",
-                          "style": { "classes": "label-eyebrow" }
+                          "style": {
+                            "classes": "label-eyebrow"
+                          }
                         }
                       },
                       {
                         "type": "ia.input.dropdown",
-                        "meta": { "name": "SeverityDropdown" },
-                        "position": { "basis": "auto" },
+                        "meta": {
+                          "name": "SeverityDropdown"
+                        },
+                        "position": {
+                          "basis": "auto"
+                        },
                         "propConfig": {
                           "props.options": {
                             "binding": {
@@ -245,29 +373,52 @@
                             }
                           }
                         },
-                        "props": { "style": { "classes": "select" } }
+                        "props": {
+                          "style": {
+                            "classes": "select"
+                          }
+                        }
                       }
                     ]
                   },
                   {
                     "type": "ia.container.flex",
-                    "meta": { "name": "SearchField" },
-                    "position": { "basis": "auto" },
-                    "props": { "direction": "column", "style": { "gap": "4px" } },
+                    "meta": {
+                      "name": "SearchField"
+                    },
+                    "position": {
+                      "basis": "auto"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "4px"
+                      }
+                    },
                     "children": [
                       {
                         "type": "ia.display.label",
-                        "meta": { "name": "SearchLabel" },
-                        "position": { "basis": "auto" },
+                        "meta": {
+                          "name": "SearchLabel"
+                        },
+                        "position": {
+                          "basis": "auto"
+                        },
                         "props": {
                           "text": "Search",
-                          "style": { "classes": "label-eyebrow" }
+                          "style": {
+                            "classes": "label-eyebrow"
+                          }
                         }
                       },
                       {
                         "type": "ia.input.text-field",
-                        "meta": { "name": "SearchInput" },
-                        "position": { "basis": "auto" },
+                        "meta": {
+                          "name": "SearchInput"
+                        },
+                        "position": {
+                          "basis": "auto"
+                        },
                         "propConfig": {
                           "props.text": {
                             "binding": {
@@ -281,15 +432,22 @@
                         },
                         "props": {
                           "placeholder": "Search…",
-                          "style": { "classes": "search-input" }
+                          "style": {
+                            "classes": "search-input"
+                          }
                         }
                       }
                     ]
                   },
                   {
                     "type": "ia.container.flex",
-                    "meta": { "name": "FilterFooter" },
-                    "position": { "basis": "auto", "shrink": 0 },
+                    "meta": {
+                      "name": "FilterFooter"
+                    },
+                    "position": {
+                      "basis": "auto",
+                      "shrink": 0
+                    },
                     "props": {
                       "alignItems": "center",
                       "style": {
@@ -300,11 +458,18 @@
                     "children": [
                       {
                         "type": "ia.input.button",
-                        "meta": { "name": "ResetButton" },
-                        "position": { "basis": "0", "grow": 1 },
+                        "meta": {
+                          "name": "ResetButton"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1
+                        },
                         "props": {
                           "text": "Reset",
-                          "style": { "classes": "btn btn-sm" }
+                          "style": {
+                            "classes": "btn btn-sm"
+                          }
                         },
                         "events": {
                           "component": {
@@ -320,11 +485,18 @@
                       },
                       {
                         "type": "ia.input.button",
-                        "meta": { "name": "ApplyButton" },
-                        "position": { "basis": "0", "grow": 1 },
+                        "meta": {
+                          "name": "ApplyButton"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1
+                        },
                         "props": {
                           "text": "Apply",
-                          "style": { "classes": "btn btn-primary btn-sm" }
+                          "style": {
+                            "classes": "btn btn-primary btn-sm"
+                          }
                         },
                         "events": {
                           "component": {
@@ -346,8 +518,12 @@
           },
           {
             "type": "ia.container.flex",
-            "meta": { "name": "ContentArea" },
-            "position": { "grow": 1 },
+            "meta": {
+              "name": "ContentArea"
+            },
+            "position": {
+              "grow": 1
+            },
             "props": {
               "direction": "column",
               "style": {
@@ -359,26 +535,43 @@
             "children": [
               {
                 "type": "ia.container.flex",
-                "meta": { "name": "AuditPanelWrapper" },
-                "position": { "grow": 1 },
+                "meta": {
+                  "name": "AuditPanelWrapper"
+                },
+                "position": {
+                  "grow": 1
+                },
                 "props": {
                   "direction": "column",
-                  "style": { "padding": "0 12px 12px 12px" }
+                  "style": {
+                    "padding": "0 12px 12px 12px"
+                  }
                 },
                 "children": [
                   {
                     "type": "ia.container.flex",
-                    "meta": { "name": "AuditPanel" },
-                    "position": { "grow": 1 },
+                    "meta": {
+                      "name": "AuditPanel"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
                     "props": {
                       "direction": "column",
-                      "style": { "classes": "detail-panel" }
+                      "style": {
+                        "classes": "detail-panel"
+                      }
                     },
                     "children": [
                       {
                         "type": "ia.display.label",
-                        "meta": { "name": "ResultBanner" },
-                        "position": { "basis": "auto", "shrink": 0 },
+                        "meta": {
+                          "name": "ResultBanner"
+                        },
+                        "position": {
+                          "basis": "auto",
+                          "shrink": 0
+                        },
                         "propConfig": {
                           "props.text": {
                             "binding": {
@@ -399,13 +592,19 @@
                       },
                       {
                         "type": "ia.display.table",
-                        "meta": { "name": "AuditTable" },
-                        "position": { "grow": 1 },
+                        "meta": {
+                          "name": "AuditTable"
+                        },
+                        "position": {
+                          "grow": 1
+                        },
                         "propConfig": {
                           "props.data": {
                             "binding": {
                               "type": "property",
-                              "config": { "path": "view.custom.rows" }
+                              "config": {
+                                "path": "view.custom.rows"
+                              }
                             }
                           }
                         },
@@ -413,49 +612,67 @@
                           "columns": [
                             {
                               "field": "LoggedAt",
-                              "header": { "title": "Timestamp" },
+                              "header": {
+                                "title": "Timestamp"
+                              },
                               "visible": true,
                               "sort": "desc"
                             },
                             {
                               "field": "UserDisplayName",
-                              "header": { "title": "User" },
+                              "header": {
+                                "title": "User"
+                              },
                               "visible": true
                             },
                             {
                               "field": "LogEntityTypeName",
-                              "header": { "title": "Entity Type" },
+                              "header": {
+                                "title": "Entity Type"
+                              },
                               "visible": true
                             },
                             {
                               "field": "EntityId",
-                              "header": { "title": "Entity ID" },
+                              "header": {
+                                "title": "Entity ID"
+                              },
                               "visible": true
                             },
                             {
                               "field": "LogEventTypeCode",
-                              "header": { "title": "Event" },
+                              "header": {
+                                "title": "Event"
+                              },
                               "visible": true
                             },
                             {
                               "field": "LogSeverityCode",
-                              "header": { "title": "Severity" },
+                              "header": {
+                                "title": "Severity"
+                              },
                               "visible": true
                             },
                             {
                               "field": "Description",
-                              "header": { "title": "Description" },
+                              "header": {
+                                "title": "Description"
+                              },
                               "visible": true
                             }
                           ],
-                          "filter": { "enabled": false },
+                          "filter": {
+                            "enabled": false
+                          },
                           "rows": {
                             "selection": {
                               "enabled": true,
                               "selectionMode": "single"
                             }
                           },
-                          "style": { "classes": "data-table" }
+                          "style": {
+                            "classes": "data-table"
+                          }
                         },
                         "events": {
                           "component": {
@@ -482,18 +699,20 @@
       "customMethods": [
         {
           "name": "applySearch",
-          "params": ["self"],
+          "params": [
+            "self"
+          ],
           "script": "\tresult = BlueRidge.Audit.ConfigLog.search(self.view.custom.filter)\n\tself.view.custom.rows       = result[\"rows\"]\n\tself.view.custom.totalCount = result[\"totalCount\"]"
         },
         {
           "name": "resetFilter",
-          "params": ["self"],
+          "params": [
+            "self"
+          ],
           "script": "\timport system\n\tnow = system.date.now()\n\tself.view.custom.filter = {\n\t\t\"startDate\":      system.date.addDays(now, -7),\n\t\t\"endDate\":        now,\n\t\t\"entityTypeCode\": None,\n\t\t\"logSeverityCode\": None,\n\t\t\"appUserId\":      None,\n\t\t\"searchText\":     \"\"\n\t}\n\tself.applySearch()"
         }
       ],
-      "extensionFunctions": {
-        "onStartup": "\tself.resetFilter()"
-      }
+      "extensionFunctions": null
     }
   }
 }
