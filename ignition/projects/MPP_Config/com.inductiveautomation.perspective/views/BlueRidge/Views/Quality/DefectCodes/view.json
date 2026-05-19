@@ -52,7 +52,7 @@
           "pageScope": true,
           "sessionScope": false,
           "viewScope": false,
-          "script": "\tsystem.perspective.refreshBinding(\"view.custom.allRows\")"
+          "script": "\tf = self.view.custom.filter or {}\n\tself.view.custom.allRows = BlueRidge.Quality.DefectCode.getAll(\n\t\tf.get(\"includeDeprecated\", False),\n\t\tf.get(\"areaLocationId\"))"
         }
       ]
     },
