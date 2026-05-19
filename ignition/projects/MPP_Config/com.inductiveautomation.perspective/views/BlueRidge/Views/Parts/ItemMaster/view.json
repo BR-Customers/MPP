@@ -197,6 +197,23 @@
             "type": "ia.input.button",
             "meta": {"name": "BtnAddItem"},
             "position": {"basis": "auto"},
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "popup",
+                  "scope": "C",
+                  "config": {
+                    "type": "open",
+                    "id": "mpp-add-item",
+                    "viewPath": "BlueRidge/Components/Popups/AddItem",
+                    "modal": true,
+                    "showCloseIcon": false,
+                    "overlayDismiss": false,
+                    "viewportBound": true
+                  }
+                }
+              }
+            },
             "props": {
               "text": "+ Add Item",
               "style": {"classes": "btn btn-primary"}
