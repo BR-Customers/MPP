@@ -1,0 +1,126 @@
+{
+  "custom": {},
+  "params": {
+    "value": {}
+  },
+  "propConfig": {
+    "params.value": {"paramDirection": "input"}
+  },
+  "props": {
+    "defaultSize": {
+      "width": 800,
+      "height": 280
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {"name": "root"},
+    "props": {
+      "direction": "column",
+      "style": {"gap": "10px"}
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {"name": "HeaderRow"},
+        "position": {"basis": "auto"},
+        "props": {"direction": "row", "alignItems": "center", "style": {"gap": "8px"}},
+        "children": [
+          {
+            "type": "ia.input.dropdown",
+            "meta": {"name": "DropdownVersion"},
+            "position": {"basis": "auto"},
+            "propConfig": {
+              "props.options": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "[{'label': 'v' + toStr({view.params.value.publishedVersion}) + ' — Effective ' + {view.params.value.effectiveFrom} + ' (Published)', 'value': {view.params.value.publishedVersion}}]"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {"classes": "select", "minWidth": "320px"}
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {"name": "BadgePublished"},
+            "position": {"basis": "auto"},
+            "props": {"text": "Published", "style": {"classes": "badge badge-published"}}
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {"name": "HeaderSpacer"},
+            "position": {"grow": 1},
+            "props": {}
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {"name": "BtnNewVersion"},
+            "position": {"basis": "auto"},
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "C",
+                  "config": {
+                    "script": "BlueRidge.Common.Notify.toast('Not wired yet', 'BOMs versioning workflow lands in Phase 6.', 'info', 5)"
+                  }
+                }
+              }
+            },
+            "props": {"text": "New Version", "style": {"classes": "btn btn-sm"}}
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {"name": "PublishedPanel"},
+        "position": {"basis": "auto"},
+        "props": {"direction": "column", "style": {"classes": "detail-panel", "overflow": "hidden"}},
+        "children": [
+          {
+            "type": "ia.display.table",
+            "meta": {"name": "BomLinesTable"},
+            "position": {"basis": "auto"},
+            "propConfig": {
+              "props.data": {
+                "binding": {
+                  "type": "property",
+                  "config": {"path": "view.params.value.lines"}
+                }
+              }
+            },
+            "props": {
+              "columns": [
+                {"field": "seq",           "header": "#",         "width": 50,  "editable": false},
+                {"field": "componentName", "header": "Component", "editable": false},
+                {"field": "partNumber",    "header": "Part Number", "editable": false},
+                {"field": "qtyPer",        "header": "Qty",       "width": 80,  "editable": false},
+                {"field": "uom",           "header": "UOM",       "width": 80,  "editable": false}
+              ],
+              "rows": {"height": 32},
+              "style": {"classes": "data-table"}
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {"name": "ReadOnlyCaption"},
+            "position": {"basis": "auto"},
+            "props": {
+              "text": "Published — read-only. Click New Version to create a draft copy for editing.",
+              "style": {
+                "padding": "8px 12px",
+                "fontSize": "11px",
+                "color": "var(--mpp-text-muted)",
+                "fontStyle": "italic"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
