@@ -4,8 +4,9 @@
 -- Created:      2026-04-13
 -- Description:
 --   Tests for Audit.FailureLog_List.
---   Covers: date range returns rows, and ProcedureName filter
---   restricts results to matching rows only.
+--   Covers: date range returns rows, ProcedureName filter restricts
+--   results to matching rows only, and @FailureReasonLike substring
+--   filter returns only matching rows.
 --
 --   Pre-conditions:
 --     - Migration 0001 applied (audit lookup seeds present)
@@ -14,6 +15,12 @@
 --     - Audit.FailureLog_List deployed
 --     - FailureLog already contains rows from 060_FailureLog_GetByEntity.sql
 --       (or this file seeds its own rows below)
+--
+-- Change Log:
+--   2026-04-13 - Initial version
+--   2026-05-19 - Updated temp table shapes for v3.0 column set
+--                (LogEntityTypeCode, LogEventTypeCode, TotalCount);
+--                added Test 3: @FailureReasonLike filter
 -- =============================================
 
 EXEC test.BeginTestFile @FileName = N'02_audit_readers/070_FailureLog_List.sql';
@@ -65,14 +72,15 @@ CREATE TABLE #List1 (
     AttemptedAt         DATETIME2(3),
     AppUserId           BIGINT,
     UserDisplayName     NVARCHAR(200),
-    LogEntityTypeId     BIGINT,
+    LogEntityTypeCode   NVARCHAR(50),
     LogEntityTypeName   NVARCHAR(100),
     EntityId            BIGINT,
     LogEventTypeId      BIGINT,
-    LogEventTypeName    NVARCHAR(100),
+    LogEventTypeCode    NVARCHAR(50),
     FailureReason       NVARCHAR(500),
     ProcedureName       NVARCHAR(200),
-    AttemptedParameters NVARCHAR(MAX)
+    AttemptedParameters NVARCHAR(MAX),
+    TotalCount          INT
 );
 
 INSERT INTO #List1
@@ -103,14 +111,15 @@ CREATE TABLE #List2 (
     AttemptedAt         DATETIME2(3),
     AppUserId           BIGINT,
     UserDisplayName     NVARCHAR(200),
-    LogEntityTypeId     BIGINT,
+    LogEntityTypeCode   NVARCHAR(50),
     LogEntityTypeName   NVARCHAR(100),
     EntityId            BIGINT,
     LogEventTypeId      BIGINT,
-    LogEventTypeName    NVARCHAR(100),
+    LogEventTypeCode    NVARCHAR(50),
     FailureReason       NVARCHAR(500),
     ProcedureName       NVARCHAR(200),
-    AttemptedParameters NVARCHAR(MAX)
+    AttemptedParameters NVARCHAR(MAX),
+    TotalCount          INT
 );
 
 INSERT INTO #List2
@@ -143,6 +152,68 @@ EXEC test.Assert_RowCount
     @ActualCount   = @SetupMatchCount;
 
 DROP TABLE #List2;
+GO
+
+-- =============================================
+-- Test 3: @FailureReasonLike substring match
+-- =============================================
+-- Seed two FailureLog rows with distinct reasons via Audit_LogFailure
+EXEC Audit.Audit_LogFailure
+    @AppUserId           = 1,
+    @LogEntityTypeCode   = N'Location',
+    @EntityId            = NULL,
+    @LogEventTypeCode    = N'Created',
+    @FailureReason       = N'duplicate code abc',
+    @ProcedureName       = N'test.LikeProc',
+    @AttemptedParameters = N'{}';
+EXEC Audit.Audit_LogFailure
+    @AppUserId           = 1,
+    @LogEntityTypeCode   = N'Location',
+    @EntityId            = NULL,
+    @LogEventTypeCode    = N'Created',
+    @FailureReason       = N'invalid parent',
+    @ProcedureName       = N'test.LikeProc',
+    @AttemptedParameters = N'{}';
+GO
+
+DECLARE @Start DATETIME2(3) = DATEADD(MINUTE, -5, SYSUTCDATETIME());
+DECLARE @End   DATETIME2(3) = SYSUTCDATETIME();
+CREATE TABLE #FL_Like (
+    Id                  BIGINT,
+    AttemptedAt         DATETIME2(3),
+    AppUserId           BIGINT,
+    UserDisplayName     NVARCHAR(200),
+    LogEntityTypeCode   NVARCHAR(50),
+    LogEntityTypeName   NVARCHAR(100),
+    EntityId            BIGINT,
+    LogEventTypeId      BIGINT,
+    LogEventTypeCode    NVARCHAR(50),
+    FailureReason       NVARCHAR(500),
+    ProcedureName       NVARCHAR(200),
+    AttemptedParameters NVARCHAR(MAX),
+    TotalCount          INT
+);
+INSERT INTO #FL_Like EXEC Audit.FailureLog_List
+    @StartDate         = @Start,
+    @EndDate           = @End,
+    @FailureReasonLike = N'duplicate',
+    @ProcedureName     = N'test.LikeProc';
+
+DECLARE @LikeCount INT;
+SELECT @LikeCount = COUNT(*) FROM #FL_Like;
+DECLARE @LikeCountStr NVARCHAR(10) = CAST(@LikeCount AS NVARCHAR(10));
+EXEC test.Assert_IsEqual
+    @TestName = N'FailureLog_List @FailureReasonLike: only matching rows returned',
+    @Expected = N'1',
+    @Actual   = @LikeCountStr;
+
+DECLARE @MatchedReason NVARCHAR(500);
+SELECT TOP 1 @MatchedReason = FailureReason FROM #FL_Like;
+EXEC test.Assert_Contains
+    @TestName    = N'FailureLog_List @FailureReasonLike: matched reason contains substring',
+    @HaystackStr = @MatchedReason,
+    @NeedleStr   = N'duplicate';
+DROP TABLE #FL_Like;
 GO
 
 -- =============================================
