@@ -1,0 +1,13 @@
+{
+  "scope": "G",
+  "version": 1,
+  "restricted": false,
+  "overridable": true,
+  "files": ["view.json"],
+  "attributes": {
+    "lastModification": {
+      "actor": "Jacques Potgieter",
+      "timestamp": "2026-05-19T12:00:00Z"
+    }
+  }
+}

@@ -205,18 +205,135 @@
         ]
       },
       {
-        "type": "ia.display.label",
-        "meta": {"name": "PlaceholderBody"},
+        "type": "ia.container.flex",
+        "meta": {"name": "Main"},
         "position": {"grow": 1, "basis": "0"},
         "props": {
-          "text": "Item Master shell — Phase 1 build in progress.",
-          "style": {
-            "padding": "32px",
-            "color": "var(--mpp-text-muted)",
-            "fontStyle": "italic"
+          "direction": "row",
+          "style": {"overflow": "hidden", "borderTop": "1px solid var(--mpp-border-subtle)"}
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {"name": "LeftPanel"},
+            "position": {"basis": "240px", "shrink": 0},
+            "props": {
+              "direction": "column",
+              "style": {
+                "background": "var(--mpp-surface-nav)",
+                "borderRight": "1px solid var(--mpp-border-subtle)"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {"name": "FilterBar"},
+                "position": {"basis": "auto", "shrink": 0},
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "padding": "8px 10px",
+                    "borderBottom": "1px solid var(--mpp-border-subtle)",
+                    "gap": "6px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.input.text-field",
+                    "meta": {"name": "InputSearch"},
+                    "position": {"basis": "auto"},
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {"bidirectional": true, "path": "view.custom.search"}
+                        }
+                      }
+                    },
+                    "props": {
+                      "placeholder": "🔍 Search items…",
+                      "style": {"classes": "search-input"}
+                    }
+                  },
+                  {
+                    "type": "ia.input.dropdown",
+                    "meta": {"name": "DropdownTypeFilter"},
+                    "position": {"basis": "auto"},
+                    "propConfig": {
+                      "props.value": {
+                        "binding": {
+                          "type": "property",
+                          "config": {"bidirectional": true, "path": "view.custom.typeFilter"}
+                        }
+                      }
+                    },
+                    "props": {
+                      "options": [
+                        {"label": "All Types",      "value": "All Types"},
+                        {"label": "Raw Material",   "value": "Raw Material"},
+                        {"label": "Component",      "value": "Component"},
+                        {"label": "Sub-Assembly",   "value": "Sub-Assembly"},
+                        {"label": "Finished Good",  "value": "Finished Good"},
+                        {"label": "Pass-Through",   "value": "Pass-Through"}
+                      ],
+                      "style": {"classes": "select"}
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.display.flex-repeater",
+                "meta": {"name": "ItemList"},
+                "position": {"grow": 1, "basis": "0"},
+                "propConfig": {
+                  "props.instances": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "forEach({view.custom.items}, {'item': it, 'selectedId': {view.custom.selected.meta.Id}})"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "path": "BlueRidge/Components/Parts/ItemMaster/ItemRow",
+                  "direction": "column",
+                  "elementPosition": {"basis": "auto"},
+                  "useDefaultViewWidth": false,
+                  "useDefaultViewHeight": false,
+                  "style": {"overflowY": "auto", "padding": "4px 0"}
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {"name": "RightPlaceholder"},
+            "position": {"grow": 1, "basis": "0"},
+            "props": {
+              "text": "Detail area — wired in Task 4.",
+              "style": {
+                "padding": "32px",
+                "color": "var(--mpp-text-muted)",
+                "fontStyle": "italic"
+              }
+            }
           }
-        }
+        ]
       }
-    ]
+    ],
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "itemRowClicked",
+          "pageScope": true,
+          "viewScope": false,
+          "sessionScope": false,
+          "script": "\tclickedId = payload.get('id') if payload else None\n\tif clickedId is None:\n\t\treturn\n\tfor it in self.view.custom.items:\n\t\tif it.get('id') == clickedId:\n\t\t\tif it.get('id') == 1:\n\t\t\t\tself.view.custom.editDraft = dict(self.view.custom.selected)\n\t\t\telse:\n\t\t\t\tbundle = {'meta': dict(it), 'containerConfig': {}, 'routes': {'steps': []}, 'boms': {'lines': []}, 'qualitySpecs': [], 'eligibility': {'rows': []}}\n\t\t\t\tself.view.custom.selected  = bundle\n\t\t\t\tself.view.custom.editDraft = dict(bundle)\n\t\t\tself.view.custom.mode = 'update'\n\t\t\tbreak"
+        }
+      ]
+    }
   }
 }

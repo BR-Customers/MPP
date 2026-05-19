@@ -1,0 +1,133 @@
+{
+  "custom": {},
+  "params": {
+    "item": {},
+    "selectedId": 0
+  },
+  "propConfig": {
+    "params.item":       {"paramDirection": "input"},
+    "params.selectedId": {"paramDirection": "input"}
+  },
+  "props": {
+    "defaultSize": {
+      "width": 240,
+      "height": 36
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {"name": "root"},
+    "events": {
+      "dom": {
+        "onClick": {
+          "type": "script",
+          "scope": "C",
+          "config": {
+            "script": "system.perspective.sendMessage('itemRowClicked', {'id': self.view.params.item.get('id')}, scope='page')"
+          }
+        }
+      }
+    },
+    "propConfig": {
+      "props.style.classes": {
+        "binding": {
+          "type": "expr",
+          "config": {
+            "expression": "if({view.params.item.id} = {view.params.selectedId}, 'tree-item tree-item-selected', 'tree-item')"
+          }
+        }
+      }
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "justify": "space-between",
+      "style": {
+        "padding": "6px 10px",
+        "cursor": "pointer",
+        "borderBottom": "1px solid var(--mpp-border-subtle)"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {"name": "RowText"},
+        "position": {"grow": 1, "shrink": 1, "basis": "0"},
+        "props": {
+          "direction": "column",
+          "style": {"overflow": "hidden", "gap": "1px"}
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {"name": "LabelPartNumber"},
+            "position": {"basis": "auto"},
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {"path": "view.params.item.partNumber"}
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontSize": "12px",
+                "fontWeight": "600"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {"name": "LabelDescription"},
+            "position": {"basis": "auto"},
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {"path": "view.params.item.description"}
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontSize": "11px",
+                "color": "var(--mpp-text-muted)",
+                "whiteSpace": "nowrap",
+                "overflow": "hidden",
+                "textOverflow": "ellipsis"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {"name": "BadgeType"},
+        "position": {"basis": "auto"},
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {"path": "view.params.item.typeBadge"}
+            }
+          },
+          "props.style.classes": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.item.isDraft} = true, 'badge badge-draft', 'badge badge-purple')"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontSize": "10px",
+            "padding": "1px 5px"
+          }
+        }
+      }
+    ]
+  }
+}

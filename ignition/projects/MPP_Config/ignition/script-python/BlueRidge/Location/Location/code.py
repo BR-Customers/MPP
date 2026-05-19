@@ -60,11 +60,11 @@
 #                      and Common.Ui.notifyResult (Common.Action removed);
 #                      drop local _rowsToDicts; replace per-module logger;
 #                      strip debug `print ds`; NQ params camelCased.
+#   2026-05-19 - 1.5 - Add getAllAreas(includeAll=False) for Area-tier dropdown;
+#                      filters HierarchyLevel==2 client-side from GetTree flat result.
 #   2026-05-19 - 1.6 - Add listByTier(tierCode) — generic tier-scoped read via
 #                      location/Location_ListByTier NQ; first consumer: Defect
 #                      Codes Area dropdown.
-#   2026-05-19 - 1.5 - Add getAllAreas(includeAll=False) for Area-tier dropdown;
-#                      filters HierarchyLevel==2 client-side from GetTree flat result.
 #   2026-05-18 - 1.4 - Editor write surface: emptyMeta, metaFromLocation,
 #                      eligibleTypes, eligibleDefinitions, buildAttributesForType,
 #                      beginCreate, handleSaveAll, handleDeprecate. Wraps
