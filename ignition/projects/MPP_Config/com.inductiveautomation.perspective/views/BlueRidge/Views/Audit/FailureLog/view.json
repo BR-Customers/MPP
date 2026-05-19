@@ -43,7 +43,7 @@
       },
       "onChange": {
         "enabled": true,
-        "script": "\t# Fires once on view-load (now(0) is single-eval -> binding evaluates true).\n\t# Calls resetFilter which seeds dates + runs Apply.\n\tif previousValue and previousValue.value != currentValue.value:\n\t\tself.view.resetFilter()"
+        "script": "\t# Fires once on view-load (now(0) is single-eval -> binding evaluates true).\n\t# Calls resetFilter which seeds dates + runs Apply.\n\tif previousValue and previousValue.value != currentValue.value:\n\t\tself.resetFilter()"
       }
     }
   },
