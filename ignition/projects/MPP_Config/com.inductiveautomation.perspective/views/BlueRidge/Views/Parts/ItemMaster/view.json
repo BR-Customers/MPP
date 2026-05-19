@@ -910,24 +910,113 @@
                     },
                     "children": [
                       {
-                        "type": "ia.display.label",
-                        "meta": {"name": "TabPanelsPlaceholder"},
-                        "position": {"basis": "auto"},
+                        "type": "ia.display.view",
+                        "meta": {"name": "EmbedContainerConfig"},
+                        "position": {"basis": "auto", "grow": 0, "shrink": 0},
                         "propConfig": {
-                          "props.text": {
+                          "props.params.value": {
+                            "binding": {
+                              "type": "property",
+                              "config": {"bidirectional": true, "path": "view.custom.editDraft.containerConfig"}
+                            }
+                          },
+                          "position.display": {
                             "binding": {
                               "type": "expr",
-                              "config": {
-                                "expression": "'Active tab: ' + {view.custom.activeTab} + ' — embedded views wired in Tasks 6–10.'"
-                              }
+                              "config": {"expression": "{view.custom.activeTab} = 'containerConfig'"}
                             }
                           }
                         },
                         "props": {
-                          "style": {
-                            "color": "var(--mpp-text-muted)",
-                            "fontStyle": "italic"
+                          "path": "BlueRidge/Components/Parts/ItemMaster/ContainerConfig"
+                        }
+                      },
+                      {
+                        "type": "ia.display.view",
+                        "meta": {"name": "EmbedRoutes"},
+                        "position": {"basis": "auto", "grow": 0, "shrink": 0},
+                        "propConfig": {
+                          "props.params.value": {
+                            "binding": {
+                              "type": "property",
+                              "config": {"bidirectional": true, "path": "view.custom.editDraft.routes"}
+                            }
+                          },
+                          "position.display": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {"expression": "{view.custom.activeTab} = 'routes'"}
+                            }
                           }
+                        },
+                        "props": {
+                          "path": "BlueRidge/Components/Parts/ItemMaster/Routes"
+                        }
+                      },
+                      {
+                        "type": "ia.display.view",
+                        "meta": {"name": "EmbedBoms"},
+                        "position": {"basis": "auto", "grow": 0, "shrink": 0},
+                        "propConfig": {
+                          "props.params.value": {
+                            "binding": {
+                              "type": "property",
+                              "config": {"bidirectional": true, "path": "view.custom.editDraft.boms"}
+                            }
+                          },
+                          "position.display": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {"expression": "{view.custom.activeTab} = 'boms'"}
+                            }
+                          }
+                        },
+                        "props": {
+                          "path": "BlueRidge/Components/Parts/ItemMaster/Boms"
+                        }
+                      },
+                      {
+                        "type": "ia.display.view",
+                        "meta": {"name": "EmbedQualitySpecs"},
+                        "position": {"basis": "auto", "grow": 0, "shrink": 0},
+                        "propConfig": {
+                          "props.params.value": {
+                            "binding": {
+                              "type": "property",
+                              "config": {"bidirectional": true, "path": "view.custom.editDraft.qualitySpecs"}
+                            }
+                          },
+                          "position.display": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {"expression": "{view.custom.activeTab} = 'qualitySpecs'"}
+                            }
+                          }
+                        },
+                        "props": {
+                          "path": "BlueRidge/Components/Parts/ItemMaster/QualitySpecs"
+                        }
+                      },
+                      {
+                        "type": "ia.display.view",
+                        "meta": {"name": "EmbedEligibility"},
+                        "position": {"basis": "auto", "grow": 0, "shrink": 0},
+                        "propConfig": {
+                          "props.params.value": {
+                            "binding": {
+                              "type": "property",
+                              "config": {"bidirectional": true, "path": "view.custom.editDraft.eligibility"}
+                            }
+                          },
+                          "position.display": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {"expression": "{view.custom.activeTab} = 'eligibility'"}
+                            }
+                          }
+                        },
+                        "props": {
+                          "path": "BlueRidge/Components/Parts/ItemMaster/Eligibility"
                         }
                       }
                     ]
