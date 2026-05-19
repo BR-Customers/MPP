@@ -37,6 +37,9 @@ def search(filters=None):
 
     # Client-side search filter (proc has no @SearchText param).
     # 353-row max set; in-process filter on Code + Description is trivial.
+    # Row dict keys are PascalCase -- they mirror the proc's SELECT aliases
+    # (drc.Code, drc.Description). If the proc ever renames those, this
+    # filter silently no-ops and returns the unfiltered list.
     needle = (f.get("searchText") or "").strip().lower()
     if not needle:
         return rows
