@@ -756,17 +756,183 @@
                 ]
               },
               {
-                "type": "ia.display.label",
-                "meta": {"name": "TabContainerPlaceholder"},
+                "type": "ia.container.flex",
+                "meta": {"name": "TabContainer"},
                 "position": {"grow": 1, "basis": "0"},
                 "props": {
-                  "text": "Tab container — wired in Task 5+.",
-                  "style": {
-                    "padding": "32px",
-                    "color": "var(--mpp-text-muted)",
-                    "fontStyle": "italic"
+                  "direction": "column",
+                  "style": {"background": "var(--mpp-surface-card)", "overflow": "hidden"}
+                },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {"name": "TabStrip"},
+                    "position": {"basis": "auto", "shrink": 0},
+                    "props": {
+                      "direction": "row",
+                      "style": {"classes": "tab-strip"}
+                    },
+                    "children": [
+                      {
+                        "type": "ia.input.button",
+                        "meta": {"name": "TabBtnContainerConfig"},
+                        "position": {"basis": "auto"},
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "type": "script",
+                              "scope": "C",
+                              "config": {"script": "self.view.custom.activeTab = 'containerConfig'"}
+                            }
+                          }
+                        },
+                        "propConfig": {
+                          "props.style.classes": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "if({view.custom.activeTab} = 'containerConfig', 'tab-item tab-item-active', 'tab-item')"
+                              }
+                            }
+                          }
+                        },
+                        "props": {"text": "Container Config"}
+                      },
+                      {
+                        "type": "ia.input.button",
+                        "meta": {"name": "TabBtnRoutes"},
+                        "position": {"basis": "auto"},
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "type": "script",
+                              "scope": "C",
+                              "config": {"script": "self.view.custom.activeTab = 'routes'"}
+                            }
+                          }
+                        },
+                        "propConfig": {
+                          "props.style.classes": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "if({view.custom.activeTab} = 'routes', 'tab-item tab-item-active', 'tab-item')"
+                              }
+                            }
+                          }
+                        },
+                        "props": {"text": "Routes"}
+                      },
+                      {
+                        "type": "ia.input.button",
+                        "meta": {"name": "TabBtnBoms"},
+                        "position": {"basis": "auto"},
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "type": "script",
+                              "scope": "C",
+                              "config": {"script": "self.view.custom.activeTab = 'boms'"}
+                            }
+                          }
+                        },
+                        "propConfig": {
+                          "props.style.classes": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "if({view.custom.activeTab} = 'boms', 'tab-item tab-item-active', 'tab-item')"
+                              }
+                            }
+                          }
+                        },
+                        "props": {"text": "BOMs"}
+                      },
+                      {
+                        "type": "ia.input.button",
+                        "meta": {"name": "TabBtnQualitySpecs"},
+                        "position": {"basis": "auto"},
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "type": "script",
+                              "scope": "C",
+                              "config": {"script": "self.view.custom.activeTab = 'qualitySpecs'"}
+                            }
+                          }
+                        },
+                        "propConfig": {
+                          "props.style.classes": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "if({view.custom.activeTab} = 'qualitySpecs', 'tab-item tab-item-active', 'tab-item')"
+                              }
+                            }
+                          }
+                        },
+                        "props": {"text": "Quality Specs"}
+                      },
+                      {
+                        "type": "ia.input.button",
+                        "meta": {"name": "TabBtnEligibility"},
+                        "position": {"basis": "auto"},
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "type": "script",
+                              "scope": "C",
+                              "config": {"script": "self.view.custom.activeTab = 'eligibility'"}
+                            }
+                          }
+                        },
+                        "propConfig": {
+                          "props.style.classes": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "if({view.custom.activeTab} = 'eligibility', 'tab-item tab-item-active', 'tab-item')"
+                              }
+                            }
+                          }
+                        },
+                        "props": {"text": "Eligibility"}
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {"name": "TabPanels"},
+                    "position": {"grow": 1, "basis": "0"},
+                    "props": {
+                      "direction": "column",
+                      "style": {"overflow": "auto", "padding": "10px 14px", "position": "relative"}
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {"name": "TabPanelsPlaceholder"},
+                        "position": {"basis": "auto"},
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "'Active tab: ' + {view.custom.activeTab} + ' — embedded views wired in Tasks 6–10.'"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-muted)",
+                            "fontStyle": "italic"
+                          }
+                        }
+                      }
+                    ]
                   }
-                }
+                ]
               }
             ]
           }
