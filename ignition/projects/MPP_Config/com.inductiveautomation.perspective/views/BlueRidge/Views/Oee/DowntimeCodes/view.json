@@ -198,13 +198,33 @@
                     ]
                   },
                   {
-                    "type": "ia.input.checkbox",
-                    "meta": { "name": "IncludeDeprecated" },
+                    "type": "ia.container.flex",
+                    "meta": { "name": "IncludeDeprecatedField" },
                     "position": { "basis": "auto" },
-                    "propConfig": {
-                      "props.selected": { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.filter.includeDeprecated" } } }
+                    "props": {
+                      "direction": "row",
+                      "alignItems": "center",
+                      "style": { "gap": "8px", "paddingTop": "4px" }
                     },
-                    "props": { "text": "Include deprecated", "style": { "classes": "checkbox", "color": "var(--mpp-text-secondary)", "fontSize": "12px" } }
+                    "children": [
+                      {
+                        "type": "ia.input.checkbox",
+                        "meta": { "name": "IncludeDeprecated" },
+                        "position": { "basis": "auto", "shrink": 0 },
+                        "propConfig": {
+                          "props.selected": { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.filter.includeDeprecated" } } }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": { "name": "IncludeDeprecatedLabel" },
+                        "position": { "basis": "auto" },
+                        "props": {
+                          "text": "Include deprecated",
+                          "style": { "color": "var(--mpp-text-secondary)", "fontSize": "12px", "whiteSpace": "nowrap" }
+                        }
+                      }
+                    ]
                   }
                 ]
               }
