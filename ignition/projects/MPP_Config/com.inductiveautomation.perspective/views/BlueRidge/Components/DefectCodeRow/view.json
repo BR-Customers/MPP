@@ -99,7 +99,7 @@
         "events": {
           "component": {
             "onActionPerformed": {
-              "type": "script", "scope": "C",
+              "type": "script", "scope": "G",
               "config": {
                 "script": "\tsystem.perspective.openPopup(\n\t\tid=\"mpp-defect-code-editor\",\n\t\tview=\"BlueRidge/Components/Popups/DefectCodeEditor\",\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\"mode\": \"update\", \"defectCodeId\": self.view.params.id})"
               }
