@@ -1,6 +1,34 @@
 # MPP MES — Project Status
 
-**Last updated:** 2026-05-19 (audit-pages addressing bug fixed; Downtime Codes Ops view wired end-to-end; Item Master Phase 1 view shell landed)
+**Last updated:** 2026-05-19 (Defect Codes Config Tool screen — Tasks 1-7 of 8 landed via subagent-driven execution; one open bug blocks Task 8 smoke completion)
+
+---
+
+## 🟠 Open at session end (2026-05-19 evening)
+
+### Defect Codes — table doesn't re-render after Save
+
+The Defect Codes Configuration Tool screen (Quality → Defect Codes) is **partially functional**:
+
+- ✓ +Add Code opens editor (after the `scope:"G"` fix in `9fbc62e` — same lesson as DowntimeCodes)
+- ✓ Area dropdown populated from real plant locations
+- ✓ Code prefix auto-suggests on area change
+- ✓ Save succeeds: DB INSERT happens, success toast fires
+- ✗ **List doesn't re-render the new row after Save**
+
+Root cause unknown. The flex-repeater's `instances` binding is an expression `runScript("BlueRidge.Quality.DefectCode.filterAndMapRows", 0, {view.custom.allRows}, {view.custom.filter.searchText})` that throws `Error_ExpressionEval` in Designer Binding Preview and the rendered list stays empty in session. **The same `filterAndMapRows` call with the same input data returns a correct result list when run from Designer Script Console.** Diff between contexts isn't pinned down.
+
+**Pickup notes:**
+1. Check gateway log for the actual Python traceback (Designer preview swallows it). Status → Diagnostics → Logs, filter to `BlueRidge.Quality.DefectCode`.
+2. Likely culprit: `runScript` marshals args to Java types differently than Script Console; `_u()` deep-unwrap may have an edge case with the Java Timestamp values in `CreatedAt`/`DeprecatedAt` columns (even though the function never reads them, `_u` traverses).
+3. Alternative path: replace the expression binding with a property binding on `view.custom.allRows` + script transform that reads `self.view.custom.filter.searchText` directly. Drops the runScript indirection entirely. Trade-off: search-text changes won't re-fire the binding (only allRows changes will) — fixable by binding on the filter object or using a composite expression for the dependency.
+
+See [[project_mpp_defect_codes_open_bugs]] memory for full hypotheses + commit map.
+
+### Other Defect Codes follow-ups (not blocking the open bug)
+
+- **"Area (optional)" label** in DefectCodeEditor → proc rejects null. Misleading. Change to "Area" + add client-side guard in `handleSave`.
+- **`getAllAreas` vs `listByTier`** — Task 5 added `listByTier` as a generic primitive but neither Task 6 (popup) nor Task 7 (list view) ended up using it. Ships with zero consumers. Cleanup option: migrate both area-dropdown sites to `listByTier('Area')` + transform when next touched.
 
 ---
 
