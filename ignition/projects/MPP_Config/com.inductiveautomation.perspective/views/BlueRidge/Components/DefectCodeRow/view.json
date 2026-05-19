@@ -1,18 +1,22 @@
 {
   "custom": {},
   "params": {
-    "code": "",
-    "description": "",
-    "area": "",
-    "excused": false,
-    "selected": false
+    "id":             0,
+    "code":           "",
+    "description":    "",
+    "area":           "",
+    "areaLocationId": 0,
+    "excused":        false,
+    "selected":       false
   },
   "propConfig": {
-    "params.code":        { "paramDirection": "input" },
-    "params.description": { "paramDirection": "input" },
-    "params.area":        { "paramDirection": "input" },
-    "params.excused":     { "paramDirection": "input" },
-    "params.selected":    { "paramDirection": "input" }
+    "params.id":             { "paramDirection": "input" },
+    "params.code":           { "paramDirection": "input" },
+    "params.description":    { "paramDirection": "input" },
+    "params.area":           { "paramDirection": "input" },
+    "params.areaLocationId": { "paramDirection": "input" },
+    "params.excused":        { "paramDirection": "input" },
+    "params.selected":       { "paramDirection": "input" }
   },
   "props": {
     "defaultSize": { "width": 800, "height": 44 }
@@ -91,7 +95,17 @@
         "type": "ia.input.button",
         "meta": { "name": "EditButton" },
         "position": { "basis": "80px", "shrink": 0 },
-        "props": { "text": "Edit", "style": { "classes": "btn btn-sm" } }
+        "props": { "text": "Edit", "style": { "classes": "btn btn-sm" } },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script", "scope": "C",
+              "config": {
+                "script": "\tsystem.perspective.openPopup(\n\t\tid=\"mpp-defect-code-editor\",\n\t\tview=\"BlueRidge/Components/Popups/DefectCodeEditor\",\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\"mode\": \"update\", \"defectCodeId\": self.view.params.id})"
+              }
+            }
+          }
+        }
       }
     ]
   }

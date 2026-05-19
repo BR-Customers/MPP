@@ -1,36 +1,43 @@
 {
   "custom": {
     "filter": {
-      "area": "All Areas",
-      "searchText": "",
+      "areaLocationId":    null,
+      "searchText":        "",
       "includeDeprecated": false
     },
-    "areaOptions": [
-      { "label": "All Areas",       "value": "All Areas" },
-      { "label": "Die Cast",        "value": "Die Cast" },
-      { "label": "Trim Shop",       "value": "Trim Shop" },
-      { "label": "Machine Shop",    "value": "Machine Shop" },
-      { "label": "Prod Control",    "value": "Prod Control" },
-      { "label": "Quality Control", "value": "Quality Control" },
-      { "label": "HSP",             "value": "HSP" }
-    ],
-    "rows": [
-      { "code": "DC-0135",  "description": "Porosity",                    "area": "Die Cast",     "excused": false, "selected": false },
-      { "code": "DC-0136",  "description": "Cold Shut",                   "area": "Die Cast",     "excused": false, "selected": true  },
-      { "code": "DC-0137",  "description": "Flash",                       "area": "Die Cast",     "excused": true,  "selected": false },
-      { "code": "DC-0138",  "description": "Misrun",                      "area": "Die Cast",     "excused": false, "selected": false },
-      { "code": "MS-0001",  "description": "Dimensional (OOT)",           "area": "Machine Shop", "excused": false, "selected": false },
-      { "code": "MS-0143",  "description": "Surface Finish",              "area": "Machine Shop", "excused": false, "selected": false },
-      { "code": "MS-0154",  "description": "Tool Marks",                  "area": "Machine Shop", "excused": false, "selected": false },
-      { "code": "TS-0101",  "description": "Burr — Trim",                 "area": "Trim Shop",    "excused": false, "selected": false },
-      { "code": "HSP-0247", "description": "Vendor Defect — Dimensional", "area": "HSP",          "excused": false, "selected": false }
-    ]
+    "areaOptions": [],
+    "allRows":     []
   },
   "params": {},
   "propConfig": {
-    "custom.filter.area":              { "persistent": true },
-    "custom.filter.searchText":        { "persistent": true },
-    "custom.filter.includeDeprecated": { "persistent": true }
+    "custom.filter.areaLocationId":   { "persistent": true },
+    "custom.filter.searchText":       { "persistent": true },
+    "custom.filter.includeDeprecated":{ "persistent": true },
+    "custom.areaOptions": {
+      "binding": {
+        "type": "expr",
+        "config": { "expression": "runScript(\"BlueRidge.Location.Location.getAllAreas\", 0, true)" }
+      }
+    },
+    "custom.allRows": {
+      "binding": {
+        "type": "query",
+        "config": {
+          "queryPath":     "quality/DefectCode_List",
+          "fallbackDelay": 2.5,
+          "parameters": {
+            "includeDeprecated": "{view.custom.filter.includeDeprecated}",
+            "areaLocationId":    "{view.custom.filter.areaLocationId}"
+          }
+        },
+        "transforms": [
+          {
+            "type": "script",
+            "code": "\theaders = list(value.getColumnNames()) if value is not None else []\n\treturn [dict(zip(headers, row)) for row in (value or [])]"
+          }
+        ]
+      }
+    }
   },
   "props": {
     "defaultSize": { "width": 1280, "height": 720 }
@@ -38,6 +45,17 @@
   "root": {
     "type": "ia.container.flex",
     "meta": { "name": "root" },
+    "scripts": {
+      "messageHandlers": [
+        {
+          "messageType": "defectCodeRefresh",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tsystem.perspective.refreshBinding(\"view.custom.allRows\")"
+        }
+      ]
+    },
     "props": {
       "direction": "column",
       "style": { "classes": "screen-active" }
@@ -83,7 +101,17 @@
             "type": "ia.input.button",
             "meta": { "name": "AddCodeButton" },
             "position": { "basis": "auto" },
-            "props": { "text": "+ Add Code", "style": { "classes": "btn btn-primary", "marginRight": "12px" } }
+            "props": { "text": "+ Add Code", "style": { "classes": "btn btn-primary", "marginRight": "12px" } },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script", "scope": "C",
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\n\t\tid=\"mpp-defect-code-editor\",\n\t\tview=\"BlueRidge/Components/Popups/DefectCodeEditor\",\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\"mode\": \"create\", \"defectCodeId\": None})"
+                  }
+                }
+              }
+            }
           }
         ]
       },
@@ -127,7 +155,7 @@
                         "position": { "basis": "auto" },
                         "propConfig": {
                           "props.options": { "binding": { "type": "property", "config": { "path": "view.custom.areaOptions" } } },
-                          "props.value":   { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.filter.area" } } }
+                          "props.value":   { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.filter.areaLocationId" } } }
                         },
                         "props": { "style": { "classes": "select" } }
                       }
@@ -218,7 +246,12 @@
                     "position": { "basis": "auto" },
                     "propConfig": {
                       "props.instances": {
-                        "binding": { "type": "property", "config": { "path": "view.custom.rows" } }
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "runScript(\"BlueRidge.Quality.DefectCode.filterAndMapRows\", 0, {view.custom.allRows}, {view.custom.filter.searchText})"
+                          }
+                        }
                       }
                     },
                     "props": {
