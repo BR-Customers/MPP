@@ -413,7 +413,7 @@
         {
           "name": "handleAreaChange",
           "params": ["previousValue", "currentValue"],
-          "script": "\tif self.view.custom.mode != \"create\":\n\t\treturn\n\tareas = self.view.custom.areas or []\n\tprevName = None\n\tnewName  = None\n\tfor a in areas:\n\t\tif a.get(\"value\") == previousValue:\n\t\t\tprevName = a.get(\"label\")\n\t\tif a.get(\"value\") == currentValue:\n\t\t\tnewName = a.get(\"label\")\n\tnewPrefix  = BlueRidge.Quality.DefectCode.derivePrefix(newName)\n\tprevPrefix = BlueRidge.Quality.DefectCode.derivePrefix(prevName)\n\tdraft = self.view.custom.editDraft or {}\n\tmeta  = dict(draft.get(\"meta\") or {})\n\tcurrentCode = meta.get(\"Code\") or \"\"\n\tif not currentCode or currentCode == prevPrefix:\n\t\tmeta[\"Code\"] = newPrefix\n\t\tself.view.custom.editDraft = {\"meta\": meta}"
+          "script": "\tpreviousValue = BlueRidge.Common.Util.extractQualifiedValues(previousValue)\n\tcurrentValue  = BlueRidge.Common.Util.extractQualifiedValues(currentValue)\n\tif self.view.custom.mode != \"create\":\n\t\treturn\n\tareas = self.view.custom.areas or []\n\tprevName = None\n\tnewName  = None\n\tfor a in areas:\n\t\tif a.get(\"value\") == previousValue:\n\t\t\tprevName = a.get(\"label\")\n\t\tif a.get(\"value\") == currentValue:\n\t\t\tnewName = a.get(\"label\")\n\tnewPrefix  = BlueRidge.Quality.DefectCode.derivePrefix(newName)\n\tprevPrefix = BlueRidge.Quality.DefectCode.derivePrefix(prevName)\n\tdraft = self.view.custom.editDraft or {}\n\tmeta  = dict(draft.get(\"meta\") or {})\n\tcurrentCode = meta.get(\"Code\") or \"\"\n\tif not currentCode or currentCode == prevPrefix:\n\t\tmeta[\"Code\"] = newPrefix\n\t\tself.view.custom.editDraft = {\"meta\": meta}"
         },
         {
           "name": "handleSave",
