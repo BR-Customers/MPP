@@ -496,12 +496,15 @@ button {
     background: var(--mpp-accent-20);
 }
 
+/* Rows-per-page chooser inside the table pager. The selector matches
+   three layered Ignition wrapper classes (iaSelectCommon + ia_select +
+   ia_select__select), so adding a border here paints it three times
+   over and reads as a doubled outline. Background + radius only. */
 .ia_pager .iaSelectCommon,
 .ia_pager .ia_select,
 .ia_pager .ia_select__select {
     background-color: var(--mpp-surface-raised);
     color: var(--mpp-text-primary);
-    border: 1px solid var(--mpp-border-default);
     border-radius: var(--mpp-radius-sm);
 }
 
@@ -1379,11 +1382,19 @@ button {
 
 
 /* ─── Dashboard tiles (KPI cards) ──────────────────────────────────── */
+/* Base: gap + padding only. Parent flex container governs sizing. */
 .psc-dashboard-tiles {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: var(--mpp-space-3);
     padding: var(--mpp-space-3);
+}
+
+/* Modifier: auto-fit grid layout for screens that want the original
+   responsive tile-flow behavior. Apply alongside the base class:
+       "style": { "classes": "dashboard-tiles dashboard-tiles--grid" }
+*/
+.psc-dashboard-tiles--grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 }
 
 .psc-dashboard-tile {

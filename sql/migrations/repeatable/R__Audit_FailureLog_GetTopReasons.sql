@@ -5,7 +5,7 @@
 -- Version:     2.0
 --
 -- Description:
---   Returns the top 50 failure reasons by frequency within a date range.
+--   Returns the top 5 failure reasons by frequency within a date range.
 --   Supports optional filtering by entity type and/or originating
 --   procedure name. Useful for identifying recurring validation or
 --   business-rule failures, either globally or scoped to a single proc.
@@ -18,7 +18,7 @@
 --   @ProcedureName NVARCHAR(200) = NULL     - Optional exact-match filter on originating proc.
 --
 -- Result set:
---   Top 50 rows: FailureReason, FailureCount — ordered by FailureCount DESC.
+--   Top 5 rows: FailureReason, FailureCount — ordered by FailureCount DESC.
 --
 -- Dependencies:
 --   Tables: Audit.FailureLog, Audit.LogEntityType
@@ -27,6 +27,9 @@
 --   2026-04-13 - 1.0 - Initial version (OUTPUT params)
 --   2026-04-14 - 1.1 - Added optional @ProcedureName filter
 --   2026-04-14 - 2.0 - Removed OUTPUT params for Named Query compatibility
+--   2026-05-19 - 2.1 - End-date semantics aligned with FailureLog_List
+--                       (`< DATEADD(day, 1, @EndDate)` instead of BETWEEN inclusive)
+--                       so tile aggregates capture the full day of @EndDate
 -- =============================================
 CREATE OR ALTER PROCEDURE Audit.FailureLog_GetTopReasons
     @StartDate          DATETIME2(3),
@@ -51,11 +54,12 @@ BEGIN
             RETURN;
     END
 
-    SELECT TOP (50)
+    SELECT TOP (5)
         fl.FailureReason,
         COUNT(*) AS FailureCount
     FROM Audit.FailureLog fl
-    WHERE fl.AttemptedAt BETWEEN @StartDate AND @EndDate
+    WHERE fl.AttemptedAt >= @StartDate
+      AND fl.AttemptedAt <  DATEADD(day, 1, @EndDate)
       AND (@LogEntityTypeId IS NULL OR fl.LogEntityTypeId = @LogEntityTypeId)
       AND (@ProcedureName   IS NULL OR fl.ProcedureName   = @ProcedureName)
     GROUP BY fl.FailureReason

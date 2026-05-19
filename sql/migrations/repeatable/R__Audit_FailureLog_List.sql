@@ -43,7 +43,7 @@ BEGIN
 
     SELECT TOP 1000
         fl.Id,
-        fl.AttemptedAt,
+        CAST(fl.AttemptedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS AttemptedAt,
         fl.AppUserId,
         au.DisplayName               AS UserDisplayName,
         let.Code                     AS LogEntityTypeCode,

@@ -41,7 +41,7 @@ BEGIN
     -- If code is invalid, query returns 0 rows (LogEntityTypeId will be NULL)
     SELECT
         cl.Id,
-        cl.LoggedAt,
+        CAST(cl.LoggedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS LoggedAt,
         cl.UserId,
         au.DisplayName          AS UserDisplayName,
         cl.LogSeverityId,

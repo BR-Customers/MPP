@@ -41,7 +41,7 @@ BEGIN
     -- If code is invalid, query returns 0 rows (LogEntityTypeId will be NULL)
     SELECT
         fl.Id,
-        fl.AttemptedAt,
+        CAST(fl.AttemptedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS AttemptedAt,
         fl.AppUserId,
         au.DisplayName          AS UserDisplayName,
         fl.LogEntityTypeId,

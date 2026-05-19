@@ -6,5 +6,11 @@
   "files": [
     "stylesheet.css"
   ],
-  "attributes": {}
+  "attributes": {
+    "lastModificationSignature": "7a7b7d6df3f374945f58d5eda6f91592f05192a4196dbd101490f4c15a02a4ed",
+    "lastModification": {
+      "actor": "admin",
+      "timestamp": "2026-05-19T17:51:16Z"
+    }
+  }
 }
