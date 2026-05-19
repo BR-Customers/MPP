@@ -3,7 +3,7 @@
 #
 # Author:           Blue Ridge Automation
 # Created:          2026-05-12
-# Version:          1.4
+# Version:          1.5
 #
 # Description:
 #   Entity-script for Location.Location and its attribute values.
@@ -11,6 +11,7 @@
 #   Read surface:
 #       getOne(locationId)               -> dict | None
 #       getAttributesByLocation(locId)   -> list[dict]
+#       getAllAreas(includeAll=False)     -> list[{label, value}]
 #
 #   Write surface (sort-order actions):
 #       handleMoveUp(selected, userId=None, ...)   -> dict | None
@@ -58,6 +59,8 @@
 #                      and Common.Ui.notifyResult (Common.Action removed);
 #                      drop local _rowsToDicts; replace per-module logger;
 #                      strip debug `print ds`; NQ params camelCased.
+#   2026-05-19 - 1.5 - Add getAllAreas(includeAll=False) for Area-tier dropdown;
+#                      filters HierarchyLevel==3 client-side from GetTree flat result.
 #   2026-05-18 - 1.4 - Editor write surface: emptyMeta, metaFromLocation,
 #                      eligibleTypes, eligibleDefinitions, buildAttributesForType,
 #                      beginCreate, handleSaveAll, handleDeprecate. Wraps
@@ -147,6 +150,23 @@ def getAttributesByLocation(locationId):
         }
         for i, r in enumerate(rows)
     ]
+
+
+def getAllAreas(includeAll=False):
+    """Returns Area-tier Locations (HierarchyLevel == 3) as [{label, value}] for dropdowns.
+
+       MPP has 3 Areas (Die Cast / Machine Shop / Trim Shop). Client-side filter is fine
+       at this scale -- no new NQ needed; we reuse the existing GetTree flat result.
+
+       includeAll: prepends {label: 'All Areas', value: None}
+         for filter sidebars; editor popup calls with default (False)."""
+    BlueRidge.Common.Util.log("loading areas")
+    rows = BlueRidge.Common.Db.execList("location/GetTree", {"rootId": 1}) or []
+    areas = [r for r in rows if r.get("HierarchyLevel") == 3]
+    out = [{"label": r.get("Name") or "", "value": r.get("Id")} for r in areas]
+    if includeAll:
+        out.insert(0, {"label": "All Areas", "value": None})
+    return out
 
 
 def _u(value):
