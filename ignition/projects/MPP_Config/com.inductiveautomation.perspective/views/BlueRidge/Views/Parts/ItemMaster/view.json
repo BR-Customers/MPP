@@ -1,0 +1,222 @@
+{
+  "custom": {
+    "search": "",
+    "typeFilter": "All Types",
+    "activeTab": "containerConfig",
+    "mode": "update",
+    "items": [
+      {"id": 1, "partNumber": "5G0",     "description": "Front Cover Assy",    "itemTypeName": "Finished Good", "typeBadge": "FG",   "isDraft": false},
+      {"id": 2, "partNumber": "5G0-C",   "description": "Front Cover Casting", "itemTypeName": "Component",     "typeBadge": "COMP", "isDraft": false},
+      {"id": 3, "partNumber": "PNA",     "description": "Mounting Pin",        "itemTypeName": "Component",     "typeBadge": "COMP", "isDraft": false},
+      {"id": 4, "partNumber": "6MA-HSG", "description": "Cam Holder Housing",  "itemTypeName": "Pass-Through",  "typeBadge": "PT",   "isDraft": true},
+      {"id": 5, "partNumber": "RPY",     "description": "Assembly Set",        "itemTypeName": "Finished Good", "typeBadge": "FG",   "isDraft": false}
+    ],
+    "itemTypes": ["Raw Material", "Component", "Sub-Assembly", "Finished Good", "Pass-Through"],
+    "uoms": ["EA", "LB", "KG"],
+    "selected": {
+      "meta": {
+        "Id": 1,
+        "PartNumber": "5G0",
+        "Description": "5G0 Front Cover Assembly",
+        "ItemTypeName": "Finished Good",
+        "UomCode": "EA",
+        "MacolaPartNumber": "5G0-FC-001",
+        "UnitWeight": 3.25,
+        "WeightUomCode": "LB",
+        "DefaultSubLotQty": 24,
+        "PartsPerBasket": 100,
+        "CountryOfOrigin": "US",
+        "MaxParts": 500
+      },
+      "containerConfig": {
+        "TraysPerContainer": 4,
+        "PartsPerTray": 12,
+        "IsSerialized": true,
+        "ClosureMethod": "ByCount",
+        "TargetWeight": null,
+        "DunnageCode": "RD-5G0F",
+        "CustomerCode": "HONDA-5G0"
+      },
+      "routes": {
+        "publishedVersion": 2,
+        "effectiveFrom": "2026-01-15",
+        "steps": [
+          {"seq": 1, "areaName": "Die Cast",     "templateLabel": "DC-5G0 v1 — Die Cast 5G0 Front Cover",   "isRequired": true, "dataFields": "DieInfo, CavityInfo, Weight, GoodCount, BadCount"},
+          {"seq": 2, "areaName": "Trim Shop",    "templateLabel": "TRIM-5G0 v1 — Trim 5G0 Front Cover",     "isRequired": true, "dataFields": "Weight, GoodCount, BadCount"},
+          {"seq": 3, "areaName": "Machine Shop", "templateLabel": "CNC-5G0 v1 — CNC Machining 5G0",         "isRequired": true, "dataFields": "GoodCount, BadCount"},
+          {"seq": 4, "areaName": "Prod Control", "templateLabel": "ASSY-FRONT v1 — Assembly Front Cover",   "isRequired": true, "dataFields": "SerialNumber, MaterialVerification, GoodCount, BadCount"}
+        ]
+      },
+      "boms": {
+        "publishedVersion": 1,
+        "effectiveFrom": "2026-01-15",
+        "lines": [
+          {"seq": 1, "componentName": "Front Cover Casting", "partNumber": "5G0-C", "qtyPer": 1, "uom": "EA"},
+          {"seq": 2, "componentName": "Mounting Pin",        "partNumber": "PNA",   "qtyPer": 2, "uom": "EA"}
+        ]
+      },
+      "qualitySpecs": [
+        {"specName": "5G0 Dimensional Spec",  "activeVersion": "v2", "statusLabel": "Active"},
+        {"specName": "5G0 Visual Inspection", "activeVersion": "v1", "statusLabel": "Active"}
+      ],
+      "eligibility": {
+        "selectedArea": "Die Cast",
+        "rows": [
+          {"machineName": "DC Machine #3",  "code": "DC-003", "tonnage": "400 tons", "eligible": true},
+          {"machineName": "DC Machine #7",  "code": "DC-007", "tonnage": "400 tons", "eligible": true},
+          {"machineName": "DC Machine #12", "code": "DC-012", "tonnage": "400 tons", "eligible": true},
+          {"machineName": "DC Machine #15", "code": "DC-015", "tonnage": "250 tons", "eligible": false}
+        ]
+      }
+    },
+    "editDraft": {
+      "meta": {
+        "Id": 1,
+        "PartNumber": "5G0",
+        "Description": "5G0 Front Cover Assembly",
+        "ItemTypeName": "Finished Good",
+        "UomCode": "EA",
+        "MacolaPartNumber": "5G0-FC-001",
+        "UnitWeight": 3.25,
+        "WeightUomCode": "LB",
+        "DefaultSubLotQty": 24,
+        "PartsPerBasket": 100,
+        "CountryOfOrigin": "US",
+        "MaxParts": 500
+      },
+      "containerConfig": {
+        "TraysPerContainer": 4,
+        "PartsPerTray": 12,
+        "IsSerialized": true,
+        "ClosureMethod": "ByCount",
+        "TargetWeight": null,
+        "DunnageCode": "RD-5G0F",
+        "CustomerCode": "HONDA-5G0"
+      },
+      "routes": {
+        "publishedVersion": 2,
+        "effectiveFrom": "2026-01-15",
+        "steps": [
+          {"seq": 1, "areaName": "Die Cast",     "templateLabel": "DC-5G0 v1 — Die Cast 5G0 Front Cover",   "isRequired": true, "dataFields": "DieInfo, CavityInfo, Weight, GoodCount, BadCount"},
+          {"seq": 2, "areaName": "Trim Shop",    "templateLabel": "TRIM-5G0 v1 — Trim 5G0 Front Cover",     "isRequired": true, "dataFields": "Weight, GoodCount, BadCount"},
+          {"seq": 3, "areaName": "Machine Shop", "templateLabel": "CNC-5G0 v1 — CNC Machining 5G0",         "isRequired": true, "dataFields": "GoodCount, BadCount"},
+          {"seq": 4, "areaName": "Prod Control", "templateLabel": "ASSY-FRONT v1 — Assembly Front Cover",   "isRequired": true, "dataFields": "SerialNumber, MaterialVerification, GoodCount, BadCount"}
+        ]
+      },
+      "boms": {
+        "publishedVersion": 1,
+        "effectiveFrom": "2026-01-15",
+        "lines": [
+          {"seq": 1, "componentName": "Front Cover Casting", "partNumber": "5G0-C", "qtyPer": 1, "uom": "EA"},
+          {"seq": 2, "componentName": "Mounting Pin",        "partNumber": "PNA",   "qtyPer": 2, "uom": "EA"}
+        ]
+      },
+      "qualitySpecs": [
+        {"specName": "5G0 Dimensional Spec",  "activeVersion": "v2", "statusLabel": "Active"},
+        {"specName": "5G0 Visual Inspection", "activeVersion": "v1", "statusLabel": "Active"}
+      ],
+      "eligibility": {
+        "selectedArea": "Die Cast",
+        "rows": [
+          {"machineName": "DC Machine #3",  "code": "DC-003", "tonnage": "400 tons", "eligible": true},
+          {"machineName": "DC Machine #7",  "code": "DC-007", "tonnage": "400 tons", "eligible": true},
+          {"machineName": "DC Machine #12", "code": "DC-012", "tonnage": "400 tons", "eligible": true},
+          {"machineName": "DC Machine #15", "code": "DC-015", "tonnage": "250 tons", "eligible": false}
+        ]
+      }
+    }
+  },
+  "params": {},
+  "props": {
+    "defaultSize": {
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {"name": "root"},
+    "props": {
+      "direction": "column",
+      "style": {"classes": "canvas"}
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {"name": "TitleBar"},
+        "position": {"basis": "auto", "shrink": 0},
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "padding": "8px 16px",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "background": "var(--mpp-surface-card)",
+            "gap": "12px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {"name": "LabelTitle"},
+            "position": {"basis": "auto"},
+            "props": {
+              "text": "Item Master",
+              "style": {"fontSize": "15px", "fontWeight": "600"}
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {"name": "LabelDirty"},
+            "position": {"basis": "auto"},
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if({view.custom.editDraft} != {view.custom.selected}, '● Unsaved changes', '')"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontSize": "12px",
+                "color": "var(--mpp-state-warn-fg)",
+                "fontStyle": "italic"
+              }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {"name": "TitleSpacer"},
+            "position": {"grow": 1},
+            "props": {}
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {"name": "BtnAddItem"},
+            "position": {"basis": "auto"},
+            "props": {
+              "text": "+ Add Item",
+              "style": {"classes": "btn btn-primary"}
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {"name": "PlaceholderBody"},
+        "position": {"grow": 1, "basis": "0"},
+        "props": {
+          "text": "Item Master shell — Phase 1 build in progress.",
+          "style": {
+            "padding": "32px",
+            "color": "var(--mpp-text-muted)",
+            "fontStyle": "italic"
+          }
+        }
+      }
+    ]
+  }
+}
