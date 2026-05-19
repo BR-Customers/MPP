@@ -291,7 +291,7 @@
                           "transforms": [
                             {
                               "type": "script",
-                              "code": "\treturn [\n\t\t{\n\t\t\t\"id\":          r.get(\"Id\"),\n\t\t\t\"code\":        r.get(\"Code\"),\n\t\t\t\"description\": r.get(\"Description\"),\n\t\t\t\"area\":        r.get(\"AreaName\"),\n\t\t\t\"type\":        r.get(\"ReasonTypeName\") or \"(Unassigned)\",\n\t\t\t\"excused\":     bool(r.get(\"IsExcused\")),\n\t\t\t\"selected\":    False\n\t\t}\n\t\tfor r in (value or [])\n\t]"
+                              "code": "\treturn [\n\t\t{\n\t\t\t\"id\":          r.get(\"Id\"),\n\t\t\t\"code\":        r.get(\"Code\"),\n\t\t\t\"description\": r.get(\"Description\"),\n\t\t\t\"area\":        r.get(\"AreaName\"),\n\t\t\t\"type\":        r.get(\"ReasonTypeName\") or \"(Unassigned)\",\n\t\t\t\"excused\":     bool(r.get(\"IsExcused\")),\n\t\t\t\"deprecated\":  r.get(\"DeprecatedAt\") is not None,\n\t\t\t\"selected\":    False\n\t\t}\n\t\tfor r in (value or [])\n\t]"
                             }
                           ]
                         }
