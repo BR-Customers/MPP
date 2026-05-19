@@ -1,0 +1,78 @@
+{
+  "custom": {},
+  "params": {
+    "value": []
+  },
+  "propConfig": {
+    "params.value": {"paramDirection": "input"}
+  },
+  "props": {
+    "defaultSize": {
+      "width": 800,
+      "height": 240
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {"name": "root"},
+    "props": {
+      "direction": "column",
+      "style": {"gap": "10px"}
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {"name": "PanelHeader"},
+        "position": {"basis": "auto"},
+        "props": {
+          "text": "Linked Quality Specs",
+          "style": {"fontSize": "13px", "fontWeight": "600"}
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {"name": "Panel"},
+        "position": {"basis": "auto"},
+        "props": {"direction": "column", "style": {"classes": "detail-panel", "overflow": "hidden"}},
+        "children": [
+          {
+            "type": "ia.display.table",
+            "meta": {"name": "SpecsTable"},
+            "position": {"basis": "auto"},
+            "propConfig": {
+              "props.data": {
+                "binding": {
+                  "type": "property",
+                  "config": {"path": "view.params.value"}
+                }
+              }
+            },
+            "props": {
+              "columns": [
+                {"field": "specName",      "header": "Spec Name"},
+                {"field": "activeVersion", "header": "Active Version", "width": 120},
+                {"field": "statusLabel",   "header": "Status",         "width": 100}
+              ],
+              "rows": {"height": 36},
+              "style": {"classes": "data-table"}
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {"name": "GoToSpecHint"},
+        "position": {"basis": "auto"},
+        "props": {
+          "text": "Phase 7 will add a 'Go to spec' navigation button per row.",
+          "style": {
+            "padding": "8px 0",
+            "fontSize": "11px",
+            "color": "var(--mpp-text-muted)",
+            "fontStyle": "italic"
+          }
+        }
+      }
+    ]
+  }
+}
