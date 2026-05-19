@@ -35,6 +35,10 @@
 #                                      into one call -- avoids the chained-
 #                                      binding latch we hit on the flex-
 #                                      repeater's props.instances.
+#       prettyJson(jsonString)         Format a JSON string with 2-space
+#                                      indentation for audit detail popups.
+#                                      Returns input unchanged on parse
+#                                      failure; returns "" for None.
 #
 #   These are the only sanctioned source for each concern. Entity scripts
 #   call them directly; no per-module log() wrappers, no per-script
@@ -54,6 +58,9 @@
 #                      directly so the picker always reflects what
 #                      Designer can actually render. No CSV / hardcoded
 #                      list to drift out of sync.
+#   2026-05-19 - 1.2 - Add prettyJson. Formats JSON strings with 2-space
+#                      indentation for the FailureDetail audit popup;
+#                      gracefully handles None + malformed input.
 # =============================================================================
 
 import re
@@ -334,6 +341,30 @@ def buildIconPickerInstancesFromLibrary(library, selected, replyMessage, popupId
         replyMessage,
         popupId,
     )
+
+
+def prettyJson(jsonString):
+    """
+    Pretty-print a JSON string with 2-space indentation. Used by audit
+    detail popups to render the AttemptedParameters / Old / New JSON
+    snapshots in a readable form. On parse failure (malformed JSON, or
+    NULL) returns the input unchanged -- the popup shows the raw text
+    rather than crashing.
+
+    Args:
+        jsonString (str): JSON string to format, or None.
+
+    Returns:
+        str: pretty-printed JSON, or the input string if it can't be
+             parsed, or empty string if input was None.
+    """
+    if jsonString is None:
+        return ""
+    try:
+        parsed = system.util.jsonDecode(jsonString)
+        return system.util.jsonEncode(parsed, 2)
+    except Exception:
+        return jsonString
 
 
 def convertWrapperObjectToJson(obj):

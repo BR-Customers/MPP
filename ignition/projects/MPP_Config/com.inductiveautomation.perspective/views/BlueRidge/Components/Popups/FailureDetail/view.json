@@ -1,0 +1,203 @@
+{
+  "custom": {},
+  "params": {
+    "id":                  null,
+    "attemptedAt":         null,
+    "userDisplayName":     "",
+    "logEntityTypeName":   "",
+    "entityId":            null,
+    "logEventTypeCode":    "",
+    "procedureName":       "",
+    "failureReason":       "",
+    "attemptedParameters": "",
+    "popupId":             "mpp-failure-detail"
+  },
+  "propConfig": {
+    "params.id":                  { "paramDirection": "input" },
+    "params.attemptedAt":         { "paramDirection": "input" },
+    "params.userDisplayName":     { "paramDirection": "input" },
+    "params.logEntityTypeName":   { "paramDirection": "input" },
+    "params.entityId":            { "paramDirection": "input" },
+    "params.logEventTypeCode":    { "paramDirection": "input" },
+    "params.procedureName":       { "paramDirection": "input" },
+    "params.failureReason":       { "paramDirection": "input" },
+    "params.attemptedParameters": { "paramDirection": "input" },
+    "params.popupId":             { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "width": 720, "height": 560 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "column",
+      "style": {
+        "background": "var(--mpp-surface-canvas)",
+        "borderRadius": "var(--mpp-radius-md, 8px)",
+        "height": "100%",
+        "overflow": "hidden",
+        "width": "100%"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "Header" },
+        "position": { "basis": "48px", "shrink": 0 },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "padding": "0 16px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "Title" },
+            "position": { "grow": 1 },
+            "props": {
+              "style": { "classes": "modal-title", "color": "var(--mpp-text-primary)", "fontSize": "14px", "fontWeight": "600" },
+              "text": "Rejection Detail"
+            }
+          },
+          {
+            "type": "ia.display.icon",
+            "meta": { "name": "CloseIcon" },
+            "position": { "basis": "24px", "shrink": 0 },
+            "props": { "path": "material/close", "color": "var(--mpp-text-secondary)", "style": { "cursor": "pointer", "height": "20px", "width": "20px" } },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "type": "script", "scope": "G",
+                  "config": { "script": "\tsystem.perspective.closePopup(id=self.view.params.popupId)" }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "Body" },
+        "position": { "basis": "0", "grow": 1 },
+        "props": {
+          "direction": "column",
+          "style": { "gap": "10px", "padding": "16px", "overflow": "auto" }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "MetaLine" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\"Attempted at:  \" + dateFormat({view.params.attemptedAt}, \"yyyy-MM-dd HH:mm:ss\") + \"   |   User:  \" + coalesce({view.params.userDisplayName}, \"(unknown)\") + \"   |   Event:  \" + coalesce({view.params.logEventTypeCode}, \"\")"
+                  }
+                }
+              }
+            },
+            "props": { "style": { "fontSize": "12px", "color": "var(--mpp-text-secondary)" } }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "EntityLine" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\"Procedure:  \" + coalesce({view.params.procedureName}, \"\") + \"   |   Entity:  \" + coalesce({view.params.logEntityTypeName}, \"\") + \"  \\u00B7  \" + coalesce({view.params.entityId}, \"(new)\")"
+                  }
+                }
+              }
+            },
+            "props": { "style": { "fontSize": "12px", "color": "var(--mpp-text-secondary)" } }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "ReasonHeader" },
+            "position": { "shrink": 0 },
+            "props": { "text": "Failure Reason", "style": { "fontSize": "11px", "fontWeight": "600", "color": "var(--mpp-text-secondary)", "letterSpacing": "0.05em", "textTransform": "uppercase", "marginTop": "8px" } }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "ReasonText" },
+            "position": { "shrink": 0 },
+            "propConfig": { "props.text": { "binding": { "type": "property", "config": { "path": "view.params.failureReason" } } } },
+            "props": { "style": { "fontSize": "13px", "color": "var(--mpp-text-primary)", "lineHeight": "1.4" } }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "ParamsHeader" },
+            "position": { "shrink": 0 },
+            "props": { "text": "Attempted Parameters", "style": { "fontSize": "11px", "fontWeight": "600", "color": "var(--mpp-text-secondary)", "letterSpacing": "0.05em", "textTransform": "uppercase", "marginTop": "8px" } }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "ParamsBlock" },
+            "position": { "basis": "0", "grow": 1, "shrink": 0 },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "runScript(\"BlueRidge.Common.Util.prettyJson\", 0, {view.params.attemptedParameters})" }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "background": "var(--mpp-surface-card)",
+                "border": "1px solid var(--mpp-border-subtle)",
+                "borderRadius": "6px",
+                "color": "var(--mpp-text-primary)",
+                "fontFamily": "ui-monospace, Menlo, Consolas, monospace",
+                "fontSize": "11px",
+                "lineHeight": "1.4",
+                "overflow": "auto",
+                "padding": "12px",
+                "whiteSpace": "pre"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "Footer" },
+        "position": { "basis": "60px", "shrink": 0 },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderTop": "1px solid var(--mpp-border-subtle)",
+            "padding": "12px 16px"
+          }
+        },
+        "children": [
+          { "type": "ia.container.flex", "meta": { "name": "Spacer" }, "position": { "grow": 1 } },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "CloseButton" },
+            "position": { "shrink": 0 },
+            "props": { "text": "Close", "style": { "classes": "btn btn-sm" } },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script", "scope": "G",
+                  "config": { "script": "\tsystem.perspective.closePopup(id=self.view.params.popupId)" }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
