@@ -1,42 +1,36 @@
 {
   "custom": {
     "filter": {
-      "startDate": 1776211200000,
-      "endDate": 1776297600000,
-      "entityType": "All",
-      "user": "All",
+      "startDate": null,
+      "endDate": null,
+      "entityTypeCode": null,
+      "logSeverityCode": null,
+      "appUserId": null,
       "searchText": ""
     },
-    "entityTypeOptions": [
-      { "label": "All",                "value": "All" },
-      { "label": "Location",           "value": "Location" },
-      { "label": "Item",               "value": "Item" },
-      { "label": "Bom",                "value": "Bom" },
-      { "label": "RouteTemplate",      "value": "RouteTemplate" },
-      { "label": "OperationTemplate",  "value": "OperationTemplate" },
-      { "label": "QualitySpec",        "value": "QualitySpec" },
-      { "label": "AppUser",            "value": "AppUser" }
-    ],
-    "userOptions": [
-      { "label": "All",              "value": "All" },
-      { "label": "J. Potgieter",     "value": "J. Potgieter" },
-      { "label": "Bootstrap Admin",  "value": "Bootstrap Admin" }
-    ],
-    "auditRows": [
-      { "Timestamp": "2026-04-16 09:42:15", "User": "J. Potgieter",     "EntityType": "Location",          "Entity": "DC Machine #7",   "Event": "Updated", "Description": "Tonnage changed from 350 to 400" },
-      { "Timestamp": "2026-04-16 09:38:02", "User": "J. Potgieter",     "EntityType": "Item",              "Entity": "5G0 Front Cover", "Event": "Updated", "Description": "UnitWeight changed from 3.15 to 3.25" },
-      { "Timestamp": "2026-04-16 09:30:00", "User": "J. Potgieter",     "EntityType": "RouteTemplate",     "Entity": "5G0 Route v2",    "Event": "Created", "Description": "New version created from v1" },
-      { "Timestamp": "2026-04-15 16:45:12", "User": "Bootstrap Admin",  "EntityType": "AppUser",           "Entity": "D. Martinez",     "Event": "Created", "Description": "User created with role Quality" },
-      { "Timestamp": "2026-04-15 14:22:01", "User": "J. Potgieter",     "EntityType": "OperationTemplate", "Entity": "Die Cast v2",     "Event": "Updated", "Description": "Added CollectsWeight field" }
-    ]
+    "rows": [],
+    "totalCount": 0
   },
   "params": {},
   "propConfig": {
-    "custom.filter.startDate":  { "persistent": true },
-    "custom.filter.endDate":    { "persistent": true },
-    "custom.filter.entityType": { "persistent": true },
-    "custom.filter.user":       { "persistent": true },
-    "custom.filter.searchText": { "persistent": true }
+    "custom.filter.startDate": {
+      "persistent": true
+    },
+    "custom.filter.endDate": {
+      "persistent": true
+    },
+    "custom.filter.entityTypeCode": {
+      "persistent": true
+    },
+    "custom.filter.logSeverityCode": {
+      "persistent": true
+    },
+    "custom.filter.appUserId": {
+      "persistent": true
+    },
+    "custom.filter.searchText": {
+      "persistent": true
+    }
   },
   "props": {
     "defaultSize": { "width": 1280, "height": 720 }
@@ -67,7 +61,10 @@
         "position": { "grow": 1 },
         "props": {
           "direction": "row",
-          "style": { "overflow": "hidden", "borderTop": "1px solid var(--mpp-border-subtle)" }
+          "style": {
+            "overflow": "hidden",
+            "borderTop": "1px solid var(--mpp-border-subtle)"
+          }
         },
         "children": [
           {
@@ -98,7 +95,10 @@
                         "type": "ia.display.label",
                         "meta": { "name": "StartDateLabel" },
                         "position": { "basis": "auto" },
-                        "props": { "text": "Start Date", "style": { "classes": "label-eyebrow" } }
+                        "props": {
+                          "text": "Start Date",
+                          "style": { "classes": "label-eyebrow" }
+                        }
                       },
                       {
                         "type": "ia.input.date-time-input",
@@ -108,7 +108,10 @@
                           "props.value": {
                             "binding": {
                               "type": "property",
-                              "config": { "bidirectional": true, "path": "view.custom.filter.startDate" }
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.filter.startDate"
+                              }
                             }
                           }
                         },
@@ -126,7 +129,10 @@
                         "type": "ia.display.label",
                         "meta": { "name": "EndDateLabel" },
                         "position": { "basis": "auto" },
-                        "props": { "text": "End Date", "style": { "classes": "label-eyebrow" } }
+                        "props": {
+                          "text": "End Date",
+                          "style": { "classes": "label-eyebrow" }
+                        }
                       },
                       {
                         "type": "ia.input.date-time-input",
@@ -136,7 +142,10 @@
                           "props.value": {
                             "binding": {
                               "type": "property",
-                              "config": { "bidirectional": true, "path": "view.custom.filter.endDate" }
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.filter.endDate"
+                              }
                             }
                           }
                         },
@@ -154,7 +163,10 @@
                         "type": "ia.display.label",
                         "meta": { "name": "EntityTypeLabel" },
                         "position": { "basis": "auto" },
-                        "props": { "text": "Entity Type", "style": { "classes": "label-eyebrow" } }
+                        "props": {
+                          "text": "Entity Type",
+                          "style": { "classes": "label-eyebrow" }
+                        }
                       },
                       {
                         "type": "ia.input.dropdown",
@@ -163,14 +175,25 @@
                         "propConfig": {
                           "props.options": {
                             "binding": {
-                              "type": "property",
-                              "config": { "path": "view.custom.entityTypeOptions" }
+                              "type": "expr",
+                              "config": {
+                                "expression": "runScript(\"BlueRidge.Audit.LogEntityType.list\", 0)"
+                              },
+                              "transforms": [
+                                {
+                                  "type": "script",
+                                  "code": "\treturn [{\"label\": \"(All)\", \"value\": None}] + [{\"label\": t.get(\"Name\"), \"value\": t.get(\"Code\")} for t in (value or [])]"
+                                }
+                              ]
                             }
                           },
                           "props.value": {
                             "binding": {
                               "type": "property",
-                              "config": { "bidirectional": true, "path": "view.custom.filter.entityType" }
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.filter.entityTypeCode"
+                              }
                             }
                           }
                         },
@@ -180,31 +203,45 @@
                   },
                   {
                     "type": "ia.container.flex",
-                    "meta": { "name": "UserField" },
+                    "meta": { "name": "SeverityField" },
                     "position": { "basis": "auto" },
                     "props": { "direction": "column", "style": { "gap": "4px" } },
                     "children": [
                       {
                         "type": "ia.display.label",
-                        "meta": { "name": "UserLabel" },
+                        "meta": { "name": "SeverityLabel" },
                         "position": { "basis": "auto" },
-                        "props": { "text": "User", "style": { "classes": "label-eyebrow" } }
+                        "props": {
+                          "text": "Severity",
+                          "style": { "classes": "label-eyebrow" }
+                        }
                       },
                       {
                         "type": "ia.input.dropdown",
-                        "meta": { "name": "UserDropdown" },
+                        "meta": { "name": "SeverityDropdown" },
                         "position": { "basis": "auto" },
                         "propConfig": {
                           "props.options": {
                             "binding": {
-                              "type": "property",
-                              "config": { "path": "view.custom.userOptions" }
+                              "type": "expr",
+                              "config": {
+                                "expression": "runScript(\"BlueRidge.Audit.LogSeverity.list\", 0)"
+                              },
+                              "transforms": [
+                                {
+                                  "type": "script",
+                                  "code": "\treturn [{\"label\": \"(All)\", \"value\": None}] + [{\"label\": s.get(\"Name\"), \"value\": s.get(\"Code\")} for s in (value or [])]"
+                                }
+                              ]
                             }
                           },
                           "props.value": {
                             "binding": {
                               "type": "property",
-                              "config": { "bidirectional": true, "path": "view.custom.filter.user" }
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.filter.logSeverityCode"
+                              }
                             }
                           }
                         },
@@ -222,7 +259,10 @@
                         "type": "ia.display.label",
                         "meta": { "name": "SearchLabel" },
                         "position": { "basis": "auto" },
-                        "props": { "text": "Search", "style": { "classes": "label-eyebrow" } }
+                        "props": {
+                          "text": "Search",
+                          "style": { "classes": "label-eyebrow" }
+                        }
                       },
                       {
                         "type": "ia.input.text-field",
@@ -232,11 +272,71 @@
                           "props.text": {
                             "binding": {
                               "type": "property",
-                              "config": { "bidirectional": true, "path": "view.custom.filter.searchText" }
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.filter.searchText"
+                              }
                             }
                           }
                         },
-                        "props": { "placeholder": "Search…", "style": { "classes": "search-input" } }
+                        "props": {
+                          "placeholder": "Search…",
+                          "style": { "classes": "search-input" }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": { "name": "FilterFooter" },
+                    "position": { "basis": "auto", "shrink": 0 },
+                    "props": {
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "8px",
+                        "padding": "12px 0 0 0"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.input.button",
+                        "meta": { "name": "ResetButton" },
+                        "position": { "basis": "0", "grow": 1 },
+                        "props": {
+                          "text": "Reset",
+                          "style": { "classes": "btn btn-sm" }
+                        },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "type": "script",
+                              "scope": "G",
+                              "config": {
+                                "script": "\tself.view.resetFilter()"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.button",
+                        "meta": { "name": "ApplyButton" },
+                        "position": { "basis": "0", "grow": 1 },
+                        "props": {
+                          "text": "Apply",
+                          "style": { "classes": "btn btn-primary btn-sm" }
+                        },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "type": "script",
+                              "scope": "G",
+                              "config": {
+                                "script": "\tself.view.applySearch()"
+                              }
+                            }
+                          }
+                        }
                       }
                     ]
                   }
@@ -246,47 +346,130 @@
           },
           {
             "type": "ia.container.flex",
-            "meta": { "name": "DetailArea" },
+            "meta": { "name": "ContentArea" },
             "position": { "grow": 1 },
             "props": {
               "direction": "column",
-              "style": { "classes": "detail-area" }
+              "style": {
+                "classes": "detail-area",
+                "padding": "0",
+                "overflowY": "auto"
+              }
             },
             "children": [
               {
                 "type": "ia.container.flex",
-                "meta": { "name": "DetailPanel" },
+                "meta": { "name": "AuditPanelWrapper" },
                 "position": { "grow": 1 },
                 "props": {
                   "direction": "column",
-                  "style": { "classes": "detail-panel" }
+                  "style": { "padding": "0 12px 12px 12px" }
                 },
                 "children": [
                   {
-                    "type": "ia.display.table",
-                    "meta": { "name": "AuditTable" },
+                    "type": "ia.container.flex",
+                    "meta": { "name": "AuditPanel" },
                     "position": { "grow": 1 },
-                    "propConfig": {
-                      "props.data": {
-                        "binding": {
-                          "type": "property",
-                          "config": { "path": "view.custom.auditRows" }
+                    "props": {
+                      "direction": "column",
+                      "style": { "classes": "detail-panel" }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": { "name": "ResultBanner" },
+                        "position": { "basis": "auto", "shrink": 0 },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "if({view.custom.totalCount} < 1000, \"Showing \" + {view.custom.totalCount} + \" rows\", \"Showing first 1000 of \" + {view.custom.totalCount} + \" — narrow your filter\")"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "11px",
+                            "padding": "4px 12px"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.table",
+                        "meta": { "name": "AuditTable" },
+                        "position": { "grow": 1 },
+                        "propConfig": {
+                          "props.data": {
+                            "binding": {
+                              "type": "property",
+                              "config": { "path": "view.custom.rows" }
+                            }
+                          }
+                        },
+                        "props": {
+                          "columns": [
+                            {
+                              "field": "LoggedAt",
+                              "header": { "title": "Timestamp" },
+                              "visible": true,
+                              "sort": "desc"
+                            },
+                            {
+                              "field": "UserDisplayName",
+                              "header": { "title": "User" },
+                              "visible": true
+                            },
+                            {
+                              "field": "LogEntityTypeName",
+                              "header": { "title": "Entity Type" },
+                              "visible": true
+                            },
+                            {
+                              "field": "EntityId",
+                              "header": { "title": "Entity ID" },
+                              "visible": true
+                            },
+                            {
+                              "field": "LogEventTypeCode",
+                              "header": { "title": "Event" },
+                              "visible": true
+                            },
+                            {
+                              "field": "LogSeverityCode",
+                              "header": { "title": "Severity" },
+                              "visible": true
+                            },
+                            {
+                              "field": "Description",
+                              "header": { "title": "Description" },
+                              "visible": true
+                            }
+                          ],
+                          "filter": { "enabled": false },
+                          "rows": {
+                            "selection": {
+                              "enabled": true,
+                              "selectionMode": "single"
+                            }
+                          },
+                          "style": { "classes": "data-table" }
+                        },
+                        "events": {
+                          "component": {
+                            "onRowClick": {
+                              "type": "script",
+                              "scope": "G",
+                              "config": {
+                                "script": "\trow = event.row if hasattr(event, \"row\") else None\n\tdata = row.data if row and hasattr(row, \"data\") else None\n\tif data is None:\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid=\"mpp-config-change-detail\",\n\t\tview=\"BlueRidge/Components/Popups/ConfigChangeDetail\",\n\t\tmodal=True,\n\t\tdraggable=False,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t\"id\":                data.get(\"Id\"),\n\t\t\t\"loggedAt\":          data.get(\"LoggedAt\"),\n\t\t\t\"userDisplayName\":   data.get(\"UserDisplayName\"),\n\t\t\t\"logEntityTypeName\": data.get(\"LogEntityTypeName\"),\n\t\t\t\"entityId\":          data.get(\"EntityId\"),\n\t\t\t\"logEventTypeCode\":  data.get(\"LogEventTypeCode\"),\n\t\t\t\"logSeverityCode\":   data.get(\"LogSeverityCode\"),\n\t\t\t\"description\":       data.get(\"Description\"),\n\t\t\t\"oldValue\":          data.get(\"OldValue\"),\n\t\t\t\"newValue\":          data.get(\"NewValue\"),\n\t\t\t\"popupId\":           \"mpp-config-change-detail\"\n\t\t}\n\t)"
+                              }
+                            }
+                          }
                         }
                       }
-                    },
-                    "props": {
-                      "columns": [
-                        { "field": "Timestamp",   "header": { "title": "Timestamp"   }, "visible": true, "sort": "asc" },
-                        { "field": "User",        "header": { "title": "User"        }, "visible": true },
-                        { "field": "EntityType",  "header": { "title": "Entity Type" }, "visible": true },
-                        { "field": "Entity",      "header": { "title": "Entity"      }, "visible": true },
-                        { "field": "Event",       "header": { "title": "Event"       }, "visible": true },
-                        { "field": "Description", "header": { "title": "Description" }, "visible": true }
-                      ],
-                      "filter": { "enabled": false },
-                      "rows": { "selection": { "enabled": true, "selectionMode": "single" } },
-                      "style": { "classes": "data-table" }
-                    }
+                    ]
                   }
                 ]
               }
@@ -294,6 +477,23 @@
           }
         ]
       }
-    ]
+    ],
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "applySearch",
+          "params": ["self"],
+          "script": "\tresult = BlueRidge.Audit.ConfigLog.search(self.view.custom.filter)\n\tself.view.custom.rows       = result[\"rows\"]\n\tself.view.custom.totalCount = result[\"totalCount\"]"
+        },
+        {
+          "name": "resetFilter",
+          "params": ["self"],
+          "script": "\timport system\n\tnow = system.date.now()\n\tself.view.custom.filter = {\n\t\t\"startDate\":      system.date.addDays(now, -7),\n\t\t\"endDate\":        now,\n\t\t\"entityTypeCode\": None,\n\t\t\"logSeverityCode\": None,\n\t\t\"appUserId\":      None,\n\t\t\"searchText\":     \"\"\n\t}\n\tself.applySearch()"
+        }
+      ],
+      "extensionFunctions": {
+        "onStartup": "\tself.resetFilter()"
+      }
+    }
   }
 }
