@@ -153,16 +153,18 @@ def getAttributesByLocation(locationId):
 
 
 def getAllAreas(includeAll=False):
-    """Returns Area-tier Locations (HierarchyLevel == 3) as [{label, value}] for dropdowns.
+    """Returns Area-tier Locations (HierarchyLevel == 2) as [{label, value}] for dropdowns.
 
-       MPP has 3 Areas (Die Cast / Machine Shop / Trim Shop). Client-side filter is fine
-       at this scale -- no new NQ needed; we reuse the existing GetTree flat result.
+       Seeded Areas: Die Cast / Machine Shop / Quality Control / Trim Shop. Downtime
+       codes today only target DC/MS/TS but the dropdown surfaces all 4 -- callers
+       can choose to ignore the empty-QC case. Client-side filter off GetTree's
+       flat result is fine at this scale (full tree is ~20 rows).
 
        includeAll: prepends {label: 'All Areas', value: None}
          for filter sidebars; editor popup calls with default (False)."""
     BlueRidge.Common.Util.log("loading areas")
     rows = BlueRidge.Common.Db.execList("location/GetTree", {"rootId": 1}) or []
-    areas = [r for r in rows if r.get("HierarchyLevel") == 3]
+    areas = [r for r in rows if r.get("HierarchyLevel") == 2]
     out = [{"label": r.get("Name") or "", "value": r.get("Id")} for r in areas]
     if includeAll:
         out.insert(0, {"label": "All Areas", "value": None})

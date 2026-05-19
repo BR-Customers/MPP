@@ -57,7 +57,7 @@ Stored procs (Oee.DowntimeReasonCode_* — already built)
 
 **Schema conventions:** `version: 2`, params use **camelCase** identifiers, sqlType per Designer enum (`3` for BIGINT, `7` for NVARCHAR, `6` for BIT). All Status mutation NQs are `type: "Query"` (not `UpdateQuery`) because we read the `SELECT @Status, @Message, @NewId` row.
 
-**Area dropdown source:** New entity-script function `BlueRidge.Location.Location.getAllAreas()` that calls the existing `getAll()` and filters in Python for `hierarchyLevel == 3` (Area is the third ISA-95 tier — Enterprise/Site/Area/WorkCenter/Cell). No new NQ — MPP has only 3 Area rows (DC/MS/TS), so client-side filter is fine. Returns `[{label: name, value: id}]` dropdown shape.
+**Area dropdown source:** New entity-script function `BlueRidge.Location.Location.getAllAreas()` filters the flat result of `location/GetTree` for `HierarchyLevel == 2` (Area is the **second** zero-indexed tier in the project's seed — Enterprise=0, Site=1, **Area=2**, WorkCenter=3, Cell=4). Seeded Areas are Die Cast / Machine Shop / Quality Control / Trim Shop. Downtime codes today target DC/MS/TS; the dropdown surfaces all 4 (QC may show empty). No new NQ — full Location tree is ~20 rows, client-side filter is fine. Returns `[{label: name, value: id}]` dropdown shape.
 
 ### 2. Entity scripts (2 new modules)
 
