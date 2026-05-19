@@ -3,7 +3,7 @@
 #
 # Author:           Blue Ridge Automation
 # Created:          2026-04-13
-# Version:          1.1
+# Version:          1.2
 #
 # Description:
 #   Helpers for the PlantHierarchy view's Perspective Tree component.
@@ -31,6 +31,19 @@
 #       or path strings) to the underlying Location.Id stored in
 #       data.id of the selected node.
 #
+#   expandToTarget(items, targetId)
+#       Force-expand every ancestor of the target. Used after Create or
+#       any tree-mutating action that lands a node deeper than the
+#       default expandDepth -- without this, the new node would exist
+#       in the data tree but be hidden inside collapsed ancestors.
+#
+#   injectDraftNode(items, parentLocationId, draftLabel, ...)
+#       Insert a synthetic draft child under the parent. Used by the
+#       +Add Location flow to show the operator where the new Location
+#       will land in the tree before Save commits it. Draft node carries
+#       data.id=None and data.isDraft=True; replaced by the real row
+#       on the next tree refresh after Save.
+#
 # Dependencies:
 #   - NQ at "location/GetTree" wrapping EXEC Location.Location_GetTree
 #       Parameter: rootId (Long)
@@ -44,6 +57,15 @@
 #   2026-05-14 - 1.1 - Route buildTree through Common.Db.execList;
 #                      header rewritten to standard module shape;
 #                      default-icon docstring corrected to mpp/factory.
+#   2026-05-18 - 1.2 - buildTree surfaces HierarchyLevel into node.data
+#                      (already returned by Location_GetTree) so the
+#                      LocationEditor's eligibleTypes helper can filter
+#                      by parent level. Add expandToTarget(items, targetId)
+#                      to walk a path and force-expand its ancestors --
+#                      used after Create to ensure the new node is
+#                      visible even when default expandDepth doesn't
+#                      cover that depth. Add injectDraftNode(...) for
+#                      the +Add Location flow's transient draft tile.
 # =============================================================================
 
 
@@ -95,14 +117,16 @@ def buildTree(rootId, expandDepth=2, defaultIcon="mpp/factory"):
                 "style": {},
             },
             "data": {
-                "id":             locId,
-                "code":           r.get("Code"),
-                "name":           r.get("Name"),
-                "definitionName": r.get("DefinitionName"),
-                "typeName":       r.get("TypeName"),
-                "depth":          depth,
-                "description":    r.get("Description"),
-                "sortOrder":      r.get("SortOrder"),
+                "id":              locId,
+                "code":            r.get("Code"),
+                "name":            r.get("Name"),
+                "definitionName":  r.get("DefinitionName"),
+                "definitionId":    r.get("LocationTypeDefinitionId"),
+                "typeName":        r.get("TypeName"),
+                "hierarchyLevel":  r.get("HierarchyLevel"),
+                "depth":           depth,
+                "description":     r.get("Description"),
+                "sortOrder":       r.get("SortOrder"),
             },
             "items": [],
         }
@@ -187,6 +211,115 @@ def getNodeData(items, pathStr):
     if isinstance(node, dict):
         return node.get("data")
     return None
+
+
+def expandToTarget(items, targetId):
+    """Walk the tree depth-first; when the target is found, set
+       expanded=True on every ancestor (and the target itself).
+       Mutates items in place; returns True when found, False otherwise.
+
+       Idempotent -- calling on an already-expanded path is a no-op.
+       Use after Create / re-anchor flows to guarantee the target is
+       visible even when buildTree's default expandDepth doesn't cover
+       its depth in the tree.
+
+       Args:
+           items (list):    Tree's props.items (list returned by buildTree).
+           targetId (long): data.id to expand to.
+
+       Returns:
+           bool: True when the target was found and the path expanded,
+                 False otherwise.
+    """
+    if not items or targetId is None:
+        return False
+
+    def walk(nodes):
+        for node in nodes:
+            if not isinstance(node, dict):
+                continue
+            data = node.get("data")
+            if data and data.get("id") == targetId:
+                node["expanded"] = True
+                return True
+            children = node.get("items")
+            if children and walk(children):
+                node["expanded"] = True
+                return True
+        return False
+
+    return walk(items)
+
+
+def injectDraftNode(items, parentLocationId, draftLabel, draftIcon="mpp/add",
+                    draftData=None):
+    """Insert a synthetic draft child node under the parent (resolved by
+       parentLocationId). Used by the +Add Location flow so the operator
+       sees where the new Location will land in the tree before Save.
+
+       The draft node carries data.id=None and an italic-ish label that
+       reads as 'new' to the operator. The parent's expanded flag is
+       forced to True so the draft is visible. The draft itself is a
+       leaf (no children).
+
+       Mutates items in place. Returns (path, drafted) where path is
+       the slash-separated path string to the draft (e.g. '0/1/2/4'),
+       or (None, False) when parent not found.
+
+       Args:
+           items (list):           Tree's props.items.
+           parentLocationId (long): Location.Id of the parent.
+           draftLabel (str):       Display label for the draft.
+           draftIcon (str):        Icon path for the draft node.
+           draftData (dict|None):  Extra fields merged into the draft's
+                                   data dict (e.g. type hints). All
+                                   draft data dicts carry id=None so
+                                   selection logic can distinguish.
+
+       Returns:
+           tuple: (pathStr|None, foundParent bool).
+    """
+    BlueRidge.Common.Util.log(
+        "parentLocationId=%s items(type=%s len=%s)"
+        % (parentLocationId,
+           type(items).__name__ if items is not None else "None",
+           len(items) if items is not None else "-")
+    )
+    if not items or parentLocationId is None:
+        return (None, False)
+
+    draftNode = {
+        "label":    draftLabel,
+        "expanded": False,
+        "icon":     {"path": draftIcon, "color": "--mpp-accent-50", "style": {}},
+        "data":     dict(draftData) if draftData else {},
+        "items":    [],
+    }
+    draftNode["data"]["id"] = None
+    draftNode["data"]["isDraft"] = True
+
+    def walk(nodes, prefix):
+        for i, node in enumerate(nodes):
+            if not isinstance(node, dict):
+                continue
+            data = node.get("data")
+            if data and data.get("id") == parentLocationId:
+                children = node.setdefault("items", [])
+                children.append(draftNode)
+                node["expanded"] = True
+                return prefix + [i, len(children) - 1]
+            grandchildren = node.get("items")
+            if grandchildren:
+                found = walk(grandchildren, prefix + [i])
+                if found is not None:
+                    node["expanded"] = True
+                    return found
+        return None
+
+    pathList = walk(items, [])
+    if pathList is None:
+        return (None, False)
+    return ("/".join(str(i) for i in pathList), True)
 
 
 def resolveSelectedId(items, selection):

@@ -3,7 +3,7 @@
 #
 # Author:           Blue Ridge Automation
 # Created:          2026-05-13
-# Version:          1.1
+# Version:          1.2
 #
 # Description:
 #   Entity-script for Location.LocationTypeDefinition. Provides the read
@@ -44,7 +44,37 @@
 #                      Common.Ui.notifyResult (Common.Action is gone);
 #                      drop local _rowsToDicts; replace per-module logger;
 #                      NQ params camelCased.
+#   2026-05-18 - 1.2 - metaFromDefinition coalesces nullable string fields
+#                      (Icon, Description) from None -> '' so the bound
+#                      text-fields don't render the literal "null" string;
+#                      handleSaveAll inverts that for nullable fields ('' ->
+#                      None) before forwarding to the proc, preserving the
+#                      DB-side NULL-means-no-value semantic. emptyAttributeRow
+#                      already returned '' for the same fields; no change
+#                      there, only on the read + save round-trip.
 # =============================================================================
+
+
+def _emptyToNone(value):
+    """Map '' -> None for nullable string columns. Pass-through for any
+       non-empty value (including 0 / False, which are valid)."""
+    if value is None:
+        return None
+    if isinstance(value, basestring) and value == "":
+        return None
+    return value
+
+
+def _cleanAttributeRow(row):
+    """Normalize a row before sending to SaveAll: empty strings -> None for
+       the nullable string columns (DefaultValue, Uom, Description).
+       Required columns (AttributeName, DataType) and BIT (IsRequired)
+       pass through unchanged."""
+    cleaned = dict(row)
+    cleaned["DefaultValue"] = _emptyToNone(cleaned.get("DefaultValue"))
+    cleaned["Uom"]          = _emptyToNone(cleaned.get("Uom"))
+    cleaned["Description"]  = _emptyToNone(cleaned.get("Description"))
+    return cleaned
 
 
 def emptyAttributeRow():
@@ -79,7 +109,12 @@ def emptyMeta(locationTypeId):
 def metaFromDefinition(definition):
     """Project a LocationTypeDefinition dict (as returned by getAll)
        into the meta shape used by view.custom.editDraft.meta. Pulls
-       only the fields the SaveAll proc accepts."""
+       only the fields the SaveAll proc accepts.
+
+       Nullable string fields (Icon, Description) coalesce from None to
+       '' so the bound text-field props.text doesn't render the literal
+       string "null". The inverse '' -> None mapping happens in
+       handleSaveAll on the way back to the proc."""
     if not definition:
         return None
     return {
@@ -87,8 +122,8 @@ def metaFromDefinition(definition):
         "LocationTypeId": definition.get("LocationTypeId"),
         "Code":           definition.get("Code"),
         "Name":           definition.get("Name"),
-        "Icon":           definition.get("Icon"),
-        "Description":    definition.get("Description"),
+        "Icon":           definition.get("Icon")        or "",
+        "Description":    definition.get("Description") or "",
     }
 
 
@@ -164,7 +199,8 @@ def handleSaveAll(meta, attributes, userId=None):
         userId = BlueRidge.Common.Util._currentAppUserId()
 
     isCreate     = meta.get("Id") is None
-    attrsJson    = system.util.jsonEncode(attributes or [])
+    cleanedAttrs = [_cleanAttributeRow(a) for a in (attributes or [])]
+    attrsJson    = system.util.jsonEncode(cleanedAttrs)
     successTitle = "Created definition" if isCreate else "Saved definition"
     successMsg   = meta.get("Name") or ""
 
@@ -175,8 +211,8 @@ def handleSaveAll(meta, attributes, userId=None):
             "locationTypeId": meta.get("LocationTypeId"),
             "code":           meta.get("Code"),
             "name":           meta.get("Name"),
-            "icon":           meta.get("Icon"),
-            "description":    meta.get("Description"),
+            "icon":           _emptyToNone(meta.get("Icon")),
+            "description":    _emptyToNone(meta.get("Description")),
             "appUserId":      userId,
             "attributesJson": attrsJson,
         },

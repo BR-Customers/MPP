@@ -1,0 +1,180 @@
+{
+  "custom": {},
+  "params": {
+    "iconName": "",
+    "iconPath": "",
+    "isSelected": false,
+    "popupId": "mpp-icon-picker",
+    "replyMessage": "iconPickerResult"
+  },
+  "propConfig": {
+    "params.iconName": {
+      "paramDirection": "input"
+    },
+    "params.iconPath": {
+      "paramDirection": "input"
+    },
+    "params.isSelected": {
+      "paramDirection": "input"
+    },
+    "params.popupId": {
+      "paramDirection": "input"
+    },
+    "params.replyMessage": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 88,
+      "width": 96
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "Icon"
+        },
+        "position": {
+          "basis": "32px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.iconPath} !\u003d \"\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.path": {
+            "binding": {
+              "config": {
+                "path": "view.params.iconPath"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "color": "var(--mpp-text-primary)",
+          "style": {
+            "height": "32px",
+            "width": "32px"
+          }
+        },
+        "type": "ia.display.icon"
+      },
+      {
+        "meta": {
+          "name": "NoIconHint"
+        },
+        "position": {
+          "basis": "32px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.iconPath} \u003d \"\""
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-tertiary)",
+            "fontSize": "20px",
+            "lineHeight": "32px",
+            "textAlign": "center",
+            "width": "32px"
+          },
+          "text": "—"
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": {
+          "name": "Name"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.iconName"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "11px",
+            "lineHeight": "1.2",
+            "overflow": "hidden",
+            "textAlign": "center",
+            "textOverflow": "ellipsis",
+            "whiteSpace": "nowrap",
+            "width": "100%"
+          }
+        },
+        "type": "ia.display.label"
+      }
+    ],
+    "events": {
+      "dom": {
+        "onClick": {
+          "config": {
+            "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload\u003d{\"icon\": self.view.params.iconPath}, scope\u003d\"page\")\n\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)"
+          },
+          "scope": "G",
+          "type": "script"
+        }
+      }
+    },
+    "meta": {
+      "name": "root"
+    },
+    "propConfig": {
+      "props.style.background": {
+        "binding": {
+          "config": {
+            "expression": "if({view.params.isSelected}, \"var(--mpp-surface-selected)\", \"var(--mpp-surface-card)\")"
+          },
+          "type": "expr"
+        }
+      },
+      "props.style.borderColor": {
+        "binding": {
+          "config": {
+            "expression": "if({view.params.isSelected}, \"var(--mpp-border-focus)\", \"var(--mpp-border-subtle)\")"
+          },
+          "type": "expr"
+        }
+      }
+    },
+    "props": {
+      "alignItems": "center",
+      "direction": "column",
+      "justify": "center",
+      "style": {
+        "border": "1px solid",
+        "borderRadius": "6px",
+        "cursor": "pointer",
+        "gap": "6px",
+        "height": "100%",
+        "padding": "10px 6px",
+        "width": "100%"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

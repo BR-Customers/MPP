@@ -1,152 +1,30 @@
 {
   "custom": {
     "editDraft": {
-      "attributes": [
-        {
-          "AttributeName": "IpAddress",
-          "CreatedAt": {
-            "$": [
-              "ts",
-              192,
-              1778853339435
-            ],
-            "$ts": 1778711308733
-          },
-          "DataType": "NVARCHAR",
-          "DefaultValue": null,
-          "DeprecatedAt": null,
-          "Description": "IP address of the terminal",
-          "Id": 1,
-          "IsRequired": false,
-          "LocationTypeDefinitionId": 7,
-          "SortOrder": 1,
-          "Uom": null
-        },
-        {
-          "AttributeName": "DefaultPrinter",
-          "CreatedAt": {
-            "$": [
-              "ts",
-              192,
-              1778853339435
-            ],
-            "$ts": 1778711308733
-          },
-          "DataType": "NVARCHAR",
-          "DefaultValue": null,
-          "DeprecatedAt": null,
-          "Description": "Default Zebra printer name",
-          "Id": 2,
-          "IsRequired": false,
-          "LocationTypeDefinitionId": 7,
-          "SortOrder": 2,
-          "Uom": null
-        },
-        {
-          "AttributeName": "HasBarcodeScanner",
-          "CreatedAt": {
-            "$": [
-              "ts",
-              192,
-              1778853339435
-            ],
-            "$ts": 1778711308733
-          },
-          "DataType": "BIT",
-          "DefaultValue": "1",
-          "DeprecatedAt": null,
-          "Description": "Whether terminal has a barcode scanner",
-          "Id": 3,
-          "IsRequired": true,
-          "LocationTypeDefinitionId": 7,
-          "SortOrder": 3,
-          "Uom": null
-        }
-      ],
+      "attributes": [],
       "meta": {
-        "Code": "Terminal",
-        "Description": null,
-        "Icon": "mpp/tune",
-        "Id": 7,
-        "LocationTypeId": 5,
-        "Name": "Terminal"
+        "Code": "",
+        "Description": "",
+        "Icon": "",
+        "Id": "",
+        "LocationTypeId": "",
+        "Name": ""
       }
     },
     "mode": "update",
     "selected": {
-      "attributes": [
-        {
-          "AttributeName": "IpAddress",
-          "CreatedAt": {
-            "$": [
-              "ts",
-              192,
-              1778853339435
-            ],
-            "$ts": 1778711308733
-          },
-          "DataType": "NVARCHAR",
-          "DefaultValue": null,
-          "DeprecatedAt": null,
-          "Description": "IP address of the terminal",
-          "Id": 1,
-          "IsRequired": false,
-          "LocationTypeDefinitionId": 7,
-          "SortOrder": 1,
-          "Uom": null
-        },
-        {
-          "AttributeName": "DefaultPrinter",
-          "CreatedAt": {
-            "$": [
-              "ts",
-              192,
-              1778853339435
-            ],
-            "$ts": 1778711308733
-          },
-          "DataType": "NVARCHAR",
-          "DefaultValue": null,
-          "DeprecatedAt": null,
-          "Description": "Default Zebra printer name",
-          "Id": 2,
-          "IsRequired": false,
-          "LocationTypeDefinitionId": 7,
-          "SortOrder": 2,
-          "Uom": null
-        },
-        {
-          "AttributeName": "HasBarcodeScanner",
-          "CreatedAt": {
-            "$": [
-              "ts",
-              192,
-              1778853339435
-            ],
-            "$ts": 1778711308733
-          },
-          "DataType": "BIT",
-          "DefaultValue": "1",
-          "DeprecatedAt": null,
-          "Description": "Whether terminal has a barcode scanner",
-          "Id": 3,
-          "IsRequired": true,
-          "LocationTypeDefinitionId": 7,
-          "SortOrder": 3,
-          "Uom": null
-        }
-      ],
+      "attributes": [],
       "meta": {
-        "Code": "Terminal",
-        "Description": null,
-        "Icon": "mpp/tune",
-        "Id": 7,
-        "LocationTypeId": 5,
-        "Name": "Terminal"
+        "Code": "",
+        "Description": "",
+        "Icon": "",
+        "Id": "",
+        "LocationTypeId": "",
+        "Name": ""
       }
     },
-    "selectedDefId": 7,
-    "tierId": 5
+    "selectedDefId": "",
+    "tierId": ""
   },
   "params": {},
   "propConfig": {
@@ -689,7 +567,7 @@
                       }
                     },
                     "props": {
-                      "placeholder": "DieCastMachine",
+                      "placeholder": "Unique Code",
                       "style": {
                         "boxSizing": "border-box",
                         "classes": "search-input",
@@ -745,7 +623,7 @@
                       }
                     },
                     "props": {
-                      "placeholder": "Die Cast Machine",
+                      "placeholder": "Type Definition Name",
                       "style": {
                         "boxSizing": "border-box",
                         "classes": "search-input",
@@ -786,29 +664,102 @@
                     "type": "ia.display.label"
                   },
                   {
-                    "meta": {
-                      "name": "Input"
+                    "type": "ia.container.flex",
+                    "meta": { "name": "Input" },
+                    "props": {
+                      "alignItems": "center",
+                      "style": { "gap": "8px", "minHeight": "32px" }
                     },
-                    "propConfig": {
-                      "props.text": {
-                        "binding": {
-                          "config": {
-                            "bidirectional": true,
-                            "path": "view.custom.editDraft.meta.Icon"
+                    "children": [
+                      {
+                        "type": "ia.display.icon",
+                        "meta": { "name": "IconPreview" },
+                        "position": { "basis": "24px", "shrink": 0 },
+                        "propConfig": {
+                          "props.path": {
+                            "binding": {
+                              "type": "property",
+                              "config": { "path": "view.custom.editDraft.meta.Icon" }
+                            }
                           },
-                          "type": "property"
+                          "position.display": {
+                            "binding": {
+                              "type": "expr",
+                              "config": { "expression": "{view.custom.editDraft.meta.Icon} !\u003d \"\"" }
+                            }
+                          }
+                        },
+                        "props": {
+                          "color": "var(--mpp-text-primary)",
+                          "style": { "height": "24px", "width": "24px" }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": { "name": "EmptyHint" },
+                        "position": { "basis": "24px", "shrink": 0 },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "type": "expr",
+                              "config": { "expression": "{view.custom.editDraft.meta.Icon} \u003d \"\"" }
+                            }
+                          }
+                        },
+                        "props": {
+                          "text": "—",
+                          "style": {
+                            "color": "var(--mpp-text-tertiary)",
+                            "fontSize": "20px",
+                            "lineHeight": "24px",
+                            "textAlign": "center",
+                            "width": "24px"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": { "name": "NameLabel" },
+                        "position": { "grow": 1 },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "expr",
+                              "config": { "expression": "if({view.custom.editDraft.meta.Icon} \u003d \"\", \"(none)\", runScript(\"BlueRidge.Common.Util._humanizeIconName\", 0, replace({view.custom.editDraft.meta.Icon}, \"mpp/\", \"\")))" }
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "12px",
+                            "overflow": "hidden",
+                            "textOverflow": "ellipsis",
+                            "whiteSpace": "nowrap"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.button",
+                        "meta": { "name": "PickButton" },
+                        "position": { "shrink": 0 },
+                        "props": {
+                          "text": "Pick…",
+                          "style": { "classes": "btn btn-sm" }
+                        },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "type": "script",
+                              "scope": "G",
+                              "config": {
+                                "script": "\tdraft \u003d self.view.custom.editDraft or {}\n\tmeta \u003d (draft.get(\"meta\") if hasattr(draft, \"get\") else None) or {}\n\tselected \u003d meta.get(\"Icon\") if hasattr(meta, \"get\") else \"\"\n\tsystem.perspective.openPopup(\n\t\tid\u003d\"mpp-icon-picker\",\n\t\tview\u003d\"BlueRidge/Components/Popups/IconPicker\",\n\t\tmodal\u003dTrue,\n\t\tshowCloseIcon\u003dFalse,\n\t\tparams\u003d{\n\t\t\t\"selected\":     selected or \"\",\n\t\t\t\"replyMessage\": \"iconPickerResult\"\n\t\t}\n\t)"
+                              }
+                            }
+                          }
                         }
                       }
-                    },
-                    "props": {
-                      "placeholder": "mpp/die_cast",
-                      "style": {
-                        "boxSizing": "border-box",
-                        "classes": "search-input",
-                        "width": "100%"
-                      }
-                    },
-                    "type": "ia.input.text-field"
+                    ]
                   }
                 ],
                 "meta": {
@@ -1304,7 +1255,14 @@
         {
           "messageType": "confirmUnsavedResult",
           "pageScope": true,
-          "script": "\taction = payload.get(\"action\") if payload else None\n\tif action == \"save\":\n\t\tdraft = self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\t\tresult = BlueRidge.Location.LocationTypeDefinition.handleSaveAll(draft.get(\"meta\"), draft.get(\"attributes\"))\n\t\tif result and result.get(\"Status\"):\n\t\t\tsystem.perspective.closePopup(id=\"mpp-loc-type-editor\")\n\telif action == \"discard\":\n\t\tsystem.perspective.closePopup(id=\"mpp-loc-type-editor\")",
+          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tif action \u003d\u003d \"save\":\n\t\tdraft \u003d self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\t\tresult \u003d BlueRidge.Location.LocationTypeDefinition.handleSaveAll(draft.get(\"meta\"), draft.get(\"attributes\"))\n\t\tif result and result.get(\"Status\"):\n\t\t\tsystem.perspective.closePopup(id\u003d\"mpp-loc-type-editor\")\n\telif action \u003d\u003d \"discard\":\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-loc-type-editor\")",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "iconPickerResult",
+          "pageScope": true,
+          "script": "\ticon \u003d payload.get(\"icon\") if payload else None\n\tif icon is None:\n\t\treturn\n\tdraft \u003d self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\tmeta \u003d dict(draft.get(\"meta\") or {})\n\tmeta[\"Icon\"] \u003d icon\n\tself.view.custom.editDraft \u003d {\n\t\t\"meta\":       meta,\n\t\t\"attributes\": draft.get(\"attributes\") or []\n\t}",
           "sessionScope": false,
           "viewScope": false
         }

@@ -106,6 +106,10 @@ Full vertical stack scaffolded 2026-05-13. Convention-rectification pass landed 
 - FDS-06-028 wording sharpen — WO Auto-Finish (§6.10) prose still mentions "camera-count mode" pre-tray-reframe. Low priority.
 - ~~**Latent NQ v1 schema bug:** at least `location/Get/resource.json` is `version: 1`~~ — resolved 2026-05-14 (bumped to v2 with corrected sqlType enum). See `feedback_ignition_nq_resource_schema.md` memory for the empirically-verified Designer sqlType table.
 
+### Deferred follow-ups tied to future Config Tool surfaces
+
+- **DieCastMachine Cell — read-only mounted-Tool status panel** (Plant Hierarchy editor). When the Tools master Config Tool surface is built, add a read-only section under (or alongside) Attributes on DieCastMachine Cell details showing the currently mounted Tool, mount timestamp, and mounting supervisor, sourced from `Tools.ToolAssignment_ListActiveByCell(@CellLocationId)`. Mutation (mount/release) stays on the plant-floor scan-in screen per FDS-05-034 + the `tool-assignment-modal` mockup design — the Plant Hierarchy panel is visibility-only so engineering can see what's mounted without going to the floor or asking. Deferred until the Tool master Config Tool screen exists (it would have no cross-link target today). Discussion: 2026-05-18 session.
+
 ---
 
 ## OIR Status (v2.17, 2026-05-01)

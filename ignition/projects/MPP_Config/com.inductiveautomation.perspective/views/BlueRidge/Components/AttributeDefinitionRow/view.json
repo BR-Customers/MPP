@@ -300,7 +300,7 @@
           }
         },
         "props": {
-          "placeholder": "â€”",
+          "placeholder": "—",
           "style": {
             "boxSizing": "border-box",
             "classes": "search-input"
@@ -339,7 +339,7 @@
           }
         },
         "props": {
-          "placeholder": "â€”",
+          "placeholder": "—",
           "style": {
             "boxSizing": "border-box",
             "classes": "search-input"
