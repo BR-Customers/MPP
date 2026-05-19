@@ -1,6 +1,32 @@
 # MPP MES — Project Status
 
-**Last updated:** 2026-05-19
+**Last updated:** 2026-05-19 (end of long session — audit pages landed but with an addressing bug; pickup notes below)
+
+---
+
+## 🟠 Open at session end (2026-05-19)
+
+### Audit pages — Apply/Reset wiring broken: customMethods addressing
+
+FailureLog + AuditLog views land structurally (parse cleanly in Designer, scan green, SQL suite 937/937) but the Apply / Reset buttons + the onStartup-replacement sentinel handler all use **wrong addressing** to the customMethods (`applySearch`, `resetFilter`) defined at `root.scripts.customMethods`.
+
+**The bug:**
+- customMethods live on the **root component** (root.scripts.customMethods), NOT on the view object.
+- The scripts I wrote use `self.view.applySearch()` from component events and `self.resetFilter()` from a view-level onChange. Neither resolves — `self.view` is the view (no methods), and `self` in view-level onChange is also the view (no methods).
+
+**To fix next session:**
+1. Verify the exact API for calling root.scripts.customMethods from (a) a child component event, (b) a view-level propConfig.custom.X.onChange handler. Open Designer, try in Script Console.
+2. Hypotheses to test: `self.view.rootContainer.applySearch()` (from component) and `self.rootContainer.applySearch()` (from view-level onChange).
+3. Alternative: investigate whether Perspective supports a view-level customMethods block (sibling to `root`, not nested under it). If yes, prefer that — cleaner.
+4. Patch both audit views (FailureLog + AuditLog) — Apply button, Reset button, and `_initFired` onChange handler.
+
+**See:** `[[feedback_ignition_view_customMethods_scope]]` memory entry.
+
+**Other audit-pages follow-ups** (not blockers):
+- AuditLog lost AppUser dropdown during T13 (original mockup's UserDropdown was repurposed → SeverityDropdown). Design called for both. Add a separate AppUser dropdown row.
+- Designer smoke test still pending end-to-end verification after the customMethods fix lands.
+
+---
 
 This file holds the **volatile** state of the project — current doc versions, active blockers, recent change narrative, and the next-session briefing. Durable identity, document map, architecture, and conventions live in `CLAUDE.md`.
 
