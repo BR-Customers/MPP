@@ -32,6 +32,7 @@ Comments may be returned as annotations on the Word document, an annotated PDF, 
 
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
+| 1.2 | 2026-05-18 | Blue Ridge Automation | **Location-hierarchy immutability made explicit.** Added **FDS-02-002a — `ParentLocationId` is Immutable**: a `Location`'s parent SHALL NOT change after creation, because retroactive hierarchy changes would silently rewrite historical track-and-trace reports (LotMovement, ConsumptionEvent, RejectEvent, DowntimeEvent, HoldEvent, OperationLog) — which join event rows to the live Location row to derive tier path. Physical relocations are handled by Deprecate + Create New (industry-standard MES pattern; preserves event-anchored history verbatim). The rule was previously an implementation-only convention buried in `Location.Location_Update`; promoted to FDS so it is auditable and survives any future code rewrite. |
 | 1.1 | 2026-05-12 | Blue Ridge Automation | **Customer Acceptance signature page added.** Replaces the v1.0 stub Approval table with a formal Customer Acceptance section: numbered acceptance statement (design intent, scope boundary, open-items acknowledgement, Phase 0 workshop carve-out, change control, reference-document handling), separate Prepared-By (Blue Ridge) and Accepted-By (MPP) signature blocks, and a Conditions or Exceptions register. No design-content changes elsewhere in the document. |
 | 1.0 | 2026-05-04 | Blue Ridge Automation | **First release for customer review.** Consolidates all pre-release working-session edits (v0.1 through v0.11p) into a single customer-facing release. Covers all 16 sections — System Architecture, Plant Model & Location Hierarchy, Master Data, User Identity / Authentication / Elevation, LOT Lifecycle & Genealogy, Production Execution, Container Management & Shipping, Quality & Hold, Downtime Tracking, PLC/OPC Integration, Audit & Logging, Reporting, External System Interfaces, Data Migration, Deployment & Commissioning, Identifier Sequences — plus appendices (machine list, downtime codes, defect codes, OPC tag map, MIP touchpoints, FRS crosswalk, scope matrix crosswalk, paper-sheet mapping). The embedded Open Items Register at the end of this document carries the **6 items still requiring resolution** (OI-32, OI-33, OI-34, OI-35, UJ-05, UJ-19) — these gate either Arc 2 SQL build or specific design sections and need MPP customer validation or Blue Ridge architecture review before commencement. |
 
@@ -396,6 +397,24 @@ The system SHALL seed five `LocationType` rows at deployment, corresponding to t
 
 #### FDS-02-002 — Hierarchy Enforcement
 The system SHOULD validate that child locations have a `HierarchyLevel` greater than or equal to their parent's level, determined by joining through `LocationTypeDefinition` to `LocationType`. The system SHALL NOT enforce strict sequential levels — a Cell MAY be a direct child of an Area if no Work Center level exists for that area.
+
+#### FDS-02-002a — `ParentLocationId` is Immutable — `MVP`
+
+A `Location`'s `ParentLocationId` SHALL NOT be editable after the row is created. The same rule extends to `LocationTypeDefinitionId` — once set, both fields are fixed for the life of the row. Only `Name`, `Code`, `Description`, `SortOrder`, and attribute values (`LocationAttribute` rows) are mutable.
+
+**Why this matters — track-and-trace integrity.** Every shop-floor event table records the `LocationId` active at event time: `Lots.LotMovement.FromLocationId` / `ToLocationId`, `Workorder.ConsumptionEvent.LocationId`, `Quality.RejectEvent.LocationId`, `Oee.DowntimeEvent.LocationId`, `Quality.HoldEvent.LocationId`, `Audit.OperationLog.LocationId`, plus `Lots.Lot.CurrentLocationId` and `Tools.ToolAssignment.CellLocationId`. Every Honda-relevant report — genealogy, area-scoped defect and downtime aggregation, LOT-history export — joins those FK columns to the **current** `Location` row to derive tier path (Cell → Work Center → Area). A retroactive `ParentLocationId` change would silently rewrite every historical aggregation that walks the hierarchy, with no flag in the report, no audit trail visible to the auditor, and no opportunity for the system to know the answer was wrong. That failure mode is incompatible with Honda's traceability requirements.
+
+**Handling physical relocations.** When a piece of equipment genuinely changes parent (e.g., a CNC moves from one Area to another), the operation SHALL be performed as **Deprecate the existing `Location` row + Create a new row under the new parent**:
+
+- The deprecated row retains its `Id` and its original `ParentLocationId`. All historical events bound to that `Id` continue to resolve through the correct as-of-event hierarchy.
+- The new row gets a new `Id`. All forward production is recorded against that `Id`.
+- The Configuration Tool's Plant Hierarchy view SHALL filter deprecated rows out of the active tree by default, with an "Include deprecated" toggle for admin diagnostics. The deprecated row is never re-activated.
+
+This pattern is the industry standard for MES location hierarchies and matches the approach used by Honda's tier-1 MES for the same reason.
+
+**Cost of NOT making this rule.** The alternative (allowing reparent) requires either (a) snapshotting the location-path-as-of-event on every event-table row across 14+ event tables, or (b) full slowly-changing-dimension versioning on the `Location` table with temporal joins on every read path. Both are large, ongoing-discipline changes for a rare operation. The Deprecate + Create New pattern achieves the same goal with no additional schema cost.
+
+**Implementation.** `Location.Location_Update` excludes `ParentLocationId` and `LocationTypeDefinitionId` from its parameter list. `Location.Location_MoveUp` / `Location.Location_MoveDown` swap `SortOrder` with the nearest active sibling under the **same `ParentLocationId`** — they never traverse parents. No "Move to Different Parent" / "Reparent" proc SHALL be added.
 
 #### FDS-02-003 — Areas as Instances
 MPP's five operational areas SHALL be created as `Location` instances at deployment, each with an appropriate `LocationTypeDefinition` (`ProductionArea` or `SupportArea`):
