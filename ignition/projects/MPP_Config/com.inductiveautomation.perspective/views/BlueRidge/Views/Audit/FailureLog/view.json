@@ -1,68 +1,66 @@
 {
   "custom": {
     "filter": {
-      "startDate": 1775865600000,
-      "endDate":   1776470400000,
-      "entityType": "All",
-      "procedure": "All Procs",
+      "startDate": null,
+      "endDate": null,
+      "entityTypeCode": null,
+      "procedureName": null,
+      "appUserId": null,
       "searchText": ""
     },
-    "entityTypeOptions": [
-      { "label": "All",                "value": "All" },
-      { "label": "Location",           "value": "Location" },
-      { "label": "Item",               "value": "Item" },
-      { "label": "Bom",                "value": "Bom" },
-      { "label": "RouteTemplate",      "value": "RouteTemplate" },
-      { "label": "OperationTemplate",  "value": "OperationTemplate" },
-      { "label": "QualitySpec",        "value": "QualitySpec" },
-      { "label": "AppUser",            "value": "AppUser" }
-    ],
-    "procedureOptions": [
-      { "label": "All Procs",         "value": "All Procs" },
-      { "label": "Location_Create",   "value": "Location_Create" },
-      { "label": "Item_Deprecate",    "value": "Item_Deprecate" },
-      { "label": "Bom_Publish",       "value": "Bom_Publish" }
-    ],
-    "rejectionReasons": [
-      { "label": "Duplicate code exists",        "value": 12, "percent": 100 },
-      { "label": "Active dependents exist",      "value": 8,  "percent": 67  },
-      { "label": "Required parameter missing",   "value": 5,  "percent": 42  }
-    ],
-    "failingProcedures": [
-      { "label": "Location.Location_Create", "value": 9, "percent": 100 },
-      { "label": "Parts.Item_Deprecate",     "value": 7, "percent": 78  },
-      { "label": "Parts.Bom_Publish",        "value": 4, "percent": 44  }
-    ],
-    "failureRows": [
-      { "Timestamp": "2026-04-16 09:44:30", "User": "J. Potgieter",    "Entity": "Location", "Procedure": "Location_Create", "Reason": "A location with this Code already exists." },
-      { "Timestamp": "2026-04-16 09:40:12", "User": "J. Potgieter",    "Entity": "Item",     "Procedure": "Item_Deprecate",  "Reason": "Cannot deprecate: active RouteTemplate references exist." },
-      { "Timestamp": "2026-04-15 16:50:00", "User": "Bootstrap Admin", "Entity": "Location", "Procedure": "Location_Create", "Reason": "Required parameter missing." },
-      { "Timestamp": "2026-04-15 11:22:33", "User": "J. Potgieter",    "Entity": "Bom",      "Procedure": "Bom_Publish",     "Reason": "Cannot publish: BOM has no lines." }
-    ]
+    "rows": [],
+    "totalCount": 0,
+    "topReasons": [],
+    "topProcs": []
   },
   "params": {},
   "propConfig": {
-    "custom.filter.startDate":  { "persistent": true },
-    "custom.filter.endDate":    { "persistent": true },
-    "custom.filter.entityType": { "persistent": true },
-    "custom.filter.procedure":  { "persistent": true },
-    "custom.filter.searchText": { "persistent": true }
+    "custom.filter.startDate": {
+      "persistent": true
+    },
+    "custom.filter.endDate": {
+      "persistent": true
+    },
+    "custom.filter.entityTypeCode": {
+      "persistent": true
+    },
+    "custom.filter.procedureName": {
+      "persistent": true
+    },
+    "custom.filter.appUserId": {
+      "persistent": true
+    },
+    "custom.filter.searchText": {
+      "persistent": true
+    }
   },
   "props": {
-    "defaultSize": { "width": 1280, "height": 720 }
+    "defaultSize": {
+      "width": 1280,
+      "height": 720
+    }
   },
   "root": {
     "type": "ia.container.flex",
-    "meta": { "name": "root" },
+    "meta": {
+      "name": "root"
+    },
     "props": {
       "direction": "column",
-      "style": { "classes": "screen-active" }
+      "style": {
+        "classes": "screen-active"
+      }
     },
     "children": [
       {
         "type": "ia.display.view",
-        "meta": { "name": "TitleBar" },
-        "position": { "basis": "auto", "shrink": 0 },
+        "meta": {
+          "name": "TitleBar"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
         "props": {
           "path": "BlueRidge/Components/Common/TitleBar",
           "params": {
@@ -73,174 +71,433 @@
       },
       {
         "type": "ia.container.flex",
-        "meta": { "name": "MainSplit" },
-        "position": { "grow": 1 },
+        "meta": {
+          "name": "MainSplit"
+        },
+        "position": {
+          "grow": 1
+        },
         "props": {
           "direction": "row",
-          "style": { "overflow": "hidden", "borderTop": "1px solid var(--mpp-border-subtle)" }
+          "style": {
+            "overflow": "hidden",
+            "borderTop": "1px solid var(--mpp-border-subtle)"
+          }
         },
         "children": [
           {
             "type": "ia.container.flex",
-            "meta": { "name": "FilterSidebar" },
-            "position": { "basis": "220px", "shrink": 0 },
+            "meta": {
+              "name": "FilterSidebar"
+            },
+            "position": {
+              "basis": "220px",
+              "shrink": 0
+            },
             "props": {
               "direction": "column",
-              "style": { "classes": "filter-sidebar" }
+              "style": {
+                "classes": "filter-sidebar"
+              }
             },
             "children": [
               {
                 "type": "ia.container.flex",
-                "meta": { "name": "FilterPanel" },
-                "position": { "basis": "auto" },
+                "meta": {
+                  "name": "FilterPanel"
+                },
+                "position": {
+                  "basis": "auto"
+                },
                 "props": {
                   "direction": "column",
-                  "style": { "classes": "filter-panel" }
+                  "style": {
+                    "classes": "filter-panel"
+                  }
                 },
                 "children": [
                   {
                     "type": "ia.container.flex",
-                    "meta": { "name": "StartDateField" },
-                    "position": { "basis": "auto" },
-                    "props": { "direction": "column", "style": { "gap": "4px" } },
+                    "meta": {
+                      "name": "StartDateField"
+                    },
+                    "position": {
+                      "basis": "auto"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "4px"
+                      }
+                    },
                     "children": [
                       {
                         "type": "ia.display.label",
-                        "meta": { "name": "StartDateLabel" },
-                        "position": { "basis": "auto" },
-                        "props": { "text": "Start Date", "style": { "classes": "label-eyebrow" } }
+                        "meta": {
+                          "name": "StartDateLabel"
+                        },
+                        "position": {
+                          "basis": "auto"
+                        },
+                        "props": {
+                          "text": "Start Date",
+                          "style": {
+                            "classes": "label-eyebrow"
+                          }
+                        }
                       },
                       {
                         "type": "ia.input.date-time-input",
-                        "meta": { "name": "StartDateInput" },
-                        "position": { "basis": "auto" },
+                        "meta": {
+                          "name": "StartDateInput"
+                        },
+                        "position": {
+                          "basis": "auto"
+                        },
                         "propConfig": {
                           "props.value": {
                             "binding": {
                               "type": "property",
-                              "config": { "bidirectional": true, "path": "view.custom.filter.startDate" }
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.filter.startDate"
+                              }
                             }
                           }
                         },
-                        "props": { "format": "YYYY-MM-DD", "pickerType": "date" }
+                        "props": {
+                          "format": "YYYY-MM-DD",
+                          "pickerType": "date"
+                        }
                       }
                     ]
                   },
                   {
                     "type": "ia.container.flex",
-                    "meta": { "name": "EndDateField" },
-                    "position": { "basis": "auto" },
-                    "props": { "direction": "column", "style": { "gap": "4px" } },
+                    "meta": {
+                      "name": "EndDateField"
+                    },
+                    "position": {
+                      "basis": "auto"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "4px"
+                      }
+                    },
                     "children": [
                       {
                         "type": "ia.display.label",
-                        "meta": { "name": "EndDateLabel" },
-                        "position": { "basis": "auto" },
-                        "props": { "text": "End Date", "style": { "classes": "label-eyebrow" } }
+                        "meta": {
+                          "name": "EndDateLabel"
+                        },
+                        "position": {
+                          "basis": "auto"
+                        },
+                        "props": {
+                          "text": "End Date",
+                          "style": {
+                            "classes": "label-eyebrow"
+                          }
+                        }
                       },
                       {
                         "type": "ia.input.date-time-input",
-                        "meta": { "name": "EndDateInput" },
-                        "position": { "basis": "auto" },
+                        "meta": {
+                          "name": "EndDateInput"
+                        },
+                        "position": {
+                          "basis": "auto"
+                        },
                         "propConfig": {
                           "props.value": {
                             "binding": {
                               "type": "property",
-                              "config": { "bidirectional": true, "path": "view.custom.filter.endDate" }
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.filter.endDate"
+                              }
                             }
                           }
                         },
-                        "props": { "format": "YYYY-MM-DD", "pickerType": "date" }
+                        "props": {
+                          "format": "YYYY-MM-DD",
+                          "pickerType": "date"
+                        }
                       }
                     ]
                   },
                   {
                     "type": "ia.container.flex",
-                    "meta": { "name": "EntityTypeField" },
-                    "position": { "basis": "auto" },
-                    "props": { "direction": "column", "style": { "gap": "4px" } },
+                    "meta": {
+                      "name": "EntityTypeField"
+                    },
+                    "position": {
+                      "basis": "auto"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "4px"
+                      }
+                    },
                     "children": [
                       {
                         "type": "ia.display.label",
-                        "meta": { "name": "EntityTypeLabel" },
-                        "position": { "basis": "auto" },
-                        "props": { "text": "Entity Type", "style": { "classes": "label-eyebrow" } }
+                        "meta": {
+                          "name": "EntityTypeLabel"
+                        },
+                        "position": {
+                          "basis": "auto"
+                        },
+                        "props": {
+                          "text": "Entity Type",
+                          "style": {
+                            "classes": "label-eyebrow"
+                          }
+                        }
                       },
                       {
                         "type": "ia.input.dropdown",
-                        "meta": { "name": "EntityTypeDropdown" },
-                        "position": { "basis": "auto" },
+                        "meta": {
+                          "name": "EntityTypeDropdown"
+                        },
+                        "position": {
+                          "basis": "auto"
+                        },
                         "propConfig": {
                           "props.options": {
-                            "binding": { "type": "property", "config": { "path": "view.custom.entityTypeOptions" } }
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "runScript(\"BlueRidge.Audit.LogEntityType.list\", 0)"
+                              },
+                              "transforms": [
+                                {
+                                  "type": "script",
+                                  "code": "\treturn [{\"label\": \"(All)\", \"value\": None}] + [{\"label\": t.get(\"Name\"), \"value\": t.get(\"Code\")} for t in (value or [])]"
+                                }
+                              ]
+                            }
                           },
                           "props.value": {
                             "binding": {
                               "type": "property",
-                              "config": { "bidirectional": true, "path": "view.custom.filter.entityType" }
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.filter.entityTypeCode"
+                              }
                             }
                           }
                         },
-                        "props": { "style": { "classes": "select" } }
+                        "props": {
+                          "style": {
+                            "classes": "select"
+                          }
+                        }
                       }
                     ]
                   },
                   {
                     "type": "ia.container.flex",
-                    "meta": { "name": "ProcedureField" },
-                    "position": { "basis": "auto" },
-                    "props": { "direction": "column", "style": { "gap": "4px" } },
+                    "meta": {
+                      "name": "ProcedureField"
+                    },
+                    "position": {
+                      "basis": "auto"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "4px"
+                      }
+                    },
                     "children": [
                       {
                         "type": "ia.display.label",
-                        "meta": { "name": "ProcedureLabel" },
-                        "position": { "basis": "auto" },
-                        "props": { "text": "Procedure", "style": { "classes": "label-eyebrow" } }
+                        "meta": {
+                          "name": "ProcedureLabel"
+                        },
+                        "position": {
+                          "basis": "auto"
+                        },
+                        "props": {
+                          "text": "Procedure",
+                          "style": {
+                            "classes": "label-eyebrow"
+                          }
+                        }
                       },
                       {
                         "type": "ia.input.dropdown",
-                        "meta": { "name": "ProcedureDropdown" },
-                        "position": { "basis": "auto" },
+                        "meta": {
+                          "name": "ProcedureDropdown"
+                        },
+                        "position": {
+                          "basis": "auto"
+                        },
                         "propConfig": {
                           "props.options": {
-                            "binding": { "type": "property", "config": { "path": "view.custom.procedureOptions" } }
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "runScript(\"BlueRidge.Audit.FailureLog.distinctProcedures\", 0)"
+                              },
+                              "transforms": [
+                                {
+                                  "type": "script",
+                                  "code": "\treturn [{\"label\": \"(All)\", \"value\": None}] + [{\"label\": t.get(\"ProcedureName\"), \"value\": t.get(\"ProcedureName\")} for t in (value or [])]"
+                                }
+                              ]
+                            }
                           },
                           "props.value": {
                             "binding": {
                               "type": "property",
-                              "config": { "bidirectional": true, "path": "view.custom.filter.procedure" }
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.filter.procedureName"
+                              }
                             }
                           }
                         },
-                        "props": { "style": { "classes": "select" } }
+                        "props": {
+                          "style": {
+                            "classes": "select"
+                          }
+                        }
                       }
                     ]
                   },
                   {
                     "type": "ia.container.flex",
-                    "meta": { "name": "SearchField" },
-                    "position": { "basis": "auto" },
-                    "props": { "direction": "column", "style": { "gap": "4px" } },
+                    "meta": {
+                      "name": "SearchField"
+                    },
+                    "position": {
+                      "basis": "auto"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "4px"
+                      }
+                    },
                     "children": [
                       {
                         "type": "ia.display.label",
-                        "meta": { "name": "SearchLabel" },
-                        "position": { "basis": "auto" },
-                        "props": { "text": "Search", "style": { "classes": "label-eyebrow" } }
+                        "meta": {
+                          "name": "SearchLabel"
+                        },
+                        "position": {
+                          "basis": "auto"
+                        },
+                        "props": {
+                          "text": "Search",
+                          "style": {
+                            "classes": "label-eyebrow"
+                          }
+                        }
                       },
                       {
                         "type": "ia.input.text-field",
-                        "meta": { "name": "SearchInput" },
-                        "position": { "basis": "auto" },
+                        "meta": {
+                          "name": "SearchInput"
+                        },
+                        "position": {
+                          "basis": "auto"
+                        },
                         "propConfig": {
                           "props.text": {
                             "binding": {
                               "type": "property",
-                              "config": { "bidirectional": true, "path": "view.custom.filter.searchText" }
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.filter.searchText"
+                              }
                             }
                           }
                         },
-                        "props": { "placeholder": "Search…", "style": { "classes": "search-input" } }
+                        "props": {
+                          "placeholder": "Search…",
+                          "style": {
+                            "classes": "search-input"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "FilterFooter"
+                    },
+                    "position": {
+                      "basis": "auto",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "8px",
+                        "padding": "12px 0 0 0"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.input.button",
+                        "meta": {
+                          "name": "ResetButton"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1
+                        },
+                        "props": {
+                          "text": "Reset",
+                          "style": {
+                            "classes": "btn btn-sm"
+                          }
+                        },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "type": "script",
+                              "scope": "G",
+                              "config": {
+                                "script": "\tself.view.resetFilter()"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.button",
+                        "meta": {
+                          "name": "ApplyButton"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1
+                        },
+                        "props": {
+                          "text": "Apply",
+                          "style": {
+                            "classes": "btn btn-primary btn-sm"
+                          }
+                        },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "type": "script",
+                              "scope": "G",
+                              "config": {
+                                "script": "\tself.view.applySearch()"
+                              }
+                            }
+                          }
+                        }
                       }
                     ]
                   }
@@ -250,17 +507,30 @@
           },
           {
             "type": "ia.container.flex",
-            "meta": { "name": "ContentArea" },
-            "position": { "grow": 1 },
+            "meta": {
+              "name": "ContentArea"
+            },
+            "position": {
+              "grow": 1
+            },
             "props": {
               "direction": "column",
-              "style": { "classes": "detail-area", "padding": "0", "overflowY": "auto" }
+              "style": {
+                "classes": "detail-area",
+                "padding": "0",
+                "overflowY": "auto"
+              }
             },
             "children": [
               {
                 "type": "ia.container.flex",
-                "meta": { "name": "DashboardTiles" },
-                "position": { "basis": "auto", "shrink": 0 },
+                "meta": {
+                  "name": "DashboardTiles"
+                },
+                "position": {
+                  "basis": "auto",
+                  "shrink": 0
+                },
                 "props": {
                   "direction": "row",
                   "wrap": "wrap",
@@ -273,64 +543,136 @@
                 "children": [
                   {
                     "type": "ia.container.flex",
-                    "meta": { "name": "RejectionReasonsTile" },
-                    "position": { "basis": "240px", "grow": 1 },
+                    "meta": {
+                      "name": "RejectionReasonsTile"
+                    },
+                    "position": {
+                      "basis": "240px",
+                      "grow": 1
+                    },
                     "props": {
                       "direction": "column",
-                      "style": { "classes": "dashboard-tile" }
+                      "style": {
+                        "classes": "dashboard-tile"
+                      }
                     },
                     "children": [
                       {
                         "type": "ia.display.label",
-                        "meta": { "name": "TileLabel" },
-                        "position": { "basis": "auto" },
-                        "props": { "text": "Top Rejection Reasons (7 days)", "style": { "classes": "tile-label" } }
+                        "meta": {
+                          "name": "TileLabel"
+                        },
+                        "position": {
+                          "basis": "auto"
+                        },
+                        "props": {
+                          "text": "Top Rejection Reasons (7 days)",
+                          "style": {
+                            "classes": "tile-label"
+                          }
+                        }
                       },
                       {
                         "type": "ia.display.flex-repeater",
-                        "meta": { "name": "RejectionReasonsRows" },
-                        "position": { "basis": "auto" },
+                        "meta": {
+                          "name": "RejectionReasonsRows"
+                        },
+                        "position": {
+                          "basis": "auto"
+                        },
                         "propConfig": {
                           "props.instances": {
-                            "binding": { "type": "property", "config": { "path": "view.custom.rejectionReasons" } }
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.topReasons"
+                              },
+                              "transforms": [
+                                {
+                                  "type": "script",
+                                  "code": "\treturn [\n\t\t{\n\t\t\t\"label\":       r.get(\"FailureReason\") or \"(none)\",\n\t\t\t\"count\":       r.get(\"FailureCount\") or 0,\n\t\t\t\"filterField\": \"failureReasonText\",\n\t\t\t\"filterValue\": r.get(\"FailureReason\") or \"\"\n\t\t}\n\t\tfor r in (value or [])\n\t]"
+                                }
+                              ]
+                            }
                           }
                         },
                         "props": {
-                          "path": "BlueRidge/Components/Common/TileStatRow",
+                          "path": "BlueRidge/Components/Audit/TopRow",
                           "direction": "column",
-                          "useDefaultViewWidth": false
+                          "elementPosition": {
+                            "basis": "32px",
+                            "shrink": 0
+                          },
+                          "useDefaultViewWidth": false,
+                          "useDefaultViewHeight": false
                         }
                       }
                     ]
                   },
                   {
                     "type": "ia.container.flex",
-                    "meta": { "name": "FailingProceduresTile" },
-                    "position": { "basis": "240px", "grow": 1 },
+                    "meta": {
+                      "name": "FailingProceduresTile"
+                    },
+                    "position": {
+                      "basis": "240px",
+                      "grow": 1
+                    },
                     "props": {
                       "direction": "column",
-                      "style": { "classes": "dashboard-tile" }
+                      "style": {
+                        "classes": "dashboard-tile"
+                      }
                     },
                     "children": [
                       {
                         "type": "ia.display.label",
-                        "meta": { "name": "TileLabel" },
-                        "position": { "basis": "auto" },
-                        "props": { "text": "Top Failing Procedures (7 days)", "style": { "classes": "tile-label" } }
+                        "meta": {
+                          "name": "TileLabel"
+                        },
+                        "position": {
+                          "basis": "auto"
+                        },
+                        "props": {
+                          "text": "Top Failing Procedures (7 days)",
+                          "style": {
+                            "classes": "tile-label"
+                          }
+                        }
                       },
                       {
                         "type": "ia.display.flex-repeater",
-                        "meta": { "name": "FailingProceduresRows" },
-                        "position": { "basis": "auto" },
+                        "meta": {
+                          "name": "FailingProceduresRows"
+                        },
+                        "position": {
+                          "basis": "auto"
+                        },
                         "propConfig": {
                           "props.instances": {
-                            "binding": { "type": "property", "config": { "path": "view.custom.failingProcedures" } }
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.topProcs"
+                              },
+                              "transforms": [
+                                {
+                                  "type": "script",
+                                  "code": "\treturn [\n\t\t{\n\t\t\t\"label\":       r.get(\"ProcedureName\") or \"(none)\",\n\t\t\t\"count\":       r.get(\"FailureCount\") or 0,\n\t\t\t\"filterField\": \"procedureName\",\n\t\t\t\"filterValue\": r.get(\"ProcedureName\") or \"\"\n\t\t}\n\t\tfor r in (value or [])\n\t]"
+                                }
+                              ]
+                            }
                           }
                         },
                         "props": {
-                          "path": "BlueRidge/Components/Common/TileStatRow",
+                          "path": "BlueRidge/Components/Audit/TopRow",
                           "direction": "column",
-                          "useDefaultViewWidth": false
+                          "elementPosition": {
+                            "basis": "32px",
+                            "shrink": 0
+                          },
+                          "useDefaultViewWidth": false,
+                          "useDefaultViewHeight": false
                         }
                       }
                     ]
@@ -339,42 +681,141 @@
               },
               {
                 "type": "ia.container.flex",
-                "meta": { "name": "FailurePanelWrapper" },
-                "position": { "grow": 1 },
+                "meta": {
+                  "name": "FailurePanelWrapper"
+                },
+                "position": {
+                  "grow": 1
+                },
                 "props": {
                   "direction": "column",
-                  "style": { "padding": "0 12px 12px 12px" }
+                  "style": {
+                    "padding": "0 12px 12px 12px"
+                  }
                 },
                 "children": [
                   {
                     "type": "ia.container.flex",
-                    "meta": { "name": "FailurePanel" },
-                    "position": { "grow": 1 },
+                    "meta": {
+                      "name": "FailurePanel"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
                     "props": {
                       "direction": "column",
-                      "style": { "classes": "detail-panel" }
+                      "style": {
+                        "classes": "detail-panel"
+                      }
                     },
                     "children": [
                       {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "ResultBanner"
+                        },
+                        "position": {
+                          "basis": "auto",
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "if({view.custom.totalCount} < 1000, \"Showing \" + {view.custom.totalCount} + \" rows\", \"Showing first 1000 of \" + {view.custom.totalCount} + \" — narrow your filter\")"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "11px",
+                            "padding": "4px 12px"
+                          }
+                        }
+                      },
+                      {
                         "type": "ia.display.table",
-                        "meta": { "name": "FailureTable" },
-                        "position": { "grow": 1 },
+                        "meta": {
+                          "name": "FailureTable"
+                        },
+                        "position": {
+                          "grow": 1
+                        },
                         "propConfig": {
                           "props.data": {
-                            "binding": { "type": "property", "config": { "path": "view.custom.failureRows" } }
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.rows"
+                              }
+                            }
                           }
                         },
                         "props": {
                           "columns": [
-                            { "field": "Timestamp", "header": { "title": "Timestamp"      }, "visible": true, "sort": "desc" },
-                            { "field": "User",      "header": { "title": "User"           }, "visible": true },
-                            { "field": "Entity",    "header": { "title": "Entity"         }, "visible": true },
-                            { "field": "Procedure", "header": { "title": "Procedure"      }, "visible": true },
-                            { "field": "Reason",    "header": { "title": "Failure Reason" }, "visible": true }
+                            {
+                              "field": "AttemptedAt",
+                              "header": {
+                                "title": "Timestamp"
+                              },
+                              "visible": true,
+                              "sort": "desc"
+                            },
+                            {
+                              "field": "UserDisplayName",
+                              "header": {
+                                "title": "User"
+                              },
+                              "visible": true
+                            },
+                            {
+                              "field": "LogEntityTypeName",
+                              "header": {
+                                "title": "Entity Type"
+                              },
+                              "visible": true
+                            },
+                            {
+                              "field": "ProcedureName",
+                              "header": {
+                                "title": "Procedure"
+                              },
+                              "visible": true
+                            },
+                            {
+                              "field": "FailureReason",
+                              "header": {
+                                "title": "Failure Reason"
+                              },
+                              "visible": true
+                            }
                           ],
-                          "filter": { "enabled": false },
-                          "rows": { "selection": { "enabled": true, "selectionMode": "single" } },
-                          "style": { "classes": "data-table" }
+                          "filter": {
+                            "enabled": false
+                          },
+                          "rows": {
+                            "selection": {
+                              "enabled": true,
+                              "selectionMode": "single"
+                            }
+                          },
+                          "style": {
+                            "classes": "data-table"
+                          }
+                        },
+                        "events": {
+                          "component": {
+                            "onRowClick": {
+                              "type": "script",
+                              "scope": "G",
+                              "config": {
+                                "script": "\trow = event.row if hasattr(event, \"row\") else None\n\tdata = row.data if row and hasattr(row, \"data\") else None\n\tif data is None:\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid=\"mpp-failure-detail\",\n\t\tview=\"BlueRidge/Components/Popups/FailureDetail\",\n\t\tmodal=True,\n\t\tdraggable=False,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t\"id\":                  data.get(\"Id\"),\n\t\t\t\"attemptedAt\":         data.get(\"AttemptedAt\"),\n\t\t\t\"userDisplayName\":     data.get(\"UserDisplayName\"),\n\t\t\t\"logEntityTypeName\":   data.get(\"LogEntityTypeName\"),\n\t\t\t\"entityId\":            data.get(\"EntityId\"),\n\t\t\t\"logEventTypeCode\":    data.get(\"LogEventTypeCode\"),\n\t\t\t\"procedureName\":       data.get(\"ProcedureName\"),\n\t\t\t\"failureReason\":       data.get(\"FailureReason\"),\n\t\t\t\"attemptedParameters\": data.get(\"AttemptedParameters\")\n\t\t}\n\t)"
+                              }
+                            }
+                          }
                         }
                       }
                     ]
@@ -385,6 +826,36 @@
           }
         ]
       }
-    ]
+    ],
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "applySearch",
+          "params": [
+            "self"
+          ],
+          "script": "\tresult = BlueRidge.Audit.FailureLog.search(self.view.custom.filter)\n\tself.view.custom.rows       = result[\"rows\"]\n\tself.view.custom.totalCount = result[\"totalCount\"]\n\tself.view.custom.topReasons = result[\"topReasons\"]\n\tself.view.custom.topProcs   = result[\"topProcs\"]"
+        },
+        {
+          "name": "resetFilter",
+          "params": [
+            "self"
+          ],
+          "script": "\timport system\n\tnow = system.date.now()\n\tself.view.custom.filter = {\n\t\t\"startDate\":      system.date.addDays(now, -7),\n\t\t\"endDate\":        now,\n\t\t\"entityTypeCode\": None,\n\t\t\"procedureName\":  None,\n\t\t\"appUserId\":      None,\n\t\t\"searchText\":     \"\"\n\t}\n\tself.applySearch()"
+        }
+      ],
+      "extensionFunctions": {
+        "onStartup": "\tself.resetFilter()"
+      },
+      "messageHandlers": [
+        {
+          "messageType": "applyFilterFromTile",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tfield = payload.get(\"field\") if payload else None\n\tvalue = payload.get(\"value\") if payload else None\n\tif not field:\n\t\treturn\n\tf = dict(self.view.custom.filter or {})\n\tif field == \"failureReasonText\":\n\t\tf[\"searchText\"] = value or \"\"\n\telif field == \"procedureName\":\n\t\tf[\"procedureName\"] = value\n\tself.view.custom.filter = f\n\tself.applySearch()"
+        }
+      ]
+    }
   }
 }
