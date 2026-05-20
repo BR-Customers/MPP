@@ -1,8 +1,24 @@
 {
   "custom": {
     "mode":      "create",
-    "selected":  { "meta": null },
-    "editDraft": { "meta": null },
+    "selected":  {
+      "meta": {
+        "Id":             null,
+        "Code":           "",
+        "Description":    "",
+        "AreaLocationId": null,
+        "IsExcused":      false
+      }
+    },
+    "editDraft": {
+      "meta": {
+        "Id":             null,
+        "Code":           "",
+        "Description":    "",
+        "AreaLocationId": null,
+        "IsExcused":      false
+      }
+    },
     "areas":     [],
     "_initFired": false
   },
@@ -293,7 +309,8 @@
                       "config": { "bidirectional": true, "path": "view.custom.editDraft.meta.IsExcused" }
                     }
                   }
-                }
+                },
+                "props": { "text": "" }
               },
               {
                 "type": "ia.display.label",
