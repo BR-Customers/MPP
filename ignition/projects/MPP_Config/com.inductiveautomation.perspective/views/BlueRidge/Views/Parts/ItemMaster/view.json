@@ -243,7 +243,7 @@
                   "props.instances": {
                     "binding": {
                       "config": {
-                        "expression": "forEach({view.custom.items}, {\u0027item\u0027: it, \u0027selectedId\u0027: {view.custom.selected.meta.Id}})"
+                        "expression": "runScript(\"BlueRidge.Parts.Item.getInstancesForFlexRepeater\", 0, {view.custom.search}, {view.custom.typeFilter}, {view.custom.selected.meta.Id})"
                       },
                       "type": "expr"
                     }

@@ -136,3 +136,13 @@ def getAllForList(searchText="", typeFilter="All Types"):
         includeDeprecated=False,
     )
     return mapItemRowsForList(rows, typeFilter)
+
+
+def getInstancesForFlexRepeater(searchText="", typeFilter="All Types", selectedId=0):
+    """Composes the flex-repeater instances payload for the items list.
+    Each instance is {'item': <row>, 'selectedId': <int>}. Replaces the
+    forEach(...) expression Ignition's scanner rejected for nested
+    reference paths inside the row-template dict literal."""
+    selectedId = _u(selectedId) or 0
+    rows = getAllForList(searchText, typeFilter)
+    return [{"item": r, "selectedId": selectedId} for r in rows]
