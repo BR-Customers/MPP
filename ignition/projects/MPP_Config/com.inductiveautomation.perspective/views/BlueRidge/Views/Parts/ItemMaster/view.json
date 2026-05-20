@@ -1,34 +1,24 @@
 {
-  "propConfig": {
-    "custom.items": {
-      "binding": {
-        "type": "expr",
-        "config": {
-          "expression": "runScript(\"BlueRidge.Parts.Item.getAllForList\", 0, {view.custom.search}, {view.custom.typeFilter})"
-        }
-      }
-    }
-  },
   "custom": {
     "activeTab": "containerConfig",
     "editDraft": {
       "meta": {
-        "Id": 0,
-        "PartNumber": "",
+        "CountryOfOrigin": "",
+        "DefaultSubLotQty": 0,
         "Description": "",
+        "Id": 0,
         "ItemTypeId": 0,
         "ItemTypeName": "",
         "MacolaPartNumber": "",
-        "DefaultSubLotQty": 0,
         "MaxLotSize": 0,
-        "UomId": 0,
-        "UomCode": "",
-        "UnitWeight": 0,
-        "WeightUomId": 0,
-        "WeightUomCode": "",
-        "CountryOfOrigin": "",
         "MaxParts": 0,
-        "PartsPerBasket": 0
+        "PartNumber": "",
+        "PartsPerBasket": 0,
+        "UnitWeight": 0,
+        "UomCode": "",
+        "UomId": 0,
+        "WeightUomCode": "",
+        "WeightUomId": 0
       }
     },
     "itemTypes": [
@@ -38,27 +28,26 @@
       "Finished Good",
       "Pass-Through"
     ],
-    "items": [],
     "mode": "view",
     "search": "",
     "selected": {
       "meta": {
-        "Id": 0,
-        "PartNumber": "",
+        "CountryOfOrigin": "",
+        "DefaultSubLotQty": 0,
         "Description": "",
+        "Id": 0,
         "ItemTypeId": 0,
         "ItemTypeName": "",
         "MacolaPartNumber": "",
-        "DefaultSubLotQty": 0,
         "MaxLotSize": 0,
-        "UomId": 0,
-        "UomCode": "",
-        "UnitWeight": 0,
-        "WeightUomId": 0,
-        "WeightUomCode": "",
-        "CountryOfOrigin": "",
         "MaxParts": 0,
-        "PartsPerBasket": 0
+        "PartNumber": "",
+        "PartsPerBasket": 0,
+        "UnitWeight": 0,
+        "UomCode": "",
+        "UomId": 0,
+        "WeightUomCode": "",
+        "WeightUomId": 0
       }
     },
     "typeFilter": "All Types",
@@ -69,6 +58,16 @@
     ]
   },
   "params": {},
+  "propConfig": {
+    "custom.items": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Item.getAllForList\", 0, {view.custom.search}, {view.custom.typeFilter})"
+        },
+        "type": "expr"
+      }
+    }
+  },
   "props": {
     "defaultSize": {
       "height": 720,
@@ -378,7 +377,7 @@
                           "component": {
                             "onActionPerformed": {
                               "config": {
-                                "script": "BlueRidge.Common.Notify.toast(\u0027Not wired yet\u0027, \u0027Item save lands in Phase 3.\u0027, \u0027info\u0027, 5)"
+                                "script": "\tBlueRidge.Common.Notify.toast(\u0027Not wired yet\u0027, \u0027Item save lands in Phase 3.\u0027, \u0027info\u0027, 5)"
                               },
                               "scope": "C",
                               "type": "script"
@@ -401,7 +400,7 @@
                           "component": {
                             "onActionPerformed": {
                               "config": {
-                                "script": "BlueRidge.Common.Notify.toast(\u0027Not wired yet\u0027, \u0027Item deprecate lands in Phase 3.\u0027, \u0027info\u0027, 5)"
+                                "script": "\tBlueRidge.Common.Notify.toast(\u0027Not wired yet\u0027, \u0027Item deprecate lands in Phase 3.\u0027, \u0027info\u0027, 5)"
                               },
                               "scope": "C",
                               "type": "script"
@@ -988,15 +987,14 @@
                     "propConfig": {
                       "props.params.value": {
                         "binding": {
-                          "type": "property",
-                          "config": {"path": "view.custom.editDraft.meta.Id"}
+                          "config": {
+                            "path": "view.custom.editDraft.meta.Id"
+                          },
+                          "type": "property"
                         }
                       }
                     },
                     "props": {
-                      "params": {
-                        "value": 0
-                      },
                       "path": "BlueRidge/Components/Parts/ItemMaster/ContainerConfig"
                     },
                     "type": "ia.display.view"
@@ -1011,15 +1009,14 @@
                     "propConfig": {
                       "props.params.value": {
                         "binding": {
-                          "type": "property",
-                          "config": {"path": "view.custom.editDraft.meta.Id"}
+                          "config": {
+                            "path": "view.custom.editDraft.meta.Id"
+                          },
+                          "type": "property"
                         }
                       }
                     },
                     "props": {
-                      "params": {
-                        "value": 0
-                      },
                       "path": "BlueRidge/Components/Parts/ItemMaster/Routes"
                     },
                     "type": "ia.display.view"
@@ -1034,15 +1031,14 @@
                     "propConfig": {
                       "props.params.value": {
                         "binding": {
-                          "type": "property",
-                          "config": {"path": "view.custom.editDraft.meta.Id"}
+                          "config": {
+                            "path": "view.custom.editDraft.meta.Id"
+                          },
+                          "type": "property"
                         }
                       }
                     },
                     "props": {
-                      "params": {
-                        "value": 0
-                      },
                       "path": "BlueRidge/Components/Parts/ItemMaster/Boms"
                     },
                     "type": "ia.display.view"
@@ -1057,15 +1053,14 @@
                     "propConfig": {
                       "props.params.value": {
                         "binding": {
-                          "type": "property",
-                          "config": {"path": "view.custom.editDraft.meta.Id"}
+                          "config": {
+                            "path": "view.custom.editDraft.meta.Id"
+                          },
+                          "type": "property"
                         }
                       }
                     },
                     "props": {
-                      "params": {
-                        "value": 0
-                      },
                       "path": "BlueRidge/Components/Parts/ItemMaster/QualitySpecs"
                     },
                     "type": "ia.display.view"
@@ -1080,15 +1075,14 @@
                     "propConfig": {
                       "props.params.value": {
                         "binding": {
-                          "type": "property",
-                          "config": {"path": "view.custom.editDraft.meta.Id"}
+                          "config": {
+                            "path": "view.custom.editDraft.meta.Id"
+                          },
+                          "type": "property"
                         }
                       }
                     },
                     "props": {
-                      "params": {
-                        "value": 0
-                      },
                       "path": "BlueRidge/Components/Parts/ItemMaster/Eligibility"
                     },
                     "type": "ia.display.view"
@@ -1108,7 +1102,10 @@
                     "Boms",
                     "Quality Specs",
                     "Eligibility"
-                  ]
+                  ],
+                  "style": {
+                    "classes": "tab-host"
+                  }
                 },
                 "type": "ia.container.tab"
               }
@@ -1123,10 +1120,10 @@
             "propConfig": {
               "position.display": {
                 "binding": {
-                  "type": "expr",
                   "config": {
-                    "expression": "{view.custom.mode} != \"view\""
-                  }
+                    "expression": "{view.custom.mode} !\u003d \"view\""
+                  },
+                  "type": "expr"
                 }
               }
             },
@@ -1139,6 +1136,20 @@
             "type": "ia.container.flex"
           },
           {
+            "children": [
+              {
+                "meta": {
+                  "name": "EmptyStateLabel"
+                },
+                "props": {
+                  "style": {
+                    "fontSize": "13px"
+                  },
+                  "text": "Select an item from the list to view its details, or click + Add Item to create a new one."
+                },
+                "type": "ia.display.label"
+              }
+            ],
             "meta": {
               "name": "EmptyState"
             },
@@ -1149,37 +1160,23 @@
             "propConfig": {
               "position.display": {
                 "binding": {
-                  "type": "expr",
                   "config": {
-                    "expression": "{view.custom.mode} = \"view\""
-                  }
+                    "expression": "{view.custom.mode} \u003d \"view\""
+                  },
+                  "type": "expr"
                 }
               }
             },
             "props": {
-              "direction": "column",
               "alignItems": "center",
+              "direction": "column",
               "justify": "center",
               "style": {
+                "background": "var(--mpp-surface-card)",
                 "color": "var(--mpp-text-muted)",
-                "fontStyle": "italic",
-                "background": "var(--mpp-surface-card)"
+                "fontStyle": "italic"
               }
             },
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "EmptyStateLabel"
-                },
-                "props": {
-                  "text": "Select an item from the list to view its details, or click + Add Item to create a new one.",
-                  "style": {
-                    "fontSize": "13px"
-                  }
-                }
-              }
-            ],
             "type": "ia.container.flex"
           }
         ],
@@ -1215,7 +1212,7 @@
         {
           "messageType": "itemRowClicked",
           "pageScope": true,
-          "script": "\tclickedId = payload.get('id') if payload else None\n\tif clickedId is None:\n\t\treturn\n\titemMeta = BlueRidge.Parts.Item.getOne(clickedId)\n\tif itemMeta is None:\n\t\tBlueRidge.Common.Notify.toast('Item not found', 'Item id ' + str(clickedId) + ' no longer exists.', 'warning')\n\t\treturn\n\tself.view.custom.selected  = {'meta': dict(itemMeta)}\n\tself.view.custom.editDraft = {'meta': dict(itemMeta)}\n\tself.view.custom.mode = 'update'",
+          "script": "\tclickedId \u003d payload.get(\u0027id\u0027) if payload else None\n\tif clickedId is None:\n\t\treturn\n\titemMeta \u003d BlueRidge.Parts.Item.getOne(clickedId)\n\tif itemMeta is None:\n\t\tBlueRidge.Common.Notify.toast(\u0027Item not found\u0027, \u0027Item id \u0027 + str(clickedId) + \u0027 no longer exists.\u0027, \u0027warning\u0027)\n\t\treturn\n\tself.view.custom.selected  \u003d {\u0027meta\u0027: dict(itemMeta)}\n\tself.view.custom.editDraft \u003d {\u0027meta\u0027: dict(itemMeta)}\n\tself.view.custom.mode \u003d \u0027update\u0027",
           "sessionScope": false,
           "viewScope": false
         }

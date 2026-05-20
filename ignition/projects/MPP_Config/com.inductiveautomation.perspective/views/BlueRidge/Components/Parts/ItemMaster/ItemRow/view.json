@@ -5,68 +5,34 @@
     "selectedId": 0
   },
   "propConfig": {
-    "params.item":       {"paramDirection": "input"},
-    "params.selectedId": {"paramDirection": "input"}
+    "params.item": {
+      "paramDirection": "input"
+    },
+    "params.selectedId": {
+      "paramDirection": "input"
+    }
   },
   "props": {
     "defaultSize": {
-      "width": 240,
-      "height": 36
+      "height": 36,
+      "width": 240
     }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": {"name": "root"},
-    "events": {
-      "dom": {
-        "onClick": {
-          "type": "script",
-          "scope": "G",
-          "config": {
-            "script": "system.perspective.sendMessage('itemRowClicked', payload={'id': self.view.params.item.get('id')}, scope='page')"
-          }
-        }
-      }
-    },
-    "propConfig": {
-      "props.style.classes": {
-        "binding": {
-          "type": "expr",
-          "config": {
-            "expression": "if({view.params.item.id} = {view.params.selectedId}, 'tree-item tree-item-selected', 'tree-item')"
-          }
-        }
-      }
-    },
-    "props": {
-      "direction": "row",
-      "alignItems": "center",
-      "justify": "space-between",
-      "style": {
-        "padding": "6px 10px",
-        "cursor": "pointer",
-        "borderBottom": "1px solid var(--mpp-border-subtle)"
-      }
-    },
     "children": [
       {
-        "type": "ia.container.flex",
-        "meta": {"name": "RowText"},
-        "position": {"grow": 1, "shrink": 1, "basis": "0"},
-        "props": {
-          "direction": "column",
-          "style": {"overflow": "hidden", "gap": "1px"}
-        },
         "children": [
           {
-            "type": "ia.display.label",
-            "meta": {"name": "LabelPartNumber"},
-            "position": {"basis": "auto"},
+            "meta": {
+              "name": "LabelPartNumber"
+            },
             "propConfig": {
               "props.text": {
                 "binding": {
-                  "type": "property",
-                  "config": {"path": "view.params.item.partNumber"}
+                  "config": {
+                    "path": "view.params.item.partNumber"
+                  },
+                  "type": "property"
                 }
               }
             },
@@ -75,49 +41,70 @@
                 "fontSize": "12px",
                 "fontWeight": "600"
               }
-            }
+            },
+            "type": "ia.display.label"
           },
           {
-            "type": "ia.display.label",
-            "meta": {"name": "LabelDescription"},
-            "position": {"basis": "auto"},
+            "meta": {
+              "name": "LabelDescription"
+            },
             "propConfig": {
               "props.text": {
                 "binding": {
-                  "type": "property",
-                  "config": {"path": "view.params.item.description"}
+                  "config": {
+                    "path": "view.params.item.description"
+                  },
+                  "type": "property"
                 }
               }
             },
             "props": {
               "style": {
-                "fontSize": "11px",
                 "color": "var(--mpp-text-muted)",
-                "whiteSpace": "nowrap",
+                "fontSize": "11px",
                 "overflow": "hidden",
-                "textOverflow": "ellipsis"
+                "textOverflow": "ellipsis",
+                "whiteSpace": "nowrap"
               }
-            }
+            },
+            "type": "ia.display.label"
           }
-        ]
+        ],
+        "meta": {
+          "name": "RowText"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "1px",
+            "overflow": "hidden"
+          }
+        },
+        "type": "ia.container.flex"
       },
       {
-        "type": "ia.display.label",
-        "meta": {"name": "BadgeType"},
-        "position": {"basis": "auto"},
+        "meta": {
+          "name": "BadgeType"
+        },
         "propConfig": {
-          "props.text": {
-            "binding": {
-              "type": "property",
-              "config": {"path": "view.params.item.typeBadge"}
-            }
-          },
           "props.style.classes": {
             "binding": {
-              "type": "expr",
               "config": {
-                "expression": "if({view.params.item.isDraft} = true, 'badge badge-draft', 'badge badge-purple')"
-              }
+                "expression": "if({view.params.item.isDraft} \u003d true, \u0027badge badge-draft\u0027, \u0027badge badge-purple\u0027)"
+              },
+              "type": "expr"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.item.typeBadge"
+              },
+              "type": "property"
             }
           }
         },
@@ -126,8 +113,43 @@
             "fontSize": "10px",
             "padding": "1px 5px"
           }
+        },
+        "type": "ia.display.label"
+      }
+    ],
+    "events": {
+      "dom": {
+        "onClick": {
+          "config": {
+            "script": "\tsystem.perspective.sendMessage(\u0027itemRowClicked\u0027, payload\u003d{\u0027id\u0027: self.view.params.item.get(\u0027id\u0027)}, scope\u003d\u0027page\u0027)"
+          },
+          "scope": "G",
+          "type": "script"
         }
       }
-    ]
+    },
+    "meta": {
+      "name": "root"
+    },
+    "propConfig": {
+      "props.style.classes": {
+        "binding": {
+          "config": {
+            "expression": "if({view.params.item.id} \u003d {view.params.selectedId}, \u0027tree-item tree-item-selected\u0027, \u0027tree-item\u0027)"
+          },
+          "type": "expr"
+        }
+      }
+    },
+    "props": {
+      "alignItems": "center",
+      "justify": "space-between",
+      "style": {
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "cursor": "pointer",
+        "padding": "6px 10px"
+      }
+    },
+    "type": "ia.container.flex"
   }
 }

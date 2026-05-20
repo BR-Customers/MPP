@@ -36,6 +36,12 @@
               "name": "DropdownVersion"
             },
             "propConfig": {
+              "props.value": {
+                "binding": {
+                  "config": {"path": "view.custom.data.publishedVersion"},
+                  "type": "property"
+                }
+              },
               "props.options": {
                 "binding": {
                   "config": {
@@ -79,7 +85,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "BlueRidge.Common.Notify.toast(\u0027Not wired yet\u0027, \u0027Routes versioning workflow lands in Phase 5.\u0027, \u0027info\u0027, 5)"
+                    "script": "\tBlueRidge.Common.Notify.toast(\u0027Not wired yet\u0027, \u0027Routes versioning workflow lands in Phase 5.\u0027, \u0027info\u0027, 5)"
                   },
                   "scope": "C",
                   "type": "script"
