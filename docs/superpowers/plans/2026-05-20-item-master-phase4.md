@@ -1,12 +1,12 @@
-# Item Master Phase 4 — Implementation Plan (ContainerConfig Save)
+# Item Master Phase 4 — Implementation Plan (ContainerConfig Section)
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. **Read `project_mpp_item_master_pattern` memory before starting** — it codifies the per-section ownership pattern this plan implements.
 
-**Goal:** Wire the parent ItemMaster view's Save button to persist `editDraft.containerConfig` via existing `Parts.ContainerConfig_Create` / `_Update` procs, repair the parent↔child binding contract Phase 2 left inconsistent, and add the deferred `TargetWeight` conditional display.
+**Goal:** Retrofit the ContainerConfig tab to the per-section ownership pattern, wire its own Save + Discard via existing `Parts.ContainerConfig_Create` / `_Update` procs, add the deferred `TargetWeight` conditional field, AND lay down the parent's section-dirty + switch-gate infrastructure (Phase 4 is first to ship under the convention, so it builds the infra; later phases inherit it).
 
-**Architecture:** Two new Ignition named queries wrap the existing Create/Update procs. The `BlueRidge.Parts.ContainerConfig` entity script gains `add(data)` and `update(data)` mirroring the DefectCode CRUD shape. The ContainerConfig embedded view is rewired so its form fields bidi-bind to `view.params.value.<field>` (an Object param) instead of its own runScript-populated `custom.data`. The parent view passes `view.custom.editDraft.containerConfig` into that param with `bidirectional: true`, extends `itemRowClicked` to fetch + seed both `editDraft.containerConfig` and `selected.containerConfig`, and adds a `handleSave` customMethod with client-side guards that routes Create vs Update based on the presence of `editDraft.containerConfig.Id`.
+**Architecture:** ContainerConfig embed owns its own `view.custom.selected` and `view.custom.editDraft` LOCALLY; receives only `params.value: itemId` (BIGINT, input-only); fetches its own data on item-id change; has its own Save/Discard buttons; broadcasts dirty state via `sectionDirtyChanged` page-scoped message. Parent maintains `view.custom.sectionDirty` flag map + `pendingSwitch` staging area + ConfirmUnsaved gate on tab clicks and item-row clicks. NO bundled editDraft on parent. NO bidirectional Object-param. Pattern reference: `project_mpp_item_master_pattern` memory.
 
-**Tech Stack:** Ignition Perspective 8.3 (file-based views), Jython 2.7 (script-python modules), SQL Server 2022 (existing procs). No SQL or proc changes — Phase 4 is pure NQ + script + view work.
+**Tech Stack:** Ignition Perspective 8.3 (file-based views), Jython 2.7, SQL Server 2022 (existing procs). No SQL changes — proc + test coverage already exist.
 
 ---
 
@@ -19,20 +19,25 @@ ignition/projects/MPP_Config/
 │   │   ├── ContainerConfig_Create/         [NEW] query.sql + resource.json
 │   │   └── ContainerConfig_Update/         [NEW] query.sql + resource.json
 │   └── script-python/BlueRidge/Parts/
-│       └── ContainerConfig/code.py         [MODIFY] add add() and update()
+│       └── ContainerConfig/code.py         [MODIFY] add add() + update()
 └── com.inductiveautomation.perspective/views/BlueRidge/
     ├── Components/Parts/ItemMaster/
-    │   └── ContainerConfig/view.json       [MODIFY] rewire fields to params.value, add TargetWeight
+    │   └── ContainerConfig/view.json       [REWRITE] full retrofit to per-section pattern
     └── Views/Parts/ItemMaster/
-        └── view.json                       [MODIFY] EmbedContainerConfig binding, itemRowClicked, BtnSave, custom seeds
+        └── view.json                       [HEAVY MODIFY] demolish old bundled editDraft/selected;
+                                                         add selectedItemId + sectionDirty + pendingSwitch;
+                                                         rewire all 5 tab embeds to selectedItemId;
+                                                         add gate customMethods + message handlers;
+                                                         add per-tab dirty dot indicators
 ```
 
-Reference files (read-only) for the executor:
+Reference files (read-only):
 - `sql/migrations/repeatable/R__Parts_ContainerConfig_Create.sql` — proc signature truth
 - `sql/migrations/repeatable/R__Parts_ContainerConfig_Update.sql` — proc signature truth
-- `ignition/projects/MPP_Config/ignition/named-query/quality/DefectCode_Create/resource.json` — NQ resource.json reference for a Create proc
-- `ignition/projects/MPP_Config/ignition/named-query/quality/DefectCode_Update/resource.json` — NQ resource.json reference for an Update proc
-- `ignition/projects/MPP_Config/ignition/script-python/BlueRidge/Quality/DefectCode/code.py` — entity-script CRUD shape reference
+- `ignition/projects/MPP_Config/ignition/named-query/quality/DefectCode_Create/resource.json` — NQ resource.json reference (Create with NewId)
+- `ignition/projects/MPP_Config/ignition/named-query/quality/DefectCode_Update/resource.json` — NQ resource.json reference (Update, no NewId)
+- `ignition/projects/MPP_Config/ignition/script-python/BlueRidge/Quality/DefectCode/code.py` — entity script CRUD shape reference
+- `ignition/projects/MPP_Config/com.inductiveautomation.perspective/views/BlueRidge/Components/Popups/ConfirmUnsaved/view.json` — the popup reused for the switch gate
 - `docs/superpowers/specs/2026-05-20-item-master-phase4-design.md` — companion design spec
 
 ---
@@ -43,18 +48,16 @@ Reference files (read-only) for the executor:
 - Create: `ignition/projects/MPP_Config/ignition/named-query/parts/ContainerConfig_Create/query.sql`
 - Create: `ignition/projects/MPP_Config/ignition/named-query/parts/ContainerConfig_Create/resource.json`
 
-- [ ] **Step 1: Read the reference NQ resource.json**
+- [ ] **Step 1: Read the DefectCode_Create reference resource.json**
 
-```bash
-type ignition\projects\MPP_Config\ignition\named-query\quality\DefectCode_Create\resource.json
+```powershell
+Get-Content ignition\projects\MPP_Config\ignition\named-query\quality\DefectCode_Create\resource.json
 ```
-Use it as the template for the field ordering, scope, version, and sqlType enum. **Do not paraphrase from memory** — match this file's exact JSON shape.
+Match the exact JSON field order, top-level `attributes` shape, scope/version/database keys.
 
-- [ ] **Step 2: Create the query.sql file**
+- [ ] **Step 2: Create the query.sql**
 
 Path: `ignition/projects/MPP_Config/ignition/named-query/parts/ContainerConfig_Create/query.sql`
-
-Content (newline-terminated):
 
 ```sql
 EXEC Parts.ContainerConfig_Create
@@ -69,17 +72,15 @@ EXEC Parts.ContainerConfig_Create
     @AppUserId         = :appUserId
 ```
 
-- [ ] **Step 3: Create the resource.json**
+- [ ] **Step 3: Create resource.json**
 
-Path: `ignition/projects/MPP_Config/ignition/named-query/parts/ContainerConfig_Create/resource.json`
-
-Mirror the DefectCode_Create resource.json exactly — `scope:"DG"`, `version:2`, `database:"MPP"`, `type:"Query"`, `cacheEnabled:false`, `lastModification.actor:"claude"`, `lastModificationSignature:""`. Param ordering matches the SQL above. sqlType values:
+Mirror DefectCode_Create shape. Params + sqlType:
 
 | param | sqlType |
 |---|---|
 | `itemId` | `3` (Int8 / BIGINT) |
 | `traysPerContainer` | `4` (Int4 / INT) |
-| `partsPerTray` | `4` (Int4 / INT) |
+| `partsPerTray` | `4` |
 | `isSerialized` | `6` (Boolean / BIT) |
 | `dunnageCode` | `7` (String / NVARCHAR) |
 | `customerCode` | `7` |
@@ -87,31 +88,27 @@ Mirror the DefectCode_Create resource.json exactly — `scope:"DG"`, `version:2`
 | `targetWeight` | `8` (Decimal / DECIMAL) |
 | `appUserId` | `3` |
 
-If the DefectCode_Create reference uses any sqlType not listed here, prefer the reference's exact enum.
+If the reference's existing INT or DECIMAL params disagree with these guesses, prefer the reference's enums.
 
 - [ ] **Step 4: Validate JSON**
 
 ```powershell
 try { Get-Content 'ignition\projects\MPP_Config\ignition\named-query\parts\ContainerConfig_Create\resource.json' -Raw | ConvertFrom-Json | Out-Null; 'OK' } catch { 'BAD: ' + $_.Exception.Message }
 ```
-Expected: `OK`
 
-- [ ] **Step 5: Run gateway scan**
+- [ ] **Step 5: Gateway scan**
 
 ```powershell
 .\scan.ps1
 ```
-Expected: JSON response with `scanActive` and a short `lastScanDuration` (~250ms). No errors.
 
-- [ ] **Step 6: Smoke from Designer Script Console**
-
-(Manual / Jacques — captured in the plan so the executor doesn't skip it.) In Designer Script Console:
+- [ ] **Step 6: Smoke from Designer Script Console** (manual; capture in commit if deferred)
 
 ```python
 print system.db.runNamedQuery(
     "parts/ContainerConfig_Create",
     {
-        "itemId":            <a real Item Id with NO existing active config>,
+        "itemId":            <a real Item with NO existing active config>,
         "traysPerContainer": 4,
         "partsPerTray":      12,
         "isSerialized":      True,
@@ -122,10 +119,7 @@ print system.db.runNamedQuery(
         "appUserId":         2,
     })
 ```
-
-Expected: a Dataset with one row, columns `Status, Message, NewId`. `Status == 1` and `NewId` a positive BIGINT. If `Status == 0`, read `Message` and fix the cause before proceeding.
-
-If you cannot smoke from Designer right now, mark this step deferred and capture in commit message — but Task 6 below depends on this proc behaving as expected.
+Expected: Dataset row with `Status=1`, `Message`, `NewId` a positive BIGINT.
 
 - [ ] **Step 7: Commit**
 
@@ -144,16 +138,14 @@ Wraps Parts.ContainerConfig_Create stored proc. Phase 4 add path."
 - Create: `ignition/projects/MPP_Config/ignition/named-query/parts/ContainerConfig_Update/query.sql`
 - Create: `ignition/projects/MPP_Config/ignition/named-query/parts/ContainerConfig_Update/resource.json`
 
-- [ ] **Step 1: Read the reference NQ resource.json**
+- [ ] **Step 1: Read DefectCode_Update reference**
 
-```bash
-type ignition\projects\MPP_Config\ignition\named-query\quality\DefectCode_Update\resource.json
+```powershell
+Get-Content ignition\projects\MPP_Config\ignition\named-query\quality\DefectCode_Update\resource.json
 ```
-This Update reference does NOT return `NewId` — only `Status, Message`. Match its shape exactly.
+Update procs return `Status, Message` only — no `NewId`.
 
-- [ ] **Step 2: Create the query.sql file**
-
-Path: `ignition/projects/MPP_Config/ignition/named-query/parts/ContainerConfig_Update/query.sql`
+- [ ] **Step 2: Create query.sql**
 
 ```sql
 EXEC Parts.ContainerConfig_Update
@@ -168,9 +160,9 @@ EXEC Parts.ContainerConfig_Update
     @AppUserId         = :appUserId
 ```
 
-- [ ] **Step 3: Create the resource.json**
+- [ ] **Step 3: Create resource.json**
 
-Mirror the DefectCode_Update reference exactly. Param ordering matches the SQL above. sqlType table same as Task 1, with `id` replacing `itemId` (still sqlType `3`).
+Mirror DefectCode_Update. Same sqlType table as Task 1 with `id` (sqlType `3`) replacing `itemId`.
 
 - [ ] **Step 4: Validate JSON**
 
@@ -178,7 +170,7 @@ Mirror the DefectCode_Update reference exactly. Param ordering matches the SQL a
 try { Get-Content 'ignition\projects\MPP_Config\ignition\named-query\parts\ContainerConfig_Update\resource.json' -Raw | ConvertFrom-Json | Out-Null; 'OK' } catch { 'BAD: ' + $_.Exception.Message }
 ```
 
-- [ ] **Step 5: Run gateway scan**
+- [ ] **Step 5: Gateway scan**
 
 ```powershell
 .\scan.ps1
@@ -190,19 +182,17 @@ try { Get-Content 'ignition\projects\MPP_Config\ignition\named-query\parts\Conta
 print system.db.runNamedQuery(
     "parts/ContainerConfig_Update",
     {
-        "id":                <the NewId from Task 1's smoke>,
+        "id":                <NewId from Task 1>,
         "traysPerContainer": 5,
         "partsPerTray":      14,
         "isSerialized":      True,
-        "dunnageCode":       "TEST-DUNNAGE-UPDATED",
+        "dunnageCode":       "TEST-UPDATED",
         "customerCode":      "TEST-CUST",
         "closureMethod":     "ByWeight",
         "targetWeight":      18.75,
         "appUserId":         2,
     })
 ```
-
-Expected: Dataset row with `Status == 1`. If `Status == 0`, read `Message`.
 
 - [ ] **Step 7: Commit**
 
@@ -215,28 +205,18 @@ Wraps Parts.ContainerConfig_Update stored proc. Phase 4 update path."
 
 ---
 
-### Task 3: Extend `BlueRidge.Parts.ContainerConfig` entity script with `add` and `update`
+### Task 3: Extend `BlueRidge.Parts.ContainerConfig` entity script with `add` + `update`
 
 **Files:**
 - Modify: `ignition/projects/MPP_Config/ignition/script-python/BlueRidge/Parts/ContainerConfig/code.py`
 
-- [ ] **Step 1: Read the current script**
+- [ ] **Step 1: Read current script**
 
-```bash
-type ignition\projects\MPP_Config\ignition\script-python\BlueRidge\Parts\ContainerConfig\code.py
-```
-Confirm Phase 2's surface is just `_u()` + `getByItem()`.
+Confirm Phase 2 surface is just `_u` + `getByItem`.
 
-- [ ] **Step 2: Read the DefectCode entity script as the shape reference**
+- [ ] **Step 2: Read DefectCode entity script** for the CRUD shape reference.
 
-```bash
-type ignition\projects\MPP_Config\ignition\script-python\BlueRidge\Quality\DefectCode\code.py
-```
-Match its `add` / `update` function decoration: `_u(data)`, `Common.Util.log("data=%s" % data)`, `Common.Db.execMutation(...)` with camelCase NQ params, AppUserId pulled from `Common.Util._currentAppUserId()`.
-
-- [ ] **Step 3: Append `add()` and `update()` to ContainerConfig/code.py**
-
-Insert these two functions after the existing `getByItem` definition. Keep the existing `_u` and `getByItem` untouched.
+- [ ] **Step 3: Append two functions to ContainerConfig/code.py** (after `getByItem`):
 
 ```python
 def add(data):
@@ -295,13 +275,13 @@ def update(data):
     )
 ```
 
-- [ ] **Step 4: Run gateway scan**
+- [ ] **Step 4: Gateway scan**
 
 ```powershell
 .\scan.ps1
 ```
 
-- [ ] **Step 5: Smoke from Designer Script Console**
+- [ ] **Step 5: Smoke from Script Console**
 
 ```python
 # Create path
@@ -315,12 +295,11 @@ result = BlueRidge.Parts.ContainerConfig.add({
     "DunnageCode":       None,
     "CustomerCode":      None,
 })
-print result
-# Expected: {Status: True/1, Message: ..., NewId: <int>}
+print result   # Expected: {Status: True/1, Message: ..., NewId: <int>}
 
 # Update path
 result = BlueRidge.Parts.ContainerConfig.update({
-    "Id":                <the NewId above>,
+    "Id":                <NewId above>,
     "TraysPerContainer": 3,
     "PartsPerTray":      48,
     "IsSerialized":      True,
@@ -329,8 +308,7 @@ result = BlueRidge.Parts.ContainerConfig.update({
     "DunnageCode":       "DUN-A",
     "CustomerCode":      "CUST-A",
 })
-print result
-# Expected: {Status: True/1, Message: ...}  -- no NewId on Update
+print result   # Expected: {Status: True/1, Message: ...}
 ```
 
 - [ ] **Step 6: Commit**
@@ -346,47 +324,25 @@ the view."
 
 ---
 
-### Task 4: Rewire ContainerConfig embedded view to use `params.value` as the data source
+### Task 4: Rewrite ContainerConfig embed for per-section ownership
 
 **Files:**
 - Modify: `ignition/projects/MPP_Config/com.inductiveautomation.perspective/views/BlueRidge/Components/Parts/ItemMaster/ContainerConfig/view.json`
 
-- [ ] **Step 1: Confirm Designer is closed**
+Confirm Designer is closed before file edits.
 
-Per `feedback_ignition_view_edit_boundary.md`, file edits to existing views are safe only when Designer is not running. If Designer is open with the parent ItemMaster view loaded, its in-memory cache will fight the disk edit.
+- [ ] **Step 1: Read current view.json** to capture the existing field layout (TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, DunnageCode, CustomerCode). These get preserved with new bindings.
 
-- [ ] **Step 2: Change `params.value` default + remove `custom.data`**
+- [ ] **Step 2: Replace the top-level `custom`, `params`, `propConfig` blocks**
 
-Open `ContainerConfig/view.json`. Replace the top-level `custom` and `params`/`propConfig` blocks:
+The entire file is rewritten in this task because the changes touch every layer. Use Write (not Edit) to replace the file.
 
-**Before (lines 1–18):**
+Top-level structure:
+
 ```json
 {
   "custom": {
-    "data": {}
-  },
-  "params": {
-    "value": 0
-  },
-  "propConfig": {
-    "params.value": {"paramDirection": "input"},
-    "custom.data": {
-      "binding": {
-        "type": "expr",
-        "config": {
-          "expression": "runScript(\"BlueRidge.Parts.ContainerConfig.getByItem\", 0, {view.params.value})"
-        }
-      }
-    }
-  },
-```
-
-**After:**
-```json
-{
-  "custom": {},
-  "params": {
-    "value": {
+    "selected": {
       "Id":                null,
       "ItemId":            null,
       "TraysPerContainer": null,
@@ -396,69 +352,370 @@ Open `ContainerConfig/view.json`. Replace the top-level `custom` and `params`/`p
       "TargetWeight":      null,
       "DunnageCode":       null,
       "CustomerCode":      null
+    },
+    "editDraft": {
+      "Id":                null,
+      "ItemId":            null,
+      "TraysPerContainer": null,
+      "PartsPerTray":      null,
+      "IsSerialized":      false,
+      "ClosureMethod":     null,
+      "TargetWeight":      null,
+      "DunnageCode":       null,
+      "CustomerCode":      null
+    },
+    "isDirty": false
+  },
+  "params": { "value": 0 },
+  "propConfig": {
+    "params.value": {
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.rootContainer.load()"
+      }
+    },
+    "custom.isDirty": {
+      "binding": {
+        "type": "expr",
+        "config": { "expression": "{view.custom.editDraft} != {view.custom.selected}" }
+      },
+      "onChange": {
+        "enabled": true,
+        "script": "\tsystem.perspective.sendMessage(\"sectionDirtyChanged\", payload={\"section\": \"containerConfig\", \"isDirty\": bool(currentValue.value)}, scope=\"page\")"
+      }
     }
   },
-  "propConfig": {
-    "params.value": {"paramDirection": "input"}
+  "props": {
+    "defaultSize": { "width": 800, "height": 220 }
   },
+  "root": { ... see Step 3 ... }
+}
 ```
 
-- [ ] **Step 3: Rebind each form field's path from `view.custom.data.<field>` → `view.params.value.<field>`**
+- [ ] **Step 3: Write the `root` block** — flex column with HeaderRow + FieldRow1 + FieldRow2.
 
-Six bindings to change. Each is a six-character substring replace.
-
-| Field | Old path | New path |
-|---|---|---|
-| InputTraysPerContainer | `view.custom.data.TraysPerContainer` | `view.params.value.TraysPerContainer` |
-| InputPartsPerTray      | `view.custom.data.PartsPerTray`      | `view.params.value.PartsPerTray` |
-| DropdownIsSerialized   | `view.custom.data.IsSerialized`      | `view.params.value.IsSerialized` |
-| DropdownClosureMethod  | `view.custom.data.ClosureMethod`     | `view.params.value.ClosureMethod` |
-| InputDunnageCode       | `view.custom.data.DunnageCode`       | `view.params.value.DunnageCode` |
-| InputCustomerCode      | `view.custom.data.CustomerCode`      | `view.params.value.CustomerCode` |
-
-Use the Edit tool with replace_all=true on the literal substring `view.custom.data.` → `view.params.value.` — all six occurrences should switch in one call. Bidirectional flag stays true.
-
-- [ ] **Step 4: Add the new `TargetWeight` field with conditional display**
-
-Insert this field-container into `FieldRow2`'s `children` array, between `FieldClosureMethod` and `FieldDunnageCode`:
+HeaderRow holds the panel title + Save + Discard buttons:
 
 ```json
 {
   "type": "ia.container.flex",
-  "meta": {"name": "FieldTargetWeight"},
+  "meta": {"name": "HeaderRow"},
   "position": {"basis": "auto"},
-  "propConfig": {
-    "position.display": {
-      "binding": {
-        "type": "expr",
-        "config": {"expression": "{view.params.value.ClosureMethod} = \"ByWeight\""}
-      }
-    }
-  },
-  "props": {"direction": "column", "style": {"classes": "field", "gap": "2px"}},
+  "props": {"direction": "row", "alignItems": "center", "style": {"gap": "8px", "marginBottom": "4px"}},
   "children": [
     {
       "type": "ia.display.label",
-      "meta": {"name": "LabelTargetWeight"},
+      "meta": {"name": "PanelHeader"},
       "position": {"basis": "auto"},
-      "props": {"text": "Target Weight", "style": {"classes": "field-label"}}
+      "props": {
+        "text": "Container Configuration",
+        "style": {"fontSize": "13px", "fontWeight": "600"}
+      }
     },
     {
-      "type": "ia.input.text-field",
-      "meta": {"name": "InputTargetWeight"},
+      "type": "ia.display.label",
+      "meta": {"name": "Spacer"},
+      "position": {"grow": 1},
+      "props": {"text": ""}
+    },
+    {
+      "type": "ia.input.button",
+      "meta": {"name": "BtnDiscard"},
       "position": {"basis": "auto"},
       "propConfig": {
-        "props.text": {
-          "binding": {
-            "type": "property",
-            "config": {"bidirectional": true, "path": "view.params.value.TargetWeight"}
-          }
+        "meta.visible": {
+          "binding": {"type": "property", "config": {"path": "view.custom.isDirty"}}
         }
       },
-      "props": {"style": {"classes": "search-input", "width": "100px"}}
+      "props": {"text": "Discard", "style": {"classes": "btn btn-sm"}},
+      "events": {
+        "component": {
+          "onActionPerformed": {
+            "type": "script",
+            "scope": "G",
+            "config": {"script": "\tself.view.rootContainer.handleDiscard()"}
+          }
+        }
+      }
+    },
+    {
+      "type": "ia.input.button",
+      "meta": {"name": "BtnSave"},
+      "position": {"basis": "auto"},
+      "propConfig": {
+        "meta.visible": {
+          "binding": {"type": "property", "config": {"path": "view.custom.isDirty"}}
+        }
+      },
+      "props": {"text": "Save", "style": {"classes": "btn btn-primary btn-sm"}},
+      "events": {
+        "component": {
+          "onActionPerformed": {
+            "type": "script",
+            "scope": "G",
+            "config": {"script": "\tself.view.rootContainer.handleSave()"}
+          }
+        }
+      }
     }
   ]
 }
+```
+
+FieldRow1 — three fields, all bidi-bound to `view.custom.editDraft.<field>`:
+
+```json
+{
+  "type": "ia.container.flex",
+  "meta": {"name": "FieldRow1"},
+  "position": {"basis": "auto"},
+  "props": {"direction": "row", "style": {"classes": "field-row", "gap": "12px"}},
+  "children": [
+    {
+      "type": "ia.container.flex",
+      "meta": {"name": "FieldTraysPerContainer"},
+      "position": {"basis": "auto"},
+      "props": {"direction": "column", "style": {"classes": "field", "gap": "2px"}},
+      "children": [
+        {"type": "ia.display.label", "meta": {"name": "Label"}, "position": {"basis": "auto"},
+         "props": {"text": "Trays Per Container", "style": {"classes": "field-label"}}},
+        {"type": "ia.input.text-field", "meta": {"name": "Input"}, "position": {"basis": "auto"},
+         "propConfig": {"props.text": {"binding": {"type": "property",
+           "config": {"bidirectional": true, "path": "view.custom.editDraft.TraysPerContainer"}}}},
+         "props": {"style": {"classes": "search-input", "width": "80px"}}}
+      ]
+    },
+    {
+      "type": "ia.container.flex",
+      "meta": {"name": "FieldPartsPerTray"},
+      "position": {"basis": "auto"},
+      "props": {"direction": "column", "style": {"classes": "field", "gap": "2px"}},
+      "children": [
+        {"type": "ia.display.label", "meta": {"name": "Label"}, "position": {"basis": "auto"},
+         "props": {"text": "Parts Per Tray", "style": {"classes": "field-label"}}},
+        {"type": "ia.input.text-field", "meta": {"name": "Input"}, "position": {"basis": "auto"},
+         "propConfig": {"props.text": {"binding": {"type": "property",
+           "config": {"bidirectional": true, "path": "view.custom.editDraft.PartsPerTray"}}}},
+         "props": {"style": {"classes": "search-input", "width": "80px"}}}
+      ]
+    },
+    {
+      "type": "ia.container.flex",
+      "meta": {"name": "FieldIsSerialized"},
+      "position": {"basis": "auto"},
+      "props": {"direction": "column", "style": {"classes": "field", "gap": "2px"}},
+      "children": [
+        {"type": "ia.display.label", "meta": {"name": "Label"}, "position": {"basis": "auto"},
+         "props": {"text": "Serialized", "style": {"classes": "field-label"}}},
+        {"type": "ia.input.dropdown", "meta": {"name": "Input"}, "position": {"basis": "auto"},
+         "propConfig": {"props.value": {"binding": {"type": "property",
+           "config": {"bidirectional": true, "path": "view.custom.editDraft.IsSerialized"}}}},
+         "props": {
+           "options": [{"label": "Yes", "value": true}, {"label": "No", "value": false}],
+           "style": {"classes": "select"}
+         }}
+      ]
+    }
+  ]
+}
+```
+
+FieldRow2 — ClosureMethod, TargetWeight (conditional), DunnageCode, CustomerCode:
+
+```json
+{
+  "type": "ia.container.flex",
+  "meta": {"name": "FieldRow2"},
+  "position": {"basis": "auto"},
+  "props": {"direction": "row", "style": {"classes": "field-row", "gap": "12px"}},
+  "children": [
+    {
+      "type": "ia.container.flex",
+      "meta": {"name": "FieldClosureMethod"},
+      "position": {"basis": "auto"},
+      "props": {"direction": "column", "style": {"classes": "field", "gap": "2px"}},
+      "children": [
+        {"type": "ia.display.label", "meta": {"name": "Label"}, "position": {"basis": "auto"},
+         "props": {"text": "Closure Method", "style": {"classes": "field-label"}}},
+        {"type": "ia.input.dropdown", "meta": {"name": "Input"}, "position": {"basis": "auto"},
+         "propConfig": {"props.value": {"binding": {"type": "property",
+           "config": {"bidirectional": true, "path": "view.custom.editDraft.ClosureMethod"}}}},
+         "props": {
+           "options": [
+             {"label": "ByCount",  "value": "ByCount"},
+             {"label": "ByWeight", "value": "ByWeight"},
+             {"label": "ByVision", "value": "ByVision"}
+           ],
+           "style": {"classes": "select"}
+         }}
+      ]
+    },
+    {
+      "type": "ia.container.flex",
+      "meta": {"name": "FieldTargetWeight"},
+      "position": {"basis": "auto"},
+      "propConfig": {
+        "position.display": {
+          "binding": {"type": "expr",
+            "config": {"expression": "{view.custom.editDraft.ClosureMethod} = \"ByWeight\""}}
+        }
+      },
+      "props": {"direction": "column", "style": {"classes": "field", "gap": "2px"}},
+      "children": [
+        {"type": "ia.display.label", "meta": {"name": "Label"}, "position": {"basis": "auto"},
+         "props": {"text": "Target Weight", "style": {"classes": "field-label"}}},
+        {"type": "ia.input.text-field", "meta": {"name": "Input"}, "position": {"basis": "auto"},
+         "propConfig": {"props.text": {"binding": {"type": "property",
+           "config": {"bidirectional": true, "path": "view.custom.editDraft.TargetWeight"}}}},
+         "props": {"style": {"classes": "search-input", "width": "100px"}}}
+      ]
+    },
+    {
+      "type": "ia.container.flex",
+      "meta": {"name": "FieldDunnageCode"},
+      "position": {"basis": "auto"},
+      "props": {"direction": "column", "style": {"classes": "field", "gap": "2px"}},
+      "children": [
+        {"type": "ia.display.label", "meta": {"name": "Label"}, "position": {"basis": "auto"},
+         "props": {"text": "Dunnage Code", "style": {"classes": "field-label"}}},
+        {"type": "ia.input.text-field", "meta": {"name": "Input"}, "position": {"basis": "auto"},
+         "propConfig": {"props.text": {"binding": {"type": "property",
+           "config": {"bidirectional": true, "path": "view.custom.editDraft.DunnageCode"}}}},
+         "props": {"style": {"classes": "search-input", "width": "120px"}}}
+      ]
+    },
+    {
+      "type": "ia.container.flex",
+      "meta": {"name": "FieldCustomerCode"},
+      "position": {"basis": "auto"},
+      "props": {"direction": "column", "style": {"classes": "field", "gap": "2px"}},
+      "children": [
+        {"type": "ia.display.label", "meta": {"name": "Label"}, "position": {"basis": "auto"},
+         "props": {"text": "Customer Code", "style": {"classes": "field-label"}}},
+        {"type": "ia.input.text-field", "meta": {"name": "Input"}, "position": {"basis": "auto"},
+         "propConfig": {"props.text": {"binding": {"type": "property",
+           "config": {"bidirectional": true, "path": "view.custom.editDraft.CustomerCode"}}}},
+         "props": {"style": {"classes": "search-input", "width": "140px"}}}
+      ]
+    }
+  ]
+}
+```
+
+The root container wraps these three rows with `direction: column`, `style.classes: detail-panel`, `padding: 12px 14px`, `gap: 10px` — matching the Phase 2 file's outer container shape.
+
+- [ ] **Step 4: Add `root.scripts.customMethods` and `messageHandlers`**
+
+Three customMethods + two message handlers under `root.scripts`. Each entry's `params` array MUST NOT include `"self"` (Ignition auto-prepends per the customMethods-scope memory).
+
+```json
+"scripts": {
+  "customMethods": [
+    {
+      "name": "load",
+      "params": [],
+      "script": "<load script — see below>"
+    },
+    {
+      "name": "handleSave",
+      "params": [],
+      "script": "<handleSave script — see below>"
+    },
+    {
+      "name": "handleDiscard",
+      "params": [],
+      "script": "<handleDiscard script — see below>"
+    }
+  ],
+  "messageHandlers": [
+    {
+      "messageType": "sectionSaveRequested",
+      "pageScope": true,
+      "sessionScope": false,
+      "viewScope": false,
+      "script": "\tif payload and payload.get(\"section\") == \"containerConfig\":\n\t\tself.rootContainer.handleSave()"
+    },
+    {
+      "messageType": "sectionDiscardRequested",
+      "pageScope": true,
+      "sessionScope": false,
+      "viewScope": false,
+      "script": "\tif payload and payload.get(\"section\") == \"containerConfig\":\n\t\tself.rootContainer.handleDiscard()"
+    }
+  ]
+}
+```
+
+`load` script (one JSON string with `\n` and `\t` escapes preserved):
+
+```python
+itemId = self.view.params.value
+if not itemId:
+    empty = {
+        "Id": None, "ItemId": None,
+        "TraysPerContainer": None, "PartsPerTray": None,
+        "IsSerialized": False,
+        "ClosureMethod": None, "TargetWeight": None,
+        "DunnageCode": None, "CustomerCode": None,
+    }
+    self.view.custom.selected  = dict(empty)
+    self.view.custom.editDraft = dict(empty)
+    return
+row = BlueRidge.Parts.ContainerConfig.getByItem(itemId) or {}
+loaded = {
+    "Id":                row.get("Id"),
+    "ItemId":            itemId,
+    "TraysPerContainer": row.get("TraysPerContainer"),
+    "PartsPerTray":      row.get("PartsPerTray"),
+    "IsSerialized":      bool(row.get("IsSerialized", False)),
+    "ClosureMethod":     row.get("ClosureMethod"),
+    "TargetWeight":      row.get("TargetWeight"),
+    "DunnageCode":       row.get("DunnageCode"),
+    "CustomerCode":      row.get("CustomerCode"),
+}
+self.view.custom.selected  = dict(loaded)
+self.view.custom.editDraft = dict(loaded)
+```
+
+`handleSave`:
+
+```python
+draft = self.view.custom.editDraft or {}
+itemId = self.view.params.value
+if not itemId:
+    BlueRidge.Common.Notify.toast("No item selected", "Select an item before saving container configuration.", "warning")
+    return
+trays = draft.get("TraysPerContainer")
+partsPerTray = draft.get("PartsPerTray")
+if trays is None or trays <= 0:
+    BlueRidge.Common.Notify.toast("Trays per Container required", "Enter a positive number of trays per container.", "warning")
+    return
+if partsPerTray is None or partsPerTray <= 0:
+    BlueRidge.Common.Notify.toast("Parts per Tray required", "Enter a positive number of parts per tray.", "warning")
+    return
+if draft.get("ClosureMethod") == "ByWeight":
+    tw = draft.get("TargetWeight")
+    if tw is None or tw <= 0:
+        BlueRidge.Common.Notify.toast("Target Weight required", "ByWeight closure requires a positive target weight.", "warning")
+        return
+payload = dict(draft)
+payload["ItemId"] = itemId
+if payload.get("Id"):
+    result       = BlueRidge.Parts.ContainerConfig.update(payload)
+    successTitle = "Container config updated"
+else:
+    result       = BlueRidge.Parts.ContainerConfig.add(payload)
+    successTitle = "Container config saved"
+BlueRidge.Common.Ui.notifyResult(result, successTitle)
+if result and result.get("Status"):
+    self.load()
+```
+
+`handleDiscard`:
+
+```python
+self.view.custom.editDraft = dict(self.view.custom.selected)
 ```
 
 - [ ] **Step 5: Validate JSON**
@@ -467,7 +724,7 @@ Insert this field-container into `FieldRow2`'s `children` array, between `FieldC
 try { Get-Content 'ignition\projects\MPP_Config\com.inductiveautomation.perspective\views\BlueRidge\Components\Parts\ItemMaster\ContainerConfig\view.json' -Raw | ConvertFrom-Json | Out-Null; 'OK' } catch { 'BAD: ' + $_.Exception.Message }
 ```
 
-- [ ] **Step 6: Run gateway scan**
+- [ ] **Step 6: Gateway scan**
 
 ```powershell
 .\scan.ps1
@@ -477,312 +734,320 @@ try { Get-Content 'ignition\projects\MPP_Config\com.inductiveautomation.perspect
 
 ```bash
 git add ignition/projects/MPP_Config/com.inductiveautomation.perspective/views/BlueRidge/Components/Parts/ItemMaster/ContainerConfig/
-git commit -m "refactor(item-master): ContainerConfig embed binds to params.value
+git commit -m "refactor(item-master): ContainerConfig embed owns its own state
 
-Replace child-owned custom.data + runScript binding with bidirectional
-bindings on params.value.* per the Phase 1/2 spec intent. Parent now
-owns editDraft.containerConfig and pushes it down via Object param
-(rewired in the next commit).
+Per-section ownership pattern (per project_mpp_item_master_pattern
+memory). Embed holds local selected + editDraft, fetches its own
+data on params.value change, has its own Save + Discard buttons,
+broadcasts sectionDirtyChanged page-scoped on dirty transitions,
+listens for sectionSaveRequested + sectionDiscardRequested from
+parent. Adds TargetWeight field with position.display gated on
+ClosureMethod == 'ByWeight'.
 
-Adds TargetWeight field with position.display gated on
-ClosureMethod == 'ByWeight'."
+No more bidi Object-param. params.value is now a plain BIGINT itemId."
 ```
 
 ---
 
-### Task 5: Rewire parent EmbedContainerConfig binding + extend `itemRowClicked` + add containerConfig to initial custom seeds
+### Task 5: Add parent-side gate infrastructure to ItemMaster view
 
 **Files:**
 - Modify: `ignition/projects/MPP_Config/com.inductiveautomation.perspective/views/BlueRidge/Views/Parts/ItemMaster/view.json`
 
-- [ ] **Step 1: Read the current EmbedContainerConfig binding**
+This is the largest task — it touches the parent view's custom props, all five tab-embed bindings, message handlers, and customMethods. Confirm Designer is closed.
 
-Located in the view's first tab Embedded View (`meta.name = "ContainerConfig"`, around line 950–968 per the current file). Verify before editing.
+- [ ] **Step 1: Replace the top-level `custom` block**
 
-- [ ] **Step 2: Change EmbedContainerConfig `props.params.value` binding**
+Demolish the old `editDraft`, `selected`, `mode` properties (which were never properly populated for ContainerConfig anyway). Add the new gate-infrastructure props.
 
 **Before:**
+
 ```json
-"meta": {"name": "ContainerConfig"},
-"propConfig": {
-  "props.params.value": {
-    "binding": {
-      "type": "property",
-      "config": {"path": "view.custom.editDraft.meta.Id"}
-    }
-  }
-},
-"props": {
-  "params": {"value": 0},
-  "path": "BlueRidge/Components/Parts/ItemMaster/ContainerConfig"
-},
-"type": "ia.display.view"
+"custom": {
+  "activeTab": "containerConfig",
+  "editDraft": { ... },
+  "selected":  { ... },
+  "mode": "...",
+  "items": [],
+  "itemTypes": [...],
+  "uoms": [...],
+  "search": "",
+  "typeFilter": "All Types"
+}
 ```
 
 **After:**
+
 ```json
-"meta": {"name": "ContainerConfig"},
+"custom": {
+  "selectedItemId": null,
+  "activeTab":      "containerConfig",
+  "sectionDirty": {
+    "identity":        false,
+    "containerConfig": false,
+    "routes":          false,
+    "boms":            false,
+    "qualitySpecs":    false,
+    "eligibility":     false
+  },
+  "pendingSwitch": null,
+  "items":      [],
+  "itemTypes":  [...],
+  "uoms":       [...],
+  "search":     "",
+  "typeFilter": "All Types"
+}
+```
+
+Preserve `items`, `itemTypes`, `uoms`, `search`, `typeFilter` blocks verbatim — they're Phase 2 read-path infrastructure that still applies.
+
+- [ ] **Step 2: Rewire all five tab embeds' `params.value` to `view.custom.selectedItemId`**
+
+Each of the five Embedded View components (ContainerConfig, Routes, Boms, QualitySpecs, Eligibility) currently has:
+
+```json
 "propConfig": {
   "props.params.value": {
+    "binding": {"type": "property", "config": {"path": "view.custom.editDraft.meta.Id"}}
+  }
+}
+```
+
+Replace ALL FIVE with:
+
+```json
+"propConfig": {
+  "props.params.value": {
+    "binding": {"type": "property", "config": {"path": "view.custom.selectedItemId"}}
+  }
+}
+```
+
+(No `bidirectional: true` — input-only.)
+
+- [ ] **Step 3: Remove identity-field bindings that referenced the deleted editDraft.meta**
+
+The current parent view has Identity-section input bindings like `view.custom.editDraft.meta.PartNumber`. Those paths no longer exist. Phase 3 will carve Identity into its own embed. For Phase 4, the Identity bindings become DEAD until Phase 3 reconstructs them.
+
+**Two options:** (pick one)
+
+  (a) Remove the Identity input bindings entirely — fields render their `props.text`/`props.value` literal defaults (likely empty strings / nulls). Header shows blank until Phase 3.
+  (b) Hide the Identity input section behind `meta.visible: false` so it doesn't render at all in Phase 4. Header area shows the title row + Add/Save/Deprecate buttons only.
+
+Option (b) is cleaner — easier to inspect the view in Designer without "broken" fields. Recommend (b). Implementation: for each Identity-field container under the SummaryRow / Identity panel, set `meta.visible: false`. The fields remain in the JSON for Phase 3 to re-enable.
+
+- [ ] **Step 4: Add per-tab dirty-dot indicators on TabContainer**
+
+The existing TabContainer (around line 1062 of the current view) has `props.tabs: ["Container Config", "Routes", "Boms", "Quality Specs", "Eligibility"]`. Ignition's TabContainer doesn't natively support custom tab labels, but it does support binding the entire `tabs` array. Replace the static array with an expression-bound one that injects the dot:
+
+```json
+"propConfig": {
+  "props.tabs": {
     "binding": {
-      "type": "property",
+      "type": "expr",
       "config": {
-        "bidirectional": true,
-        "path": "view.custom.editDraft.containerConfig"
+        "expression": "[\nif({view.custom.sectionDirty.containerConfig}, '● Container Config', 'Container Config'),\nif({view.custom.sectionDirty.routes},          '● Routes',          'Routes'),\nif({view.custom.sectionDirty.boms},            '● Boms',            'Boms'),\nif({view.custom.sectionDirty.qualitySpecs},    '● Quality Specs',   'Quality Specs'),\nif({view.custom.sectionDirty.eligibility},     '● Eligibility',     'Eligibility')\n]"
       }
     }
   }
-},
-"props": {
-  "params": {"value": {}},
-  "path": "BlueRidge/Components/Parts/ItemMaster/ContainerConfig"
-},
-"type": "ia.display.view"
-```
-
-Leave the four other tab embeds (Routes, Boms, QualitySpecs, Eligibility) bound to `view.custom.editDraft.meta.Id` unchanged — they don't have bidi slices yet.
-
-- [ ] **Step 3: Extend the `itemRowClicked` message handler**
-
-Current handler (in `root.scripts.messageHandlers`, the `itemRowClicked` entry):
-
-```python
-clickedId = payload.get('id') if payload else None
-if clickedId is None:
-    return
-itemMeta = BlueRidge.Parts.Item.getOne(clickedId)
-if itemMeta is None:
-    BlueRidge.Common.Notify.toast('Item not found', 'Item id ' + str(clickedId) + ' no longer exists.', 'warning')
-    return
-self.view.custom.selected  = {'meta': dict(itemMeta)}
-self.view.custom.editDraft = {'meta': dict(itemMeta)}
-self.view.custom.mode = 'update'
-```
-
-Replace its script with (note: this is one string in the JSON, with `\n` and `\t` escapes; write it whole):
-
-```python
-clickedId = payload.get('id') if payload else None
-if clickedId is None:
-    return
-itemMeta = BlueRidge.Parts.Item.getOne(clickedId)
-if itemMeta is None:
-    BlueRidge.Common.Notify.toast('Item not found', 'Item id ' + str(clickedId) + ' no longer exists.', 'warning')
-    return
-ccRow = BlueRidge.Parts.ContainerConfig.getByItem(clickedId) or {}
-cc = {
-    'Id':                ccRow.get('Id'),
-    'ItemId':            clickedId,
-    'TraysPerContainer': ccRow.get('TraysPerContainer'),
-    'PartsPerTray':      ccRow.get('PartsPerTray'),
-    'IsSerialized':      bool(ccRow.get('IsSerialized', False)),
-    'ClosureMethod':     ccRow.get('ClosureMethod'),
-    'TargetWeight':      ccRow.get('TargetWeight'),
-    'DunnageCode':       ccRow.get('DunnageCode'),
-    'CustomerCode':      ccRow.get('CustomerCode'),
-}
-self.view.custom.selected  = {'meta': dict(itemMeta), 'containerConfig': dict(cc)}
-self.view.custom.editDraft = {'meta': dict(itemMeta), 'containerConfig': dict(cc)}
-self.view.custom.mode = 'update'
-```
-
-- [ ] **Step 4: Update the initial `custom.editDraft` and `custom.selected` seeds**
-
-The parent view's top-level `custom` block currently has `editDraft: {meta: {}}` and `selected: {meta: {}}`. Extend each to include the empty `containerConfig` slice so the binding has a valid path before the first item click:
-
-**Before:**
-```json
-"editDraft": {"meta": {}},
-"selected":  {"meta": {}}
-```
-
-**After:**
-```json
-"editDraft": {
-  "meta": {},
-  "containerConfig": {
-    "Id":                null,
-    "ItemId":            null,
-    "TraysPerContainer": null,
-    "PartsPerTray":      null,
-    "IsSerialized":      false,
-    "ClosureMethod":     null,
-    "TargetWeight":      null,
-    "DunnageCode":       null,
-    "CustomerCode":      null
-  }
-},
-"selected": {
-  "meta": {},
-  "containerConfig": {
-    "Id":                null,
-    "ItemId":            null,
-    "TraysPerContainer": null,
-    "PartsPerTray":      null,
-    "IsSerialized":      false,
-    "ClosureMethod":     null,
-    "TargetWeight":      null,
-    "DunnageCode":       null,
-    "CustomerCode":      null
-  }
 }
 ```
 
-Both seeds are deep-equal, so the dirty indicator stays clear on cold open.
+(`●` is the same `●` character used elsewhere in the project.)
 
-- [ ] **Step 5: Validate JSON**
+- [ ] **Step 5: Wire TabContainer's tab-change gate**
 
-```powershell
-try { Get-Content 'ignition\projects\MPP_Config\com.inductiveautomation.perspective\views\BlueRidge\Views\Parts\ItemMaster\view.json' -Raw | ConvertFrom-Json | Out-Null; 'OK' } catch { 'BAD: ' + $_.Exception.Message }
+The TabContainer's `props.currentTabIndex` (or the equivalent in 8.3 — verify the prop name in Designer) currently has no onChange. Add a tab-change interceptor: when the user clicks a different tab, check the CURRENT section's dirty flag. If dirty, stage and open the popup instead of changing the tab.
+
+This requires the TabContainer's `currentTabIndex` to bidi-bind to `view.custom.activeTabIndex` (a new custom prop derived from `activeTab`). On change of `activeTabIndex`, run an interceptor in onChange.
+
+The cleaner pattern in Ignition Perspective is to bind `currentTabIndex` to a custom prop `view.custom.activeTabIndex` bidirectionally AND add an onChange handler on `activeTabIndex` that:
+
+```python
+# onChange of view.custom.activeTabIndex
+prev = previousValue.value
+curr = currentValue.value
+sectionKeys = ["containerConfig", "routes", "boms", "qualitySpecs", "eligibility"]
+if prev is None or curr is None or prev == curr:
+    return
+currentSection = sectionKeys[prev] if prev < len(sectionKeys) else None
+if currentSection and self.view.custom.sectionDirty.get(currentSection, False):
+    # Stage the pending switch, revert the tab, open popup.
+    self.view.custom.pendingSwitch = {"kind": "tab", "to": curr}
+    self.view.custom.activeTabIndex = prev  # revert; Ignition reflects the change
+    self.view.rootContainer.openConfirmUnsaved(currentSection)
+else:
+    self.view.custom.activeTab = sectionKeys[curr] if curr < len(sectionKeys) else None
 ```
 
-- [ ] **Step 6: Run gateway scan**
+Add `view.custom.activeTabIndex: 0` to the `custom` block in Step 1.
 
-```powershell
-.\scan.ps1
+- [ ] **Step 6: Add the three new customMethods on `root.scripts.customMethods`**
+
+`openConfirmUnsaved`:
+
+```python
+# params: [sectionKey]
+titles = {
+    "identity":        "Identity",
+    "containerConfig": "Container Configuration",
+    "routes":          "Routes",
+    "boms":            "BOMs",
+    "qualitySpecs":    "Quality Specs",
+    "eligibility":     "Eligibility",
+}
+title = titles.get(sectionKey, sectionKey)
+system.perspective.openPopup(
+    id="mpp-confirm-unsaved",
+    view="BlueRidge/Components/Popups/ConfirmUnsaved",
+    modal=True,
+    showCloseIcon=False,
+    params={
+        "title":   "Unsaved Changes",
+        "message": "You have unsaved changes to " + title + ". Save before switching?",
+    },
+)
 ```
 
-- [ ] **Step 7: Commit**
+`completeSwitch`:
 
-```bash
-git add ignition/projects/MPP_Config/com.inductiveautomation.perspective/views/BlueRidge/Views/Parts/ItemMaster/view.json
-git commit -m "feat(item-master): wire editDraft.containerConfig via bidi embed
-
-Parent EmbedContainerConfig now bidi-binds editDraft.containerConfig
-into the child's params.value. itemRowClicked extends to fetch
-ContainerConfig (or empty defaults if no active config exists) and
-seed both editDraft and selected so the dirty indicator works
-symmetrically. Initial custom seeds also include the containerConfig
-slice so the binding has a valid path before the first item click."
+```python
+pending = self.view.custom.pendingSwitch or {}
+kind    = pending.get("kind")
+target  = pending.get("to")
+if kind == "tab":
+    sectionKeys = ["containerConfig", "routes", "boms", "qualitySpecs", "eligibility"]
+    self.view.custom.activeTabIndex = target
+    if target is not None and target < len(sectionKeys):
+        self.view.custom.activeTab = sectionKeys[target]
+elif kind == "item":
+    self.view.custom.selectedItemId = target
+self.view.custom.pendingSwitch = None
 ```
 
----
+`cancelSwitch`:
 
-### Task 6: Add `handleSave` customMethod + wire BtnSave's onActionPerformed
+```python
+self.view.custom.pendingSwitch = None
+```
 
-**Files:**
-- Modify: `ignition/projects/MPP_Config/com.inductiveautomation.perspective/views/BlueRidge/Views/Parts/ItemMaster/view.json`
+- [ ] **Step 7: Rewrite the parent's `itemRowClicked` message handler**
 
-- [ ] **Step 1: Locate `root.scripts.customMethods` in the parent view**
+```python
+targetId = payload.get("id") if payload else None
+if targetId is None or targetId == self.view.custom.selectedItemId:
+    return
+dirtyKeys = [k for k, v in (self.view.custom.sectionDirty or {}).items() if v]
+if dirtyKeys:
+    self.view.custom.pendingSwitch = {"kind": "item", "to": targetId}
+    self.rootContainer.openConfirmUnsaved(dirtyKeys[0])
+else:
+    self.view.custom.selectedItemId = targetId
+```
 
-Find the existing `customMethods` array (sibling of `messageHandlers` under `root.scripts`). If empty, you'll add the first entry. If it already has methods, append.
-
-- [ ] **Step 2: Add `handleSave` to `customMethods`**
-
-The new entry (JSON shape — note `params` MUST NOT include `"self"` per `feedback_ignition_view_customMethods_scope.md`; Ignition auto-prepends it):
+- [ ] **Step 8: Add the two new message handlers on `root.scripts.messageHandlers`**
 
 ```json
 {
-  "name": "handleSave",
-  "params": [],
+  "messageType": "sectionDirtyChanged",
+  "pageScope": true,
+  "sessionScope": false,
+  "viewScope": false,
+  "script": "<see below>"
+},
+{
+  "messageType": "confirmUnsavedResult",
+  "pageScope": true,
+  "sessionScope": false,
+  "viewScope": false,
   "script": "<see below>"
 }
 ```
 
-The `script` value (one JSON string, with `\t` and `\n` escapes preserved when serializing):
+`sectionDirtyChanged` script:
 
 ```python
-draft  = self.view.custom.editDraft or {}
-meta   = draft.get('meta') or {}
-cc     = dict(draft.get('containerConfig') or {})
-itemId = meta.get('Id')
-
-if not itemId:
-    BlueRidge.Common.Notify.toast('No item selected', 'Select an item before saving container configuration.', 'warning')
+section = payload.get("section") if payload else None
+isDirty = bool(payload.get("isDirty")) if payload else False
+if not section:
     return
-
-trays        = cc.get('TraysPerContainer')
-partsPerTray = cc.get('PartsPerTray')
-if trays is None or trays <= 0:
-    BlueRidge.Common.Notify.toast('Trays per Container required', 'Enter a positive number of trays per container.', 'warning')
-    return
-if partsPerTray is None or partsPerTray <= 0:
-    BlueRidge.Common.Notify.toast('Parts per Tray required', 'Enter a positive number of parts per tray.', 'warning')
-    return
-if cc.get('ClosureMethod') == 'ByWeight':
-    tw = cc.get('TargetWeight')
-    if tw is None or tw <= 0:
-        BlueRidge.Common.Notify.toast('Target Weight required', 'ByWeight closure requires a positive target weight.', 'warning')
-        return
-
-cc['ItemId'] = itemId
-if cc.get('Id'):
-    result       = BlueRidge.Parts.ContainerConfig.update(cc)
-    successTitle = 'Container config updated'
-else:
-    result       = BlueRidge.Parts.ContainerConfig.add(cc)
-    successTitle = 'Container config saved'
-
-BlueRidge.Common.Ui.notifyResult(result, successTitle)
-
-if result and result.get('Status'):
-    refreshed = BlueRidge.Parts.ContainerConfig.getByItem(itemId) or {}
-    newCc = {
-        'Id':                refreshed.get('Id'),
-        'ItemId':            itemId,
-        'TraysPerContainer': refreshed.get('TraysPerContainer'),
-        'PartsPerTray':      refreshed.get('PartsPerTray'),
-        'IsSerialized':      bool(refreshed.get('IsSerialized', False)),
-        'ClosureMethod':     refreshed.get('ClosureMethod'),
-        'TargetWeight':      refreshed.get('TargetWeight'),
-        'DunnageCode':       refreshed.get('DunnageCode'),
-        'CustomerCode':      refreshed.get('CustomerCode'),
-    }
-    nextDraft = dict(self.view.custom.editDraft)
-    nextDraft['containerConfig'] = dict(newCc)
-    self.view.custom.editDraft = nextDraft
-    nextSelected = dict(self.view.custom.selected)
-    nextSelected['containerConfig'] = dict(newCc)
-    self.view.custom.selected = nextSelected
+nextMap = dict(self.view.custom.sectionDirty or {})
+nextMap[section] = isDirty
+self.view.custom.sectionDirty = nextMap
+pending = self.view.custom.pendingSwitch
+if pending and not any(nextMap.values()):
+    self.rootContainer.completeSwitch()
 ```
 
-- [ ] **Step 3: Rewire BtnSave's onActionPerformed**
+`confirmUnsavedResult` script:
 
-Find the `BtnSave` component in the view (its current `onActionPerformed` toasts "Not wired yet — Item save lands in Phase 3"). Replace its script:
-
-**Before:**
 ```python
-BlueRidge.Common.Notify.toast('Not wired yet', 'Item save lands in Phase 3.', 'info', 5)
+action = payload.get("action") if payload else None
+pending = self.view.custom.pendingSwitch
+if not pending:
+    return
+if action == "cancel":
+    self.rootContainer.cancelSwitch()
+    return
+dirtyKeys = [k for k, v in (self.view.custom.sectionDirty or {}).items() if v]
+if not dirtyKeys:
+    self.rootContainer.completeSwitch()
+    return
+dirtySection = dirtyKeys[0]
+if action == "save":
+    system.perspective.sendMessage("sectionSaveRequested", payload={"section": dirtySection}, scope="page")
+elif action == "discard":
+    system.perspective.sendMessage("sectionDiscardRequested", payload={"section": dirtySection}, scope="page")
+# completeSwitch is triggered by the sectionDirtyChanged handler when the dirty flag flips back to false.
 ```
 
-**After:**
-```python
-self.view.rootContainer.handleSave()
-```
-
-Keep the event's `scope: "G"` if present (or set to `"G"`) — per `feedback_ignition_popup_open_scope.md`, popup-open events sometimes need `G`; for a method call into the same view this is also safer than `C`.
-
-- [ ] **Step 4: Validate JSON**
+- [ ] **Step 9: Validate JSON**
 
 ```powershell
 try { Get-Content 'ignition\projects\MPP_Config\com.inductiveautomation.perspective\views\BlueRidge\Views\Parts\ItemMaster\view.json' -Raw | ConvertFrom-Json | Out-Null; 'OK' } catch { 'BAD: ' + $_.Exception.Message }
 ```
 
-- [ ] **Step 5: Run gateway scan**
+- [ ] **Step 10: Gateway scan**
 
 ```powershell
 .\scan.ps1
 ```
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 11: Commit**
 
 ```bash
 git add ignition/projects/MPP_Config/com.inductiveautomation.perspective/views/BlueRidge/Views/Parts/ItemMaster/view.json
-git commit -m "feat(item-master): wire Save button to ContainerConfig add/update
+git commit -m "feat(item-master): parent-side section-dirty gate infrastructure
 
-handleSave customMethod routes to ContainerConfig.update when
-editDraft.containerConfig.Id exists, else ContainerConfig.add.
-Client-side guards on TraysPerContainer, PartsPerTray, and
-TargetWeight (when ByWeight). On success: re-fetches via getByItem
-and reassigns editDraft + selected via parent-dict clones so the
-bidi binding re-fires on the child."
+Per-section ownership pattern (per project_mpp_item_master_pattern).
+Demolish the old bundled editDraft / selected / mode props that were
+never properly populated. Add selectedItemId, sectionDirty flag map,
+pendingSwitch staging, activeTabIndex (mirrors activeTab as int for
+tab onChange interception).
+
+Wire ConfirmUnsaved gate:
+- Tab clicks intercepted via activeTabIndex onChange; reverts the
+  tab and opens ConfirmUnsaved when the current section is dirty.
+- Item-row clicks intercepted via the existing itemRowClicked handler;
+  opens ConfirmUnsaved when any section is dirty.
+- confirmUnsavedResult: save -> sectionSaveRequested, discard ->
+  sectionDiscardRequested, cancel -> drop pendingSwitch.
+- completeSwitch fires automatically when sectionDirty flips clean
+  with a pendingSwitch waiting.
+
+All five tab embeds now receive params.value: selectedItemId (BIGINT,
+input-only). The four non-Phase-4 tabs still ignore the param value.
+
+Identity-section input fields are hidden via meta.visible: false until
+Phase 3 carves Identity into its own embed. Header buttons (Save /
+Deprecate / Add Item) stay as Phase 3 placeholders."
 ```
 
 ---
 
-### Task 7: Designer smoke + Phase 4 close-out
+### Task 6: Designer smoke + Phase 4 close-out
 
-This task is for Jacques, not the executor.
+For Jacques, post-merge.
 
 - [ ] **Step 1: Pull latest main**
 
@@ -790,29 +1055,25 @@ This task is for Jacques, not the executor.
 git pull --ff-only origin main
 ```
 
-Confirm Tasks 1–6 are all present.
-
-- [ ] **Step 2: Run gateway scan one more time**
+- [ ] **Step 2: Run gateway scan once more**
 
 ```powershell
 .\scan.ps1
 ```
 
-- [ ] **Step 3: Smoke per spec §8**
+- [ ] **Step 3: Walk the 11-step smoke checklist in spec §7**
 
-Walk the 10-step checklist in `docs/superpowers/specs/2026-05-20-item-master-phase4-design.md` §8.
-
-The critical R1 step is #4 (ClosureMethod=ByCount → ByWeight). If it fails (dirty indicator doesn't light OR `editDraft.containerConfig.ClosureMethod` doesn't update in the property browser), STOP, open a Phase 4 follow-up, and follow the §7.1 fallback design.
+`docs/superpowers/specs/2026-05-20-item-master-phase4-design.md` §7. The critical step is #4 (tab-click intercept while dirty). Any FAIL means the gate wiring or message protocol has a defect — halt and triage rather than patching forward.
 
 - [ ] **Step 4: Update PROJECT_STATUS.md**
 
-Promote the "Item Master Phase 2 read paths landed; R1 bidi-embed smoke pending" note to "Phase 4 ContainerConfig save landed + R1 verified pass". If R1 failed, note the fallback work as a new open block.
+Move Phase 4 from "open" to "recently closed" with commit range. Note the per-section convention adoption + retrofit pattern.
 
-- [ ] **Step 5: Commit status update + push**
+- [ ] **Step 5: Commit status + push**
 
 ```bash
 git add PROJECT_STATUS.md
-git commit -m "docs(status): Item Master Phase 4 ContainerConfig save landed"
+git commit -m "docs(status): Item Master Phase 4 + per-section pattern landed"
 git push origin main
 ```
 
@@ -820,26 +1081,24 @@ git push origin main
 
 ## Self-Review
 
-- **Spec coverage:** All spec sections map to tasks. §3.2 file deltas → Tasks 1–6. §3.3 data shapes → Task 5 (seeds) + Task 3 (entity script). §3.4 itemRowClicked → Task 5. §3.5 embedded view rewiring → Task 4. §3.6 parent embed rewiring → Task 5. §3.7 Save handler → Task 6. §3.8 entity script additions → Task 3. §4 NQs → Tasks 1, 2. §7 risks + §7.1 fallback → noted in Task 7 step 3. §8 smoke → Task 7.
-- **Placeholder scan:** No `TBD`, no "add appropriate handling", no "fill in details". Every step has the literal SQL / JSON / Python.
-- **Type consistency:** All field names PascalCase (matches DB columns: `TraysPerContainer`, `ClosureMethod`, `TargetWeight`, etc.) in dicts; NQ param keys camelCase. `_currentAppUserId` always called inside the entity script, never passed from the view. The R1-gated dependency between Tasks 4/5 and Task 7's smoke is called out.
+- **Spec coverage:** All sections of the spec map to tasks. §2.2 file deltas → Tasks 1-5. §2.3 embed structure → Task 4. §2.4 parent structure → Task 5. §2.5 dirty indicator → Task 5 Step 4. §2.6 gate semantics → Task 5 Steps 5-8. §2.9-§2.13 handler bodies → embedded in Task 4. §3 NQ specs → Tasks 1, 2. §6 risks + §7 smoke → Task 6.
+- **Placeholder scan:** No "TBD", no "add appropriate error handling", no "fill in details". Every step has the literal SQL / JSON / Python.
+- **Type consistency:** All dict keys PascalCase (DB column names: TraysPerContainer, ClosureMethod, TargetWeight). NQ param keys camelCase. Message payload keys camelCase (`section`, `isDirty`, `action`). `params.value` is a BIGINT in all five tab embeds.
+- **R1 explicitly avoided:** params.value is plain BIGINT, never bidi. All cross-embed state flows through page-scoped messages.
 
 ## Execution Handoff
 
-Plan complete and saved to `docs/superpowers/plans/2026-05-20-item-master-phase4.md`. Companion spec at `docs/superpowers/specs/2026-05-20-item-master-phase4-design.md`.
+Plan complete and saved to `docs/superpowers/plans/2026-05-20-item-master-phase4.md`. Companion spec at `docs/superpowers/specs/2026-05-20-item-master-phase4-design.md`. Pattern memory at `project_mpp_item_master_pattern`.
 
 Two execution options:
 
-1. **Subagent-Driven (recommended)** — fresh subagent per task, review between tasks. Phase 4 has 7 tasks; each is a self-contained file edit + scan + commit, ideal for the subagent pattern.
+1. **Subagent-Driven (recommended)** — fresh subagent per task. Phase 4 has 6 tasks; Task 5 is the largest (parent view) and benefits from review between subtasks.
+2. **Inline Execution** — execute here in this session using executing-plans, batch with checkpoints.
 
-2. **Inline Execution** — execute tasks in this session using executing-plans, batch with checkpoints. Faster if Jacques wants Phase 4 landed in this session.
-
-If a worktree is desired (matching the agent-X convention used for Routes / BOMs design work), create it before Task 1:
+If a worktree is desired:
 
 ```powershell
 git worktree add -b item-master-phase4 ..\mpp-worktrees\agent-A-phase4 main
 ```
-
-…then run all tasks inside that worktree, and merge to main at the end.
 
 **Which approach?**

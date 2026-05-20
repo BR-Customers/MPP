@@ -2,6 +2,17 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` (recommended) or `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Spec doc is the contract — read it BEFORE touching any task.
 
+> **Convention reconciliation (added 2026-05-20):** This plan was drafted before the **per-section ownership** convention was codified in `project_mpp_item_master_pattern` memory (2026-05-20 rev). The spec's §0 lists the deltas. When executing this plan, apply these adjustments:
+>
+> 1. **Tasks 18-19 (view structure):** Drop `editDraft.boms` from the PARENT view custom block. BOMs embed owns its own `view.custom.selected` + `view.custom.editDraft` LOCALLY. Parent passes only `params.value: bomId` (BIGINT, input-only — no `bidirectional: true`).
+> 2. **Repeater binding:** flex-repeater `instances` binds to `view.custom.editDraft.activeVersion.lines` (the embed's local state), NOT to `view.params.value.activeVersion.lines`.
+> 3. **Six message handlers** that Task 19 was going to add on the parent (`bomActiveVersionChanged`, `bomVersionListRefresh`, `bomLineMoveUp`, etc.) move INTO the BOMs embed — they're now intra-tab handlers that mutate local state.
+> 4. **Parent message handlers** the BOMs embed must wire: emit `sectionDirtyChanged {section: "boms", isDirty: <bool>}` on every dirty transition; listen for `sectionSaveRequested {section: "boms"}` (run SaveAll) and `sectionDiscardRequested {section: "boms"}` (revert editDraft to selected).
+> 5. **Dirty-vs-publish distinction:** `sectionDirty.boms` tracks unsaved DRAFT LINE EDITS only. `Publish`, `Deprecate`, `Discard Draft` are state-machine actions that do NOT fire `sectionDirtyChanged` — they refresh local `selected` directly (success toast + reload). Conflating them would block tab/item switching after a Publish, which is wrong.
+> 6. **No page-level Save button for BOMs.** The embed renders its own `[Save Draft]` / `[Publish]` / `[Discard Draft]` buttons per the mockup. The parent's title-bar Save button (Phase 3) only saves Identity.
+>
+> Proc surface, NQ shapes, entity script, mockup references, and task ordering remain as written. The retrofit is to **where state lives** and **how dirty propagates** — proc semantics and intra-tab UX are unchanged.
+
 **Goal:** Wire the Item Master `BOMs` tab from Phase 1's static published-only display into a full Draft → Published → Deprecated versioned-entity editor. Backend (SQL migration + 10 procs + tests) → NQs → entity script → view restructure.
 
 **Architecture summary** (full detail in spec §3–§7):

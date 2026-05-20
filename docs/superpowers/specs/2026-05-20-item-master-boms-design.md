@@ -4,7 +4,29 @@
 **Status:** Draft — pending Jacques review
 **Scope:** Wire the Item Master `BOMs` tab from a static published-only display (Phase 1 shell) into a full versioned-entity editor with Draft → Published → Deprecated lifecycle. Backend procs + NQs + entity script + view edits to the existing tab shell.
 
-**Prerequisites:** Phase 1 (view shell — landed 2026-05-19) and Phase 2 (parent DB read paths + R1 bidi smoke — Agent B). Does NOT depend on Phase 3 (Item Save) or Phase 4 (ContainerConfig save). MAY land before or after Phase 5 (Routes) — they're symmetric versioned-entity workflows; pattern reconciliation between this spec and the Routes spec happens after both land.
+**Prerequisites:** Phase 1 (view shell — landed 2026-05-19) and Phase 2 (parent DB read paths — Agent B; R1 bidi smoke superseded by the convention update below). Does NOT depend on Phase 3 (Item Save) or Phase 4 (ContainerConfig save). MAY land before or after Phase 5 (Routes) — they're symmetric versioned-entity workflows.
+
+---
+
+## 0 — Convention reconciliation (added 2026-05-20)
+
+This spec predates the **per-section ownership** convention codified in the `project_mpp_item_master_pattern` memory (2026-05-20 rev). The convention is now authoritative; sections of this spec that contradict it MUST be updated during implementation. The deltas are surgical (medium retrofit, NOT a rewrite — most of the spec stands):
+
+| What this spec says | What the convention requires |
+|---|---|
+| **D4 (lines 193-227):** `editDraft.boms.activeVersion` lives on the parent ItemMaster view; passed bidirectionally via `view.params.value` as an Object param. | **Drop `editDraft.boms` from the parent entirely.** The BOMs tab embed owns its own `view.custom.selected` + `view.custom.editDraft` LOCALLY. The embed receives only `params.value: bomId` (BIGINT, input-only). |
+| **§7.1 (lines 360-395):** flex-repeater `instances` binds to `view.params.value.activeVersion.lines`. Mutations bidi-propagate back to parent's `editDraft.boms.activeVersion.lines`. | Repeater binds to **`view.custom.editDraft.activeVersion.lines`** (the embed's local state). Line mutations write to local state; no bidi back to parent. |
+| **§7.3 (lines 444-454):** six message handlers on the parent (`bomActiveVersionChanged`, `bomVersionListRefresh`, `bomLineMoveUp`, etc.) mutate parent's `editDraft.boms.*`. | These handlers move INTO the BOMs embed (they're now intra-tab, not cross-tab). The parent's only BOM-aware message handler is the generic `sectionDirtyChanged` listener that updates `view.custom.sectionDirty.boms`. |
+| **§7.5 / Plan Task 19:** parent mutates `editDraft.boms.activeVersion.lines` from child messages. | Parent does NOT touch BOMs state. Save/Discard live inside the BOMs embed and are triggered either by the embed's local buttons OR by `sectionSaveRequested` / `sectionDiscardRequested` from the parent (sent when the ConfirmUnsaved popup resolves). |
+| **D3 (lines 184-189):** "BOMs tab lifecycle actions are ISOLATED" relied on the parent's page-level Save button being smart enough to skip BOMs. | Isolation is now **enforced architecturally** — there is no page-level Save button for BOMs. The embed has its own `[Save Draft]`, `[Publish]`, `[Discard Draft]` buttons. |
+| **(new requirement, not in this spec)** | **`sectionDirty.boms` tracks unsaved DRAFT LINE EDITS only.** Publish / Deprecate / Discard-Draft are state-machine transitions, NOT "section save" events — they do NOT fire `sectionDirtyChanged` (they fire their own success/error toasts and refresh the embed's `selected` directly). Conflating publish state with section-dirty would block tab/item switching after a successful Publish, which is wrong. |
+
+**Page-scoped messages introduced by the convention** that the BOMs embed must wire:
+
+- **Emit (embed → parent):** `sectionDirtyChanged {section: "boms", isDirty: <bool>}` on every dirty-state transition (entering Draft edit mode flips dirty; SaveAll Draft / Discard Draft / Publish flips it back).
+- **Listen (parent → embed):** `sectionSaveRequested {section: "boms"}` — embed responds by running its own SaveAll. `sectionDiscardRequested {section: "boms"}` — embed responds by reverting local editDraft to selected.
+
+The rest of this spec — the proc surface, NQ shapes, entity script, mockup line references, lifecycle state machine, Phase 6 task ordering — stands as written. The retrofit is to **WHERE** state lives (embed-local instead of parent-bundled) and **HOW** dirty propagates (page-scoped message instead of bidi binding). The proc-side semantics and the embed-internal interaction model are unchanged.
 
 ---
 

@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Convention reconciliation (added 2026-05-20):** This plan was drafted ahead of the **per-section ownership** convention codified in `project_mpp_item_master_pattern` memory (2026-05-20 rev). The plan's architecture already aligns with the convention — Routes was the first spec to consciously reject the bidi-Object-param mechanism. Two small adjustments during execution: (1) the deferred cross-tab dirty gate (spec §6.8) is now provided by the convention — emit `sectionDirtyChanged {section: "routes", isDirty: <bool>}` page-scoped on every dirty-state transition, and listen for `sectionSaveRequested` / `sectionDiscardRequested` page-scoped from parent. (2) Rename "tab-level dirty" → "section dirty" in toast messages and code comments for consistency with Identity (which is a section but not a tab). The rest of the plan stands as written.
+
 **Goal:** Wire the Routes tab on `/items` end-to-end against `Parts.RouteTemplate` + `Parts.RouteStep` + `Parts.OperationTemplate`, implementing the full Draft → Published → Deprecated workflow per `docs/superpowers/specs/2026-05-20-item-master-routes-design.md`.
 
 **Tech stack:** SQL Server 2022 (new + extended stored procs); Ignition 8.3 Perspective NQs + entity scripts (`BlueRidge.Common.Db` / `_Util` / `_Ui` / `_Notify`); per-view edits in Designer for existing views, file writes for new views.

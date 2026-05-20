@@ -8,6 +8,24 @@ Phase 1 left this tab as a published-only static table reading from `view.params
 
 ---
 
+## 0 — Convention reconciliation (added 2026-05-20)
+
+This spec was ahead of the curve — it deliberately departed from Phase 1's bidi-Object-param mechanism in favor of input-only `params.itemId` and embed-local state. The **per-section ownership** convention codified in `project_mpp_item_master_pattern` memory (2026-05-20 rev) ratifies this approach and extends it to all six sections.
+
+Two small alignments to land during implementation:
+
+1. **Terminology:** the spec uses "tab-level dirty" and "tab-level Save". The convention uses **section** (Identity is also a section even though it's not in a tab). Rename for consistency in code comments and toast messages — the wiring stays the same.
+2. **Cross-tab/item dirty gate** that the spec §6.8 noted as "deferred to Phase 6" is now provided by the convention's parent-side infrastructure:
+   - Emit `sectionDirtyChanged {section: "routes", isDirty: <bool>}` page-scoped on every dirty-state transition (entering Draft edit mode flips dirty; SaveAll Draft / Discard Draft / Publish flips it back).
+   - Listen for `sectionSaveRequested {section: "routes"}` (run SaveAll) and `sectionDiscardRequested {section: "routes"}` (revert local editDraft to selected).
+   - Routes-internal navigation (version-dropdown change while dirty) keeps its existing ConfirmUnsaved wiring — that's intra-tab, not cross-tab.
+
+**Dirty-vs-publish distinction:** `sectionDirty.routes` tracks unsaved DRAFT STEP EDITS only. `Publish` / `Deprecate` / `Discard Draft` are state-machine transitions, NOT "section save" events — they do NOT fire `sectionDirtyChanged` (they refresh `selected` directly). Conflating them would block tab/item switching after a successful Publish, which is wrong.
+
+The rest of this spec stands as written.
+
+---
+
 ## 1. Goals
 
 - Routes tab loads the version list and selected version's steps from the database for the currently-selected Item.

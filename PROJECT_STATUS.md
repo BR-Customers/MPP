@@ -1,6 +1,23 @@
 # MPP MES — Project Status
 
-**Last updated:** 2026-05-20 (Defect Codes Task 8 landed + deprecated-row styling parity with DowntimeCodes — `15eeee2..4922ec4`. Item Master Phase 2 read paths landed in `worktree-Agent-B-item-master-phase2`; R1 bidi-embed smoke pending Designer verification by Jacques.)
+**Last updated:** 2026-05-20 (Defect Codes Task 8 landed + Item Master per-section ownership convention codified; Phase 4 docs rewritten, Phase 5/6 docs reconciled. Phase 2 read paths landed in `worktree-Agent-B-item-master-phase2`. R1 bidi-embed risk is OBSOLETE under the new convention.)
+
+---
+
+## 🆕 Item Master design convention update (2026-05-20)
+
+The Item Master design has been **reworked from bundled-editDraft + bidi-Object-param to per-section ownership** before any Phase 3+ implementation lands. Each of 6 sections (Identity + 5 tabs) now owns its own selected/editDraft locally, has its own Save/Discard, and broadcasts dirty state via `sectionDirtyChanged` page-scoped messages. Parent aggregates flags + gates tab/item switches via the existing ConfirmUnsaved popup.
+
+**Why:** R1 (bidi Object-param round-trip) was never proven and Phase 2's wiring drifted from the original design. Per-section ownership uses primitives the project has shipped reliably (page-scoped messages) and aligns with how the customer's roles actually work (different engineers own different concerns).
+
+**Canonical reference:** `project_mpp_item_master_pattern` memory (2026-05-20 rev).
+
+**Docs realigned:**
+- `docs/superpowers/specs/2026-05-20-item-master-phase4-design.md` + plan — **rewritten** for per-section.
+- `docs/superpowers/specs/2026-05-20-item-master-boms-design.md` + plan — **medium retrofit** flagged via §0 convention-reconciliation preamble (most of spec stands).
+- `docs/superpowers/specs/2026-05-20-item-master-routes-design.md` + plan — **light retrofit** (Routes already designed for per-section; convention ratifies it).
+
+**Phase 1 + 2 code:** parent's old bundled `editDraft` and `selected` blocks are inert (never properly populated for ContainerConfig); they get demolished as part of Phase 4 Task 5.
 
 ---
 
