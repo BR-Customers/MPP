@@ -3,22 +3,33 @@
     "activeTab": "containerConfig",
     "editDraft": {
       "meta": {
-        "CountryOfOrigin": "",
-        "DefaultSubLotQty": 0,
-        "Description": "",
-        "Id": 0,
-        "ItemTypeId": 0,
-        "ItemTypeName": "",
-        "MacolaPartNumber": "",
-        "MaxLotSize": 0,
-        "MaxParts": 0,
-        "PartNumber": "",
-        "PartsPerBasket": 0,
-        "UnitWeight": 0,
-        "UomCode": "",
-        "UomId": 0,
-        "WeightUomCode": "",
-        "WeightUomId": 0
+        "CountryOfOrigin": "US",
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1779309668179
+          ],
+          "$ts": 1779321304125
+        },
+        "CreatedByUserId": 2,
+        "DefaultSubLotQty": 24,
+        "DeprecatedAt": null,
+        "Description": "5G0 Front Cover Assembly",
+        "Id": 1,
+        "ItemTypeId": 4,
+        "ItemTypeName": "Finished Good",
+        "MacolaPartNumber": "5G0-FC-001",
+        "MaxLotSize": null,
+        "MaxParts": 500,
+        "PartNumber": "5G0",
+        "UnitWeight": 3.25,
+        "UomCode": "EA",
+        "UomId": 1,
+        "UpdatedAt": null,
+        "UpdatedByUserId": null,
+        "WeightUomCode": "LB",
+        "WeightUomId": 2
       }
     },
     "itemTypes": [
@@ -28,26 +39,37 @@
       "Finished Good",
       "Pass-Through"
     ],
-    "mode": "view",
+    "mode": "update",
     "search": "",
     "selected": {
       "meta": {
-        "CountryOfOrigin": "",
-        "DefaultSubLotQty": 0,
-        "Description": "",
-        "Id": 0,
-        "ItemTypeId": 0,
-        "ItemTypeName": "",
-        "MacolaPartNumber": "",
-        "MaxLotSize": 0,
-        "MaxParts": 0,
-        "PartNumber": "",
-        "PartsPerBasket": 0,
-        "UnitWeight": 0,
-        "UomCode": "",
-        "UomId": 0,
-        "WeightUomCode": "",
-        "WeightUomId": 0
+        "CountryOfOrigin": "US",
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1779309668178
+          ],
+          "$ts": 1779321304125
+        },
+        "CreatedByUserId": 2,
+        "DefaultSubLotQty": 24,
+        "DeprecatedAt": null,
+        "Description": "5G0 Front Cover Assembly",
+        "Id": 1,
+        "ItemTypeId": 4,
+        "ItemTypeName": "Finished Good",
+        "MacolaPartNumber": "5G0-FC-001",
+        "MaxLotSize": null,
+        "MaxParts": 500,
+        "PartNumber": "5G0",
+        "UnitWeight": 3.25,
+        "UomCode": "EA",
+        "UomId": 1,
+        "UpdatedAt": null,
+        "UpdatedByUserId": null,
+        "WeightUomCode": "LB",
+        "WeightUomId": 2
       }
     },
     "typeFilter": "All Types",
@@ -99,7 +121,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "if({view.custom.editDraft} !\u003d {view.custom.selected}, \u0027● Unsaved changes\u0027, \u0027\u0027)"
+                    "expression": "if({view.custom.editDraft} != {view.custom.selected}, '\u25cf Unsaved changes', '')"
                   },
                   "type": "expr"
                 }
@@ -192,7 +214,7 @@
                       }
                     },
                     "props": {
-                      "placeholder": "🔍 Search items…",
+                      "placeholder": "\ud83d\udd0d Search items\u2026",
                       "style": {
                         "classes": "search-input"
                       }
@@ -328,7 +350,7 @@
                           "props.text": {
                             "binding": {
                               "config": {
-                                "expression": "{view.custom.editDraft.meta.PartNumber} + \u0027 — \u0027 + {view.custom.editDraft.meta.Description}"
+                                "expression": "{view.custom.editDraft.meta.PartNumber} + ' \u2014 ' + {view.custom.editDraft.meta.Description}"
                               },
                               "type": "expr"
                             }
@@ -377,7 +399,7 @@
                           "component": {
                             "onActionPerformed": {
                               "config": {
-                                "script": "\tBlueRidge.Common.Notify.toast(\u0027Not wired yet\u0027, \u0027Item save lands in Phase 3.\u0027, \u0027info\u0027, 5)"
+                                "script": "\tBlueRidge.Common.Notify.toast('Not wired yet', 'Item save lands in Phase 3.', 'info', 5)"
                               },
                               "scope": "C",
                               "type": "script"
@@ -400,7 +422,7 @@
                           "component": {
                             "onActionPerformed": {
                               "config": {
-                                "script": "\tBlueRidge.Common.Notify.toast(\u0027Not wired yet\u0027, \u0027Item deprecate lands in Phase 3.\u0027, \u0027info\u0027, 5)"
+                                "script": "\tBlueRidge.Common.Notify.toast('Not wired yet', 'Item deprecate lands in Phase 3.', 'info', 5)"
                               },
                               "scope": "C",
                               "type": "script"
@@ -995,7 +1017,12 @@
                       }
                     },
                     "props": {
-                      "path": "BlueRidge/Components/Parts/ItemMaster/ContainerConfig"
+                      "path": "BlueRidge/Components/Parts/ItemMaster/ContainerConfig",
+                      "useDefaultViewWidth": false,
+                      "useDefaultViewHeight": false,
+                      "params": {
+                        "value": 0
+                      }
                     },
                     "type": "ia.display.view"
                   },
@@ -1017,7 +1044,12 @@
                       }
                     },
                     "props": {
-                      "path": "BlueRidge/Components/Parts/ItemMaster/Routes"
+                      "path": "BlueRidge/Components/Parts/ItemMaster/Routes",
+                      "useDefaultViewWidth": false,
+                      "useDefaultViewHeight": false,
+                      "params": {
+                        "value": 0
+                      }
                     },
                     "type": "ia.display.view"
                   },
@@ -1039,7 +1071,12 @@
                       }
                     },
                     "props": {
-                      "path": "BlueRidge/Components/Parts/ItemMaster/Boms"
+                      "path": "BlueRidge/Components/Parts/ItemMaster/Boms",
+                      "useDefaultViewWidth": false,
+                      "useDefaultViewHeight": false,
+                      "params": {
+                        "value": 0
+                      }
                     },
                     "type": "ia.display.view"
                   },
@@ -1061,7 +1098,12 @@
                       }
                     },
                     "props": {
-                      "path": "BlueRidge/Components/Parts/ItemMaster/QualitySpecs"
+                      "path": "BlueRidge/Components/Parts/ItemMaster/QualitySpecs",
+                      "useDefaultViewWidth": false,
+                      "useDefaultViewHeight": false,
+                      "params": {
+                        "value": 0
+                      }
                     },
                     "type": "ia.display.view"
                   },
@@ -1083,7 +1125,12 @@
                       }
                     },
                     "props": {
-                      "path": "BlueRidge/Components/Parts/ItemMaster/Eligibility"
+                      "path": "BlueRidge/Components/Parts/ItemMaster/Eligibility",
+                      "useDefaultViewWidth": false,
+                      "useDefaultViewHeight": false,
+                      "params": {
+                        "value": 0
+                      }
                     },
                     "type": "ia.display.view"
                   }
@@ -1095,17 +1142,38 @@
                   "grow": 1
                 },
                 "props": {
-                  "currentTabIndex": 1,
+                  "currentTabIndex": 2,
+                  "menuType": "modern",
+                  "style": {
+                    "classes": "tab-host"
+                  },
+                  "tabSize": {
+                    "width": 120
+                  },
+                  "menuStyle": {
+                    "classes": "tab-strip"
+                  },
+                  "contentStyle": {
+                    "classes": "tab-content-fill"
+                  },
+                  "tabStyle": {
+                    "active": {
+                      "classes": "tab-item tab-item-active"
+                    },
+                    "disabled": {
+                      "classes": "tab-item"
+                    },
+                    "inactive": {
+                      "classes": "tab-item"
+                    }
+                  },
                   "tabs": [
                     "Container Config",
                     "Routes",
                     "Boms",
                     "Quality Specs",
                     "Eligibility"
-                  ],
-                  "style": {
-                    "classes": "tab-host"
-                  }
+                  ]
                 },
                 "type": "ia.container.tab"
               }
@@ -1121,7 +1189,7 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "{view.custom.mode} !\u003d \"view\""
+                    "expression": "{view.custom.mode} != \"view\""
                   },
                   "type": "expr"
                 }
@@ -1161,7 +1229,7 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "{view.custom.mode} \u003d \"view\""
+                    "expression": "{view.custom.mode} = \"view\""
                   },
                   "type": "expr"
                 }
@@ -1212,7 +1280,7 @@
         {
           "messageType": "itemRowClicked",
           "pageScope": true,
-          "script": "\tclickedId \u003d payload.get(\u0027id\u0027) if payload else None\n\tif clickedId is None:\n\t\treturn\n\titemMeta \u003d BlueRidge.Parts.Item.getOne(clickedId)\n\tif itemMeta is None:\n\t\tBlueRidge.Common.Notify.toast(\u0027Item not found\u0027, \u0027Item id \u0027 + str(clickedId) + \u0027 no longer exists.\u0027, \u0027warning\u0027)\n\t\treturn\n\tself.view.custom.selected  \u003d {\u0027meta\u0027: dict(itemMeta)}\n\tself.view.custom.editDraft \u003d {\u0027meta\u0027: dict(itemMeta)}\n\tself.view.custom.mode \u003d \u0027update\u0027",
+          "script": "\tclickedId = payload.get('id') if payload else None\n\tif clickedId is None:\n\t\treturn\n\titemMeta = BlueRidge.Parts.Item.getOne(clickedId)\n\tif itemMeta is None:\n\t\tBlueRidge.Common.Notify.toast('Item not found', 'Item id ' + str(clickedId) + ' no longer exists.', 'warning')\n\t\treturn\n\tself.view.custom.selected  = {'meta': dict(itemMeta)}\n\tself.view.custom.editDraft = {'meta': dict(itemMeta)}\n\tself.view.custom.mode = 'update'",
           "sessionScope": false,
           "viewScope": false
         }

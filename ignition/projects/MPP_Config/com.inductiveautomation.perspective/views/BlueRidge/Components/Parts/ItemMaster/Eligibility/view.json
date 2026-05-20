@@ -7,7 +7,9 @@
     "value": 0
   },
   "propConfig": {
-    "params.value": {"paramDirection": "input"}
+    "params.value": {
+      "paramDirection": "input"
+    }
   },
   "props": {
     "defaultSize": {
@@ -17,97 +19,201 @@
   },
   "root": {
     "type": "ia.container.flex",
-    "meta": {"name": "root"},
+    "meta": {
+      "name": "root"
+    },
     "props": {
       "direction": "column",
-      "style": {"gap": "10px"}
+      "style": {
+        "gap": "10px",
+        "height": "100%"
+      }
     },
     "children": [
       {
         "type": "ia.container.flex",
-        "meta": {"name": "FilterRow"},
-        "position": {"basis": "auto"},
-        "props": {"direction": "row", "alignItems": "center", "style": {"gap": "8px"}},
+        "meta": {
+          "name": "FilterRow"
+        },
+        "position": {
+          "basis": "auto"
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "gap": "8px"
+          }
+        },
         "children": [
           {
             "type": "ia.display.label",
-            "meta": {"name": "LabelArea"},
-            "position": {"basis": "auto"},
-            "props": {"text": "Area:", "style": {"fontSize": "12px", "color": "var(--mpp-text-muted)"}}
+            "meta": {
+              "name": "LabelArea"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "props": {
+              "text": "Area:",
+              "style": {
+                "fontSize": "12px",
+                "color": "var(--mpp-text-muted)"
+              }
+            }
           },
           {
             "type": "ia.input.dropdown",
-            "meta": {"name": "DropdownArea"},
-            "position": {"basis": "auto"},
+            "meta": {
+              "name": "DropdownArea"
+            },
+            "position": {
+              "basis": "auto"
+            },
             "propConfig": {
               "props.value": {
                 "binding": {
                   "type": "property",
-                  "config": {"bidirectional": true, "path": "view.custom.selectedArea"}
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.selectedArea"
+                  }
                 }
               }
             },
             "props": {
               "options": [
-                {"label": "All Areas",    "value": "All Areas"},
-                {"label": "Die Cast",     "value": "Die Cast"},
-                {"label": "Trim Shop",    "value": "Trim Shop"},
-                {"label": "Machine Shop", "value": "Machine Shop"}
+                {
+                  "label": "All Areas",
+                  "value": "All Areas"
+                },
+                {
+                  "label": "Die Cast",
+                  "value": "Die Cast"
+                },
+                {
+                  "label": "Trim Shop",
+                  "value": "Trim Shop"
+                },
+                {
+                  "label": "Machine Shop",
+                  "value": "Machine Shop"
+                }
               ],
-              "style": {"classes": "select"}
+              "style": {
+                "classes": "select"
+              }
             }
           }
         ]
       },
       {
         "type": "ia.container.flex",
-        "meta": {"name": "Panel"},
-        "position": {"basis": "auto"},
-        "props": {"direction": "column", "style": {"classes": "detail-panel", "overflow": "hidden"}},
+        "meta": {
+          "name": "Panel"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "detail-panel",
+            "overflow": "hidden"
+          }
+        },
         "children": [
           {
             "type": "ia.container.flex",
-            "meta": {"name": "PanelHeader"},
-            "position": {"basis": "auto"},
-            "props": {"direction": "row", "style": {"padding": "8px 12px", "borderBottom": "1px solid var(--mpp-border-subtle)"}},
+            "meta": {
+              "name": "PanelHeader"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "props": {
+              "direction": "row",
+              "style": {
+                "padding": "8px 12px",
+                "borderBottom": "1px solid var(--mpp-border-subtle)"
+              }
+            },
             "children": [
               {
                 "type": "ia.display.label",
-                "meta": {"name": "PanelHeaderLabel"},
-                "position": {"basis": "auto"},
+                "meta": {
+                  "name": "PanelHeaderLabel"
+                },
+                "position": {
+                  "basis": "auto"
+                },
                 "propConfig": {
                   "props.text": {
                     "binding": {
                       "type": "expr",
-                      "config": {"expression": "'Machine Eligibility — ' + {view.custom.selectedArea} + ' area'"}
+                      "config": {
+                        "expression": "'Machine Eligibility \u2014 ' + {view.custom.selectedArea} + ' area'"
+                      }
                     }
                   }
                 },
-                "props": {"style": {"fontSize": "13px", "fontWeight": "600"}}
+                "props": {
+                  "style": {
+                    "fontSize": "13px",
+                    "fontWeight": "600"
+                  }
+                }
               }
             ]
           },
           {
             "type": "ia.display.table",
-            "meta": {"name": "MachineTable"},
-            "position": {"basis": "auto"},
+            "meta": {
+              "name": "MachineTable"
+            },
+            "position": {
+              "basis": "auto"
+            },
             "propConfig": {
               "props.data": {
                 "binding": {
                   "type": "property",
-                  "config": {"path": "view.custom.rows"}
+                  "config": {
+                    "path": "view.custom.rows"
+                  }
                 }
               }
             },
             "props": {
               "columns": [
-                {"field": "machineName", "header": "Machine"},
-                {"field": "code",        "header": "Code",     "width": 100},
-                {"field": "tonnage",     "header": "Tonnage",  "width": 110},
-                {"field": "eligible",    "header": "Eligible", "width": 90, "render": "boolean", "editable": true}
+                {
+                  "field": "machineName",
+                  "header": "Machine"
+                },
+                {
+                  "field": "code",
+                  "header": "Code",
+                  "width": 100
+                },
+                {
+                  "field": "tonnage",
+                  "header": "Tonnage",
+                  "width": 110
+                },
+                {
+                  "field": "eligible",
+                  "header": "Eligible",
+                  "width": 90,
+                  "render": "boolean",
+                  "editable": true
+                }
               ],
-              "rows": {"height": 32},
-              "style": {"classes": "data-table"}
+              "rows": {
+                "height": 32
+              },
+              "style": {
+                "classes": "data-table"
+              }
             }
           }
         ]

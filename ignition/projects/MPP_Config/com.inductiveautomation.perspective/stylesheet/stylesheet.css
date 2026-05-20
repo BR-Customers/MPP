@@ -2723,62 +2723,26 @@ button {
 }
 
 
-/* ─── ia.container.tab — restyle Ignition's stock tab chrome ────────
-   Ignition 8.3's tab container renders its own tab strip independent
-   of our .psc-tab-strip / .psc-tab-item CSS. Class names from the
-   tab container's DOM are NOT empirically verified — Ignition 8.3's
-   class naming is inconsistent (per ignition-context-pack §06). The
-   selectors below cover several common patterns; verify with browser
-   DevTools and prune to the ones that match.
+/* ─── ia.container.tab — use typed style-class slots ────────
+   Ignition 8.3's ia.container.tab exposes typed style.classes props on
+   menuStyle, contentStyle, and tabStyle.{active,inactive,disabled}.
+   Wire those slots in the view JSON rather than chasing internal DOM
+   class names. (Per ignition-context-pack §06 — Ignition 8.3 class
+   naming is inconsistent; type-safe slots are the supported surface.)
 
-   Apply by adding `style.classes: "tab-host"` to the tab container,
-   so these rules don't bleed onto other parts of the app. */
+   Slot wiring (per ItemMaster):
+     menuStyle.classes              → .psc-tab-strip       (existing, reused)
+     contentStyle.classes           → .psc-tab-content-fill (new, below)
+     tabStyle.active.classes        → "tab-item tab-item-active"  (existing)
+     tabStyle.inactive.classes      → "tab-item"
+*/
 
-/* Tab strip backplate */
-.psc-tab-host .ia_tabContainer__tabHeader,
-.psc-tab-host .tab-header,
-.psc-tab-host [class*="tabHeader"] {
-    background: var(--mpp-surface-raised);
-    border-bottom: 1px solid var(--mpp-border-subtle);
-    padding: 0 var(--mpp-space-3);
-}
-
-/* Individual tabs */
-.psc-tab-host .ia_tabContainer__tabHeader__tab,
-.psc-tab-host .tab-header__tab,
-.psc-tab-host [class*="tabHeader"] [class*="tab"]:not([class*="tabHeader"]):not([class*="tabContent"]),
-.psc-tab-host [role="tab"] {
-    padding: var(--mpp-space-2) var(--mpp-space-4) !important;
-    font-size: var(--mpp-fs-sm);
-    font-weight: var(--mpp-fw-medium);
-    color: var(--mpp-text-tertiary);
-    cursor: pointer;
-    border-bottom: 3px solid transparent !important;
-    background: transparent;
-    transition: color var(--mpp-transition-fast),
-                border-color var(--mpp-transition-fast);
-}
-
-.psc-tab-host .ia_tabContainer__tabHeader__tab:hover,
-.psc-tab-host [role="tab"]:hover {
-    color: var(--mpp-text-secondary);
-}
-
-/* Selected tab */
-.psc-tab-host .ia_tabContainer__tabHeader__tab--selected,
-.psc-tab-host .ia_tabContainer__tabHeader__tab[data-selected="true"],
-.psc-tab-host [role="tab"][aria-selected="true"],
-.psc-tab-host [class*="tabHeader"] [class*="--selected"] {
-    color: var(--mpp-accent-70) !important;
-    border-bottom-color: var(--mpp-accent-70) !important;
-    font-weight: var(--mpp-fw-semibold) !important;
-    background: transparent !important;
-}
-
-/* Tab content panel — match the surface palette */
-.psc-tab-host .ia_tabContainer__tabContent,
-.psc-tab-host [class*="tabContent"],
-.psc-tab-host [class*="tabPanel"] {
+/* Fills the tab content area with the surface palette so the empty
+   space below shorter panels doesn't show through as the host bg. */
+.psc-tab-content-fill {
     background: var(--mpp-surface-card);
     padding: var(--mpp-space-3);
+    height: 100%;
+    overflow: auto;
+    color: var(--mpp-text-primary);
 }

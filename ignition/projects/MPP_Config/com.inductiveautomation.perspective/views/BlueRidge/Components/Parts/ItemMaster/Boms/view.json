@@ -10,16 +10,16 @@
     "value": 0
   },
   "propConfig": {
-    "params.value": {
-      "paramDirection": "input"
-    },
     "custom.data": {
       "binding": {
-        "type": "expr",
         "config": {
           "expression": "runScript(\"BlueRidge.Parts.Bom.getActiveForItem\", 0, {view.params.value})"
-        }
+        },
+        "type": "expr"
       }
+    },
+    "params.value": {
+      "paramDirection": "input"
     }
   },
   "props": {
@@ -36,18 +36,20 @@
               "name": "DropdownVersion"
             },
             "propConfig": {
-              "props.value": {
-                "binding": {
-                  "config": {"path": "view.custom.data.publishedVersion"},
-                  "type": "property"
-                }
-              },
               "props.options": {
                 "binding": {
                   "config": {
-                    "expression": "[{\u0027label\u0027: \u0027v\u0027 + toStr({view.custom.data.publishedVersion}) + \u0027 — Effective \u0027 + {view.custom.data.effectiveFrom} + \u0027 (Published)\u0027, \u0027value\u0027: {view.custom.data.publishedVersion}}]"
+                    "expression": "[{'label': 'v' + toStr({view.custom.data.publishedVersion}) + ' \u2014 Effective ' + {view.custom.data.effectiveFrom} + ' (Published)', 'value': {view.custom.data.publishedVersion}}]"
                   },
                   "type": "expr"
+                }
+              },
+              "props.value": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.data.publishedVersion"
+                  },
+                  "type": "property"
                 }
               }
             },
@@ -85,7 +87,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tBlueRidge.Common.Notify.toast(\u0027Not wired yet\u0027, \u0027BOMs versioning workflow lands in Phase 6.\u0027, \u0027info\u0027, 5)"
+                    "script": "\tBlueRidge.Common.Notify.toast('Not wired yet', 'BOMs versioning workflow lands in Phase 6.', 'info', 5)"
                   },
                   "scope": "C",
                   "type": "script"
@@ -182,13 +184,16 @@
                 "fontStyle": "italic",
                 "padding": "8px 12px"
               },
-              "text": "Published — read-only. Click New Version to create a draft copy for editing."
+              "text": "Published \u2014 read-only. Click New Version to create a draft copy for editing."
             },
             "type": "ia.display.label"
           }
         ],
         "meta": {
           "name": "PublishedPanel"
+        },
+        "position": {
+          "grow": 1
         },
         "props": {
           "direction": "column",
@@ -206,7 +211,8 @@
     "props": {
       "direction": "column",
       "style": {
-        "gap": "10px"
+        "gap": "10px",
+        "height": "100%"
       }
     },
     "type": "ia.container.flex"

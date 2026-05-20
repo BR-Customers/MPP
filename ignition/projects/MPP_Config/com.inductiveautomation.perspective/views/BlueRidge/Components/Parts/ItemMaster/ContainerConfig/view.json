@@ -14,7 +14,9 @@
     "value": 0
   },
   "propConfig": {
-    "params.value": {"paramDirection": "input"},
+    "params.value": {
+      "paramDirection": "input"
+    },
     "custom.data": {
       "binding": {
         "type": "expr",
@@ -32,113 +34,234 @@
   },
   "root": {
     "type": "ia.container.flex",
-    "meta": {"name": "root"},
+    "meta": {
+      "name": "root"
+    },
     "props": {
       "direction": "column",
-      "style": {"classes": "detail-panel", "padding": "12px 14px", "gap": "10px"}
+      "style": {
+        "classes": "detail-panel",
+        "padding": "12px 14px",
+        "gap": "10px",
+        "height": "100%"
+      }
     },
     "children": [
       {
         "type": "ia.display.label",
-        "meta": {"name": "PanelHeader"},
-        "position": {"basis": "auto"},
+        "meta": {
+          "name": "PanelHeader"
+        },
+        "position": {
+          "basis": "auto"
+        },
         "props": {
           "text": "Container Configuration",
-          "style": {"fontSize": "13px", "fontWeight": "600", "marginBottom": "4px"}
+          "style": {
+            "fontSize": "13px",
+            "fontWeight": "600",
+            "marginBottom": "4px"
+          }
         }
       },
       {
         "type": "ia.container.flex",
-        "meta": {"name": "FieldRow1"},
-        "position": {"basis": "auto"},
-        "props": {"direction": "row", "style": {"classes": "field-row", "gap": "12px"}},
+        "meta": {
+          "name": "FieldRow1"
+        },
+        "position": {
+          "basis": "auto"
+        },
+        "props": {
+          "direction": "row",
+          "style": {
+            "classes": "field-row",
+            "gap": "12px"
+          }
+        },
         "children": [
           {
             "type": "ia.container.flex",
-            "meta": {"name": "FieldTraysPerContainer"},
-            "position": {"basis": "auto"},
-            "props": {"direction": "column", "style": {"classes": "field", "gap": "2px"}},
+            "meta": {
+              "name": "FieldTraysPerContainer"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "field",
+                "gap": "2px"
+              }
+            },
             "children": [
               {
                 "type": "ia.display.label",
-                "meta": {"name": "LabelTraysPerContainer"},
-                "position": {"basis": "auto"},
-                "props": {"text": "Trays Per Container", "style": {"classes": "field-label"}}
+                "meta": {
+                  "name": "LabelTraysPerContainer"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "props": {
+                  "text": "Trays Per Container",
+                  "style": {
+                    "classes": "field-label"
+                  }
+                }
               },
               {
                 "type": "ia.input.text-field",
-                "meta": {"name": "InputTraysPerContainer"},
-                "position": {"basis": "auto"},
+                "meta": {
+                  "name": "InputTraysPerContainer"
+                },
+                "position": {
+                  "basis": "auto"
+                },
                 "propConfig": {
                   "props.text": {
                     "binding": {
                       "type": "property",
-                      "config": {"bidirectional": true, "path": "view.custom.data.TraysPerContainer"}
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.data.TraysPerContainer"
+                      }
                     }
                   }
                 },
-                "props": {"style": {"classes": "search-input", "width": "80px"}}
+                "props": {
+                  "style": {
+                    "classes": "search-input",
+                    "width": "80px"
+                  }
+                }
               }
             ]
           },
           {
             "type": "ia.container.flex",
-            "meta": {"name": "FieldPartsPerTray"},
-            "position": {"basis": "auto"},
-            "props": {"direction": "column", "style": {"classes": "field", "gap": "2px"}},
+            "meta": {
+              "name": "FieldPartsPerTray"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "field",
+                "gap": "2px"
+              }
+            },
             "children": [
               {
                 "type": "ia.display.label",
-                "meta": {"name": "LabelPartsPerTray"},
-                "position": {"basis": "auto"},
-                "props": {"text": "Parts Per Tray", "style": {"classes": "field-label"}}
+                "meta": {
+                  "name": "LabelPartsPerTray"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "props": {
+                  "text": "Parts Per Tray",
+                  "style": {
+                    "classes": "field-label"
+                  }
+                }
               },
               {
                 "type": "ia.input.text-field",
-                "meta": {"name": "InputPartsPerTray"},
-                "position": {"basis": "auto"},
+                "meta": {
+                  "name": "InputPartsPerTray"
+                },
+                "position": {
+                  "basis": "auto"
+                },
                 "propConfig": {
                   "props.text": {
                     "binding": {
                       "type": "property",
-                      "config": {"bidirectional": true, "path": "view.custom.data.PartsPerTray"}
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.data.PartsPerTray"
+                      }
                     }
                   }
                 },
-                "props": {"style": {"classes": "search-input", "width": "80px"}}
+                "props": {
+                  "style": {
+                    "classes": "search-input",
+                    "width": "80px"
+                  }
+                }
               }
             ]
           },
           {
             "type": "ia.container.flex",
-            "meta": {"name": "FieldIsSerialized"},
-            "position": {"basis": "auto"},
-            "props": {"direction": "column", "style": {"classes": "field", "gap": "2px"}},
+            "meta": {
+              "name": "FieldIsSerialized"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "field",
+                "gap": "2px"
+              }
+            },
             "children": [
               {
                 "type": "ia.display.label",
-                "meta": {"name": "LabelIsSerialized"},
-                "position": {"basis": "auto"},
-                "props": {"text": "Serialized", "style": {"classes": "field-label"}}
+                "meta": {
+                  "name": "LabelIsSerialized"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "props": {
+                  "text": "Serialized",
+                  "style": {
+                    "classes": "field-label"
+                  }
+                }
               },
               {
                 "type": "ia.input.dropdown",
-                "meta": {"name": "DropdownIsSerialized"},
-                "position": {"basis": "auto"},
+                "meta": {
+                  "name": "DropdownIsSerialized"
+                },
+                "position": {
+                  "basis": "auto"
+                },
                 "propConfig": {
                   "props.value": {
                     "binding": {
                       "type": "property",
-                      "config": {"bidirectional": true, "path": "view.custom.data.IsSerialized"}
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.data.IsSerialized"
+                      }
                     }
                   }
                 },
                 "props": {
                   "options": [
-                    {"label": "Yes", "value": true},
-                    {"label": "No",  "value": false}
+                    {
+                      "label": "Yes",
+                      "value": true
+                    },
+                    {
+                      "label": "No",
+                      "value": false
+                    }
                   ],
-                  "style": {"classes": "select"}
+                  "style": {
+                    "classes": "select"
+                  }
                 }
               }
             ]
@@ -147,98 +270,207 @@
       },
       {
         "type": "ia.container.flex",
-        "meta": {"name": "FieldRow2"},
-        "position": {"basis": "auto"},
-        "props": {"direction": "row", "style": {"classes": "field-row", "gap": "12px"}},
+        "meta": {
+          "name": "FieldRow2"
+        },
+        "position": {
+          "basis": "auto"
+        },
+        "props": {
+          "direction": "row",
+          "style": {
+            "classes": "field-row",
+            "gap": "12px"
+          }
+        },
         "children": [
           {
             "type": "ia.container.flex",
-            "meta": {"name": "FieldClosureMethod"},
-            "position": {"basis": "auto"},
-            "props": {"direction": "column", "style": {"classes": "field", "gap": "2px"}},
+            "meta": {
+              "name": "FieldClosureMethod"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "field",
+                "gap": "2px"
+              }
+            },
             "children": [
               {
                 "type": "ia.display.label",
-                "meta": {"name": "LabelClosureMethod"},
-                "position": {"basis": "auto"},
-                "props": {"text": "Closure Method", "style": {"classes": "field-label"}}
+                "meta": {
+                  "name": "LabelClosureMethod"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "props": {
+                  "text": "Closure Method",
+                  "style": {
+                    "classes": "field-label"
+                  }
+                }
               },
               {
                 "type": "ia.input.dropdown",
-                "meta": {"name": "DropdownClosureMethod"},
-                "position": {"basis": "auto"},
+                "meta": {
+                  "name": "DropdownClosureMethod"
+                },
+                "position": {
+                  "basis": "auto"
+                },
                 "propConfig": {
                   "props.value": {
                     "binding": {
                       "type": "property",
-                      "config": {"bidirectional": true, "path": "view.custom.data.ClosureMethod"}
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.data.ClosureMethod"
+                      }
                     }
                   }
                 },
                 "props": {
                   "options": [
-                    {"label": "ByCount",  "value": "ByCount"},
-                    {"label": "ByWeight", "value": "ByWeight"},
-                    {"label": "ByVision", "value": "ByVision"}
+                    {
+                      "label": "ByCount",
+                      "value": "ByCount"
+                    },
+                    {
+                      "label": "ByWeight",
+                      "value": "ByWeight"
+                    },
+                    {
+                      "label": "ByVision",
+                      "value": "ByVision"
+                    }
                   ],
-                  "style": {"classes": "select"}
+                  "style": {
+                    "classes": "select"
+                  }
                 }
               }
             ]
           },
           {
             "type": "ia.container.flex",
-            "meta": {"name": "FieldDunnageCode"},
-            "position": {"basis": "auto"},
-            "props": {"direction": "column", "style": {"classes": "field", "gap": "2px"}},
+            "meta": {
+              "name": "FieldDunnageCode"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "field",
+                "gap": "2px"
+              }
+            },
             "children": [
               {
                 "type": "ia.display.label",
-                "meta": {"name": "LabelDunnageCode"},
-                "position": {"basis": "auto"},
-                "props": {"text": "Dunnage Code", "style": {"classes": "field-label"}}
+                "meta": {
+                  "name": "LabelDunnageCode"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "props": {
+                  "text": "Dunnage Code",
+                  "style": {
+                    "classes": "field-label"
+                  }
+                }
               },
               {
                 "type": "ia.input.text-field",
-                "meta": {"name": "InputDunnageCode"},
-                "position": {"basis": "auto"},
+                "meta": {
+                  "name": "InputDunnageCode"
+                },
+                "position": {
+                  "basis": "auto"
+                },
                 "propConfig": {
                   "props.text": {
                     "binding": {
                       "type": "property",
-                      "config": {"bidirectional": true, "path": "view.custom.data.DunnageCode"}
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.data.DunnageCode"
+                      }
                     }
                   }
                 },
-                "props": {"style": {"classes": "search-input", "width": "120px"}}
+                "props": {
+                  "style": {
+                    "classes": "search-input",
+                    "width": "120px"
+                  }
+                }
               }
             ]
           },
           {
             "type": "ia.container.flex",
-            "meta": {"name": "FieldCustomerCode"},
-            "position": {"basis": "auto"},
-            "props": {"direction": "column", "style": {"classes": "field", "gap": "2px"}},
+            "meta": {
+              "name": "FieldCustomerCode"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "field",
+                "gap": "2px"
+              }
+            },
             "children": [
               {
                 "type": "ia.display.label",
-                "meta": {"name": "LabelCustomerCode"},
-                "position": {"basis": "auto"},
-                "props": {"text": "Customer Code", "style": {"classes": "field-label"}}
+                "meta": {
+                  "name": "LabelCustomerCode"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "props": {
+                  "text": "Customer Code",
+                  "style": {
+                    "classes": "field-label"
+                  }
+                }
               },
               {
                 "type": "ia.input.text-field",
-                "meta": {"name": "InputCustomerCode"},
-                "position": {"basis": "auto"},
+                "meta": {
+                  "name": "InputCustomerCode"
+                },
+                "position": {
+                  "basis": "auto"
+                },
                 "propConfig": {
                   "props.text": {
                     "binding": {
                       "type": "property",
-                      "config": {"bidirectional": true, "path": "view.custom.data.CustomerCode"}
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.data.CustomerCode"
+                      }
                     }
                   }
                 },
-                "props": {"style": {"classes": "search-input", "width": "140px"}}
+                "props": {
+                  "style": {
+                    "classes": "search-input",
+                    "width": "140px"
+                  }
+                }
               }
             ]
           }
