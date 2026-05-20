@@ -12,7 +12,24 @@
   "custom": {
     "activeTab": "containerConfig",
     "editDraft": {
-      "meta": {}
+      "meta": {
+        "Id": 0,
+        "PartNumber": "",
+        "Description": "",
+        "ItemTypeId": 0,
+        "ItemTypeName": "",
+        "MacolaPartNumber": "",
+        "DefaultSubLotQty": 0,
+        "MaxLotSize": 0,
+        "UomId": 0,
+        "UomCode": "",
+        "UnitWeight": 0,
+        "WeightUomId": 0,
+        "WeightUomCode": "",
+        "CountryOfOrigin": "",
+        "MaxParts": 0,
+        "PartsPerBasket": 0
+      }
     },
     "itemTypes": [
       "Raw Material",
@@ -22,10 +39,27 @@
       "Pass-Through"
     ],
     "items": [],
-    "mode": "update",
+    "mode": "view",
     "search": "",
     "selected": {
-      "meta": {}
+      "meta": {
+        "Id": 0,
+        "PartNumber": "",
+        "Description": "",
+        "ItemTypeId": 0,
+        "ItemTypeName": "",
+        "MacolaPartNumber": "",
+        "DefaultSubLotQty": 0,
+        "MaxLotSize": 0,
+        "UomId": 0,
+        "UomCode": "",
+        "UnitWeight": 0,
+        "WeightUomId": 0,
+        "WeightUomCode": "",
+        "CountryOfOrigin": "",
+        "MaxParts": 0,
+        "PartsPerBasket": 0
+      }
     },
     "typeFilter": "All Types",
     "uoms": [
@@ -1086,12 +1120,66 @@
               "basis": "0",
               "grow": 1
             },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.custom.mode} != \"view\""
+                  }
+                }
+              }
+            },
             "props": {
               "direction": "column",
               "style": {
                 "overflow": "hidden"
               }
             },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "EmptyState"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.custom.mode} = \"view\""
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "center",
+              "justify": "center",
+              "style": {
+                "color": "var(--mpp-text-muted)",
+                "fontStyle": "italic",
+                "background": "var(--mpp-surface-card)"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "EmptyStateLabel"
+                },
+                "props": {
+                  "text": "Select an item from the list to view its details, or click + Add Item to create a new one.",
+                  "style": {
+                    "fontSize": "13px"
+                  }
+                }
+              }
+            ],
             "type": "ia.container.flex"
           }
         ],

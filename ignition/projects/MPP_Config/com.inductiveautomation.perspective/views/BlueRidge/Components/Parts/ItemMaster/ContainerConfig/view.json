@@ -1,6 +1,14 @@
 {
   "custom": {
-    "data": {}
+    "data": {
+      "TraysPerContainer": 0,
+      "PartsPerTray": 0,
+      "IsSerialized": false,
+      "DunnageCode": "",
+      "CustomerCode": "",
+      "ClosureMethod": "",
+      "TargetWeight": 0
+    }
   },
   "params": {
     "value": 0

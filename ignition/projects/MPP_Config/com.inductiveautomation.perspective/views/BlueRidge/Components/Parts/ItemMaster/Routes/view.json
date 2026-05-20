@@ -1,6 +1,10 @@
 {
   "custom": {
-    "data": {}
+    "data": {
+      "publishedVersion": 0,
+      "effectiveFrom": "",
+      "steps": []
+    }
   },
   "params": {
     "value": 0
