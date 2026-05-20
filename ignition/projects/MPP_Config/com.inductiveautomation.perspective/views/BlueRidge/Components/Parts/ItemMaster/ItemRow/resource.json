@@ -6,8 +6,9 @@
   "files": ["view.json"],
   "attributes": {
     "lastModification": {
-      "actor": "Jacques Potgieter",
-      "timestamp": "2026-05-19T12:00:00Z"
-    }
+      "actor": "claude",
+      "timestamp": "2026-05-20T04:00:00Z"
+    },
+    "lastModificationSignature": ""
   }
 }

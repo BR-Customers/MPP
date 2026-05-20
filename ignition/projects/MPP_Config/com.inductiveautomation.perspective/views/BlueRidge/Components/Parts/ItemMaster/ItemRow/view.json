@@ -21,9 +21,9 @@
       "dom": {
         "onClick": {
           "type": "script",
-          "scope": "C",
+          "scope": "G",
           "config": {
-            "script": "system.perspective.sendMessage('itemRowClicked', {'id': self.view.params.item.get('id')}, scope='page')"
+            "script": "system.perspective.sendMessage('itemRowClicked', payload={'id': self.view.params.item.get('id')}, scope='page')"
           }
         }
       }
