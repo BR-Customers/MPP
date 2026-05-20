@@ -104,7 +104,7 @@
         "meta": { "name": "EditButton" },
         "position": { "basis": "80px", "shrink": 0 },
         "propConfig": {
-          "position.display": {
+          "meta.visible": {
             "binding": {
               "type": "expr",
               "config": { "expression": "!{view.params.deprecated}" }
