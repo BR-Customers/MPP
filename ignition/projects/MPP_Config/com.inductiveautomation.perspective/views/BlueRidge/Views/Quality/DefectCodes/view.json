@@ -6,7 +6,7 @@
       "includeDeprecated": false
     },
     "areaOptions": [],
-    "allRows":     []
+    "rows":        []
   },
   "params": {},
   "propConfig": {
@@ -19,23 +19,12 @@
         "config": { "expression": "runScript(\"BlueRidge.Location.Location.getAllAreas\", 0, true)" }
       }
     },
-    "custom.allRows": {
+    "custom.rows": {
       "binding": {
-        "type": "query",
+        "type": "expr",
         "config": {
-          "queryPath":     "quality/DefectCode_List",
-          "fallbackDelay": 2.5,
-          "parameters": {
-            "includeDeprecated": "{view.custom.filter.includeDeprecated}",
-            "areaLocationId":    "{view.custom.filter.areaLocationId}"
-          }
-        },
-        "transforms": [
-          {
-            "type": "script",
-            "code": "\theaders = list(value.getColumnNames()) if value is not None else []\n\treturn [dict(zip(headers, row)) for row in (value or [])]"
-          }
-        ]
+          "expression": "runScript(\"BlueRidge.Quality.DefectCode.search\", 0, {view.custom.filter})"
+        }
       }
     }
   },
@@ -52,7 +41,7 @@
           "pageScope": true,
           "sessionScope": false,
           "viewScope": false,
-          "script": "\tf = self.view.custom.filter or {}\n\tself.view.custom.allRows = BlueRidge.Quality.DefectCode.getAll(\n\t\tf.get(\"includeDeprecated\", False),\n\t\tf.get(\"areaLocationId\"))"
+          "script": "\tself.view.custom.rows = BlueRidge.Quality.DefectCode.search(self.view.custom.filter)"
         }
       ]
     },
@@ -247,10 +236,8 @@
                     "propConfig": {
                       "props.instances": {
                         "binding": {
-                          "type": "expr",
-                          "config": {
-                            "expression": "runScript(\"BlueRidge.Quality.DefectCode.filterAndMapRows\", 0, {view.custom.allRows}, {view.custom.filter.searchText})"
-                          }
+                          "type": "property",
+                          "config": { "path": "view.custom.rows" }
                         }
                       }
                     },

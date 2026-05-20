@@ -3,7 +3,7 @@
 #
 # Author:           Blue Ridge Automation
 # Created:          2026-05-19
-# Version:          1.0
+# Version:          1.1
 #
 # Description:
 #   Read + mutation surface for the Defect Codes Configuration Tool
@@ -11,14 +11,14 @@
 #   BlueRidge.Common.Db.* helpers.
 #
 # Public surface:
+#   search(filter)        -> list[dict]   -- one-shot DB + filter + map
+#                                            for the list view binding
 #   getAll(includeDeprecated=False, areaLocationId=None) -> list[dict]
-#   getOne(defectCodeId) -> dict | None
-#   add(data) -> {Status, Message, NewId}
-#   update(data) -> {Status, Message}
+#   getOne(defectCodeId)  -> dict | None
+#   add(data)             -> {Status, Message, NewId}
+#   update(data)          -> {Status, Message}
 #   deprecate(defectCodeId) -> {Status, Message}
-#   derivePrefix(areaName) -> str    -- helper for Code auto-suggest
-#   filterAndMapRows(allRows, searchText) -> list[dict]
-#                                    -- helper for flex-repeater binding
+#   derivePrefix(areaName)-> str          -- helper for Code auto-suggest
 #
 # Layer:
 #   View -> BlueRidge.Quality.DefectCode (this module)
@@ -28,12 +28,55 @@
 # Change Log:
 #   2026-05-19 - 1.0 - Initial version: full CRUD + derivePrefix +
 #                      filterAndMapRows helpers.
+#   2026-05-20 - 1.1 - Replace filterAndMapRows with search(filter)
+#                      following DowntimeReasonCode.search pattern.
+#                      Single-binding architecture (one expr binding ->
+#                      one runScript call -> ready-to-render rows)
+#                      sidesteps the chained-binding runtime failure
+#                      that blocked Task 8 with the prior two-binding
+#                      design (query+transform feeding a runScript expr).
 # =============================================================================
 
 
 def _u(value):
     """Deep-unwrap shorthand for QualifiedValue / Java Map containers."""
     return BlueRidge.Common.Util.extractQualifiedValues(value)
+
+
+def search(filter=None):
+    """One-shot list view feed. Runs the DB query, applies the client-side
+    search-text filter, maps rows to the DefectCodeRow shape, returns
+    the list ready to be assigned to a flex-repeater's props.instances.
+
+    filter keys (all optional):
+        includeDeprecated  bool, default False (server-side via proc)
+        areaLocationId     BIGINT or None      (server-side via proc)
+        searchText         string or None      (client-side filter here)
+    """
+    BlueRidge.Common.Util.log("filter=%s" % filter)
+    f = _u(filter) or {}
+    rows = getAll(
+        bool(f.get("includeDeprecated", False)),
+        f.get("areaLocationId"),
+    )
+    needle = (f.get("searchText") or "").strip().lower()
+    out = []
+    for r in rows:
+        code        = r.get("Code") or ""
+        description = r.get("Description") or ""
+        if needle and needle not in code.lower() and needle not in description.lower():
+            continue
+        out.append({
+            "id":             r.get("Id"),
+            "code":           code,
+            "description":    description,
+            "area":           r.get("AreaName") or "",
+            "areaLocationId": r.get("AreaLocationId"),
+            "excused":        bool(r.get("IsExcused")),
+            "deprecated":     r.get("DeprecatedAt") is not None,
+            "selected":       False,
+        })
+    return out
 
 
 def getAll(includeDeprecated=False, areaLocationId=None):
@@ -130,42 +173,3 @@ def derivePrefix(areaName):
         return words[0] + "-"
     prefix = "".join(w[0].upper() for w in words)
     return prefix + "-"
-
-
-def filterAndMapRows(allRows, searchText):
-    """Flex-repeater instances transform.
-
-    Filters allRows by case-insensitive substring match on Code or
-    Description against searchText. Maps DB column names to the
-    DefectCodeRow view-param shape. Returns list[dict] ready for
-    Repeater.props.instances.
-
-    Accepts allRows as either list[dict] (entity-script output) OR
-    a Dataset (Ignition custom-prop layer may coerce stored lists
-    back to Dataset when read via expression). Defensive at entry.
-    """
-    allRows = _u(allRows)
-    if allRows is None:
-        return []
-    # If allRows is a Dataset (has getColumnNames + getRowCount),
-    # convert to list[dict] so the .get() row access below works.
-    if hasattr(allRows, "getColumnNames") and hasattr(allRows, "getRowCount"):
-        headers = list(allRows.getColumnNames())
-        allRows = [dict(zip(headers, row)) for row in allRows]
-    s = (_u(searchText) or "").strip().lower()
-    out = []
-    for r in allRows:
-        code        = r.get("Code") or ""
-        description = r.get("Description") or ""
-        if s and s not in code.lower() and s not in description.lower():
-            continue
-        out.append({
-            "id":             r.get("Id"),
-            "code":           code,
-            "description":    description,
-            "area":           r.get("AreaName") or "",
-            "areaLocationId": r.get("AreaLocationId"),
-            "excused":        bool(r.get("IsExcused")),
-            "selected":       False,
-        })
-    return out

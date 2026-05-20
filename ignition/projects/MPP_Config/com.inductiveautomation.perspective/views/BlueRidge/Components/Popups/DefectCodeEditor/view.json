@@ -241,7 +241,7 @@
                 "meta": { "name": "Label" },
                 "props": {
                   "style": { "classes": "field-label" },
-                  "text": "Area (optional)"
+                  "text": "Area"
                 }
               },
               {
@@ -418,7 +418,7 @@
         {
           "name": "handleSave",
           "params": [],
-          "script": "\tmode  = self.view.custom.mode\n\tdraft = self.view.custom.editDraft or {}\n\tmeta  = draft.get(\"meta\") or {}\n\tif mode == \"create\":\n\t\tresult = BlueRidge.Quality.DefectCode.add(meta)\n\t\tsuccessTitle = \"Defect code created\"\n\telse:\n\t\tresult = BlueRidge.Quality.DefectCode.update(meta)\n\t\tsuccessTitle = \"Defect code updated\"\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle)\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.selected = {\"meta\": dict(meta)}\n\t\tsystem.perspective.sendMessage(\"defectCodeRefresh\", scope=\"page\")\n\t\tsystem.perspective.closePopup(id=\"mpp-defect-code-editor\")"
+          "script": "\tmode  = self.view.custom.mode\n\tdraft = self.view.custom.editDraft or {}\n\tmeta  = draft.get(\"meta\") or {}\n\tif meta.get(\"AreaLocationId\") is None:\n\t\tBlueRidge.Common.Notify.toast(\"Area required\", \"Pick an area before saving.\", \"warning\")\n\t\treturn\n\tif mode == \"create\":\n\t\tresult = BlueRidge.Quality.DefectCode.add(meta)\n\t\tsuccessTitle = \"Defect code created\"\n\telse:\n\t\tresult = BlueRidge.Quality.DefectCode.update(meta)\n\t\tsuccessTitle = \"Defect code updated\"\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle)\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.selected = {\"meta\": dict(meta)}\n\t\tsystem.perspective.sendMessage(\"defectCodeRefresh\", scope=\"page\")\n\t\tsystem.perspective.closePopup(id=\"mpp-defect-code-editor\")"
         },
         {
           "name": "handleDeprecate",
