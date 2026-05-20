@@ -1,7 +1,10 @@
 {
-  "custom": {},
+  "custom": {
+    "selectedArea": "All Areas",
+    "rows": []
+  },
   "params": {
-    "value": {}
+    "value": 0
   },
   "propConfig": {
     "params.value": {"paramDirection": "input"}
@@ -40,7 +43,7 @@
               "props.value": {
                 "binding": {
                   "type": "property",
-                  "config": {"bidirectional": true, "path": "view.params.value.selectedArea"}
+                  "config": {"bidirectional": true, "path": "view.custom.selectedArea"}
                 }
               }
             },
@@ -76,7 +79,7 @@
                   "props.text": {
                     "binding": {
                       "type": "expr",
-                      "config": {"expression": "'Machine Eligibility — ' + {view.params.value.selectedArea} + ' area'"}
+                      "config": {"expression": "'Machine Eligibility — ' + {view.custom.selectedArea} + ' area'"}
                     }
                   }
                 },
@@ -92,7 +95,7 @@
               "props.data": {
                 "binding": {
                   "type": "property",
-                  "config": {"path": "view.params.value.rows"}
+                  "config": {"path": "view.custom.rows"}
                 }
               }
             },

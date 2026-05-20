@@ -1,10 +1,20 @@
 {
-  "custom": {},
+  "custom": {
+    "data": {}
+  },
   "params": {
-    "value": {}
+    "value": 0
   },
   "propConfig": {
-    "params.value": {"paramDirection": "input"}
+    "params.value": {"paramDirection": "input"},
+    "custom.data": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.ContainerConfig.getByItem\", 0, {view.params.value})"
+        }
+      }
+    }
   },
   "props": {
     "defaultSize": {
@@ -55,7 +65,7 @@
                   "props.text": {
                     "binding": {
                       "type": "property",
-                      "config": {"bidirectional": true, "path": "view.params.value.TraysPerContainer"}
+                      "config": {"bidirectional": true, "path": "view.custom.data.TraysPerContainer"}
                     }
                   }
                 },
@@ -83,7 +93,7 @@
                   "props.text": {
                     "binding": {
                       "type": "property",
-                      "config": {"bidirectional": true, "path": "view.params.value.PartsPerTray"}
+                      "config": {"bidirectional": true, "path": "view.custom.data.PartsPerTray"}
                     }
                   }
                 },
@@ -111,7 +121,7 @@
                   "props.value": {
                     "binding": {
                       "type": "property",
-                      "config": {"bidirectional": true, "path": "view.params.value.IsSerialized"}
+                      "config": {"bidirectional": true, "path": "view.custom.data.IsSerialized"}
                     }
                   }
                 },
@@ -153,7 +163,7 @@
                   "props.value": {
                     "binding": {
                       "type": "property",
-                      "config": {"bidirectional": true, "path": "view.params.value.ClosureMethod"}
+                      "config": {"bidirectional": true, "path": "view.custom.data.ClosureMethod"}
                     }
                   }
                 },
@@ -188,7 +198,7 @@
                   "props.text": {
                     "binding": {
                       "type": "property",
-                      "config": {"bidirectional": true, "path": "view.params.value.DunnageCode"}
+                      "config": {"bidirectional": true, "path": "view.custom.data.DunnageCode"}
                     }
                   }
                 },
@@ -216,7 +226,7 @@
                   "props.text": {
                     "binding": {
                       "type": "property",
-                      "config": {"bidirectional": true, "path": "view.params.value.CustomerCode"}
+                      "config": {"bidirectional": true, "path": "view.custom.data.CustomerCode"}
                     }
                   }
                 },

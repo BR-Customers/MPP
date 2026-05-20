@@ -3,12 +3,15 @@
   "version": 1,
   "restricted": false,
   "overridable": true,
-  "files": ["view.json"],
+  "files": [
+    "view.json",
+    "thumbnail.png"
+  ],
   "attributes": {
+    "lastModificationSignature": "",
     "lastModification": {
       "actor": "claude",
-      "timestamp": "2026-05-20T00:00:00Z"
-    },
-    "lastModificationSignature": ""
+      "timestamp": "2026-05-20T01:00:00Z"
+    }
   }
 }

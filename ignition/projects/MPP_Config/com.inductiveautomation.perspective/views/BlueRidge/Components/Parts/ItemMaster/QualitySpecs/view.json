@@ -1,10 +1,20 @@
 {
-  "custom": {},
+  "custom": {
+    "data": []
+  },
   "params": {
-    "value": []
+    "value": 0
   },
   "propConfig": {
-    "params.value": {"paramDirection": "input"}
+    "params.value": {"paramDirection": "input"},
+    "custom.data": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Quality.QualitySpec.listForItem\", 0, {view.params.value})"
+        }
+      }
+    }
   },
   "props": {
     "defaultSize": {
@@ -43,7 +53,7 @@
               "props.data": {
                 "binding": {
                   "type": "property",
-                  "config": {"path": "view.params.value"}
+                  "config": {"path": "view.custom.data"}
                 }
               }
             },

@@ -1,126 +1,205 @@
 {
-  "custom": {},
+  "custom": {
+    "data": {}
+  },
   "params": {
-    "value": {}
+    "value": 0
   },
   "propConfig": {
-    "params.value": {"paramDirection": "input"}
+    "params.value": {
+      "paramDirection": "input"
+    },
+    "custom.data": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.RouteTemplate.getActiveForItem\", 0, {view.params.value})"
+        }
+      }
+    }
   },
   "props": {
     "defaultSize": {
-      "width": 800,
       "height": 320
     }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": {"name": "root"},
-    "props": {
-      "direction": "column",
-      "style": {"gap": "10px"}
-    },
     "children": [
       {
-        "type": "ia.container.flex",
-        "meta": {"name": "HeaderRow"},
-        "position": {"basis": "auto"},
-        "props": {"direction": "row", "alignItems": "center", "style": {"gap": "8px"}},
         "children": [
           {
-            "type": "ia.input.dropdown",
-            "meta": {"name": "DropdownVersion"},
-            "position": {"basis": "auto"},
+            "meta": {
+              "name": "DropdownVersion"
+            },
             "propConfig": {
               "props.options": {
                 "binding": {
-                  "type": "expr",
                   "config": {
-                    "expression": "[{'label': 'v' + toStr({view.params.value.publishedVersion}) + ' — Effective ' + {view.params.value.effectiveFrom} + ' (Published)', 'value': {view.params.value.publishedVersion}}]"
-                  }
+                    "expression": "[{\u0027label\u0027: \u0027v\u0027 + toStr({view.custom.data.publishedVersion}) + \u0027 — Effective \u0027 + {view.custom.data.effectiveFrom} + \u0027 (Published)\u0027, \u0027value\u0027: {view.custom.data.publishedVersion}}]"
+                  },
+                  "type": "expr"
                 }
               }
             },
             "props": {
-              "style": {"classes": "select", "minWidth": "320px"}
-            }
+              "style": {
+                "classes": "select",
+                "minWidth": "320px"
+              }
+            },
+            "type": "ia.input.dropdown"
           },
           {
-            "type": "ia.display.label",
-            "meta": {"name": "BadgePublished"},
-            "position": {"basis": "auto"},
-            "props": {"text": "Published", "style": {"classes": "badge badge-published"}}
+            "meta": {
+              "name": "BadgePublished"
+            },
+            "props": {
+              "style": {
+                "classes": "badge badge-published"
+              },
+              "text": "Published"
+            },
+            "type": "ia.display.label"
           },
           {
-            "type": "ia.container.flex",
-            "meta": {"name": "HeaderSpacer"},
-            "position": {"grow": 1},
-            "props": {}
+            "meta": {
+              "name": "HeaderSpacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.container.flex"
           },
           {
-            "type": "ia.input.button",
-            "meta": {"name": "BtnNewVersion"},
-            "position": {"basis": "auto"},
             "events": {
               "component": {
                 "onActionPerformed": {
-                  "type": "script",
-                  "scope": "C",
                   "config": {
-                    "script": "BlueRidge.Common.Notify.toast('Not wired yet', 'Routes versioning workflow lands in Phase 5.', 'info', 5)"
-                  }
+                    "script": "BlueRidge.Common.Notify.toast(\u0027Not wired yet\u0027, \u0027Routes versioning workflow lands in Phase 5.\u0027, \u0027info\u0027, 5)"
+                  },
+                  "scope": "C",
+                  "type": "script"
                 }
               }
             },
-            "props": {"text": "New Version", "style": {"classes": "btn btn-sm"}}
+            "meta": {
+              "name": "BtnNewVersion"
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-sm"
+              },
+              "text": "New Version"
+            },
+            "type": "ia.input.button"
           }
-        ]
+        ],
+        "meta": {
+          "name": "HeaderRow"
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "gap": "8px"
+          }
+        },
+        "type": "ia.container.flex"
       },
       {
-        "type": "ia.container.flex",
-        "meta": {"name": "PublishedPanel"},
-        "position": {"basis": "auto"},
-        "props": {"direction": "column", "style": {"classes": "detail-panel", "overflow": "hidden"}},
         "children": [
           {
-            "type": "ia.display.table",
-            "meta": {"name": "RouteStepsTable"},
-            "position": {"basis": "auto"},
+            "meta": {
+              "name": "RouteStepsTable"
+            },
             "propConfig": {
               "props.data": {
                 "binding": {
-                  "type": "property",
-                  "config": {"path": "view.params.value.steps"}
+                  "config": {
+                    "path": "view.custom.data.steps"
+                  },
+                  "type": "property"
                 }
               }
             },
             "props": {
               "columns": [
-                {"field": "seq",           "header": "#",                  "width": 50,  "editable": false},
-                {"field": "areaName",      "header": "Area",               "width": 140, "editable": false},
-                {"field": "templateLabel", "header": "Operation Template", "editable": false},
-                {"field": "isRequired",    "header": "Required",           "width": 80,  "editable": false, "render": "boolean"},
-                {"field": "dataFields",    "header": "Data Collection",    "editable": false}
+                {
+                  "editable": false,
+                  "field": "seq",
+                  "header": "#",
+                  "width": 50
+                },
+                {
+                  "editable": false,
+                  "field": "areaName",
+                  "header": "Area",
+                  "width": 140
+                },
+                {
+                  "editable": false,
+                  "field": "templateLabel",
+                  "header": "Operation Template"
+                },
+                {
+                  "editable": false,
+                  "field": "isRequired",
+                  "header": "Required",
+                  "render": "boolean",
+                  "width": 80
+                },
+                {
+                  "editable": false,
+                  "field": "dataFields",
+                  "header": "Data Collection"
+                }
               ],
-              "rows": {"height": 32},
-              "style": {"classes": "data-table"}
-            }
+              "rows": {
+                "height": 32
+              },
+              "style": {
+                "classes": "data-table"
+              }
+            },
+            "type": "ia.display.table"
           },
           {
-            "type": "ia.display.label",
-            "meta": {"name": "ReadOnlyCaption"},
-            "position": {"basis": "auto"},
+            "meta": {
+              "name": "ReadOnlyCaption"
+            },
             "props": {
-              "text": "Published — read-only. Click New Version to create a draft copy for editing.",
               "style": {
-                "padding": "8px 12px",
-                "fontSize": "11px",
                 "color": "var(--mpp-text-muted)",
-                "fontStyle": "italic"
-              }
-            }
+                "fontSize": "11px",
+                "fontStyle": "italic",
+                "padding": "8px 12px"
+              },
+              "text": "Published — read-only. Click New Version to create a draft copy for editing."
+            },
+            "type": "ia.display.label"
           }
-        ]
+        ],
+        "meta": {
+          "name": "PublishedPanel"
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "detail-panel",
+            "overflow": "hidden"
+          }
+        },
+        "type": "ia.container.flex"
       }
-    ]
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "gap": "10px"
+      }
+    },
+    "type": "ia.container.flex"
   }
 }
