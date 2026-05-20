@@ -1,34 +1,29 @@
 # MPP MES — Project Status
 
-**Last updated:** 2026-05-20 (Item Master Phase 2 read paths landed in `worktree-Agent-B-item-master-phase2`; R1 bidi-embed smoke pending Designer verification by Jacques)
+**Last updated:** 2026-05-20 (Defect Codes Task 8 landed + deprecated-row styling parity with DowntimeCodes — `15eeee2..4922ec4`. Item Master Phase 2 read paths landed in `worktree-Agent-B-item-master-phase2`; R1 bidi-embed smoke pending Designer verification by Jacques.)
 
 ---
 
-## 🟠 Open at session end (2026-05-19 evening)
+## ✅ Recently closed
 
-### Defect Codes — table doesn't re-render after Save
+### Defect Codes — Task 8 complete (2026-05-20)
 
-The Defect Codes Configuration Tool screen (Quality → Defect Codes) is **partially functional**:
+The flex-repeater never re-rendered because the screen chained two bindings: a query+transform on `view.custom.allRows` (Python list[dict] with `java.sql.Timestamp` values from unread CreatedAt/DeprecatedAt) feeding a second expression binding `runScript("...filterAndMapRows", 0, {view.custom.allRows}, {view.custom.filter.searchText})`. Substituting a freshly transformed list-of-dicts back into another binding's args chokes Perspective's marshaling. Script Console didn't reproduce because it sends literal Python objects.
 
-- ✓ +Add Code opens editor (after the `scope:"G"` fix in `9fbc62e` — same lesson as DowntimeCodes)
-- ✓ Area dropdown populated from real plant locations
-- ✓ Code prefix auto-suggests on area change
-- ✓ Save succeeds: DB INSERT happens, success toast fires
-- ✗ **List doesn't re-render the new row after Save**
+**Fix (`15eeee2`):** consolidated to the DowntimeCodes peer pattern — new `BlueRidge.Quality.DefectCode.search(filter)` does DB + client-side text filter + row mapping in one shot; `view.custom.rows` binds via single expr `runScript("...search", 0, {view.custom.filter})`; the flex-repeater downgrades to a plain property binding on `view.custom.rows`.
 
-Root cause unknown. The flex-repeater's `instances` binding is an expression `runScript("BlueRidge.Quality.DefectCode.filterAndMapRows", 0, {view.custom.allRows}, {view.custom.filter.searchText})` that throws `Error_ExpressionEval` in Designer Binding Preview and the rendered list stays empty in session. **The same `filterAndMapRows` call with the same input data returns a correct result list when run from Designer Script Console.** Diff between contexts isn't pinned down.
+**Bundled follow-ups:**
+- `15eeee2` — "Area (optional)" → "Area" label + handleSave null-area warning toast guard
+- `75b4420` — Editor `editDraft.meta` initialized to the proper empty shape upfront (was `null`, causing red borders and "null" text on first render); explicit `props.text:""` on Excused checkbox (suppresses component default placeholder); list-view IncludeDeprecated wrapped in `IncludeDeprecatedField` matching DowntimeCodes filter sidebar
+- `16291b6` — DefectCodeRow gains `params.deprecated` + root opacity binding (55% fade) + EditButton conditional hide for deprecated rows
+- `4922ec4` — Both DefectCodeRow and DowntimeCodeRow switched EditButton hide from `position.display` to `meta.visible` so the 80px slot stays reserved and Area/Excused columns hold their x-position across deprecated rows ([[ignition-meta-visible-in-tables]])
 
-**Pickup notes:**
-1. Check gateway log for the actual Python traceback (Designer preview swallows it). Status → Diagnostics → Logs, filter to `BlueRidge.Quality.DefectCode`.
-2. Likely culprit: `runScript` marshals args to Java types differently than Script Console; `_u()` deep-unwrap may have an edge case with the Java Timestamp values in `CreatedAt`/`DeprecatedAt` columns (even though the function never reads them, `_u` traverses).
-3. Alternative path: replace the expression binding with a property binding on `view.custom.allRows` + script transform that reads `self.view.custom.filter.searchText` directly. Drops the runScript indirection entirely. Trade-off: search-text changes won't re-fire the binding (only allRows changes will) — fixable by binding on the filter object or using a composite expression for the dependency.
+Smoke-confirmed by Jacques: add, deprecate, filter all working.
 
-See [[project_mpp_defect_codes_open_bugs]] memory for full hypotheses + commit map.
+### Defect Codes — open follow-ups (not blocking)
 
-### Other Defect Codes follow-ups (not blocking the open bug)
-
-- **"Area (optional)" label** in DefectCodeEditor → proc rejects null. Misleading. Change to "Area" + add client-side guard in `handleSave`.
 - **`getAllAreas` vs `listByTier`** — Task 5 added `listByTier` as a generic primitive but neither Task 6 (popup) nor Task 7 (list view) ended up using it. Ships with zero consumers. Cleanup option: migrate both area-dropdown sites to `listByTier('Area')` + transform when next touched.
+- **Parity opportunity in DowntimeCodeEditor** — same `editDraft: {meta: null}` initial state and unset `props.text` on Excused checkbox. Symptoms haven't been reported there (its `params.editId` onChange populates meta earlier in lifecycle) but the same two-line fix would close the latent risk.
 
 ---
 
