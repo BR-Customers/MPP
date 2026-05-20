@@ -61,20 +61,25 @@ def _mapSteps(rows):
     return out
 
 
+_EMPTY_ROUTE = {"publishedVersion": 0, "effectiveFrom": "", "steps": []}
+
+
 def getActiveForItem(itemId):
     """Returns the active RouteTemplate + steps for the given Item.
-    Single entity-script call → one binding on view.custom.data."""
+    Single entity-script call → one binding on view.custom.data.
+    Always returns a dict — empty shape when no published route exists
+    or itemId is missing, so view bindings never traverse into None."""
     itemId = _u(itemId)
     BlueRidge.Common.Util.log("itemId=%s" % itemId)
     if not itemId:
-        return None
+        return dict(_EMPTY_ROUTE)
     try:
         header = BlueRidge.Common.Db.execOne(
             "parts/RouteTemplate_GetActiveForItem",
             {"itemId": itemId},
         )
         if header is None:
-            return None
+            return dict(_EMPTY_ROUTE)
         steps = BlueRidge.Common.Db.execList(
             "parts/RouteStep_ListByRoute",
             {"routeTemplateId": header.get("Id")},
@@ -88,4 +93,4 @@ def getActiveForItem(itemId):
         BlueRidge.Common.Util.log("getActiveForItem failed: %s" % str(e))
         BlueRidge.Common.Notify.toast(
             "Could not load route", str(e), "error")
-        return None
+        return dict(_EMPTY_ROUTE)

@@ -53,20 +53,25 @@ def _mapLines(rows):
     return out
 
 
+_EMPTY_BOM = {"publishedVersion": 0, "effectiveFrom": "", "lines": []}
+
+
 def getActiveForItem(itemId):
     """Returns the active BOM + lines for the given parent Item.
-    Single entity-script call → one binding on view.custom.data."""
+    Single entity-script call → one binding on view.custom.data.
+    Always returns a dict — empty shape when no published BOM exists
+    or itemId is missing, so view bindings never traverse into None."""
     itemId = _u(itemId)
     BlueRidge.Common.Util.log("itemId=%s" % itemId)
     if not itemId:
-        return None
+        return dict(_EMPTY_BOM)
     try:
         header = BlueRidge.Common.Db.execOne(
             "parts/Bom_GetActiveForItem",
             {"parentItemId": itemId},
         )
         if header is None:
-            return None
+            return dict(_EMPTY_BOM)
         lines = BlueRidge.Common.Db.execList(
             "parts/BomLine_ListByBom",
             {"bomId": header.get("Id")},
@@ -80,4 +85,4 @@ def getActiveForItem(itemId):
         BlueRidge.Common.Util.log("getActiveForItem failed: %s" % str(e))
         BlueRidge.Common.Notify.toast(
             "Could not load BOM", str(e), "error")
-        return None
+        return dict(_EMPTY_BOM)

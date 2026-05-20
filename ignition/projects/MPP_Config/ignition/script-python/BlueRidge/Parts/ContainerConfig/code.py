@@ -23,20 +23,21 @@ def _u(value):
 
 
 def getByItem(itemId):
-    """Returns the active ContainerConfig row for the Item, or None.
-    Multiple active rows shouldn't exist (filtered unique index), but the
-    underlying execOne logs a warning if they do."""
+    """Returns the active ContainerConfig row for the Item.
+    Always returns a dict (possibly empty) so view bindings on
+    view.custom.data.<field> never traverse into None."""
     itemId = _u(itemId)
     BlueRidge.Common.Util.log("itemId=%s" % itemId)
-    if itemId is None:
-        return None
+    if not itemId:
+        return {}
     try:
-        return BlueRidge.Common.Db.execOne(
+        row = BlueRidge.Common.Db.execOne(
             "parts/ContainerConfig_GetByItem",
             {"itemId": itemId},
         )
+        return row if row is not None else {}
     except Exception as e:
         BlueRidge.Common.Util.log("getByItem failed: %s" % str(e))
         BlueRidge.Common.Notify.toast(
             "Could not load container config", str(e), "error")
-        return None
+        return {}
