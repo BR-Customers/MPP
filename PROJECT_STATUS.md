@@ -1,6 +1,6 @@
 # MPP MES — Project Status
 
-**Last updated:** 2026-05-19 (Defect Codes Config Tool screen — Tasks 1-7 of 8 landed via subagent-driven execution; one open bug blocks Task 8 smoke completion)
+**Last updated:** 2026-05-20 (Item Master Phase 2 read paths landed in `worktree-Agent-B-item-master-phase2`; R1 bidi-embed smoke pending Designer verification by Jacques)
 
 ---
 
@@ -219,6 +219,26 @@ Phase G capability snapshot: `Meeting_Notes/2026-04-22_Phase_G_Capabilities_Summ
 ## Recent Change Narrative
 
 A timeline of session-by-session changes. Most recent first.
+
+### 2026-05-20 — Item Master Phase 2: read paths + R1 smoke test bed
+
+Phase 2 of the 8-phase Item Master Configuration Tool. Three new Named Queries (`parts/Item_List`, `parts/Item_Get`, `parts/ContainerConfig_GetByItem`) wrap existing stored procs. Two new entity scripts (`BlueRidge.Parts.Item`, `BlueRidge.Parts.ContainerConfig`) route through `Common.Db`. The parent `ItemMaster/view.json` now binds `view.custom.items` to a `runScript(BlueRidge.Parts.Item.getAllForList, ...)` expression and its `itemRowClicked` handler calls the live entity scripts to populate `view.custom.editDraft.meta` + `view.custom.editDraft.containerConfig` from the DB. The other four tab slices (routes/boms/qualitySpecs/eligibility) are left empty until their own phases land.
+
+**No SQL changes.** Tests stay at 937/937 (existing `Parts.Item_List`, `Parts.Item_Get`, `Parts.ContainerConfig_GetByItem` reused as-is).
+
+**Spec:** `docs/superpowers/specs/2026-05-20-item-master-phase2-design.md`
+**Plan:** `docs/superpowers/plans/2026-05-20-item-master-phase2.md`
+
+**Files touched (8 created + 2 modified):**
+- 3 new NQ folders under `ignition/projects/MPP_Config/ignition/named-query/parts/`
+- 2 new entity script modules under `ignition/projects/MPP_Config/ignition/script-python/BlueRidge/Parts/`
+- 1 view edit + resource.json metadata bump on `BlueRidge/Views/Parts/ItemMaster/`
+
+**R1 smoke verification — PENDING.** Designer smoke checklist in spec §9. R1 holding is the precondition for Phase 3-8 building on the bidi-embed pattern. If smoke fails, the page-scoped message fallback documented in spec §2 governs the rebuild.
+
+**Worktree:** built in `.claude/worktrees/Agent-B-item-master-phase2` on branch `worktree-Agent-B-item-master-phase2`. Ready to merge to main once R1 smoke verifies green.
+
+**Next pickup:** Jacques walks the R1 smoke checklist in Designer. On pass → Phase 3 (Item Save / Deprecate / Add Item Create) brainstorming, including cleanup of the `PartsPerBasket` Identity field that doesn't map to a real `Parts.Item` column. On fail → fallback design cycle (page-scoped messages instead of bidi-embed).
 
 ### 2026-05-19 — Item Master Phase 1 view shell
 
