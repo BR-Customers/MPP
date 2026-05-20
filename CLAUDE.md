@@ -133,6 +133,14 @@ Edits to **existing** `view.json` files default to Designer, not file edits. Fil
 
 Editors with `view.custom.editDraft` / `view.custom.selected` state and an explicit Save action wire their Close-style buttons (footer Close + header X) through the reusable `BlueRidge/Components/Popups/ConfirmUnsaved` popup. Dirty check first; clean state closes immediately; dirty state opens the popup with Save & Close / Discard & Close / Cancel buttons. User's choice routes back via page-scoped `confirmUnsavedResult` message. Reference impl: LocationTypeEditor. Generalizes to BomEditor / RouteTemplateEditor / QualitySpecEditor. See `project_mpp_confirm_unsaved_pattern.md`.
 
+### Compound editors with per-section ownership
+
+Multi-section editors with embedded sub-views (currently Item Master at `/items`; will apply to any future surface with this shape) follow the **per-section ownership** pattern: each section's embedded view receives only a BIGINT `params.value: itemId` (input-only, NOT bidirectional), owns its own `view.custom.selected` + `view.custom.editDraft` locally, fetches its own data on item-id change, has its own Save + Discard buttons inside the embed, and broadcasts dirty-state transitions via `sectionDirtyChanged` page-scoped messages with `{section, isDirty}` payload. The parent maintains `view.custom.sectionDirty` flag map + `pendingSwitch` staging area; tab clicks and item-row clicks are gated by the same ConfirmUnsaved popup pattern (Save → `sectionSaveRequested`, Discard → `sectionDiscardRequested`, both page-scoped). Versioned sections (Routes / BOMs) keep their Draft/Publish lifecycle ORTHOGONAL to `sectionDirty` — only unsaved Draft-line edits flip the dirty flag, NOT publish/deprecate transitions. Pattern memory: `project_mpp_item_master_pattern.md` (2026-05-20 rev). Reference impl target: ContainerConfig embed post-Phase-4.
+
+### Form-binding initial state
+
+Inputs that bidi-bind to nested paths (`view.custom.editDraft.<section>.<field>`) require the **full empty shape pre-populated** in the custom-block defaults — initializing just `{<section>: null}` causes the first render to show validation-error borders and literal `"null"` text in text-fields until the load handler populates the dict. Always seed `editDraft.<section>` with every key the form binds, even if the value is `null` / `""` / `false`. Reference incident: `b295b53` (DefectCodeEditor fix, 2026-05-20).
+
 ### UI
 
 No drag-and-drop anywhere — up/down arrow buttons for all sortable lists.
