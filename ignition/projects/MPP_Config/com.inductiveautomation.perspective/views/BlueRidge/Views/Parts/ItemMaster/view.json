@@ -1,129 +1,37 @@
 {
+  "propConfig": {
+    "custom.items": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Item.getAllForList\", 0, {view.custom.search}, {view.custom.typeFilter})"
+        }
+      }
+    }
+  },
   "custom": {
     "search": "",
     "typeFilter": "All Types",
     "activeTab": "containerConfig",
     "mode": "update",
-    "items": [
-      {"id": 1, "partNumber": "5G0",     "description": "Front Cover Assy",    "itemTypeName": "Finished Good", "typeBadge": "FG",   "isDraft": false},
-      {"id": 2, "partNumber": "5G0-C",   "description": "Front Cover Casting", "itemTypeName": "Component",     "typeBadge": "COMP", "isDraft": false},
-      {"id": 3, "partNumber": "PNA",     "description": "Mounting Pin",        "itemTypeName": "Component",     "typeBadge": "COMP", "isDraft": false},
-      {"id": 4, "partNumber": "6MA-HSG", "description": "Cam Holder Housing",  "itemTypeName": "Pass-Through",  "typeBadge": "PT",   "isDraft": true},
-      {"id": 5, "partNumber": "RPY",     "description": "Assembly Set",        "itemTypeName": "Finished Good", "typeBadge": "FG",   "isDraft": false}
-    ],
+    "items": [],
     "itemTypes": ["Raw Material", "Component", "Sub-Assembly", "Finished Good", "Pass-Through"],
     "uoms": ["EA", "LB", "KG"],
     "selected": {
-      "meta": {
-        "Id": 1,
-        "PartNumber": "5G0",
-        "Description": "5G0 Front Cover Assembly",
-        "ItemTypeName": "Finished Good",
-        "UomCode": "EA",
-        "MacolaPartNumber": "5G0-FC-001",
-        "UnitWeight": 3.25,
-        "WeightUomCode": "LB",
-        "DefaultSubLotQty": 24,
-        "PartsPerBasket": 100,
-        "CountryOfOrigin": "US",
-        "MaxParts": 500
-      },
-      "containerConfig": {
-        "TraysPerContainer": 4,
-        "PartsPerTray": 12,
-        "IsSerialized": true,
-        "ClosureMethod": "ByCount",
-        "TargetWeight": null,
-        "DunnageCode": "RD-5G0F",
-        "CustomerCode": "HONDA-5G0"
-      },
-      "routes": {
-        "publishedVersion": 2,
-        "effectiveFrom": "2026-01-15",
-        "steps": [
-          {"seq": 1, "areaName": "Die Cast",     "templateLabel": "DC-5G0 v1 — Die Cast 5G0 Front Cover",   "isRequired": true, "dataFields": "DieInfo, CavityInfo, Weight, GoodCount, BadCount"},
-          {"seq": 2, "areaName": "Trim Shop",    "templateLabel": "TRIM-5G0 v1 — Trim 5G0 Front Cover",     "isRequired": true, "dataFields": "Weight, GoodCount, BadCount"},
-          {"seq": 3, "areaName": "Machine Shop", "templateLabel": "CNC-5G0 v1 — CNC Machining 5G0",         "isRequired": true, "dataFields": "GoodCount, BadCount"},
-          {"seq": 4, "areaName": "Prod Control", "templateLabel": "ASSY-FRONT v1 — Assembly Front Cover",   "isRequired": true, "dataFields": "SerialNumber, MaterialVerification, GoodCount, BadCount"}
-        ]
-      },
-      "boms": {
-        "publishedVersion": 1,
-        "effectiveFrom": "2026-01-15",
-        "lines": [
-          {"seq": 1, "componentName": "Front Cover Casting", "partNumber": "5G0-C", "qtyPer": 1, "uom": "EA"},
-          {"seq": 2, "componentName": "Mounting Pin",        "partNumber": "PNA",   "qtyPer": 2, "uom": "EA"}
-        ]
-      },
-      "qualitySpecs": [
-        {"specName": "5G0 Dimensional Spec",  "activeVersion": "v2", "statusLabel": "Active"},
-        {"specName": "5G0 Visual Inspection", "activeVersion": "v1", "statusLabel": "Active"}
-      ],
-      "eligibility": {
-        "selectedArea": "Die Cast",
-        "rows": [
-          {"machineName": "DC Machine #3",  "code": "DC-003", "tonnage": "400 tons", "eligible": true},
-          {"machineName": "DC Machine #7",  "code": "DC-007", "tonnage": "400 tons", "eligible": true},
-          {"machineName": "DC Machine #12", "code": "DC-012", "tonnage": "400 tons", "eligible": true},
-          {"machineName": "DC Machine #15", "code": "DC-015", "tonnage": "250 tons", "eligible": false}
-        ]
-      }
+      "meta": {},
+      "containerConfig": {},
+      "routes": {"steps": []},
+      "boms": {"lines": []},
+      "qualitySpecs": [],
+      "eligibility": {"rows": []}
     },
     "editDraft": {
-      "meta": {
-        "Id": 1,
-        "PartNumber": "5G0",
-        "Description": "5G0 Front Cover Assembly",
-        "ItemTypeName": "Finished Good",
-        "UomCode": "EA",
-        "MacolaPartNumber": "5G0-FC-001",
-        "UnitWeight": 3.25,
-        "WeightUomCode": "LB",
-        "DefaultSubLotQty": 24,
-        "PartsPerBasket": 100,
-        "CountryOfOrigin": "US",
-        "MaxParts": 500
-      },
-      "containerConfig": {
-        "TraysPerContainer": 4,
-        "PartsPerTray": 12,
-        "IsSerialized": true,
-        "ClosureMethod": "ByCount",
-        "TargetWeight": null,
-        "DunnageCode": "RD-5G0F",
-        "CustomerCode": "HONDA-5G0"
-      },
-      "routes": {
-        "publishedVersion": 2,
-        "effectiveFrom": "2026-01-15",
-        "steps": [
-          {"seq": 1, "areaName": "Die Cast",     "templateLabel": "DC-5G0 v1 — Die Cast 5G0 Front Cover",   "isRequired": true, "dataFields": "DieInfo, CavityInfo, Weight, GoodCount, BadCount"},
-          {"seq": 2, "areaName": "Trim Shop",    "templateLabel": "TRIM-5G0 v1 — Trim 5G0 Front Cover",     "isRequired": true, "dataFields": "Weight, GoodCount, BadCount"},
-          {"seq": 3, "areaName": "Machine Shop", "templateLabel": "CNC-5G0 v1 — CNC Machining 5G0",         "isRequired": true, "dataFields": "GoodCount, BadCount"},
-          {"seq": 4, "areaName": "Prod Control", "templateLabel": "ASSY-FRONT v1 — Assembly Front Cover",   "isRequired": true, "dataFields": "SerialNumber, MaterialVerification, GoodCount, BadCount"}
-        ]
-      },
-      "boms": {
-        "publishedVersion": 1,
-        "effectiveFrom": "2026-01-15",
-        "lines": [
-          {"seq": 1, "componentName": "Front Cover Casting", "partNumber": "5G0-C", "qtyPer": 1, "uom": "EA"},
-          {"seq": 2, "componentName": "Mounting Pin",        "partNumber": "PNA",   "qtyPer": 2, "uom": "EA"}
-        ]
-      },
-      "qualitySpecs": [
-        {"specName": "5G0 Dimensional Spec",  "activeVersion": "v2", "statusLabel": "Active"},
-        {"specName": "5G0 Visual Inspection", "activeVersion": "v1", "statusLabel": "Active"}
-      ],
-      "eligibility": {
-        "selectedArea": "Die Cast",
-        "rows": [
-          {"machineName": "DC Machine #3",  "code": "DC-003", "tonnage": "400 tons", "eligible": true},
-          {"machineName": "DC Machine #7",  "code": "DC-007", "tonnage": "400 tons", "eligible": true},
-          {"machineName": "DC Machine #12", "code": "DC-012", "tonnage": "400 tons", "eligible": true},
-          {"machineName": "DC Machine #15", "code": "DC-015", "tonnage": "250 tons", "eligible": false}
-        ]
-      }
+      "meta": {},
+      "containerConfig": {},
+      "routes": {"steps": []},
+      "boms": {"lines": []},
+      "qualitySpecs": [],
+      "eligibility": {"rows": []}
     }
   },
   "params": {},
@@ -1054,7 +962,7 @@
           "pageScope": true,
           "viewScope": false,
           "sessionScope": false,
-          "script": "\tclickedId = payload.get('id') if payload else None\n\tif clickedId is None:\n\t\treturn\n\tfor it in self.view.custom.items:\n\t\tif it.get('id') == clickedId:\n\t\t\tif it.get('id') == 1:\n\t\t\t\tself.view.custom.editDraft = dict(self.view.custom.selected)\n\t\t\telse:\n\t\t\t\tbundle = {'meta': dict(it), 'containerConfig': {}, 'routes': {'steps': []}, 'boms': {'lines': []}, 'qualitySpecs': [], 'eligibility': {'rows': []}}\n\t\t\t\tself.view.custom.selected  = bundle\n\t\t\t\tself.view.custom.editDraft = dict(bundle)\n\t\t\tself.view.custom.mode = 'update'\n\t\t\tbreak"
+          "script": "\tclickedId = payload.get('id') if payload else None\n\tif clickedId is None:\n\t\treturn\n\titemMeta = BlueRidge.Parts.Item.getOne(clickedId)\n\tif itemMeta is None:\n\t\tBlueRidge.Common.Notify.toast('Item not found', 'Item id ' + str(clickedId) + ' no longer exists.', 'warning')\n\t\treturn\n\tccRow = BlueRidge.Parts.ContainerConfig.getByItem(clickedId) or {}\n\tself.view.custom.selected = {\n\t\t'meta': dict(itemMeta),\n\t\t'containerConfig': dict(ccRow),\n\t\t'routes': {'steps': []},\n\t\t'boms': {'lines': []},\n\t\t'qualitySpecs': [],\n\t\t'eligibility': {'rows': []}\n\t}\n\tself.view.custom.editDraft = {\n\t\t'meta': dict(itemMeta),\n\t\t'containerConfig': dict(ccRow),\n\t\t'routes': {'steps': []},\n\t\t'boms': {'lines': []},\n\t\t'qualitySpecs': [],\n\t\t'eligibility': {'rows': []}\n\t}\n\tself.view.custom.mode = 'update'"
         }
       ]
     }
