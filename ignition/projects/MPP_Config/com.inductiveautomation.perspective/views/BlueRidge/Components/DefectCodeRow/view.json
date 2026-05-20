@@ -7,6 +7,7 @@
     "area":           "",
     "areaLocationId": 0,
     "excused":        false,
+    "deprecated":     false,
     "selected":       false
   },
   "propConfig": {
@@ -16,6 +17,7 @@
     "params.area":           { "paramDirection": "input" },
     "params.areaLocationId": { "paramDirection": "input" },
     "params.excused":        { "paramDirection": "input" },
+    "params.deprecated":     { "paramDirection": "input" },
     "params.selected":       { "paramDirection": "input" }
   },
   "props": {
@@ -35,6 +37,12 @@
         "binding": {
           "type": "expr",
           "config": { "expression": "if({view.params.selected}, 'var(--mpp-accent-90)', 'var(--mpp-text-primary)')" }
+        }
+      },
+      "props.style.opacity": {
+        "binding": {
+          "type": "expr",
+          "config": { "expression": "if({view.params.deprecated}, 0.55, 1)" }
         }
       }
     },
@@ -95,6 +103,14 @@
         "type": "ia.input.button",
         "meta": { "name": "EditButton" },
         "position": { "basis": "80px", "shrink": 0 },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "!{view.params.deprecated}" }
+            }
+          }
+        },
         "props": { "text": "Edit", "style": { "classes": "btn btn-sm" } },
         "events": {
           "component": {
