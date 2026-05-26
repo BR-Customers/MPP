@@ -1,118 +1,1163 @@
 {
   "custom": {
-    "itemId": 0,
-    "versions": [],
-    "showDeprecated": false,
-    "selectedVersionId": 0,
-    "selectedHeader": {
-      "Id": 0,
-      "ItemId": 0,
-      "PartNumber": "",
-      "VersionNumber": 0,
-      "Name": "",
-      "EffectiveFrom": "",
-      "PublishedAt": null,
-      "DeprecatedAt": null,
-      "CreatedByDisplayName": "",
-      "CreatedAt": ""
-    },
-    "selectedSteps": [],
-    "selectedStepsView": [],
-    "mode": "view",
-    "areas": [],
-    "opTemplatesByArea": {},
-    "draftId": 0,
     "draftEditDraft": {
+      "EffectiveFrom": "",
       "Id": 0,
       "Name": "",
-      "EffectiveFrom": "",
       "steps": []
     },
+    "draftId": 0,
     "draftSelected": {
+      "EffectiveFrom": "",
       "Id": 0,
       "Name": "",
-      "EffectiveFrom": "",
       "steps": []
-    }
+    },
+    "mode": "view",
+    "opTemplatesByArea": {},
+    "selectedVersionId": 22,
+    "showDeprecated": false
   },
   "params": {
-    "value": 0
+    "value": 1
   },
   "propConfig": {
-    "params.value": {
-      "paramDirection": "input"
+    "custom.areas": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Location.Location.getAllAreas\", 0, false)"
+        },
+        "type": "expr"
+      }
     },
     "custom.itemId": {
       "binding": {
-        "type": "property",
         "config": {
           "path": "view.params.value"
-        }
-      }
-    },
-    "custom.versions": {
-      "binding": {
-        "type": "expr",
-        "config": {
-          "expression": "runScript(\"BlueRidge.Parts.RouteTemplate.listVersions\", 0, {view.custom.itemId}, {view.custom.showDeprecated})"
-        }
-      },
-      "onChange": {
-        "enabled": true,
-        "script": "\tdef _g(obj, key):\n\t\ttry:\n\t\t\treturn obj[key]\n\t\texcept Exception:\n\t\t\treturn None\n\tif self.view.custom.selectedVersionId and self.view.custom.selectedVersionId > 0:\n\t\treturn\n\tcurr = currentValue.value if currentValue is not None else None\n\tBlueRidge.Common.Util.log('versions.onChange count=%s' % (len(curr) if curr is not None else 'None'))\n\tif curr is None:\n\t\tself.view.custom.selectedVersionId = 0\n\t\treturn\n\tactive = None\n\tfor v in curr:\n\t\tpub = _g(v, 'PublishedAt')\n\t\tdep = _g(v, 'DeprecatedAt')\n\t\tif pub and not dep:\n\t\t\tactive = v\n\t\t\tbreak\n\tif active is not None:\n\t\tself.view.custom.selectedVersionId = _g(active, 'Id') or 0\n\telif len(curr) > 0:\n\t\tself.view.custom.selectedVersionId = _g(curr[0], 'Id') or 0\n\telse:\n\t\tself.view.custom.selectedVersionId = 0"
+        },
+        "type": "property"
       }
     },
     "custom.selectedHeader": {
       "binding": {
-        "type": "expr",
         "config": {
           "expression": "runScript(\"BlueRidge.Parts.RouteTemplate.getHeader\", 0, {view.custom.selectedVersionId})"
-        }
+        },
+        "type": "expr"
       },
       "onChange": {
         "enabled": true,
-        "script": "\tdef _g(obj, key):\n\t\ttry:\n\t\t\treturn obj[key]\n\t\texcept Exception:\n\t\t\treturn None\n\theader = currentValue.value if currentValue is not None else None\n\thdrId = _g(header, 'Id') if header is not None else None\n\tBlueRidge.Common.Util.log('selectedHeader.onChange hdrId=%s' % hdrId)\n\tif not hdrId or hdrId <= 0:\n\t\tif self.view.custom.mode == 'draft':\n\t\t\tself.view.custom.draftId = 0\n\t\t\tself.view.custom.draftEditDraft = {'Id': 0, 'Name': '', 'EffectiveFrom': '', 'steps': []}\n\t\t\tself.view.custom.draftSelected = {'Id': 0, 'Name': '', 'EffectiveFrom': '', 'steps': []}\n\t\t\tself.view.custom.mode = 'view'\n\t\t\tself.view.rootContainer.broadcastDirty(False)\n\t\treturn\n\tpublishedAt = _g(header, 'PublishedAt')\n\tdeprecatedAt = _g(header, 'DeprecatedAt')\n\tisDraft = (publishedAt is None) and (deprecatedAt is None)\n\tBlueRidge.Common.Util.log('selectedHeader.onChange isDraft=%s publishedAt=%s deprecatedAt=%s' % (isDraft, publishedAt, deprecatedAt))\n\tif isDraft:\n\t\tif self.view.custom.draftId == hdrId:\n\t\t\treturn\n\t\tname = _g(header, 'Name') or ''\n\t\teffRaw = _g(header, 'EffectiveFrom')\n\t\teffStr = str(effRaw or '')[:10]\n\t\tsteps = BlueRidge.Parts.RouteTemplate.getSteps(hdrId) or []\n\t\tstepsCopy = [dict(s) for s in steps]\n\t\tself.view.custom.draftId = hdrId\n\t\tself.view.custom.draftEditDraft = {'Id': hdrId, 'Name': name, 'EffectiveFrom': effStr, 'steps': stepsCopy}\n\t\tself.view.custom.draftSelected = {'Id': hdrId, 'Name': name, 'EffectiveFrom': effStr, 'steps': [dict(s) for s in steps]}\n\t\tself.view.custom.mode = 'draft'\n\t\tself.view.rootContainer.broadcastDirty(False)\n\telse:\n\t\tif self.view.custom.mode == 'draft':\n\t\t\tself.view.custom.draftId = 0\n\t\t\tself.view.custom.draftEditDraft = {'Id': 0, 'Name': '', 'EffectiveFrom': '', 'steps': []}\n\t\t\tself.view.custom.draftSelected = {'Id': 0, 'Name': '', 'EffectiveFrom': '', 'steps': []}\n\t\t\tself.view.custom.mode = 'view'\n\t\t\tself.view.rootContainer.broadcastDirty(False)"
+        "script": "\tdef _g(obj, key):\n\t\ttry:\n\t\t\treturn obj[key]\n\t\texcept Exception:\n\t\t\treturn None\n\theader \u003d currentValue.value if currentValue is not None else None\n\thdrId \u003d _g(header, \u0027Id\u0027) if header is not None else None\n\tBlueRidge.Common.Util.log(\u0027selectedHeader.onChange hdrId\u003d%s\u0027 % hdrId)\n\tif not hdrId or hdrId \u003c\u003d 0:\n\t\tif self.view.custom.mode \u003d\u003d \u0027draft\u0027:\n\t\t\tself.view.custom.draftId \u003d 0\n\t\t\tself.view.custom.draftEditDraft \u003d {\u0027Id\u0027: 0, \u0027Name\u0027: \u0027\u0027, \u0027EffectiveFrom\u0027: \u0027\u0027, \u0027steps\u0027: []}\n\t\t\tself.view.custom.draftSelected \u003d {\u0027Id\u0027: 0, \u0027Name\u0027: \u0027\u0027, \u0027EffectiveFrom\u0027: \u0027\u0027, \u0027steps\u0027: []}\n\t\t\tself.view.custom.mode \u003d \u0027view\u0027\n\t\t\tself.view.rootContainer.broadcastDirty(False)\n\t\treturn\n\tpublishedAt \u003d _g(header, \u0027PublishedAt\u0027)\n\tdeprecatedAt \u003d _g(header, \u0027DeprecatedAt\u0027)\n\tisDraft \u003d (publishedAt is None) and (deprecatedAt is None)\n\tBlueRidge.Common.Util.log(\u0027selectedHeader.onChange isDraft\u003d%s publishedAt\u003d%s deprecatedAt\u003d%s\u0027 % (isDraft, publishedAt, deprecatedAt))\n\tif isDraft:\n\t\tif self.view.custom.draftId \u003d\u003d hdrId:\n\t\t\treturn\n\t\tname \u003d _g(header, \u0027Name\u0027) or \u0027\u0027\n\t\teffRaw \u003d _g(header, \u0027EffectiveFrom\u0027)\n\t\teffStr \u003d str(effRaw or \u0027\u0027)[:10]\n\t\tsteps \u003d BlueRidge.Parts.RouteTemplate.getSteps(hdrId) or []\n\t\tstepsCopy \u003d [dict(s) for s in steps]\n\t\tself.view.custom.draftId \u003d hdrId\n\t\tself.view.custom.draftEditDraft \u003d {\u0027Id\u0027: hdrId, \u0027Name\u0027: name, \u0027EffectiveFrom\u0027: effStr, \u0027steps\u0027: stepsCopy}\n\t\tself.view.custom.draftSelected \u003d {\u0027Id\u0027: hdrId, \u0027Name\u0027: name, \u0027EffectiveFrom\u0027: effStr, \u0027steps\u0027: [dict(s) for s in steps]}\n\t\tself.view.custom.mode \u003d \u0027draft\u0027\n\t\tself.view.rootContainer.broadcastDirty(False)\n\telse:\n\t\tif self.view.custom.mode \u003d\u003d \u0027draft\u0027:\n\t\t\tself.view.custom.draftId \u003d 0\n\t\t\tself.view.custom.draftEditDraft \u003d {\u0027Id\u0027: 0, \u0027Name\u0027: \u0027\u0027, \u0027EffectiveFrom\u0027: \u0027\u0027, \u0027steps\u0027: []}\n\t\t\tself.view.custom.draftSelected \u003d {\u0027Id\u0027: 0, \u0027Name\u0027: \u0027\u0027, \u0027EffectiveFrom\u0027: \u0027\u0027, \u0027steps\u0027: []}\n\t\t\tself.view.custom.mode \u003d \u0027view\u0027\n\t\t\tself.view.rootContainer.broadcastDirty(False)"
       }
     },
     "custom.selectedSteps": {
       "binding": {
-        "type": "expr",
         "config": {
           "expression": "runScript(\"BlueRidge.Parts.RouteTemplate.getSteps\", 0, {view.custom.selectedVersionId})"
-        }
+        },
+        "type": "expr"
+      }
+    },
+    "custom.selectedVersionId": {
+      "onChange": {
+        "enabled": true,
+        "script": "\tnewId = currentValue.value if currentValue is not None else 0\n\tBlueRidge.Common.Util.log('selectedVersionId.onChange newId=%s currentMode=%s currentDraftId=%s' % (newId, self.view.custom.mode, self.view.custom.draftId))\n\tif not newId or newId <= 0:\n\t\tif self.view.custom.mode == 'draft':\n\t\t\tself.view.custom.draftId = 0\n\t\t\tself.view.custom.draftEditDraft = {'Id': 0, 'Name': '', 'EffectiveFrom': '', 'steps': []}\n\t\t\tself.view.custom.draftSelected = {'Id': 0, 'Name': '', 'EffectiveFrom': '', 'steps': []}\n\t\t\tself.view.custom.mode = 'view'\n\t\t\tself.view.rootContainer.broadcastDirty(False)\n\t\treturn\n\theader = BlueRidge.Parts.RouteTemplate.getHeader(newId)\n\tif not header:\n\t\tBlueRidge.Common.Util.log('selectedVersionId.onChange getHeader returned None for newId=%s' % newId)\n\t\treturn\n\tpublishedAt = header.get('PublishedAt')\n\tdeprecatedAt = header.get('DeprecatedAt')\n\tisDraft = (publishedAt is None) and (deprecatedAt is None)\n\tBlueRidge.Common.Util.log('selectedVersionId.onChange isDraft=%s publishedAt=%s deprecatedAt=%s' % (isDraft, publishedAt, deprecatedAt))\n\tif isDraft:\n\t\tif self.view.custom.draftId == newId:\n\t\t\treturn\n\t\tname = header.get('Name') or ''\n\t\teffStr = str(header.get('EffectiveFrom') or '')[:10]\n\t\tsteps = BlueRidge.Parts.RouteTemplate.getSteps(newId) or []\n\t\tstepsCopy = [dict(s) for s in steps]\n\t\tself.view.custom.draftId = newId\n\t\tself.view.custom.draftEditDraft = {'Id': newId, 'Name': name, 'EffectiveFrom': effStr, 'steps': stepsCopy}\n\t\tself.view.custom.draftSelected = {'Id': newId, 'Name': name, 'EffectiveFrom': effStr, 'steps': [dict(s) for s in steps]}\n\t\tself.view.custom.mode = 'draft'\n\t\tself.view.rootContainer.broadcastDirty(False)\n\telse:\n\t\tif self.view.custom.mode == 'draft':\n\t\t\tself.view.custom.draftId = 0\n\t\t\tself.view.custom.draftEditDraft = {'Id': 0, 'Name': '', 'EffectiveFrom': '', 'steps': []}\n\t\t\tself.view.custom.draftSelected = {'Id': 0, 'Name': '', 'EffectiveFrom': '', 'steps': []}\n\t\t\tself.view.custom.mode = 'view'\n\t\t\tself.view.rootContainer.broadcastDirty(False)"
       }
     },
     "custom.selectedStepsView": {
       "binding": {
-        "type": "property",
         "config": {
           "path": "view.custom.selectedSteps"
         },
         "transforms": [
           {
-            "code": "\tout = []\n\tfor r in (value or []):\n\t\tr = r or {}\n\t\tout.append({'seq': r.get('SequenceNumber'), 'areaName': r.get('OperationAreaName') or '', 'opCode': r.get('OperationCode') or '', 'opName': r.get('OperationName') or '', 'isRequired': bool(r.get('IsRequired')), 'dataFields': r.get('DataCollectionSummary') or ''})\n\treturn out",
+            "code": "\tout \u003d []\n\tfor r in (value or []):\n\t\tr \u003d r or {}\n\t\tout.append({\u0027seq\u0027: r.get(\u0027SequenceNumber\u0027), \u0027areaName\u0027: r.get(\u0027OperationAreaName\u0027) or \u0027\u0027, \u0027opCode\u0027: r.get(\u0027OperationCode\u0027) or \u0027\u0027, \u0027opName\u0027: r.get(\u0027OperationName\u0027) or \u0027\u0027, \u0027isRequired\u0027: bool(r.get(\u0027IsRequired\u0027)), \u0027dataFields\u0027: r.get(\u0027DataCollectionSummary\u0027) or \u0027\u0027})\n\treturn out",
             "type": "script"
           }
-        ]
+        ],
+        "type": "property"
       }
     },
-    "custom.areas": {
+    "custom.versions": {
       "binding": {
-        "type": "expr",
         "config": {
-          "expression": "runScript(\"BlueRidge.Location.Location.getAllAreas\", 0, false)"
-        }
+          "expression": "runScript(\"BlueRidge.Parts.RouteTemplate.listVersions\", 0, {view.custom.itemId}, {view.custom.showDeprecated})"
+        },
+        "type": "expr"
+      },
+      "onChange": {
+        "enabled": true,
+        "script": "\tdef _g(obj, key):\n\t\ttry:\n\t\t\treturn obj[key]\n\t\texcept Exception:\n\t\t\treturn None\n\tif self.view.custom.selectedVersionId and self.view.custom.selectedVersionId \u003e 0:\n\t\treturn\n\tcurr \u003d currentValue.value if currentValue is not None else None\n\tBlueRidge.Common.Util.log(\u0027versions.onChange count\u003d%s\u0027 % (len(curr) if curr is not None else \u0027None\u0027))\n\tif curr is None:\n\t\tself.view.custom.selectedVersionId \u003d 0\n\t\treturn\n\tactive \u003d None\n\tfor v in curr:\n\t\tpub \u003d _g(v, \u0027PublishedAt\u0027)\n\t\tdep \u003d _g(v, \u0027DeprecatedAt\u0027)\n\t\tif pub and not dep:\n\t\t\tactive \u003d v\n\t\t\tbreak\n\tif active is not None:\n\t\tself.view.custom.selectedVersionId \u003d _g(active, \u0027Id\u0027) or 0\n\telif len(curr) \u003e 0:\n\t\tself.view.custom.selectedVersionId \u003d _g(curr[0], \u0027Id\u0027) or 0\n\telse:\n\t\tself.view.custom.selectedVersionId \u003d 0"
       }
+    },
+    "params.value": {
+      "paramDirection": "input"
     }
   },
   "props": {
     "defaultSize": {
-      "height": 360,
+      "height": 600,
       "width": 1100
     }
   },
   "root": {
-    "type": "ia.container.flex",
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "VersionDropdown"
+            },
+            "position": {
+              "basis": "360px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.options": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.versions"
+                  },
+                  "transforms": [
+                    {
+                      "code": "\tout \u003d []\n\tfor v in (value or []):\n\t\tvnum \u003d v.get(\u0027VersionNumber\u0027, 0)\n\t\tname \u003d v.get(\u0027Name\u0027) or \u0027\u0027\n\t\tif v.get(\u0027DeprecatedAt\u0027):\n\t\t\tstate \u003d \u0027Deprecated\u0027\n\t\telif v.get(\u0027PublishedAt\u0027):\n\t\t\tstate \u003d \u0027Published\u0027\n\t\telse:\n\t\t\tstate \u003d \u0027Draft\u0027\n\t\tlabel \u003d \u0027v\u0027 + str(vnum) + \u0027 -- \u0027 + name + \u0027 (\u0027 + state + \u0027)\u0027\n\t\tout.append({\u0027label\u0027: label, \u0027value\u0027: v.get(\u0027Id\u0027)})\n\treturn out",
+                      "type": "script"
+                    }
+                  ],
+                  "type": "property"
+                }
+              },
+              "props.value": {
+                "binding": {
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.selectedVersionId"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "select"
+              }
+            },
+            "type": "ia.input.dropdown"
+          },
+          {
+            "meta": {
+              "name": "ShowDeprecatedCheckbox"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.selected": {
+                "binding": {
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.showDeprecated"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontSize": "12px"
+              },
+              "text": "Show all versions"
+            },
+            "type": "ia.input.checkbox"
+          },
+          {
+            "meta": {
+              "name": "StateBadge"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.selectedHeader.DeprecatedAt} !\u003d null, \u0027badge badge-deprecated\u0027, if({view.custom.selectedHeader.PublishedAt} !\u003d null, \u0027badge badge-published\u0027, \u0027badge badge-draft\u0027))"
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.selectedHeader.DeprecatedAt} !\u003d null, \u0027Deprecated\u0027, if({view.custom.selectedHeader.PublishedAt} !\u003d null, \u0027Published\u0027, if({view.custom.selectedHeader.Id} \u003e 0, \u0027Draft\u0027, \u0027\u0027)))"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {}
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "DraftDirtyIndicator"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.custom.mode} \u003d \u0027draft\u0027"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-state-warn-fg)",
+                "fontSize": "11px",
+                "fontStyle": "italic"
+              },
+              "text": "Editing draft"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "DraftEffectiveFromField"
+            },
+            "position": {
+              "basis": "200px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.custom.mode} \u003d \u0027draft\u0027"
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.draftEditDraft.EffectiveFrom"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "placeholder": "EffectiveFrom (ISO)",
+              "style": {
+                "classes": "psc-search-input"
+              }
+            },
+            "type": "ia.input.text-field"
+          },
+          {
+            "meta": {
+              "name": "HeaderSpacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tparentId \u003d self.view.custom.selectedVersionId\n\tBlueRidge.Common.Util.log(\u0027BtnNewVersion click; parentId\u003d%s\u0027 % parentId)\n\tif not parentId or parentId \u003c\u003d 0:\n\t\tBlueRidge.Common.Notify.toast(\u0027Cannot create version\u0027, \u0027No source version selected.\u0027, \u0027warn\u0027, 5)\n\t\treturn\n\tresult \u003d BlueRidge.Parts.RouteTemplate.createNewVersion(parentId, None)\n\tBlueRidge.Common.Ui.notifyResult(result, \u0027New version\u0027, \u0027Draft created.\u0027, \u0027Create failed\u0027)\n\tif not result or not result.get(\u0027Status\u0027):\n\t\treturn\n\tnewDraftId \u003d result[\u0027NewId\u0027]\n\tself.view.custom.draftId \u003d newDraftId\n\theader \u003d BlueRidge.Parts.RouteTemplate.getHeader(newDraftId) or {}\n\tsteps \u003d BlueRidge.Parts.RouteTemplate.getSteps(newDraftId) or []\n\teffStr \u003d str(header.get(\u0027EffectiveFrom\u0027) or \u0027\u0027)[:10]\n\tdraft \u003d {\u0027Id\u0027: newDraftId, \u0027Name\u0027: header.get(\u0027Name\u0027, \u0027\u0027), \u0027EffectiveFrom\u0027: effStr, \u0027steps\u0027: [dict(s) for s in steps]}\n\tself.view.custom.draftEditDraft \u003d dict(draft)\n\tself.view.custom.draftSelected \u003d {\u0027Id\u0027: newDraftId, \u0027Name\u0027: header.get(\u0027Name\u0027, \u0027\u0027), \u0027EffectiveFrom\u0027: effStr, \u0027steps\u0027: [dict(s) for s in steps]}\n\tself.view.custom.mode \u003d \u0027draft\u0027\n\tself.view.custom.selectedVersionId \u003d newDraftId\n\tself.view.rootContainer.reloadVersions()\n\tself.view.rootContainer.broadcastDirty(False)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "BtnNewVersion"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.custom.mode} \u003d \u0027view\u0027"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-primary btn-sm"
+              },
+              "text": "New Version"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tdraft \u003d self.view.custom.draftEditDraft\n\tresult \u003d BlueRidge.Parts.RouteTemplate.saveAll(self.view.custom.draftId, draft.get(\u0027Name\u0027), draft.get(\u0027EffectiveFrom\u0027), draft.get(\u0027steps\u0027) or [])\n\tBlueRidge.Common.Ui.notifyResult(result, \u0027Route saved\u0027, \u0027Route saved.\u0027, \u0027Save failed\u0027)\n\tif not result or not result.get(\u0027Status\u0027):\n\t\treturn\n\tself.view.custom.draftSelected \u003d {\u0027Id\u0027: draft.get(\u0027Id\u0027), \u0027Name\u0027: draft.get(\u0027Name\u0027), \u0027EffectiveFrom\u0027: draft.get(\u0027EffectiveFrom\u0027), \u0027steps\u0027: [dict(s) for s in (draft.get(\u0027steps\u0027) or [])]}\n\tself.view.rootContainer.reloadVersions()\n\tself.view.rootContainer.broadcastDirty(False)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "BtnSaveDraft"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.custom.mode} \u003d \u0027draft\u0027"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-sm"
+              },
+              "text": "Save"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tdraft \u003d self.view.custom.draftEditDraft\n\tresult \u003d BlueRidge.Parts.RouteTemplate.publishWithSave(self.view.custom.draftId, draft.get(\u0027Name\u0027), draft.get(\u0027EffectiveFrom\u0027), draft.get(\u0027steps\u0027) or [])\n\tBlueRidge.Common.Ui.notifyResult(result, \u0027Publish\u0027, \u0027Route published.\u0027, \u0027Publish failed\u0027)\n\tif not result or not result.get(\u0027Status\u0027):\n\t\treturn\n\tpublishedId \u003d self.view.custom.draftId\n\tself.view.custom.draftId \u003d 0\n\tself.view.custom.draftEditDraft \u003d {\u0027Id\u0027: 0, \u0027Name\u0027: \u0027\u0027, \u0027EffectiveFrom\u0027: \u0027\u0027, \u0027steps\u0027: []}\n\tself.view.custom.draftSelected \u003d {\u0027Id\u0027: 0, \u0027Name\u0027: \u0027\u0027, \u0027EffectiveFrom\u0027: \u0027\u0027, \u0027steps\u0027: []}\n\tself.view.custom.mode \u003d \u0027view\u0027\n\tself.view.rootContainer.reloadVersions()\n\tself.view.custom.selectedVersionId \u003d publishedId\n\tself.view.rootContainer.broadcastDirty(False)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "BtnPublish"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.custom.mode} \u003d \u0027draft\u0027"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-primary btn-sm"
+              },
+              "text": "Publish"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(id\u003d\u0027mpp-confirm-destructive\u0027, view\u003d\u0027BlueRidge/Components/Popups/ConfirmDestructive\u0027, modal\u003dTrue, showCloseIcon\u003dFalse, params\u003d{\u0027title\u0027: \u0027Discard Draft?\u0027, \u0027message\u0027: \u0027This deletes the unpublished draft entirely. It cannot be undone.\u0027, \u0027confirmLabel\u0027: \u0027Discard Draft\u0027, \u0027replyMessage\u0027: \u0027routeConfirmDiscard\u0027})"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "BtnDiscardDraft"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.custom.mode} \u003d \u0027draft\u0027"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-danger btn-sm"
+              },
+              "text": "Discard Draft"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "HeaderRow"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "gap": "8px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "RouteStepsTable"
+            },
+            "position": {
+              "grow": 1
+            },
+            "propConfig": {
+              "props.data": {
+                "binding": {
+                  "config": {
+                    "expression": "runScript(\"BlueRidge.Parts.RouteTemplate.getSteps\", 0, {view.custom.selectedVersionId})"
+                  },
+                  "transforms": [
+                    {
+                      "code": "\tout \u003d []\n\tfor r in (value or []):\n\t\tr \u003d r or {}\n\t\tout.append({\u0027seq\u0027: r.get(\u0027SequenceNumber\u0027), \u0027areaName\u0027: r.get(\u0027OperationAreaName\u0027) or \u0027\u0027, \u0027opCode\u0027: r.get(\u0027OperationCode\u0027) or \u0027\u0027, \u0027opName\u0027: r.get(\u0027OperationName\u0027) or \u0027\u0027, \u0027isRequired\u0027: bool(r.get(\u0027IsRequired\u0027)), \u0027dataFields\u0027: r.get(\u0027DataCollectionSummary\u0027) or \u0027\u0027})\n\treturn out",
+                      "type": "script"
+                    }
+                  ],
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "columns": [
+                {
+                  "align": "center",
+                  "boolean": "checkbox",
+                  "dateFormat": "MM/DD/YYYY",
+                  "editable": false,
+                  "field": "seq",
+                  "filter": {
+                    "boolean": {
+                      "condition": ""
+                    },
+                    "date": {
+                      "condition": "",
+                      "value": ""
+                    },
+                    "enabled": false,
+                    "number": {
+                      "condition": "",
+                      "value": ""
+                    },
+                    "string": {
+                      "condition": "",
+                      "value": ""
+                    },
+                    "visible": "on-hover"
+                  },
+                  "footer": {
+                    "align": "center",
+                    "justify": "left",
+                    "style": {
+                      "classes": ""
+                    },
+                    "title": ""
+                  },
+                  "header": {
+                    "align": "center",
+                    "justify": "center",
+                    "style": {
+                      "classes": ""
+                    },
+                    "title": "#"
+                  },
+                  "justify": "auto",
+                  "nullFormat": {
+                    "includeNullStrings": false,
+                    "nullFormatValue": "",
+                    "strict": false
+                  },
+                  "number": "value",
+                  "numberFormat": "0,0.##",
+                  "progressBar": {
+                    "bar": {
+                      "color": "",
+                      "style": {
+                        "classes": ""
+                      }
+                    },
+                    "max": 100,
+                    "min": 0,
+                    "track": {
+                      "color": "",
+                      "style": {
+                        "classes": ""
+                      }
+                    },
+                    "value": {
+                      "enabled": true,
+                      "format": "0,0.##",
+                      "justify": "center",
+                      "style": {
+                        "classes": ""
+                      }
+                    }
+                  },
+                  "render": "auto",
+                  "resizable": false,
+                  "sort": "none",
+                  "sortable": false,
+                  "strictWidth": false,
+                  "style": {
+                    "classes": ""
+                  },
+                  "toggleSwitch": {
+                    "color": {
+                      "selected": "",
+                      "unselected": ""
+                    }
+                  },
+                  "viewParams": {},
+                  "viewPath": "",
+                  "visible": true,
+                  "width": 50
+                },
+                {
+                  "align": "center",
+                  "boolean": "checkbox",
+                  "dateFormat": "MM/DD/YYYY",
+                  "editable": false,
+                  "field": "areaName",
+                  "filter": {
+                    "boolean": {
+                      "condition": ""
+                    },
+                    "date": {
+                      "condition": "",
+                      "value": ""
+                    },
+                    "enabled": false,
+                    "number": {
+                      "condition": "",
+                      "value": ""
+                    },
+                    "string": {
+                      "condition": "",
+                      "value": ""
+                    },
+                    "visible": "on-hover"
+                  },
+                  "footer": {
+                    "align": "center",
+                    "justify": "left",
+                    "style": {
+                      "classes": ""
+                    },
+                    "title": ""
+                  },
+                  "header": {
+                    "align": "center",
+                    "justify": "left",
+                    "style": {
+                      "classes": ""
+                    },
+                    "title": "Area"
+                  },
+                  "justify": "auto",
+                  "nullFormat": {
+                    "includeNullStrings": false,
+                    "nullFormatValue": "",
+                    "strict": false
+                  },
+                  "number": "value",
+                  "numberFormat": "0,0.##",
+                  "progressBar": {
+                    "bar": {
+                      "color": "",
+                      "style": {
+                        "classes": ""
+                      }
+                    },
+                    "max": 100,
+                    "min": 0,
+                    "track": {
+                      "color": "",
+                      "style": {
+                        "classes": ""
+                      }
+                    },
+                    "value": {
+                      "enabled": true,
+                      "format": "0,0.##",
+                      "justify": "center",
+                      "style": {
+                        "classes": ""
+                      }
+                    }
+                  },
+                  "render": "auto",
+                  "resizable": true,
+                  "sort": "none",
+                  "sortable": false,
+                  "strictWidth": false,
+                  "style": {
+                    "classes": ""
+                  },
+                  "toggleSwitch": {
+                    "color": {
+                      "selected": "",
+                      "unselected": ""
+                    }
+                  },
+                  "viewParams": {},
+                  "viewPath": "",
+                  "visible": true,
+                  "width": 140
+                },
+                {
+                  "align": "center",
+                  "boolean": "checkbox",
+                  "dateFormat": "MM/DD/YYYY",
+                  "editable": false,
+                  "field": "opCode",
+                  "filter": {
+                    "boolean": {
+                      "condition": ""
+                    },
+                    "date": {
+                      "condition": "",
+                      "value": ""
+                    },
+                    "enabled": false,
+                    "number": {
+                      "condition": "",
+                      "value": ""
+                    },
+                    "string": {
+                      "condition": "",
+                      "value": ""
+                    },
+                    "visible": "on-hover"
+                  },
+                  "footer": {
+                    "align": "center",
+                    "justify": "left",
+                    "style": {
+                      "classes": ""
+                    },
+                    "title": ""
+                  },
+                  "header": {
+                    "align": "center",
+                    "justify": "left",
+                    "style": {
+                      "classes": ""
+                    },
+                    "title": "Operation Code"
+                  },
+                  "justify": "auto",
+                  "nullFormat": {
+                    "includeNullStrings": false,
+                    "nullFormatValue": "",
+                    "strict": false
+                  },
+                  "number": "value",
+                  "numberFormat": "0,0.##",
+                  "progressBar": {
+                    "bar": {
+                      "color": "",
+                      "style": {
+                        "classes": ""
+                      }
+                    },
+                    "max": 100,
+                    "min": 0,
+                    "track": {
+                      "color": "",
+                      "style": {
+                        "classes": ""
+                      }
+                    },
+                    "value": {
+                      "enabled": true,
+                      "format": "0,0.##",
+                      "justify": "center",
+                      "style": {
+                        "classes": ""
+                      }
+                    }
+                  },
+                  "render": "auto",
+                  "resizable": true,
+                  "sort": "none",
+                  "sortable": false,
+                  "strictWidth": false,
+                  "style": {
+                    "classes": ""
+                  },
+                  "toggleSwitch": {
+                    "color": {
+                      "selected": "",
+                      "unselected": ""
+                    }
+                  },
+                  "viewParams": {},
+                  "viewPath": "",
+                  "visible": true,
+                  "width": 140
+                },
+                {
+                  "align": "center",
+                  "boolean": "checkbox",
+                  "dateFormat": "MM/DD/YYYY",
+                  "editable": false,
+                  "field": "opName",
+                  "filter": {
+                    "boolean": {
+                      "condition": ""
+                    },
+                    "date": {
+                      "condition": "",
+                      "value": ""
+                    },
+                    "enabled": false,
+                    "number": {
+                      "condition": "",
+                      "value": ""
+                    },
+                    "string": {
+                      "condition": "",
+                      "value": ""
+                    },
+                    "visible": "on-hover"
+                  },
+                  "footer": {
+                    "align": "center",
+                    "justify": "left",
+                    "style": {
+                      "classes": ""
+                    },
+                    "title": ""
+                  },
+                  "header": {
+                    "align": "center",
+                    "justify": "left",
+                    "style": {
+                      "classes": ""
+                    },
+                    "title": "Operation Name"
+                  },
+                  "justify": "auto",
+                  "nullFormat": {
+                    "includeNullStrings": false,
+                    "nullFormatValue": "",
+                    "strict": false
+                  },
+                  "number": "value",
+                  "numberFormat": "0,0.##",
+                  "progressBar": {
+                    "bar": {
+                      "color": "",
+                      "style": {
+                        "classes": ""
+                      }
+                    },
+                    "max": 100,
+                    "min": 0,
+                    "track": {
+                      "color": "",
+                      "style": {
+                        "classes": ""
+                      }
+                    },
+                    "value": {
+                      "enabled": true,
+                      "format": "0,0.##",
+                      "justify": "center",
+                      "style": {
+                        "classes": ""
+                      }
+                    }
+                  },
+                  "render": "auto",
+                  "resizable": true,
+                  "sort": "none",
+                  "sortable": false,
+                  "strictWidth": false,
+                  "style": {
+                    "classes": ""
+                  },
+                  "toggleSwitch": {
+                    "color": {
+                      "selected": "",
+                      "unselected": ""
+                    }
+                  },
+                  "viewParams": {},
+                  "viewPath": "",
+                  "visible": true,
+                  "width": ""
+                },
+                {
+                  "align": "center",
+                  "boolean": "checkbox",
+                  "dateFormat": "MM/DD/YYYY",
+                  "editable": false,
+                  "field": "isRequired",
+                  "filter": {
+                    "boolean": {
+                      "condition": ""
+                    },
+                    "date": {
+                      "condition": "",
+                      "value": ""
+                    },
+                    "enabled": false,
+                    "number": {
+                      "condition": "",
+                      "value": ""
+                    },
+                    "string": {
+                      "condition": "",
+                      "value": ""
+                    },
+                    "visible": "on-hover"
+                  },
+                  "footer": {
+                    "align": "center",
+                    "justify": "left",
+                    "style": {
+                      "classes": ""
+                    },
+                    "title": ""
+                  },
+                  "header": {
+                    "align": "center",
+                    "justify": "center",
+                    "style": {
+                      "classes": ""
+                    },
+                    "title": "Required"
+                  },
+                  "justify": "auto",
+                  "nullFormat": {
+                    "includeNullStrings": false,
+                    "nullFormatValue": "",
+                    "strict": false
+                  },
+                  "number": "value",
+                  "numberFormat": "0,0.##",
+                  "progressBar": {
+                    "bar": {
+                      "color": "",
+                      "style": {
+                        "classes": ""
+                      }
+                    },
+                    "max": 100,
+                    "min": 0,
+                    "track": {
+                      "color": "",
+                      "style": {
+                        "classes": ""
+                      }
+                    },
+                    "value": {
+                      "enabled": true,
+                      "format": "0,0.##",
+                      "justify": "center",
+                      "style": {
+                        "classes": ""
+                      }
+                    }
+                  },
+                  "render": "boolean",
+                  "resizable": false,
+                  "sort": "none",
+                  "sortable": false,
+                  "strictWidth": false,
+                  "style": {
+                    "classes": ""
+                  },
+                  "toggleSwitch": {
+                    "color": {
+                      "selected": "",
+                      "unselected": ""
+                    }
+                  },
+                  "viewParams": {},
+                  "viewPath": "",
+                  "visible": true,
+                  "width": 80
+                },
+                {
+                  "align": "center",
+                  "boolean": "checkbox",
+                  "dateFormat": "MM/DD/YYYY",
+                  "editable": false,
+                  "field": "dataFields",
+                  "filter": {
+                    "boolean": {
+                      "condition": ""
+                    },
+                    "date": {
+                      "condition": "",
+                      "value": ""
+                    },
+                    "enabled": false,
+                    "number": {
+                      "condition": "",
+                      "value": ""
+                    },
+                    "string": {
+                      "condition": "",
+                      "value": ""
+                    },
+                    "visible": "on-hover"
+                  },
+                  "footer": {
+                    "align": "center",
+                    "justify": "left",
+                    "style": {
+                      "classes": ""
+                    },
+                    "title": ""
+                  },
+                  "header": {
+                    "align": "center",
+                    "justify": "left",
+                    "style": {
+                      "classes": ""
+                    },
+                    "title": "Data Collection"
+                  },
+                  "justify": "auto",
+                  "nullFormat": {
+                    "includeNullStrings": false,
+                    "nullFormatValue": "",
+                    "strict": false
+                  },
+                  "number": "value",
+                  "numberFormat": "0,0.##",
+                  "progressBar": {
+                    "bar": {
+                      "color": "",
+                      "style": {
+                        "classes": ""
+                      }
+                    },
+                    "max": 100,
+                    "min": 0,
+                    "track": {
+                      "color": "",
+                      "style": {
+                        "classes": ""
+                      }
+                    },
+                    "value": {
+                      "enabled": true,
+                      "format": "0,0.##",
+                      "justify": "center",
+                      "style": {
+                        "classes": ""
+                      }
+                    }
+                  },
+                  "render": "auto",
+                  "resizable": true,
+                  "sort": "none",
+                  "sortable": false,
+                  "strictWidth": false,
+                  "style": {
+                    "classes": ""
+                  },
+                  "toggleSwitch": {
+                    "color": {
+                      "selected": "",
+                      "unselected": ""
+                    }
+                  },
+                  "viewParams": {},
+                  "viewPath": "",
+                  "visible": true,
+                  "width": ""
+                }
+              ],
+              "rows": {
+                "height": 32
+              },
+              "style": {
+                "classes": "data-table"
+              }
+            },
+            "type": "ia.display.table"
+          },
+          {
+            "meta": {
+              "name": "ReadOnlyCaption"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-muted)",
+                "fontSize": "11px",
+                "fontStyle": "italic",
+                "padding": "8px 12px"
+              },
+              "text": "Read-only. Click New Version to create a draft copy for editing."
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": {
+          "name": "PublishedPanel"
+        },
+        "position": {
+          "grow": 1
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.custom.mode} \u003d \u0027view\u0027"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "detail-panel",
+            "overflow": "hidden"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "DraftStepRows"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.instances": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.draftEditDraft.steps"
+                  },
+                  "transforms": [
+                    {
+                      "code": "\tsteps \u003d value or []\n\tareas \u003d self.view.custom.areas or []\n\topCache \u003d self.view.custom.opTemplatesByArea or {}\n\tout \u003d []\n\ttotal \u003d len(steps)\n\tfor i, s in enumerate(steps):\n\t\ts \u003d s or {}\n\t\tout.append({\u0027rowIndex\u0027: i, \u0027step\u0027: dict(s), \u0027areas\u0027: areas, \u0027opTemplatesByArea\u0027: opCache, \u0027isFirst\u0027: (i \u003d\u003d 0), \u0027isLast\u0027: (i \u003d\u003d total - 1)})\n\treturn out",
+                      "type": "script"
+                    }
+                  ],
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "elementPosition": {
+                "basis": "44px",
+                "shrink": 0
+              },
+              "path": "BlueRidge/Components/Parts/ItemMaster/Routes/DraftStepRow",
+              "style": {
+                "gap": "4px"
+              },
+              "useDefaultViewHeight": false,
+              "useDefaultViewWidth": false
+            },
+            "type": "ia.display.flex-repeater"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tBlueRidge.Common.Util.log(\u0027BtnAddStep click\u0027)\n\tdraft \u003d self.view.custom.draftEditDraft or {}\n\tsteps \u003d list(draft.get(\u0027steps\u0027) or [])\n\tsteps.append({\u0027Id\u0027: None, \u0027SequenceNumber\u0027: len(steps) + 1, \u0027OperationAreaLocationId\u0027: None, \u0027OperationAreaName\u0027: \u0027\u0027, \u0027OperationTemplateId\u0027: None, \u0027OperationCode\u0027: \u0027\u0027, \u0027OperationName\u0027: \u0027\u0027, \u0027OperationVersionNumber\u0027: None, \u0027DataCollectionSummary\u0027: \u0027\u0027, \u0027IsRequired\u0027: True, \u0027Description\u0027: None})\n\tnewDraft \u003d {\u0027Id\u0027: draft.get(\u0027Id\u0027), \u0027Name\u0027: draft.get(\u0027Name\u0027), \u0027EffectiveFrom\u0027: draft.get(\u0027EffectiveFrom\u0027), \u0027steps\u0027: steps}\n\tself.view.custom.draftEditDraft \u003d newDraft\n\tself.view.rootContainer.broadcastDirty(True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "BtnAddStep"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-sm",
+                "marginTop": "8px",
+                "width": "120px"
+              },
+              "text": "+ Add Step"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "DraftPanel"
+        },
+        "position": {
+          "grow": 1
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.custom.mode} \u003d \u0027draft\u0027"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "detail-panel",
+            "gap": "4px"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
     "meta": {
       "name": "root"
     },
@@ -128,756 +1173,20 @@
       "customMethods": [
         {
           "name": "broadcastDirty",
-          "params": ["isDirty"],
-          "script": "\tsystem.perspective.sendMessage('sectionDirtyChanged', payload={'section': 'routes', 'isDirty': bool(isDirty)}, scope='page')"
+          "params": [
+            "isDirty"
+          ],
+          "script": "\tsystem.perspective.sendMessage(\u0027sectionDirtyChanged\u0027, payload\u003d{\u0027section\u0027: \u0027routes\u0027, \u0027isDirty\u0027: bool(isDirty)}, scope\u003d\u0027page\u0027)"
         },
         {
           "name": "reloadVersions",
           "params": [],
-          "script": "\tself.view.custom.versions = BlueRidge.Parts.RouteTemplate.listVersions(self.view.custom.itemId, self.view.custom.showDeprecated)"
+          "script": "\tself.view.custom.versions \u003d BlueRidge.Parts.RouteTemplate.listVersions(self.view.custom.itemId, self.view.custom.showDeprecated)"
         }
-      ]
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": null
     },
-    "children": [
-      {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "HeaderRow"
-        },
-        "position": {
-          "basis": "auto",
-          "shrink": 0
-        },
-        "props": {
-          "alignItems": "center",
-          "style": {
-            "gap": "8px"
-          }
-        },
-        "children": [
-          {
-            "type": "ia.input.dropdown",
-            "meta": {
-              "name": "VersionDropdown"
-            },
-            "position": {
-              "basis": "360px",
-              "shrink": 0
-            },
-            "propConfig": {
-              "props.options": {
-                "binding": {
-                  "type": "property",
-                  "config": {
-                    "path": "view.custom.versions"
-                  },
-                  "transforms": [
-                    {
-                      "code": "\tout = []\n\tfor v in (value or []):\n\t\tvnum = v.get('VersionNumber', 0)\n\t\tname = v.get('Name') or ''\n\t\tif v.get('DeprecatedAt'):\n\t\t\tstate = 'Deprecated'\n\t\telif v.get('PublishedAt'):\n\t\t\tstate = 'Published'\n\t\telse:\n\t\t\tstate = 'Draft'\n\t\tlabel = 'v' + str(vnum) + ' -- ' + name + ' (' + state + ')'\n\t\tout.append({'label': label, 'value': v.get('Id')})\n\treturn out",
-                      "type": "script"
-                    }
-                  ]
-                }
-              },
-              "props.value": {
-                "binding": {
-                  "type": "property",
-                  "config": {
-                    "path": "view.custom.selectedVersionId",
-                    "bidirectional": true
-                  }
-                }
-              }
-            },
-            "props": {
-              "style": {
-                "classes": "select"
-              }
-            }
-          },
-          {
-            "type": "ia.input.checkbox",
-            "meta": {
-              "name": "ShowDeprecatedCheckbox"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "propConfig": {
-              "props.selected": {
-                "binding": {
-                  "type": "property",
-                  "config": {
-                    "path": "view.custom.showDeprecated",
-                    "bidirectional": true
-                  }
-                }
-              }
-            },
-            "props": {
-              "text": "Show all versions",
-              "style": {
-                "fontSize": "12px"
-              }
-            }
-          },
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "StateBadge"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "if({view.custom.selectedHeader.DeprecatedAt} != null, 'Deprecated', if({view.custom.selectedHeader.PublishedAt} != null, 'Published', if({view.custom.selectedHeader.Id} > 0, 'Draft', '')))"
-                  }
-                }
-              },
-              "props.style.classes": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "if({view.custom.selectedHeader.DeprecatedAt} != null, 'badge badge-deprecated', if({view.custom.selectedHeader.PublishedAt} != null, 'badge badge-published', 'badge badge-draft'))"
-                  }
-                }
-              }
-            },
-            "props": {
-              "text": "",
-              "style": {
-                "classes": "badge"
-              }
-            }
-          },
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "DraftDirtyIndicator"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "{view.custom.mode} = 'draft'"
-                  }
-                }
-              }
-            },
-            "props": {
-              "text": "Editing draft",
-              "style": {
-                "color": "var(--mpp-state-warn-fg)",
-                "fontSize": "11px",
-                "fontStyle": "italic"
-              }
-            }
-          },
-          {
-            "type": "ia.input.text-field",
-            "meta": {
-              "name": "DraftEffectiveFromField"
-            },
-            "position": {
-              "basis": "200px",
-              "shrink": 0
-            },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "{view.custom.mode} = 'draft'"
-                  }
-                }
-              },
-              "props.text": {
-                "binding": {
-                  "type": "property",
-                  "config": {
-                    "path": "view.custom.draftEditDraft.EffectiveFrom",
-                    "bidirectional": true
-                  }
-                }
-              }
-            },
-            "props": {
-              "placeholder": "EffectiveFrom (ISO)",
-              "style": {
-                "classes": "psc-search-input"
-              }
-            }
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": {
-              "name": "HeaderSpacer"
-            },
-            "position": {
-              "grow": 1
-            }
-          },
-          {
-            "type": "ia.input.button",
-            "meta": {
-              "name": "BtnNewVersion"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "{view.custom.mode} = 'view'"
-                  }
-                }
-              }
-            },
-            "props": {
-              "text": "New Version",
-              "style": {
-                "classes": "btn btn-primary btn-sm"
-              }
-            },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\tparentId = self.view.custom.selectedVersionId\n\tBlueRidge.Common.Util.log('BtnNewVersion click; parentId=%s' % parentId)\n\tif not parentId or parentId <= 0:\n\t\tBlueRidge.Common.Notify.toast('Cannot create version', 'No source version selected.', 'warn', 5)\n\t\treturn\n\tresult = BlueRidge.Parts.RouteTemplate.createNewVersion(parentId, None)\n\tBlueRidge.Common.Ui.notifyResult(result, 'New version', 'Draft created.', 'Create failed')\n\tif not result or not result.get('Status'):\n\t\treturn\n\tnewDraftId = result['NewId']\n\tself.view.custom.draftId = newDraftId\n\theader = BlueRidge.Parts.RouteTemplate.getHeader(newDraftId) or {}\n\tsteps = BlueRidge.Parts.RouteTemplate.getSteps(newDraftId) or []\n\teffStr = str(header.get('EffectiveFrom') or '')[:10]\n\tdraft = {'Id': newDraftId, 'Name': header.get('Name', ''), 'EffectiveFrom': effStr, 'steps': [dict(s) for s in steps]}\n\tself.view.custom.draftEditDraft = dict(draft)\n\tself.view.custom.draftSelected = {'Id': newDraftId, 'Name': header.get('Name', ''), 'EffectiveFrom': effStr, 'steps': [dict(s) for s in steps]}\n\tself.view.custom.mode = 'draft'\n\tself.view.custom.selectedVersionId = newDraftId\n\tself.view.rootContainer.reloadVersions()\n\tself.view.rootContainer.broadcastDirty(False)"
-                  }
-                }
-              }
-            }
-          },
-          {
-            "type": "ia.input.button",
-            "meta": {
-              "name": "BtnSaveDraft"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "{view.custom.mode} = 'draft'"
-                  }
-                }
-              }
-            },
-            "props": {
-              "text": "Save",
-              "style": {
-                "classes": "btn btn-sm"
-              }
-            },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\tdraft = self.view.custom.draftEditDraft\n\tresult = BlueRidge.Parts.RouteTemplate.saveAll(self.view.custom.draftId, draft.get('Name'), draft.get('EffectiveFrom'), draft.get('steps') or [])\n\tBlueRidge.Common.Ui.notifyResult(result, 'Route saved', 'Route saved.', 'Save failed')\n\tif not result or not result.get('Status'):\n\t\treturn\n\tself.view.custom.draftSelected = {'Id': draft.get('Id'), 'Name': draft.get('Name'), 'EffectiveFrom': draft.get('EffectiveFrom'), 'steps': [dict(s) for s in (draft.get('steps') or [])]}\n\tself.view.rootContainer.reloadVersions()\n\tself.view.rootContainer.broadcastDirty(False)"
-                  }
-                }
-              }
-            }
-          },
-          {
-            "type": "ia.input.button",
-            "meta": {
-              "name": "BtnPublish"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "{view.custom.mode} = 'draft'"
-                  }
-                }
-              }
-            },
-            "props": {
-              "text": "Publish",
-              "style": {
-                "classes": "btn btn-primary btn-sm"
-              }
-            },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\tdraft = self.view.custom.draftEditDraft\n\tresult = BlueRidge.Parts.RouteTemplate.publishWithSave(self.view.custom.draftId, draft.get('Name'), draft.get('EffectiveFrom'), draft.get('steps') or [])\n\tBlueRidge.Common.Ui.notifyResult(result, 'Publish', 'Route published.', 'Publish failed')\n\tif not result or not result.get('Status'):\n\t\treturn\n\tpublishedId = self.view.custom.draftId\n\tself.view.custom.draftId = 0\n\tself.view.custom.draftEditDraft = {'Id': 0, 'Name': '', 'EffectiveFrom': '', 'steps': []}\n\tself.view.custom.draftSelected = {'Id': 0, 'Name': '', 'EffectiveFrom': '', 'steps': []}\n\tself.view.custom.mode = 'view'\n\tself.view.rootContainer.reloadVersions()\n\tself.view.custom.selectedVersionId = publishedId\n\tself.view.rootContainer.broadcastDirty(False)"
-                  }
-                }
-              }
-            }
-          },
-          {
-            "type": "ia.input.button",
-            "meta": {
-              "name": "BtnDiscardDraft"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "{view.custom.mode} = 'draft'"
-                  }
-                }
-              }
-            },
-            "props": {
-              "text": "Discard Draft",
-              "style": {
-                "classes": "btn btn-danger btn-sm"
-              }
-            },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\tsystem.perspective.openPopup(id='mpp-confirm-destructive', view='BlueRidge/Components/Popups/ConfirmDestructive', modal=True, showCloseIcon=False, params={'title': 'Discard Draft?', 'message': 'This deletes the unpublished draft entirely. It cannot be undone.', 'confirmLabel': 'Discard Draft', 'replyMessage': 'routeConfirmDiscard'})"
-                  }
-                }
-              }
-            }
-          }
-        ]
-      },
-      {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "PublishedPanel"
-        },
-        "position": {
-          "grow": 1
-        },
-        "propConfig": {
-          "position.display": {
-            "binding": {
-              "type": "expr",
-              "config": {
-                "expression": "{view.custom.mode} = 'view'"
-              }
-            }
-          }
-        },
-        "props": {
-          "direction": "column",
-          "style": {
-            "classes": "detail-panel",
-            "overflow": "hidden"
-          }
-        },
-        "children": [
-          {
-            "type": "ia.display.table",
-            "meta": {
-              "name": "RouteStepsTable"
-            },
-            "position": {
-              "grow": 1
-            },
-            "propConfig": {
-              "props.data": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "runScript(\"BlueRidge.Parts.RouteTemplate.getSteps\", 0, {view.custom.selectedVersionId})"
-                  },
-                  "transforms": [
-                    {
-                      "code": "\tout = []\n\tfor r in (value or []):\n\t\tr = r or {}\n\t\tout.append({'seq': r.get('SequenceNumber'), 'areaName': r.get('OperationAreaName') or '', 'opCode': r.get('OperationCode') or '', 'opName': r.get('OperationName') or '', 'isRequired': bool(r.get('IsRequired')), 'dataFields': r.get('DataCollectionSummary') or ''})\n\treturn out",
-                      "type": "script"
-                    }
-                  ]
-                }
-              }
-            },
-            "props": {
-              "columns": [
-                {
-                  "field": "seq",
-                  "visible": true,
-                  "editable": false,
-                  "render": "auto",
-                  "justify": "auto",
-                  "align": "center",
-                  "resizable": false,
-                  "sortable": false,
-                  "sort": "none",
-                  "filter": {"enabled": false, "visible": "on-hover", "string": {"condition": "", "value": ""}, "number": {"condition": "", "value": ""}, "boolean": {"condition": ""}, "date": {"condition": "", "value": ""}},
-                  "viewPath": "",
-                  "viewParams": {},
-                  "boolean": "checkbox",
-                  "number": "value",
-                  "progressBar": {"max": 100, "min": 0, "bar": {"color": "", "style": {"classes": ""}}, "track": {"color": "", "style": {"classes": ""}}, "value": {"enabled": true, "format": "0,0.##", "justify": "center", "style": {"classes": ""}}},
-                  "toggleSwitch": {"color": {"selected": "", "unselected": ""}},
-                  "nullFormat": {"includeNullStrings": false, "strict": false, "nullFormatValue": ""},
-                  "numberFormat": "0,0.##",
-                  "dateFormat": "MM/DD/YYYY",
-                  "width": 50,
-                  "strictWidth": false,
-                  "style": {"classes": ""},
-                  "header": {"title": "#", "justify": "center", "align": "center", "style": {"classes": ""}},
-                  "footer": {"title": "", "justify": "left", "align": "center", "style": {"classes": ""}}
-                },
-                {
-                  "field": "areaName",
-                  "visible": true,
-                  "editable": false,
-                  "render": "auto",
-                  "justify": "auto",
-                  "align": "center",
-                  "resizable": true,
-                  "sortable": false,
-                  "sort": "none",
-                  "filter": {"enabled": false, "visible": "on-hover", "string": {"condition": "", "value": ""}, "number": {"condition": "", "value": ""}, "boolean": {"condition": ""}, "date": {"condition": "", "value": ""}},
-                  "viewPath": "",
-                  "viewParams": {},
-                  "boolean": "checkbox",
-                  "number": "value",
-                  "progressBar": {"max": 100, "min": 0, "bar": {"color": "", "style": {"classes": ""}}, "track": {"color": "", "style": {"classes": ""}}, "value": {"enabled": true, "format": "0,0.##", "justify": "center", "style": {"classes": ""}}},
-                  "toggleSwitch": {"color": {"selected": "", "unselected": ""}},
-                  "nullFormat": {"includeNullStrings": false, "strict": false, "nullFormatValue": ""},
-                  "numberFormat": "0,0.##",
-                  "dateFormat": "MM/DD/YYYY",
-                  "width": 140,
-                  "strictWidth": false,
-                  "style": {"classes": ""},
-                  "header": {"title": "Area", "justify": "left", "align": "center", "style": {"classes": ""}},
-                  "footer": {"title": "", "justify": "left", "align": "center", "style": {"classes": ""}}
-                },
-                {
-                  "field": "opCode",
-                  "visible": true,
-                  "editable": false,
-                  "render": "auto",
-                  "justify": "auto",
-                  "align": "center",
-                  "resizable": true,
-                  "sortable": false,
-                  "sort": "none",
-                  "filter": {"enabled": false, "visible": "on-hover", "string": {"condition": "", "value": ""}, "number": {"condition": "", "value": ""}, "boolean": {"condition": ""}, "date": {"condition": "", "value": ""}},
-                  "viewPath": "",
-                  "viewParams": {},
-                  "boolean": "checkbox",
-                  "number": "value",
-                  "progressBar": {"max": 100, "min": 0, "bar": {"color": "", "style": {"classes": ""}}, "track": {"color": "", "style": {"classes": ""}}, "value": {"enabled": true, "format": "0,0.##", "justify": "center", "style": {"classes": ""}}},
-                  "toggleSwitch": {"color": {"selected": "", "unselected": ""}},
-                  "nullFormat": {"includeNullStrings": false, "strict": false, "nullFormatValue": ""},
-                  "numberFormat": "0,0.##",
-                  "dateFormat": "MM/DD/YYYY",
-                  "width": 140,
-                  "strictWidth": false,
-                  "style": {"classes": ""},
-                  "header": {"title": "Operation Code", "justify": "left", "align": "center", "style": {"classes": ""}},
-                  "footer": {"title": "", "justify": "left", "align": "center", "style": {"classes": ""}}
-                },
-                {
-                  "field": "opName",
-                  "visible": true,
-                  "editable": false,
-                  "render": "auto",
-                  "justify": "auto",
-                  "align": "center",
-                  "resizable": true,
-                  "sortable": false,
-                  "sort": "none",
-                  "filter": {"enabled": false, "visible": "on-hover", "string": {"condition": "", "value": ""}, "number": {"condition": "", "value": ""}, "boolean": {"condition": ""}, "date": {"condition": "", "value": ""}},
-                  "viewPath": "",
-                  "viewParams": {},
-                  "boolean": "checkbox",
-                  "number": "value",
-                  "progressBar": {"max": 100, "min": 0, "bar": {"color": "", "style": {"classes": ""}}, "track": {"color": "", "style": {"classes": ""}}, "value": {"enabled": true, "format": "0,0.##", "justify": "center", "style": {"classes": ""}}},
-                  "toggleSwitch": {"color": {"selected": "", "unselected": ""}},
-                  "nullFormat": {"includeNullStrings": false, "strict": false, "nullFormatValue": ""},
-                  "numberFormat": "0,0.##",
-                  "dateFormat": "MM/DD/YYYY",
-                  "width": "",
-                  "strictWidth": false,
-                  "style": {"classes": ""},
-                  "header": {"title": "Operation Name", "justify": "left", "align": "center", "style": {"classes": ""}},
-                  "footer": {"title": "", "justify": "left", "align": "center", "style": {"classes": ""}}
-                },
-                {
-                  "field": "isRequired",
-                  "visible": true,
-                  "editable": false,
-                  "render": "boolean",
-                  "justify": "auto",
-                  "align": "center",
-                  "resizable": false,
-                  "sortable": false,
-                  "sort": "none",
-                  "filter": {"enabled": false, "visible": "on-hover", "string": {"condition": "", "value": ""}, "number": {"condition": "", "value": ""}, "boolean": {"condition": ""}, "date": {"condition": "", "value": ""}},
-                  "viewPath": "",
-                  "viewParams": {},
-                  "boolean": "checkbox",
-                  "number": "value",
-                  "progressBar": {"max": 100, "min": 0, "bar": {"color": "", "style": {"classes": ""}}, "track": {"color": "", "style": {"classes": ""}}, "value": {"enabled": true, "format": "0,0.##", "justify": "center", "style": {"classes": ""}}},
-                  "toggleSwitch": {"color": {"selected": "", "unselected": ""}},
-                  "nullFormat": {"includeNullStrings": false, "strict": false, "nullFormatValue": ""},
-                  "numberFormat": "0,0.##",
-                  "dateFormat": "MM/DD/YYYY",
-                  "width": 80,
-                  "strictWidth": false,
-                  "style": {"classes": ""},
-                  "header": {"title": "Required", "justify": "center", "align": "center", "style": {"classes": ""}},
-                  "footer": {"title": "", "justify": "left", "align": "center", "style": {"classes": ""}}
-                },
-                {
-                  "field": "dataFields",
-                  "visible": true,
-                  "editable": false,
-                  "render": "auto",
-                  "justify": "auto",
-                  "align": "center",
-                  "resizable": true,
-                  "sortable": false,
-                  "sort": "none",
-                  "filter": {"enabled": false, "visible": "on-hover", "string": {"condition": "", "value": ""}, "number": {"condition": "", "value": ""}, "boolean": {"condition": ""}, "date": {"condition": "", "value": ""}},
-                  "viewPath": "",
-                  "viewParams": {},
-                  "boolean": "checkbox",
-                  "number": "value",
-                  "progressBar": {"max": 100, "min": 0, "bar": {"color": "", "style": {"classes": ""}}, "track": {"color": "", "style": {"classes": ""}}, "value": {"enabled": true, "format": "0,0.##", "justify": "center", "style": {"classes": ""}}},
-                  "toggleSwitch": {"color": {"selected": "", "unselected": ""}},
-                  "nullFormat": {"includeNullStrings": false, "strict": false, "nullFormatValue": ""},
-                  "numberFormat": "0,0.##",
-                  "dateFormat": "MM/DD/YYYY",
-                  "width": "",
-                  "strictWidth": false,
-                  "style": {"classes": ""},
-                  "header": {"title": "Data Collection", "justify": "left", "align": "center", "style": {"classes": ""}},
-                  "footer": {"title": "", "justify": "left", "align": "center", "style": {"classes": ""}}
-                }
-              ],
-              "rows": {
-                "height": 32
-              },
-              "style": {
-                "classes": "data-table"
-              }
-            }
-          },
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "ReadOnlyCaption"
-            },
-            "position": {
-              "basis": "auto",
-              "shrink": 0
-            },
-            "props": {
-              "style": {
-                "color": "var(--mpp-text-muted)",
-                "fontSize": "11px",
-                "fontStyle": "italic",
-                "padding": "8px 12px"
-              },
-              "text": "Read-only. Click New Version to create a draft copy for editing."
-            }
-          }
-        ]
-      },
-      {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "DraftPanel"
-        },
-        "position": {
-          "grow": 1
-        },
-        "propConfig": {
-          "position.display": {
-            "binding": {
-              "type": "expr",
-              "config": {
-                "expression": "{view.custom.mode} = 'draft'"
-              }
-            }
-          }
-        },
-        "props": {
-          "direction": "column",
-          "style": {
-            "classes": "detail-panel",
-            "gap": "4px",
-            "overflow": "auto"
-          }
-        },
-        "children": [
-          {
-            "type": "ia.display.flex-repeater",
-            "meta": {
-              "name": "DraftStepRows"
-            },
-            "position": {
-              "basis": "auto",
-              "shrink": 0
-            },
-            "propConfig": {
-              "props.instances": {
-                "binding": {
-                  "type": "property",
-                  "config": {
-                    "path": "view.custom.draftEditDraft.steps"
-                  },
-                  "transforms": [
-                    {
-                      "code": "\tsteps = value or []\n\tareas = self.view.custom.areas or []\n\topCache = self.view.custom.opTemplatesByArea or {}\n\tout = []\n\ttotal = len(steps)\n\tfor i, s in enumerate(steps):\n\t\ts = s or {}\n\t\tout.append({'rowIndex': i, 'step': dict(s), 'areas': areas, 'opTemplatesByArea': opCache, 'isFirst': (i == 0), 'isLast': (i == total - 1)})\n\treturn out",
-                      "type": "script"
-                    }
-                  ]
-                }
-              }
-            },
-            "props": {
-              "direction": "column",
-              "path": "BlueRidge/Components/Parts/ItemMaster/Routes/DraftStepRow",
-              "elementPosition": {
-                "basis": "44px",
-                "shrink": 0
-              },
-              "useDefaultViewHeight": false,
-              "useDefaultViewWidth": false,
-              "style": {
-                "gap": "4px"
-              }
-            }
-          },
-          {
-            "type": "ia.input.button",
-            "meta": {
-              "name": "BtnAddStep"
-            },
-            "position": {
-              "basis": "auto",
-              "shrink": 0
-            },
-            "props": {
-              "text": "+ Add Step",
-              "style": {
-                "classes": "btn btn-sm",
-                "marginTop": "8px",
-                "width": "120px"
-              }
-            },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\tBlueRidge.Common.Util.log('BtnAddStep click')\n\tdraft = self.view.custom.draftEditDraft or {}\n\tsteps = list(draft.get('steps') or [])\n\tsteps.append({'Id': None, 'SequenceNumber': len(steps) + 1, 'OperationAreaLocationId': None, 'OperationAreaName': '', 'OperationTemplateId': None, 'OperationCode': '', 'OperationName': '', 'OperationVersionNumber': None, 'DataCollectionSummary': '', 'IsRequired': True, 'Description': None})\n\tnewDraft = {'Id': draft.get('Id'), 'Name': draft.get('Name'), 'EffectiveFrom': draft.get('EffectiveFrom'), 'steps': steps}\n\tself.view.custom.draftEditDraft = newDraft\n\tself.view.rootContainer.broadcastDirty(True)"
-                  }
-                }
-              }
-            }
-          }
-        ]
-      }
-    ],
-    "messageHandlers": [
-      {
-        "messageType": "routeConfirmDiscard",
-        "scopes": {
-          "pageScope": true,
-          "viewScope": false
-        },
-        "config": {
-          "script": "\taction = payload.get('action') if payload else None\n\tif action != 'confirm':\n\t\treturn\n\tresult = BlueRidge.Parts.RouteTemplate.discardDraft(self.view.custom.draftId)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Discard', 'Draft discarded.', 'Discard failed')\n\tif not result or not result.get('Status'):\n\t\treturn\n\tself.view.custom.draftId = 0\n\tself.view.custom.draftEditDraft = {'Id': 0, 'Name': '', 'EffectiveFrom': '', 'steps': []}\n\tself.view.custom.draftSelected = {'Id': 0, 'Name': '', 'EffectiveFrom': '', 'steps': []}\n\tself.view.custom.mode = 'view'\n\tself.rootContainer.reloadVersions()\n\tactive = None\n\tfor v in (self.view.custom.versions or []):\n\t\tif v.get('PublishedAt') and not v.get('DeprecatedAt'):\n\t\t\tactive = v\n\t\t\tbreak\n\tself.view.custom.selectedVersionId = active['Id'] if active else 0\n\tself.rootContainer.broadcastDirty(False)"
-        }
-      },
-      {
-        "messageType": "sectionSaveRequested",
-        "scopes": {
-          "pageScope": true,
-          "viewScope": false
-        },
-        "config": {
-          "script": "\tif not payload or payload.get('section') != 'routes':\n\t\treturn\n\tif self.view.custom.mode != 'draft':\n\t\treturn\n\tdraft = self.view.custom.draftEditDraft\n\tresult = BlueRidge.Parts.RouteTemplate.saveAll(self.view.custom.draftId, draft.get('Name'), draft.get('EffectiveFrom'), draft.get('steps') or [])\n\tBlueRidge.Common.Ui.notifyResult(result, 'Route saved', 'Route saved.', 'Save failed')\n\tif not result or not result.get('Status'):\n\t\treturn\n\tself.view.custom.draftSelected = {'Id': draft.get('Id'), 'Name': draft.get('Name'), 'EffectiveFrom': draft.get('EffectiveFrom'), 'steps': [dict(s) for s in (draft.get('steps') or [])]}\n\tself.rootContainer.reloadVersions()\n\tself.rootContainer.broadcastDirty(False)"
-        }
-      },
-      {
-        "messageType": "sectionDiscardRequested",
-        "scopes": {
-          "pageScope": true,
-          "viewScope": false
-        },
-        "config": {
-          "script": "\tif not payload or payload.get('section') != 'routes':\n\t\treturn\n\tif self.view.custom.mode != 'draft':\n\t\treturn\n\tsel = self.view.custom.draftSelected\n\tself.view.custom.draftEditDraft = {'Id': sel.get('Id'), 'Name': sel.get('Name'), 'EffectiveFrom': sel.get('EffectiveFrom'), 'steps': [dict(s) for s in (sel.get('steps') or [])]}\n\tself.rootContainer.broadcastDirty(False)"
-        }
-      },
-      {
-        "messageType": "routeStepChanged",
-        "scopes": {
-          "pageScope": true,
-          "viewScope": false
-        },
-        "config": {
-          "script": "\tif not payload:\n\t\treturn\n\tidx = payload.get('rowIndex')\n\tnewStep = payload.get('step')\n\tif idx is None or newStep is None:\n\t\treturn\n\tdraft = self.view.custom.draftEditDraft\n\tsteps = list(draft.get('steps') or [])\n\tif idx < 0 or idx >= len(steps):\n\t\treturn\n\tsteps[idx] = dict(newStep)\n\tnewDraft = {'Id': draft.get('Id'), 'Name': draft.get('Name'), 'EffectiveFrom': draft.get('EffectiveFrom'), 'steps': steps}\n\tself.view.custom.draftEditDraft = newDraft\n\tself.rootContainer.broadcastDirty(True)"
-        }
-      },
-      {
-        "messageType": "routeStepMoveUp",
-        "scopes": {
-          "pageScope": true,
-          "viewScope": false
-        },
-        "config": {
-          "script": "\tif not payload:\n\t\treturn\n\tidx = payload.get('rowIndex')\n\tif idx is None or idx <= 0:\n\t\treturn\n\tdraft = self.view.custom.draftEditDraft\n\tsteps = list(draft.get('steps') or [])\n\tif idx >= len(steps):\n\t\treturn\n\tsteps[idx-1], steps[idx] = steps[idx], steps[idx-1]\n\tnewDraft = {'Id': draft.get('Id'), 'Name': draft.get('Name'), 'EffectiveFrom': draft.get('EffectiveFrom'), 'steps': steps}\n\tself.view.custom.draftEditDraft = newDraft\n\tself.rootContainer.broadcastDirty(True)"
-        }
-      },
-      {
-        "messageType": "routeStepMoveDown",
-        "scopes": {
-          "pageScope": true,
-          "viewScope": false
-        },
-        "config": {
-          "script": "\tif not payload:\n\t\treturn\n\tidx = payload.get('rowIndex')\n\tdraft = self.view.custom.draftEditDraft\n\tsteps = list(draft.get('steps') or [])\n\tif idx is None or idx < 0 or idx >= len(steps) - 1:\n\t\treturn\n\tsteps[idx+1], steps[idx] = steps[idx], steps[idx+1]\n\tnewDraft = {'Id': draft.get('Id'), 'Name': draft.get('Name'), 'EffectiveFrom': draft.get('EffectiveFrom'), 'steps': steps}\n\tself.view.custom.draftEditDraft = newDraft\n\tself.rootContainer.broadcastDirty(True)"
-        }
-      },
-      {
-        "messageType": "routeStepRemove",
-        "scopes": {
-          "pageScope": true,
-          "viewScope": false
-        },
-        "config": {
-          "script": "\tif not payload:\n\t\treturn\n\tidx = payload.get('rowIndex')\n\tif idx is None:\n\t\treturn\n\tdraft = self.view.custom.draftEditDraft\n\tsteps = list(draft.get('steps') or [])\n\tif idx < 0 or idx >= len(steps):\n\t\treturn\n\tdel steps[idx]\n\tnewDraft = {'Id': draft.get('Id'), 'Name': draft.get('Name'), 'EffectiveFrom': draft.get('EffectiveFrom'), 'steps': steps}\n\tself.view.custom.draftEditDraft = newDraft\n\tself.rootContainer.broadcastDirty(True)"
-        }
-      }
-    ]
+    "type": "ia.container.flex"
   }
 }
