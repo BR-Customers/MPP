@@ -624,7 +624,7 @@
         {
           "messageType": "itemsRefresh",
           "pageScope": true,
-          "script": "\tsystem.perspective.refreshBinding(\"view.custom.items\")",
+          "script": "\tsearch = self.view.custom.search or \"\"\n\ttypeFilter = self.view.custom.typeFilter or \"All Types\"\n\tself.view.custom.items = BlueRidge.Parts.Item.getAllForList(search, typeFilter)",
           "sessionScope": false,
           "viewScope": false
         },
