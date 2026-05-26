@@ -1,6 +1,6 @@
 # MPP MES — Project Status
 
-**Last updated:** 2026-05-20 (Defect Codes Task 8 landed + Item Master per-section ownership convention codified; Phase 4 docs rewritten, Phase 5/6 docs reconciled. Phase 2 read paths landed in `worktree-Agent-B-item-master-phase2`. R1 bidi-embed risk is OBSOLETE under the new convention.)
+**Last updated:** 2026-05-26 (Phase 4 ContainerConfig save + parent gate infrastructure landed on main, 8 commits `4e2f47d`..`be207a5`. Phase 5/6/8 unblocked for parallel agent dispatch; Phase 3 picks up next inline.)
 
 ---
 
@@ -22,6 +22,32 @@ The Item Master design has been **reworked from bundled-editDraft + bidi-Object-
 ---
 
 ## ✅ Recently closed
+
+### Item Master Phase 4 — ContainerConfig save + parent gate infrastructure (2026-05-26)
+
+First section to ship under the per-section ownership convention. ContainerConfig embed now owns its own `view.custom.selected` + `view.custom.editDraft` locally, receives a plain BIGINT `params.value: itemId` (input-only, no bidi Object-param), fetches its own data via `BlueRidge.Parts.ContainerConfig.getByItem` on `params.value` onChange, has its own Save / Discard buttons in a HeaderRow, broadcasts `sectionDirtyChanged` page-scoped on every dirty transition, and listens for `sectionSaveRequested` / `sectionDiscardRequested` from the parent. New `TargetWeight` field with `position.display` gated on `ClosureMethod == 'ByWeight'`. `handleSave` coerces string text-field input → numeric (text-field bidi writes strings into editDraft, so the plan's `trays <= 0` would silently misvalidate in Jython 2).
+
+Parent ItemMaster view demolished the old bundled `editDraft` / `selected` / `mode` props (never properly populated anyway) and added the per-section gate infrastructure:
+
+- `view.custom.selectedItemId` (BIGINT, set on item-row click); all 5 tab embeds receive `params.value: selectedItemId` input-only.
+- `view.custom.activeTabIndex` (int, bidi-bound to TabContainer.currentTabIndex). View-level onChange interceptor stages `pendingSwitch` and opens ConfirmUnsaved when leaving a dirty section, then auto-reverts.
+- `view.custom.sectionDirty` flag map populated by listening to `sectionDirtyChanged` from sections.
+- `view.custom.pendingSwitch` staging area for the intercepted nav event.
+- `root.scripts.customMethods`: `openConfirmUnsaved(sectionKey)`, `completeSwitch()`, `cancelSwitch()`.
+- `root.scripts.messageHandlers`: rewritten `itemRowClicked` (gated by any-section-dirty), new `sectionDirtyChanged`, new `confirmUnsavedResult` (save → page-msg `sectionSaveRequested`; discard → page-msg `sectionDiscardRequested`; cancel → drop pendingSwitch).
+- TabContainer `props.tabs` bound via `runScript(BlueRidge.Parts.Item.itemMasterTabLabels, 0, {view.custom.sectionDirty})` — returns a plain Python list[str] with `●` prefix on dirty sections. Initial `[if(...), ...]` expression-array-literal binding caused a red error at the top of the tab strip; runScript binding is cleaner.
+
+Identity panel (DetailsHeader) restored as **read-only display** binding to a new `view.custom.selectedItem` prop populated via `runScript(BlueRidge.Parts.Item.getOneOrEmpty, 0, {view.custom.selectedItemId})`. `getOneOrEmpty` returns the full Item key-shape with null values when itemId is null/missing, so cold-open bindings render clean rather than Quality-Bad. All Identity inputs are `enabled: false`; Save / Deprecate buttons toast Phase-3 placeholders. Phase 3 will carve Identity into its own embed and wire bidi editing.
+
+Plan deviations (all called out in commit messages):
+
+- **sqlType corrections**: plan said `INT → 4`, `DECIMAL → 8`; correct values from the empirical Designer-canonical enum (per `ignition-context-pack/04_named_queries.md`) are `INT → 2` (Int4) and DECIMAL has no native code so `→ 5` (Float8 — JDBC coerces).
+- **`self.X()` not `self.rootContainer.X()`** inside `root.scripts.messageHandlers` and `root.scripts.customMethods`: per the verified `ignition-view-customMethods-scope` memory, `self` IS the root component at that scope. The plan-text had the wrong addressing.
+- **`{X} != null` not `isnull(X, 0) != 0`** for nullable-BIGINT visibility gates: `isnull(value, default)` is SQL; Ignition expressions use `isNull(value)` or direct null comparison. The wrong syntax silently fail-evaluated to Quality-Bad and propagated to the view-level ERROR banner.
+
+Commit range: `4e2f47d` (NQ Create) → `8c72bea` (NQ Update) → `bcb4575` (entity script) → `981b816` (ContainerConfig embed) → `7731120` (parent gate) → `61a9eaa` (DetailsHeader excise + tab init fix) → `08256e0` (expr/runScript fixes) → `be207a5` (Identity read-only restore).
+
+**Status**: smoke-pass-1 confirmed by Jacques on cold-open + click-5G0. Deeper smoke (dirty/Save/Discard/ConfirmUnsaved popup flows, item-row switch while dirty, ByWeight TargetWeight validation) deferred to organic verification during Phase 3 + parallel agent work.
 
 ### Defect Codes — Task 8 complete (2026-05-20)
 
