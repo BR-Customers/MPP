@@ -59,7 +59,7 @@
       },
       "onChange": {
         "enabled": true,
-        "script": "\traw = currentValue.value if currentValue is not None else []\n\tcurr = BlueRidge.Common.Util.extractQualifiedValues(raw) or []\n\tif self.view.custom.selectedVersionId and self.view.custom.selectedVersionId > 0:\n\t\treturn\n\tactive = None\n\tfor v in curr:\n\t\tv = v or {}\n\t\tif v.get('PublishedAt') and not v.get('DeprecatedAt'):\n\t\t\tactive = v\n\t\t\tbreak\n\tif active:\n\t\tself.view.custom.selectedVersionId = active.get('Id') or 0\n\telif curr:\n\t\tself.view.custom.selectedVersionId = (curr[0] or {}).get('Id') or 0\n\telse:\n\t\tself.view.custom.selectedVersionId = 0"
+        "script": "\timport json\n\tif self.view.custom.selectedVersionId and self.view.custom.selectedVersionId > 0:\n\t\treturn\n\traw = currentValue.value if currentValue is not None else []\n\ttry:\n\t\tj = BlueRidge.Common.Util.convertWrapperObjectToJson(raw)\n\t\tcurr = json.loads(j) if j else []\n\texcept Exception:\n\t\tcurr = []\n\tif not isinstance(curr, list):\n\t\tcurr = []\n\tactive = None\n\tfor v in curr:\n\t\tif not isinstance(v, dict):\n\t\t\tcontinue\n\t\tif v.get('PublishedAt') and not v.get('DeprecatedAt'):\n\t\t\tactive = v\n\t\t\tbreak\n\tif active:\n\t\tself.view.custom.selectedVersionId = active.get('Id') or 0\n\telif curr and isinstance(curr[0], dict):\n\t\tself.view.custom.selectedVersionId = curr[0].get('Id') or 0\n\telse:\n\t\tself.view.custom.selectedVersionId = 0"
       }
     },
     "custom.selectedHeader": {
