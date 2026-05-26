@@ -1066,6 +1066,58 @@
       {
         "children": [
           {
+            "children": [
+              {
+                "meta": {"name": "HdrSeq"},
+                "position": {"basis": "40px", "shrink": 0},
+                "props": {"text": "#", "style": {"color": "var(--mpp-text-secondary)", "fontSize": "11px", "fontWeight": "600", "letterSpacing": "0.05em", "textAlign": "center", "textTransform": "uppercase"}},
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {"name": "HdrArea"},
+                "position": {"basis": "160px", "shrink": 0},
+                "props": {"text": "Area", "style": {"color": "var(--mpp-text-secondary)", "fontSize": "11px", "fontWeight": "600", "letterSpacing": "0.05em", "textTransform": "uppercase"}},
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {"name": "HdrOpTemplate"},
+                "position": {"basis": "260px", "shrink": 0},
+                "props": {"text": "Operation Template", "style": {"color": "var(--mpp-text-secondary)", "fontSize": "11px", "fontWeight": "600", "letterSpacing": "0.05em", "textTransform": "uppercase"}},
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {"name": "HdrRequired"},
+                "position": {"basis": "70px", "shrink": 0},
+                "props": {"text": "Req", "style": {"color": "var(--mpp-text-secondary)", "fontSize": "11px", "fontWeight": "600", "letterSpacing": "0.05em", "textAlign": "center", "textTransform": "uppercase"}},
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {"name": "HdrDataCollection"},
+                "position": {"grow": 1},
+                "props": {"text": "Data Collection", "style": {"color": "var(--mpp-text-secondary)", "fontSize": "11px", "fontWeight": "600", "letterSpacing": "0.05em", "textTransform": "uppercase"}},
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {"name": "HdrActions"},
+                "position": {"basis": "108px", "shrink": 0},
+                "props": {"text": "Actions", "style": {"color": "var(--mpp-text-secondary)", "fontSize": "11px", "fontWeight": "600", "letterSpacing": "0.05em", "textAlign": "center", "textTransform": "uppercase"}},
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {"name": "DraftStepHeader"},
+            "position": {"basis": "auto", "shrink": 0},
+            "props": {
+              "alignItems": "center",
+              "style": {
+                "background": "var(--mpp-surface-raised)",
+                "borderBottom": "1px solid var(--mpp-border-subtle)",
+                "gap": "6px",
+                "padding": "8px 8px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
             "meta": {
               "name": "DraftStepRows"
             },
