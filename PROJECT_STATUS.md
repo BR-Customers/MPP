@@ -1,6 +1,85 @@
 # MPP MES — Project Status
 
-**Last updated:** 2026-05-26 (Phase 3 Item Master Identity + AddItem CRUD code-complete, smoke partially passed; **MAJOR BUG OPEN** — per-section editDraft drifts from selected during view lifecycle, causing spurious dirty state and blocking navigation. Diagnosis pending.)
+**Last updated:** 2026-05-26 (Phase 6 BOMs landed on main via rebase + ff-merge; SQL tests **1034/1034**. **MAJOR BUG STILL OPEN** — per-section editDraft drift; BOMs `43c20bd` isDirty deep-compare via `Common.Util.convertWrapperObjectToJson` round-trip is the candidate fix-pattern to try on Identity/ContainerConfig.)
+
+---
+
+## 🔖 Next Session Pickup — Item Master Phase 3 (paused 2026-05-26)
+
+**State of play.** Phase 3 (Item Master Identity + AddItem CRUD) is **code-complete on main** (commits below). Phase 5 Routes and Phase 6 BOMs also landed in parallel during this session — Routes via Agent A pushing directly to main; BOMs via Agent B + rebase merge. **One MAJOR blocker remains** before Phase 3 can be marked done: spurious dirty-state drift on Identity (and probably ContainerConfig) that locks item-to-item navigation. See "Active Blocker" section below for full diagnosis-to-date.
+
+**First three steps on resume:**
+
+1. **Sync up.** Pull origin/main; verify clean tree; read this whole status doc top to bottom because the parallel-agent activity has changed a lot of files (Routes flex-repeater patterns, BOMs reusable ConfirmAction popup, ConfirmDestructive popup, etc.).
+   ```
+   git fetch origin && git pull --ff-only origin main
+   git log --oneline -30                          # see what landed
+   git status                                      # should be clean
+   ```
+
+2. **Diagnostic capture before any code changes.** Open Item Master in Designer, click an item with non-null values, wait a few seconds until "Item Master • Unsaved changes" appears with no user input, then:
+   - Select the **Identity** embedded view in the project browser.
+   - In the Property Browser, capture **every key + value of `view.custom.editDraft`** AND **every key + value of `view.custom.selected`**.
+   - Diff them — note which keys differ AND what the difference looks like (type, wrapper class, whitespace, anything visible).
+   - Also note: is `view.custom.isDirty` showing `true` while the dicts look identical to your eye? (Different bug class.)
+
+3. **Read these before touching code:**
+   - `docs/superpowers/plans/2026-05-26-item-master-phase3.md` — the plan we executed
+   - `docs/superpowers/specs/2026-05-20-item-master-phase3-design.md` — the spec
+   - `ignition/projects/MPP_Config/com.inductiveautomation.perspective/views/BlueRidge/Components/Parts/ItemMaster/Identity/view.json` — the new embed
+   - `BlueRidge.Common.Util.convertWrapperObjectToJson` (in `Common/Util/code.py`) — Jacques changed this to `return dict(obj)` mid-session; that fix unblocked dirty-detection and immediately exposed this drift bug. Worth checking whether `dict()` is a shallow vs deep unwrap — if shallow, leaf Java wrappers in editDraft vs selected could still mismatch even when both serialize to the same JSON-string.
+   - `43c20bd` BOMs isDirty fix — same JSON-round-trip pattern, may have lessons for Identity/ContainerConfig.
+
+**Smoke checklist progress:**
+
+| Step | Status |
+|---|---|
+| 1. Cold open populates list | ✅ PASS |
+| 2. Click 5G0 populates Identity | ✅ PASS |
+| 3. Edit Description → dirty dot, tabs disable | ✅ PASS |
+| 4. Save → toast + dirty clears + list refreshes | ✅ PASS |
+| 5. Discard reverts; dirty clears | ✅ PASS |
+| 6. UnitWeight w/o WeightUOM → proc rejects | ✅ PASS |
+| 7. MaxParts = 0 → proc rejects | ✅ PASS |
+| 8. +Add Item opens | ✅ PASS |
+| 9. Create succeeds (toast) | ✅ PASS |
+| 9b. New row appears in list without manual refresh | 🟡 Fix in `13356bd` (refactored binding to read from `view.custom.items` via pure transform) — needs retest |
+| **Cross-item nav without changes** | ❌ **BLOCKER** — see Active Blocker section |
+| 10–15 | ⏳ Gated on blocker |
+
+**Phase 3 commit chain since `752d86a`:**
+```
+5526ec3 NQ parts/Item_Create
+9aba45d NQ parts/Item_Update
+1595f6e NQ parts/Item_Deprecate
+0c31eba NQ parts/ItemType_List
+5fa3fbe NQ parts/Uom_List
+aaab0be BlueRidge.Parts.ItemType entity script
+07c0711 BlueRidge.Parts.Uom entity script
+f4021f7 Item.add + update + deprecate + emptyMeta
+3466643 Identity embed (per-section ownership)
+471d2b8 Wire AddItem popup to Item.add
+3973be8 Swap DetailsHeader for Identity embed
+1965f56 itemsRefresh direct write (1st refresh attempt — wrong target)
+42ba778 load() coerces None -> "" for nullable text fields
+12c6a7b load() stringifies numerics + refreshTick (architectural violation)
+13356bd attachSelectedId pure transform; ItemList binds to view.custom.items
+1fabed2 docs(status): log blocker
+1fabed2..HEAD docs(status): pickup note + BOMs/Routes parallel work landed
+```
+
+**Lessons captured this session (don't re-litigate):**
+- `convertWrapperObjectToJson` is `dict(obj)`, not `pyToGson(obj)`. (Jacques's fix — supersedes my earlier wrong implementation.)
+- Component-level bindings must NOT call DB-hitting helpers like `getAllForList` directly. The three-layer convention is: `view.custom.X` does the DB fetch via runScript; components bind to `view.custom.X` with a pure transform if reshape is needed. (My `12c6a7b` violated this; `13356bd` corrected with `attachSelectedId` pure transform.)
+- `ia.container.tab` in 8.3 doesn't support intercept-with-state-preservation. Use tabs-as-objects with `runWhileHidden: true` + `disabled` per-tab. Already in place via `itemMasterTabObjects` helper.
+- Don't swap out working UI components without asking. Stick to the smallest change that fixes the bug.
+
+**Parallel agent activity to be aware of:**
+- Phase 5 (Routes): landed by Agent A pushing directly to main. Many commits between `f32f312` and `0151dbc`. There are several `fix(routes)` commits — likely Routes has its own polish round still going.
+- Phase 6 (BOMs): landed by Agent B via rebase-merge. `971c2f4..38639a1` plus three rebase fixups + `43c20bd` isDirty backport + `705986e` SQL hot-fix. SQL test count went from 937 to **1034**.
+- Phase 8 (Eligibility): no commits visible — that agent may not have started, or may still be in a worktree.
+
+**Workaround for demo purposes** until the drift bug is fixed: when ConfirmUnsaved fires spuriously, click **Discard & Close** — it resets `editDraft = dict(selected)`, clears dirty until the next drift cycle (a few seconds).
 
 ---
 
@@ -8,7 +87,7 @@
 
 **Symptom:** After loading an Item, navigating between items (or sometimes just letting the view sit for a few seconds), `view.custom.editDraft` becomes !=  `view.custom.selected` even with no user input. This triggers `sectionDirtyChanged{isDirty: true}` → ConfirmUnsaved popup blocks `itemRowClicked` navigation → user stuck on current item indefinitely.
 
-**Affected sections:** Identity embed (confirmed), ContainerConfig embed (very likely — same pattern).
+**Affected sections:** Identity embed (confirmed), ContainerConfig embed (very likely — same pattern), BOMs embed (very likely — same pattern; landed 2026-05-26 with isDirty deep-compare via JSON round-trip already applied — **try porting commit `43c20bd` to Identity + ContainerConfig as the first diagnostic step**).
 
 **Attempts to date (all partial):**
 
@@ -49,6 +128,39 @@ The Item Master design has been **reworked from bundled-editDraft + bidi-Object-
 ---
 
 ## ✅ Recently closed
+
+### Item Master Phase 6 — BOMs versioning workflow landed via rebase + ff-merge (2026-05-26)
+
+Second versioned per-section embed to ship (after Phase 5 Routes). The BOMs tab on `/items` now supports the full Draft → Published → Deprecated lifecycle: create new version (clone last Published into Draft), add/edit/remove component-item lines (Item dropdown + UoM auto-populate + Qty + IsScrapTracked), Save Draft (bundled JSON-line reconciliation via `Bom_SaveDraft` — physical DELETE/UPDATE/INSERT since `BomLine` has no `DeprecatedAt`), Publish (atomic save-then-publish with optional `EffectiveFrom` + min-1-line guard moved BEFORE `BEGIN TRANSACTION` to avoid Msg 3915 in INSERT-EXEC tests), Discard Draft (hard delete + cascade), Deprecate Published (idempotent). Filtered UNIQUE index `UX_Bom_ActiveDraft` enforces one Draft per ParentItemId. New migration: `0016_parts_bom_unique_draft.sql`.
+
+Built in worktree `.claude/worktrees/Agent-B-item-master-boms`, then **rebased onto main** after main absorbed Phase 5 Routes + Phase 3 Item CRUD which collided on three surfaces:
+
+- **Migration slot collision** — `0015_parts_bom_unique_draft.sql` renamed to `0016_*` (0015 taken by main's `audit_add_event_type_deleted`).
+- **`Uom_List` NQ add/add** — kept main's `EXEC Parts.Uom_List @IncludeDeprecated = :includeDeprecated` signature; deleted BOMs' duplicate; updated `BlueRidge.Parts.Bom.listUoms()` to pass `{"includeDeprecated": False}`.
+- **Generic 2-button confirm popup duplication** — swapped BOMs' new `ConfirmAction` for main's `ConfirmDestructive`; updated 2 callers in `Boms/view.json` (`openDeprecateConfirm`, `openDiscardDraftConfirm`); deleted `ConfirmAction` view dir. Orphan `f30be77 feat(popups): reusable ConfirmAction popup` commit still in history → `682905b` deletes its files (net effect correct; squash if cleaner log desired).
+
+**Pattern backports from main's Routes versioning work (post-fork commits):**
+
+- **`85986c3` isDirty deep-compare** — backported as `43c20bd`. BOMs' `view.custom.isDirty` was comparing `editDraft.lines != selected.lines` (list reference equality); now routes both sides through `Common.Util.convertWrapperObjectToJson` for primitive-level equality. **This is the candidate fix-pattern for the open dirty-drift blocker on Identity/ContainerConfig.**
+- **`e7f2f3e` / `404b51b` ImmutableMap unwrap in versions.onChange** — NOT APPLICABLE; BOMs has no versions.onChange handler (uses runScript-bound dropdown + Python entity returning plain `list[dict]`); uses `flex-repeater` not `ia.display.table`.
+- **`e29c670` selectedItem default shape restore** — NOT APPLICABLE; BOMs `view.custom.selected` + `editDraft` already declare full nested empty shape.
+- **`a391f07` Routes onChange bracket-access on ImmutableMap (not broken json.loads roundtrip)** — landed AFTER the rebase agent did its main pass; BOMs absorbed via a second silent rebase before ff-merge. BOMs has no analogous onChange callsite.
+
+**Pre-existing test bug recovered:** `010_Bom_crud.sql` had a `#BomListScratch` temp-table that wasn't widened when `R__Parts_Bom_ListByParentItem.sql` went to v3 (added `LineCount` + `Status` columns). INSERT-EXEC was throwing Msg 213 silently aborting the whole file via `sqlcmd -b`, skipping ~13 trailing assertions including `[BomCreateHappy]`. Fixed in `705986e` as part of the rebase pass.
+
+**Final 11-commit set on main:** `971c2f4` SQL backend → `c61db35` 10 NQs → `ae481b5` entity script → `f30be77` ConfirmAction (orphaned later) → `d357a95` BomLineRow → `38639a1` BOMs embed wire → `217c540` migration renumber → `c2962c1` Uom_List signature → `682905b` ConfirmAction→ConfirmDestructive swap → `43c20bd` isDirty deep-compare → `705986e` `#BomListScratch` widen. Merged ff-only.
+
+**SQL tests:** 1034/1034 passing (was 972 on BOMs branch pre-rebase; +62 from main's Phase 5 Routes additions + recovered `010_Bom_crud.sql` assertions).
+
+**Pickup tomorrow:**
+
+1. **Smoke-test BOMs end-to-end in Designer** — open `/items`, pick 5G0, click BOMs tab. Verify: versions list with line-count + status badges; `+ New Version` → clones last Published into Draft + EffectiveFrom prefill + success toast; edit qty → `●` dirty + tab disable; `+ Add Component` Item dropdown auto-populates UoM; reorder arrows; row `×` remove; `Save Draft` → reload persists; `Publish` (zero-line + missing EffectiveFrom blocked; valid → status flip); `Deprecate` → `ConfirmDestructive` → status flip; `Discard Draft` → `ConfirmDestructive` → version vanishes; tab-switch with dirty Draft triggers ConfirmDestructive gate (parent's Phase 4 infrastructure carries this); `Audit.ConfigLog` rows for every mutation.
+2. **Reset dev DB** — `.\Reset-DevDatabase.ps1` to land migration 0016 cleanly (if `0015_parts_bom_unique_draft` row exists in `SchemaVersion` from pre-rebase, the reset rebuilds from scratch).
+3. **`.\scan.ps1`** before Designer testing to pick up new NQs + 2 new views + restructured `Boms/view.json`.
+4. **Try `43c20bd` deep-compare pattern on Identity + ContainerConfig isDirty** — first diagnostic step for the open editDraft-drift blocker (both currently do reference-equality on dict-typed editDraft vs selected, the exact bug the BOMs backport addressed).
+5. **Working tree on main has uncommitted edits** to `ItemMaster/{resource.json, view.json}` from prior Identity bug investigation — survived the merge intact; decide whether to commit / discard / continue iterating before re-opening Designer.
+6. Optional cleanup: interactive-rebase squash `f30be77` (orphan ConfirmAction add) into `682905b` (its delete) for tidier log.
+7. Optional: remove worktree `git worktree remove .claude/worktrees/Agent-B-item-master-boms` (Agent-A + Agent-C worktrees still in use for parallel work).
 
 ### Item Master Phase 4 — ContainerConfig save + parent gate infrastructure (2026-05-26)
 
@@ -254,8 +366,8 @@ Items genuinely gating downstream work, by owner:
 
 ## Build Status
 
-- **Configuration Tool (Arc 1):** Phases 1–8 + G.1–G.5 + 0013 corrections + 0014 LocationTypeDefinition CRUD support complete. Audit page procs (FailureLog_List, ConfigLog_List, FailureLog_DistinctProcedures) landed 2026-05-19. **937/937 tests passing** across 22+ test suites.
-- **SQL artifacts:** `/sql/` folder, **14 versioned migrations + 220 repeatable procs.** PowerShell reset script `Reset-DevDatabase.ps1` auto-discovers and runs all scripts via `sqlcmd.exe`. Tested on SQL Server 2025.
+- **Configuration Tool (Arc 1):** Phases 1–8 + G.1–G.5 + 0013 corrections + 0014 LocationTypeDefinition CRUD support complete. Audit page procs (FailureLog_List, ConfigLog_List, FailureLog_DistinctProcedures) landed 2026-05-19. Phase 5 Routes versioning + Phase 6 BOMs versioning landed 2026-05-26. **1034/1034 tests passing** across 24+ test suites.
+- **SQL artifacts:** `/sql/` folder, **16 versioned migrations** (latest: `0015_audit_add_event_type_deleted` + `0016_parts_bom_unique_draft`) **+ 230+ repeatable procs.** PowerShell reset script `Reset-DevDatabase.ps1` auto-discovers and runs all scripts via `sqlcmd.exe`. Tested on SQL Server 2025.
 - **Plant Floor (Arc 2):** Mockup landed at `mockup/plantFloor.html` (12 terminal/lot routes + Home Page). SQL not yet started — gated on Phase 0.
 - **Ignition project (live build, Arc 1):** Phase 1 Location pipeline + toasts + scan helper landed 2026-05-12. LocationTypeEditor full stack 2026-05-13. **Convention rectification 2026-05-14** — `Common.Db`/`Common.Util`/`Common.Ui` layer built, `Common.Action` deleted, 5 entity scripts retrofitted through Common helpers, LocationTypeEditor view restructured to `editDraft`/`selected` pattern + dirty indicator + Cancel, all NQs normalized (camelCase identifiers, Designer-canonical sqlType enum, v2 schema). Designer smoke-test pending. Audit pages (FailureLog + AuditLog) landed 2026-05-19 with the customMethods addressing bug fixed same day. **Downtime Codes Ops view wired 2026-05-19** — first Config Tool admin surface to combine live-data List + popup editor + page-scoped refresh pulse (separate pattern from the audit-browser read-only pattern).
 - **Seed data loading:** CSVs ready in `reference/seed_data/` (876 rows total). `machines.csv` not yet loaded; MPP parts list not yet provided; `defect_codes.csv` not yet loaded; `downtime_reason_codes.csv` has bulk-load proc but not yet invoked.
