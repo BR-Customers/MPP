@@ -19,7 +19,7 @@
     "showDeprecated": false
   },
   "params": {
-    "value": 1
+    "value": ""
   },
   "propConfig": {
     "custom.areas": {
@@ -36,6 +36,10 @@
           "path": "view.params.value"
         },
         "type": "property"
+      },
+      "onChange": {
+        "enabled": true,
+        "script": "\tnewItemId = currentValue.value if currentValue is not None else 0\n\tprevItemId = previousValue.value if previousValue is not None else 0\n\tBlueRidge.Common.Util.log('itemId.onChange new=%s prev=%s' % (newItemId, prevItemId))\n\tif newItemId == prevItemId:\n\t\treturn\n\tself.view.custom.selectedVersionId = 0\n\tself.view.custom.draftId = 0\n\tself.view.custom.draftEditDraft = {'Id': 0, 'Name': '', 'EffectiveFrom': '', 'steps': []}\n\tself.view.custom.draftSelected = {'Id': 0, 'Name': '', 'EffectiveFrom': '', 'steps': []}\n\tself.view.custom.mode = 'view'\n\tself.view.rootContainer.broadcastDirty(False)"
       }
     },
     "custom.selectedHeader": {
@@ -58,12 +62,6 @@
         "type": "expr"
       }
     },
-    "custom.selectedVersionId": {
-      "onChange": {
-        "enabled": true,
-        "script": "\tnewId = currentValue.value if currentValue is not None else 0\n\tBlueRidge.Common.Util.log('selectedVersionId.onChange newId=%s currentMode=%s currentDraftId=%s' % (newId, self.view.custom.mode, self.view.custom.draftId))\n\tif not newId or newId <= 0:\n\t\tif self.view.custom.mode == 'draft':\n\t\t\tself.view.custom.draftId = 0\n\t\t\tself.view.custom.draftEditDraft = {'Id': 0, 'Name': '', 'EffectiveFrom': '', 'steps': []}\n\t\t\tself.view.custom.draftSelected = {'Id': 0, 'Name': '', 'EffectiveFrom': '', 'steps': []}\n\t\t\tself.view.custom.mode = 'view'\n\t\t\tself.view.rootContainer.broadcastDirty(False)\n\t\treturn\n\theader = BlueRidge.Parts.RouteTemplate.getHeader(newId)\n\tif not header:\n\t\tBlueRidge.Common.Util.log('selectedVersionId.onChange getHeader returned None for newId=%s' % newId)\n\t\treturn\n\tpublishedAt = header.get('PublishedAt')\n\tdeprecatedAt = header.get('DeprecatedAt')\n\tisDraft = (publishedAt is None) and (deprecatedAt is None)\n\tBlueRidge.Common.Util.log('selectedVersionId.onChange isDraft=%s publishedAt=%s deprecatedAt=%s' % (isDraft, publishedAt, deprecatedAt))\n\tif isDraft:\n\t\tif self.view.custom.draftId == newId:\n\t\t\treturn\n\t\tname = header.get('Name') or ''\n\t\teffStr = str(header.get('EffectiveFrom') or '')[:10]\n\t\tsteps = BlueRidge.Parts.RouteTemplate.getSteps(newId) or []\n\t\tstepsCopy = [dict(s) for s in steps]\n\t\tself.view.custom.draftId = newId\n\t\tself.view.custom.draftEditDraft = {'Id': newId, 'Name': name, 'EffectiveFrom': effStr, 'steps': stepsCopy}\n\t\tself.view.custom.draftSelected = {'Id': newId, 'Name': name, 'EffectiveFrom': effStr, 'steps': [dict(s) for s in steps]}\n\t\tself.view.custom.mode = 'draft'\n\t\tself.view.rootContainer.broadcastDirty(False)\n\telse:\n\t\tif self.view.custom.mode == 'draft':\n\t\t\tself.view.custom.draftId = 0\n\t\t\tself.view.custom.draftEditDraft = {'Id': 0, 'Name': '', 'EffectiveFrom': '', 'steps': []}\n\t\t\tself.view.custom.draftSelected = {'Id': 0, 'Name': '', 'EffectiveFrom': '', 'steps': []}\n\t\t\tself.view.custom.mode = 'view'\n\t\t\tself.view.rootContainer.broadcastDirty(False)"
-      }
-    },
     "custom.selectedStepsView": {
       "binding": {
         "config": {
@@ -76,6 +74,12 @@
           }
         ],
         "type": "property"
+      }
+    },
+    "custom.selectedVersionId": {
+      "onChange": {
+        "enabled": true,
+        "script": "\tnewId \u003d currentValue.value if currentValue is not None else 0\n\tBlueRidge.Common.Util.log(\u0027selectedVersionId.onChange newId\u003d%s currentMode\u003d%s currentDraftId\u003d%s\u0027 % (newId, self.view.custom.mode, self.view.custom.draftId))\n\tif not newId or newId \u003c\u003d 0:\n\t\tif self.view.custom.mode \u003d\u003d \u0027draft\u0027:\n\t\t\tself.view.custom.draftId \u003d 0\n\t\t\tself.view.custom.draftEditDraft \u003d {\u0027Id\u0027: 0, \u0027Name\u0027: \u0027\u0027, \u0027EffectiveFrom\u0027: \u0027\u0027, \u0027steps\u0027: []}\n\t\t\tself.view.custom.draftSelected \u003d {\u0027Id\u0027: 0, \u0027Name\u0027: \u0027\u0027, \u0027EffectiveFrom\u0027: \u0027\u0027, \u0027steps\u0027: []}\n\t\t\tself.view.custom.mode \u003d \u0027view\u0027\n\t\t\tself.view.rootContainer.broadcastDirty(False)\n\t\treturn\n\theader \u003d BlueRidge.Parts.RouteTemplate.getHeader(newId)\n\tif not header:\n\t\tBlueRidge.Common.Util.log(\u0027selectedVersionId.onChange getHeader returned None for newId\u003d%s\u0027 % newId)\n\t\treturn\n\tpublishedAt \u003d header.get(\u0027PublishedAt\u0027)\n\tdeprecatedAt \u003d header.get(\u0027DeprecatedAt\u0027)\n\tisDraft \u003d (publishedAt is None) and (deprecatedAt is None)\n\tBlueRidge.Common.Util.log(\u0027selectedVersionId.onChange isDraft\u003d%s publishedAt\u003d%s deprecatedAt\u003d%s\u0027 % (isDraft, publishedAt, deprecatedAt))\n\tif isDraft:\n\t\tif self.view.custom.draftId \u003d\u003d newId:\n\t\t\treturn\n\t\tname \u003d header.get(\u0027Name\u0027) or \u0027\u0027\n\t\teffStr \u003d str(header.get(\u0027EffectiveFrom\u0027) or \u0027\u0027)[:10]\n\t\tsteps \u003d BlueRidge.Parts.RouteTemplate.getSteps(newId) or []\n\t\tstepsCopy \u003d [dict(s) for s in steps]\n\t\tself.view.custom.draftId \u003d newId\n\t\tself.view.custom.draftEditDraft \u003d {\u0027Id\u0027: newId, \u0027Name\u0027: name, \u0027EffectiveFrom\u0027: effStr, \u0027steps\u0027: stepsCopy}\n\t\tself.view.custom.draftSelected \u003d {\u0027Id\u0027: newId, \u0027Name\u0027: name, \u0027EffectiveFrom\u0027: effStr, \u0027steps\u0027: [dict(s) for s in steps]}\n\t\tself.view.custom.mode \u003d \u0027draft\u0027\n\t\tself.view.rootContainer.broadcastDirty(False)\n\telse:\n\t\tif self.view.custom.mode \u003d\u003d \u0027draft\u0027:\n\t\t\tself.view.custom.draftId \u003d 0\n\t\t\tself.view.custom.draftEditDraft \u003d {\u0027Id\u0027: 0, \u0027Name\u0027: \u0027\u0027, \u0027EffectiveFrom\u0027: \u0027\u0027, \u0027steps\u0027: []}\n\t\t\tself.view.custom.draftSelected \u003d {\u0027Id\u0027: 0, \u0027Name\u0027: \u0027\u0027, \u0027EffectiveFrom\u0027: \u0027\u0027, \u0027steps\u0027: []}\n\t\t\tself.view.custom.mode \u003d \u0027view\u0027\n\t\t\tself.view.rootContainer.broadcastDirty(False)"
       }
     },
     "custom.versions": {
@@ -1068,44 +1072,134 @@
           {
             "children": [
               {
-                "meta": {"name": "HdrSeq"},
-                "position": {"basis": "40px", "shrink": 0},
-                "props": {"text": "#", "style": {"color": "var(--mpp-text-secondary)", "fontSize": "11px", "fontWeight": "600", "letterSpacing": "0.05em", "textAlign": "center", "textTransform": "uppercase"}},
+                "meta": {
+                  "name": "HdrSeq"
+                },
+                "position": {
+                  "basis": "40px",
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "11px",
+                    "fontWeight": "600",
+                    "letterSpacing": "0.05em",
+                    "textAlign": "center",
+                    "textTransform": "uppercase"
+                  },
+                  "text": "#"
+                },
                 "type": "ia.display.label"
               },
               {
-                "meta": {"name": "HdrArea"},
-                "position": {"basis": "160px", "shrink": 0},
-                "props": {"text": "Area", "style": {"color": "var(--mpp-text-secondary)", "fontSize": "11px", "fontWeight": "600", "letterSpacing": "0.05em", "textTransform": "uppercase"}},
+                "meta": {
+                  "name": "HdrArea"
+                },
+                "position": {
+                  "basis": "160px",
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "11px",
+                    "fontWeight": "600",
+                    "letterSpacing": "0.05em",
+                    "textTransform": "uppercase"
+                  },
+                  "text": "Area"
+                },
                 "type": "ia.display.label"
               },
               {
-                "meta": {"name": "HdrOpTemplate"},
-                "position": {"basis": "260px", "shrink": 0},
-                "props": {"text": "Operation Template", "style": {"color": "var(--mpp-text-secondary)", "fontSize": "11px", "fontWeight": "600", "letterSpacing": "0.05em", "textTransform": "uppercase"}},
+                "meta": {
+                  "name": "HdrOpTemplate"
+                },
+                "position": {
+                  "basis": "260px",
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "11px",
+                    "fontWeight": "600",
+                    "letterSpacing": "0.05em",
+                    "textTransform": "uppercase"
+                  },
+                  "text": "Operation Template"
+                },
                 "type": "ia.display.label"
               },
               {
-                "meta": {"name": "HdrRequired"},
-                "position": {"basis": "70px", "shrink": 0},
-                "props": {"text": "Req", "style": {"color": "var(--mpp-text-secondary)", "fontSize": "11px", "fontWeight": "600", "letterSpacing": "0.05em", "textAlign": "center", "textTransform": "uppercase"}},
+                "meta": {
+                  "name": "HdrRequired"
+                },
+                "position": {
+                  "basis": "70px",
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "11px",
+                    "fontWeight": "600",
+                    "letterSpacing": "0.05em",
+                    "textAlign": "center",
+                    "textTransform": "uppercase"
+                  },
+                  "text": "Req"
+                },
                 "type": "ia.display.label"
               },
               {
-                "meta": {"name": "HdrDataCollection"},
-                "position": {"grow": 1},
-                "props": {"text": "Data Collection", "style": {"color": "var(--mpp-text-secondary)", "fontSize": "11px", "fontWeight": "600", "letterSpacing": "0.05em", "textTransform": "uppercase"}},
+                "meta": {
+                  "name": "HdrDataCollection"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "11px",
+                    "fontWeight": "600",
+                    "letterSpacing": "0.05em",
+                    "textTransform": "uppercase"
+                  },
+                  "text": "Data Collection"
+                },
                 "type": "ia.display.label"
               },
               {
-                "meta": {"name": "HdrActions"},
-                "position": {"basis": "108px", "shrink": 0},
-                "props": {"text": "Actions", "style": {"color": "var(--mpp-text-secondary)", "fontSize": "11px", "fontWeight": "600", "letterSpacing": "0.05em", "textAlign": "center", "textTransform": "uppercase"}},
+                "meta": {
+                  "name": "HdrActions"
+                },
+                "position": {
+                  "basis": "108px",
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "11px",
+                    "fontWeight": "600",
+                    "letterSpacing": "0.05em",
+                    "textAlign": "center",
+                    "textTransform": "uppercase"
+                  },
+                  "text": "Actions"
+                },
                 "type": "ia.display.label"
               }
             ],
-            "meta": {"name": "DraftStepHeader"},
-            "position": {"basis": "auto", "shrink": 0},
+            "meta": {
+              "name": "DraftStepHeader"
+            },
+            "position": {
+              "shrink": 0
+            },
             "props": {
               "alignItems": "center",
               "style": {
