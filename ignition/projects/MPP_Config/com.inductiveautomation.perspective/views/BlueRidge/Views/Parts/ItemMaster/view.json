@@ -1,37 +1,17 @@
 {
   "custom": {
+    "selectedItemId": null,
     "activeTab": "containerConfig",
-    "editDraft": {
-      "meta": {
-        "CountryOfOrigin": "US",
-        "CreatedAt": {
-          "$": [
-            "ts",
-            192,
-            1779309668179
-          ],
-          "$ts": 1779321304125
-        },
-        "CreatedByUserId": 2,
-        "DefaultSubLotQty": 24,
-        "DeprecatedAt": null,
-        "Description": "5G0 Front Cover Assembly",
-        "Id": 1,
-        "ItemTypeId": 4,
-        "ItemTypeName": "Finished Good",
-        "MacolaPartNumber": "5G0-FC-001",
-        "MaxLotSize": null,
-        "MaxParts": 500,
-        "PartNumber": "5G0",
-        "UnitWeight": 3.25,
-        "UomCode": "EA",
-        "UomId": 1,
-        "UpdatedAt": null,
-        "UpdatedByUserId": null,
-        "WeightUomCode": "LB",
-        "WeightUomId": 2
-      }
+    "activeTabIndex": 0,
+    "sectionDirty": {
+      "identity": false,
+      "containerConfig": false,
+      "routes": false,
+      "boms": false,
+      "qualitySpecs": false,
+      "eligibility": false
     },
+    "pendingSwitch": null,
     "itemTypes": [
       "Raw Material",
       "Component",
@@ -39,39 +19,7 @@
       "Finished Good",
       "Pass-Through"
     ],
-    "mode": "update",
     "search": "",
-    "selected": {
-      "meta": {
-        "CountryOfOrigin": "US",
-        "CreatedAt": {
-          "$": [
-            "ts",
-            192,
-            1779309668178
-          ],
-          "$ts": 1779321304125
-        },
-        "CreatedByUserId": 2,
-        "DefaultSubLotQty": 24,
-        "DeprecatedAt": null,
-        "Description": "5G0 Front Cover Assembly",
-        "Id": 1,
-        "ItemTypeId": 4,
-        "ItemTypeName": "Finished Good",
-        "MacolaPartNumber": "5G0-FC-001",
-        "MaxLotSize": null,
-        "MaxParts": 500,
-        "PartNumber": "5G0",
-        "UnitWeight": 3.25,
-        "UomCode": "EA",
-        "UomId": 1,
-        "UpdatedAt": null,
-        "UpdatedByUserId": null,
-        "WeightUomCode": "LB",
-        "WeightUomId": 2
-      }
-    },
     "typeFilter": "All Types",
     "uoms": [
       "EA",
@@ -87,6 +35,12 @@
           "expression": "runScript(\"BlueRidge.Parts.Item.getAllForList\", 0, {view.custom.search}, {view.custom.typeFilter})"
         },
         "type": "expr"
+      }
+    },
+    "custom.activeTabIndex": {
+      "onChange": {
+        "enabled": true,
+        "script": "\tprev = previousValue.value if previousValue is not None else None\n\tcurr = currentValue.value if currentValue is not None else None\n\tsectionKeys = [\"containerConfig\", \"routes\", \"boms\", \"qualitySpecs\", \"eligibility\"]\n\tif prev is None or curr is None or prev == curr:\n\t\treturn\n\tcurrentSection = sectionKeys[prev] if 0 <= prev < len(sectionKeys) else None\n\tdirtyMap = self.custom.sectionDirty or {}\n\tif currentSection and dirtyMap.get(currentSection, False):\n\t\tself.custom.pendingSwitch = {\"kind\": \"tab\", \"to\": curr}\n\t\tself.custom.activeTabIndex = prev\n\t\tself.rootContainer.openConfirmUnsaved(currentSection)\n\telif 0 <= curr < len(sectionKeys):\n\t\tself.custom.activeTab = sectionKeys[curr]"
       }
     }
   },
@@ -121,7 +75,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "if({view.custom.editDraft} != {view.custom.selected}, '\u25cf Unsaved changes', '')"
+                    "expression": "if({view.custom.sectionDirty.identity} || {view.custom.sectionDirty.containerConfig} || {view.custom.sectionDirty.routes} || {view.custom.sectionDirty.boms} || {view.custom.sectionDirty.qualitySpecs} || {view.custom.sectionDirty.eligibility}, '\u25cf Unsaved changes', '')"
                   },
                   "type": "expr"
                 }
@@ -298,7 +252,7 @@
                   "props.instances": {
                     "binding": {
                       "config": {
-                        "expression": "runScript(\"BlueRidge.Parts.Item.getInstancesForFlexRepeater\", 0, {view.custom.search}, {view.custom.typeFilter}, {view.custom.selected.meta.Id})"
+                        "expression": "runScript(\"BlueRidge.Parts.Item.getInstancesForFlexRepeater\", 0, {view.custom.search}, {view.custom.typeFilter}, {view.custom.selectedItemId})"
                       },
                       "type": "expr"
                     }
@@ -984,7 +938,8 @@
                   }
                 ],
                 "meta": {
-                  "name": "DetailsHeader"
+                  "name": "DetailsHeader",
+                  "visible": false
                 },
                 "position": {
                   "shrink": 0
@@ -1010,7 +965,7 @@
                       "props.params.value": {
                         "binding": {
                           "config": {
-                            "path": "view.custom.editDraft.meta.Id"
+                            "path": "view.custom.selectedItemId"
                           },
                           "type": "property"
                         }
@@ -1037,7 +992,7 @@
                       "props.params.value": {
                         "binding": {
                           "config": {
-                            "path": "view.custom.editDraft.meta.Id"
+                            "path": "view.custom.selectedItemId"
                           },
                           "type": "property"
                         }
@@ -1064,7 +1019,7 @@
                       "props.params.value": {
                         "binding": {
                           "config": {
-                            "path": "view.custom.editDraft.meta.Id"
+                            "path": "view.custom.selectedItemId"
                           },
                           "type": "property"
                         }
@@ -1091,7 +1046,7 @@
                       "props.params.value": {
                         "binding": {
                           "config": {
-                            "path": "view.custom.editDraft.meta.Id"
+                            "path": "view.custom.selectedItemId"
                           },
                           "type": "property"
                         }
@@ -1118,7 +1073,7 @@
                       "props.params.value": {
                         "binding": {
                           "config": {
-                            "path": "view.custom.editDraft.meta.Id"
+                            "path": "view.custom.selectedItemId"
                           },
                           "type": "property"
                         }
@@ -1141,8 +1096,26 @@
                 "position": {
                   "grow": 1
                 },
+                "propConfig": {
+                  "props.currentTabIndex": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.activeTabIndex"
+                      }
+                    }
+                  },
+                  "props.tabs": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "[\nif({view.custom.sectionDirty.containerConfig}, '● Container Config', 'Container Config'),\nif({view.custom.sectionDirty.routes},          '● Routes',          'Routes'),\nif({view.custom.sectionDirty.boms},            '● Boms',            'Boms'),\nif({view.custom.sectionDirty.qualitySpecs},    '● Quality Specs',   'Quality Specs'),\nif({view.custom.sectionDirty.eligibility},     '● Eligibility',     'Eligibility')\n]"
+                      }
+                    }
+                  }
+                },
                 "props": {
-                  "currentTabIndex": 2,
                   "menuType": "modern",
                   "style": {
                     "classes": "tab-host"
@@ -1166,14 +1139,7 @@
                     "inactive": {
                       "classes": "tab-item"
                     }
-                  },
-                  "tabs": [
-                    "Container Config",
-                    "Routes",
-                    "Boms",
-                    "Quality Specs",
-                    "Eligibility"
-                  ]
+                  }
                 },
                 "type": "ia.container.tab"
               }
@@ -1189,7 +1155,7 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "{view.custom.mode} != \"view\""
+                    "expression": "isnull({view.custom.selectedItemId}, 0) != 0"
                   },
                   "type": "expr"
                 }
@@ -1229,7 +1195,7 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "{view.custom.mode} = \"view\""
+                    "expression": "isnull({view.custom.selectedItemId}, 0) = 0"
                   },
                   "type": "expr"
                 }
@@ -1274,13 +1240,43 @@
       }
     },
     "scripts": {
-      "customMethods": [],
+      "customMethods": [
+        {
+          "name": "openConfirmUnsaved",
+          "params": ["sectionKey"],
+          "script": "\ttitles = {\n\t\t\"identity\":        \"Identity\",\n\t\t\"containerConfig\": \"Container Configuration\",\n\t\t\"routes\":          \"Routes\",\n\t\t\"boms\":            \"BOMs\",\n\t\t\"qualitySpecs\":    \"Quality Specs\",\n\t\t\"eligibility\":     \"Eligibility\",\n\t}\n\ttitle = titles.get(sectionKey, sectionKey or \"\")\n\tsystem.perspective.openPopup(\n\t\tid=\"mpp-confirm-unsaved\",\n\t\tview=\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t\"title\":   \"Unsaved Changes\",\n\t\t\t\"message\": \"You have unsaved changes to \" + title + \". Save before switching?\",\n\t\t},\n\t)"
+        },
+        {
+          "name": "completeSwitch",
+          "params": [],
+          "script": "\tpending = self.view.custom.pendingSwitch or {}\n\tkind    = pending.get(\"kind\")\n\ttarget  = pending.get(\"to\")\n\tsectionKeys = [\"containerConfig\", \"routes\", \"boms\", \"qualitySpecs\", \"eligibility\"]\n\tif kind == \"tab\":\n\t\tself.view.custom.activeTabIndex = target\n\t\tif target is not None and 0 <= target < len(sectionKeys):\n\t\t\tself.view.custom.activeTab = sectionKeys[target]\n\telif kind == \"item\":\n\t\tself.view.custom.selectedItemId = target\n\tself.view.custom.pendingSwitch = None"
+        },
+        {
+          "name": "cancelSwitch",
+          "params": [],
+          "script": "\tself.view.custom.pendingSwitch = None"
+        }
+      ],
       "extensionFunctions": null,
       "messageHandlers": [
         {
           "messageType": "itemRowClicked",
           "pageScope": true,
-          "script": "\tclickedId = payload.get('id') if payload else None\n\tif clickedId is None:\n\t\treturn\n\titemMeta = BlueRidge.Parts.Item.getOne(clickedId)\n\tif itemMeta is None:\n\t\tBlueRidge.Common.Notify.toast('Item not found', 'Item id ' + str(clickedId) + ' no longer exists.', 'warning')\n\t\treturn\n\tself.view.custom.selected  = {'meta': dict(itemMeta)}\n\tself.view.custom.editDraft = {'meta': dict(itemMeta)}\n\tself.view.custom.mode = 'update'",
+          "script": "\ttargetId = payload.get(\"id\") if payload else None\n\tif targetId is None or targetId == self.view.custom.selectedItemId:\n\t\treturn\n\tdirtyMap = self.view.custom.sectionDirty or {}\n\tdirtyKeys = [k for k, v in dirtyMap.items() if v]\n\tif dirtyKeys:\n\t\tself.view.custom.pendingSwitch = {\"kind\": \"item\", \"to\": targetId}\n\t\tself.openConfirmUnsaved(dirtyKeys[0])\n\telse:\n\t\tself.view.custom.selectedItemId = targetId",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "sectionDirtyChanged",
+          "pageScope": true,
+          "script": "\tsection = payload.get(\"section\") if payload else None\n\tisDirty = bool(payload.get(\"isDirty\")) if payload else False\n\tif not section:\n\t\treturn\n\tnextMap = dict(self.view.custom.sectionDirty or {})\n\tnextMap[section] = isDirty\n\tself.view.custom.sectionDirty = nextMap\n\tpending = self.view.custom.pendingSwitch\n\tif pending and not any(nextMap.values()):\n\t\tself.completeSwitch()",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "confirmUnsavedResult",
+          "pageScope": true,
+          "script": "\taction = payload.get(\"action\") if payload else None\n\tpending = self.view.custom.pendingSwitch\n\tif not pending:\n\t\treturn\n\tif action == \"cancel\":\n\t\tself.cancelSwitch()\n\t\treturn\n\tdirtyMap = self.view.custom.sectionDirty or {}\n\tdirtyKeys = [k for k, v in dirtyMap.items() if v]\n\tif not dirtyKeys:\n\t\tself.completeSwitch()\n\t\treturn\n\tdirtySection = dirtyKeys[0]\n\tif action == \"save\":\n\t\tsystem.perspective.sendMessage(\"sectionSaveRequested\", payload={\"section\": dirtySection}, scope=\"page\")\n\telif action == \"discard\":\n\t\tsystem.perspective.sendMessage(\"sectionDiscardRequested\", payload={\"section\": dirtySection}, scope=\"page\")",
           "sessionScope": false,
           "viewScope": false
         }
