@@ -1367,7 +1367,71 @@
         }
       ],
       "extensionFunctions": null,
-      "messageHandlers": null
+      "messageHandlers": [
+        {
+          "messageType": "routeConfirmDiscard",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "config": {
+            "script": "\taction = payload.get('action') if payload else None\n\tif action != 'confirm':\n\t\treturn\n\tdraftId = self.view.custom.draftId\n\tif not draftId or draftId <= 0:\n\t\tBlueRidge.Common.Notify.toast('Discard', 'No draft to discard.', 'warn', 5)\n\t\treturn\n\tresult = BlueRidge.Parts.RouteTemplate.discardDraft(draftId)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Discard', 'Draft discarded.', 'Discard failed')\n\tif not result or not result.get('Status'):\n\t\treturn\n\tself.view.custom.draftId = 0\n\tself.view.custom.draftEditDraft = {'Id': 0, 'Name': '', 'EffectiveFrom': '', 'steps': []}\n\tself.view.custom.draftSelected = {'Id': 0, 'Name': '', 'EffectiveFrom': '', 'steps': []}\n\tself.view.custom.mode = 'view'\n\tself.view.custom.selectedVersionId = 0\n\tself.rootContainer.reloadVersions()\n\tself.rootContainer.broadcastDirty(False)"
+          }
+        },
+        {
+          "messageType": "sectionSaveRequested",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "config": {
+            "script": "\tif not payload or payload.get('section') != 'routes':\n\t\treturn\n\tif self.view.custom.mode != 'draft':\n\t\treturn\n\tdraft = self.view.custom.draftEditDraft\n\tresult = BlueRidge.Parts.RouteTemplate.saveAll(self.view.custom.draftId, draft.get('Name'), draft.get('EffectiveFrom'), draft.get('steps') or [])\n\tBlueRidge.Common.Ui.notifyResult(result, 'Route saved', 'Route saved.', 'Save failed')\n\tif not result or not result.get('Status'):\n\t\treturn\n\tself.view.custom.draftSelected = {'Id': draft.get('Id'), 'Name': draft.get('Name'), 'EffectiveFrom': draft.get('EffectiveFrom'), 'steps': [dict(s) for s in (draft.get('steps') or [])]}\n\tself.rootContainer.reloadVersions()\n\tself.rootContainer.broadcastDirty(False)"
+          }
+        },
+        {
+          "messageType": "sectionDiscardRequested",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "config": {
+            "script": "\tif not payload or payload.get('section') != 'routes':\n\t\treturn\n\tif self.view.custom.mode != 'draft':\n\t\treturn\n\tsel = self.view.custom.draftSelected\n\tself.view.custom.draftEditDraft = {'Id': sel.get('Id'), 'Name': sel.get('Name'), 'EffectiveFrom': sel.get('EffectiveFrom'), 'steps': [dict(s) for s in (sel.get('steps') or [])]}\n\tself.rootContainer.broadcastDirty(False)"
+          }
+        },
+        {
+          "messageType": "routeStepChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "config": {
+            "script": "\tif not payload:\n\t\treturn\n\tidx = payload.get('rowIndex')\n\tnewStep = payload.get('step')\n\tif idx is None or newStep is None:\n\t\treturn\n\tdraft = self.view.custom.draftEditDraft\n\tsteps = list(draft.get('steps') or [])\n\tif idx < 0 or idx >= len(steps):\n\t\treturn\n\tsteps[idx] = dict(newStep)\n\tnewDraft = {'Id': draft.get('Id'), 'Name': draft.get('Name'), 'EffectiveFrom': draft.get('EffectiveFrom'), 'steps': steps}\n\tself.view.custom.draftEditDraft = newDraft\n\tself.rootContainer.broadcastDirty(True)"
+          }
+        },
+        {
+          "messageType": "routeStepMoveUp",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "config": {
+            "script": "\tif not payload:\n\t\treturn\n\tidx = payload.get('rowIndex')\n\tif idx is None or idx <= 0:\n\t\treturn\n\tdraft = self.view.custom.draftEditDraft\n\tsteps = list(draft.get('steps') or [])\n\tif idx >= len(steps):\n\t\treturn\n\tsteps[idx-1], steps[idx] = steps[idx], steps[idx-1]\n\tnewDraft = {'Id': draft.get('Id'), 'Name': draft.get('Name'), 'EffectiveFrom': draft.get('EffectiveFrom'), 'steps': steps}\n\tself.view.custom.draftEditDraft = newDraft\n\tself.rootContainer.broadcastDirty(True)"
+          }
+        },
+        {
+          "messageType": "routeStepMoveDown",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "config": {
+            "script": "\tif not payload:\n\t\treturn\n\tidx = payload.get('rowIndex')\n\tdraft = self.view.custom.draftEditDraft\n\tsteps = list(draft.get('steps') or [])\n\tif idx is None or idx < 0 or idx >= len(steps) - 1:\n\t\treturn\n\tsteps[idx+1], steps[idx] = steps[idx], steps[idx+1]\n\tnewDraft = {'Id': draft.get('Id'), 'Name': draft.get('Name'), 'EffectiveFrom': draft.get('EffectiveFrom'), 'steps': steps}\n\tself.view.custom.draftEditDraft = newDraft\n\tself.rootContainer.broadcastDirty(True)"
+          }
+        },
+        {
+          "messageType": "routeStepRemove",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "config": {
+            "script": "\tif not payload:\n\t\treturn\n\tidx = payload.get('rowIndex')\n\tif idx is None:\n\t\treturn\n\tdraft = self.view.custom.draftEditDraft\n\tsteps = list(draft.get('steps') or [])\n\tif idx < 0 or idx >= len(steps):\n\t\treturn\n\tdel steps[idx]\n\tnewDraft = {'Id': draft.get('Id'), 'Name': draft.get('Name'), 'EffectiveFrom': draft.get('EffectiveFrom'), 'steps': steps}\n\tself.view.custom.draftEditDraft = newDraft\n\tself.rootContainer.broadcastDirty(True)"
+          }
+        }
+      ]
     },
     "type": "ia.container.flex"
   }
