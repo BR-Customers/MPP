@@ -198,3 +198,32 @@ def itemMasterTabLabels(sectionDirty):
         else:
             out.append(label)
     return out
+
+
+def itemMasterTabObjects(sectionDirty, activeTab):
+    """Returns the 5 tab objects for ia.container.tab. Each tab is a
+    dict with text / runWhileHidden / disabled per the 8.3 tab-object
+    schema.
+
+    - text: label with leading ● when its section is dirty
+    - runWhileHidden: True (keep embed state across tab switches —
+      avoids the unmount-remount cycle that loses local editDraft)
+    - disabled: True when any section is dirty AND this isn't the
+      active tab (locks navigation until user saves or discards;
+      replaces the bidi-onChange popup intercept which doesn't work
+      cleanly with ia.container.tab)
+
+    sectionDirty: dict { section_key: bool } from view.custom.sectionDirty
+    activeTab:    string section-key from view.custom.activeTab
+    """
+    d = _u(sectionDirty) or {}
+    activeTab = _u(activeTab)
+    anyDirty = any(d.get(k, False) for k, _ in _TAB_LABELS)
+    out = []
+    for key, label in _TAB_LABELS:
+        out.append({
+            "text":           (u"● " + label) if d.get(key, False) else label,
+            "runWhileHidden": True,
+            "disabled":       bool(anyDirty and key != activeTab),
+        })
+    return out

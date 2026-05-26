@@ -55,7 +55,7 @@
     "custom.activeTabIndex": {
       "onChange": {
         "enabled": true,
-        "script": "\tprev = previousValue.value if previousValue is not None else None\n\tcurr = currentValue.value if currentValue is not None else None\n\tsectionKeys = [\"containerConfig\", \"routes\", \"boms\", \"qualitySpecs\", \"eligibility\"]\n\tif prev is None or curr is None or prev == curr:\n\t\treturn\n\tif curr < 0 or curr >= len(sectionKeys):\n\t\tif 0 <= prev < len(sectionKeys):\n\t\t\tself.custom.activeTabIndex = prev\n\t\treturn\n\tif prev < 0 or prev >= len(sectionKeys):\n\t\tself.custom.activeTab = sectionKeys[curr]\n\t\treturn\n\tcurrentSection = sectionKeys[prev]\n\tdirtyMap = self.custom.sectionDirty or {}\n\tif dirtyMap.get(currentSection, False):\n\t\tself.custom.pendingSwitch = {\"kind\": \"tab\", \"to\": curr}\n\t\tself.custom.activeTabIndex = prev\n\t\tself.rootContainer.openConfirmUnsaved(currentSection)\n\telse:\n\t\tself.custom.activeTab = sectionKeys[curr]"
+        "script": "\tcurr = currentValue.value if currentValue is not None else None\n\tsectionKeys = [\"containerConfig\", \"routes\", \"boms\", \"qualitySpecs\", \"eligibility\"]\n\tif curr is not None and 0 <= curr < len(sectionKeys):\n\t\tself.custom.activeTab = sectionKeys[curr]"
       }
     },
     "custom.items": {
@@ -1146,7 +1146,7 @@
                   "props.tabs": {
                     "binding": {
                       "config": {
-                        "expression": "runScript(\"BlueRidge.Parts.Item.itemMasterTabLabels\", 0, {view.custom.sectionDirty})"
+                        "expression": "runScript(\"BlueRidge.Parts.Item.itemMasterTabObjects\", 0, {view.custom.sectionDirty}, {view.custom.activeTab})"
                       },
                       "type": "expr"
                     }
