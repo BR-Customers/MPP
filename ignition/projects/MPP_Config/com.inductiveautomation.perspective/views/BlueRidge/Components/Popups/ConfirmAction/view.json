@@ -1,0 +1,166 @@
+{
+  "custom": {},
+  "params": {
+    "title": "Confirm",
+    "message": "Are you sure?",
+    "confirmLabel": "Confirm",
+    "cancelLabel": "Cancel",
+    "confirmStyle": "btn btn-danger btn-sm",
+    "replyMessage": "confirmActionResult",
+    "popupId": "mpp-confirm-action",
+    "context": null
+  },
+  "propConfig": {
+    "params.title":        { "paramDirection": "input" },
+    "params.message":      { "paramDirection": "input" },
+    "params.confirmLabel": { "paramDirection": "input" },
+    "params.cancelLabel":  { "paramDirection": "input" },
+    "params.confirmStyle": { "paramDirection": "input" },
+    "params.replyMessage": { "paramDirection": "input" },
+    "params.popupId":      { "paramDirection": "input" },
+    "params.context":      { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "height": 200, "width": 480 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "column",
+      "style": {
+        "background": "var(--mpp-surface-canvas)",
+        "borderRadius": "var(--mpp-radius-md, 8px)",
+        "height": "100%",
+        "overflow": "hidden",
+        "width": "100%"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Title" },
+        "position": { "basis": "auto", "shrink": 0 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": { "path": "view.params.title" }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "modal-title",
+            "color": "var(--mpp-text-primary)",
+            "fontSize": "14px",
+            "fontWeight": "600",
+            "padding": "14px 16px 4px 16px"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Message" },
+        "position": { "basis": "0", "grow": 1 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": { "path": "view.params.message" }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "12px",
+            "lineHeight": "1.5",
+            "padding": "8px 16px 16px 16px"
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "Footer" },
+        "position": { "basis": "60px", "shrink": 0 },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderTop": "1px solid var(--mpp-border-subtle)",
+            "gap": "8px",
+            "padding": "12px 16px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "CancelButton" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": { "path": "view.params.cancelLabel" }
+                }
+              }
+            },
+            "props": {
+              "style": { "classes": "btn btn-sm" }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"action\": \"cancel\", \"context\": self.view.params.context}, scope=\"page\")\n\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "Spacer" },
+            "position": { "grow": 1 }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "ConfirmButton" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": { "path": "view.params.confirmLabel" }
+                }
+              },
+              "props.style.classes": {
+                "binding": {
+                  "type": "property",
+                  "config": { "path": "view.params.confirmStyle" }
+                }
+              }
+            },
+            "props": {
+              "style": { "classes": "btn btn-danger btn-sm" }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"action\": \"confirm\", \"context\": self.view.params.context}, scope=\"page\")\n\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
