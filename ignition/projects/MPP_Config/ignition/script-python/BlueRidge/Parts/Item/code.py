@@ -3,28 +3,42 @@
 #
 # Author:           Blue Ridge Automation
 # Created:          2026-05-20
-# Version:          1.0
+# Version:          1.2
 #
 # Description:
-#   Read surface for the Item Master Configuration Tool screen
-#   (Phase 2). Mutations (add/update/deprecate) land in Phase 3.
-#   Routes every DB call through BlueRidge.Common.Db.* helpers.
+#   Read + mutation surface for the Item Master Configuration Tool
+#   screen. Routes every DB call through BlueRidge.Common.Db.* helpers.
 #
 # Public surface:
 #   getAll(searchText=None, itemTypeId=None, includeDeprecated=False)
-#     -> list[dict]
-#   getOne(itemId) -> dict | None
+#                          -> list[dict]
+#   getOne(itemId)         -> dict | None
+#   getOneOrEmpty(itemId)  -> dict (full key-shape, null values when no row)
 #   mapItemRowsForList(rows, typeFilter='All Types') -> list[dict]
 #   typeBadgeFor(itemTypeName) -> str
 #   getAllForList(searchText='', typeFilter='All Types') -> list[dict]
+#   getInstancesForFlexRepeater(...) -> list[dict]
+#   itemMasterTabLabels(sectionDirty) -> list[str]
+#   itemMasterTabObjects(sectionDirty, activeTab) -> list[dict]
+#   add(meta)              -> {Status, Message, NewId}
+#   update(meta)           -> {Status, Message}
+#   deprecate(itemId)      -> {Status, Message}
+#   emptyMeta()            -> dict (blank shape for AddItem popup)
 #
 # Layer:
 #   View -> BlueRidge.Parts.Item (this module)
-#        -> BlueRidge.Common.Db.execList / execOne
+#        -> BlueRidge.Common.Db.execList / execOne / execMutation
 #   Views never call system.db.* directly.
 #
 # Change Log:
 #   2026-05-20 - 1.0 - Initial version (read paths only).
+#   2026-05-26 - 1.1 - Phase 4: getOneOrEmpty + itemMasterTabLabels +
+#                      itemMasterTabObjects helpers.
+#   2026-05-26 - 1.2 - Phase 3: add() + update() + deprecate() +
+#                      emptyMeta() mutation surface. Key-tolerant
+#                      (camelCase OR PascalCase) so the AddItem popup
+#                      (camelCase draft) and the Identity embed
+#                      (PascalCase editDraft from Item_Get) both work.
 # =============================================================================
 
 
@@ -227,3 +241,114 @@ def itemMasterTabObjects(sectionDirty, activeTab):
             "disabled":       bool(anyDirty and key != activeTab),
         })
     return out
+
+
+def add(meta):
+    """Create a new Item. meta keys (camelCase OR PascalCase tolerated):
+        partNumber, itemTypeId, description, macolaPartNumber,
+        defaultSubLotQty, maxLotSize, uomId, unitWeight, weightUomId,
+        countryOfOrigin, maxParts
+
+    PartNumber, ItemTypeId, and UomId are required (proc rejects nulls).
+    Returns {Status, Message, NewId}.
+
+    The proc enforces:
+      - PartNumber uniqueness
+      - ItemTypeId / UomId / WeightUomId FK + not-deprecated
+      - WeightUomId required when UnitWeight supplied
+      - MaxParts > 0 when supplied
+      - CountryOfOrigin <= 2 chars
+    """
+    m = _u(meta) or {}
+    BlueRidge.Common.Util.log("meta=%s" % m)
+    def _pick(camel, pascal):
+        v = m.get(camel)
+        if v is None:
+            v = m.get(pascal)
+        return v
+    return BlueRidge.Common.Db.execMutation(
+        "parts/Item_Create",
+        {
+            "partNumber":       _pick("partNumber",       "PartNumber"),
+            "itemTypeId":       _pick("itemTypeId",       "ItemTypeId"),
+            "description":      _pick("description",      "Description"),
+            "macolaPartNumber": _pick("macolaPartNumber", "MacolaPartNumber"),
+            "defaultSubLotQty": _pick("defaultSubLotQty", "DefaultSubLotQty"),
+            "maxLotSize":       _pick("maxLotSize",       "MaxLotSize"),
+            "uomId":            _pick("uomId",            "UomId"),
+            "unitWeight":       _pick("unitWeight",       "UnitWeight"),
+            "weightUomId":      _pick("weightUomId",      "WeightUomId"),
+            "countryOfOrigin":  _pick("countryOfOrigin",  "CountryOfOrigin"),
+            "maxParts":         _pick("maxParts",         "MaxParts"),
+            "appUserId":        BlueRidge.Common.Util._currentAppUserId(),
+        },
+    )
+
+
+def update(meta):
+    """Update an existing Item in place. PartNumber + ItemTypeId are
+    immutable per the proc; do not pass them. meta keys (camelCase OR
+    PascalCase tolerated):
+        Id, description, macolaPartNumber, defaultSubLotQty,
+        maxLotSize, uomId, unitWeight, weightUomId,
+        countryOfOrigin, maxParts
+
+    Returns {Status, Message}.
+    """
+    m = _u(meta) or {}
+    BlueRidge.Common.Util.log("meta=%s" % m)
+    def _pick(camel, pascal):
+        v = m.get(camel)
+        if v is None:
+            v = m.get(pascal)
+        return v
+    return BlueRidge.Common.Db.execMutation(
+        "parts/Item_Update",
+        {
+            "id":               _pick("id",               "Id"),
+            "description":      _pick("description",      "Description"),
+            "macolaPartNumber": _pick("macolaPartNumber", "MacolaPartNumber"),
+            "defaultSubLotQty": _pick("defaultSubLotQty", "DefaultSubLotQty"),
+            "maxLotSize":       _pick("maxLotSize",       "MaxLotSize"),
+            "uomId":            _pick("uomId",            "UomId"),
+            "unitWeight":       _pick("unitWeight",       "UnitWeight"),
+            "weightUomId":      _pick("weightUomId",      "WeightUomId"),
+            "countryOfOrigin":  _pick("countryOfOrigin",  "CountryOfOrigin"),
+            "maxParts":         _pick("maxParts",         "MaxParts"),
+            "appUserId":        BlueRidge.Common.Util._currentAppUserId(),
+        },
+    )
+
+
+def deprecate(itemId):
+    """Soft-delete the Item by Id. Returns {Status, Message}. The proc's
+    FK-guards reject deprecation when active Bom / BomLine /
+    RouteTemplate / ItemLocation / ContainerConfig dependents exist;
+    the Message field surfaces the specific dependency."""
+    itemId = _u(itemId)
+    BlueRidge.Common.Util.log("itemId=%s" % itemId)
+    return BlueRidge.Common.Db.execMutation(
+        "parts/Item_Deprecate",
+        {
+            "id":        itemId,
+            "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+        },
+    )
+
+
+def emptyMeta():
+    """Blank meta dict for the AddItem popup's initial state. Keys match
+    what the popup's form fields bidi-bind to (camelCase)."""
+    return {
+        "partNumber":       "",
+        "itemTypeId":       None,
+        "description":      "",
+        "macolaPartNumber": "",
+        "defaultSubLotQty": None,
+        "maxLotSize":       None,
+        "uomId":            None,
+        "unitWeight":       None,
+        "weightUomId":      None,
+        "countryOfOrigin":  "",
+        "maxParts":         None,
+    }
