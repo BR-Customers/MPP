@@ -1094,7 +1094,7 @@
                 "basis": "44px",
                 "shrink": 0
               },
-              "path": "BlueRidge/Components/Parts/ItemMaster/Routes/DraftStepRow",
+              "path": "BlueRidge/Components/Parts/ItemMaster/DraftStepRow",
               "style": {
                 "gap": "4px"
               },
