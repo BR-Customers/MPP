@@ -146,3 +146,29 @@ def getInstancesForFlexRepeater(searchText="", typeFilter="All Types", selectedI
     selectedId = _u(selectedId) or 0
     rows = getAllForList(searchText, typeFilter)
     return [{"item": r, "selectedId": selectedId} for r in rows]
+
+
+_TAB_LABELS = [
+    ("containerConfig", "Container Config"),
+    ("routes",          "Routes"),
+    ("boms",            "Boms"),
+    ("qualitySpecs",    "Quality Specs"),
+    ("eligibility",     "Eligibility"),
+]
+
+
+def itemMasterTabLabels(sectionDirty):
+    """Returns the 5 tab labels for the ItemMaster TabContainer with a
+    leading dot prefix on any tab whose section is currently dirty.
+
+    sectionDirty: dict { section_key: bool }, comes from
+    view.custom.sectionDirty. Defensive against null / Java Map wrappers
+    via Common.Util.extractQualifiedValues."""
+    d = _u(sectionDirty) or {}
+    out = []
+    for key, label in _TAB_LABELS:
+        if d.get(key, False):
+            out.append(u"● " + label)
+        else:
+            out.append(label)
+    return out

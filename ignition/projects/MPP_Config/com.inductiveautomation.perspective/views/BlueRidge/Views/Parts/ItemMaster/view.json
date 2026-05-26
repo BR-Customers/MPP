@@ -446,7 +446,7 @@
                   "props.tabs": {
                     "binding": {
                       "config": {
-                        "expression": "[\nif({view.custom.sectionDirty.containerConfig}, '● Container Config', 'Container Config'),\nif({view.custom.sectionDirty.routes},          '● Routes',          'Routes'),\nif({view.custom.sectionDirty.boms},            '● Boms',            'Boms'),\nif({view.custom.sectionDirty.qualitySpecs},    '● Quality Specs',   'Quality Specs'),\nif({view.custom.sectionDirty.eligibility},     '● Eligibility',     'Eligibility')\n]"
+                        "expression": "runScript(\"BlueRidge.Parts.Item.itemMasterTabLabels\", 0, {view.custom.sectionDirty})"
                       },
                       "type": "expr"
                     }
@@ -493,7 +493,7 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "isnull({view.custom.selectedItemId}, 0) != 0"
+                    "expression": "{view.custom.selectedItemId} != null"
                   },
                   "type": "expr"
                 }
@@ -533,7 +533,7 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "isnull({view.custom.selectedItemId}, 0) = 0"
+                    "expression": "{view.custom.selectedItemId} = null"
                   },
                   "type": "expr"
                 }
