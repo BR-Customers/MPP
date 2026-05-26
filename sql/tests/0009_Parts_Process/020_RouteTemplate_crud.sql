@@ -1111,6 +1111,204 @@ EXEC test.Assert_IsEqual
 GO
 
 -- =============================================
+-- Test 27 (Phase 5): Publish rejects a Draft with zero steps
+--   Fresh Item TEST-RT-ITEM-002 with a Draft RouteTemplate but no steps.
+-- =============================================
+DECLARE @S       BIT,
+        @M       NVARCHAR(500),
+        @SStr    NVARCHAR(1),
+        @Item2Id BIGINT,
+        @Rt2Id   BIGINT;
+
+CREATE TABLE #Rci2 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #Rci2
+EXEC Parts.Item_Create
+    @ItemTypeId  = 4,
+    @PartNumber  = N'TEST-RT-ITEM-002',
+    @Description = N'Zero-step publish test',
+    @UomId       = 1,
+    @AppUserId   = 1;
+SELECT @Item2Id = NewId FROM #Rci2;
+DROP TABLE #Rci2;
+
+CREATE TABLE #Rcr2 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #Rcr2
+EXEC Parts.RouteTemplate_Create
+    @ItemId    = @Item2Id,
+    @Name      = N'TEST-RT-NOSTEPS',
+    @AppUserId = 1;
+SELECT @Rt2Id = NewId FROM #Rcr2;
+DROP TABLE #Rcr2;
+
+CREATE TABLE #RuP1 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #RuP1
+EXEC Parts.RouteTemplate_Publish @Id = @Rt2Id, @AppUserId = 1;
+SELECT @S = Status, @M = Message FROM #RuP1;
+DROP TABLE #RuP1;
+
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtPubNoSteps] Status is 0 (zero-steps guard)',
+    @Expected = N'0',
+    @Actual   = @SStr;
+
+DECLARE @NoStepsMsg NVARCHAR(1) = CASE
+    WHEN @M LIKE N'%no steps%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtPubNoSteps] Message names the no-steps guard',
+    @Expected = N'1',
+    @Actual   = @NoStepsMsg;
+GO
+
+-- =============================================
+-- Test 28 (Phase 5): Publish v4 with no overrides preserves Name + EffectiveFrom
+--   After Test 26 v4 was cloned from v3, so it has steps and a Name
+--   identical to v3's. Publishing without overrides should leave Name
+--   and EffectiveFrom untouched.
+-- =============================================
+DECLARE @S            BIT,
+        @M            NVARCHAR(500),
+        @SStr         NVARCHAR(1),
+        @ItemId       BIGINT,
+        @V4Id         BIGINT,
+        @BeforeName   NVARCHAR(200),
+        @BeforeEffFr  DATETIME2(3),
+        @AfterName    NVARCHAR(200),
+        @AfterEffFr   DATETIME2(3);
+
+SELECT @ItemId = Id FROM Parts.Item WHERE PartNumber = N'TEST-RT-ITEM-001';
+SELECT @V4Id = Id FROM Parts.RouteTemplate WHERE ItemId = @ItemId AND VersionNumber = 4;
+
+SELECT @BeforeName  = Name,
+       @BeforeEffFr = EffectiveFrom
+FROM Parts.RouteTemplate WHERE Id = @V4Id;
+
+CREATE TABLE #RuP2 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #RuP2
+EXEC Parts.RouteTemplate_Publish @Id = @V4Id, @AppUserId = 1;
+SELECT @S = Status, @M = Message FROM #RuP2;
+DROP TABLE #RuP2;
+
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtPubV4] Status is 1 (publish v4 with no overrides)',
+    @Expected = N'1',
+    @Actual   = @SStr;
+
+SELECT @AfterName  = Name,
+       @AfterEffFr = EffectiveFrom
+FROM Parts.RouteTemplate WHERE Id = @V4Id;
+
+DECLARE @NameUnchanged NVARCHAR(1) = CASE
+    WHEN @AfterName = @BeforeName THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtPubV4] Name unchanged when override is NULL',
+    @Expected = N'1',
+    @Actual   = @NameUnchanged;
+
+DECLARE @EffFrUnchanged NVARCHAR(1) = CASE
+    WHEN @AfterEffFr = @BeforeEffFr THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtPubV4] EffectiveFrom unchanged when override is NULL',
+    @Expected = N'1',
+    @Actual   = @EffFrUnchanged;
+GO
+
+-- =============================================
+-- Test 29 (Phase 5): Publish with @EffectiveFrom override applies the override
+--   Create v5 (cloned from v4), then Publish with EffectiveFrom = 2027-01-01.
+-- =============================================
+DECLARE @S       BIT,
+        @M       NVARCHAR(500),
+        @SStr    NVARCHAR(1),
+        @ItemId  BIGINT,
+        @V4Id    BIGINT,
+        @V5Id    BIGINT;
+
+SELECT @ItemId = Id FROM Parts.Item WHERE PartNumber = N'TEST-RT-ITEM-001';
+SELECT @V4Id = Id FROM Parts.RouteTemplate WHERE ItemId = @ItemId AND VersionNumber = 4;
+
+CREATE TABLE #RcV5 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #RcV5
+EXEC Parts.RouteTemplate_CreateNewVersion
+    @ParentRouteTemplateId = @V4Id,
+    @AppUserId             = 1;
+SELECT @V5Id = NewId FROM #RcV5;
+DROP TABLE #RcV5;
+
+DECLARE @OverrideEff DATETIME2(3) = N'2027-01-01T00:00:00';
+
+CREATE TABLE #RuP3 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #RuP3
+EXEC Parts.RouteTemplate_Publish
+    @Id            = @V5Id,
+    @AppUserId     = 1,
+    @EffectiveFrom = @OverrideEff;
+SELECT @S = Status, @M = Message FROM #RuP3;
+DROP TABLE #RuP3;
+
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtPubV5EffOverride] Status is 1',
+    @Expected = N'1',
+    @Actual   = @SStr;
+
+DECLARE @StoredEff DATETIME2(3);
+SELECT @StoredEff = EffectiveFrom FROM Parts.RouteTemplate WHERE Id = @V5Id;
+DECLARE @EffApplied NVARCHAR(1) = CASE
+    WHEN @StoredEff = @OverrideEff THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtPubV5EffOverride] EffectiveFrom = 2027-01-01',
+    @Expected = N'1',
+    @Actual   = @EffApplied;
+GO
+
+-- =============================================
+-- Test 30 (Phase 5): Publish with @Name override applies the rename
+--   Create v6 (cloned from v5), then Publish with @Name = 'Renamed at publish'.
+-- =============================================
+DECLARE @S       BIT,
+        @M       NVARCHAR(500),
+        @SStr    NVARCHAR(1),
+        @ItemId  BIGINT,
+        @V5Id    BIGINT,
+        @V6Id    BIGINT;
+
+SELECT @ItemId = Id FROM Parts.Item WHERE PartNumber = N'TEST-RT-ITEM-001';
+SELECT @V5Id = Id FROM Parts.RouteTemplate WHERE ItemId = @ItemId AND VersionNumber = 5;
+
+CREATE TABLE #RcV6 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #RcV6
+EXEC Parts.RouteTemplate_CreateNewVersion
+    @ParentRouteTemplateId = @V5Id,
+    @AppUserId             = 1;
+SELECT @V6Id = NewId FROM #RcV6;
+DROP TABLE #RcV6;
+
+CREATE TABLE #RuP4 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #RuP4
+EXEC Parts.RouteTemplate_Publish
+    @Id        = @V6Id,
+    @AppUserId = 1,
+    @Name      = N'Renamed at publish';
+SELECT @S = Status, @M = Message FROM #RuP4;
+DROP TABLE #RuP4;
+
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtPubV6NameOverride] Status is 1',
+    @Expected = N'1',
+    @Actual   = @SStr;
+
+DECLARE @StoredName NVARCHAR(200);
+SELECT @StoredName = Name FROM Parts.RouteTemplate WHERE Id = @V6Id;
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtPubV6NameOverride] Name = ''Renamed at publish''',
+    @Expected = N'Renamed at publish',
+    @Actual   = @StoredName;
+GO
+
+-- =============================================
 -- Cleanup
 -- =============================================
 DELETE rs

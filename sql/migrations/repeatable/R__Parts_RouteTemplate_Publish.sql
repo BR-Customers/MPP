@@ -2,19 +2,28 @@
 -- Procedure:   Parts.RouteTemplate_Publish
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     2.0
+-- Version:     3.0
 --
 -- Description:
 --   Flips a Draft RouteTemplate to Published by setting PublishedAt =
---   SYSUTCDATETIME(). One-way transition — once a route is published,
---   it becomes immutable (RouteStep mutations reject). To change a
---   published route, use _CreateNewVersion which creates a Draft clone.
+--   SYSUTCDATETIME(). Optionally overrides EffectiveFrom and Name in
+--   the same transaction (Item Master Routes tab Publish surface lets
+--   engineering tweak the publish-as-of date or rename at the last step).
+--   One-way transition — once a route is published, it becomes immutable
+--   (RouteStep mutations reject). To change a published route, use
+--   _CreateNewVersion which creates a Draft clone.
 --
---   Rejects if the route is already published or has been deprecated.
+--   Rejects if the route is already published, deprecated, or has zero
+--   RouteStep rows (a published route with no steps is nonsensical).
 --
 -- Parameters (input):
---   @Id BIGINT        - RouteTemplate.Id. Required.
---   @AppUserId BIGINT - Required for audit.
+--   @Id BIGINT                       - RouteTemplate.Id. Required.
+--   @AppUserId BIGINT                - Required for audit.
+--   @EffectiveFrom DATETIME2(3) NULL - Optional override applied before
+--                                       PublishedAt is set. NULL preserves
+--                                       the row's existing EffectiveFrom.
+--   @Name NVARCHAR(200) NULL         - Optional Name override. NULL
+--                                       preserves the row's existing Name.
 --
 -- Result set:
 --   Single row with Status (BIT), Message (NVARCHAR).
@@ -23,10 +32,14 @@
 -- Change Log:
 --   2026-04-14 - 1.0 - Initial version (OUTPUT params)
 --   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
+--   2026-05-20 - 3.0 - Added optional @EffectiveFrom + @Name overrides
+--                      and a zero-steps guard.
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.RouteTemplate_Publish
-    @Id        BIGINT,
-    @AppUserId BIGINT
+    @Id            BIGINT,
+    @AppUserId     BIGINT,
+    @EffectiveFrom DATETIME2(3)  = NULL,
+    @Name          NVARCHAR(200) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -37,7 +50,10 @@ BEGIN
 
     DECLARE @ProcName NVARCHAR(200) = N'Parts.RouteTemplate_Publish';
     DECLARE @Params   NVARCHAR(MAX) =
-        (SELECT @Id AS Id FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+        (SELECT @Id            AS Id,
+                @EffectiveFrom AS EffectiveFrom,
+                @Name          AS Name
+         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
     BEGIN TRY
         IF @Id IS NULL OR @AppUserId IS NULL
@@ -97,10 +113,27 @@ BEGIN
             RETURN;
         END
 
+        -- Zero-steps guard: a published route with no steps is nonsensical.
+        IF NOT EXISTS (SELECT 1 FROM Parts.RouteStep WHERE RouteTemplateId = @Id)
+        BEGIN
+            SET @Message = N'Cannot publish: route has no steps.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'Route',
+                @EntityId = @Id, @LogEventTypeCode = N'Updated',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message;
+            RETURN;
+        END
+
         BEGIN TRANSACTION;
 
+        -- Apply optional overrides in the same UPDATE that flips PublishedAt.
+        -- ISNULL preserves the existing column value when the override is NULL.
         UPDATE Parts.RouteTemplate
-        SET PublishedAt = SYSUTCDATETIME()
+        SET PublishedAt   = SYSUTCDATETIME(),
+            EffectiveFrom = ISNULL(@EffectiveFrom, EffectiveFrom),
+            Name          = ISNULL(@Name, Name)
         WHERE Id = @Id;
 
         EXEC Audit.Audit_LogConfigChange
