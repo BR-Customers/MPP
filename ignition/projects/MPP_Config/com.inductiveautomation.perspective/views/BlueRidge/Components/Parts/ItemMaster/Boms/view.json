@@ -1,220 +1,634 @@
 {
   "custom": {
-    "data": {
-      "publishedVersion": 0,
-      "effectiveFrom": "",
+    "selected": {
+      "id": null,
+      "parentItemId": null,
+      "versionNumber": null,
+      "effectiveFrom": null,
+      "effectiveFromDisplay": "",
+      "publishedAt": null,
+      "deprecatedAt": null,
+      "status": null,
       "lines": []
-    }
+    },
+    "editDraft": {
+      "id": null,
+      "parentItemId": null,
+      "versionNumber": null,
+      "effectiveFrom": null,
+      "effectiveFromDisplay": "",
+      "publishedAt": null,
+      "deprecatedAt": null,
+      "status": null,
+      "lines": []
+    },
+    "isDirty": false,
+    "activeVersionId": null,
+    "includeDeprecated": false,
+    "versions": [],
+    "availableItems": [],
+    "uoms": []
   },
   "params": {
     "value": 0
   },
   "propConfig": {
-    "custom.data": {
-      "binding": {
-        "config": {
-          "expression": "runScript(\"BlueRidge.Parts.Bom.getActiveForItem\", 0, {view.params.value})"
-        },
-        "type": "expr"
+    "params.value": {
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.rootContainer.onItemChanged()"
       }
     },
-    "params.value": {
-      "paramDirection": "input"
+    "custom.isDirty": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "{view.custom.editDraft.lines} != {view.custom.selected.lines} || {view.custom.editDraft.effectiveFromDisplay} != {view.custom.selected.effectiveFromDisplay}"
+        }
+      },
+      "onChange": {
+        "enabled": true,
+        "script": "\tsystem.perspective.sendMessage(\"sectionDirtyChanged\", payload={\"section\": \"boms\", \"isDirty\": bool(currentValue.value)}, scope=\"page\")"
+      }
+    },
+    "custom.activeVersionId": {
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.rootContainer.loadActiveVersion()"
+      }
+    },
+    "custom.versions": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Bom.listByParentItem\", 0, {view.params.value}, {view.custom.includeDeprecated})"
+        }
+      }
+    },
+    "custom.availableItems": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Bom.listAvailableItems\", 0, {view.params.value}, null)"
+        }
+      }
+    },
+    "custom.uoms": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Bom.listUoms\", 30000)"
+        }
+      }
     }
   },
   "props": {
     "defaultSize": {
-      "height": 280
+      "width": 900,
+      "height": 480
     }
   },
   "root": {
-    "children": [
-      {
-        "children": [
-          {
-            "meta": {
-              "name": "DropdownVersion"
-            },
-            "propConfig": {
-              "props.options": {
-                "binding": {
-                  "config": {
-                    "expression": "[{'label': 'v' + toStr({view.custom.data.publishedVersion}) + ' \u2014 Effective ' + {view.custom.data.effectiveFrom} + ' (Published)', 'value': {view.custom.data.publishedVersion}}]"
-                  },
-                  "type": "expr"
-                }
-              },
-              "props.value": {
-                "binding": {
-                  "config": {
-                    "path": "view.custom.data.publishedVersion"
-                  },
-                  "type": "property"
-                }
-              }
-            },
-            "props": {
-              "style": {
-                "classes": "select",
-                "minWidth": "320px"
-              }
-            },
-            "type": "ia.input.dropdown"
-          },
-          {
-            "meta": {
-              "name": "BadgePublished"
-            },
-            "props": {
-              "style": {
-                "classes": "badge badge-published"
-              },
-              "text": "Published"
-            },
-            "type": "ia.display.label"
-          },
-          {
-            "meta": {
-              "name": "HeaderSpacer"
-            },
-            "position": {
-              "grow": 1
-            },
-            "type": "ia.container.flex"
-          },
-          {
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "config": {
-                    "script": "\tBlueRidge.Common.Notify.toast('Not wired yet', 'BOMs versioning workflow lands in Phase 6.', 'info', 5)"
-                  },
-                  "scope": "C",
-                  "type": "script"
-                }
-              }
-            },
-            "meta": {
-              "name": "BtnNewVersion"
-            },
-            "props": {
-              "style": {
-                "classes": "btn btn-sm"
-              },
-              "text": "New Version"
-            },
-            "type": "ia.input.button"
-          }
-        ],
-        "meta": {
-          "name": "HeaderRow"
-        },
-        "props": {
-          "alignItems": "center",
-          "style": {
-            "gap": "8px"
-          }
-        },
-        "type": "ia.container.flex"
-      },
-      {
-        "children": [
-          {
-            "meta": {
-              "name": "BomLinesTable"
-            },
-            "propConfig": {
-              "props.data": {
-                "binding": {
-                  "config": {
-                    "path": "view.custom.data.lines"
-                  },
-                  "type": "property"
-                }
-              }
-            },
-            "props": {
-              "columns": [
-                {
-                  "editable": false,
-                  "field": "seq",
-                  "header": "#",
-                  "width": 50
-                },
-                {
-                  "editable": false,
-                  "field": "componentName",
-                  "header": "Component"
-                },
-                {
-                  "editable": false,
-                  "field": "partNumber",
-                  "header": "Part Number"
-                },
-                {
-                  "editable": false,
-                  "field": "qtyPer",
-                  "header": "Qty",
-                  "width": 80
-                },
-                {
-                  "editable": false,
-                  "field": "uom",
-                  "header": "UOM",
-                  "width": 80
-                }
-              ],
-              "rows": {
-                "height": 32
-              },
-              "style": {
-                "classes": "data-table"
-              }
-            },
-            "type": "ia.display.table"
-          },
-          {
-            "meta": {
-              "name": "ReadOnlyCaption"
-            },
-            "props": {
-              "style": {
-                "color": "var(--mpp-text-muted)",
-                "fontSize": "11px",
-                "fontStyle": "italic",
-                "padding": "8px 12px"
-              },
-              "text": "Published \u2014 read-only. Click New Version to create a draft copy for editing."
-            },
-            "type": "ia.display.label"
-          }
-        ],
-        "meta": {
-          "name": "PublishedPanel"
-        },
-        "position": {
-          "grow": 1
-        },
-        "props": {
-          "direction": "column",
-          "style": {
-            "classes": "detail-panel",
-            "overflow": "hidden"
-          }
-        },
-        "type": "ia.container.flex"
-      }
-    ],
-    "meta": {
-      "name": "root"
-    },
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
     "props": {
       "direction": "column",
       "style": {
+        "classes": "detail-panel",
+        "padding": "12px 14px",
         "gap": "10px",
         "height": "100%"
       }
     },
-    "type": "ia.container.flex"
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "HeaderBar" },
+        "position": { "basis": "auto" },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": { "gap": "8px" }
+        },
+        "children": [
+          {
+            "type": "ia.input.dropdown",
+            "meta": { "name": "VersionDropdown" },
+            "position": { "basis": "320px", "shrink": 0 },
+            "propConfig": {
+              "props.options": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "forEach({view.custom.versions}, {\"label\": \"v\" + toStr(it.VersionNumber) + \" — \" + it.Status + if(it.effectiveFromDisplay != \"\", \" (Eff \" + it.effectiveFromDisplay + \")\", \"\"), \"value\": it.Id})"
+                  }
+                }
+              },
+              "props.value": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.activeVersionId"
+                  }
+                }
+              }
+            },
+            "props": {
+              "noSelectionText": "(no versions)",
+              "style": { "classes": "select", "minWidth": "320px" }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "ModeBadge" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": { "path": "view.custom.selected.status" }
+                }
+              },
+              "props.style.classes": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if({view.custom.selected.status} = \"Published\", \"badge badge-published\", if({view.custom.selected.status} = \"Draft\", \"badge badge-warn\", if({view.custom.selected.status} = \"Deprecated\", \"badge badge-muted\", \"\")))"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": { "classes": "badge" }
+            }
+          },
+          {
+            "type": "ia.input.checkbox",
+            "meta": { "name": "IncludeDeprecatedCheckbox" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "props.selected": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.includeDeprecated"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Include deprecated",
+              "style": { "fontSize": "11px" }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "HeaderSpacer" },
+            "position": { "grow": 1 }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "BtnNewVersion" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.value} != null && !{view.custom.isDirty}"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "+ New Version",
+              "style": { "classes": "btn btn-sm" }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleNewVersion()"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "BtnDeprecate" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "meta.visible": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.custom.selected.status} = \"Published\""
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Deprecate",
+              "style": { "classes": "btn btn-danger btn-sm" }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tself.view.rootContainer.openDeprecateConfirm()"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "DraftHeaderRow" },
+        "position": { "basis": "auto" },
+        "propConfig": {
+          "meta.visible": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "{view.custom.editDraft.status} = \"Draft\"" }
+            }
+          }
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": { "gap": "8px" }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "LabelEffectiveFrom" },
+            "position": { "shrink": 0 },
+            "props": {
+              "text": "Effective From:",
+              "style": { "classes": "field-label" }
+            }
+          },
+          {
+            "type": "ia.input.text-field",
+            "meta": { "name": "InputEffectiveFrom" },
+            "position": { "basis": "140px", "shrink": 0 },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.editDraft.effectiveFromDisplay"
+                  }
+                }
+              }
+            },
+            "props": {
+              "placeholder": "YYYY-MM-DD",
+              "style": { "classes": "search-input" }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "DraftSpacer" },
+            "position": { "grow": 1 }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "BtnDiscardDraft" },
+            "position": { "shrink": 0 },
+            "props": {
+              "text": "Discard Draft",
+              "style": { "classes": "btn btn-danger btn-sm" }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tself.view.rootContainer.openDiscardDraftConfirm()"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "BtnSaveDraft" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "type": "property",
+                  "config": { "path": "view.custom.isDirty" }
+                }
+              }
+            },
+            "props": {
+              "text": "Save Draft",
+              "style": { "classes": "btn btn-sm" }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleSaveDraft()"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "BtnPublish" },
+            "position": { "shrink": 0 },
+            "props": {
+              "text": "Publish",
+              "style": { "classes": "btn btn-primary btn-sm" }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tself.view.rootContainer.handlePublish()"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "ColumnHeader" },
+        "position": { "basis": "auto" },
+        "propConfig": {
+          "meta.visible": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "{view.custom.selected.id} != null" }
+            }
+          }
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "background": "var(--mpp-surface-card)",
+            "gap": "8px",
+            "padding": "6px 10px",
+            "fontWeight": "600",
+            "fontSize": "11px",
+            "color": "var(--mpp-text-secondary)"
+          }
+        },
+        "children": [
+          { "type": "ia.display.label", "meta": { "name": "ColHash" }, "position": { "basis": "36px", "shrink": 0 }, "props": { "text": "#", "style": { "textAlign": "right" } } },
+          { "type": "ia.display.label", "meta": { "name": "ColMove" }, "position": { "basis": "52px", "shrink": 0 }, "propConfig": { "meta.visible": { "binding": { "type": "expr", "config": { "expression": "{view.custom.editDraft.status} = \"Draft\"" } } } }, "props": { "text": "" } },
+          { "type": "ia.display.label", "meta": { "name": "ColComp" }, "position": { "grow": 1, "basis": "0" }, "props": { "text": "Component" } },
+          { "type": "ia.display.label", "meta": { "name": "ColQty" }, "position": { "basis": "80px", "shrink": 0 }, "props": { "text": "Qty Per", "style": { "textAlign": "right" } } },
+          { "type": "ia.display.label", "meta": { "name": "ColUom" }, "position": { "basis": "90px", "shrink": 0 }, "props": { "text": "UOM" } },
+          { "type": "ia.display.label", "meta": { "name": "ColRm" }, "position": { "basis": "40px", "shrink": 0 }, "propConfig": { "meta.visible": { "binding": { "type": "expr", "config": { "expression": "{view.custom.editDraft.status} = \"Draft\"" } } } }, "props": { "text": "" } }
+        ]
+      },
+      {
+        "type": "ia.display.flex-repeater",
+        "meta": { "name": "LinesRepeater" },
+        "position": { "grow": 1, "basis": "0" },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "forEach({view.custom.editDraft.lines}, {\"line\": it, \"rowIndex\": index, \"mode\": if({view.custom.editDraft.status} = \"Draft\", \"draft\", if({view.custom.editDraft.status} = \"Deprecated\", \"deprecated\", \"published\")), \"lineCount\": len({view.custom.editDraft.lines}), \"availableItems\": {view.custom.availableItems}, \"uoms\": {view.custom.uoms}})"
+              }
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "elementPosition": { "basis": "auto" },
+          "path": "BlueRidge/Components/Parts/ItemMaster/Boms/BomLineRow",
+          "style": {
+            "overflowY": "auto"
+          },
+          "useDefaultViewHeight": false,
+          "useDefaultViewWidth": false
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "DraftFooter" },
+        "position": { "basis": "auto" },
+        "propConfig": {
+          "meta.visible": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "{view.custom.editDraft.status} = \"Draft\"" }
+            }
+          }
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "padding": "6px 10px",
+            "borderTop": "1px solid var(--mpp-border-subtle)"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "BtnAddComponent" },
+            "position": { "shrink": 0 },
+            "props": {
+              "text": "+ Add Component",
+              "style": { "classes": "btn btn-sm" }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleAddComponent()"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "EmptyHint" },
+        "position": { "basis": "auto" },
+        "propConfig": {
+          "meta.visible": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "{view.custom.selected.id} = null" }
+            }
+          }
+        },
+        "props": {
+          "text": "No BOM versions yet. Click + New Version to create the first draft.",
+          "style": {
+            "color": "var(--mpp-text-muted)",
+            "fontStyle": "italic",
+            "fontSize": "12px",
+            "padding": "16px"
+          }
+        }
+      }
+    ],
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "onItemChanged",
+          "params": [],
+          "script": "\titemId = self.view.params.value\n\tself.view.custom.activeVersionId = None\n\tself.view.custom.selected  = self._emptyBom()\n\tself.view.custom.editDraft = self._emptyBom()\n\tif not itemId:\n\t\treturn\n\tversions = BlueRidge.Parts.Bom.listByParentItem(itemId, self.view.custom.includeDeprecated) or []\n\tif versions:\n\t\tself.view.custom.activeVersionId = versions[0].get(\"Id\")"
+        },
+        {
+          "name": "loadActiveVersion",
+          "params": [],
+          "script": "\tbomId = self.view.custom.activeVersionId\n\tif not bomId:\n\t\tself.view.custom.selected  = self._emptyBom()\n\t\tself.view.custom.editDraft = self._emptyBom()\n\t\treturn\n\tbundle = BlueRidge.Parts.Bom.getOneFull(bomId)\n\tself.view.custom.selected  = bundle\n\tself.view.custom.editDraft = self._cloneBundle(bundle)"
+        },
+        {
+          "name": "_emptyBom",
+          "params": [],
+          "script": "\treturn {\n\t\t\"id\": None, \"parentItemId\": None, \"versionNumber\": None,\n\t\t\"effectiveFrom\": None, \"effectiveFromDisplay\": \"\",\n\t\t\"publishedAt\": None, \"deprecatedAt\": None,\n\t\t\"status\": None, \"lines\": [],\n\t}"
+        },
+        {
+          "name": "_cloneBundle",
+          "params": ["bundle"],
+          "script": "\tb = dict(bundle or {})\n\tlines = []\n\tfor ln in (bundle or {}).get(\"lines\", []) or []:\n\t\tlines.append(dict(ln))\n\tb[\"lines\"] = lines\n\treturn b"
+        },
+        {
+          "name": "handleNewVersion",
+          "params": [],
+          "script": "\titemId = self.view.params.value\n\tresult = BlueRidge.Parts.Bom.handleCreateOrCloneVersion(itemId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"New draft version created\")\n\tif result and result.get(\"Status\"):\n\t\tnewId = result.get(\"NewId\")\n\t\tself.refreshVersionList()\n\t\tif newId:\n\t\t\tself.view.custom.activeVersionId = newId"
+        },
+        {
+          "name": "refreshVersionList",
+          "params": [],
+          "script": "\titemId = self.view.params.value\n\tself.view.custom.versions = BlueRidge.Parts.Bom.listByParentItem(itemId, self.view.custom.includeDeprecated) or []"
+        },
+        {
+          "name": "handleSaveDraft",
+          "params": [],
+          "script": "\tdraft = self.view.custom.editDraft or {}\n\tbomId = draft.get(\"id\")\n\tif not bomId:\n\t\tBlueRidge.Common.Notify.toast(\"No draft selected\", \"Cannot save: no draft BOM is currently active.\", \"warning\")\n\t\treturn\n\teffDisplay = draft.get(\"effectiveFromDisplay\") or \"\"\n\teffDisplay = effDisplay.strip() if isinstance(effDisplay, basestring) else effDisplay\n\tif not effDisplay:\n\t\tBlueRidge.Common.Notify.toast(\"Effective From required\", \"Enter an effective date before saving.\", \"warning\")\n\t\treturn\n\tlines = draft.get(\"lines\") or []\n\tresult = BlueRidge.Parts.Bom.handleSaveDraft(bomId, effDisplay, lines)\n\tBlueRidge.Common.Ui.notifyResult(result, \"BOM draft saved\")\n\tif result and result.get(\"Status\"):\n\t\tself.refreshVersionList()\n\t\tself.loadActiveVersion()"
+        },
+        {
+          "name": "handlePublish",
+          "params": [],
+          "script": "\tdraft = self.view.custom.editDraft or {}\n\tbomId = draft.get(\"id\")\n\tif not bomId:\n\t\tBlueRidge.Common.Notify.toast(\"No draft selected\", \"Cannot publish: no draft BOM is currently active.\", \"warning\")\n\t\treturn\n\teffDisplay = draft.get(\"effectiveFromDisplay\") or \"\"\n\teffDisplay = effDisplay.strip() if isinstance(effDisplay, basestring) else effDisplay\n\tif not effDisplay:\n\t\tBlueRidge.Common.Notify.toast(\"Effective From required\", \"Enter an effective date before publishing.\", \"warning\")\n\t\treturn\n\tlines = draft.get(\"lines\") or []\n\tif not lines:\n\t\tBlueRidge.Common.Notify.toast(\"At least one line required\", \"Add at least one component before publishing.\", \"warning\")\n\t\treturn\n\tresult = BlueRidge.Parts.Bom.handlePublish(bomId, effDisplay, lines)\n\tBlueRidge.Common.Ui.notifyResult(result, \"BOM published\")\n\tif result and result.get(\"Status\"):\n\t\tself.refreshVersionList()\n\t\tself.loadActiveVersion()"
+        },
+        {
+          "name": "openDeprecateConfirm",
+          "params": [],
+          "script": "\tsel = self.view.custom.selected or {}\n\tbomId = sel.get(\"id\")\n\tver = sel.get(\"versionNumber\")\n\tif not bomId:\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid=\"mpp-confirm-action\",\n\t\tview=\"BlueRidge/Components/Popups/ConfirmAction\",\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t\"title\":        \"Deprecate BOM\",\n\t\t\t\"message\":      \"Deprecate v\" + str(ver) + \"? This retires the version from production. Existing Work Orders are unaffected.\",\n\t\t\t\"confirmLabel\": \"Deprecate\",\n\t\t\t\"cancelLabel\":  \"Cancel\",\n\t\t\t\"confirmStyle\": \"btn btn-danger btn-sm\",\n\t\t\t\"replyMessage\": \"bomConfirmDeprecateResult\",\n\t\t\t\"context\":      bomId,\n\t\t},\n\t)"
+        },
+        {
+          "name": "openDiscardDraftConfirm",
+          "params": [],
+          "script": "\tdraft = self.view.custom.editDraft or {}\n\tbomId = draft.get(\"id\")\n\tif not bomId:\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid=\"mpp-confirm-action\",\n\t\tview=\"BlueRidge/Components/Popups/ConfirmAction\",\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t\"title\":        \"Discard Draft\",\n\t\t\t\"message\":      \"Discard this draft and all unsaved edits? This cannot be undone.\",\n\t\t\t\"confirmLabel\": \"Discard\",\n\t\t\t\"cancelLabel\":  \"Cancel\",\n\t\t\t\"confirmStyle\": \"btn btn-danger btn-sm\",\n\t\t\t\"replyMessage\": \"bomConfirmDiscardResult\",\n\t\t\t\"context\":      bomId,\n\t\t},\n\t)"
+        },
+        {
+          "name": "handleAddComponent",
+          "params": [],
+          "script": "\tdraft = dict(self.view.custom.editDraft or {})\n\tlines = list(draft.get(\"lines\") or [])\n\tlines.append(BlueRidge.Parts.Bom.emptyLine())\n\tdraft[\"lines\"] = lines\n\tself.view.custom.editDraft = draft"
+        },
+        {
+          "name": "_swapLines",
+          "params": ["idxA", "idxB"],
+          "script": "\tdraft = dict(self.view.custom.editDraft or {})\n\tlines = list(draft.get(\"lines\") or [])\n\tif idxA < 0 or idxB < 0 or idxA >= len(lines) or idxB >= len(lines):\n\t\treturn\n\tlines[idxA], lines[idxB] = lines[idxB], lines[idxA]\n\tdraft[\"lines\"] = lines\n\tself.view.custom.editDraft = draft"
+        },
+        {
+          "name": "_removeLine",
+          "params": ["idx"],
+          "script": "\tdraft = dict(self.view.custom.editDraft or {})\n\tlines = list(draft.get(\"lines\") or [])\n\tif idx < 0 or idx >= len(lines):\n\t\treturn\n\tdel lines[idx]\n\tdraft[\"lines\"] = lines\n\tself.view.custom.editDraft = draft"
+        },
+        {
+          "name": "_applyItemChange",
+          "params": ["idx", "newItemId"],
+          "script": "\tdraft = dict(self.view.custom.editDraft or {})\n\tlines = list(draft.get(\"lines\") or [])\n\tif idx < 0 or idx >= len(lines):\n\t\treturn\n\tavail = self.view.custom.availableItems or []\n\tpicked = None\n\tfor it in avail:\n\t\tif it.get(\"Id\") == newItemId:\n\t\t\tpicked = it\n\t\t\tbreak\n\tln = dict(lines[idx])\n\tln[\"childItemId\"] = newItemId\n\tif picked:\n\t\tln[\"partNumber\"]    = picked.get(\"PartNumber\") or \"\"\n\t\tln[\"componentName\"] = picked.get(\"Description\") or \"\"\n\t\tif not ln.get(\"uomId\"):\n\t\t\tln[\"uomId\"]   = picked.get(\"DefaultUomId\")\n\t\t\tln[\"uomCode\"] = picked.get(\"DefaultUomCode\") or \"\"\n\tlines[idx] = ln\n\tdraft[\"lines\"] = lines\n\tself.view.custom.editDraft = draft"
+        }
+      ],
+      "messageHandlers": [
+        {
+          "messageType": "sectionSaveRequested",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif payload and payload.get(\"section\") == \"boms\":\n\t\tself.handleSaveDraft()"
+        },
+        {
+          "messageType": "sectionDiscardRequested",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif payload and payload.get(\"section\") == \"boms\":\n\t\tself.view.custom.editDraft = self._cloneBundle(self.view.custom.selected)"
+        },
+        {
+          "messageType": "bomLineMoveUp",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tself._swapLines(idx, idx - 1)"
+        },
+        {
+          "messageType": "bomLineMoveDown",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tself._swapLines(idx, idx + 1)"
+        },
+        {
+          "messageType": "bomLineRemove",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tself._removeLine(idx)"
+        },
+        {
+          "messageType": "bomLineItemChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tnewItemId = payload.get(\"newItemId\")\n\tself._applyItemChange(idx, newItemId)"
+        },
+        {
+          "messageType": "bomConfirmDeprecateResult",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tif payload.get(\"action\") != \"confirm\":\n\t\treturn\n\tbomId = payload.get(\"context\")\n\tif not bomId:\n\t\treturn\n\tresult = BlueRidge.Parts.Bom.handleDeprecate(bomId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"BOM deprecated\")\n\tif result and result.get(\"Status\"):\n\t\tself.refreshVersionList()\n\t\tself.loadActiveVersion()"
+        },
+        {
+          "messageType": "bomConfirmDiscardResult",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tif payload.get(\"action\") != \"confirm\":\n\t\treturn\n\tbomId = payload.get(\"context\")\n\tif not bomId:\n\t\treturn\n\tresult = BlueRidge.Parts.Bom.handleDiscardDraft(bomId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Draft discarded\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.activeVersionId = None\n\t\tself.refreshVersionList()\n\t\tvers = self.view.custom.versions or []\n\t\tif vers:\n\t\t\tself.view.custom.activeVersionId = vers[0].get(\"Id\")"
+        }
+      ]
+    }
   }
 }
