@@ -750,7 +750,7 @@
                   },
                   "transforms": [
                     {
-                      "code": "\tsteps = value or []\n\tareas = self.view.custom.areas or []\n\topCache = self.view.custom.opTemplatesByArea or {}\n\tout = []\n\ttotal = len(steps)\n\tfor i, s in enumerate(steps):\n\t\ts = s or {}\n\t\tout.append({'instancePosition': {}, 'instanceStyle': {}, 'rowIndex': i, 'step': dict(s), 'areas': areas, 'opTemplatesByArea': opCache, 'isFirst': (i == 0), 'isLast': (i == total - 1)})\n\treturn out",
+                      "code": "\tsteps = value or []\n\tareas = self.view.custom.areas or []\n\topCache = self.view.custom.opTemplatesByArea or {}\n\tout = []\n\ttotal = len(steps)\n\tfor i, s in enumerate(steps):\n\t\ts = s or {}\n\t\tout.append({'rowIndex': i, 'step': dict(s), 'areas': areas, 'opTemplatesByArea': opCache, 'isFirst': (i == 0), 'isLast': (i == total - 1)})\n\treturn out",
                       "type": "script"
                     }
                   ]
@@ -759,8 +759,12 @@
             },
             "props": {
               "direction": "column",
-              "elementPath": "BlueRidge/Components/Parts/ItemMaster/Routes/DraftStepRow",
-              "useDefaultViewHeight": true,
+              "path": "BlueRidge/Components/Parts/ItemMaster/Routes/DraftStepRow",
+              "elementPosition": {
+                "basis": "44px",
+                "shrink": 0
+              },
+              "useDefaultViewHeight": false,
               "useDefaultViewWidth": false,
               "style": {
                 "gap": "4px"
