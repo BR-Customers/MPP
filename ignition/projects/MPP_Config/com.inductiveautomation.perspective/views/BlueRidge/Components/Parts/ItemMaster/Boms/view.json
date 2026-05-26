@@ -44,7 +44,7 @@
       "binding": {
         "type": "expr",
         "config": {
-          "expression": "{view.custom.editDraft.lines} != {view.custom.selected.lines} || {view.custom.editDraft.effectiveFromDisplay} != {view.custom.selected.effectiveFromDisplay}"
+          "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.editDraft.lines}) != runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.selected.lines}) || {view.custom.editDraft.effectiveFromDisplay} != {view.custom.selected.effectiveFromDisplay}"
         }
       },
       "onChange": {
