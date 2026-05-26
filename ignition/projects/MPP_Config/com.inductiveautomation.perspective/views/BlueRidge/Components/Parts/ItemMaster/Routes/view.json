@@ -504,10 +504,16 @@
             "propConfig": {
               "props.data": {
                 "binding": {
-                  "type": "property",
+                  "type": "expr",
                   "config": {
-                    "path": "view.custom.selectedStepsView"
-                  }
+                    "expression": "runScript(\"BlueRidge.Parts.RouteTemplate.getSteps\", 0, {view.custom.selectedVersionId})"
+                  },
+                  "transforms": [
+                    {
+                      "code": "\tout = []\n\tfor r in (value or []):\n\t\tr = r or {}\n\t\tout.append({'seq': r.get('SequenceNumber'), 'areaName': r.get('OperationAreaName') or '', 'opCode': r.get('OperationCode') or '', 'opName': r.get('OperationName') or '', 'isRequired': bool(r.get('IsRequired')), 'dataFields': r.get('DataCollectionSummary') or ''})\n\treturn out",
+                      "type": "script"
+                    }
+                  ]
                 }
               }
             },
