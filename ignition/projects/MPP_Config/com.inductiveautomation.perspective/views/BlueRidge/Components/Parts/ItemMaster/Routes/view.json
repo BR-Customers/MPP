@@ -68,6 +68,10 @@
         "config": {
           "expression": "runScript(\"BlueRidge.Parts.RouteTemplate.getHeader\", 0, {view.custom.selectedVersionId})"
         }
+      },
+      "onChange": {
+        "enabled": true,
+        "script": "\timport json\n\traw = currentValue.value if currentValue is not None else None\n\ttry:\n\t\tj = BlueRidge.Common.Util.convertWrapperObjectToJson(raw)\n\t\theader = json.loads(j) if j else None\n\texcept Exception:\n\t\theader = None\n\tif not isinstance(header, dict):\n\t\theader = None\n\thdrId = header.get('Id') if header else None\n\tif not hdrId or hdrId <= 0:\n\t\tif self.view.custom.mode == 'draft':\n\t\t\tself.view.custom.draftId = 0\n\t\t\tself.view.custom.draftEditDraft = {'Id': 0, 'Name': '', 'EffectiveFrom': '', 'steps': []}\n\t\t\tself.view.custom.draftSelected = {'Id': 0, 'Name': '', 'EffectiveFrom': '', 'steps': []}\n\t\t\tself.view.custom.mode = 'view'\n\t\t\tself.view.rootContainer.broadcastDirty(False)\n\t\treturn\n\tisDraft = (header.get('PublishedAt') is None) and (header.get('DeprecatedAt') is None)\n\tif isDraft:\n\t\tif self.view.custom.draftId == hdrId:\n\t\t\treturn\n\t\tsteps = BlueRidge.Parts.RouteTemplate.getSteps(hdrId) or []\n\t\tstepsCopy = [dict(s) for s in steps]\n\t\teffStr = str(header.get('EffectiveFrom') or '')[:10]\n\t\tdraft = {'Id': hdrId, 'Name': header.get('Name', ''), 'EffectiveFrom': effStr, 'steps': stepsCopy}\n\t\tself.view.custom.draftId = hdrId\n\t\tself.view.custom.draftEditDraft = dict(draft)\n\t\tself.view.custom.draftSelected = {'Id': hdrId, 'Name': header.get('Name', ''), 'EffectiveFrom': effStr, 'steps': [dict(s) for s in steps]}\n\t\tself.view.custom.mode = 'draft'\n\t\tself.view.rootContainer.broadcastDirty(False)\n\telse:\n\t\tif self.view.custom.mode == 'draft':\n\t\t\tself.view.custom.draftId = 0\n\t\t\tself.view.custom.draftEditDraft = {'Id': 0, 'Name': '', 'EffectiveFrom': '', 'steps': []}\n\t\t\tself.view.custom.draftSelected = {'Id': 0, 'Name': '', 'EffectiveFrom': '', 'steps': []}\n\t\t\tself.view.custom.mode = 'view'\n\t\t\tself.view.rootContainer.broadcastDirty(False)"
       }
     },
     "custom.selectedSteps": {
