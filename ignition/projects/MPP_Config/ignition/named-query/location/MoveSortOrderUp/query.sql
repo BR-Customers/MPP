@@ -1,5 +1,3 @@
-EXECUTE [Location].[Location_MoveUp] 
-   @Id = :LocationID 
-  ,@AppUserId = :UserID 
-
-
+EXEC Location.Location_MoveUp
+    @Id        = :locationId,
+    @AppUserId = :userId

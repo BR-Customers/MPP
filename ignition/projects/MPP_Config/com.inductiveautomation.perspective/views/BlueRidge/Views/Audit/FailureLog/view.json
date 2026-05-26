@@ -1,390 +1,4309 @@
 {
   "custom": {
     "filter": {
-      "startDate": 1775865600000,
-      "endDate":   1776470400000,
-      "entityType": "All",
-      "procedure": "All Procs",
-      "searchText": ""
+      "appUserId": null,
+      "endDate": {
+        "$": [
+          "ts",
+          192,
+          1779209343553
+        ],
+        "$ts": 1779209343553
+      },
+      "entityTypeCode": null,
+      "procedureName": null,
+      "searchText": "",
+      "startDate": {
+        "$": [
+          "ts",
+          192,
+          1779209343553
+        ],
+        "$ts": 1778604543553
+      }
     },
-    "entityTypeOptions": [
-      { "label": "All",                "value": "All" },
-      { "label": "Location",           "value": "Location" },
-      { "label": "Item",               "value": "Item" },
-      { "label": "Bom",                "value": "Bom" },
-      { "label": "RouteTemplate",      "value": "RouteTemplate" },
-      { "label": "OperationTemplate",  "value": "OperationTemplate" },
-      { "label": "QualitySpec",        "value": "QualitySpec" },
-      { "label": "AppUser",            "value": "AppUser" }
+    "rows": [
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208811057
+        },
+        "AttemptedParameters": "{\"Id\":-999999}",
+        "EntityId": -999999,
+        "FailureReason": "AppUser not found.",
+        "Id": 164,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "ProcedureName": "Location.AppUser_Deprecate",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 16,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208811052
+        },
+        "AttemptedParameters": "{\"Id\":17}",
+        "EntityId": 17,
+        "FailureReason": "AppUser is already deprecated.",
+        "Id": 163,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "ProcedureName": "Location.AppUser_Deprecate",
+        "UserDisplayName": "DDCaller"
+      },
+      {
+        "AppUserId": 15,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208811037
+        },
+        "AttemptedParameters": "{\"Id\":15}",
+        "EntityId": 15,
+        "FailureReason": "Cannot deprecate your own account.",
+        "Id": 162,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "ProcedureName": "Location.AppUser_Deprecate",
+        "UserDisplayName": "SelfRef"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208811028
+        },
+        "AttemptedParameters": "{\"Id\":1}",
+        "EntityId": 1,
+        "FailureReason": "Cannot deprecate the bootstrap account (Id \u003d 1).",
+        "Id": 161,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "ProcedureName": "Location.AppUser_Deprecate",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208810944
+        },
+        "AttemptedParameters": "{\"Id\":11,\"Initials\":\"UDR\",\"DisplayName\":\"Should Not Apply\"}",
+        "EntityId": 11,
+        "FailureReason": "AppUser not found or is deprecated.",
+        "Id": 160,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Location.AppUser_Update",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208810927
+        },
+        "AttemptedParameters": "{\"Id\":-999999,\"Initials\":\"GHX\",\"DisplayName\":\"Ghost User\"}",
+        "EntityId": -999999,
+        "FailureReason": "AppUser not found or is deprecated.",
+        "Id": 159,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Location.AppUser_Update",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208810922
+        },
+        "AttemptedParameters": "{\"Id\":10,\"Initials\":\"UND\"}",
+        "EntityId": 10,
+        "FailureReason": "Required parameter missing.",
+        "Id": 158,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Location.AppUser_Update",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208810451
+        },
+        "AttemptedParameters": "{\"Initials\":\"IR6\",\"DisplayName\":\"Role Without AD\",\"IgnitionRole\":\"Supervisor\"}",
+        "EntityId": null,
+        "FailureReason": "IgnitionRole cannot be set without an AdAccount.",
+        "Id": 157,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Location.AppUser_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208810434
+        },
+        "AttemptedParameters": "{\"Initials\":\"DP\",\"DisplayName\":\"Duplicate User Again\"}",
+        "EntityId": null,
+        "FailureReason": "An AppUser with these Initials already exists.",
+        "Id": 156,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Location.AppUser_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208810415
+        },
+        "AttemptedParameters": "{\"Initials\":\"ND\"}",
+        "EntityId": null,
+        "FailureReason": "Required parameter missing.",
+        "Id": 155,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Location.AppUser_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208810406
+        },
+        "AttemptedParameters": "{\"DisplayName\":\"No Initials User\"}",
+        "EntityId": null,
+        "FailureReason": "Required parameter missing.",
+        "Id": 154,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Location.AppUser_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208810312
+        },
+        "AttemptedParameters": "{}",
+        "EntityId": null,
+        "FailureReason": "Test reason B",
+        "Id": 153,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "test.ProcBravo",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208810311
+        },
+        "AttemptedParameters": "{}",
+        "EntityId": null,
+        "FailureReason": "Test reason A",
+        "Id": 151,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "test.ProcAlpha",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208810311
+        },
+        "AttemptedParameters": "{}",
+        "EntityId": null,
+        "FailureReason": "Test reason A2",
+        "Id": 152,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "test.ProcAlpha",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208810226
+        },
+        "AttemptedParameters": null,
+        "EntityId": null,
+        "FailureReason": "Test090.Reason.Low",
+        "Id": 150,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "ProcedureName": "Test090.Proc",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208810225
+        },
+        "AttemptedParameters": null,
+        "EntityId": null,
+        "FailureReason": "Test090.Reason.High",
+        "Id": 148,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Test090.Proc",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208810225
+        },
+        "AttemptedParameters": null,
+        "EntityId": null,
+        "FailureReason": "Test090.Reason.High",
+        "Id": 149,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Test090.Proc",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208810156
+        },
+        "AttemptedParameters": null,
+        "EntityId": null,
+        "FailureReason": "Test 080: Low_Proc hit 1",
+        "Id": 147,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Test080.Low_Proc",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208810155
+        },
+        "AttemptedParameters": null,
+        "EntityId": null,
+        "FailureReason": "Test 080: High_Proc hit 1",
+        "Id": 144,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Test080.High_Proc",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208810155
+        },
+        "AttemptedParameters": null,
+        "EntityId": null,
+        "FailureReason": "Test 080: High_Proc hit 2",
+        "Id": 145,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Test080.High_Proc",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208810155
+        },
+        "AttemptedParameters": null,
+        "EntityId": null,
+        "FailureReason": "Test 080: High_Proc hit 3",
+        "Id": 146,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Test080.High_Proc",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208810091
+        },
+        "AttemptedParameters": "{}",
+        "EntityId": null,
+        "FailureReason": "duplicate code abc",
+        "Id": 142,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "test.LikeProc",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208810091
+        },
+        "AttemptedParameters": "{}",
+        "EntityId": null,
+        "FailureReason": "invalid parent",
+        "Id": 143,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "test.LikeProc",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208810056
+        },
+        "AttemptedParameters": "{\"Id\":88}",
+        "EntityId": 88,
+        "FailureReason": "Test 070: row B - user not found",
+        "Id": 140,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Test070.Unique_Proc",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208810056
+        },
+        "AttemptedParameters": null,
+        "EntityId": 88,
+        "FailureReason": "Test 070: row C - name conflict",
+        "Id": 141,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Test070.Other_Proc",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208810055
+        },
+        "AttemptedParameters": "{\"AdAccount\":\"test070a\"}",
+        "EntityId": 88,
+        "FailureReason": "Test 070: row A - duplicate AdAccount",
+        "Id": 139,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Test070.Unique_Proc",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208809970
+        },
+        "AttemptedParameters": null,
+        "EntityId": 77,
+        "FailureReason": "Test 060: Location 77 row 1 - name conflict",
+        "Id": 138,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Test060.Location_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208809969
+        },
+        "AttemptedParameters": "{\"AdAccount\":\"test060a\"}",
+        "EntityId": 77,
+        "FailureReason": "Test 060: AppUser 77 row 1 - duplicate AdAccount",
+        "Id": 136,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Test060.AppUser_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208809969
+        },
+        "AttemptedParameters": "{\"Id\":77}",
+        "EntityId": 77,
+        "FailureReason": "Test 060: AppUser 77 row 2 - user not found",
+        "Id": 137,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Test060.AppUser_Update",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208809329
+        },
+        "AttemptedParameters": "{\"Id\":42}",
+        "EntityId": 42,
+        "FailureReason": "Test",
+        "Id": 135,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "ProcedureName": "Test",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208809321
+        },
+        "AttemptedParameters": null,
+        "EntityId": null,
+        "FailureReason": "Test",
+        "Id": 134,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "TestProc",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208809315
+        },
+        "AttemptedParameters": null,
+        "EntityId": null,
+        "FailureReason": "User not found",
+        "Id": 133,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Location.AppUser_Update",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208809309
+        },
+        "AttemptedParameters": "{\"AdAccount\":\"jdoe\",\"DisplayName\":\"John Doe\"}",
+        "EntityId": null,
+        "FailureReason": "Duplicate AdAccount detected during create",
+        "Id": 132,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Location.AppUser_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208809134
+        },
+        "AttemptedParameters": "{\"Id\":3,\"MinQuantity\":500,\"MaxQuantity\":50,\"IsConsumptionPoint\":true}",
+        "EntityId": 3,
+        "FailureReason": "MinQuantity cannot exceed MaxQuantity.",
+        "Id": 131,
+        "LogEntityTypeCode": "ItemLocation",
+        "LogEntityTypeName": "Item-Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Parts.ItemLocation_SetConsumptionMetadata",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208809102
+        },
+        "AttemptedParameters": "{\"ItemId\":23,\"LocationId\":10,\"MinQuantity\":100,\"MaxQuantity\":10,\"IsConsumptionPoint\":false}",
+        "EntityId": null,
+        "FailureReason": "MinQuantity cannot exceed MaxQuantity.",
+        "Id": 130,
+        "LogEntityTypeCode": "ItemLocation",
+        "LogEntityTypeName": "Item-Location",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.ItemLocation_Add",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208808765
+        },
+        "AttemptedParameters": "{\"ToolTypeId\":1,\"Code\":\"BogusDT\",\"Name\":\"Bogus\",\"DataType\":\"Frobnicator\",\"IsRequired\":false}",
+        "EntityId": null,
+        "FailureReason": "Invalid DataType. Must be String, Integer, Decimal, Boolean, or Date.",
+        "Id": 129,
+        "LogEntityTypeCode": "ToolAttributeDefinition",
+        "LogEntityTypeName": "Tool Attribute Def",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Tools.ToolAttributeDefinition_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208808663
+        },
+        "AttemptedParameters": "{\"ToolId\":4}",
+        "EntityId": 4,
+        "FailureReason": "No active assignment found for this Tool.",
+        "Id": 128,
+        "LogEntityTypeCode": "ToolAssignment",
+        "LogEntityTypeName": "Tool Assignment",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Tools.ToolAssignment_Release",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208808616
+        },
+        "AttemptedParameters": "{\"ToolId\":5,\"CellLocationId\":9}",
+        "EntityId": null,
+        "FailureReason": "Another Tool is already mounted on this Cell. Release it first.",
+        "Id": 127,
+        "LogEntityTypeCode": "ToolAssignment",
+        "LogEntityTypeName": "Tool Assignment",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Tools.ToolAssignment_Assign",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208808599
+        },
+        "AttemptedParameters": "{\"ToolId\":4,\"CellLocationId\":10}",
+        "EntityId": null,
+        "FailureReason": "Tool is already mounted on a Cell. Release the current assignment first.",
+        "Id": 126,
+        "LogEntityTypeCode": "ToolAssignment",
+        "LogEntityTypeName": "Tool Assignment",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Tools.ToolAssignment_Assign",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208808582
+        },
+        "AttemptedParameters": "{\"ToolId\":4,\"CellLocationId\":2}",
+        "EntityId": null,
+        "FailureReason": "CellLocationId must reference an active Cell-tier Location.",
+        "Id": 125,
+        "LogEntityTypeCode": "ToolAssignment",
+        "LogEntityTypeName": "Tool Assignment",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Tools.ToolAssignment_Assign",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208808409
+        },
+        "AttemptedParameters": "{\"ToolId\":2,\"CavityNumber\":1}",
+        "EntityId": null,
+        "FailureReason": "An active cavity with this number already exists on the Tool.",
+        "Id": 124,
+        "LogEntityTypeCode": "ToolCavity",
+        "LogEntityTypeName": "Tool Cavity",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Tools.ToolCavity_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208808393
+        },
+        "AttemptedParameters": "{\"ToolId\":3,\"CavityNumber\":1}",
+        "EntityId": null,
+        "FailureReason": "This Tool\u0027s type does not support cavities.",
+        "Id": 123,
+        "LogEntityTypeCode": "ToolCavity",
+        "LogEntityTypeName": "Tool Cavity",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Tools.ToolCavity_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208808179
+        },
+        "AttemptedParameters": "{\"ToolTypeId\":2,\"Code\":\"CUT-BAD-001\",\"Name\":\"Cutter w\\/ rank\",\"DieRankId\":1,\"StatusCodeId\":1}",
+        "EntityId": null,
+        "FailureReason": "DieRankId is only valid for Die-type Tools.",
+        "Id": 122,
+        "LogEntityTypeCode": "Tool",
+        "LogEntityTypeName": "Tool",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Tools.Tool_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208808171
+        },
+        "AttemptedParameters": "{\"ToolTypeId\":1,\"Code\":\"DIE-TEST-001\",\"Name\":\"Dup\",\"StatusCodeId\":1}",
+        "EntityId": null,
+        "FailureReason": "A Tool with this Code already exists.",
+        "Id": 121,
+        "LogEntityTypeCode": "Tool",
+        "LogEntityTypeName": "Tool",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Tools.Tool_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208807824
+        },
+        "AttemptedParameters": "{\"Id\":1}",
+        "EntityId": 1,
+        "FailureReason": "Shift schedule is already deprecated.",
+        "Id": 120,
+        "LogEntityTypeCode": "ShiftSchedule",
+        "LogEntityTypeName": "Shift Schedule",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "ProcedureName": "Oee.ShiftSchedule_Deprecate",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208807817
+        },
+        "AttemptedParameters": "{\"Id\":1,\"Name\":\"Try update deprecated\",\"StartTime\":\"06:00:00\",\"EndTime\":\"14:00:00\",\"DaysOfWeekBitmask\":31,\"EffectiveFrom\":\"2026-01-01\"}",
+        "EntityId": 1,
+        "FailureReason": "Cannot update a deprecated shift schedule.",
+        "Id": 119,
+        "LogEntityTypeCode": "ShiftSchedule",
+        "LogEntityTypeName": "Shift Schedule",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Oee.ShiftSchedule_Update",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208807753
+        },
+        "AttemptedParameters": "{\"Name\":\"Bad Bitmask 200\",\"StartTime\":\"06:00:00\",\"EndTime\":\"14:00:00\",\"DaysOfWeekBitmask\":200,\"EffectiveFrom\":\"2026-01-01\"}",
+        "EntityId": null,
+        "FailureReason": "DaysOfWeekBitmask must be between 1 and 127.",
+        "Id": 118,
+        "LogEntityTypeCode": "ShiftSchedule",
+        "LogEntityTypeName": "Shift Schedule",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Oee.ShiftSchedule_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208807748
+        },
+        "AttemptedParameters": "{\"Name\":\"Bad Bitmask Zero\",\"StartTime\":\"06:00:00\",\"EndTime\":\"14:00:00\",\"DaysOfWeekBitmask\":0,\"EffectiveFrom\":\"2026-01-01\"}",
+        "EntityId": null,
+        "FailureReason": "DaysOfWeekBitmask must be between 1 and 127.",
+        "Id": 117,
+        "LogEntityTypeCode": "ShiftSchedule",
+        "LogEntityTypeName": "Shift Schedule",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Oee.ShiftSchedule_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208807742
+        },
+        "AttemptedParameters": "{\"Name\":\"First Shift\",\"StartTime\":\"14:00:00\",\"EndTime\":\"22:00:00\",\"DaysOfWeekBitmask\":31,\"EffectiveFrom\":\"2026-01-01\"}",
+        "EntityId": null,
+        "FailureReason": "A shift schedule with this Name already exists.",
+        "Id": 116,
+        "LogEntityTypeCode": "ShiftSchedule",
+        "LogEntityTypeName": "Shift Schedule",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Oee.ShiftSchedule_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208807517
+        },
+        "AttemptedParameters": "{\"Id\":2}",
+        "EntityId": 2,
+        "FailureReason": "Downtime reason code is already deprecated.",
+        "Id": 115,
+        "LogEntityTypeCode": "DowntimeReasonCode",
+        "LogEntityTypeName": "Downtime Reason Code",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "ProcedureName": "Oee.DowntimeReasonCode_Deprecate",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208807477
+        },
+        "AttemptedParameters": "{\"Id\":999999,\"Description\":\"Should fail\",\"AreaLocationId\":3,\"IsExcused\":false}",
+        "EntityId": 999999,
+        "FailureReason": "Downtime reason code not found.",
+        "Id": 114,
+        "LogEntityTypeCode": "DowntimeReasonCode",
+        "LogEntityTypeName": "Downtime Reason Code",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Oee.DowntimeReasonCode_Update",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208807394
+        },
+        "AttemptedParameters": "{\"Code\":\"TEST-DRC-BAD-TYPE\",\"Description\":\"Invalid type test\",\"AreaLocationId\":3,\"DowntimeReasonTypeId\":99,\"IsExcused\":false}",
+        "EntityId": null,
+        "FailureReason": "Invalid DowntimeReasonTypeId.",
+        "Id": 113,
+        "LogEntityTypeCode": "DowntimeReasonCode",
+        "LogEntityTypeName": "Downtime Reason Code",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Oee.DowntimeReasonCode_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208807388
+        },
+        "AttemptedParameters": "{\"Code\":\"TEST-DRC-BAD-AREA\",\"Description\":\"Invalid area test\",\"AreaLocationId\":999999,\"IsExcused\":false}",
+        "EntityId": null,
+        "FailureReason": "Invalid or deprecated AreaLocationId.",
+        "Id": 112,
+        "LogEntityTypeCode": "DowntimeReasonCode",
+        "LogEntityTypeName": "Downtime Reason Code",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Oee.DowntimeReasonCode_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208807383
+        },
+        "AttemptedParameters": "{\"Code\":\"TEST-DRC-NULL-DESC\",\"AreaLocationId\":3,\"IsExcused\":false}",
+        "EntityId": null,
+        "FailureReason": "Required parameter missing.",
+        "Id": 111,
+        "LogEntityTypeCode": "DowntimeReasonCode",
+        "LogEntityTypeName": "Downtime Reason Code",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Oee.DowntimeReasonCode_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208807379
+        },
+        "AttemptedParameters": "{\"Code\":\"TEST-DRC-001\",\"Description\":\"Duplicate code attempt\",\"AreaLocationId\":3,\"DowntimeReasonTypeId\":1,\"IsExcused\":false}",
+        "EntityId": null,
+        "FailureReason": "A downtime reason code with this Code already exists.",
+        "Id": 110,
+        "LogEntityTypeCode": "DowntimeReasonCode",
+        "LogEntityTypeName": "Downtime Reason Code",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Oee.DowntimeReasonCode_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208807202
+        },
+        "AttemptedParameters": "{\"Id\":3}",
+        "EntityId": 3,
+        "FailureReason": "Defect code is already deprecated.",
+        "Id": 109,
+        "LogEntityTypeCode": "DefectCode",
+        "LogEntityTypeName": "Defect Code",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "ProcedureName": "Quality.DefectCode_Deprecate",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208807195
+        },
+        "AttemptedParameters": "{\"Id\":3,\"Description\":\"Should fail\",\"AreaLocationId\":3,\"IsExcused\":false}",
+        "EntityId": 3,
+        "FailureReason": "Cannot update a deprecated defect code.",
+        "Id": 108,
+        "LogEntityTypeCode": "DefectCode",
+        "LogEntityTypeName": "Defect Code",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Quality.DefectCode_Update",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208807141
+        },
+        "AttemptedParameters": "{\"Id\":999999,\"Description\":\"Should fail\",\"AreaLocationId\":3,\"IsExcused\":false}",
+        "EntityId": 999999,
+        "FailureReason": "Defect code not found.",
+        "Id": 107,
+        "LogEntityTypeCode": "DefectCode",
+        "LogEntityTypeName": "Defect Code",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Quality.DefectCode_Update",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208807117
+        },
+        "AttemptedParameters": "{\"Code\":\"TEST-DEF-X\",\"Description\":\"Invalid area\",\"AreaLocationId\":999999,\"IsExcused\":false}",
+        "EntityId": null,
+        "FailureReason": "Invalid or deprecated AreaLocationId.",
+        "Id": 106,
+        "LogEntityTypeCode": "DefectCode",
+        "LogEntityTypeName": "Defect Code",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Quality.DefectCode_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208807113
+        },
+        "AttemptedParameters": "{\"Code\":\"TEST-DEF-001\",\"Description\":\"Duplicate code\",\"AreaLocationId\":3,\"IsExcused\":false}",
+        "EntityId": null,
+        "FailureReason": "A defect code with this Code already exists.",
+        "Id": 105,
+        "LogEntityTypeCode": "DefectCode",
+        "LogEntityTypeName": "Defect Code",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Quality.DefectCode_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208807007
+        },
+        "AttemptedParameters": "{\"Id\":3}",
+        "EntityId": 3,
+        "FailureReason": "Cannot remove attributes from a published version.",
+        "Id": 104,
+        "LogEntityTypeCode": "QualitySpecAttribute",
+        "LogEntityTypeName": "Quality Spec Attribute",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Quality.QualitySpecAttribute_Remove",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208807004
+        },
+        "AttemptedParameters": "{\"Id\":3,\"AttributeName\":\"Changed\",\"DataType\":\"Text\",\"IsRequired\":true}",
+        "EntityId": 3,
+        "FailureReason": "Cannot update attributes on a published version.",
+        "Id": 103,
+        "LogEntityTypeCode": "QualitySpecAttribute",
+        "LogEntityTypeName": "Quality Spec Attribute",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Quality.QualitySpecAttribute_Update",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208806999
+        },
+        "AttemptedParameters": "{\"QualitySpecVersionId\":3,\"AttributeName\":\"Should Fail\",\"DataType\":\"Text\",\"IsRequired\":true}",
+        "EntityId": null,
+        "FailureReason": "Cannot add attributes to a published version.",
+        "Id": 102,
+        "LogEntityTypeCode": "QualitySpecAttribute",
+        "LogEntityTypeName": "Quality Spec Attribute",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Quality.QualitySpecAttribute_Add",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208806933
+        },
+        "AttemptedParameters": "{\"Id\":2}",
+        "EntityId": 2,
+        "FailureReason": "Attribute is already at the top.",
+        "Id": 101,
+        "LogEntityTypeCode": "QualitySpecAttribute",
+        "LogEntityTypeName": "Quality Spec Attribute",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Quality.QualitySpecAttribute_MoveUp",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208806881
+        },
+        "AttemptedParameters": "{\"QualitySpecVersionId\":3,\"AttributeName\":\"Dimension A\",\"DataType\":\"Numeric\",\"IsRequired\":true}",
+        "EntityId": null,
+        "FailureReason": "An attribute with this name already exists in this version.",
+        "Id": 100,
+        "LogEntityTypeCode": "QualitySpecAttribute",
+        "LogEntityTypeName": "Quality Spec Attribute",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Quality.QualitySpecAttribute_Add",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208806728
+        },
+        "AttemptedParameters": "{\"Id\":2}",
+        "EntityId": 2,
+        "FailureReason": "Cannot deprecate a Draft version. Delete it instead or publish first.",
+        "Id": 99,
+        "LogEntityTypeCode": "QualitySpecVersion",
+        "LogEntityTypeName": "Quality Spec Version",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "ProcedureName": "Quality.QualitySpecVersion_Deprecate",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208806707
+        },
+        "AttemptedParameters": "{\"SourceVersionId\":1}",
+        "EntityId": null,
+        "FailureReason": "A Draft version already exists for this spec. Publish or delete it first.",
+        "Id": 98,
+        "LogEntityTypeCode": "QualitySpecVersion",
+        "LogEntityTypeName": "Quality Spec Version",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Quality.QualitySpecVersion_CreateNewVersion",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208806677
+        },
+        "AttemptedParameters": "{\"Id\":1}",
+        "EntityId": 1,
+        "FailureReason": "Version is already published.",
+        "Id": 97,
+        "LogEntityTypeCode": "QualitySpecVersion",
+        "LogEntityTypeName": "Quality Spec Version",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Quality.QualitySpecVersion_Publish",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208806631
+        },
+        "AttemptedParameters": "{\"QualitySpecId\":4}",
+        "EntityId": null,
+        "FailureReason": "A version already exists for this spec. Use _CreateNewVersion to add a new version.",
+        "Id": 96,
+        "LogEntityTypeCode": "QualitySpecVersion",
+        "LogEntityTypeName": "Quality Spec Version",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Quality.QualitySpecVersion_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208806502
+        },
+        "AttemptedParameters": "{\"Id\":999999,\"Name\":\"Should Fail\",\"Description\":\"Should fail\"}",
+        "EntityId": 999999,
+        "FailureReason": "Quality specification not found.",
+        "Id": 95,
+        "LogEntityTypeCode": "QualitySpec",
+        "LogEntityTypeName": "Quality Spec",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Quality.QualitySpec_Update",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208806479
+        },
+        "AttemptedParameters": "{\"Name\":\"Test Spec Invalid Item\",\"ItemId\":999999}",
+        "EntityId": null,
+        "FailureReason": "Invalid or deprecated ItemId.",
+        "Id": 94,
+        "LogEntityTypeCode": "QualitySpec",
+        "LogEntityTypeName": "Quality Spec",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Quality.QualitySpec_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208806474
+        },
+        "AttemptedParameters": "{\"Name\":\"\"}",
+        "EntityId": null,
+        "FailureReason": "Required parameter missing.",
+        "Id": 93,
+        "LogEntityTypeCode": "QualitySpec",
+        "LogEntityTypeName": "Quality Spec",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Quality.QualitySpec_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208806338
+        },
+        "AttemptedParameters": "{\"Id\":7}",
+        "EntityId": 7,
+        "FailureReason": "Parent BOM is published (immutable). Create a new version to modify.",
+        "Id": 92,
+        "LogEntityTypeCode": "BomLine",
+        "LogEntityTypeName": "BOM Line",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "ProcedureName": "Parts.BomLine_Remove",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208806329
+        },
+        "AttemptedParameters": "{\"Id\":7}",
+        "EntityId": 7,
+        "FailureReason": "Parent BOM is published (immutable). Create a new version to modify.",
+        "Id": 91,
+        "LogEntityTypeCode": "BomLine",
+        "LogEntityTypeName": "BOM Line",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Parts.BomLine_MoveDown",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208806320
+        },
+        "AttemptedParameters": "{\"Id\":6}",
+        "EntityId": 6,
+        "FailureReason": "Parent BOM is published (immutable). Create a new version to modify.",
+        "Id": 90,
+        "LogEntityTypeCode": "BomLine",
+        "LogEntityTypeName": "BOM Line",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Parts.BomLine_MoveUp",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208806312
+        },
+        "AttemptedParameters": "{\"Id\":7,\"QtyPer\":7.0000,\"UomId\":1}",
+        "EntityId": 7,
+        "FailureReason": "Parent BOM is published (immutable). Create a new version to modify.",
+        "Id": 89,
+        "LogEntityTypeCode": "BomLine",
+        "LogEntityTypeName": "BOM Line",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Parts.BomLine_Update",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208806304
+        },
+        "AttemptedParameters": "{\"BomId\":3,\"ChildItemId\":21,\"QtyPer\":1.0000,\"UomId\":1}",
+        "EntityId": null,
+        "FailureReason": "Parent BOM is published (immutable). Create a new version to modify.",
+        "Id": 88,
+        "LogEntityTypeCode": "BomLine",
+        "LogEntityTypeName": "BOM Line",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.BomLine_Add",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208806219
+        },
+        "AttemptedParameters": "{\"Id\":6,\"QtyPer\":1.0000,\"UomId\":999999}",
+        "EntityId": 6,
+        "FailureReason": "Invalid or deprecated UomId.",
+        "Id": 87,
+        "LogEntityTypeCode": "BomLine",
+        "LogEntityTypeName": "BOM Line",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Parts.BomLine_Update",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208806188
+        },
+        "AttemptedParameters": "{\"BomId\":3,\"ChildItemId\":21,\"QtyPer\":1.0000,\"UomId\":999999}",
+        "EntityId": null,
+        "FailureReason": "Invalid or deprecated UomId.",
+        "Id": 86,
+        "LogEntityTypeCode": "BomLine",
+        "LogEntityTypeName": "BOM Line",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.BomLine_Add",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208806176
+        },
+        "AttemptedParameters": "{\"BomId\":3,\"ChildItemId\":18,\"QtyPer\":5.0000,\"UomId\":1}",
+        "EntityId": null,
+        "FailureReason": "This Item is already a line on the BOM. Update the existing line to change QtyPer.",
+        "Id": 85,
+        "LogEntityTypeCode": "BomLine",
+        "LogEntityTypeName": "BOM Line",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.BomLine_Add",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208806168
+        },
+        "AttemptedParameters": "{\"BomId\":3,\"ChildItemId\":17,\"QtyPer\":1.0000,\"UomId\":1}",
+        "EntityId": null,
+        "FailureReason": "A BOM cannot contain its parent Item as a component (self-reference).",
+        "Id": 84,
+        "LogEntityTypeCode": "BomLine",
+        "LogEntityTypeName": "BOM Line",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.BomLine_Add",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208806162
+        },
+        "AttemptedParameters": "{\"BomId\":3,\"ChildItemId\":999999,\"QtyPer\":1.0000,\"UomId\":1}",
+        "EntityId": null,
+        "FailureReason": "Invalid or deprecated ChildItemId.",
+        "Id": 83,
+        "LogEntityTypeCode": "BomLine",
+        "LogEntityTypeName": "BOM Line",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.BomLine_Add",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208806154
+        },
+        "AttemptedParameters": "{\"BomId\":999999,\"ChildItemId\":18,\"QtyPer\":1.0000,\"UomId\":1}",
+        "EntityId": null,
+        "FailureReason": "Parent BOM not found.",
+        "Id": 82,
+        "LogEntityTypeCode": "BomLine",
+        "LogEntityTypeName": "BOM Line",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.BomLine_Add",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208806149
+        },
+        "AttemptedParameters": "{\"ChildItemId\":18,\"QtyPer\":1.0000,\"UomId\":1}",
+        "EntityId": null,
+        "FailureReason": "Required parameter missing.",
+        "Id": 81,
+        "LogEntityTypeCode": "BomLine",
+        "LogEntityTypeName": "BOM Line",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.BomLine_Add",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208805978
+        },
+        "AttemptedParameters": "{\"Id\":1}",
+        "EntityId": 1,
+        "FailureReason": "Cannot publish a deprecated BOM.",
+        "Id": 80,
+        "LogEntityTypeCode": "Bom",
+        "LogEntityTypeName": "BOM",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Parts.Bom_Publish",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208805896
+        },
+        "AttemptedParameters": "{\"Id\":1,\"QtyPer\":99.0000,\"UomId\":1}",
+        "EntityId": 1,
+        "FailureReason": "Parent BOM is published (immutable). Create a new version to modify.",
+        "Id": 79,
+        "LogEntityTypeCode": "BomLine",
+        "LogEntityTypeName": "BOM Line",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Parts.BomLine_Update",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208805879
+        },
+        "AttemptedParameters": "{\"BomId\":1,\"ChildItemId\":16,\"QtyPer\":1.0000,\"UomId\":1}",
+        "EntityId": null,
+        "FailureReason": "Parent BOM is published (immutable). Create a new version to modify.",
+        "Id": 78,
+        "LogEntityTypeCode": "BomLine",
+        "LogEntityTypeName": "BOM Line",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.BomLine_Add",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208805870
+        },
+        "AttemptedParameters": "{\"Id\":1}",
+        "EntityId": 1,
+        "FailureReason": "BOM is already published.",
+        "Id": 77,
+        "LogEntityTypeCode": "Bom",
+        "LogEntityTypeName": "BOM",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Parts.Bom_Publish",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208805800
+        },
+        "AttemptedParameters": "{\"ParentItemId\":999999}",
+        "EntityId": null,
+        "FailureReason": "Invalid or deprecated ParentItemId.",
+        "Id": 76,
+        "LogEntityTypeCode": "Bom",
+        "LogEntityTypeName": "BOM",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.Bom_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208805796
+        },
+        "AttemptedParameters": "{\"ParentItemId\":13}",
+        "EntityId": null,
+        "FailureReason": "A BOM already exists for this Item. Use _CreateNewVersion to add a new version.",
+        "Id": 75,
+        "LogEntityTypeCode": "Bom",
+        "LogEntityTypeName": "BOM",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.Bom_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208805788
+        },
+        "AttemptedParameters": "{}",
+        "EntityId": null,
+        "FailureReason": "Required parameter missing.",
+        "Id": 74,
+        "LogEntityTypeCode": "Bom",
+        "LogEntityTypeName": "BOM",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.Bom_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208805662
+        },
+        "AttemptedParameters": "{\"ItemId\":12,\"LocationId\":9}",
+        "EntityId": null,
+        "FailureReason": "No active ItemLocation pairing exists for this Item and Location.",
+        "Id": 73,
+        "LogEntityTypeCode": "ItemLocation",
+        "LogEntityTypeName": "Item-Location",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "ProcedureName": "Parts.ItemLocation_Remove",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208805589
+        },
+        "AttemptedParameters": "{\"ItemId\":12,\"LocationId\":999999,\"IsConsumptionPoint\":false}",
+        "EntityId": null,
+        "FailureReason": "Invalid or deprecated LocationId.",
+        "Id": 72,
+        "LogEntityTypeCode": "ItemLocation",
+        "LogEntityTypeName": "Item-Location",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.ItemLocation_Add",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208805583
+        },
+        "AttemptedParameters": "{\"ItemId\":999999,\"LocationId\":9,\"IsConsumptionPoint\":false}",
+        "EntityId": null,
+        "FailureReason": "Invalid or deprecated ItemId.",
+        "Id": 71,
+        "LogEntityTypeCode": "ItemLocation",
+        "LogEntityTypeName": "Item-Location",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.ItemLocation_Add",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208805425
+        },
+        "AttemptedParameters": "{\"Id\":4}",
+        "EntityId": 4,
+        "FailureReason": "RouteTemplate is already published.",
+        "Id": 70,
+        "LogEntityTypeCode": "Route",
+        "LogEntityTypeName": "Route",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Parts.RouteTemplate_Publish",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208805417
+        },
+        "AttemptedParameters": "{\"RouteTemplateId\":3,\"OperationTemplateId\":9,\"IsRequired\":true}",
+        "EntityId": null,
+        "FailureReason": "Parent RouteTemplate is published (immutable). Create a new version to modify.",
+        "Id": 69,
+        "LogEntityTypeCode": "RouteStep",
+        "LogEntityTypeName": "Route Step",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.RouteStep_Add",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208805401
+        },
+        "AttemptedParameters": "{\"Id\":2}",
+        "EntityId": 2,
+        "FailureReason": "Parent RouteTemplate is deprecated (deprecated routes are immutable).",
+        "Id": 68,
+        "LogEntityTypeCode": "RouteStep",
+        "LogEntityTypeName": "Route Step",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "ProcedureName": "Parts.RouteStep_Remove",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208805395
+        },
+        "AttemptedParameters": "{\"Id\":3}",
+        "EntityId": 3,
+        "FailureReason": "Parent RouteTemplate is deprecated (deprecated routes are immutable).",
+        "Id": 67,
+        "LogEntityTypeCode": "RouteStep",
+        "LogEntityTypeName": "Route Step",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Parts.RouteStep_MoveUp",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208805239
+        },
+        "AttemptedParameters": "{\"OperationTemplateId\":9,\"IsRequired\":true}",
+        "EntityId": null,
+        "FailureReason": "Required parameter missing.",
+        "Id": 66,
+        "LogEntityTypeCode": "RouteStep",
+        "LogEntityTypeName": "Route Step",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Parts.RouteStep_Update",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208805142
+        },
+        "AttemptedParameters": "{\"ItemId\":999999,\"Name\":\"TEST-RT-BADITEM\"}",
+        "EntityId": null,
+        "FailureReason": "Invalid or deprecated ItemId.",
+        "Id": 65,
+        "LogEntityTypeCode": "Route",
+        "LogEntityTypeName": "Route",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.RouteTemplate_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208805137
+        },
+        "AttemptedParameters": "{\"ItemId\":11,\"Name\":\"TEST-RT-DUP\"}",
+        "EntityId": null,
+        "FailureReason": "A RouteTemplate already exists for this Item. Use _CreateNewVersion to add a new version.",
+        "Id": 64,
+        "LogEntityTypeCode": "Route",
+        "LogEntityTypeName": "Route",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.RouteTemplate_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208804995
+        },
+        "AttemptedParameters": "{\"Id\":5}",
+        "EntityId": 5,
+        "FailureReason": "OperationTemplateField not found or already deprecated.",
+        "Id": 63,
+        "LogEntityTypeCode": "OpTemplateField",
+        "LogEntityTypeName": "Op Template Field",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "ProcedureName": "Parts.OperationTemplateField_Remove",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208804960
+        },
+        "AttemptedParameters": "{\"OperationTemplateId\":1,\"DataCollectionFieldId\":999999,\"IsRequired\":true}",
+        "EntityId": null,
+        "FailureReason": "Invalid or deprecated DataCollectionFieldId.",
+        "Id": 62,
+        "LogEntityTypeCode": "OpTemplateField",
+        "LogEntityTypeName": "Op Template Field",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.OperationTemplateField_Add",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208804953
+        },
+        "AttemptedParameters": "{\"OperationTemplateId\":1,\"DataCollectionFieldId\":2,\"IsRequired\":true}",
+        "EntityId": null,
+        "FailureReason": "This DataCollectionField is already active on the OperationTemplate.",
+        "Id": 61,
+        "LogEntityTypeCode": "OpTemplateField",
+        "LogEntityTypeName": "Op Template Field",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.OperationTemplateField_Add",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208804937
+        },
+        "AttemptedParameters": "{\"Id\":8}",
+        "EntityId": 8,
+        "FailureReason": "Cannot deprecate: active RouteSteps reference this OperationTemplate.",
+        "Id": 60,
+        "LogEntityTypeCode": "OperationTemplate",
+        "LogEntityTypeName": "Operation Template",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "ProcedureName": "Parts.OperationTemplate_Deprecate",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208804890
+        },
+        "AttemptedParameters": "{\"Id\":7}",
+        "EntityId": 7,
+        "FailureReason": "OperationTemplate not found or already deprecated.",
+        "Id": 59,
+        "LogEntityTypeCode": "OperationTemplate",
+        "LogEntityTypeName": "Operation Template",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "ProcedureName": "Parts.OperationTemplate_Deprecate",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208804876
+        },
+        "AttemptedParameters": "{\"Id\":6,\"Name\":\"Should Not Apply\",\"AreaLocationId\":3}",
+        "EntityId": 6,
+        "FailureReason": "OperationTemplate not found or deprecated.",
+        "Id": 58,
+        "LogEntityTypeCode": "OperationTemplate",
+        "LogEntityTypeName": "Operation Template",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Parts.OperationTemplate_Update",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208804801
+        },
+        "AttemptedParameters": "{\"ParentOperationTemplateId\":999999}",
+        "EntityId": 999999,
+        "FailureReason": "Parent OperationTemplate not found.",
+        "Id": 57,
+        "LogEntityTypeCode": "OperationTemplate",
+        "LogEntityTypeName": "Operation Template",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.OperationTemplate_CreateNewVersion",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208804797
+        },
+        "AttemptedParameters": "{}",
+        "EntityId": null,
+        "FailureReason": "Required parameter missing.",
+        "Id": 56,
+        "LogEntityTypeCode": "OperationTemplate",
+        "LogEntityTypeName": "Operation Template",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.OperationTemplate_CreateNewVersion",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208804696
+        },
+        "AttemptedParameters": "{\"Code\":\"TEST-OP-BADAREA\",\"Name\":\"Bad Area\",\"AreaLocationId\":999999}",
+        "EntityId": null,
+        "FailureReason": "Invalid or deprecated AreaLocationId.",
+        "Id": 55,
+        "LogEntityTypeCode": "OperationTemplate",
+        "LogEntityTypeName": "Operation Template",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.OperationTemplate_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208804691
+        },
+        "AttemptedParameters": "{\"Code\":\"DUP-OP\",\"Name\":\"Dup Attempt\",\"AreaLocationId\":3}",
+        "EntityId": null,
+        "FailureReason": "An OperationTemplate with this Code already exists. Use _CreateNewVersion to add a new version of the existing family.",
+        "Id": 54,
+        "LogEntityTypeCode": "OperationTemplate",
+        "LogEntityTypeName": "Operation Template",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.OperationTemplate_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208804679
+        },
+        "AttemptedParameters": "{\"Name\":\"Missing Code\",\"AreaLocationId\":3}",
+        "EntityId": null,
+        "FailureReason": "Required parameter missing.",
+        "Id": 53,
+        "LogEntityTypeCode": "OperationTemplate",
+        "LogEntityTypeName": "Operation Template",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.OperationTemplate_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208804551
+        },
+        "AttemptedParameters": "{\"TraysPerContainer\":1,\"PartsPerTray\":1,\"IsSerialized\":false,\"DunnageCode\":\"DUN\",\"CustomerCode\":\"CUST\"}",
+        "EntityId": null,
+        "FailureReason": "Required parameter missing.",
+        "Id": 52,
+        "LogEntityTypeCode": "ContainerConfig",
+        "LogEntityTypeName": "Container Config",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Parts.ContainerConfig_Update",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208804520
+        },
+        "AttemptedParameters": "{\"ItemId\":9,\"TraysPerContainer\":2,\"PartsPerTray\":10,\"IsSerialized\":false,\"DunnageCode\":\"DUN-DUP\",\"CustomerCode\":\"CUST-DUP\"}",
+        "EntityId": null,
+        "FailureReason": "An active ContainerConfig already exists for this Item.",
+        "Id": 51,
+        "LogEntityTypeCode": "ContainerConfig",
+        "LogEntityTypeName": "Container Config",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.ContainerConfig_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208804509
+        },
+        "AttemptedParameters": "{\"ItemId\":999999,\"TraysPerContainer\":1,\"PartsPerTray\":1,\"IsSerialized\":false,\"DunnageCode\":\"DUN-X\",\"CustomerCode\":\"CUST-X\"}",
+        "EntityId": null,
+        "FailureReason": "Invalid or deprecated ItemId.",
+        "Id": 50,
+        "LogEntityTypeCode": "ContainerConfig",
+        "LogEntityTypeName": "Container Config",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.ContainerConfig_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208804505
+        },
+        "AttemptedParameters": "{\"TraysPerContainer\":1,\"PartsPerTray\":1,\"IsSerialized\":false,\"DunnageCode\":\"DUN-X\",\"CustomerCode\":\"CUST-X\"}",
+        "EntityId": null,
+        "FailureReason": "Required parameter missing.",
+        "Id": 49,
+        "LogEntityTypeCode": "ContainerConfig",
+        "LogEntityTypeName": "Container Config",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.ContainerConfig_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208804380
+        },
+        "AttemptedParameters": "{\"Id\":8,\"UomId\":1,\"MaxParts\":0}",
+        "EntityId": 8,
+        "FailureReason": "MaxParts must be greater than zero when supplied.",
+        "Id": 48,
+        "LogEntityTypeCode": "Item",
+        "LogEntityTypeName": "Item",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Parts.Item_Update",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208804367
+        },
+        "AttemptedParameters": "{\"PartNumber\":\"TEST-MP-002\",\"ItemTypeId\":4,\"Description\":\"MaxParts zero\",\"UomId\":1,\"MaxParts\":0}",
+        "EntityId": null,
+        "FailureReason": "MaxParts must be greater than zero when supplied.",
+        "Id": 47,
+        "LogEntityTypeCode": "Item",
+        "LogEntityTypeName": "Item",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.Item_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208804349
+        },
+        "AttemptedParameters": "{\"Id\":7}",
+        "EntityId": 7,
+        "FailureReason": "Item not found or already deprecated.",
+        "Id": 46,
+        "LogEntityTypeCode": "Item",
+        "LogEntityTypeName": "Item",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "ProcedureName": "Parts.Item_Deprecate",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208804298
+        },
+        "AttemptedParameters": "{\"Id\":4,\"Description\":\"Should not apply\",\"UomId\":1}",
+        "EntityId": 4,
+        "FailureReason": "Item not found or deprecated.",
+        "Id": 45,
+        "LogEntityTypeCode": "Item",
+        "LogEntityTypeName": "Item",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Parts.Item_Update",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208804173
+        },
+        "AttemptedParameters": "{\"Description\":\"No-op\",\"UomId\":1}",
+        "EntityId": null,
+        "FailureReason": "Required parameter missing.",
+        "Id": 44,
+        "LogEntityTypeCode": "Item",
+        "LogEntityTypeName": "Item",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Parts.Item_Update",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208804101
+        },
+        "AttemptedParameters": "{\"PartNumber\":\"TEST-NOWGTUOM\",\"ItemTypeId\":4,\"Description\":\"Weight without UOM\",\"UomId\":1,\"UnitWeight\":2.5000}",
+        "EntityId": null,
+        "FailureReason": "WeightUomId is required when UnitWeight is provided.",
+        "Id": 43,
+        "LogEntityTypeCode": "Item",
+        "LogEntityTypeName": "Item",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.Item_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208804097
+        },
+        "AttemptedParameters": "{\"PartNumber\":\"TEST-BADUOM\",\"ItemTypeId\":4,\"Description\":\"Bad Uom\",\"UomId\":999999}",
+        "EntityId": null,
+        "FailureReason": "Invalid or deprecated UomId.",
+        "Id": 42,
+        "LogEntityTypeCode": "Item",
+        "LogEntityTypeName": "Item",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.Item_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208804093
+        },
+        "AttemptedParameters": "{\"PartNumber\":\"TEST-BADITEMTYPE\",\"ItemTypeId\":999999,\"Description\":\"Bad Item Type\",\"UomId\":1}",
+        "EntityId": null,
+        "FailureReason": "Invalid or deprecated ItemTypeId.",
+        "Id": 41,
+        "LogEntityTypeCode": "Item",
+        "LogEntityTypeName": "Item",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.Item_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208804087
+        },
+        "AttemptedParameters": "{\"PartNumber\":\"DUP-001\",\"ItemTypeId\":4,\"Description\":\"Duplicate Attempt\",\"UomId\":1}",
+        "EntityId": null,
+        "FailureReason": "An Item with this PartNumber already exists.",
+        "Id": 40,
+        "LogEntityTypeCode": "Item",
+        "LogEntityTypeName": "Item",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.Item_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208804074
+        },
+        "AttemptedParameters": "{\"ItemTypeId\":4,\"Description\":\"No Part Number\",\"UomId\":1}",
+        "EntityId": null,
+        "FailureReason": "Required parameter missing.",
+        "Id": 39,
+        "LogEntityTypeCode": "Item",
+        "LogEntityTypeName": "Item",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.Item_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208803898
+        },
+        "AttemptedParameters": "{\"Name\":\"Nope\"}",
+        "EntityId": null,
+        "FailureReason": "Required parameter missing.",
+        "Id": 38,
+        "LogEntityTypeCode": "DataCollectionField",
+        "LogEntityTypeName": "Data Collection Field",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Parts.DataCollectionField_Update",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208803878
+        },
+        "AttemptedParameters": "{\"Code\":\"DUP_DCF\",\"Name\":\"Dup DCF 2\"}",
+        "EntityId": null,
+        "FailureReason": "A DataCollectionField with this Code already exists.",
+        "Id": 37,
+        "LogEntityTypeCode": "DataCollectionField",
+        "LogEntityTypeName": "Data Collection Field",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.DataCollectionField_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208803871
+        },
+        "AttemptedParameters": "{\"Name\":\"No Code DCF\"}",
+        "EntityId": null,
+        "FailureReason": "Required parameter missing.",
+        "Id": 36,
+        "LogEntityTypeCode": "DataCollectionField",
+        "LogEntityTypeName": "Data Collection Field",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.DataCollectionField_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208803805
+        },
+        "AttemptedParameters": "{\"Name\":\"Nope\"}",
+        "EntityId": null,
+        "FailureReason": "Required parameter missing.",
+        "Id": 35,
+        "LogEntityTypeCode": "ItemType",
+        "LogEntityTypeName": "Item Type",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Parts.ItemType_Update",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208803789
+        },
+        "AttemptedParameters": "{\"Code\":\"DUP_ITEMTYPE\",\"Name\":\"Dup ItemType 2\"}",
+        "EntityId": null,
+        "FailureReason": "An ItemType with this Code already exists.",
+        "Id": 34,
+        "LogEntityTypeCode": "ItemType",
+        "LogEntityTypeName": "Item Type",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.ItemType_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208803782
+        },
+        "AttemptedParameters": "{\"Name\":\"No Code ItemType\"}",
+        "EntityId": null,
+        "FailureReason": "Required parameter missing.",
+        "Id": 33,
+        "LogEntityTypeCode": "ItemType",
+        "LogEntityTypeName": "Item Type",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.ItemType_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208803717
+        },
+        "AttemptedParameters": "{\"Name\":\"Nope\"}",
+        "EntityId": null,
+        "FailureReason": "Required parameter missing.",
+        "Id": 32,
+        "LogEntityTypeCode": "Uom",
+        "LogEntityTypeName": "Unit of Measure",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Parts.Uom_Update",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208803698
+        },
+        "AttemptedParameters": "{\"Code\":\"DUP_UOM\",\"Name\":\"Dup Uom 2\"}",
+        "EntityId": null,
+        "FailureReason": "A Uom with this Code already exists.",
+        "Id": 31,
+        "LogEntityTypeCode": "Uom",
+        "LogEntityTypeName": "Unit of Measure",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.Uom_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208803690
+        },
+        "AttemptedParameters": "{\"Name\":\"No Code Uom\"}",
+        "EntityId": null,
+        "FailureReason": "Required parameter missing.",
+        "Id": 30,
+        "LogEntityTypeCode": "Uom",
+        "LogEntityTypeName": "Unit of Measure",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.Uom_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208803234
+        },
+        "AttemptedParameters": "{\"Id\":39,\"ParentLocationId\":3,\"LocationTypeDefinitionId\":9,\"Code\":\"TEST-DC-901\",\"Name\":\"Type Change Attempt\",\"AttributeValues\":[]}",
+        "EntityId": 39,
+        "FailureReason": "LocationTypeDefinitionId is immutable on update (FDS-02-002a).",
+        "Id": 29,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Location.Location_SaveAll",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208803226
+        },
+        "AttemptedParameters": "{\"Id\":39,\"ParentLocationId\":4,\"LocationTypeDefinitionId\":8,\"Code\":\"TEST-DC-901\",\"Name\":\"Reparent Attempt\",\"AttributeValues\":[]}",
+        "EntityId": 39,
+        "FailureReason": "ParentLocationId is immutable on update (FDS-02-002a). Use Deprecate + Create New to relocate.",
+        "Id": 28,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Location.Location_SaveAll",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208803175
+        },
+        "AttemptedParameters": "{\"ParentLocationId\":3,\"LocationTypeDefinitionId\":8,\"Code\":\"TEST-DC-901\",\"Name\":\"Duplicate Code Attempt\",\"AttributeValues\":[]}",
+        "EntityId": null,
+        "FailureReason": "A location with this Code already exists.",
+        "Id": 27,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Location.Location_SaveAll",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208803167
+        },
+        "AttemptedParameters": "{\"ParentLocationId\":3,\"LocationTypeDefinitionId\":7,\"Code\":\"BADCROSS\",\"Name\":\"Cross-Type Terminal\",\"AttributeValues\":[{\"LocationAttributeDefinitionId\":4,\"Value\":\"800\"},{\"LocationAttributeDefinitionId\":3,\"Value\":\"1\"}]}",
+        "EntityId": null,
+        "FailureReason": "Attribute 4 does not belong to this Location\u0027s type definition (or is deprecated).",
+        "Id": 26,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Location.Location_SaveAll",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208803155
+        },
+        "AttemptedParameters": "{\"ParentLocationId\":3,\"LocationTypeDefinitionId\":7,\"Code\":\"BADTERM\",\"Name\":\"Bad Terminal\",\"AttributeValues\":[{\"LocationAttributeDefinitionId\":1,\"Value\":\"10.0.0.5\"}]}",
+        "EntityId": null,
+        "FailureReason": "Required attribute missing a value: HasBarcodeScanner.",
+        "Id": 25,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Location.Location_SaveAll",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208803145
+        },
+        "AttemptedParameters": "{\"ParentLocationId\":3,\"LocationTypeDefinitionId\":1,\"Code\":\"BADENT\",\"Name\":\"Bad Enterprise\",\"AttributeValues\":[]}",
+        "EntityId": null,
+        "FailureReason": "Location HierarchyLevel must be \u003e\u003d parent\u0027s HierarchyLevel (FDS-02-002).",
+        "Id": 24,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Location.Location_SaveAll",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208802964
+        },
+        "AttemptedParameters": "{\"LocationId\":37,\"LocationAttributeDefinitionId\":999999,\"AttributeValue\":\"350\"}",
+        "EntityId": null,
+        "FailureReason": "Attribute definition not found or deprecated.",
+        "Id": 23,
+        "LogEntityTypeCode": "LocationAttrDef",
+        "LogEntityTypeName": "Location Attribute Def",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Location.LocationAttribute_Set",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208802958
+        },
+        "AttemptedParameters": "{\"LocationId\":999999,\"LocationAttributeDefinitionId\":4,\"AttributeValue\":\"350\"}",
+        "EntityId": null,
+        "FailureReason": "Location not found or deprecated.",
+        "Id": 22,
+        "LogEntityTypeCode": "LocationAttrDef",
+        "LogEntityTypeName": "Location Attribute Def",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Location.LocationAttribute_Set",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208802952
+        },
+        "AttemptedParameters": "{\"LocationId\":37,\"LocationAttributeDefinitionId\":1,\"AttributeValue\":\"192.168.1.100\"}",
+        "EntityId": null,
+        "FailureReason": "Attribute definition does not belong to this location\u0027s type definition.",
+        "Id": 21,
+        "LogEntityTypeCode": "LocationAttrDef",
+        "LogEntityTypeName": "Location Attribute Def",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Location.LocationAttribute_Set",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208802945
+        },
+        "AttemptedParameters": "{\"LocationId\":38,\"LocationAttributeDefinitionId\":3}",
+        "EntityId": null,
+        "FailureReason": "Cannot clear a required attribute.",
+        "Id": 20,
+        "LogEntityTypeCode": "LocationAttrDef",
+        "LogEntityTypeName": "Location Attribute Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Location.LocationAttribute_Clear",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208802711
+        },
+        "AttemptedParameters": "{\"Id\":999999}",
+        "EntityId": 999999,
+        "FailureReason": "Location not found or deprecated.",
+        "Id": 19,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Location.Location_MoveUp",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208802706
+        },
+        "AttemptedParameters": "{}",
+        "EntityId": null,
+        "FailureReason": "Required parameter missing.",
+        "Id": 18,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Location.Location_MoveUp",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208802279
+        },
+        "AttemptedParameters": "{\"Id\":15}",
+        "EntityId": 15,
+        "FailureReason": "Cannot deprecate: active child locations exist.",
+        "Id": 17,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "ProcedureName": "Location.Location_Deprecate",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208802246
+        },
+        "AttemptedParameters": "{\"Id\":16,\"Name\":\"Die Cast Production Area\",\"Code\":\"MPP-CNC\"}",
+        "EntityId": 16,
+        "FailureReason": "A location with this Code already exists.",
+        "Id": 16,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Location.Location_Update",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208802195
+        },
+        "AttemptedParameters": "{\"LocationTypeDefinitionId\":2,\"ParentLocationId\":99999,\"Name\":\"Orphan Site\",\"Code\":\"ORPHAN\"}",
+        "EntityId": null,
+        "FailureReason": "Invalid or deprecated ParentLocationId.",
+        "Id": 15,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Location.Location_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208802191
+        },
+        "AttemptedParameters": "{\"LocationTypeDefinitionId\":1,\"Name\":\"Duplicate Enterprise\",\"Code\":\"MPP\"}",
+        "EntityId": null,
+        "FailureReason": "A location with this Code already exists.",
+        "Id": 14,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Location.Location_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208802187
+        },
+        "AttemptedParameters": "{\"LocationTypeDefinitionId\":99999,\"Name\":\"Bad Location\",\"Code\":\"BAD-LOC\"}",
+        "EntityId": null,
+        "FailureReason": "Invalid or deprecated LocationTypeDefinitionId.",
+        "Id": 13,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Location.Location_Create",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208802048
+        },
+        "AttemptedParameters": "{}",
+        "EntityId": null,
+        "FailureReason": "Required parameter missing.",
+        "Id": 12,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "ProcedureName": "Location.LocationTypeDefinition_Deprecate",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208802044
+        },
+        "AttemptedParameters": "{\"Id\":99999}",
+        "EntityId": 99999,
+        "FailureReason": "LocationTypeDefinition not found.",
+        "Id": 11,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "ProcedureName": "Location.LocationTypeDefinition_Deprecate",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208802039
+        },
+        "AttemptedParameters": "{\"Id\":8}",
+        "EntityId": 8,
+        "FailureReason": "Cannot deprecate: 3 active Location(s) still use this type.",
+        "Id": 10,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "ProcedureName": "Location.LocationTypeDefinition_Deprecate",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208801878
+        },
+        "AttemptedParameters": "{\"LocationTypeId\":5,\"Code\":\"TestDef_MissingName\",\"Name\":\"X\",\"Attributes\":[\n    {\"Id\":null,\"AttributeName\":\"OK\",\"DataType\":\"INT\"},\n    {\"Id\":null,\"AttributeName\":null,\"DataType\":\"INT\"}\n]}",
+        "EntityId": null,
+        "FailureReason": "Attribute at index 2 is missing AttributeName or DataType.",
+        "Id": 9,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Location.LocationTypeDefinition_SaveAll",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208801869
+        },
+        "AttemptedParameters": "{\"LocationTypeId\":5,\"Code\":\"TestDef_DupName\",\"Name\":\"X\",\"Attributes\":[\n    {\"Id\":null,\"AttributeName\":\"Foo\",\"DataType\":\"INT\"},\n    {\"Id\":null,\"AttributeName\":\"Foo\",\"DataType\":\"NVARCHAR\"}\n]}",
+        "EntityId": null,
+        "FailureReason": "Duplicate AttributeName in batch: Foo.",
+        "Id": 8,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Location.LocationTypeDefinition_SaveAll",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208801860
+        },
+        "AttemptedParameters": "{\"Code\":\"X\",\"Name\":\"X\",\"Attributes\":[]}",
+        "EntityId": null,
+        "FailureReason": "Required parameter missing.",
+        "Id": 7,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Location.LocationTypeDefinition_SaveAll",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208801855
+        },
+        "AttemptedParameters": "{\"Id\":16,\"LocationTypeId\":5,\"Code\":\"TestDef_Press\",\"Name\":\"Test Press Machine\",\"Attributes\":[\n    {\"Id\":4,\"AttributeName\":\"X\",\"DataType\":\"INT\"}\n]}",
+        "EntityId": 16,
+        "FailureReason": "One or more submitted attributes reference an unknown or deprecated row.",
+        "Id": 6,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Location.LocationTypeDefinition_SaveAll",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208801845
+        },
+        "AttemptedParameters": "{\"Id\":16,\"LocationTypeId\":3,\"Code\":\"TestDef_Press\",\"Name\":\"Test Press Machine\",\"Attributes\":[]}",
+        "EntityId": 16,
+        "FailureReason": "LocationTypeId is immutable on update.",
+        "Id": 5,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Location.LocationTypeDefinition_SaveAll",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208801836
+        },
+        "AttemptedParameters": "{\"Id\":16,\"LocationTypeId\":5,\"Code\":\"TestDef_Press_RENAMED\",\"Name\":\"Test Press Machine\",\"Attributes\":[]}",
+        "EntityId": 16,
+        "FailureReason": "Code is immutable on update. Existing: TestDef_Press, submitted: TestDef_Press_RENAMED.",
+        "Id": 4,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "ProcedureName": "Location.LocationTypeDefinition_SaveAll",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208801783
+        },
+        "AttemptedParameters": "{\"LocationTypeId\":5,\"Code\":\"TestDef_WithId\",\"Name\":\"Should fail\",\"Attributes\":[\n    {\"Id\":999,\"AttributeName\":\"X\",\"DataType\":\"INT\",\"IsRequired\":1}\n]}",
+        "EntityId": null,
+        "FailureReason": "Cannot specify attribute Ids when creating a new definition.",
+        "Id": 3,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Location.LocationTypeDefinition_SaveAll",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208801772
+        },
+        "AttemptedParameters": "{\"LocationTypeId\":5,\"Code\":\"DieCastMachine\",\"Name\":\"Should fail\",\"Attributes\":[]}",
+        "EntityId": null,
+        "FailureReason": "A LocationTypeDefinition with this Code already exists.",
+        "Id": 2,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Location.LocationTypeDefinition_SaveAll",
+        "UserDisplayName": "System Bootstrap"
+      },
+      {
+        "AppUserId": 1,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1779209343568
+          ],
+          "$ts": 1779208801508
+        },
+        "AttemptedParameters": "{\"LocationTypeDefinitionId\":99999,\"AttributeName\":\"BadAttr\",\"DataType\":\"NVARCHAR\",\"IsRequired\":false}",
+        "EntityId": null,
+        "FailureReason": "Invalid or deprecated LocationTypeDefinitionId.",
+        "Id": 1,
+        "LogEntityTypeCode": "LocationAttrDef",
+        "LogEntityTypeName": "Location Attribute Def",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Location.LocationAttributeDefinition_Create",
+        "UserDisplayName": "System Bootstrap"
+      }
     ],
-    "procedureOptions": [
-      { "label": "All Procs",         "value": "All Procs" },
-      { "label": "Location_Create",   "value": "Location_Create" },
-      { "label": "Item_Deprecate",    "value": "Item_Deprecate" },
-      { "label": "Bom_Publish",       "value": "Bom_Publish" }
+    "topProcs": [
+      {
+        "FailureCount": 8,
+        "ProcedureName": "Location.LocationTypeDefinition_SaveAll"
+      },
+      {
+        "FailureCount": 8,
+        "ProcedureName": "Parts.BomLine_Add"
+      },
+      {
+        "FailureCount": 6,
+        "ProcedureName": "Location.Location_SaveAll"
+      },
+      {
+        "FailureCount": 6,
+        "ProcedureName": "Parts.Item_Create"
+      },
+      {
+        "FailureCount": 5,
+        "ProcedureName": "Location.AppUser_Create"
+      }
     ],
-    "rejectionReasons": [
-      { "label": "Duplicate code exists",        "value": 12, "percent": 100 },
-      { "label": "Active dependents exist",      "value": 8,  "percent": 67  },
-      { "label": "Required parameter missing",   "value": 5,  "percent": 42  }
+    "topReasons": [
+      {
+        "FailureCount": 23,
+        "FailureReason": "Required parameter missing."
+      },
+      {
+        "FailureCount": 7,
+        "FailureReason": "Parent BOM is published (immutable). Create a new version to modify."
+      },
+      {
+        "FailureCount": 4,
+        "FailureReason": "Invalid or deprecated ItemId."
+      },
+      {
+        "FailureCount": 3,
+        "FailureReason": "A location with this Code already exists."
+      },
+      {
+        "FailureCount": 3,
+        "FailureReason": "Invalid or deprecated AreaLocationId."
+      }
     ],
-    "failingProcedures": [
-      { "label": "Location.Location_Create", "value": 9, "percent": 100 },
-      { "label": "Parts.Item_Deprecate",     "value": 7, "percent": 78  },
-      { "label": "Parts.Bom_Publish",        "value": 4, "percent": 44  }
-    ],
-    "failureRows": [
-      { "Timestamp": "2026-04-16 09:44:30", "User": "J. Potgieter",    "Entity": "Location", "Procedure": "Location_Create", "Reason": "A location with this Code already exists." },
-      { "Timestamp": "2026-04-16 09:40:12", "User": "J. Potgieter",    "Entity": "Item",     "Procedure": "Item_Deprecate",  "Reason": "Cannot deprecate: active RouteTemplate references exist." },
-      { "Timestamp": "2026-04-15 16:50:00", "User": "Bootstrap Admin", "Entity": "Location", "Procedure": "Location_Create", "Reason": "Required parameter missing." },
-      { "Timestamp": "2026-04-15 11:22:33", "User": "J. Potgieter",    "Entity": "Bom",      "Procedure": "Bom_Publish",     "Reason": "Cannot publish: BOM has no lines." }
-    ]
+    "totalCount": 164
   },
   "params": {},
   "propConfig": {
-    "custom.filter.startDate":  { "persistent": true },
-    "custom.filter.endDate":    { "persistent": true },
-    "custom.filter.entityType": { "persistent": true },
-    "custom.filter.procedure":  { "persistent": true },
-    "custom.filter.searchText": { "persistent": true }
+    "custom._initFired": {
+      "binding": {
+        "config": {
+          "expression": "now(0) !\u003d null"
+        },
+        "type": "expr"
+      },
+      "onChange": {
+        "enabled": true,
+        "script": "\t# Fires once on view-load (now(0) is single-eval -\u003e binding evaluates true).\n\t# Calls resetFilter which seeds dates + runs Apply.\n\tif previousValue and previousValue.value !\u003d currentValue.value:\n\t\tself.rootContainer.resetFilter()"
+      }
+    },
+    "custom.filter.appUserId": {
+      "persistent": true
+    },
+    "custom.filter.endDate": {
+      "persistent": true
+    },
+    "custom.filter.entityTypeCode": {
+      "persistent": true
+    },
+    "custom.filter.procedureName": {
+      "persistent": true
+    },
+    "custom.filter.searchText": {
+      "persistent": true
+    },
+    "custom.filter.startDate": {
+      "persistent": true
+    }
   },
   "props": {
-    "defaultSize": { "width": 1280, "height": 720 }
+    "defaultSize": {
+      "height": 720,
+      "width": 1280
+    }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": { "name": "root" },
-    "props": {
-      "direction": "column",
-      "style": { "classes": "screen-active" }
-    },
     "children": [
       {
-        "type": "ia.display.view",
-        "meta": { "name": "TitleBar" },
-        "position": { "basis": "auto", "shrink": 0 },
+        "meta": {
+          "name": "TitleBar"
+        },
+        "position": {
+          "shrink": 0
+        },
         "props": {
-          "path": "BlueRidge/Components/Common/TitleBar",
           "params": {
             "category": "System",
             "title": "Failure Log"
-          }
-        }
+          },
+          "path": "BlueRidge/Components/Common/TitleBar"
+        },
+        "type": "ia.display.view"
       },
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "MainSplit" },
-        "position": { "grow": 1 },
-        "props": {
-          "direction": "row",
-          "style": { "overflow": "hidden", "borderTop": "1px solid var(--mpp-border-subtle)" }
-        },
         "children": [
           {
-            "type": "ia.container.flex",
-            "meta": { "name": "FilterSidebar" },
-            "position": { "basis": "220px", "shrink": 0 },
-            "props": {
-              "direction": "column",
-              "style": { "classes": "filter-sidebar" }
-            },
             "children": [
               {
-                "type": "ia.container.flex",
-                "meta": { "name": "FilterPanel" },
-                "position": { "basis": "auto" },
-                "props": {
-                  "direction": "column",
-                  "style": { "classes": "filter-panel" }
-                },
                 "children": [
                   {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "StartDateField" },
-                    "position": { "basis": "auto" },
-                    "props": { "direction": "column", "style": { "gap": "4px" } },
                     "children": [
                       {
-                        "type": "ia.display.label",
-                        "meta": { "name": "StartDateLabel" },
-                        "position": { "basis": "auto" },
-                        "props": { "text": "Start Date", "style": { "classes": "label-eyebrow" } }
+                        "meta": {
+                          "name": "StartDateLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "label-eyebrow"
+                          },
+                          "text": "Start Date"
+                        },
+                        "type": "ia.display.label"
                       },
                       {
-                        "type": "ia.input.date-time-input",
-                        "meta": { "name": "StartDateInput" },
-                        "position": { "basis": "auto" },
+                        "meta": {
+                          "name": "StartDateInput"
+                        },
                         "propConfig": {
                           "props.value": {
                             "binding": {
-                              "type": "property",
-                              "config": { "bidirectional": true, "path": "view.custom.filter.startDate" }
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.filter.startDate"
+                              },
+                              "type": "property"
                             }
                           }
                         },
-                        "props": { "format": "YYYY-MM-DD", "pickerType": "date" }
+                        "props": {
+                          "format": "YYYY-MM-DD",
+                          "formattedValue": "2026-05-12",
+                          "pickerType": "date"
+                        },
+                        "type": "ia.input.date-time-input"
                       }
-                    ]
+                    ],
+                    "meta": {
+                      "name": "StartDateField"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "4px"
+                      }
+                    },
+                    "type": "ia.container.flex"
                   },
                   {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "EndDateField" },
-                    "position": { "basis": "auto" },
-                    "props": { "direction": "column", "style": { "gap": "4px" } },
                     "children": [
                       {
-                        "type": "ia.display.label",
-                        "meta": { "name": "EndDateLabel" },
-                        "position": { "basis": "auto" },
-                        "props": { "text": "End Date", "style": { "classes": "label-eyebrow" } }
+                        "meta": {
+                          "name": "EndDateLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "label-eyebrow"
+                          },
+                          "text": "End Date"
+                        },
+                        "type": "ia.display.label"
                       },
                       {
-                        "type": "ia.input.date-time-input",
-                        "meta": { "name": "EndDateInput" },
-                        "position": { "basis": "auto" },
+                        "meta": {
+                          "name": "EndDateInput"
+                        },
                         "propConfig": {
                           "props.value": {
                             "binding": {
-                              "type": "property",
-                              "config": { "bidirectional": true, "path": "view.custom.filter.endDate" }
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.filter.endDate"
+                              },
+                              "type": "property"
                             }
                           }
                         },
-                        "props": { "format": "YYYY-MM-DD", "pickerType": "date" }
+                        "props": {
+                          "format": "YYYY-MM-DD",
+                          "formattedValue": "2026-05-19",
+                          "pickerType": "date"
+                        },
+                        "type": "ia.input.date-time-input"
                       }
-                    ]
+                    ],
+                    "meta": {
+                      "name": "EndDateField"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "4px"
+                      }
+                    },
+                    "type": "ia.container.flex"
                   },
                   {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "EntityTypeField" },
-                    "position": { "basis": "auto" },
-                    "props": { "direction": "column", "style": { "gap": "4px" } },
                     "children": [
                       {
-                        "type": "ia.display.label",
-                        "meta": { "name": "EntityTypeLabel" },
-                        "position": { "basis": "auto" },
-                        "props": { "text": "Entity Type", "style": { "classes": "label-eyebrow" } }
+                        "meta": {
+                          "name": "EntityTypeLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "label-eyebrow"
+                          },
+                          "text": "Entity Type"
+                        },
+                        "type": "ia.display.label"
                       },
                       {
-                        "type": "ia.input.dropdown",
-                        "meta": { "name": "EntityTypeDropdown" },
-                        "position": { "basis": "auto" },
+                        "meta": {
+                          "name": "EntityTypeDropdown"
+                        },
                         "propConfig": {
                           "props.options": {
-                            "binding": { "type": "property", "config": { "path": "view.custom.entityTypeOptions" } }
+                            "binding": {
+                              "config": {
+                                "expression": "runScript(\"BlueRidge.Audit.LogEntityType.list\", 0)"
+                              },
+                              "transforms": [
+                                {
+                                  "code": "\treturn [{\"label\": \"(All)\", \"value\": None}] + [{\"label\": t.get(\"Name\"), \"value\": t.get(\"Code\")} for t in (value or [])]",
+                                  "type": "script"
+                                }
+                              ],
+                              "type": "expr"
+                            }
                           },
                           "props.value": {
                             "binding": {
-                              "type": "property",
-                              "config": { "bidirectional": true, "path": "view.custom.filter.entityType" }
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.filter.entityTypeCode"
+                              },
+                              "type": "property"
                             }
                           }
                         },
-                        "props": { "style": { "classes": "select" } }
+                        "props": {
+                          "style": {
+                            "classes": "select"
+                          }
+                        },
+                        "type": "ia.input.dropdown"
                       }
-                    ]
+                    ],
+                    "meta": {
+                      "name": "EntityTypeField"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "4px"
+                      }
+                    },
+                    "type": "ia.container.flex"
                   },
                   {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "ProcedureField" },
-                    "position": { "basis": "auto" },
-                    "props": { "direction": "column", "style": { "gap": "4px" } },
                     "children": [
                       {
-                        "type": "ia.display.label",
-                        "meta": { "name": "ProcedureLabel" },
-                        "position": { "basis": "auto" },
-                        "props": { "text": "Procedure", "style": { "classes": "label-eyebrow" } }
+                        "meta": {
+                          "name": "ProcedureLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "label-eyebrow"
+                          },
+                          "text": "Procedure"
+                        },
+                        "type": "ia.display.label"
                       },
                       {
-                        "type": "ia.input.dropdown",
-                        "meta": { "name": "ProcedureDropdown" },
-                        "position": { "basis": "auto" },
+                        "meta": {
+                          "name": "ProcedureDropdown"
+                        },
                         "propConfig": {
                           "props.options": {
-                            "binding": { "type": "property", "config": { "path": "view.custom.procedureOptions" } }
+                            "binding": {
+                              "config": {
+                                "expression": "runScript(\"BlueRidge.Audit.FailureLog.distinctProcedures\", 0)"
+                              },
+                              "transforms": [
+                                {
+                                  "code": "\treturn [{\"label\": \"(All)\", \"value\": None}] + [{\"label\": t.get(\"ProcedureName\"), \"value\": t.get(\"ProcedureName\")} for t in (value or [])]",
+                                  "type": "script"
+                                }
+                              ],
+                              "type": "expr"
+                            }
                           },
                           "props.value": {
                             "binding": {
-                              "type": "property",
-                              "config": { "bidirectional": true, "path": "view.custom.filter.procedure" }
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.filter.procedureName"
+                              },
+                              "type": "property"
                             }
                           }
                         },
-                        "props": { "style": { "classes": "select" } }
+                        "props": {
+                          "style": {
+                            "classes": "select"
+                          }
+                        },
+                        "type": "ia.input.dropdown"
                       }
-                    ]
+                    ],
+                    "meta": {
+                      "name": "ProcedureField"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "4px"
+                      }
+                    },
+                    "type": "ia.container.flex"
                   },
                   {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "SearchField" },
-                    "position": { "basis": "auto" },
-                    "props": { "direction": "column", "style": { "gap": "4px" } },
                     "children": [
                       {
-                        "type": "ia.display.label",
-                        "meta": { "name": "SearchLabel" },
-                        "position": { "basis": "auto" },
-                        "props": { "text": "Search", "style": { "classes": "label-eyebrow" } }
+                        "meta": {
+                          "name": "SearchLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "label-eyebrow"
+                          },
+                          "text": "Search"
+                        },
+                        "type": "ia.display.label"
                       },
                       {
-                        "type": "ia.input.text-field",
-                        "meta": { "name": "SearchInput" },
-                        "position": { "basis": "auto" },
+                        "meta": {
+                          "name": "SearchInput"
+                        },
                         "propConfig": {
                           "props.text": {
                             "binding": {
-                              "type": "property",
-                              "config": { "bidirectional": true, "path": "view.custom.filter.searchText" }
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.filter.searchText"
+                              },
+                              "type": "property"
                             }
                           }
                         },
-                        "props": { "placeholder": "Search…", "style": { "classes": "search-input" } }
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "ContentArea" },
-            "position": { "grow": 1 },
-            "props": {
-              "direction": "column",
-              "style": { "classes": "detail-area", "padding": "0", "overflowY": "auto" }
-            },
-            "children": [
-              {
-                "type": "ia.container.flex",
-                "meta": { "name": "DashboardTiles" },
-                "position": { "basis": "auto", "shrink": 0 },
-                "props": {
-                  "direction": "row",
-                  "wrap": "wrap",
-                  "style": {
-                    "classes": "dashboard-tiles",
-                    "padding": "12px",
-                    "gap": "12px"
-                  }
-                },
-                "children": [
-                  {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "RejectionReasonsTile" },
-                    "position": { "basis": "240px", "grow": 1 },
-                    "props": {
-                      "direction": "column",
-                      "style": { "classes": "dashboard-tile" }
-                    },
-                    "children": [
-                      {
-                        "type": "ia.display.label",
-                        "meta": { "name": "TileLabel" },
-                        "position": { "basis": "auto" },
-                        "props": { "text": "Top Rejection Reasons (7 days)", "style": { "classes": "tile-label" } }
-                      },
-                      {
-                        "type": "ia.display.flex-repeater",
-                        "meta": { "name": "RejectionReasonsRows" },
-                        "position": { "basis": "auto" },
-                        "propConfig": {
-                          "props.instances": {
-                            "binding": { "type": "property", "config": { "path": "view.custom.rejectionReasons" } }
+                        "props": {
+                          "placeholder": "Search…",
+                          "style": {
+                            "classes": "search-input"
                           }
                         },
-                        "props": {
-                          "path": "BlueRidge/Components/Common/TileStatRow",
-                          "direction": "column",
-                          "useDefaultViewWidth": false
-                        }
+                        "type": "ia.input.text-field"
                       }
-                    ]
+                    ],
+                    "meta": {
+                      "name": "SearchField"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "4px"
+                      }
+                    },
+                    "type": "ia.container.flex"
                   },
                   {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "FailingProceduresTile" },
-                    "position": { "basis": "240px", "grow": 1 },
-                    "props": {
-                      "direction": "column",
-                      "style": { "classes": "dashboard-tile" }
-                    },
                     "children": [
                       {
-                        "type": "ia.display.label",
-                        "meta": { "name": "TileLabel" },
-                        "position": { "basis": "auto" },
-                        "props": { "text": "Top Failing Procedures (7 days)", "style": { "classes": "tile-label" } }
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tself.view.rootContainer.resetFilter()"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "ResetButton"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "btn btn-sm"
+                          },
+                          "text": "Reset"
+                        },
+                        "type": "ia.input.button"
                       },
                       {
-                        "type": "ia.display.flex-repeater",
-                        "meta": { "name": "FailingProceduresRows" },
-                        "position": { "basis": "auto" },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tself.view.rootContainer.applySearch()"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "ApplyButton"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "btn btn-primary btn-sm"
+                          },
+                          "text": "Apply"
+                        },
+                        "type": "ia.input.button"
+                      }
+                    ],
+                    "meta": {
+                      "name": "FilterFooter"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "8px",
+                        "padding": "12px 0 0 0"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "FilterPanel"
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "filter-panel"
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "FilterSidebar"
+            },
+            "position": {
+              "basis": "220px",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "filter-sidebar"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "TileLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "tile-label"
+                          },
+                          "text": "Top Rejection Reasons (7 days)"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "RejectionReasonsRows"
+                        },
                         "propConfig": {
                           "props.instances": {
-                            "binding": { "type": "property", "config": { "path": "view.custom.failingProcedures" } }
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.topReasons"
+                              },
+                              "transforms": [
+                                {
+                                  "code": "\treturn [\n\t\t{\n\t\t\t\"label\":       r.get(\"FailureReason\") or \"(none)\",\n\t\t\t\"count\":       r.get(\"FailureCount\") or 0,\n\t\t\t\"filterField\": \"failureReasonText\",\n\t\t\t\"filterValue\": r.get(\"FailureReason\") or \"\"\n\t\t}\n\t\tfor r in (value or [])\n\t]",
+                                  "type": "script"
+                                }
+                              ],
+                              "type": "property"
+                            }
                           }
                         },
                         "props": {
-                          "path": "BlueRidge/Components/Common/TileStatRow",
                           "direction": "column",
+                          "elementPosition": {
+                            "basis": "32px",
+                            "shrink": 0
+                          },
+                          "path": "BlueRidge/Components/Audit/TopRow",
+                          "useDefaultViewHeight": false,
                           "useDefaultViewWidth": false
-                        }
+                        },
+                        "type": "ia.display.flex-repeater"
                       }
-                    ]
-                  }
-                ]
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": { "name": "FailurePanelWrapper" },
-                "position": { "grow": 1 },
-                "props": {
-                  "direction": "column",
-                  "style": { "padding": "0 12px 12px 12px" }
-                },
-                "children": [
-                  {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "FailurePanel" },
-                    "position": { "grow": 1 },
+                    ],
+                    "meta": {
+                      "name": "RejectionReasonsTile"
+                    },
+                    "position": {
+                      "basis": "300px",
+                      "grow": 1
+                    },
                     "props": {
                       "direction": "column",
-                      "style": { "classes": "detail-panel" }
+                      "style": {
+                        "classes": "dashboard-tile"
+                      }
                     },
+                    "type": "ia.container.flex"
+                  },
+                  {
                     "children": [
                       {
-                        "type": "ia.display.table",
-                        "meta": { "name": "FailureTable" },
-                        "position": { "grow": 1 },
+                        "meta": {
+                          "name": "TileLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "tile-label"
+                          },
+                          "text": "Top Failing Procedures (7 days)"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "FailingProceduresRows"
+                        },
+                        "propConfig": {
+                          "props.instances": {
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.topProcs"
+                              },
+                              "transforms": [
+                                {
+                                  "code": "\treturn [\n\t\t{\n\t\t\t\"label\":       r.get(\"ProcedureName\") or \"(none)\",\n\t\t\t\"count\":       r.get(\"FailureCount\") or 0,\n\t\t\t\"filterField\": \"procedureName\",\n\t\t\t\"filterValue\": r.get(\"ProcedureName\") or \"\"\n\t\t}\n\t\tfor r in (value or [])\n\t]",
+                                  "type": "script"
+                                }
+                              ],
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "direction": "column",
+                          "elementPosition": {
+                            "basis": "32px",
+                            "shrink": 0
+                          },
+                          "path": "BlueRidge/Components/Audit/TopRow",
+                          "useDefaultViewHeight": false,
+                          "useDefaultViewWidth": false
+                        },
+                        "type": "ia.display.flex-repeater"
+                      }
+                    ],
+                    "meta": {
+                      "name": "FailingProceduresTile"
+                    },
+                    "position": {
+                      "basis": "240px",
+                      "grow": 1
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "classes": "dashboard-tile"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "DashboardTiles"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "justify": "center",
+                  "style": {
+                    "classes": "dashboard-tiles",
+                    "gap": "12px",
+                    "padding": "12px"
+                  },
+                  "wrap": "wrap"
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "ResultBanner"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "if({view.custom.totalCount} \u003c 1000, \"Showing \" + {view.custom.totalCount} + \" rows\", \"Showing first 1000 of \" + {view.custom.totalCount} + \" — narrow your filter\")"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "11px",
+                            "padding": "4px 12px"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "events": {
+                          "component": {
+                            "onRowClick": {
+                              "config": {
+                                "script": "\trow \u003d event.row if hasattr(event, \"row\") else None\n\tdata \u003d row.data if row and hasattr(row, \"data\") else None\n\tif data is None:\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid\u003d\"mpp-failure-detail\",\n\t\tview\u003d\"BlueRidge/Components/Popups/FailureDetail\",\n\t\tmodal\u003dTrue,\n\t\tdraggable\u003dFalse,\n\t\tshowCloseIcon\u003dFalse,\n\t\tparams\u003d{\n\t\t\t\"id\":                  data.get(\"Id\"),\n\t\t\t\"attemptedAt\":         data.get(\"AttemptedAt\"),\n\t\t\t\"userDisplayName\":     data.get(\"UserDisplayName\"),\n\t\t\t\"logEntityTypeName\":   data.get(\"LogEntityTypeName\"),\n\t\t\t\"entityId\":            data.get(\"EntityId\"),\n\t\t\t\"logEventTypeCode\":    data.get(\"LogEventTypeCode\"),\n\t\t\t\"procedureName\":       data.get(\"ProcedureName\"),\n\t\t\t\"failureReason\":       data.get(\"FailureReason\"),\n\t\t\t\"attemptedParameters\": data.get(\"AttemptedParameters\")\n\t\t}\n\t)"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "FailureTable"
+                        },
+                        "position": {
+                          "grow": 1
+                        },
                         "propConfig": {
                           "props.data": {
-                            "binding": { "type": "property", "config": { "path": "view.custom.failureRows" } }
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.rows"
+                              },
+                              "type": "property"
+                            }
                           }
                         },
                         "props": {
                           "columns": [
-                            { "field": "Timestamp", "header": { "title": "Timestamp"      }, "visible": true, "sort": "desc" },
-                            { "field": "User",      "header": { "title": "User"           }, "visible": true },
-                            { "field": "Entity",    "header": { "title": "Entity"         }, "visible": true },
-                            { "field": "Procedure", "header": { "title": "Procedure"      }, "visible": true },
-                            { "field": "Reason",    "header": { "title": "Failure Reason" }, "visible": true }
+                            {
+                              "dateFormat": "MM/DD/YYYY h:mm A",
+                              "field": "AttemptedAt",
+                              "header": {
+                                "title": "Timestamp"
+                              },
+                              "render": "date",
+                              "sort": "desc",
+                              "sortable": true,
+                              "visible": true
+                            },
+                            {
+                              "field": "UserDisplayName",
+                              "header": {
+                                "title": "User"
+                              },
+                              "sortable": true,
+                              "visible": true
+                            },
+                            {
+                              "field": "LogEntityTypeName",
+                              "header": {
+                                "title": "Entity Type"
+                              },
+                              "sortable": true,
+                              "visible": true
+                            },
+                            {
+                              "field": "ProcedureName",
+                              "header": {
+                                "title": "Procedure"
+                              },
+                              "sortable": true,
+                              "visible": true
+                            },
+                            {
+                              "field": "FailureReason",
+                              "header": {
+                                "title": "Failure Reason"
+                              },
+                              "sortable": true,
+                              "visible": true
+                            }
                           ],
-                          "filter": { "enabled": false },
-                          "rows": { "selection": { "enabled": true, "selectionMode": "single" } },
-                          "style": { "classes": "data-table" }
-                        }
+                          "rows": {
+                            "selection": {
+                              "enabled": true,
+                              "selectionMode": "single"
+                            }
+                          },
+                          "style": {
+                            "classes": "data-table"
+                          }
+                        },
+                        "type": "ia.display.table"
                       }
-                    ]
+                    ],
+                    "meta": {
+                      "name": "FailurePanel"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "classes": "detail-panel"
+                      }
+                    },
+                    "type": "ia.container.flex"
                   }
-                ]
+                ],
+                "meta": {
+                  "name": "FailurePanelWrapper"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "padding": "0 12px 12px 12px"
+                  }
+                },
+                "type": "ia.container.flex"
               }
-            ]
+            ],
+            "meta": {
+              "name": "ContentArea"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "detail-area",
+                "overflowY": "auto",
+                "padding": "0"
+              }
+            },
+            "type": "ia.container.flex"
           }
-        ]
+        ],
+        "meta": {
+          "name": "MainSplit"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "style": {
+            "borderTop": "1px solid var(--mpp-border-subtle)",
+            "overflow": "hidden"
+          }
+        },
+        "type": "ia.container.flex"
       }
-    ]
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "screen-active"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "applySearch",
+          "params": [],
+          "script": "\tresult \u003d BlueRidge.Audit.FailureLog.search(self.view.custom.filter)\n\tself.view.custom.rows       \u003d result[\"rows\"]\n\tself.view.custom.totalCount \u003d result[\"totalCount\"]\n\tself.view.custom.topReasons \u003d result[\"topReasons\"]\n\tself.view.custom.topProcs   \u003d result[\"topProcs\"]"
+        },
+        {
+          "name": "resetFilter",
+          "params": [],
+          "script": "\timport system\n\tnow \u003d system.date.now()\n\tself.view.custom.filter \u003d {\n\t\t\"startDate\":      system.date.addDays(now, -7),\n\t\t\"endDate\":        now,\n\t\t\"entityTypeCode\": None,\n\t\t\"procedureName\":  None,\n\t\t\"appUserId\":      None,\n\t\t\"searchText\":     \"\"\n\t}\n\tself.applySearch()"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "applyFilterFromTile",
+          "pageScope": true,
+          "script": "\tfield \u003d payload.get(\"field\") if payload else None\n\tvalue \u003d payload.get(\"value\") if payload else None\n\tif not field:\n\t\treturn\n\tf \u003d dict(self.view.custom.filter or {})\n\tif field \u003d\u003d \"failureReasonText\":\n\t\tf[\"searchText\"] \u003d value or \"\"\n\telif field \u003d\u003d \"procedureName\":\n\t\tf[\"procedureName\"] \u003d value\n\tself.view.custom.filter \u003d f\n\tself.applySearch()",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
   }
 }

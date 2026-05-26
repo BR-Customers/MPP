@@ -1,0 +1,184 @@
+{
+  "custom": {},
+  "params": {
+    "index":        0,
+    "totalRows":    1,
+    "definitionId": null,
+    "name":         "",
+    "value":        "",
+    "dataType":     "",
+    "uom":          "",
+    "required":     false,
+    "defaultValue": ""
+  },
+  "propConfig": {
+    "params.index":        { "paramDirection": "input" },
+    "params.totalRows":    { "paramDirection": "input" },
+    "params.definitionId": { "paramDirection": "input" },
+    "params.name":         { "paramDirection": "input" },
+    "params.value":        { "paramDirection": "input" },
+    "params.dataType":     { "paramDirection": "input" },
+    "params.uom":          { "paramDirection": "input" },
+    "params.required":     { "paramDirection": "input" },
+    "params.defaultValue": { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "width": 800, "height": 48 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "padding": "6px 12px",
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "color": "var(--mpp-text-primary)"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "AttrName" },
+        "position": { "grow": 1, "basis": "0" },
+        "propConfig": {
+          "props.text": { "binding": { "type": "property", "config": { "path": "view.params.name" } } }
+        },
+        "props": {
+          "style": { "fontSize": "12px" }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "ValueCell" },
+        "position": { "grow": 2, "basis": "0" },
+        "props": { "direction": "row", "alignItems": "center", "style": { "gap": "8px" } },
+        "children": [
+          {
+            "type": "ia.input.text-field",
+            "meta": { "name": "Value" },
+            "position": { "grow": 1, "basis": "0" },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": { "bidirectional": true, "path": "view.params.value" }
+                }
+              },
+              "props.placeholder": {
+                "binding": {
+                  "type": "property",
+                  "config": { "path": "view.params.defaultValue" }
+                }
+              },
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "{view.params.dataType} != \"BIT\"" }
+                }
+              }
+            },
+            "events": {
+              "dom": {
+                "onBlur": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(\"locAttrValueUpdate\", payload={\"index\": self.view.params.index, \"value\": self.view.params.value}, scope=\"page\")"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "search-input",
+                "boxSizing": "border-box",
+                "height": "30px"
+              }
+            }
+          },
+          {
+            "type": "ia.input.checkbox",
+            "meta": { "name": "ValueBit" },
+            "position": { "basis": "auto", "shrink": 0 },
+            "propConfig": {
+              "props.selected": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "{view.params.value} = \"1\" || {view.params.value} = \"true\" || {view.params.value} = \"True\"" }
+                }
+              },
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "{view.params.dataType} = \"BIT\"" }
+                }
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\t# Translate the checkbox toggle into the '1'/'0' string the proc stores,\n\t# then push back through the page-scoped reply so editDraft.attributes\n\t# stays the single source of truth.\n\tnewVal = \"1\" if self.props.selected else \"0\"\n\tsystem.perspective.sendMessage(\"locAttrValueUpdate\", payload={\"index\": self.view.params.index, \"value\": newVal}, scope=\"page\")"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": ""
+            }
+          },
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "DataType" },
+        "position": { "basis": "80px", "shrink": 0 },
+        "propConfig": {
+          "props.text": { "binding": { "type": "property", "config": { "path": "view.params.dataType" } } }
+        },
+        "props": {
+          "style": {
+            "fontSize": "10px",
+            "color": "var(--mpp-text-tertiary)",
+            "whiteSpace": "nowrap"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Uom" },
+        "position": { "basis": "70px", "shrink": 0 },
+        "propConfig": {
+          "props.text": { "binding": { "type": "property", "config": { "path": "view.params.uom" } } }
+        },
+        "props": {
+          "style": { "fontSize": "11px", "color": "var(--mpp-text-secondary)" }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Required" },
+        "position": { "basis": "60px", "shrink": 0 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "if({view.params.required}, \"★\", \"\")" }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-state-warn-fg)",
+            "fontSize": "14px",
+            "textAlign": "center"
+          }
+        }
+      }
+    ]
+  }
+}

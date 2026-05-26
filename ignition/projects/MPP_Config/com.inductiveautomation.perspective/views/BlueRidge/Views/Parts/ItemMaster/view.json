@@ -1,0 +1,1291 @@
+{
+  "custom": {
+    "activeTab": "containerConfig",
+    "editDraft": {
+      "meta": {
+        "CountryOfOrigin": "US",
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1779309668179
+          ],
+          "$ts": 1779321304125
+        },
+        "CreatedByUserId": 2,
+        "DefaultSubLotQty": 24,
+        "DeprecatedAt": null,
+        "Description": "5G0 Front Cover Assembly",
+        "Id": 1,
+        "ItemTypeId": 4,
+        "ItemTypeName": "Finished Good",
+        "MacolaPartNumber": "5G0-FC-001",
+        "MaxLotSize": null,
+        "MaxParts": 500,
+        "PartNumber": "5G0",
+        "UnitWeight": 3.25,
+        "UomCode": "EA",
+        "UomId": 1,
+        "UpdatedAt": null,
+        "UpdatedByUserId": null,
+        "WeightUomCode": "LB",
+        "WeightUomId": 2
+      }
+    },
+    "itemTypes": [
+      "Raw Material",
+      "Component",
+      "Sub-Assembly",
+      "Finished Good",
+      "Pass-Through"
+    ],
+    "mode": "update",
+    "search": "",
+    "selected": {
+      "meta": {
+        "CountryOfOrigin": "US",
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1779309668178
+          ],
+          "$ts": 1779321304125
+        },
+        "CreatedByUserId": 2,
+        "DefaultSubLotQty": 24,
+        "DeprecatedAt": null,
+        "Description": "5G0 Front Cover Assembly",
+        "Id": 1,
+        "ItemTypeId": 4,
+        "ItemTypeName": "Finished Good",
+        "MacolaPartNumber": "5G0-FC-001",
+        "MaxLotSize": null,
+        "MaxParts": 500,
+        "PartNumber": "5G0",
+        "UnitWeight": 3.25,
+        "UomCode": "EA",
+        "UomId": 1,
+        "UpdatedAt": null,
+        "UpdatedByUserId": null,
+        "WeightUomCode": "LB",
+        "WeightUomId": 2
+      }
+    },
+    "typeFilter": "All Types",
+    "uoms": [
+      "EA",
+      "LB",
+      "KG"
+    ]
+  },
+  "params": {},
+  "propConfig": {
+    "custom.items": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Item.getAllForList\", 0, {view.custom.search}, {view.custom.typeFilter})"
+        },
+        "type": "expr"
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 720,
+      "width": 1280
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "LabelTitle"
+            },
+            "props": {
+              "style": {
+                "fontSize": "15px",
+                "fontWeight": "600"
+              },
+              "text": "Item Master"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "LabelDirty"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.editDraft} != {view.custom.selected}, '\u25cf Unsaved changes', '')"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-state-warn-fg)",
+                "fontSize": "12px",
+                "fontStyle": "italic"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "TitleSpacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "id": "mpp-add-item",
+                    "modal": true,
+                    "overlayDismiss": false,
+                    "showCloseIcon": false,
+                    "type": "open",
+                    "viewPath": "BlueRidge/Components/Popups/AddItem",
+                    "viewportBound": true
+                  },
+                  "scope": "C",
+                  "type": "popup"
+                }
+              }
+            },
+            "meta": {
+              "name": "BtnAddItem"
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-primary"
+              },
+              "text": "+ Add Item"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "TitleBar"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "background": "var(--mpp-surface-card)",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "gap": "12px",
+            "padding": "8px 16px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "InputSearch"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.search"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "placeholder": "\ud83d\udd0d Search items\u2026",
+                      "style": {
+                        "classes": "search-input"
+                      }
+                    },
+                    "type": "ia.input.text-field"
+                  },
+                  {
+                    "meta": {
+                      "name": "DropdownTypeFilter"
+                    },
+                    "propConfig": {
+                      "props.value": {
+                        "binding": {
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.typeFilter"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "options": [
+                        {
+                          "label": "All Types",
+                          "value": "All Types"
+                        },
+                        {
+                          "label": "Raw Material",
+                          "value": "Raw Material"
+                        },
+                        {
+                          "label": "Component",
+                          "value": "Component"
+                        },
+                        {
+                          "label": "Sub-Assembly",
+                          "value": "Sub-Assembly"
+                        },
+                        {
+                          "label": "Finished Good",
+                          "value": "Finished Good"
+                        },
+                        {
+                          "label": "Pass-Through",
+                          "value": "Pass-Through"
+                        }
+                      ],
+                      "style": {
+                        "classes": "select"
+                      }
+                    },
+                    "type": "ia.input.dropdown"
+                  }
+                ],
+                "meta": {
+                  "name": "FilterBar"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "borderBottom": "1px solid var(--mpp-border-subtle)",
+                    "gap": "6px",
+                    "padding": "8px 10px"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "ItemList"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "propConfig": {
+                  "props.instances": {
+                    "binding": {
+                      "config": {
+                        "expression": "runScript(\"BlueRidge.Parts.Item.getInstancesForFlexRepeater\", 0, {view.custom.search}, {view.custom.typeFilter}, {view.custom.selected.meta.Id})"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "elementPosition": {
+                    "basis": "auto"
+                  },
+                  "path": "BlueRidge/Components/Parts/ItemMaster/ItemRow",
+                  "style": {
+                    "overflowY": "auto",
+                    "padding": "4px 0"
+                  },
+                  "useDefaultViewHeight": false,
+                  "useDefaultViewWidth": false
+                },
+                "type": "ia.display.flex-repeater"
+              }
+            ],
+            "meta": {
+              "name": "LeftPanel"
+            },
+            "position": {
+              "basis": "240px",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "background": "var(--mpp-surface-nav)",
+                "borderRight": "1px solid var(--mpp-border-subtle)"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "SummaryText"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "{view.custom.editDraft.meta.PartNumber} + ' \u2014 ' + {view.custom.editDraft.meta.Description}"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "fontSize": "13px",
+                            "fontWeight": "600"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "SummaryBadge"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.editDraft.meta.ItemTypeName"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "badge badge-published"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "SummarySpacer"
+                        },
+                        "position": {
+                          "grow": 1
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tBlueRidge.Common.Notify.toast('Not wired yet', 'Item save lands in Phase 3.', 'info', 5)"
+                              },
+                              "scope": "C",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "BtnSave"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "btn btn-primary btn-sm"
+                          },
+                          "text": "Save"
+                        },
+                        "type": "ia.input.button"
+                      },
+                      {
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tBlueRidge.Common.Notify.toast('Not wired yet', 'Item deprecate lands in Phase 3.', 'info', 5)"
+                              },
+                              "scope": "C",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "BtnDeprecate"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "btn btn-danger btn-sm"
+                          },
+                          "text": "Deprecate"
+                        },
+                        "type": "ia.input.button"
+                      }
+                    ],
+                    "meta": {
+                      "name": "SummaryRow"
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "8px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "LabelPartNumber"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "field-label"
+                              },
+                              "text": "Part Number"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "InputPartNumber"
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.meta.PartNumber"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "enabled": false,
+                              "style": {
+                                "background": "var(--mpp-surface-card)",
+                                "classes": "search-input",
+                                "color": "var(--mpp-text-muted)"
+                              }
+                            },
+                            "type": "ia.input.text-field"
+                          }
+                        ],
+                        "meta": {
+                          "name": "FieldPartNumber"
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "field",
+                            "gap": "2px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "LabelItemType"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "field-label"
+                              },
+                              "text": "Item Type"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "InputItemType"
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.meta.ItemTypeName"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "enabled": false,
+                              "style": {
+                                "background": "var(--mpp-surface-card)",
+                                "classes": "search-input",
+                                "color": "var(--mpp-text-muted)"
+                              }
+                            },
+                            "type": "ia.input.text-field"
+                          }
+                        ],
+                        "meta": {
+                          "name": "FieldItemType"
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "field",
+                            "gap": "2px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "LabelUom"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "field-label"
+                              },
+                              "text": "UOM"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "DropdownUom"
+                            },
+                            "propConfig": {
+                              "props.value": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.meta.UomCode"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "options": [
+                                {
+                                  "label": "EA",
+                                  "value": "EA"
+                                },
+                                {
+                                  "label": "LB",
+                                  "value": "LB"
+                                },
+                                {
+                                  "label": "KG",
+                                  "value": "KG"
+                                }
+                              ],
+                              "style": {
+                                "classes": "select"
+                              }
+                            },
+                            "type": "ia.input.dropdown"
+                          }
+                        ],
+                        "meta": {
+                          "name": "FieldUom"
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "field",
+                            "gap": "2px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "FieldRowIdentity"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "field-row",
+                        "gap": "12px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "LabelDescription"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "field-label"
+                              },
+                              "text": "Description"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "InputDescription"
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.meta.Description"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "search-input",
+                                "width": "100%"
+                              }
+                            },
+                            "type": "ia.input.text-field"
+                          }
+                        ],
+                        "meta": {
+                          "name": "FieldDescription"
+                        },
+                        "position": {
+                          "basis": "200px",
+                          "grow": 2
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "field",
+                            "gap": "2px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "LabelMacola"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "field-label"
+                              },
+                              "text": "Macola Part #"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "InputMacola"
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.meta.MacolaPartNumber"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "search-input",
+                                "width": "100%"
+                              }
+                            },
+                            "type": "ia.input.text-field"
+                          }
+                        ],
+                        "meta": {
+                          "name": "FieldMacola"
+                        },
+                        "position": {
+                          "basis": "100px",
+                          "grow": 1
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "field",
+                            "gap": "2px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "FieldRowDescription"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "field-row",
+                        "gap": "12px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "LabelUnitWeight"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "field-label"
+                              },
+                              "text": "Unit Weight"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "InputUnitWeight"
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.meta.UnitWeight"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "search-input",
+                                "width": "80px"
+                              }
+                            },
+                            "type": "ia.input.text-field"
+                          }
+                        ],
+                        "meta": {
+                          "name": "FieldUnitWeight"
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "field",
+                            "gap": "2px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "LabelWeightUom"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "field-label"
+                              },
+                              "text": "Weight UOM"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "DropdownWeightUom"
+                            },
+                            "propConfig": {
+                              "props.value": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.meta.WeightUomCode"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "options": [
+                                {
+                                  "label": "EA",
+                                  "value": "EA"
+                                },
+                                {
+                                  "label": "LB",
+                                  "value": "LB"
+                                },
+                                {
+                                  "label": "KG",
+                                  "value": "KG"
+                                }
+                              ],
+                              "style": {
+                                "classes": "select"
+                              }
+                            },
+                            "type": "ia.input.dropdown"
+                          }
+                        ],
+                        "meta": {
+                          "name": "FieldWeightUom"
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "field",
+                            "gap": "2px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "LabelDefaultSubLotQty"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "field-label"
+                              },
+                              "text": "Default Sub-Lot Qty"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "InputDefaultSubLotQty"
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.meta.DefaultSubLotQty"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "search-input",
+                                "width": "80px"
+                              }
+                            },
+                            "type": "ia.input.text-field"
+                          }
+                        ],
+                        "meta": {
+                          "name": "FieldDefaultSubLotQty"
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "field",
+                            "gap": "2px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "LabelPartsPerBasket"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "field-label"
+                              },
+                              "text": "Parts Per Basket"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "InputPartsPerBasket"
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.meta.PartsPerBasket"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "search-input",
+                                "width": "80px"
+                              }
+                            },
+                            "type": "ia.input.text-field"
+                          }
+                        ],
+                        "meta": {
+                          "name": "FieldPartsPerBasket"
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "field",
+                            "gap": "2px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "FieldRowMeasures"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "field-row",
+                        "gap": "12px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "DetailsHeader"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "background": "var(--mpp-surface-card)",
+                    "borderBottom": "1px solid var(--mpp-border-subtle)",
+                    "gap": "8px",
+                    "padding": "10px 14px"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "ContainerConfig"
+                    },
+                    "propConfig": {
+                      "props.params.value": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.editDraft.meta.Id"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/Parts/ItemMaster/ContainerConfig",
+                      "useDefaultViewWidth": false,
+                      "useDefaultViewHeight": false,
+                      "params": {
+                        "value": 0
+                      }
+                    },
+                    "type": "ia.display.view"
+                  },
+                  {
+                    "meta": {
+                      "name": "Routes"
+                    },
+                    "position": {
+                      "tabIndex": 1
+                    },
+                    "propConfig": {
+                      "props.params.value": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.editDraft.meta.Id"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/Parts/ItemMaster/Routes",
+                      "useDefaultViewWidth": false,
+                      "useDefaultViewHeight": false,
+                      "params": {
+                        "value": 0
+                      }
+                    },
+                    "type": "ia.display.view"
+                  },
+                  {
+                    "meta": {
+                      "name": "Boms"
+                    },
+                    "position": {
+                      "tabIndex": 2
+                    },
+                    "propConfig": {
+                      "props.params.value": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.editDraft.meta.Id"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/Parts/ItemMaster/Boms",
+                      "useDefaultViewWidth": false,
+                      "useDefaultViewHeight": false,
+                      "params": {
+                        "value": 0
+                      }
+                    },
+                    "type": "ia.display.view"
+                  },
+                  {
+                    "meta": {
+                      "name": "QualitySpecs"
+                    },
+                    "position": {
+                      "tabIndex": 3
+                    },
+                    "propConfig": {
+                      "props.params.value": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.editDraft.meta.Id"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/Parts/ItemMaster/QualitySpecs",
+                      "useDefaultViewWidth": false,
+                      "useDefaultViewHeight": false,
+                      "params": {
+                        "value": 0
+                      }
+                    },
+                    "type": "ia.display.view"
+                  },
+                  {
+                    "meta": {
+                      "name": "Eligibility"
+                    },
+                    "position": {
+                      "tabIndex": 4
+                    },
+                    "propConfig": {
+                      "props.params.value": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.editDraft.meta.Id"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/Parts/ItemMaster/Eligibility",
+                      "useDefaultViewWidth": false,
+                      "useDefaultViewHeight": false,
+                      "params": {
+                        "value": 0
+                      }
+                    },
+                    "type": "ia.display.view"
+                  }
+                ],
+                "meta": {
+                  "name": "TabContainer_0"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "props": {
+                  "currentTabIndex": 2,
+                  "menuType": "modern",
+                  "style": {
+                    "classes": "tab-host"
+                  },
+                  "tabSize": {
+                    "width": 120
+                  },
+                  "menuStyle": {
+                    "classes": "tab-strip"
+                  },
+                  "contentStyle": {
+                    "classes": "tab-content-fill"
+                  },
+                  "tabStyle": {
+                    "active": {
+                      "classes": "tab-item tab-item-active"
+                    },
+                    "disabled": {
+                      "classes": "tab-item"
+                    },
+                    "inactive": {
+                      "classes": "tab-item"
+                    }
+                  },
+                  "tabs": [
+                    "Container Config",
+                    "Routes",
+                    "Boms",
+                    "Quality Specs",
+                    "Eligibility"
+                  ]
+                },
+                "type": "ia.container.tab"
+              }
+            ],
+            "meta": {
+              "name": "DetailArea"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.custom.mode} != \"view\""
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "overflow": "hidden"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "EmptyStateLabel"
+                },
+                "props": {
+                  "style": {
+                    "fontSize": "13px"
+                  },
+                  "text": "Select an item from the list to view its details, or click + Add Item to create a new one."
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "EmptyState"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.custom.mode} = \"view\""
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "alignItems": "center",
+              "direction": "column",
+              "justify": "center",
+              "style": {
+                "background": "var(--mpp-surface-card)",
+                "color": "var(--mpp-text-muted)",
+                "fontStyle": "italic"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Main"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "style": {
+            "borderTop": "1px solid var(--mpp-border-subtle)",
+            "overflow": "hidden"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "canvas"
+      }
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "itemRowClicked",
+          "pageScope": true,
+          "script": "\tclickedId = payload.get('id') if payload else None\n\tif clickedId is None:\n\t\treturn\n\titemMeta = BlueRidge.Parts.Item.getOne(clickedId)\n\tif itemMeta is None:\n\t\tBlueRidge.Common.Notify.toast('Item not found', 'Item id ' + str(clickedId) + ' no longer exists.', 'warning')\n\t\treturn\n\tself.view.custom.selected  = {'meta': dict(itemMeta)}\n\tself.view.custom.editDraft = {'meta': dict(itemMeta)}\n\tself.view.custom.mode = 'update'",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

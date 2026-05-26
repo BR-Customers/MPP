@@ -496,12 +496,15 @@ button {
     background: var(--mpp-accent-20);
 }
 
+/* Rows-per-page chooser inside the table pager. The selector matches
+   three layered Ignition wrapper classes (iaSelectCommon + ia_select +
+   ia_select__select), so adding a border here paints it three times
+   over and reads as a doubled outline. Background + radius only. */
 .ia_pager .iaSelectCommon,
 .ia_pager .ia_select,
 .ia_pager .ia_select__select {
     background-color: var(--mpp-surface-raised);
     color: var(--mpp-text-primary);
-    border: 1px solid var(--mpp-border-default);
     border-radius: var(--mpp-radius-sm);
 }
 
@@ -857,7 +860,6 @@ button {
     padding: 6px var(--mpp-space-2);
     color: var(--mpp-text-primary);
     font-size: var(--mpp-fs-sm);
-    min-width: 180px;
     transition: border-color var(--mpp-transition-fast),
                 box-shadow var(--mpp-transition-fast);
 }
@@ -1380,11 +1382,19 @@ button {
 
 
 /* ─── Dashboard tiles (KPI cards) ──────────────────────────────────── */
+/* Base: gap + padding only. Parent flex container governs sizing. */
 .psc-dashboard-tiles {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: var(--mpp-space-3);
     padding: var(--mpp-space-3);
+}
+
+/* Modifier: auto-fit grid layout for screens that want the original
+   responsive tile-flow behavior. Apply alongside the base class:
+       "style": { "classes": "dashboard-tiles dashboard-tiles--grid" }
+*/
+.psc-dashboard-tiles--grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 }
 
 .psc-dashboard-tile {
@@ -2710,4 +2720,29 @@ button {
     color: var(--mpp-text-primary);
     font-weight: var(--mpp-fw-medium);
     padding: 4px 6px;
+}
+
+
+/* ─── ia.container.tab — use typed style-class slots ────────
+   Ignition 8.3's ia.container.tab exposes typed style.classes props on
+   menuStyle, contentStyle, and tabStyle.{active,inactive,disabled}.
+   Wire those slots in the view JSON rather than chasing internal DOM
+   class names. (Per ignition-context-pack §06 — Ignition 8.3 class
+   naming is inconsistent; type-safe slots are the supported surface.)
+
+   Slot wiring (per ItemMaster):
+     menuStyle.classes              → .psc-tab-strip       (existing, reused)
+     contentStyle.classes           → .psc-tab-content-fill (new, below)
+     tabStyle.active.classes        → "tab-item tab-item-active"  (existing)
+     tabStyle.inactive.classes      → "tab-item"
+*/
+
+/* Fills the tab content area with the surface palette so the empty
+   space below shorter panels doesn't show through as the host bg. */
+.psc-tab-content-fill {
+    background: var(--mpp-surface-card);
+    padding: var(--mpp-space-3);
+    height: 100%;
+    overflow: auto;
+    color: var(--mpp-text-primary);
 }

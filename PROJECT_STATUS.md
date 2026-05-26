@@ -1,6 +1,48 @@
 # MPP MES — Project Status
 
-**Last updated:** 2026-05-13
+**Last updated:** 2026-05-20 (Defect Codes Task 8 landed + Item Master per-section ownership convention codified; Phase 4 docs rewritten, Phase 5/6 docs reconciled. Phase 2 read paths landed in `worktree-Agent-B-item-master-phase2`. R1 bidi-embed risk is OBSOLETE under the new convention.)
+
+---
+
+## 🆕 Item Master design convention update (2026-05-20)
+
+The Item Master design has been **reworked from bundled-editDraft + bidi-Object-param to per-section ownership** before any Phase 3+ implementation lands. Each of 6 sections (Identity + 5 tabs) now owns its own selected/editDraft locally, has its own Save/Discard, and broadcasts dirty state via `sectionDirtyChanged` page-scoped messages. Parent aggregates flags + gates tab/item switches via the existing ConfirmUnsaved popup.
+
+**Why:** R1 (bidi Object-param round-trip) was never proven and Phase 2's wiring drifted from the original design. Per-section ownership uses primitives the project has shipped reliably (page-scoped messages) and aligns with how the customer's roles actually work (different engineers own different concerns).
+
+**Canonical reference:** `project_mpp_item_master_pattern` memory (2026-05-20 rev).
+
+**Docs realigned:**
+- `docs/superpowers/specs/2026-05-20-item-master-phase4-design.md` + plan — **rewritten** for per-section.
+- `docs/superpowers/specs/2026-05-20-item-master-boms-design.md` + plan — **medium retrofit** flagged via §0 convention-reconciliation preamble (most of spec stands).
+- `docs/superpowers/specs/2026-05-20-item-master-routes-design.md` + plan — **light retrofit** (Routes already designed for per-section; convention ratifies it).
+
+**Phase 1 + 2 code:** parent's old bundled `editDraft` and `selected` blocks are inert (never properly populated for ContainerConfig); they get demolished as part of Phase 4 Task 5.
+
+---
+
+## ✅ Recently closed
+
+### Defect Codes — Task 8 complete (2026-05-20)
+
+The flex-repeater never re-rendered because the screen chained two bindings: a query+transform on `view.custom.allRows` (Python list[dict] with `java.sql.Timestamp` values from unread CreatedAt/DeprecatedAt) feeding a second expression binding `runScript("...filterAndMapRows", 0, {view.custom.allRows}, {view.custom.filter.searchText})`. Substituting a freshly transformed list-of-dicts back into another binding's args chokes Perspective's marshaling. Script Console didn't reproduce because it sends literal Python objects.
+
+**Fix (`15eeee2`):** consolidated to the DowntimeCodes peer pattern — new `BlueRidge.Quality.DefectCode.search(filter)` does DB + client-side text filter + row mapping in one shot; `view.custom.rows` binds via single expr `runScript("...search", 0, {view.custom.filter})`; the flex-repeater downgrades to a plain property binding on `view.custom.rows`.
+
+**Bundled follow-ups:**
+- `15eeee2` — "Area (optional)" → "Area" label + handleSave null-area warning toast guard
+- `75b4420` — Editor `editDraft.meta` initialized to the proper empty shape upfront (was `null`, causing red borders and "null" text on first render); explicit `props.text:""` on Excused checkbox (suppresses component default placeholder); list-view IncludeDeprecated wrapped in `IncludeDeprecatedField` matching DowntimeCodes filter sidebar
+- `16291b6` — DefectCodeRow gains `params.deprecated` + root opacity binding (55% fade) + EditButton conditional hide for deprecated rows
+- `4922ec4` — Both DefectCodeRow and DowntimeCodeRow switched EditButton hide from `position.display` to `meta.visible` so the 80px slot stays reserved and Area/Excused columns hold their x-position across deprecated rows ([[ignition-meta-visible-in-tables]])
+
+Smoke-confirmed by Jacques: add, deprecate, filter all working.
+
+### Defect Codes — open follow-ups (not blocking)
+
+- **`getAllAreas` vs `listByTier`** — Task 5 added `listByTier` as a generic primitive but neither Task 6 (popup) nor Task 7 (list view) ended up using it. Ships with zero consumers. Cleanup option: migrate both area-dropdown sites to `listByTier('Area')` + transform when next touched.
+- **Parity opportunity in DowntimeCodeEditor** — same `editDraft: {meta: null}` initial state and unset `props.text` on Excused checkbox. Symptoms haven't been reported there (its `params.editId` onChange populates meta earlier in lifecycle) but the same two-line fix would close the latent risk.
+
+---
 
 This file holds the **volatile** state of the project — current doc versions, active blockers, recent change narrative, and the next-session briefing. Durable identity, document map, architecture, and conventions live in `CLAUDE.md`.
 
@@ -96,15 +138,42 @@ Per-schema tabs are the source of truth and remain canonical until next regen.
 
 Initial v1 build at `docs_portal/`. See "Recent Change Narrative" entry below for details.
 
-### LocationTypeEditor modal — 🟡 IN-PROGRESS (2026-05-13)
+### LocationTypeEditor modal — 🟡 IN-PROGRESS (convention rectification landed 2026-05-14, Designer smoke-test pending)
 
-Full vertical stack scaffolded (SQL + NQs + entity scripts + views + cog-button wiring), tests green, gateway scanned, but end-of-day smoke-test in Designer still has unresolved issues. **What's known to work:** SQL build (907/907 tests). What's pending verification next session: Designer-side modal rendering, tier dropdown → definitions repeater flow, save round-trip, deprecate FK guard surfacing in UI. See "Recent Change Narrative" entry below for the full surface and the failure modes hit + fixed during the day.
+Full vertical stack scaffolded 2026-05-13. Convention-rectification pass landed 2026-05-14 — entity scripts retrofitted through `Common.Db`/`Common.Util`/`Common.Ui`, view restructured to `editDraft`/`selected` pattern with dirty indicator + Cancel button, NQs normalized to camelCase + Designer-canonical sqlType enum. **Pending verification next session:** Designer-side modal rendering with the new pattern (tier dropdown → definitions list → details panel → Save with dirty indicator → Cancel revert → Deprecate FK guard). 907/907 SQL tests still passing.
 
 ### Non-blocking polish
 
 - Memory file revision-history-format trim: applied to FDS only; not yet to Data Model + OIR.
 - FDS-06-028 wording sharpen — WO Auto-Finish (§6.10) prose still mentions "camera-count mode" pre-tray-reframe. Low priority.
-- **Latent NQ v1 schema bug:** at least `location/Get/resource.json` is `version: 1`; Designer 8.3.5 NPEs when opening v1 NQ resources. Other v1 NQs in the project may exist. Worth a cleanup-pass bump-to-v2 when convenient. See `feedback_ignition_nq_resource_schema.md` memory.
+- ~~**Latent NQ v1 schema bug:** at least `location/Get/resource.json` is `version: 1`~~ — resolved 2026-05-14 (bumped to v2 with corrected sqlType enum). See `feedback_ignition_nq_resource_schema.md` memory for the empirically-verified Designer sqlType table.
+
+### Deferred follow-ups tied to future Config Tool surfaces
+
+- **DieCastMachine Cell — read-only mounted-Tool status panel** (Plant Hierarchy editor). When the Tools master Config Tool surface is built, add a read-only section under (or alongside) Attributes on DieCastMachine Cell details showing the currently mounted Tool, mount timestamp, and mounting supervisor, sourced from `Tools.ToolAssignment_ListActiveByCell(@CellLocationId)`. Mutation (mount/release) stays on the plant-floor scan-in screen per FDS-05-034 + the `tool-assignment-modal` mockup design — the Plant Hierarchy panel is visibility-only so engineering can see what's mounted without going to the floor or asking. Deferred until the Tool master Config Tool screen exists (it would have no cross-link target today). Discussion: 2026-05-18 session.
+
+### 🟠 Open at session end (2026-05-19)
+
+### Item Master Phase 1 view shell landed (2026-05-19)
+
+The Item Master Configuration Tool page (`/items`) is built as a Phase 1 visual shell — 7 new view files plus a page-config registration. Layout fully mirrors the mockup at `mockup/index.html` §"SCREEN: Item Master" (lines 308–860) and `+Add Item` modal (lines 2629–2715). All `view.custom.editDraft.*` form bindings active; dirty indicator works; tab switching works; toast placeholders for Save/Deprecate/Create/New Version all fire correctly.
+
+**What's wired:** Page route, sidebar nav (already in place), ItemMaster shell, ItemRow flex-repeater + page-scoped click messaging, DetailsHeader form (9 inputs bidi-bound to editDraft.meta), TabStrip with 5-tab switching, 5 embedded tab views (ContainerConfig editable; Routes/BOMs/QualitySpecs/Eligibility read-only with placeholder New Version buttons), AddItem modal opened from +Add Item button.
+
+**What's NOT wired (deliberately Phase 2+ per `docs/superpowers/specs/2026-05-19-item-master-view-shell-design.md`):**
+- Item list / item details DB read paths (Phase 2)
+- Item Save / Deprecate / Add Item Create flows (Phase 3)
+- Container Config save (Phase 4)
+- Routes versioning workflow — own design + plan (Phase 5)
+- BOMs versioning workflow — own design + plan (Phase 6)
+- Quality Specs cross-navigation (Phase 7)
+- Eligibility editor (Phase 8)
+
+**Pickup notes for next session:** Designer-side smoke test of the page (5G0 dummy data renders, item rows click, fields edit + dirty indicator flips through embedded boundary, all 5 tabs visible). The bidi-on-Object-param mechanism for Embedded View `props.params.value` is the architectural risk — if it doesn't round-trip when smoke tested, fall back per R1 in the design doc.
+
+### 🟠 Audit-pages customMethods addressing bug (2026-05-19 — fixed same day, note retained)
+
+The `view.custom.editDraft` / `view.custom.selected` dirty-check binding in the audit views surfaced a `customMethods` scope issue: `root.scripts.customMethods` attaches methods to the ROOT COMPONENT, not to the view. Addressing inside a view-level onChange script must use `self.rootContainer.X()` (not `self.X()` or `self.view.X()`). Fixed in the same session; see `feedback_ignition_view_customMethods_scope.md` memory for the full pattern. Relevant for any future view that calls `customMethods` from within embedded-view or event-handler context.
 
 ---
 
@@ -130,10 +199,10 @@ Items genuinely gating downstream work, by owner:
 
 ## Build Status
 
-- **Configuration Tool (Arc 1):** Phases 1–8 + G.1–G.5 + 0013 corrections + 0014 LocationTypeDefinition CRUD support complete. **907/907 tests passing** across 22+ test suites.
-- **SQL artifacts:** `/sql/` folder, **14 versioned migrations + 218 repeatable procs.** PowerShell reset script `Reset-DevDatabase.ps1` auto-discovers and runs all scripts via `sqlcmd.exe`. Tested on SQL Server 2025.
+- **Configuration Tool (Arc 1):** Phases 1–8 + G.1–G.5 + 0013 corrections + 0014 LocationTypeDefinition CRUD support complete. Audit page procs (FailureLog_List, ConfigLog_List, FailureLog_DistinctProcedures) landed 2026-05-19. **937/937 tests passing** across 22+ test suites.
+- **SQL artifacts:** `/sql/` folder, **14 versioned migrations + 220 repeatable procs.** PowerShell reset script `Reset-DevDatabase.ps1` auto-discovers and runs all scripts via `sqlcmd.exe`. Tested on SQL Server 2025.
 - **Plant Floor (Arc 2):** Mockup landed at `mockup/plantFloor.html` (12 terminal/lot routes + Home Page). SQL not yet started — gated on Phase 0.
-- **Ignition project (live build, Arc 1):** Phase 1 Location pipeline, toast notifications, scan helper landed 2026-05-12. PlantHierarchy view: tree-selection re-anchor pattern + move arrows wired through `BlueRidge.Common.Action.runMutation`. **LocationTypeEditor modal IN-PROGRESS as of 2026-05-13** — SQL + NQs + entity scripts + views all scaffolded and gateway-deployed, but still has Designer-side issues at end of day (see "Outstanding for Next Session"). Cog button on PlantHierarchy wired to open the modal.
+- **Ignition project (live build, Arc 1):** Phase 1 Location pipeline + toasts + scan helper landed 2026-05-12. LocationTypeEditor full stack 2026-05-13. **Convention rectification 2026-05-14** — `Common.Db`/`Common.Util`/`Common.Ui` layer built, `Common.Action` deleted, 5 entity scripts retrofitted through Common helpers, LocationTypeEditor view restructured to `editDraft`/`selected` pattern + dirty indicator + Cancel, all NQs normalized (camelCase identifiers, Designer-canonical sqlType enum, v2 schema). Designer smoke-test pending. Audit pages (FailureLog + AuditLog) landed 2026-05-19 with the customMethods addressing bug fixed same day. **Downtime Codes Ops view wired 2026-05-19** — first Config Tool admin surface to combine live-data List + popup editor + page-scoped refresh pulse (separate pattern from the audit-browser read-only pattern).
 - **Seed data loading:** CSVs ready in `reference/seed_data/` (876 rows total). `machines.csv` not yet loaded; MPP parts list not yet provided; `defect_codes.csv` not yet loaded; `downtime_reason_codes.csv` has bulk-load proc but not yet invoked.
 
 ---
@@ -162,6 +231,217 @@ Phase G capability snapshot: `Meeting_Notes/2026-04-22_Phase_G_Capabilities_Summ
 ## Recent Change Narrative
 
 A timeline of session-by-session changes. Most recent first.
+
+### 2026-05-20 — Item Master Phase 2: read paths + R1 smoke test bed
+
+Phase 2 of the 8-phase Item Master Configuration Tool. Three new Named Queries (`parts/Item_List`, `parts/Item_Get`, `parts/ContainerConfig_GetByItem`) wrap existing stored procs. Two new entity scripts (`BlueRidge.Parts.Item`, `BlueRidge.Parts.ContainerConfig`) route through `Common.Db`. The parent `ItemMaster/view.json` now binds `view.custom.items` to a `runScript(BlueRidge.Parts.Item.getAllForList, ...)` expression and its `itemRowClicked` handler calls the live entity scripts to populate `view.custom.editDraft.meta` + `view.custom.editDraft.containerConfig` from the DB. The other four tab slices (routes/boms/qualitySpecs/eligibility) are left empty until their own phases land.
+
+**No SQL changes.** Tests stay at 937/937 (existing `Parts.Item_List`, `Parts.Item_Get`, `Parts.ContainerConfig_GetByItem` reused as-is).
+
+**Spec:** `docs/superpowers/specs/2026-05-20-item-master-phase2-design.md`
+**Plan:** `docs/superpowers/plans/2026-05-20-item-master-phase2.md`
+
+**Files touched (8 created + 2 modified):**
+- 3 new NQ folders under `ignition/projects/MPP_Config/ignition/named-query/parts/`
+- 2 new entity script modules under `ignition/projects/MPP_Config/ignition/script-python/BlueRidge/Parts/`
+- 1 view edit + resource.json metadata bump on `BlueRidge/Views/Parts/ItemMaster/`
+
+**R1 smoke verification — PENDING.** Designer smoke checklist in spec §9. R1 holding is the precondition for Phase 3-8 building on the bidi-embed pattern. If smoke fails, the page-scoped message fallback documented in spec §2 governs the rebuild.
+
+**Worktree:** built in `.claude/worktrees/Agent-B-item-master-phase2` on branch `worktree-Agent-B-item-master-phase2`. Ready to merge to main once R1 smoke verifies green.
+
+**Next pickup:** Jacques walks the R1 smoke checklist in Designer. On pass → Phase 3 (Item Save / Deprecate / Add Item Create) brainstorming, including cleanup of the `PartsPerBasket` Identity field that doesn't map to a real `Parts.Item` column. On fail → fallback design cycle (page-scoped messages instead of bidi-embed).
+
+### 2026-05-19 — Item Master Phase 1 view shell
+
+Phase 1 of an 8-phase Item Master Configuration Tool build (per `docs/superpowers/specs/2026-05-19-item-master-view-shell-design.md` + `docs/superpowers/plans/2026-05-19-item-master-view-shell.md`).
+
+**Files landed (8 new view files + 1 config edit):**
+- `page-config/config.json` — added `/items` route entry
+- `views/BlueRidge/Views/Parts/ItemMaster/{resource.json, view.json}` — page shell
+- `views/BlueRidge/Components/Parts/ItemMaster/ItemRow/{resource.json, view.json}` — flex-repeater row sub-view
+- `views/BlueRidge/Components/Parts/ItemMaster/ContainerConfig/{resource.json, view.json}` — tab 1 (editable form)
+- `views/BlueRidge/Components/Parts/ItemMaster/Routes/{resource.json, view.json}` — tab 2 (published-only table)
+- `views/BlueRidge/Components/Parts/ItemMaster/Boms/{resource.json, view.json}` — tab 3 (published-only table)
+- `views/BlueRidge/Components/Parts/ItemMaster/QualitySpecs/{resource.json, view.json}` — tab 4 (read-only linked list)
+- `views/BlueRidge/Components/Parts/ItemMaster/Eligibility/{resource.json, view.json}` — tab 5 (Area dropdown + machine table)
+- `views/BlueRidge/Components/Popups/AddItem/{resource.json, view.json}` — +Add Item modal shell
+
+**Architecture:**
+- Parent ItemMaster holds all state on `view.custom` (items, selected, editDraft, itemTypes, uoms, activeTab, mode, search, typeFilter)
+- 5 always-mounted Embedded Views in TabPanels, gated by `position.display = "{view.custom.activeTab} = '<key>'"`
+- Each embedded tab's `props.params.value` bidirectionally bound to `view.custom.editDraft.<slice>` — child form-field writes propagate back up through the embed boundary (R1 in the design doc — first use of this pattern in the project, needs Designer smoke validation)
+- ItemRow flex-repeater fires page-scoped `itemRowClicked` message handled by `root.scripts.messageHandlers[0]` on the parent
+- Save / Deprecate / Create Item / New Version buttons all fire `BlueRidge.Common.Notify.toast(...)` placeholders for Phases 3/5/6
+
+**Roadmap forward:** Phase 2 wires read paths; Phase 3 wires Item mutations + Add Item Create; Phase 4 Container Config save; Phases 5/6 are substantial Routes/BOMs versioned-entity workflows that warrant their own design docs. Phases 7/8 are Quality Specs cross-link and Eligibility editor.
+
+### 2026-05-19 — Downtime Codes Ops view wired end-to-end (first Config Tool admin surface)
+
+Plan + spec committed first (`docs/superpowers/specs/2026-05-19-downtime-codes-wiring-design.md` + `docs/superpowers/plans/2026-05-19-downtime-codes-wiring.md`), then executed via subagent-driven development across 9 tasks. Scaffolded `Views/Oee/DowntimeCodes` was sample-data only; this session turned it into a fully interactive admin surface.
+
+**Backend layer** — 6 new NQs under `named-query/oee/` (`DowntimeReasonCode_List` / `_Get` / `_Create` / `_Update` / `_Deprecate` plus `DowntimeReasonType_List` with 30-min cache). Two new entity-script modules: `BlueRidge.Oee.DowntimeReasonType` (`getAll`, `getForDropdown(includeUnassigned, includeAll)`) and `BlueRidge.Oee.DowntimeReasonCode` (full CRUD: `search/getOne/add/update/deprecate/emptyMeta`, with client-side `searchText` filter since the proc has no `@SearchText`). Added `BlueRidge.Location.Location.getAllAreas(includeAll)` as a peer read helper that filters the existing `location/GetTree` flat result for `HierarchyLevel == 2`.
+
+**Spec-review catch** — Initial plan asserted Areas were `HierarchyLevel == 3` (ISA-95 ordinal counting). The project's seed (migration 0002 line 110) places Areas at `HierarchyLevel == 2` (zero-indexed: Enterprise=0, Site=1, **Area=2**, WorkCenter=3, Cell=4). Spec reviewer caught the defect before code shipped to a view; plan + spec corrected, code patched. Seeded Areas are DC/MS/QC/TS (4, not 3 -- QC included but downtime typically only uses the first 3).
+
+**New popup view** — `BlueRidge/Components/Popups/DowntimeCodeEditor`: single popup for both Add and Edit via `view.params.mode = "create"|"update"` discriminator, with `editDraft/selected` state, dirty indicator, and `ConfirmUnsaved` wiring on both header X and footer Cancel. Code field is readonly in update mode (immutable post-create per the proc). Deprecate button visible only in update mode. Refresh pulse on Save/Deprecate via page-scoped `downtimeCodesRefresh` message.
+
+**Wired existing views** — `BlueRidge/Components/DowntimeCodeRow` got an `id` input param and Edit button onClick → openPopup. `BlueRidge/Views/Oee/DowntimeCodes` got: filter keys renamed (`area` → `areaLocationId`, `reasonType` → `downtimeReasonTypeId`) to match proc params, hardcoded sample arrays replaced with `runScript` bindings, `+ Add Code` button wired to openPopup, repeater binding restructured with script transform mapping proc PascalCase → row-component lowercase keys, and `downtimeCodesRefresh` message handler at root that shallow-copies `view.custom.filter` to force re-eval of the rows binding.
+
+**Bugs caught during smoke testing** —
+- `scope: "C"` on `component.onActionPerformed` doesn't fire reliably; project standard is `scope: "G"` (matches PlantHierarchy + AuditLog precedent). Fixed both AddCodeButton and DowntimeCodeRow EditButton.
+- `IncludeDeprecated` checkbox originally wrapped in a flex+label workaround; Jacques reverted to single-component `ia.input.checkbox.props.text` — works fine in normal-width containers. New memory entry `feedback_ignition_checkbox_text_prop_ok.md` corrects my earlier overcaution.
+- Edit button on deprecated rows hidden via `meta.visible` (not `position.display`) to preserve column alignment across the tabular layout. New memory entry `feedback_ignition_meta_visible_in_tables.md` notes table rows are the legitimate exception to the "use position.display" convention.
+
+**Visual polish** — Deprecated rows in the list rendered at 55% opacity (root `style.opacity` binding), Edit button hidden via `meta.visible: false`. Greyed visual + no Edit affordance for deprecated rows; toggle "Include deprecated" to surface them.
+
+**Bulk-load explicitly deferred** — `Oee.DowntimeReasonCode_BulkLoadFromSeed` proc exists and is tested. One-shot cutover operation; will run from Designer Script Console with the 353-row seed JSON when MPP confirms the DC/MS/TS → AreaLocationId mapping. No UI button needed.
+
+**SQL untouched** — no migrations or repeatable procs added. Test suite remains at 937/937.
+
+**Generalizes** — this is the reference pattern for any future Config Tool admin surface where a single entity has full CRUD (no compound children — that pattern stays the `SaveAll` bundled-proc reference impl): List-Detail view with live runScript-bound rows, popup editor with mode discriminator + ConfirmUnsaved, page-scoped refresh pulse. Distinct from the audit-browser pattern (read-only with TOP cap + COUNT(*) OVER total).
+
+**Parallel work landed same day** — audit-pages addressing bug (customMethods scope) fixed; `BlueRidge.Location.Location.listByTier(tierCode)` + `location/Location_ListByTier` NQ added as prep for the upcoming Defect Codes Config Tool screen.
+
+### 2026-05-19 — Audit pages landed (FailureLog + AuditLog Config Tool browsers)
+
+Design and plan committed first (`docs/superpowers/specs/2026-05-19-audit-pages-design.md` + `docs/superpowers/plans/2026-05-19-audit-pages.md`), then executed via 13 commits using the subagent-driven development pattern. Full SQL reset + test run closes the session at **937/937 tests passing**.
+
+**SQL** — `Audit.FailureLog_List` and `Audit.ConfigLog_List` both received `TOP 1000` caps and `COUNT(*) OVER() AS TotalCount` window-aggregate columns, which drive the "Showing N of M — narrow your filter" banner on both pages. FailureLog_List gained `@FailureReasonLike` substring filter and `@LogEntityTypeId` filter; ConfigLog_List gained `@DescriptionLike` and `@SeverityId`. New `Audit.FailureLog_DistinctProcedures` proc powers the Procedure dropdown on the FailureLog page — returns every distinct `ProcedureName` that has ever logged a failure. Test extensions landed alongside each proc. Note on canonical column names: `Audit.ConfigLog` uses `LoggedAt`/`UserId` (not `ChangedAt`/`AppUserId`); the proc passes those through unchanged and downstream Ignition consumers use `loggedAt` / `userDisplayName` accordingly. 220 repeatable procs total.
+
+**Ignition NQs** — 9 new named queries under `named-query/audit/`: `FailureLog_List`, `FailureLog_GetByEntity`, `FailureLog_GetTopReasons`, `FailureLog_GetTopProcs`, `FailureLog_DistinctProcedures`, `ConfigLog_List`, `ConfigLog_GetByEntity`, `LogEntityType_List`, `LogSeverity_List`.
+
+**Entity scripts** — 4 new modules: `BlueRidge.Audit.LogEntityType` (`getAll`), `BlueRidge.Audit.LogSeverity` (`getAll`), `BlueRidge.Audit.FailureLog` (3-NQ-bundled `search()` returning `{rows, totalCount, topReasons, topProcs}`), `BlueRidge.Audit.ConfigLog` (1-NQ `search()` returning `{rows, totalCount}`). Both `search()` functions deep-unwrap their filter dict via `Common.Util._u()` at entry to defend against tile-click / bidirectional-binding QualifiedValue wrappers. `Common.Util.prettyJson` helper added — formats AttemptedParameters / Old / New JSON for the detail popups (try/except wrapper; falls back to raw text on parse failure).
+
+**New views** — three new components written as files (new-view path; no Designer cache conflict): `BlueRidge/Components/Popups/FailureDetail` (single AttemptedParameters JSON block), `BlueRidge/Components/Popups/ConfigChangeDetail` (side-by-side Old + New diff blocks), `BlueRidge/Components/Audit/TopRow` (reusable tile-row sub-view shared between Top Reasons + Top Procs panels; fires page-scoped `applyFilterFromTile` message on tile click). FailureLog and AuditLog views fully wired: default date range = last 7 days, no auto-apply on load, explicit Apply + Reset buttons, TOP 1000 cap with banner. Tile-row click sets the appropriate filter field and triggers apply. FailureLog filter set: Date / EntityType / Procedure / AppUser / Search text. AuditLog filter set: Date / EntityType / Severity / Search text.
+
+**Deviation noted** — AuditLog lost its AppUser dropdown during the wire pass; the original mockup's `UserDropdown` slot was repurposed to `SeverityDropdown`. The design called for AppUser filter on both pages. Tracked as a follow-up polish item; not blocking any other work.
+
+**Proc return shapes documented** — TopReasons / TopProcs procs return `FailureCount` (not `Count`). The view's flex-repeater transform accounts for this.
+
+**Session also included** (earlier commits, not audit-pages scope): FDS v1.2 (`ParentLocationId` immutability rule, `5bd3d80`) and plant hierarchy view work (`d0d5355`).
+
+### 2026-05-15 — LocationTypeEditor smoke test + close-confirmation dialog
+
+Two commits landed:
+- `f469061` fix(loc-type-editor): dirty indicator + attribute-table alignment
+- `7ab9cd3` feat(loc-type-editor): close-confirmation dialog for unsaved work
+
+**Smoke test — all 8 flows pass.** Tier select, definition pick, edit + dirty indicator, Cancel revert, Save commit (audit verified — `Audit.ConfigLog` rows 251/252 with full pre/post payloads), Add Definition, Add/Remove Attribute, Deprecate (FK guard rejects active-Location references with graceful toast).
+
+**Fixes landed:**
+
+- Attribute row text-field events moved from `events.component.onActionPerformed` (no-op — text-fields don't have Component Events at all) to `events.dom.onBlur` for AttributeName / DefaultValue / Uom / Description. Dirty indicator now fires when user tabs out of any attribute field.
+- AttrTableHeader column basis / grow aligned with AttributeDefinitionRow. ColArrows + ColRemove converted from `ia.display.label` to `ia.container.flex` (empty labels were collapsing despite `basis`).
+- Pulled `min-width: 180px` from `.psc-search-input` — class was overloaded as a generic input look across 24 sites, and the 180px floor was overriding flex sizing in every attribute-row cell.
+
+**New view:**
+
+- `BlueRidge/Components/Popups/ConfirmUnsaved` — parameterised 3-button popup (Save & Close / Discard & Close / Cancel). LocationTypeEditor's CloseIcon + footer CloseButton now dirty-check before closing; if dirty, open this popup; user's choice routes back via page-scoped `confirmUnsavedResult` message handler. Reusable across future editors — see `project_mpp_confirm_unsaved_pattern.md` memory.
+
+**Workflow learning — file-edit boundary established.** view.json edits to existing views are unreliable due to (a) Designer's GSON serialization of `=` / `'` / `<` / `>` as 6-char unicode escapes (`=` etc.) that fight tool JSON-parsing, and (b) Designer's in-memory cache conflicts. The Designer "Files vs Gateway" conflict dialog also has confusing semantics — picking "Gateway" pushed Designer's cached state to disk and overwrote our file edits.
+
+Established split going forward (also added to CLAUDE.md):
+
+| File type | Edit path |
+|---|---|
+| view.json (existing views) | Designer — Claude writes Designer-step instructions |
+| view.json (new views) | File + scan — no Designer cache to conflict with |
+| stylesheet.css | File |
+| Python script modules | File |
+| NQ `query.sql` / `resource.json` | File |
+| SQL migrations / procs | File |
+
+**Cosmetic items still open** (next session):
+
+- TypeBadge `nameForTier` runScript returns NULL — needs gateway-log traceback to diagnose
+- Description input renders literal "null" when DB value is NULL — coalesce missing on read path
+- `â€` garble on em-dash placeholders — UTF-8 / Latin-1 mismatch somewhere in render pipeline
+
+**Memory added/updated:**
+
+- NEW `feedback_ignition_designer_unicode_escapes.md` — Designer 8.3 GSON escape style for `=` / `'` / `<` / `>` and how to match it when file-editing view.json scripts.
+- NEW `project_mpp_confirm_unsaved_pattern.md` — reusable ConfirmUnsaved popup pattern for editors with `editDraft` / `selected` state.
+- UPDATED `feedback_ignition_view_edit_boundary.md` — conflict-resolution dialog learning ("Gateway" overwrites disk with Designer's cache, not the inverse).
+
+**Context pack additions:**
+
+- `02_perspective_views.md` — note on Designer's GSON unicode-escape serialization
+- `07_conventions_and_antipatterns.md` — close-confirmation popup pattern + text-field-events caveat (no Component Events; use `dom.onBlur`)
+
+### 2026-05-14 — Convention rectification per Hunter's pack updates
+
+Hunter merged in pack updates (`hunter/explore` → `main` fast-forward, commits `784a981` / `591da53` / `cf0fb42` / `fc534bf`) that source the `ignition-context-pack/` from `MPP_MES_CONFIG_TOOL_FRONTEND_CONVENTIONS.md` v1.2 and document the `SaveAll` bundled pattern. Our 2026-05-12/13 Ignition work was built against the older pack and deviated in several places. Today's session rectified the deviations as a coordinated four-phase pass.
+
+Decision sheet: `Meeting_Notes/2026-05-14_Convention_Rectification_Review.md` (line-by-line response document with Jacques's per-item decisions).
+
+**Phase 1 — Foundation built (Common helpers):**
+
+- **`BlueRidge.Common.Db`** — `execList` / `execOne` / `execMutation`. Only layer that calls `system.db.runNamedQuery`. Handles BIT Status convention.
+- **`BlueRidge.Common.Util`** — `log` (inspect-frame auto-fill of calling module + function), `_currentAppUserId` (reads `session.custom.appUserId` with dev fallback to AppUser.Id 2), `extractQualifiedValues`, `convertWrapperObjectToJson`.
+- **`BlueRidge.Common.Ui.notifyResult(result, successTitle, successMsg, errorTitle)`** — routes mutation result to toast.
+- **`BlueRidge.Common.Notify.toast`** — `DEFAULT_TTL_SEC` 8 → 5 per C1 decision.
+- **`BlueRidge.Common.Action`** deleted (was the parallel-universe `execMutation` that mixed DB + toast).
+- **`BlueRidge.Common.Session.getCurrentUserId`** now a thin shim over `Common.Util._currentAppUserId`.
+
+**Phase 2 — Entity scripts retrofitted + NQ casings normalized:**
+
+- 5 entity scripts (`Location.Location`, `Location.Tree`, `Location.LocationType`, `Location.LocationTypeDefinition`, `Location.LocationAttributeDefinition`) rewritten to route every DB call through `Common.Db.*`. All `system.db.*` direct calls eliminated outside `Common.Db`. Per-module logger declarations removed; replaced with direct `Common.Util.log(...)` calls. 5 copies of local `_rowsToDicts` helper deleted.
+- Module surface standardized per pack convention: `listByType` → `getAll`, `listByDefinition` → `getAll`, `listAll` → `getAll`, `get` → `getOne`. Custom domain handlers (`handleMoveUp`/`handleMoveDown`/`handleSaveAll`/`handleDeprecate`/factories) kept per Jacques's A4 decision ("standard is starting point, not complete list").
+- 9 NQ files normalized: parameter identifiers → camelCase (`LocationID`/`UserID`/`Id`/`AppUserId` → `locationId`/`userId`/`id`/`appUserId`); query.sql `:placeholder` references updated to match.
+- `Get/resource.json` bumped v1 → v2 schema (was the latent Designer-NPE bug flagged 2026-05-13).
+- `print ds` stripped from `Location.code.py:124` (B1); `Tree.code.py` header rewritten to standard module shape (B2).
+
+**Phase 3 — LocationTypeEditor view restructured to editDraft/selected pattern:**
+
+- `view.custom.meta` + `view.custom.attributesDraft` → `view.custom.selected` (baseline) + `view.custom.editDraft` (in-flight), each carrying `{meta, attributes}`.
+- All form bindings repointed to `editDraft.meta.*`; attributes repeater binding to `editDraft.attributes`.
+- 4 message handlers (`definitionClick`, `attrDraftUpdate`, `attrDraftRemove`, `attrDraftMove`) rewritten to mutate `editDraft.attributes` and maintain the `selected` baseline on selection changes.
+- 5 inline scripts rewritten (Save, Deprecate, +Add Definition, +Add Attribute, TierDropdown onChange) for the new state shape.
+- **New:** dirty indicator label bound to `if({view.custom.editDraft} != {view.custom.selected}, "● Unsaved changes", "")` per pack universal rule.
+- **New:** Cancel button in DetailsHeader — reverts `editDraft = dict(selected)` in update mode; resets to view mode in create mode; hidden when no pending changes.
+- Save handler does proper deep-copy commit on success (`selected = {meta: dict(...), attributes: [dict(a) for a in ...]}`) so the dirty indicator clears.
+
+**Phase 4 — Pack contributions + memory updates (two-way street):**
+
+- **`ignition-context-pack/03_script_python.md`**: `execMutation` updated for BIT Status convention; full SP shape (`DECLARE @Status BIT = 0`) baked in verbatim. `notifyResult` signature updated. **New `Common.Notify` section** documenting popup-per-toast surface (top-right FIFO max 5, errors persist, non-errors auto-dismiss 5s — supersedes the single-banner pattern; toast is now THE standard, no variant). `runNamedQuery` vs `execQuery` clarified.
+- **`ignition-context-pack/04_named_queries.md`**: Status-row pattern rewritten with verbatim SP shape. **sqlType section rewritten** with the empirically-verified Designer-canonical enum table (Int1/Int2/Int4/Int8/Float4/Float8/Boolean/String/DateTime/ByteArray = 0/1/2/3/4/5/6/7/8/20) — explicit warning that `java.sql.Types` codes are irrelevant. NQ v2 schema section added.
+- **`ignition-context-pack/07_conventions_and_antipatterns.md`**: mutation feedback section updated for toast; **new "Mode discriminator on shared add/edit popups" section** (C4); all `Status='OK'`/`'ERROR'` references updated to BIT 1/0.
+- **`ignition-context-pack/02_perspective_views.md`**: **new "Tree mutations — return `{items, selectedPath, selected}`" section** (C2) documenting our re-anchor pattern and the `Tree.props.selection` writeback misfire workaround.
+- **`ignition-context-pack/00_README.md`**: file-13 / file-14 descriptions updated.
+
+**sqlType correction (A9 → empirical resolution):**
+
+Initial reading of A9 had me writing `sqlType: 2` for BIGINT (based on observing existing Designer-saved NQs with that code). Jacques provided an empirical reference (Designer-saved NQ with one parameter of every type) that revealed **Designer uses its own internal type enum, NOT `java.sql.Types`**:
+
+| sqlType | Designer name | DB type |
+|---|---|---|
+| 0 / 1 / 2 / 3 | Int1 / Int2 / Int4 / Int8 | TINYINT / SMALLINT / INTEGER / **BIGINT** |
+| 4 / 5 | Float4 / Float8 | REAL / FLOAT |
+| 6 | Boolean | BIT |
+| 7 | String | **NVARCHAR / VARCHAR** |
+| 8 | DateTime | DATETIME |
+| 20 | ByteArray | VARBINARY |
+
+Existing Designer-saved NQs in the project had BIGINT params with `sqlType: 2` (Int4) — that was a UI selection mistake by whoever created them; SQL Server's INT → BIGINT silent coercion meant the procs worked anyway. All NQ resource.json files corrected: BIGINT params `2` → `3`, NVARCHAR params `-9` → `7`. Memory entry `feedback_ignition_nq_resource_schema.md` updated with the full Designer enum.
+
+**Memory entries added/updated:**
+
+- UPDATED `feedback_ignition_nq_resource_schema.md` — full Designer sqlType enum table; corrects earlier "sqlType 2 for BIGINT" claim.
+
+**Files touched (42 total):**
+
+- 3 new Common modules (Db, Ui, Util) — 6 files
+- 1 deleted module (Action) — 2 files
+- 9 NQ folders modified (resource.json + query.sql each)
+- 5 entity scripts rewritten
+- 1 view (LocationTypeEditor) restructured
+- 5 pack files updated
+- 1 PROJECT_STATUS.md updated
+- 1 memory file updated
+- 1 review markdown added to Meeting_Notes/
+
+**Next pickup:** smoke-test the LocationTypeEditor modal in Designer end-to-end (tier select, definition pick, edit fields with dirty indicator, Cancel revert, Save commit, Add Definition flow, Add Attribute flow, Deprecate FK guard).
 
 ### 2026-05-13 — LocationTypeEditor modal: full vertical stack scaffolded (WIP)
 

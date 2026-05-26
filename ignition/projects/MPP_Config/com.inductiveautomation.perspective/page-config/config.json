@@ -20,6 +20,10 @@
       "title": "Failure Log",
       "viewPath": "BlueRidge/Views/Audit/FailureLog"
     },
+    "/items": {
+      "title": "Item Master",
+      "viewPath": "BlueRidge/Views/Parts/ItemMaster"
+    },
     "/plant": {
       "title": "Plant Hierarchy",
       "viewPath": "BlueRidge/Views/Location/PlantHierarchy"

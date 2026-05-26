@@ -1,228 +1,435 @@
-{
+﻿{
   "custom": {},
   "params": {
-    "index": 0,
-    "totalRows": 1,
-    "Id": null,
     "AttributeName": "",
     "DataType": "NVARCHAR",
-    "IsRequired": false,
     "DefaultValue": "",
+    "Description": "",
+    "Id": null,
+    "IsRequired": false,
     "Uom": "",
-    "Description": ""
+    "index": 0,
+    "totalRows": 1
   },
   "propConfig": {
-    "params.index":         { "paramDirection": "input" },
-    "params.totalRows":     { "paramDirection": "input" },
-    "params.Id":            { "paramDirection": "input" },
-    "params.AttributeName": { "paramDirection": "input" },
-    "params.DataType":      { "paramDirection": "input" },
-    "params.IsRequired":    { "paramDirection": "input" },
-    "params.DefaultValue":  { "paramDirection": "input" },
-    "params.Uom":           { "paramDirection": "input" },
-    "params.Description":   { "paramDirection": "input" }
+    "params.AttributeName": {
+      "paramDirection": "input"
+    },
+    "params.DataType": {
+      "paramDirection": "input"
+    },
+    "params.DefaultValue": {
+      "paramDirection": "input"
+    },
+    "params.Description": {
+      "paramDirection": "input"
+    },
+    "params.Id": {
+      "paramDirection": "input"
+    },
+    "params.IsRequired": {
+      "paramDirection": "input"
+    },
+    "params.Uom": {
+      "paramDirection": "input"
+    },
+    "params.index": {
+      "paramDirection": "input"
+    },
+    "params.totalRows": {
+      "paramDirection": "input"
+    }
   },
   "props": {
-    "defaultSize": { "width": 1000, "height": 56 }
+    "defaultSize": {
+      "height": 56,
+      "width": 1000
+    }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": { "name": "root" },
-    "props": {
-      "direction": "row",
-      "alignItems": "center",
-      "style": {
-        "padding": "8px 12px",
-        "borderBottom": "1px solid var(--mpp-border-subtle)",
-        "color": "var(--mpp-text-primary)",
-        "gap": "8px"
-      }
-    },
     "children": [
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "Arrows" },
-        "position": { "basis": "46px", "shrink": 0 },
-        "props": { "direction": "column", "alignItems": "center", "style": { "classes": "arrows", "gap": "1px" } },
         "children": [
           {
-            "type": "ia.display.icon",
-            "meta": { "name": "Up", "tooltip": { "text": "Move Up" } },
             "events": {
               "dom": {
                 "onClick": {
-                  "config": { "script": "\tif self.view.params.index > 0:\n\t\tsystem.perspective.sendMessage(\"attrDraftMove\", payload={\"index\": self.view.params.index, \"direction\": \"up\"}, scope=\"page\")" },
+                  "config": {
+                    "script": "\tif self.view.params.index \u003e 0:\n\t\tsystem.perspective.sendMessage(\"attrDraftMove\", payload\u003d{\"index\": self.view.params.index, \"direction\": \"up\"}, scope\u003d\"page\")"
+                  },
                   "scope": "G",
                   "type": "script"
                 }
               }
             },
+            "meta": {
+              "name": "Up",
+              "tooltip": {
+                "text": "Move Up"
+              }
+            },
             "propConfig": {
               "props.style.classes": {
                 "binding": {
-                  "type": "expr",
-                  "config": { "expression": "if({view.params.index} = 0, 'arrow-btn arrow-btn-disabled', 'arrow-btn')" }
+                  "config": {
+                    "expression": "if({view.params.index} \u003d 0, \u0027arrow-btn arrow-btn-disabled\u0027, \u0027arrow-btn\u0027)"
+                  },
+                  "type": "expr"
                 }
               }
             },
-            "props": { "path": "material/arrow_drop_up" }
+            "props": {
+              "path": "material/arrow_drop_up"
+            },
+            "type": "ia.display.icon"
           },
           {
-            "type": "ia.display.icon",
-            "meta": { "name": "Down", "tooltip": { "text": "Move Down" } },
             "events": {
               "dom": {
                 "onClick": {
-                  "config": { "script": "\tif self.view.params.index < self.view.params.totalRows - 1:\n\t\tsystem.perspective.sendMessage(\"attrDraftMove\", payload={\"index\": self.view.params.index, \"direction\": \"down\"}, scope=\"page\")" },
+                  "config": {
+                    "script": "\tif self.view.params.index \u003c self.view.params.totalRows - 1:\n\t\tsystem.perspective.sendMessage(\"attrDraftMove\", payload\u003d{\"index\": self.view.params.index, \"direction\": \"down\"}, scope\u003d\"page\")"
+                  },
                   "scope": "G",
                   "type": "script"
                 }
               }
             },
+            "meta": {
+              "name": "Down",
+              "tooltip": {
+                "text": "Move Down"
+              }
+            },
             "propConfig": {
               "props.style.classes": {
                 "binding": {
-                  "type": "expr",
-                  "config": { "expression": "if({view.params.index} = {view.params.totalRows} - 1, 'arrow-btn arrow-btn-disabled', 'arrow-btn')" }
+                  "config": {
+                    "expression": "if({view.params.index} \u003d {view.params.totalRows} - 1, \u0027arrow-btn arrow-btn-disabled\u0027, \u0027arrow-btn\u0027)"
+                  },
+                  "type": "expr"
                 }
               }
             },
-            "props": { "path": "material/arrow_drop_down" }
+            "props": {
+              "path": "material/arrow_drop_down"
+            },
+            "type": "ia.display.icon"
           }
-        ]
+        ],
+        "meta": {
+          "name": "Arrows"
+        },
+        "position": {
+          "basis": "32px",
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "direction": "column",
+          "style": {
+            "classes": "arrows",
+            "gap": "1px"
+          }
+        },
+        "type": "ia.container.flex"
       },
       {
-        "type": "ia.input.text-field",
-        "meta": { "name": "AttributeName" },
-        "position": { "basis": "0", "grow": 1 },
-        "propConfig": {
-          "props.text": { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.params.AttributeName" } } }
-        },
         "events": {
-          "component": {
-            "onActionPerformed": {
-              "config": { "script": "\tsystem.perspective.sendMessage(\"attrDraftUpdate\", payload={\"index\": self.view.params.index, \"field\": \"AttributeName\", \"value\": self.view.params.AttributeName}, scope=\"page\")" },
+          "dom": {
+            "onBlur": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"attrDraftUpdate\", payload\u003d{\"index\": self.view.params.index, \"field\": \"AttributeName\", \"value\": self.view.params.AttributeName}, scope\u003d\"page\")"
+              },
               "scope": "G",
               "type": "script"
             }
           }
         },
-        "props": { "style": { "classes": "search-input", "minWidth": "100px", "boxSizing": "border-box" } }
+        "meta": {
+          "name": "AttributeName"
+        },
+        "position": {
+          "basis": "64px",
+          "grow": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "bidirectional": true,
+                "path": "view.params.AttributeName"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "boxSizing": "border-box",
+            "classes": "search-input",
+            "minWidth": "100px"
+          }
+        },
+        "type": "ia.input.text-field"
       },
       {
-        "type": "ia.input.dropdown",
-        "meta": { "name": "DataType" },
-        "position": { "basis": "110px", "shrink": 0 },
-        "propConfig": {
-          "props.value": { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.params.DataType" } } }
-        },
         "events": {
           "component": {
             "onActionPerformed": {
-              "config": { "script": "\tsystem.perspective.sendMessage(\"attrDraftUpdate\", payload={\"index\": self.view.params.index, \"field\": \"DataType\", \"value\": self.view.params.DataType}, scope=\"page\")" },
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"attrDraftUpdate\", payload\u003d{\"index\": self.view.params.index, \"field\": \"DataType\", \"value\": self.view.params.DataType}, scope\u003d\"page\")"
+              },
               "scope": "G",
               "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "DataType"
+        },
+        "position": {
+          "basis": "64px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.value": {
+            "binding": {
+              "config": {
+                "bidirectional": true,
+                "path": "view.params.DataType"
+              },
+              "type": "property"
             }
           }
         },
         "props": {
           "options": [
-            { "label": "NVARCHAR", "value": "NVARCHAR" },
-            { "label": "INT",      "value": "INT" },
-            { "label": "DECIMAL",  "value": "DECIMAL" },
-            { "label": "BIT",      "value": "BIT" },
-            { "label": "DATE",     "value": "DATE" }
+            {
+              "label": "NVARCHAR",
+              "value": "NVARCHAR"
+            },
+            {
+              "label": "INT",
+              "value": "INT"
+            },
+            {
+              "label": "DECIMAL",
+              "value": "DECIMAL"
+            },
+            {
+              "label": "BIT",
+              "value": "BIT"
+            },
+            {
+              "label": "DATE",
+              "value": "DATE"
+            }
           ],
-          "style": { "classes": "search-input", "boxSizing": "border-box" }
-        }
+          "style": {
+            "boxSizing": "border-box",
+            "classes": "search-input",
+            "min-width": "124px"
+          }
+        },
+        "type": "ia.input.dropdown"
       },
       {
-        "type": "ia.input.checkbox",
-        "meta": { "name": "IsRequired" },
-        "position": { "basis": "60px", "shrink": 0 },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"attrDraftUpdate\", payload\u003d{\"index\": self.view.params.index, \"field\": \"IsRequired\", \"value\": self.view.params.IsRequired}, scope\u003d\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "IsRequired"
+        },
+        "position": {
+          "basis": "32px",
+          "shrink": 0
+        },
         "propConfig": {
-          "props.selected": { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.params.IsRequired" } } }
+          "props.selected": {
+            "binding": {
+              "config": {
+                "bidirectional": true,
+                "path": "view.params.IsRequired"
+              },
+              "type": "property"
+            }
+          }
         },
+        "props": {
+          "text": ""
+        },
+        "type": "ia.input.checkbox"
+      },
+      {
         "events": {
-          "component": {
-            "onActionPerformed": {
-              "config": { "script": "\tsystem.perspective.sendMessage(\"attrDraftUpdate\", payload={\"index\": self.view.params.index, \"field\": \"IsRequired\", \"value\": self.view.params.IsRequired}, scope=\"page\")" },
+          "dom": {
+            "onBlur": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"attrDraftUpdate\", payload\u003d{\"index\": self.view.params.index, \"field\": \"DefaultValue\", \"value\": self.view.params.DefaultValue}, scope\u003d\"page\")"
+              },
               "scope": "G",
               "type": "script"
             }
           }
         },
-        "props": { "text": "" }
-      },
-      {
-        "type": "ia.input.text-field",
-        "meta": { "name": "DefaultValue" },
-        "position": { "basis": "90px", "shrink": 0 },
+        "meta": {
+          "name": "DefaultValue"
+        },
+        "position": {
+          "basis": "80px",
+          "shrink": 0
+        },
         "propConfig": {
-          "props.text": { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.params.DefaultValue" } } }
+          "props.text": {
+            "binding": {
+              "config": {
+                "bidirectional": true,
+                "path": "view.params.DefaultValue"
+              },
+              "type": "property"
+            }
+          }
         },
+        "props": {
+          "placeholder": "—",
+          "style": {
+            "boxSizing": "border-box",
+            "classes": "search-input"
+          }
+        },
+        "type": "ia.input.text-field"
+      },
+      {
         "events": {
-          "component": {
-            "onActionPerformed": {
-              "config": { "script": "\tsystem.perspective.sendMessage(\"attrDraftUpdate\", payload={\"index\": self.view.params.index, \"field\": \"DefaultValue\", \"value\": self.view.params.DefaultValue}, scope=\"page\")" },
+          "dom": {
+            "onBlur": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"attrDraftUpdate\", payload\u003d{\"index\": self.view.params.index, \"field\": \"Uom\", \"value\": self.view.params.Uom}, scope\u003d\"page\")"
+              },
               "scope": "G",
               "type": "script"
             }
           }
         },
-        "props": { "style": { "classes": "search-input", "boxSizing": "border-box" }, "placeholder": "—" }
-      },
-      {
-        "type": "ia.input.text-field",
-        "meta": { "name": "Uom" },
-        "position": { "basis": "70px", "shrink": 0 },
+        "meta": {
+          "name": "Uom"
+        },
+        "position": {
+          "basis": "32px",
+          "shrink": 0
+        },
         "propConfig": {
-          "props.text": { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.params.Uom" } } }
+          "props.text": {
+            "binding": {
+              "config": {
+                "bidirectional": true,
+                "path": "view.params.Uom"
+              },
+              "type": "property"
+            }
+          }
         },
+        "props": {
+          "placeholder": "—",
+          "style": {
+            "boxSizing": "border-box",
+            "classes": "search-input"
+          }
+        },
+        "type": "ia.input.text-field"
+      },
+      {
         "events": {
-          "component": {
-            "onActionPerformed": {
-              "config": { "script": "\tsystem.perspective.sendMessage(\"attrDraftUpdate\", payload={\"index\": self.view.params.index, \"field\": \"Uom\", \"value\": self.view.params.Uom}, scope=\"page\")" },
+          "dom": {
+            "onBlur": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"attrDraftUpdate\", payload\u003d{\"index\": self.view.params.index, \"field\": \"Description\", \"value\": self.view.params.Description}, scope\u003d\"page\")"
+              },
               "scope": "G",
               "type": "script"
             }
           }
         },
-        "props": { "style": { "classes": "search-input", "boxSizing": "border-box" }, "placeholder": "—" }
-      },
-      {
-        "type": "ia.input.text-field",
-        "meta": { "name": "Description" },
-        "position": { "basis": "0", "grow": 1.5 },
+        "meta": {
+          "name": "Description"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 2.5
+        },
         "propConfig": {
-          "props.text": { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.params.Description" } } }
-        },
-        "events": {
-          "component": {
-            "onActionPerformed": {
-              "config": { "script": "\tsystem.perspective.sendMessage(\"attrDraftUpdate\", payload={\"index\": self.view.params.index, \"field\": \"Description\", \"value\": self.view.params.Description}, scope=\"page\")" },
-              "scope": "G",
-              "type": "script"
+          "props.text": {
+            "binding": {
+              "config": {
+                "bidirectional": true,
+                "path": "view.params.Description"
+              },
+              "type": "property"
             }
           }
         },
-        "props": { "style": { "classes": "search-input", "minWidth": "140px", "boxSizing": "border-box" }, "placeholder": "Optional" }
+        "props": {
+          "placeholder": "Optional",
+          "style": {
+            "boxSizing": "border-box",
+            "classes": "search-input",
+            "minWidth": "140px"
+          }
+        },
+        "type": "ia.input.text-field"
       },
       {
-        "type": "ia.input.button",
-        "meta": { "name": "Remove", "tooltip": { "text": "Remove this attribute" } },
-        "position": { "basis": "70px", "shrink": 0 },
         "events": {
           "component": {
             "onActionPerformed": {
-              "config": { "script": "\tsystem.perspective.sendMessage(\"attrDraftRemove\", payload={\"index\": self.view.params.index}, scope=\"page\")" },
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"attrDraftRemove\", payload\u003d{\"index\": self.view.params.index}, scope\u003d\"page\")"
+              },
               "scope": "G",
               "type": "script"
             }
           }
         },
-        "props": { "text": "Remove", "style": { "classes": "btn btn-danger btn-sm" } }
+        "meta": {
+          "name": "Remove",
+          "tooltip": {
+            "text": "Remove this attribute"
+          }
+        },
+        "position": {
+          "basis": "70px",
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "classes": "btn btn-danger btn-sm"
+          },
+          "text": "Remove"
+        },
+        "type": "ia.input.button"
       }
-    ]
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "color": "var(--mpp-text-primary)",
+        "gap": "8px",
+        "padding": "8px 12px"
+      }
+    },
+    "type": "ia.container.flex"
   }
 }

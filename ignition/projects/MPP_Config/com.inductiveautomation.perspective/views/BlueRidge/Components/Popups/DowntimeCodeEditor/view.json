@@ -1,0 +1,462 @@
+{
+  "custom": {
+    "selected":    { "meta": null },
+    "editDraft":   { "meta": null },
+    "areaOptions": [],
+    "typeOptions": []
+  },
+  "params": {
+    "mode":   "create",
+    "editId": null
+  },
+  "propConfig": {
+    "params.mode":   { "paramDirection": "input", "persistent": true },
+    "params.editId": {
+      "paramDirection": "input",
+      "persistent": true,
+      "onChange": {
+        "enabled": true,
+        "script": "\tnewId = currentValue.value\n\tif newId is None:\n\t\tself.view.custom.selected = {\"meta\": BlueRidge.Oee.DowntimeReasonCode.emptyMeta()}\n\telse:\n\t\trow = BlueRidge.Oee.DowntimeReasonCode.getOne(newId)\n\t\tif row:\n\t\t\tmeta = {\n\t\t\t\t\"id\":                   row.get(\"Id\"),\n\t\t\t\t\"code\":                 row.get(\"Code\"),\n\t\t\t\t\"description\":          row.get(\"Description\"),\n\t\t\t\t\"areaLocationId\":       row.get(\"AreaLocationId\"),\n\t\t\t\t\"downtimeReasonTypeId\": row.get(\"DowntimeReasonTypeId\"),\n\t\t\t\t\"isExcused\":            bool(row.get(\"IsExcused\"))\n\t\t\t}\n\t\t\tself.view.custom.selected = {\"meta\": meta}\n\t\telse:\n\t\t\tself.view.custom.selected = {\"meta\": BlueRidge.Oee.DowntimeReasonCode.emptyMeta()}\n\tself.view.custom.editDraft = {\"meta\": dict(self.view.custom.selected[\"meta\"])}"
+      }
+    },
+    "custom.areaOptions": {
+      "binding": {
+        "type": "expr",
+        "config": { "expression": "runScript(\"BlueRidge.Location.Location.getAllAreas\", 0)" }
+      }
+    },
+    "custom.typeOptions": {
+      "binding": {
+        "type": "expr",
+        "config": { "expression": "runScript(\"BlueRidge.Oee.DowntimeReasonType.getForDropdown\", 0)" }
+      }
+    }
+  },
+  "props": {
+    "defaultSize": { "width": 560, "height": 520 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "column",
+      "style": {
+        "background": "var(--mpp-surface-canvas)",
+        "borderRadius": "var(--mpp-radius-md, 8px)",
+        "height": "100%",
+        "overflow": "hidden",
+        "width": "100%"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "HeaderBar" },
+        "position": { "basis": "50px", "shrink": 0 },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "gap": "12px",
+            "padding": "0 16px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "TitleLabel" },
+            "props": {
+              "style": {
+                "classes": "modal-title",
+                "fontSize": "14px",
+                "fontWeight": "600"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "if({view.params.mode} = \"create\", \"Add Downtime Code\", \"Edit Downtime Code\")" }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "Spacer" },
+            "position": { "grow": 1 }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "DirtyIndicator" },
+            "props": {
+              "style": {
+                "color": "var(--mpp-accent)",
+                "fontSize": "11px",
+                "fontStyle": "italic"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "if({view.custom.editDraft} != {view.custom.selected}, \"● Unsaved changes\", \"\")" }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.icon",
+            "meta": {
+              "name": "CloseIcon",
+              "tooltip": { "text": "Close" }
+            },
+            "props": {
+              "path": "mpp/cancel",
+              "style": {
+                "classes": "modal-close",
+                "cursor": "pointer",
+                "height": "18px",
+                "width": "18px"
+              }
+            },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tif self.view.custom.editDraft == self.view.custom.selected:\n\t\tsystem.perspective.closePopup(id=\"mpp-downtime-code-editor\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid=\"mpp-confirm-unsaved\",\n\t\t\tview=\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal=True,\n\t\t\tshowCloseIcon=False,\n\t\t\tparams={\n\t\t\t\t\"title\": \"Unsaved Changes\",\n\t\t\t\t\"message\": \"You have unsaved changes to this downtime code. Save before closing?\"\n\t\t\t}\n\t\t)"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "FormBody" },
+        "position": { "grow": 1 },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "12px",
+            "overflowY": "auto",
+            "padding": "16px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "CodeField" },
+            "props": {
+              "direction": "column",
+              "style": { "gap": "4px" }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "Label" },
+                "props": {
+                  "style": { "classes": "field-label" },
+                  "text": "Code"
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": { "name": "Input" },
+                "props": {
+                  "placeholder": "e.g. DC-0050",
+                  "style": {
+                    "boxSizing": "border-box",
+                    "classes": "search-input",
+                    "width": "100%"
+                  }
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": { "bidirectional": true, "path": "view.custom.editDraft.meta.code" }
+                    }
+                  },
+                  "props.enabled": {
+                    "binding": {
+                      "type": "expr",
+                      "config": { "expression": "{view.params.mode} = \"create\"" }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "DescriptionField" },
+            "props": {
+              "direction": "column",
+              "style": { "gap": "4px" }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "Label" },
+                "props": {
+                  "style": { "classes": "field-label" },
+                  "text": "Description"
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": { "name": "Input" },
+                "props": {
+                  "placeholder": "Brief description of this downtime reason",
+                  "style": {
+                    "boxSizing": "border-box",
+                    "classes": "search-input",
+                    "width": "100%"
+                  }
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": { "bidirectional": true, "path": "view.custom.editDraft.meta.description" }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "AreaField" },
+            "props": {
+              "direction": "column",
+              "style": { "gap": "4px" }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "Label" },
+                "props": {
+                  "style": { "classes": "field-label" },
+                  "text": "Area (optional)"
+                }
+              },
+              {
+                "type": "ia.input.dropdown",
+                "meta": { "name": "Input" },
+                "props": {
+                  "style": {
+                    "boxSizing": "border-box",
+                    "classes": "search-input",
+                    "width": "100%"
+                  }
+                },
+                "propConfig": {
+                  "props.options": {
+                    "binding": {
+                      "type": "property",
+                      "config": { "path": "view.custom.areaOptions" }
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "type": "property",
+                      "config": { "bidirectional": true, "path": "view.custom.editDraft.meta.areaLocationId" }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "ReasonTypeField" },
+            "props": {
+              "direction": "column",
+              "style": { "gap": "4px" }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "Label" },
+                "props": {
+                  "style": { "classes": "field-label" },
+                  "text": "Reason Type"
+                }
+              },
+              {
+                "type": "ia.input.dropdown",
+                "meta": { "name": "Input" },
+                "props": {
+                  "style": {
+                    "boxSizing": "border-box",
+                    "classes": "search-input",
+                    "width": "100%"
+                  }
+                },
+                "propConfig": {
+                  "props.options": {
+                    "binding": {
+                      "type": "property",
+                      "config": { "path": "view.custom.typeOptions" }
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "type": "property",
+                      "config": { "bidirectional": true, "path": "view.custom.editDraft.meta.downtimeReasonTypeId" }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "ExcusedField" },
+            "props": {
+              "alignItems": "center",
+              "style": { "gap": "8px", "paddingTop": "4px" }
+            },
+            "children": [
+              {
+                "type": "ia.input.checkbox",
+                "meta": { "name": "Input" },
+                "propConfig": {
+                  "props.selected": {
+                    "binding": {
+                      "type": "property",
+                      "config": { "bidirectional": true, "path": "view.custom.editDraft.meta.isExcused" }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "Label" },
+                "props": {
+                  "style": { "classes": "field-label" },
+                  "text": "Excused (excluded from OEE availability)"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "FooterBar" },
+        "position": { "basis": "50px", "shrink": 0 },
+        "props": {
+          "alignItems": "center",
+          "justify": "space-between",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderTop": "1px solid var(--mpp-border-subtle)",
+            "gap": "8px",
+            "padding": "12px 16px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "DeprecateButton" },
+            "position": { "shrink": 0 },
+            "props": {
+              "style": { "classes": "btn btn-danger btn-sm" },
+              "text": "Deprecate"
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "{view.params.mode} = \"update\"" }
+                }
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tresult = BlueRidge.Oee.DowntimeReasonCode.deprecate(self.view.params.editId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Downtime code deprecated\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"downtimeCodesRefresh\", scope=\"page\")\n\t\tsystem.perspective.closePopup(id=\"mpp-downtime-code-editor\")"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "RightCluster" },
+            "props": {
+              "alignItems": "center",
+              "style": { "gap": "8px" }
+            },
+            "children": [
+              {
+                "type": "ia.input.button",
+                "meta": { "name": "CancelButton" },
+                "position": { "shrink": 0 },
+                "props": {
+                  "style": { "classes": "btn btn-sm" },
+                  "text": "Cancel"
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "script",
+                      "scope": "G",
+                      "config": {
+                        "script": "\tif self.view.custom.editDraft == self.view.custom.selected:\n\t\tsystem.perspective.closePopup(id=\"mpp-downtime-code-editor\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid=\"mpp-confirm-unsaved\",\n\t\t\tview=\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal=True,\n\t\t\tshowCloseIcon=False,\n\t\t\tparams={\n\t\t\t\t\"title\": \"Unsaved Changes\",\n\t\t\t\t\"message\": \"You have unsaved changes to this downtime code. Save before closing?\"\n\t\t\t}\n\t\t)"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.input.button",
+                "meta": { "name": "SaveButton" },
+                "position": { "shrink": 0 },
+                "props": {
+                  "style": { "classes": "btn btn-primary btn-sm" },
+                  "text": "Save"
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "script",
+                      "scope": "G",
+                      "config": {
+                        "script": "\tmode = self.view.params.mode\n\tdraft = self.view.custom.editDraft.get(\"meta\", {}) if self.view.custom.editDraft else {}\n\tif mode == \"create\":\n\t\tresult = BlueRidge.Oee.DowntimeReasonCode.add(draft)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"Downtime code created\")\n\telse:\n\t\tresult = BlueRidge.Oee.DowntimeReasonCode.update(draft)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"Downtime code updated\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"downtimeCodesRefresh\", scope=\"page\")\n\t\tsystem.perspective.closePopup(id=\"mpp-downtime-code-editor\")"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "confirmUnsavedResult",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\taction = payload.get(\"action\") if payload else None\n\tif action == \"save\":\n\t\tmode = self.view.params.mode\n\t\tdraft = self.view.custom.editDraft.get(\"meta\", {}) if self.view.custom.editDraft else {}\n\t\tif mode == \"create\":\n\t\t\tresult = BlueRidge.Oee.DowntimeReasonCode.add(draft)\n\t\telse:\n\t\t\tresult = BlueRidge.Oee.DowntimeReasonCode.update(draft)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"Downtime code saved\")\n\t\tif result and result.get(\"Status\"):\n\t\t\tsystem.perspective.sendMessage(\"downtimeCodesRefresh\", scope=\"page\")\n\t\t\tsystem.perspective.closePopup(id=\"mpp-downtime-code-editor\")\n\telif action == \"discard\":\n\t\tsystem.perspective.closePopup(id=\"mpp-downtime-code-editor\")"
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

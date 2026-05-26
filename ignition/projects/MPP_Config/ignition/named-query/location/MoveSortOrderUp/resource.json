@@ -18,7 +18,7 @@
     "cacheEnabled": false,
     "database": "MPP",
     "fallbackEnabled": false,
-    "lastModificationSignature": "c3b6c240164192ac218fabe14d40ecd4272cee478a77e3198d0b1c74b05f1b23",
+    "lastModificationSignature": "",
     "permissions": [
       {
         "zone": "",
@@ -26,19 +26,19 @@
       }
     ],
     "lastModification": {
-      "actor": "admin",
-      "timestamp": "2026-05-12T18:09:30Z"
+      "actor": "jacques",
+      "timestamp": "2026-05-14T12:00:00Z"
     },
     "parameters": [
       {
         "type": "Parameter",
-        "identifier": "LocationID",
-        "sqlType": 2
+        "identifier": "locationId",
+        "sqlType": 3
       },
       {
         "type": "Parameter",
-        "identifier": "UserID",
-        "sqlType": 2
+        "identifier": "userId",
+        "sqlType": 3
       }
     ]
   }

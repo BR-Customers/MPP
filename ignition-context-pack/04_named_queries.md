@@ -79,26 +79,34 @@ EXEC items.UpdateItem
 | `attributes.cacheEnabled` + `cacheAmount` + `cacheUnit` | Gateway-side memoization for slow-changing read NQs (e.g., reference / lookup tables). Off by default. |
 | `attributes.parameters[]` | Each `{type, identifier, sqlType}`. Read NQs typically have no `parameters[]`. |
 
-## sqlType integer codes (java.sql.Types)
+## sqlType integer codes — Designer's own enum
 
-Common ones:
+**Designer's `sqlType` is its own internal type enum, NOT `java.sql.Types`.** This is non-obvious and trips up anyone copying values from the JDBC reference.
 
-| sqlType | Type |
-|---|---|
-| `-5` | `BIGINT` |
-| `-9` | `NVARCHAR` |
-| `4` | `INTEGER` |
-| `6` | `FLOAT` |
-| `7` | `REAL` (or used for `NVARCHAR` / `uniqueidentifier` in older code) |
-| `8` | `DOUBLE` (or `DATETIME` in older code) |
-| `12` | `VARCHAR` |
-| `16` | `BOOLEAN` (or `BIT`) |
-| `91` | `DATE` |
-| `93` | `TIMESTAMP` |
+Empirically verified by saving an NQ in Designer 8.3 with one parameter of every available type and reading the resulting `resource.json`:
 
-Full reference: `java.sql.Types`. Older NQs frequently use sqlType `7` for any string-shaped value (varchar, nvarchar, uuid) — fine for SQL Server which is loose about column-vs-parameter typing.
+| sqlType | Designer name | DB type |
+|---|---|---|
+| `0` | Int1 | `TINYINT` |
+| `1` | Int2 | `SMALLINT` |
+| `2` | Int4 | `INTEGER` (32-bit) |
+| `3` | Int8 | `BIGINT` (64-bit) |
+| `4` | Float4 | `REAL` |
+| `5` | Float8 | `FLOAT` / `DOUBLE` |
+| `6` | Boolean | `BIT` / `BOOLEAN` |
+| `7` | String | `NVARCHAR` / `VARCHAR` |
+| `8` | DateTime | `DATETIME` |
+| `20` | ByteArray | `VARBINARY` |
 
-When in doubt, set the parameter in the Designer NQ editor and copy the resulting integer into source.
+**For SQL Server with our `BIGINT IDENTITY` PK / FK convention, `sqlType: 3` is the right code for every Id parameter.** For text columns (`NVARCHAR(...)`), `sqlType: 7`.
+
+**Why this trips people up:** `java.sql.Types` defines `2` as `NUMERIC` and `-5` as `BIGINT`. Several existing online examples (including some pack drafts) carry the JDBC `-5 = BIGINT` claim. It is irrelevant — Designer reads / writes its own enum and ignores the JDBC codes entirely. Hand-authoring `-5` or `-9` produces a value Designer does not recognize, which works only because JDBC's runtime type coercion is forgiving; on next Designer save the value is rewritten to whatever Designer's enum says for the param's true type.
+
+**Practical rule:** standardize on Designer's enum. When in doubt, set the parameter in the Designer NQ editor with the type matching the SQL column / SP parameter, save, and copy the resulting integer into any hand-authored sibling files.
+
+### NQ resource.json schema — version 2
+
+Designer 8.3.5 emits `version: 2` on NQ resources and **NPEs when opening a `version: 1` NQ resource**. Any hand-authored NQ resource files must use the v2 shape; field ordering inside `attributes` matters (Designer rewrites to its canonical order on save). Clone the shape from any Designer-saved NQ before hand-authoring a new one.
 
 ## Calling pattern from script-python
 
@@ -126,23 +134,37 @@ Why not inline the `dict(zip(...))` here: a project that pulls many lists ends u
 
 ## Mutation result pattern — single-row status SELECT
 
-**Default pattern.** Every mutation proc (Add / Update / Deprecate) declares local `@Status`, `@Message`, `@NewId` variables and ends each exit path with a single-row SELECT:
+**Default pattern.** Every mutation proc (Add / Update / Deprecate / SaveAll) declares local `@Status`, `@Message`, `@NewId` variables and ends each exit path with a single-row SELECT:
 
 ```sql
+DECLARE @Status  BIT           = 0;                  -- failure default
+DECLARE @Message NVARCHAR(500) = N'Unknown error';
+DECLARE @NewId   BIGINT        = NULL;               -- Create/Add procs only
+
+-- Validation / business-rule failure path:
+SET @Message = N'Duplicate part';
+SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+RETURN;
+
+-- Success path:
+SET @Status  = 1;
+SET @Message = N'Part created';
+SET @NewId   = SCOPE_IDENTITY();
 SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
 ```
 
-(`@NewId` is included only on Insert procs that allocate identity; Update / Deprecate procs SELECT `@Status` + `@Message` only.)
+`@Status` is **`BIT`** — `1` for success, `0` for business-rule failure. `@NewId` is included only on Insert procs that allocate identity; Update / Deprecate procs SELECT `@Status` + `@Message` only.
 
 **Caller consumption** — through `Common.Db.execMutation`:
 
 ```python
 result = <integrator>.Common.Db.execMutation("items/addItem", params)
-# result is a plain dict:
-#   {"Status": "OK",    "Message": "Item created",   "NewId": 4172}
-#   {"Status": "ERROR", "Message": "Duplicate part", "NewId": None}
+# result is a plain dict (BIT comes back as 1/0 — or as bool depending on the
+# JDBC driver; the truthy check below works for either):
+#   {"Status": 1, "Message": "Item created",   "NewId": 4172}
+#   {"Status": 0, "Message": "Duplicate part", "NewId": None}
 
-if result["Status"] == "OK":
+if result.get("Status"):
     # success path — NewId is available if the proc returned it
     ...
 else:
@@ -150,12 +172,16 @@ else:
     ...
 ```
 
+Use a **truthy check** rather than `== 1` literal equality — JDBC drivers map BIT to Boolean / Integer / Long depending on version, so `result.get("Status")` is robust where `result["Status"] == 1` may not be.
+
 This pattern separates expected failure from exceptional failure cleanly:
 
-- **Validation / business-rule failure** → proc sets `@Status='ERROR'`, populates `@Message`, falls through to the final SELECT, returns normally. Caller surfaces `Message` to the UI via `Common.Ui.notifyResult`. Not an exception.
+- **Validation / business-rule failure** → proc sets `@Status = 0` (the declared default), populates `@Message`, falls through to the final SELECT, returns normally. Caller surfaces `Message` to the UI via `Common.Ui.notifyResult`. Not an exception.
 - **System error / programming bug** → proc `RAISERROR` propagates as a `system.db` exception. Caller may wrap in try/except for logging, but typically doesn't need to.
 
 The plain-dict result shape (keys match the proc's SELECT aliases) means adding a new column to the proc — e.g., `@AffectedRows` for batch operations — automatically appears in the caller's result without changing any helper code.
+
+**Project variation:** the pack reflects what this project's stored procs return verbatim — BIT 1/0 with NVARCHAR(500) Message. Other projects using this pack MAY use NVARCHAR `"OK"`/`"ERROR"` for `@Status` if their procs already do; the helper layer (`execMutation`) is shape-agnostic and the truthy/comparison call site adapts. **The stored procs are the rule of law.** Whatever they emit, the helpers and callers match — never the other way around.
 
 ### Why not exceptions for all failures
 
@@ -196,7 +222,7 @@ Reach for `SaveAll` only when the children genuinely cannot live without the par
 
 `SaveAll` takes:
 
-- **Parent identity:** `@Id BIGINT = NULL` (NULL = create, non-NULL = update). On update, immutable parent keys (e.g., `Code`, `<ParentType>Id`) must match the existing row; the proc rejects mismatches with `Status='ERROR'`.
+- **Parent identity:** `@Id BIGINT = NULL` (NULL = create, non-NULL = update). On update, immutable parent keys (e.g., `Code`, `<ParentType>Id`) must match the existing row; the proc rejects mismatches with `Status=0`.
 - **Parent fields:** the same fields a separate Update proc would take.
 - **`@AppUserId BIGINT`** for audit.
 - **`@<Children>Json NVARCHAR(MAX) = N'[]'`** — desired-state JSON array of child rows. Each element has `{Id: long|null, ...child fields}`. Children with no `Id` are new; matching `Id` is an update; active children whose `Id` is missing from the incoming array are deprecated. `SortOrder` is derived from the array index (1-based).

@@ -1,0 +1,1 @@
+EXEC Audit.LogEntityType_List

@@ -3,43 +3,37 @@
 #
 # Author:           Blue Ridge Automation
 # Created:          2026-05-13
-# Version:          1.0
+# Version:          1.1
 #
 # Description:
 #   Read-side entity-script for Location.LocationAttributeDefinition.
 #   Returns the attribute schema (definition rows) for a given
 #   LocationTypeDefinition.
 #
-#   Write-side CRUD is NOT here — it lives on the bundled
-#   Location.LocationTypeDefinition.handleSaveAll path, which reconciles
-#   the parent definition and all its attribute-definition children in
-#   one atomic transaction. Stand-alone Create/Update/Deprecate/MoveUp/
+#   Write-side CRUD is NOT here -- it lives on the bundled
+#   Location.LocationTypeDefinition.saveAll path, which reconciles the
+#   parent definition and all its attribute-definition children in one
+#   atomic transaction. Stand-alone Create/Update/Deprecate/MoveUp/
 #   MoveDown procs exist in SQL and have their own tests, but this UI's
-#   flow doesn't call them.
+#   flow does not call them.
 #
 # Public surface:
-#   listByDefinition(definitionId) -> list[dict]
+#   getAll(definitionId) -> list[dict]
 #
 # Layer:
 #   View -> BlueRidge.Location.LocationAttributeDefinition (this module)
-#        -> system.db.execQuery (Ignition NQ engine)
+#        -> BlueRidge.Common.Db.execList
 #
 # Change Log:
-#   2026-05-13 - 1.0 - Initial version
+#   2026-05-13 - 1.0 - Initial version (listByDefinition + system.db direct)
+#   2026-05-14 - 1.1 - Rename listByDefinition -> getAll; route through
+#                      Common.Db.execList; drop local _rowsToDicts;
+#                      replace per-module logger with Common.Util.log;
+#                      NQ params camelCased.
 # =============================================================================
 
-logger = system.util.getLogger("BlueRidge.Location.LocationAttributeDefinition")
 
-
-def _rowsToDicts(ds):
-    """Ignition Dataset -> list of {columnName: value} dicts."""
-    if ds is None or ds.getRowCount() == 0:
-        return []
-    headers = list(ds.getColumnNames())
-    return [dict(zip(headers, row)) for row in ds]
-
-
-def listByDefinition(definitionId):
+def getAll(definitionId):
     """
     Returns all active LocationAttributeDefinition rows for a given
     LocationTypeDefinition, ordered by SortOrder ASC. Shape matches the
@@ -56,14 +50,16 @@ def listByDefinition(definitionId):
         list[dict]: empty when not found, no children, null/zero input,
                     or on failure.
     """
+    BlueRidge.Common.Util.log("definitionId=%s" % definitionId)
     if definitionId is None or definitionId == 0:
         return []
     try:
-        ds = system.db.execQuery("location/LocationAttributeDefinition_ListByDefinition",
-                                 {"LocationTypeDefinitionId": definitionId})
-        return _rowsToDicts(ds)
+        return BlueRidge.Common.Db.execList(
+            "location/LocationAttributeDefinition_ListByDefinition",
+            {"locationTypeDefinitionId": definitionId},
+        )
     except Exception as e:
-        logger.errorf("listByDefinition(%s) failed: %s", definitionId, str(e))
+        BlueRidge.Common.Util.log("getAll(%s) failed: %s" % (definitionId, str(e)))
         BlueRidge.Common.Notify.toast(
             "Could not load attributes",
             "Definition " + str(definitionId) + ": " + str(e),

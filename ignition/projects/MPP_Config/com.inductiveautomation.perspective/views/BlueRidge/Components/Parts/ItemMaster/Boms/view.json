@@ -1,0 +1,220 @@
+{
+  "custom": {
+    "data": {
+      "publishedVersion": 0,
+      "effectiveFrom": "",
+      "lines": []
+    }
+  },
+  "params": {
+    "value": 0
+  },
+  "propConfig": {
+    "custom.data": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Bom.getActiveForItem\", 0, {view.params.value})"
+        },
+        "type": "expr"
+      }
+    },
+    "params.value": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 280
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "DropdownVersion"
+            },
+            "propConfig": {
+              "props.options": {
+                "binding": {
+                  "config": {
+                    "expression": "[{'label': 'v' + toStr({view.custom.data.publishedVersion}) + ' \u2014 Effective ' + {view.custom.data.effectiveFrom} + ' (Published)', 'value': {view.custom.data.publishedVersion}}]"
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.value": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.data.publishedVersion"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "select",
+                "minWidth": "320px"
+              }
+            },
+            "type": "ia.input.dropdown"
+          },
+          {
+            "meta": {
+              "name": "BadgePublished"
+            },
+            "props": {
+              "style": {
+                "classes": "badge badge-published"
+              },
+              "text": "Published"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "HeaderSpacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tBlueRidge.Common.Notify.toast('Not wired yet', 'BOMs versioning workflow lands in Phase 6.', 'info', 5)"
+                  },
+                  "scope": "C",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "BtnNewVersion"
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-sm"
+              },
+              "text": "New Version"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "HeaderRow"
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "gap": "8px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "BomLinesTable"
+            },
+            "propConfig": {
+              "props.data": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.data.lines"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "columns": [
+                {
+                  "editable": false,
+                  "field": "seq",
+                  "header": "#",
+                  "width": 50
+                },
+                {
+                  "editable": false,
+                  "field": "componentName",
+                  "header": "Component"
+                },
+                {
+                  "editable": false,
+                  "field": "partNumber",
+                  "header": "Part Number"
+                },
+                {
+                  "editable": false,
+                  "field": "qtyPer",
+                  "header": "Qty",
+                  "width": 80
+                },
+                {
+                  "editable": false,
+                  "field": "uom",
+                  "header": "UOM",
+                  "width": 80
+                }
+              ],
+              "rows": {
+                "height": 32
+              },
+              "style": {
+                "classes": "data-table"
+              }
+            },
+            "type": "ia.display.table"
+          },
+          {
+            "meta": {
+              "name": "ReadOnlyCaption"
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-muted)",
+                "fontSize": "11px",
+                "fontStyle": "italic",
+                "padding": "8px 12px"
+              },
+              "text": "Published \u2014 read-only. Click New Version to create a draft copy for editing."
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": {
+          "name": "PublishedPanel"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "detail-panel",
+            "overflow": "hidden"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "gap": "10px",
+        "height": "100%"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

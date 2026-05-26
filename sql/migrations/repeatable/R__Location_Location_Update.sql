@@ -7,8 +7,24 @@
 -- Description:
 --   Updates mutable fields on an existing Location: Name, Code, Description.
 --   Does NOT change SortOrder, ParentLocationId, or LocationTypeDefinitionId
---   (those are immutable after creation). Captures old/new values as JSON
---   for audit diff. Validates Code uniqueness if changed.
+--   (those are immutable after creation, per FDS-02-002a).
+--
+--   ParentLocationId immutability is a track-and-trace requirement, not a
+--   convenience. Every event-table row (LotMovement, ConsumptionEvent,
+--   RejectEvent, DowntimeEvent, HoldEvent, OperationLog) records the
+--   LocationId active at event time and resolves the tier hierarchy
+--   (Cell -> WorkCenter -> Area) by joining to the live Location row.
+--   Reparenting would silently rewrite every historical Honda-genealogy
+--   and area-aggregation report that walks that hierarchy. The standard
+--   workaround for physical equipment relocations is Deprecate + Create
+--   New under the new parent -- historical events stay bound to the old
+--   Id and resolve correctly; live work uses the new Id. See FDS-02-002a.
+--
+--   SortOrder is mutated by Location.Location_MoveUp / _MoveDown only,
+--   and only within the same ParentLocationId.
+--
+--   Captures old/new values as JSON for audit diff. Validates Code
+--   uniqueness if changed.
 --
 -- Parameters (input):
 --   @Id BIGINT                        - PK of the Location to update. Required.

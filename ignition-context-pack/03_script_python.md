@@ -104,7 +104,7 @@ def getEntitiesForDropdown():
 2. **Docstrings carry purpose / args / returns.** Use the same shape across modules so generated docs are uniform.
 3. **Callers pass a dict, never a JSON string.** Older patterns dual-mode the first arg with `if isinstance(data, str): data = system.util.jsonDecode(data)`. Drop that: the type guards exist because the calling convention is ambiguous. If a view truly has a JSON string (rare), decode at the boundary, not in every entity function.
 4. **AppUserId from the session, not the caller.** Mutations call `<integrator>.Common.Util._currentAppUserId()` and pass `@AppUserId` to the proc. The proc stamps audit columns (`CreatedAt`, `LastEditedAt`, etc.) — script-side stamping is wrong because the proc's `getdate()` is the canonical write time and the client clock isn't trustworthy.
-5. **Optimistic locking via `RowVersion`.** Update and Deprecate procs accept `@RowVersion` and return `Status='ERROR'` with a "modified by another user" message on mismatch. Views load `RowVersion` with the row, keep it untouched during the edit session, and pass it through on save.
+5. **Optimistic locking via `RowVersion`.** Update and Deprecate procs accept `@RowVersion` and return `Status=0` with a "modified by another user" message on mismatch. Views load `RowVersion` with the row, keep it untouched during the edit session, and pass it through on save.
 6. **Deprecate, not hard-delete.** The proc soft-deletes by setting `DeprecatedAt` (or similar). Hard `DELETE` only when the row is truly transient (in-progress draft being abandoned) — and even then, prefer a dedicated `Discard<Entity>` proc over generic DELETE.
 
 ## Standard UI return shapes
@@ -148,9 +148,11 @@ def execList(nq, params=None):
     """Read procs that return 0..N rows. Returns list[dict] keyed by the proc's
        SELECT aliases. Empty list = no match (never None, never an exception)."""
     <integrator>.Common.Util.log("nq=%s params=%s" % (nq, params))
-    results = system.db.execQuery(nq, params) if params else system.db.execQuery(nq)
-    headers = list(results.getColumnNames())
-    rows = [dict(zip(headers, row)) for row in results]
+    ds = system.db.runNamedQuery(nq, params) if params else system.db.runNamedQuery(nq)
+    if ds is None or ds.getRowCount() == 0:
+        return []
+    headers = list(ds.getColumnNames())
+    rows = [dict(zip(headers, row)) for row in ds]
     <integrator>.Common.Util.log("rows=%d" % len(rows))
     return rows
 
@@ -167,61 +169,131 @@ def execOne(nq, params=None):
 def execMutation(nq, params=None):
     """Add/Update/Deprecate procs that follow the status-row convention
        (SELECT @Status, @Message, @NewId). Returns the raw dict — keys match
-       the proc's SELECT aliases. Does NOT raise on Status='ERROR'."""
+       the proc's SELECT aliases. Does NOT raise on Status=0 (business-rule
+       failure)."""
     <integrator>.Common.Util.log("nq=%s params=%s" % (nq, params))
-    results = system.db.execQuery(nq, params) if params else system.db.execQuery(nq)
-    headers = list(results.getColumnNames())
-    rows = [dict(zip(headers, row)) for row in results]
+    ds = system.db.runNamedQuery(nq, params) if params else system.db.runNamedQuery(nq)
+    headers = list(ds.getColumnNames())
+    rows = [dict(zip(headers, row)) for row in ds]
     if not rows:
-        return {"Status": "ERROR", "Message": "No status returned from proc"}
+        return {"Status": 0, "Message": "No status returned from proc"}
     if len(rows) > 1:
         <integrator>.Common.Util.log("WARN multi-row from execMutation nq=%s" % nq)
     <integrator>.Common.Util.log("result=%s" % rows[0])
     return rows[0]
 ```
 
+**Proc-side Status convention (project-specific, source of truth: the SPs themselves):**
+
+The status row's `@Status` is **`BIT`** — `1` for success, `0` for business-rule failure. Procs declare:
+
+```sql
+DECLARE @Status  BIT           = 0;                  -- failure default
+DECLARE @Message NVARCHAR(500) = N'Unknown error';
+DECLARE @NewId   BIGINT        = NULL;               -- Create/Add procs only
+
+-- On a validated failure path:
+SET @Message = N'Duplicate part';
+SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+RETURN;
+
+-- On the success path:
+SET @Status  = 1;
+SET @Message = N'Part created';
+SET @NewId   = SCOPE_IDENTITY();                     -- Create/Add only
+SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+```
+
 **Result shapes the caller sees:**
 
 ```python
-# After an Add proc:       {"Status": "OK",    "Message": "Part created",   "NewId": 4172}
-#                          {"Status": "ERROR", "Message": "Duplicate part", "NewId": None}
+# After an Add proc:       {"Status": 1, "Message": "Part created",   "NewId": 4172}
+#                          {"Status": 0, "Message": "Duplicate part", "NewId": None}
 # After an Update/Deprecate (no NewId in the SELECT):
-#                          {"Status": "OK",    "Message": "Part updated"}
-#                          {"Status": "ERROR", "Message": "Modified by another user — reload"}
+#                          {"Status": 1, "Message": "Part updated"}
+#                          {"Status": 0, "Message": "Modified by another user — reload"}
 ```
+
+**Status check pattern:** callers use a truthy check — `if result.get("Status"):` — which is robust to JDBC mapping BIT as either Python `bool`, `int`, or Java `Boolean`. **Avoid `== "OK"` / `== 1` literal comparisons** for the same reason.
+
+**Why BIT rather than NVARCHAR `"OK"`/`"ERROR"`:** matches SQL's native success-flag idiom and the existing project convention. Other projects following this pack MAY pick NVARCHAR `"OK"`/`"ERROR"` instead — whichever pattern your stored procs already use becomes the rule of law; the helper layer adapts.
 
 **Why a plain dict (not a namedtuple or class) for mutation results:** the wire shape and the script-side shape are identical — no translation layer between SQL and Jython. Adding a new SELECT column (e.g., `@AffectedRows`) automatically appears in the result dict without touching the helper.
 
-**Why `execQuery` and never `execUpdate` for mutations:** mutation procs end with a `SELECT @Status, ...` row. `execUpdate` discards the result set, so the caller gets back an int and has no way to read `Status` / `Message` / `NewId`. Always `execQuery`, even for INSERT / UPDATE / DELETE procs.
+**Why `runNamedQuery` and never `execUpdate` for mutations:** mutation procs end with a `SELECT @Status, ...` row. `system.db.execUpdate` discards the result set, so the caller gets back an int and has no way to read `Status` / `Message` / `NewId`. Always use `system.db.runNamedQuery` (which returns a Dataset), even for INSERT / UPDATE / DELETE procs that go through an `UpdateQuery`-typed NQ.
+
+**Why `runNamedQuery` and not `execQuery`:** `system.db.execQuery(sql, database)` is for raw SQL execution against a connection — it takes a SQL string and an optional database name. `system.db.runNamedQuery(path, params)` resolves the configured NQ resource and respects its `type` / `database` / `permissions` / `cache` settings. NQ paths go through `runNamedQuery`; raw SQL goes through `execQuery`. Don't confuse them.
 
 ### `<integrator>.Common.Ui` — notification helper
 
 ```python
 # script-python/<integrator>/Common/Ui/code.py
 
-def notifyResult(result, successText, errorText=None):
-    """Routes a mutation result to the shared NotificationBanner.
-       Success → green toast with successText.
-       Failure → red toast with (proc Message ?? caller errorText ?? generic fallback)."""
-    if result.get("Status") == "OK":
-        payload = {"type": "success", "text": successText}
-    else:
-        text = result.get("Message") or errorText or "Save failed"
-        payload = {"type": "error", "text": text}
-    system.perspective.sendMessage("notify", payload=payload)
+def notifyResult(result, successTitle, successMsg=None, errorTitle=None):
+    """Routes a mutation result to the toast layer.
+       Status truthy → success toast with successTitle / successMsg.
+       Status falsy  → error toast with (proc Message ?? generic fallback)."""
+    status = result.get("Status") if result else 0
+    if status:
+        <integrator>.Common.Notify.toast(
+            successTitle,
+            successMsg or "",
+            "success",
+        )
+        return
+    message = (result.get("Message") if result else None) or "No additional detail."
+    <integrator>.Common.Notify.toast(
+        errorTitle or "Action failed",
+        message,
+        "error",
+    )
 ```
 
-Subscribed to by a `<integrator>/Components/NotificationBanner` view mounted once in the project's top dock or session-overlay container.
+### `<integrator>.Common.Notify` — toast surface
 
-**NotificationBanner payload contract:**
+The notification primitive is a **popup-per-toast** stack rather than a single mounted banner view. Each fired toast opens its own Perspective popup positioned in the top-right corner; multiple toasts stack downward with explicit slot spacing.
+
+```python
+# script-python/<integrator>/Common/Notify/code.py
+
+DEFAULT_TTL_SEC = 5         # auto-dismiss for non-error toasts
+MAX_VISIBLE     = 5         # FIFO cap; older toasts evict
+STACK_TOP_START = 10        # px from top of viewport for first toast
+STACK_TOP_STEP  = 110       # px between stacked toasts
+TOAST_VIEW_PATH = "<integrator>/Components/Popups/Toast"
+MSG_HANDLER     = "<integrator>-toast"
+
+def toast(title, message, level="info", ttl=None):
+    """Fire a toast. Safe to call from any view event handler.
+
+    level: 'success' | 'info' | 'warning' | 'error'
+           Errors persist until user click; others auto-dismiss.
+    ttl:   Override seconds. None = level default (DEFAULT_TTL_SEC for
+           non-error, persistent for error)."""
+    if level not in ("success", "info", "warning", "error"):
+        level = "info"
+    effective_ttl = ttl
+    if effective_ttl is None and level != "error":
+        effective_ttl = DEFAULT_TTL_SEC
+
+    payload = {"title": title, "message": message, "level": level, "ttl": effective_ttl}
+    system.perspective.sendMessage(MSG_HANDLER, payload, scope="session")
+```
+
+A host view (typically the project's Header or a session-overlay container) subscribes to the message handler and opens individual popups via `system.perspective.openPopup()`, tracking the stack in `session.custom.toastInstances` with FIFO eviction once `MAX_VISIBLE` is reached. The popup itself auto-dismisses by polling `now(500) > dismissAt` (where `dismissAt` is an expression-bound computed value).
+
+**Toast payload contract:**
 
 | Field | Type | Required | Meaning |
 |---|---|---|---|
-| `type` | string | yes | One of `success`, `error`, `warning`, `info`. |
-| `text` | string | yes | Banner copy. |
-| `durationMs` | int | no | Auto-dismiss timeout. Default 4000 (success/info), 8000 (warning/error). |
+| `title` | string | yes | Toast headline. |
+| `message` | string | yes | Body text. |
+| `level` | string | yes | One of `success`, `info`, `warning`, `error`. |
+| `ttl` | int or None | no | Auto-dismiss seconds. `None` for non-error means default ttl; `None` for error means persistent until user click. |
 
-Behavior: stacks if multiple messages arrive (max 3 visible), auto-dismisses by type, manual close via X button, color/icon coded by `type`.
+Behavior: top-right stacking, max 5 visible (FIFO eviction of oldest), level-coded color/icon, errors persist until manual dismiss, non-errors auto-dismiss after `ttl` seconds. Stale-instance defensive sweep every fire (drops entries older than 2 minutes).
+
+**Why popup-per-toast rather than a single banner view:** each toast has independent dismissal timing, position computed at fire time, and can be styled or shaped per-level without coordinating with sibling toasts. The single-banner pattern (one mounted view stacking up to N toasts internally) is simpler to implement but couples toast lifecycles together and makes per-toast positioning awkward. Either pattern is defensible — the popup-per-toast approach in this pack reflects what one production project found cleaner; pick whichever fits your project.
 
 ### `<integrator>.Common.Util` — shared utilities
 
@@ -278,8 +350,8 @@ A Save button's `onActionPerformed` is a one-liner that delegates to the entity 
 
 ```python
 result = <integrator>.Items.Item.update(self.view.custom.editDraft)
-<integrator>.Common.Ui.notifyResult(result, successText="Saved")
-if result["Status"] == "OK":
+<integrator>.Common.Ui.notifyResult(result, successTitle="Saved")
+if result.get("Status"):
     self.view.custom.selected = dict(self.view.custom.editDraft)
     system.perspective.sendMessage("refreshTrigger")
 ```

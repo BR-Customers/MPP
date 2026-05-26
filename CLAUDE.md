@@ -125,6 +125,22 @@ Pack pattern is "read it when relevant, don't preload" — most tasks need only 
 
 The `mpp` icon library lives at `ignition/icons/mpp/` and is referenced from views as `mpp/<icon-name>` (e.g., `mpp/play_arrow`, `mpp/qr_code_scanner`). 34 unique sprites locked against Material Symbols Outlined / wght 300 / grade -25 / opsz 48; the locked set is in `mockup/icons.csv` and the realized library files (with `config.json` + `resource.json`) mirror the gateway path `data/config/resources/core/com.inductiveautomation.perspective/icons/mpp/`. Project-specific deploy + recolor recipe documented in `ignition/icons/README.md`. General 8.3 custom-icon-library mechanics (path layout, viewBox + no-fill rule, Material Symbols GitHub source URL pattern) are in `ignition-context-pack/08_custom_icon_libraries.md` — read that file when extending or troubleshooting any custom icon library.
 
+### Ignition file-edit boundary
+
+Edits to **existing** `view.json` files default to Designer, not file edits. File-based edits to existing views are unreliable because (a) Designer's GSON serialization writes `=` / `'` / `<` / `>` as 6-char unicode escapes (`=` etc.) that fight literal-string matching in editing tools, and (b) Designer's in-memory model can conflict with on-disk changes — and its "Files vs Gateway" conflict dialog has confusing semantics that can overwrite disk with Designer's cached state. File-edits are safe for **new** views (no Designer cache yet), stylesheets, named queries, Python scripts, and SQL. See `feedback_ignition_view_edit_boundary.md` and `feedback_ignition_designer_unicode_escapes.md` memories for the specifics.
+
+### Editor close-confirmation pattern
+
+Editors with `view.custom.editDraft` / `view.custom.selected` state and an explicit Save action wire their Close-style buttons (footer Close + header X) through the reusable `BlueRidge/Components/Popups/ConfirmUnsaved` popup. Dirty check first; clean state closes immediately; dirty state opens the popup with Save & Close / Discard & Close / Cancel buttons. User's choice routes back via page-scoped `confirmUnsavedResult` message. Reference impl: LocationTypeEditor. Generalizes to BomEditor / RouteTemplateEditor / QualitySpecEditor. See `project_mpp_confirm_unsaved_pattern.md`.
+
+### Compound editors with per-section ownership
+
+Multi-section editors with embedded sub-views (currently Item Master at `/items`; will apply to any future surface with this shape) follow the **per-section ownership** pattern: each section's embedded view receives only a BIGINT `params.value: itemId` (input-only, NOT bidirectional), owns its own `view.custom.selected` + `view.custom.editDraft` locally, fetches its own data on item-id change, has its own Save + Discard buttons inside the embed, and broadcasts dirty-state transitions via `sectionDirtyChanged` page-scoped messages with `{section, isDirty}` payload. The parent maintains `view.custom.sectionDirty` flag map + `pendingSwitch` staging area; tab clicks and item-row clicks are gated by the same ConfirmUnsaved popup pattern (Save → `sectionSaveRequested`, Discard → `sectionDiscardRequested`, both page-scoped). Versioned sections (Routes / BOMs) keep their Draft/Publish lifecycle ORTHOGONAL to `sectionDirty` — only unsaved Draft-line edits flip the dirty flag, NOT publish/deprecate transitions. Pattern memory: `project_mpp_item_master_pattern.md` (2026-05-20 rev). Reference impl target: ContainerConfig embed post-Phase-4.
+
+### Form-binding initial state
+
+Inputs that bidi-bind to nested paths (`view.custom.editDraft.<section>.<field>`) require the **full empty shape pre-populated** in the custom-block defaults — initializing just `{<section>: null}` causes the first render to show validation-error borders and literal `"null"` text in text-fields until the load handler populates the dict. Always seed `editDraft.<section>` with every key the form binds, even if the value is `null` / `""` / `false`. Reference incident: `b295b53` (DefectCodeEditor fix, 2026-05-20).
+
 ### UI
 
 No drag-and-drop anywhere — up/down arrow buttons for all sortable lists.

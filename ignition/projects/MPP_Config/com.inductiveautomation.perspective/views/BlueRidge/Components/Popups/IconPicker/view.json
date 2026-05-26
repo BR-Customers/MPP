@@ -1,0 +1,187 @@
+{
+  "custom": {},
+  "params": {
+    "library": "mpp",
+    "popupId": "mpp-icon-picker",
+    "replyMessage": "iconPickerResult",
+    "selected": "",
+    "title": "Pick Icon"
+  },
+  "propConfig": {
+    "custom.icons": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Common.Util.getIconLibrary\", 0, {view.params.library})"
+        },
+        "type": "expr"
+      }
+    },
+    "params.library": {
+      "paramDirection": "input"
+    },
+    "params.popupId": {
+      "paramDirection": "input"
+    },
+    "params.replyMessage": {
+      "paramDirection": "input"
+    },
+    "params.selected": {
+      "paramDirection": "input"
+    },
+    "params.title": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 540,
+      "width": 600
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "grow": 1
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.title"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "modal-title",
+                "color": "var(--mpp-text-primary)",
+                "fontSize": "14px",
+                "fontWeight": "600"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseIcon"
+            },
+            "position": {
+              "basis": "24px",
+              "shrink": 0
+            },
+            "props": {
+              "color": "var(--mpp-text-secondary)",
+              "path": "material/close",
+              "style": {
+                "cursor": "pointer",
+                "height": "20px",
+                "width": "20px"
+              }
+            },
+            "type": "ia.display.icon"
+          }
+        ],
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "basis": "48px",
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "gap": "8px",
+            "padding": "0 16px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "IconGrid"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.instances": {
+                "binding": {
+                  "config": {
+                    "expression": "runScript(\"BlueRidge.Common.Util.buildIconPickerInstancesFromLibrary\", 0, {view.params.library}, {view.params.selected}, {view.params.replyMessage}, {view.params.popupId})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "elementPosition": {
+                "basis": "96px",
+                "grow": 0,
+                "shrink": 0
+              },
+              "justify": "center",
+              "path": "BlueRidge/Components/IconPickerTile",
+              "style": {
+                "gap": "10px"
+              },
+              "wrap": "wrap"
+            },
+            "type": "ia.display.flex-repeater"
+          }
+        ],
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "padding": "16px"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "background": "var(--mpp-surface-canvas)",
+        "borderRadius": "var(--mpp-radius-md, 8px)",
+        "height": "100%",
+        "overflow": "hidden",
+        "width": "100%"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

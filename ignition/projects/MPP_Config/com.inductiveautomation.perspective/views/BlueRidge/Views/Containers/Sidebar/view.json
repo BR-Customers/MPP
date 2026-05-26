@@ -2,664 +2,1194 @@
   "custom": {},
   "params": {},
   "props": {
-    "defaultSize": { "width": 260, "height": 720 }
+    "defaultSize": {
+      "height": 720,
+      "width": 260
+    }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": { "name": "root" },
+    "children": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Icon"
+                },
+                "props": {
+                  "path": "material/apartment",
+                  "style": {
+                    "classes": "rail-icon"
+                  }
+                },
+                "type": "ia.display.icon"
+              },
+              {
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "style": {
+                    "classes": "rail-label"
+                  },
+                  "text": "Plant"
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "page": "/plant"
+                  },
+                  "scope": "C",
+                  "type": "nav"
+                }
+              }
+            },
+            "meta": {
+              "name": "RailItemPlant"
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "config": {
+                    "expression": "if(runScript(\u0027BlueRidge.Common.Nav.categoryForPath\u0027, 0, {page.props.path}) \u003d \u0027plant\u0027, \u0027rail-item rail-item-active\u0027, \u0027rail-item\u0027)"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "alignItems": "center",
+              "direction": "column",
+              "justify": "center",
+              "style": {}
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Icon"
+                },
+                "props": {
+                  "path": "mpp/package_2",
+                  "style": {
+                    "classes": "rail-icon"
+                  }
+                },
+                "type": "ia.display.icon"
+              },
+              {
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "style": {
+                    "classes": "rail-label"
+                  },
+                  "text": "Parts"
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "page": "/items"
+                  },
+                  "scope": "C",
+                  "type": "nav"
+                }
+              }
+            },
+            "meta": {
+              "name": "RailItemParts"
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "config": {
+                    "expression": "if(runScript(\u0027BlueRidge.Common.Nav.categoryForPath\u0027, 0, {page.props.path}) \u003d \u0027parts\u0027, \u0027rail-item rail-item-active\u0027, \u0027rail-item\u0027)"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "alignItems": "center",
+              "direction": "column",
+              "justify": "center",
+              "style": {}
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Icon"
+                },
+                "props": {
+                  "path": "material/check_circle",
+                  "style": {
+                    "classes": "rail-icon"
+                  }
+                },
+                "type": "ia.display.icon"
+              },
+              {
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "style": {
+                    "classes": "rail-label"
+                  },
+                  "text": "Quality"
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "page": "/quality-specs"
+                  },
+                  "scope": "C",
+                  "type": "nav"
+                }
+              }
+            },
+            "meta": {
+              "name": "RailItemQuality"
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "config": {
+                    "expression": "if(runScript(\u0027BlueRidge.Common.Nav.categoryForPath\u0027, 0, {page.props.path}) \u003d \u0027quality\u0027, \u0027rail-item rail-item-active\u0027, \u0027rail-item\u0027)"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "alignItems": "center",
+              "direction": "column",
+              "justify": "center",
+              "style": {}
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Icon"
+                },
+                "props": {
+                  "path": "material/timer",
+                  "style": {
+                    "classes": "rail-icon"
+                  }
+                },
+                "type": "ia.display.icon"
+              },
+              {
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "style": {
+                    "classes": "rail-label"
+                  },
+                  "text": "Ops"
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "page": "/downtime-codes"
+                  },
+                  "scope": "C",
+                  "type": "nav"
+                }
+              }
+            },
+            "meta": {
+              "name": "RailItemOperations"
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "config": {
+                    "expression": "if(runScript(\u0027BlueRidge.Common.Nav.categoryForPath\u0027, 0, {page.props.path}) \u003d \u0027operations\u0027, \u0027rail-item rail-item-active\u0027, \u0027rail-item\u0027)"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "alignItems": "center",
+              "direction": "column",
+              "justify": "center",
+              "style": {}
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Icon"
+                },
+                "props": {
+                  "path": "material/build",
+                  "style": {
+                    "classes": "rail-icon"
+                  }
+                },
+                "type": "ia.display.icon"
+              },
+              {
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "style": {
+                    "classes": "rail-label"
+                  },
+                  "text": "System"
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "page": "/audit-log"
+                  },
+                  "scope": "C",
+                  "type": "nav"
+                }
+              }
+            },
+            "meta": {
+              "name": "RailItemSystem"
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "config": {
+                    "expression": "if(runScript(\u0027BlueRidge.Common.Nav.categoryForPath\u0027, 0, {page.props.path}) \u003d \u0027system\u0027, \u0027rail-item rail-item-active\u0027, \u0027rail-item\u0027)"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "alignItems": "center",
+              "direction": "column",
+              "justify": "center",
+              "style": {}
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Rail"
+        },
+        "position": {
+          "basis": "60px",
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "direction": "column",
+          "style": {
+            "classes": "rail",
+            "flexGrow": 0,
+            "flexShrink": 0,
+            "width": "60px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Hint"
+                },
+                "props": {
+                  "style": {
+                    "classes": "nav-category-label",
+                    "fontStyle": "italic"
+                  },
+                  "text": "Select a category to begin"
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "EmptyState"
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "runScript(\u0027BlueRidge.Common.Nav.categoryForPath\u0027, 0, {page.props.path}) \u003d \u0027\u0027"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column"
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "style": {
+                    "classes": "nav-category-label"
+                  },
+                  "text": "Plant"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Icon"
+                    },
+                    "props": {
+                      "path": "material/apartment",
+                      "style": {
+                        "classes": "nav-icon"
+                      }
+                    },
+                    "type": "ia.display.icon"
+                  },
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "text": "Plant Hierarchy"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "events": {
+                  "dom": {
+                    "onClick": {
+                      "config": {
+                        "page": "/plant"
+                      },
+                      "scope": "C",
+                      "type": "nav"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "NavItemPlantHierarchy"
+                },
+                "propConfig": {
+                  "props.style.classes": {
+                    "binding": {
+                      "config": {
+                        "expression": "if({page.props.path} \u003d \u0027/plant\u0027, \u0027nav-item nav-item-active\u0027, \u0027nav-item\u0027)"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {}
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "PlantCategory"
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "runScript(\u0027BlueRidge.Common.Nav.categoryForPath\u0027, 0, {page.props.path}) \u003d \u0027plant\u0027"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column"
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "style": {
+                    "classes": "nav-category-label"
+                  },
+                  "text": "Parts"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Icon"
+                    },
+                    "props": {
+                      "path": "mpp/package_2",
+                      "style": {
+                        "classes": "nav-icon"
+                      }
+                    },
+                    "type": "ia.display.icon"
+                  },
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "text": "Item Master"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "events": {
+                  "dom": {
+                    "onClick": {
+                      "config": {
+                        "page": "/items"
+                      },
+                      "scope": "C",
+                      "type": "nav"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "NavItemItemMaster"
+                },
+                "propConfig": {
+                  "props.style.classes": {
+                    "binding": {
+                      "config": {
+                        "expression": "if({page.props.path} \u003d \u0027/items\u0027, \u0027nav-item nav-item-active\u0027, \u0027nav-item\u0027)"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {}
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Icon"
+                    },
+                    "props": {
+                      "path": "material/list",
+                      "style": {
+                        "classes": "nav-icon"
+                      }
+                    },
+                    "type": "ia.display.icon"
+                  },
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "text": "Operation Templates"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "events": {
+                  "dom": {
+                    "onClick": {
+                      "config": {
+                        "page": "/operations"
+                      },
+                      "scope": "C",
+                      "type": "nav"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "NavItemOperationTemplates"
+                },
+                "propConfig": {
+                  "props.style.classes": {
+                    "binding": {
+                      "config": {
+                        "expression": "if({page.props.path} \u003d \u0027/operations\u0027, \u0027nav-item nav-item-active\u0027, \u0027nav-item\u0027)"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {}
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Icon"
+                    },
+                    "props": {
+                      "path": "material/build",
+                      "style": {
+                        "classes": "nav-icon"
+                      }
+                    },
+                    "type": "ia.display.icon"
+                  },
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "text": "Tools"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "events": {
+                  "dom": {
+                    "onClick": {
+                      "config": {
+                        "page": "/tools"
+                      },
+                      "scope": "C",
+                      "type": "nav"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "NavItemTools"
+                },
+                "propConfig": {
+                  "props.style.classes": {
+                    "binding": {
+                      "config": {
+                        "expression": "if({page.props.path} \u003d \u0027/tools\u0027, \u0027nav-item nav-item-active\u0027, \u0027nav-item\u0027)"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {}
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "PartsCategory"
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "runScript(\u0027BlueRidge.Common.Nav.categoryForPath\u0027, 0, {page.props.path}) \u003d \u0027parts\u0027"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column"
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "style": {
+                    "classes": "nav-category-label"
+                  },
+                  "text": "Quality"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Icon"
+                    },
+                    "props": {
+                      "path": "material/check_circle",
+                      "style": {
+                        "classes": "nav-icon"
+                      }
+                    },
+                    "type": "ia.display.icon"
+                  },
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "text": "Quality Specs"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "events": {
+                  "dom": {
+                    "onClick": {
+                      "config": {
+                        "page": "/quality-specs"
+                      },
+                      "scope": "C",
+                      "type": "nav"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "NavItemQualitySpecs"
+                },
+                "propConfig": {
+                  "props.style.classes": {
+                    "binding": {
+                      "config": {
+                        "expression": "if({page.props.path} \u003d \u0027/quality-specs\u0027, \u0027nav-item nav-item-active\u0027, \u0027nav-item\u0027)"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {}
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Icon"
+                    },
+                    "props": {
+                      "path": "material/error",
+                      "style": {
+                        "classes": "nav-icon"
+                      }
+                    },
+                    "type": "ia.display.icon"
+                  },
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "text": "Defect Codes"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "events": {
+                  "dom": {
+                    "onClick": {
+                      "config": {
+                        "page": "/defect-codes"
+                      },
+                      "scope": "C",
+                      "type": "nav"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "NavItemDefectCodes"
+                },
+                "propConfig": {
+                  "props.style.classes": {
+                    "binding": {
+                      "config": {
+                        "expression": "if({page.props.path} \u003d \u0027/defect-codes\u0027, \u0027nav-item nav-item-active\u0027, \u0027nav-item\u0027)"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {}
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "QualityCategory"
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "runScript(\u0027BlueRidge.Common.Nav.categoryForPath\u0027, 0, {page.props.path}) \u003d \u0027quality\u0027"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column"
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "style": {
+                    "classes": "nav-category-label"
+                  },
+                  "text": "Operations"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Icon"
+                    },
+                    "props": {
+                      "path": "material/timer",
+                      "style": {
+                        "classes": "nav-icon"
+                      }
+                    },
+                    "type": "ia.display.icon"
+                  },
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "text": "Downtime Codes"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "events": {
+                  "dom": {
+                    "onClick": {
+                      "config": {
+                        "page": "/downtime-codes"
+                      },
+                      "scope": "C",
+                      "type": "nav"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "NavItemDowntimeCodes"
+                },
+                "propConfig": {
+                  "props.style.classes": {
+                    "binding": {
+                      "config": {
+                        "expression": "if({page.props.path} \u003d \u0027/downtime-codes\u0027, \u0027nav-item nav-item-active\u0027, \u0027nav-item\u0027)"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {}
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Icon"
+                    },
+                    "props": {
+                      "path": "material/event_note",
+                      "style": {
+                        "classes": "nav-icon"
+                      }
+                    },
+                    "type": "ia.display.icon"
+                  },
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "text": "Shift Schedules"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "events": {
+                  "dom": {
+                    "onClick": {
+                      "config": {
+                        "page": "/shifts"
+                      },
+                      "scope": "C",
+                      "type": "nav"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "NavItemShiftSchedules"
+                },
+                "propConfig": {
+                  "props.style.classes": {
+                    "binding": {
+                      "config": {
+                        "expression": "if({page.props.path} \u003d \u0027/shifts\u0027, \u0027nav-item nav-item-active\u0027, \u0027nav-item\u0027)"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {}
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "OperationsCategory"
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "runScript(\u0027BlueRidge.Common.Nav.categoryForPath\u0027, 0, {page.props.path}) \u003d \u0027operations\u0027"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column"
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "style": {
+                    "classes": "nav-category-label"
+                  },
+                  "text": "System"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Icon"
+                    },
+                    "props": {
+                      "path": "material/person",
+                      "style": {
+                        "classes": "nav-icon"
+                      }
+                    },
+                    "type": "ia.display.icon"
+                  },
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "text": "Users"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "events": {
+                  "dom": {
+                    "onClick": {
+                      "config": {
+                        "page": "/users"
+                      },
+                      "scope": "C",
+                      "type": "nav"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "NavItemUsers"
+                },
+                "propConfig": {
+                  "props.style.classes": {
+                    "binding": {
+                      "config": {
+                        "expression": "if({page.props.path} \u003d \u0027/users\u0027, \u0027nav-item nav-item-active\u0027, \u0027nav-item\u0027)"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {}
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Icon"
+                    },
+                    "props": {
+                      "path": "material/description",
+                      "style": {
+                        "classes": "nav-icon"
+                      }
+                    },
+                    "type": "ia.display.icon"
+                  },
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "text": "Audit Log"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "events": {
+                  "dom": {
+                    "onClick": {
+                      "config": {
+                        "page": "/audit-log"
+                      },
+                      "scope": "C",
+                      "type": "nav"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "NavItemAuditLog"
+                },
+                "propConfig": {
+                  "props.style.classes": {
+                    "binding": {
+                      "config": {
+                        "expression": "if({page.props.path} \u003d \u0027/audit-log\u0027, \u0027nav-item nav-item-active\u0027, \u0027nav-item\u0027)"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {}
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Icon"
+                    },
+                    "props": {
+                      "path": "material/warning",
+                      "style": {
+                        "classes": "nav-icon"
+                      }
+                    },
+                    "type": "ia.display.icon"
+                  },
+                  {
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "text": "Failure Log"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "events": {
+                  "dom": {
+                    "onClick": {
+                      "config": {
+                        "page": "/failure-log"
+                      },
+                      "scope": "C",
+                      "type": "nav"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "NavItemFailureLog"
+                },
+                "propConfig": {
+                  "props.style.classes": {
+                    "binding": {
+                      "config": {
+                        "expression": "if({page.props.path} \u003d \u0027/failure-log\u0027, \u0027nav-item nav-item-active\u0027, \u0027nav-item\u0027)"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {}
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "SystemCategory"
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "runScript(\u0027BlueRidge.Common.Nav.categoryForPath\u0027, 0, {page.props.path}) \u003d \u0027system\u0027"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column"
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "NavPanel"
+        },
+        "position": {
+          "basis": "200px",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderRight": "1px solid var(--mpp-border-subtle)",
+            "flexBasis": "200px",
+            "flexGrow": 1,
+            "flexShrink": 1,
+            "overflowY": "auto",
+            "padding": "var(--mpp-space-2) 0",
+            "width": "200px"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
     "props": {
-      "direction": "row",
-      "alignItems": "stretch",
-      "wrap": "nowrap",
       "style": {
         "display": "flex",
         "flexDirection": "row",
         "flexWrap": "nowrap",
-        "width": "260px",
-        "height": "100%"
+        "height": "100%",
+        "width": "260px"
       }
     },
-    "children": [
-      {
-        "type": "ia.container.flex",
-        "meta": { "name": "Rail" },
-        "position": { "basis": "60px", "shrink": 0 },
-        "props": {
-          "direction": "column",
-          "alignItems": "center",
-          "style": {
-            "classes": "rail",
-            "width": "60px",
-            "flexShrink": 0,
-            "flexGrow": 0
-          }
-        },
-        "children": [
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "RailItemPlant" },
-            "position": { "basis": "auto" },
-            "events": {
-              "dom": {
-                "onClick": {
-                  "config": { "page": "/plant" },
-                  "scope": "C",
-                  "type": "nav"
-                }
-              }
-            },
-            "propConfig": {
-              "props.style.classes": {
-                "binding": {
-                  "type": "expr",
-                  "config": { "expression": "if(runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'plant', 'rail-item rail-item-active', 'rail-item')" }
-                }
-              }
-            },
-            "props": {
-              "direction": "column",
-              "alignItems": "center",
-              "justify": "center"
-            },
-            "children": [
-              {
-                "type": "ia.display.icon",
-                "meta": { "name": "Icon" },
-                "position": { "basis": "auto" },
-                "props": { "path": "material/apartment", "style": { "classes": "rail-icon" } }
-              },
-              {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
-                "position": { "basis": "auto" },
-                "props": { "text": "Plant", "style": { "classes": "rail-label" } }
-              }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "RailItemParts" },
-            "position": { "basis": "auto" },
-            "events": {
-              "dom": {
-                "onClick": {
-                  "config": { "page": "/items" },
-                  "scope": "C",
-                  "type": "nav"
-                }
-              }
-            },
-            "propConfig": {
-              "props.style.classes": {
-                "binding": {
-                  "type": "expr",
-                  "config": { "expression": "if(runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'parts', 'rail-item rail-item-active', 'rail-item')" }
-                }
-              }
-            },
-            "props": {
-              "direction": "column",
-              "alignItems": "center",
-              "justify": "center"
-            },
-            "children": [
-              {
-                "type": "ia.display.icon",
-                "meta": { "name": "Icon" },
-                "position": { "basis": "auto" },
-                "props": { "path": "material/inventory", "style": { "classes": "rail-icon" } }
-              },
-              {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
-                "position": { "basis": "auto" },
-                "props": { "text": "Parts", "style": { "classes": "rail-label" } }
-              }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "RailItemQuality" },
-            "position": { "basis": "auto" },
-            "events": {
-              "dom": {
-                "onClick": {
-                  "config": { "page": "/quality-specs" },
-                  "scope": "C",
-                  "type": "nav"
-                }
-              }
-            },
-            "propConfig": {
-              "props.style.classes": {
-                "binding": {
-                  "type": "expr",
-                  "config": { "expression": "if(runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'quality', 'rail-item rail-item-active', 'rail-item')" }
-                }
-              }
-            },
-            "props": {
-              "direction": "column",
-              "alignItems": "center",
-              "justify": "center"
-            },
-            "children": [
-              {
-                "type": "ia.display.icon",
-                "meta": { "name": "Icon" },
-                "position": { "basis": "auto" },
-                "props": { "path": "material/check_circle", "style": { "classes": "rail-icon" } }
-              },
-              {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
-                "position": { "basis": "auto" },
-                "props": { "text": "Quality", "style": { "classes": "rail-label" } }
-              }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "RailItemOperations" },
-            "position": { "basis": "auto" },
-            "events": {
-              "dom": {
-                "onClick": {
-                  "config": { "page": "/downtime-codes" },
-                  "scope": "C",
-                  "type": "nav"
-                }
-              }
-            },
-            "propConfig": {
-              "props.style.classes": {
-                "binding": {
-                  "type": "expr",
-                  "config": { "expression": "if(runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'operations', 'rail-item rail-item-active', 'rail-item')" }
-                }
-              }
-            },
-            "props": {
-              "direction": "column",
-              "alignItems": "center",
-              "justify": "center"
-            },
-            "children": [
-              {
-                "type": "ia.display.icon",
-                "meta": { "name": "Icon" },
-                "position": { "basis": "auto" },
-                "props": { "path": "material/timer", "style": { "classes": "rail-icon" } }
-              },
-              {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
-                "position": { "basis": "auto" },
-                "props": { "text": "Ops", "style": { "classes": "rail-label" } }
-              }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "RailItemSystem" },
-            "position": { "basis": "auto" },
-            "events": {
-              "dom": {
-                "onClick": {
-                  "config": { "page": "/audit-log" },
-                  "scope": "C",
-                  "type": "nav"
-                }
-              }
-            },
-            "propConfig": {
-              "props.style.classes": {
-                "binding": {
-                  "type": "expr",
-                  "config": { "expression": "if(runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'system', 'rail-item rail-item-active', 'rail-item')" }
-                }
-              }
-            },
-            "props": {
-              "direction": "column",
-              "alignItems": "center",
-              "justify": "center"
-            },
-            "children": [
-              {
-                "type": "ia.display.icon",
-                "meta": { "name": "Icon" },
-                "position": { "basis": "auto" },
-                "props": { "path": "material/build", "style": { "classes": "rail-icon" } }
-              },
-              {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
-                "position": { "basis": "auto" },
-                "props": { "text": "System", "style": { "classes": "rail-label" } }
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "ia.container.flex",
-        "meta": { "name": "NavPanel" },
-        "position": { "grow": 1, "shrink": 1, "basis": "200px" },
-        "props": {
-          "direction": "column",
-          "style": {
-            "width": "200px",
-            "flexGrow": 1,
-            "flexShrink": 1,
-            "flexBasis": "200px",
-            "background": "var(--mpp-surface-raised)",
-            "borderRight": "1px solid var(--mpp-border-subtle)",
-            "padding": "var(--mpp-space-2) 0",
-            "overflowY": "auto"
-          }
-        },
-        "children": [
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "EmptyState" },
-            "position": { "basis": "auto" },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "type": "expr",
-                  "config": { "expression": "runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = ''" }
-                }
-              }
-            },
-            "props": { "direction": "column" },
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": { "name": "Hint" },
-                "position": { "basis": "auto" },
-                "props": {
-                  "text": "Select a category to begin",
-                  "style": { "classes": "nav-category-label", "fontStyle": "italic" }
-                }
-              }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "PlantCategory" },
-            "position": { "basis": "auto" },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "type": "expr",
-                  "config": { "expression": "runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'plant'" }
-                }
-              }
-            },
-            "props": { "direction": "column" },
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
-                "position": { "basis": "auto" },
-                "props": { "text": "Plant", "style": { "classes": "nav-category-label" } }
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": { "name": "NavItemPlantHierarchy" },
-                "position": { "basis": "auto" },
-                "events": {
-                  "dom": {
-                    "onClick": { "config": { "page": "/plant" }, "scope": "C", "type": "nav" }
-                  }
-                },
-                "propConfig": {
-                  "props.style.classes": {
-                    "binding": {
-                      "type": "expr",
-                      "config": { "expression": "if({page.props.path} = '/plant', 'nav-item nav-item-active', 'nav-item')" }
-                    }
-                  }
-                },
-                "props": { "direction": "row", "alignItems": "center" },
-                "children": [
-                  {
-                    "type": "ia.display.icon",
-                    "meta": { "name": "Icon" },
-                    "position": { "basis": "auto" },
-                    "props": { "path": "material/apartment", "style": { "classes": "nav-icon" } }
-                  },
-                  {
-                    "type": "ia.display.label",
-                    "meta": { "name": "Label" },
-                    "position": { "grow": 1 },
-                    "props": { "text": "Plant Hierarchy" }
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "PartsCategory" },
-            "position": { "basis": "auto" },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "type": "expr",
-                  "config": { "expression": "runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'parts'" }
-                }
-              }
-            },
-            "props": { "direction": "column" },
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
-                "position": { "basis": "auto" },
-                "props": { "text": "Parts", "style": { "classes": "nav-category-label" } }
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": { "name": "NavItemItemMaster" },
-                "position": { "basis": "auto" },
-                "events": {
-                  "dom": {
-                    "onClick": { "config": { "page": "/items" }, "scope": "C", "type": "nav" }
-                  }
-                },
-                "propConfig": {
-                  "props.style.classes": {
-                    "binding": {
-                      "type": "expr",
-                      "config": { "expression": "if({page.props.path} = '/items', 'nav-item nav-item-active', 'nav-item')" }
-                    }
-                  }
-                },
-                "props": { "direction": "row", "alignItems": "center" },
-                "children": [
-                  { "type": "ia.display.icon",  "meta": { "name": "Icon" },  "position": { "basis": "auto" }, "props": { "path": "material/inventory", "style": { "classes": "nav-icon" } } },
-                  { "type": "ia.display.label", "meta": { "name": "Label" }, "position": { "grow": 1 },        "props": { "text": "Item Master" } }
-                ]
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": { "name": "NavItemOperationTemplates" },
-                "position": { "basis": "auto" },
-                "events": {
-                  "dom": {
-                    "onClick": { "config": { "page": "/operations" }, "scope": "C", "type": "nav" }
-                  }
-                },
-                "propConfig": {
-                  "props.style.classes": {
-                    "binding": {
-                      "type": "expr",
-                      "config": { "expression": "if({page.props.path} = '/operations', 'nav-item nav-item-active', 'nav-item')" }
-                    }
-                  }
-                },
-                "props": { "direction": "row", "alignItems": "center" },
-                "children": [
-                  { "type": "ia.display.icon",  "meta": { "name": "Icon" },  "position": { "basis": "auto" }, "props": { "path": "material/list", "style": { "classes": "nav-icon" } } },
-                  { "type": "ia.display.label", "meta": { "name": "Label" }, "position": { "grow": 1 },        "props": { "text": "Operation Templates" } }
-                ]
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": { "name": "NavItemTools" },
-                "position": { "basis": "auto" },
-                "events": {
-                  "dom": {
-                    "onClick": { "config": { "page": "/tools" }, "scope": "C", "type": "nav" }
-                  }
-                },
-                "propConfig": {
-                  "props.style.classes": {
-                    "binding": {
-                      "type": "expr",
-                      "config": { "expression": "if({page.props.path} = '/tools', 'nav-item nav-item-active', 'nav-item')" }
-                    }
-                  }
-                },
-                "props": { "direction": "row", "alignItems": "center" },
-                "children": [
-                  { "type": "ia.display.icon",  "meta": { "name": "Icon" },  "position": { "basis": "auto" }, "props": { "path": "material/build", "style": { "classes": "nav-icon" } } },
-                  { "type": "ia.display.label", "meta": { "name": "Label" }, "position": { "grow": 1 },        "props": { "text": "Tools" } }
-                ]
-              }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "QualityCategory" },
-            "position": { "basis": "auto" },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "type": "expr",
-                  "config": { "expression": "runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'quality'" }
-                }
-              }
-            },
-            "props": { "direction": "column" },
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
-                "position": { "basis": "auto" },
-                "props": { "text": "Quality", "style": { "classes": "nav-category-label" } }
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": { "name": "NavItemQualitySpecs" },
-                "position": { "basis": "auto" },
-                "events": {
-                  "dom": {
-                    "onClick": { "config": { "page": "/quality-specs" }, "scope": "C", "type": "nav" }
-                  }
-                },
-                "propConfig": {
-                  "props.style.classes": {
-                    "binding": {
-                      "type": "expr",
-                      "config": { "expression": "if({page.props.path} = '/quality-specs', 'nav-item nav-item-active', 'nav-item')" }
-                    }
-                  }
-                },
-                "props": { "direction": "row", "alignItems": "center" },
-                "children": [
-                  { "type": "ia.display.icon",  "meta": { "name": "Icon" },  "position": { "basis": "auto" }, "props": { "path": "material/check_circle", "style": { "classes": "nav-icon" } } },
-                  { "type": "ia.display.label", "meta": { "name": "Label" }, "position": { "grow": 1 },        "props": { "text": "Quality Specs" } }
-                ]
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": { "name": "NavItemDefectCodes" },
-                "position": { "basis": "auto" },
-                "events": {
-                  "dom": {
-                    "onClick": { "config": { "page": "/defect-codes" }, "scope": "C", "type": "nav" }
-                  }
-                },
-                "propConfig": {
-                  "props.style.classes": {
-                    "binding": {
-                      "type": "expr",
-                      "config": { "expression": "if({page.props.path} = '/defect-codes', 'nav-item nav-item-active', 'nav-item')" }
-                    }
-                  }
-                },
-                "props": { "direction": "row", "alignItems": "center" },
-                "children": [
-                  { "type": "ia.display.icon",  "meta": { "name": "Icon" },  "position": { "basis": "auto" }, "props": { "path": "material/error", "style": { "classes": "nav-icon" } } },
-                  { "type": "ia.display.label", "meta": { "name": "Label" }, "position": { "grow": 1 },        "props": { "text": "Defect Codes" } }
-                ]
-              }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "OperationsCategory" },
-            "position": { "basis": "auto" },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "type": "expr",
-                  "config": { "expression": "runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'operations'" }
-                }
-              }
-            },
-            "props": { "direction": "column" },
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
-                "position": { "basis": "auto" },
-                "props": { "text": "Operations", "style": { "classes": "nav-category-label" } }
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": { "name": "NavItemDowntimeCodes" },
-                "position": { "basis": "auto" },
-                "events": {
-                  "dom": {
-                    "onClick": { "config": { "page": "/downtime-codes" }, "scope": "C", "type": "nav" }
-                  }
-                },
-                "propConfig": {
-                  "props.style.classes": {
-                    "binding": {
-                      "type": "expr",
-                      "config": { "expression": "if({page.props.path} = '/downtime-codes', 'nav-item nav-item-active', 'nav-item')" }
-                    }
-                  }
-                },
-                "props": { "direction": "row", "alignItems": "center" },
-                "children": [
-                  { "type": "ia.display.icon",  "meta": { "name": "Icon" },  "position": { "basis": "auto" }, "props": { "path": "material/timer", "style": { "classes": "nav-icon" } } },
-                  { "type": "ia.display.label", "meta": { "name": "Label" }, "position": { "grow": 1 },        "props": { "text": "Downtime Codes" } }
-                ]
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": { "name": "NavItemShiftSchedules" },
-                "position": { "basis": "auto" },
-                "events": {
-                  "dom": {
-                    "onClick": { "config": { "page": "/shifts" }, "scope": "C", "type": "nav" }
-                  }
-                },
-                "propConfig": {
-                  "props.style.classes": {
-                    "binding": {
-                      "type": "expr",
-                      "config": { "expression": "if({page.props.path} = '/shifts', 'nav-item nav-item-active', 'nav-item')" }
-                    }
-                  }
-                },
-                "props": { "direction": "row", "alignItems": "center" },
-                "children": [
-                  { "type": "ia.display.icon",  "meta": { "name": "Icon" },  "position": { "basis": "auto" }, "props": { "path": "material/event_note", "style": { "classes": "nav-icon" } } },
-                  { "type": "ia.display.label", "meta": { "name": "Label" }, "position": { "grow": 1 },        "props": { "text": "Shift Schedules" } }
-                ]
-              }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "SystemCategory" },
-            "position": { "basis": "auto" },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "type": "expr",
-                  "config": { "expression": "runScript('BlueRidge.Common.Nav.categoryForPath', 0, {page.props.path}) = 'system'" }
-                }
-              }
-            },
-            "props": { "direction": "column" },
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
-                "position": { "basis": "auto" },
-                "props": { "text": "System", "style": { "classes": "nav-category-label" } }
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": { "name": "NavItemUsers" },
-                "position": { "basis": "auto" },
-                "events": {
-                  "dom": {
-                    "onClick": { "config": { "page": "/users" }, "scope": "C", "type": "nav" }
-                  }
-                },
-                "propConfig": {
-                  "props.style.classes": {
-                    "binding": {
-                      "type": "expr",
-                      "config": { "expression": "if({page.props.path} = '/users', 'nav-item nav-item-active', 'nav-item')" }
-                    }
-                  }
-                },
-                "props": { "direction": "row", "alignItems": "center" },
-                "children": [
-                  { "type": "ia.display.icon",  "meta": { "name": "Icon" },  "position": { "basis": "auto" }, "props": { "path": "material/person", "style": { "classes": "nav-icon" } } },
-                  { "type": "ia.display.label", "meta": { "name": "Label" }, "position": { "grow": 1 },        "props": { "text": "Users" } }
-                ]
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": { "name": "NavItemAuditLog" },
-                "position": { "basis": "auto" },
-                "events": {
-                  "dom": {
-                    "onClick": { "config": { "page": "/audit-log" }, "scope": "C", "type": "nav" }
-                  }
-                },
-                "propConfig": {
-                  "props.style.classes": {
-                    "binding": {
-                      "type": "expr",
-                      "config": { "expression": "if({page.props.path} = '/audit-log', 'nav-item nav-item-active', 'nav-item')" }
-                    }
-                  }
-                },
-                "props": { "direction": "row", "alignItems": "center" },
-                "children": [
-                  { "type": "ia.display.icon",  "meta": { "name": "Icon" },  "position": { "basis": "auto" }, "props": { "path": "material/description", "style": { "classes": "nav-icon" } } },
-                  { "type": "ia.display.label", "meta": { "name": "Label" }, "position": { "grow": 1 },        "props": { "text": "Audit Log" } }
-                ]
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": { "name": "NavItemFailureLog" },
-                "position": { "basis": "auto" },
-                "events": {
-                  "dom": {
-                    "onClick": { "config": { "page": "/failure-log" }, "scope": "C", "type": "nav" }
-                  }
-                },
-                "propConfig": {
-                  "props.style.classes": {
-                    "binding": {
-                      "type": "expr",
-                      "config": { "expression": "if({page.props.path} = '/failure-log', 'nav-item nav-item-active', 'nav-item')" }
-                    }
-                  }
-                },
-                "props": { "direction": "row", "alignItems": "center" },
-                "children": [
-                  { "type": "ia.display.icon",  "meta": { "name": "Icon" },  "position": { "basis": "auto" }, "props": { "path": "material/warning", "style": { "classes": "nav-icon" } } },
-                  { "type": "ia.display.label", "meta": { "name": "Label" }, "position": { "grow": 1 },        "props": { "text": "Failure Log" } }
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    ]
+    "type": "ia.container.flex"
   }
 }

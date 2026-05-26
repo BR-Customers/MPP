@@ -1,85 +1,37 @@
 {
   "custom": {
-    "attributesDraft": [
-      {
-        "AttributeName": "IpAddress",
-        "CreatedAt": {
-          "$": [
-            "ts",
-            192,
-            1778704800104
-          ],
-          "$ts": 1778711308733
-        },
-        "DataType": "NVARCHAR",
-        "DefaultValue": null,
-        "DeprecatedAt": null,
-        "Description": "IP address of the terminal",
-        "Id": 1,
-        "IsRequired": false,
-        "LocationTypeDefinitionId": 7,
-        "SortOrder": 1,
-        "Uom": null
-      },
-      {
-        "AttributeName": "DefaultPrinter",
-        "CreatedAt": {
-          "$": [
-            "ts",
-            192,
-            1778704800104
-          ],
-          "$ts": 1778711308733
-        },
-        "DataType": "NVARCHAR",
-        "DefaultValue": null,
-        "DeprecatedAt": null,
-        "Description": "Default Zebra printer name",
-        "Id": 2,
-        "IsRequired": false,
-        "LocationTypeDefinitionId": 7,
-        "SortOrder": 2,
-        "Uom": null
-      },
-      {
-        "AttributeName": "HasBarcodeScanner",
-        "CreatedAt": {
-          "$": [
-            "ts",
-            192,
-            1778704800104
-          ],
-          "$ts": 1778711308733
-        },
-        "DataType": "BIT",
-        "DefaultValue": "1",
-        "DeprecatedAt": null,
-        "Description": "Whether terminal has a barcode scanner",
-        "Id": 3,
-        "IsRequired": true,
-        "LocationTypeDefinitionId": 7,
-        "SortOrder": 3,
-        "Uom": null
+    "editDraft": {
+      "attributes": [],
+      "meta": {
+        "Code": "",
+        "Description": "",
+        "Icon": "",
+        "Id": "",
+        "LocationTypeId": "",
+        "Name": ""
       }
-    ],
-    "meta": {
-      "Code": "Terminal",
-      "Description": null,
-      "Icon": "mpp/tune",
-      "Id": 7,
-      "LocationTypeId": 5,
-      "Name": "Terminal"
     },
     "mode": "update",
-    "selectedDefId": 7,
-    "tierId": 5
+    "selected": {
+      "attributes": [],
+      "meta": {
+        "Code": "",
+        "Description": "",
+        "Icon": "",
+        "Id": "",
+        "LocationTypeId": "",
+        "Name": ""
+      }
+    },
+    "selectedDefId": "",
+    "tierId": ""
   },
   "params": {},
   "propConfig": {
     "custom.definitions": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Location.LocationTypeDefinition.listByType\", 0, {view.custom.tierId})"
+          "expression": "runScript(\"BlueRidge.Location.LocationTypeDefinition.getAll\", 0, {view.custom.tierId})"
         },
         "type": "expr"
       }
@@ -87,7 +39,7 @@
     "custom.tiers": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Location.LocationType.listAll\", 0)"
+          "expression": "runScript(\"BlueRidge.Location.LocationType.getAll\", 0)"
         },
         "type": "expr"
       }
@@ -131,7 +83,7 @@
               "dom": {
                 "onClick": {
                   "config": {
-                    "script": "\tsystem.perspective.closePopup(id\u003d\"mpp-loc-type-editor\")"
+                    "script": "\tif self.view.custom.editDraft \u003d\u003d self.view.custom.selected:\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-loc-type-editor\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid\u003d\"mpp-confirm-unsaved\",\n\t\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal\u003dTrue,\n\t\t\tshowCloseIcon\u003dFalse,\n\t\t\tparams\u003d{\n\t\t\t\t\"title\": \"Unsaved Changes\",\n\t\t\t\t\"message\": \"You have unsaved changes to this Location Type Definition. Save before closing?\"\n\t\t\t}\n\t\t)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -213,7 +165,7 @@
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\tself.view.custom.selectedDefId \u003d None\n\tself.view.custom.meta \u003d None\n\tself.view.custom.attributesDraft \u003d []\n\tself.view.custom.mode \u003d \"view\""
+                        "script": "\tself.view.custom.selectedDefId \u003d None\n\tself.view.custom.selected \u003d {\"meta\": None, \"attributes\": []}\n\tself.view.custom.editDraft \u003d {\"meta\": None, \"attributes\": []}\n\tself.view.custom.mode \u003d \"view\""
                       },
                       "scope": "G",
                       "type": "script"
@@ -310,6 +262,9 @@
                         "shrink": 0
                       },
                       "path": "BlueRidge/Components/DefinitionItem",
+                      "style": {
+                        "gap": "8px"
+                      },
                       "wrap": "wrap"
                     },
                     "type": "ia.display.flex-repeater"
@@ -319,7 +274,7 @@
                       "component": {
                         "onActionPerformed": {
                           "config": {
-                            "script": "\tself.view.custom.meta \u003d BlueRidge.Location.LocationTypeDefinition.emptyMeta(self.view.custom.tierId)\n\tself.view.custom.attributesDraft \u003d []\n\tself.view.custom.selectedDefId \u003d None\n\tself.view.custom.mode \u003d \"create\""
+                            "script": "\temptyM \u003d BlueRidge.Location.LocationTypeDefinition.emptyMeta(self.view.custom.tierId)\n\tself.view.custom.selected \u003d {\"meta\": None, \"attributes\": []}\n\tself.view.custom.editDraft \u003d {\"meta\": emptyM, \"attributes\": []}\n\tself.view.custom.selectedDefId \u003d None\n\tself.view.custom.mode \u003d \"create\""
                           },
                           "scope": "G",
                           "type": "script"
@@ -414,7 +369,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "if({view.custom.mode} \u003d \"create\", \"new \" + runScript(\"BlueRidge.Location.LocationType.nameForTier\", 0, {view.custom.tiers}, {view.custom.tierId}), runScript(\"BlueRidge.Location.LocationType.nameForTier\", 0, {view.custom.tiers}, {view.custom.tierId}) + \" • \" + coalesce({view.custom.meta.Code}, \"\"))"
+                        "expression": "if({view.custom.mode} \u003d \"create\", \"new \" + runScript(\"BlueRidge.Location.LocationType.nameForTier\", 0, {view.custom.tiers}, {view.custom.tierId}), runScript(\"BlueRidge.Location.LocationType.nameForTier\", 0, {view.custom.tiers}, {view.custom.tierId}) + \" • \" + coalesce({view.custom.editDraft.meta.Code}, \"\"))"
                       },
                       "type": "expr"
                     }
@@ -423,6 +378,29 @@
                 "props": {
                   "style": {
                     "classes": "badge badge-type"
+                  }
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "DirtyIndicator"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "if({view.custom.editDraft} !\u003d {view.custom.selected}, \"● Unsaved changes\", \"\")"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-accent)",
+                    "fontSize": "11px",
+                    "fontStyle": "italic"
                   }
                 },
                 "type": "ia.display.label"
@@ -441,7 +419,46 @@
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\tresult \u003d BlueRidge.Location.LocationTypeDefinition.handleSaveAll(self.view.custom.meta, self.view.custom.attributesDraft)\n\tif result:\n\t\tself.view.custom.definitions \u003d result[\"definitions\"]\n\t\tself.view.custom.selectedDefId \u003d result[\"NewId\"]\n\t\tself.view.custom.attributesDraft \u003d result[\"attributes\"]\n\t\tnewMeta \u003d dict(self.view.custom.meta or {})\n\t\tnewMeta[\"Id\"] \u003d result[\"NewId\"]\n\t\tself.view.custom.meta \u003d newMeta\n\t\tself.view.custom.mode \u003d \"update\""
+                        "script": "\tif self.view.custom.mode \u003d\u003d \"create\":\n\t\tself.view.custom.selected \u003d {\"meta\": None, \"attributes\": []}\n\t\tself.view.custom.editDraft \u003d {\"meta\": None, \"attributes\": []}\n\t\tself.view.custom.selectedDefId \u003d None\n\t\tself.view.custom.mode \u003d \"view\"\n\telse:\n\t\tsel \u003d self.view.custom.selected or {\"meta\": None, \"attributes\": []}\n\t\tself.view.custom.editDraft \u003d {\n\t\t\t\"meta\":       dict(sel.get(\"meta\")) if sel.get(\"meta\") else None,\n\t\t\t\"attributes\": [dict(a) for a in (sel.get(\"attributes\") or [])]\n\t\t}"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "CancelButton",
+                  "tooltip": {
+                    "text": "Revert in-flight edits to the last saved state"
+                  }
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.editDraft} !\u003d {view.custom.selected}"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "btn btn-sm"
+                  },
+                  "text": "Cancel"
+                },
+                "type": "ia.input.button"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tdraft \u003d self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\tresult \u003d BlueRidge.Location.LocationTypeDefinition.handleSaveAll(draft.get(\"meta\"), draft.get(\"attributes\"))\n\tif not result:\n\t\treturn\n\t# Refresh definitions list for the parent flex-repeater\n\tself.view.custom.definitions \u003d result[\"definitions\"]\n\tself.view.custom.selectedDefId \u003d result[\"NewId\"]\n\t# Build the new editDraft (meta + Id, refreshed attributes from server)\n\tnewMeta \u003d dict(draft.get(\"meta\") or {})\n\tnewMeta[\"Id\"] \u003d result[\"NewId\"]\n\tnewAttrs \u003d result[\"attributes\"]\n\tself.view.custom.editDraft \u003d {\"meta\": newMeta, \"attributes\": newAttrs}\n\t# Commit baseline so dirty indicator clears\n\tself.view.custom.selected \u003d {\n\t\t\"meta\":       dict(newMeta),\n\t\t\"attributes\": [dict(a) for a in newAttrs]\n\t}\n\tself.view.custom.mode \u003d \"update\""
                       },
                       "scope": "G",
                       "type": "script"
@@ -467,7 +484,7 @@
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\tdefId \u003d (self.view.custom.meta or {}).get(\"Id\")\n\tif defId is None:\n\t\treturn\n\tresult \u003d BlueRidge.Location.LocationTypeDefinition.handleDeprecate(defId, self.view.custom.tierId)\n\tif result:\n\t\tself.view.custom.definitions \u003d result[\"definitions\"]\n\t\tself.view.custom.selectedDefId \u003d None\n\t\tself.view.custom.meta \u003d None\n\t\tself.view.custom.attributesDraft \u003d []\n\t\tself.view.custom.mode \u003d \"view\""
+                        "script": "\tdraft \u003d self.view.custom.editDraft or {}\n\tdefId \u003d (draft.get(\"meta\") or {}).get(\"Id\")\n\tif defId is None:\n\t\treturn\n\tresult \u003d BlueRidge.Location.LocationTypeDefinition.handleDeprecate(defId, self.view.custom.tierId)\n\tif not result:\n\t\treturn\n\tself.view.custom.definitions \u003d result[\"definitions\"]\n\tself.view.custom.selectedDefId \u003d None\n\tself.view.custom.selected \u003d {\"meta\": None, \"attributes\": []}\n\tself.view.custom.editDraft \u003d {\"meta\": None, \"attributes\": []}\n\tself.view.custom.mode \u003d \"view\""
                       },
                       "scope": "G",
                       "type": "script"
@@ -543,14 +560,14 @@
                         "binding": {
                           "config": {
                             "bidirectional": true,
-                            "path": "view.custom.meta.Code"
+                            "path": "view.custom.editDraft.meta.Code"
                           },
                           "type": "property"
                         }
                       }
                     },
                     "props": {
-                      "placeholder": "DieCastMachine",
+                      "placeholder": "Unique Code",
                       "style": {
                         "boxSizing": "border-box",
                         "classes": "search-input",
@@ -599,14 +616,14 @@
                         "binding": {
                           "config": {
                             "bidirectional": true,
-                            "path": "view.custom.meta.Name"
+                            "path": "view.custom.editDraft.meta.Name"
                           },
                           "type": "property"
                         }
                       }
                     },
                     "props": {
-                      "placeholder": "Die Cast Machine",
+                      "placeholder": "Type Definition Name",
                       "style": {
                         "boxSizing": "border-box",
                         "classes": "search-input",
@@ -647,29 +664,102 @@
                     "type": "ia.display.label"
                   },
                   {
-                    "meta": {
-                      "name": "Input"
+                    "type": "ia.container.flex",
+                    "meta": { "name": "Input" },
+                    "props": {
+                      "alignItems": "center",
+                      "style": { "gap": "8px", "minHeight": "32px" }
                     },
-                    "propConfig": {
-                      "props.text": {
-                        "binding": {
-                          "config": {
-                            "bidirectional": true,
-                            "path": "view.custom.meta.Icon"
+                    "children": [
+                      {
+                        "type": "ia.display.icon",
+                        "meta": { "name": "IconPreview" },
+                        "position": { "basis": "24px", "shrink": 0 },
+                        "propConfig": {
+                          "props.path": {
+                            "binding": {
+                              "type": "property",
+                              "config": { "path": "view.custom.editDraft.meta.Icon" }
+                            }
                           },
-                          "type": "property"
+                          "position.display": {
+                            "binding": {
+                              "type": "expr",
+                              "config": { "expression": "{view.custom.editDraft.meta.Icon} !\u003d \"\"" }
+                            }
+                          }
+                        },
+                        "props": {
+                          "color": "var(--mpp-text-primary)",
+                          "style": { "height": "24px", "width": "24px" }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": { "name": "EmptyHint" },
+                        "position": { "basis": "24px", "shrink": 0 },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "type": "expr",
+                              "config": { "expression": "{view.custom.editDraft.meta.Icon} \u003d \"\"" }
+                            }
+                          }
+                        },
+                        "props": {
+                          "text": "—",
+                          "style": {
+                            "color": "var(--mpp-text-tertiary)",
+                            "fontSize": "20px",
+                            "lineHeight": "24px",
+                            "textAlign": "center",
+                            "width": "24px"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": { "name": "NameLabel" },
+                        "position": { "grow": 1 },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "expr",
+                              "config": { "expression": "if({view.custom.editDraft.meta.Icon} \u003d \"\", \"(none)\", runScript(\"BlueRidge.Common.Util._humanizeIconName\", 0, replace({view.custom.editDraft.meta.Icon}, \"mpp/\", \"\")))" }
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "12px",
+                            "overflow": "hidden",
+                            "textOverflow": "ellipsis",
+                            "whiteSpace": "nowrap"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.button",
+                        "meta": { "name": "PickButton" },
+                        "position": { "shrink": 0 },
+                        "props": {
+                          "text": "Pick…",
+                          "style": { "classes": "btn btn-sm" }
+                        },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "type": "script",
+                              "scope": "G",
+                              "config": {
+                                "script": "\tdraft \u003d self.view.custom.editDraft or {}\n\tmeta \u003d (draft.get(\"meta\") if hasattr(draft, \"get\") else None) or {}\n\tselected \u003d meta.get(\"Icon\") if hasattr(meta, \"get\") else \"\"\n\tsystem.perspective.openPopup(\n\t\tid\u003d\"mpp-icon-picker\",\n\t\tview\u003d\"BlueRidge/Components/Popups/IconPicker\",\n\t\tmodal\u003dTrue,\n\t\tshowCloseIcon\u003dFalse,\n\t\tparams\u003d{\n\t\t\t\"selected\":     selected or \"\",\n\t\t\t\"replyMessage\": \"iconPickerResult\"\n\t\t}\n\t)"
+                              }
+                            }
+                          }
                         }
                       }
-                    },
-                    "props": {
-                      "placeholder": "mpp/die_cast",
-                      "style": {
-                        "boxSizing": "border-box",
-                        "classes": "search-input",
-                        "width": "100%"
-                      }
-                    },
-                    "type": "ia.input.text-field"
+                    ]
                   }
                 ],
                 "meta": {
@@ -724,7 +814,7 @@
                         "binding": {
                           "config": {
                             "bidirectional": true,
-                            "path": "view.custom.meta.Description"
+                            "path": "view.custom.editDraft.meta.Description"
                           },
                           "type": "property"
                         }
@@ -820,7 +910,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "len({view.custom.attributesDraft}) + \u0027 attribute(s)\u0027"
+                        "expression": "len({view.custom.editDraft.attributes}) + \u0027 attribute(s)\u0027"
                       },
                       "type": "expr"
                     }
@@ -848,7 +938,7 @@
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\tdrafts \u003d list(self.view.custom.attributesDraft or [])\n\tdrafts.append(BlueRidge.Location.LocationTypeDefinition.emptyAttributeRow())\n\tself.view.custom.attributesDraft \u003d drafts"
+                        "script": "\tdraft \u003d self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\tattrs \u003d list(draft.get(\"attributes\") or [])\n\tattrs.append(BlueRidge.Location.LocationTypeDefinition.emptyAttributeRow())\n\tself.view.custom.editDraft \u003d {\"meta\": draft.get(\"meta\"), \"attributes\": attrs}"
                       },
                       "scope": "G",
                       "type": "script"
@@ -888,18 +978,19 @@
                   "name": "ColArrows"
                 },
                 "position": {
-                  "basis": "46px",
+                  "basis": "32px",
                   "shrink": 0
                 },
-                "type": "ia.display.label"
+                "type": "ia.container.flex"
               },
               {
                 "meta": {
                   "name": "ColName"
                 },
                 "position": {
-                  "basis": "0",
-                  "grow": 1
+                  "basis": "64px",
+                  "grow": "01",
+                  "shrink": 0
                 },
                 "props": {
                   "text": "Attribute Name"
@@ -911,7 +1002,7 @@
                   "name": "ColType"
                 },
                 "position": {
-                  "basis": "110px",
+                  "basis": "124px",
                   "shrink": 0
                 },
                 "props": {
@@ -924,11 +1015,11 @@
                   "name": "ColReq"
                 },
                 "position": {
-                  "basis": "60px",
+                  "basis": "32px",
                   "shrink": 0
                 },
                 "props": {
-                  "text": "Req"
+                  "text": "REQ"
                 },
                 "type": "ia.display.label"
               },
@@ -937,7 +1028,7 @@
                   "name": "ColDefault"
                 },
                 "position": {
-                  "basis": "90px",
+                  "basis": "80px",
                   "shrink": 0
                 },
                 "props": {
@@ -950,7 +1041,7 @@
                   "name": "ColUom"
                 },
                 "position": {
-                  "basis": "70px",
+                  "basis": "32px",
                   "shrink": 0
                 },
                 "props": {
@@ -964,7 +1055,7 @@
                 },
                 "position": {
                   "basis": "0",
-                  "grow": 1.5
+                  "grow": 2.5
                 },
                 "props": {
                   "text": "Description"
@@ -979,7 +1070,7 @@
                   "basis": "70px",
                   "shrink": 0
                 },
-                "type": "ia.display.label"
+                "type": "ia.container.flex"
               }
             ],
             "meta": {
@@ -1015,7 +1106,7 @@
               "props.instances": {
                 "binding": {
                   "config": {
-                    "path": "view.custom.attributesDraft"
+                    "path": "view.custom.editDraft.attributes"
                   },
                   "transforms": [
                     {
@@ -1074,7 +1165,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tsystem.perspective.closePopup(id\u003d\"mpp-loc-type-editor\")"
+                    "script": "\tif self.view.custom.editDraft \u003d\u003d self.view.custom.selected:\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-loc-type-editor\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid\u003d\"mpp-confirm-unsaved\",\n\t\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal\u003dTrue,\n\t\t\tshowCloseIcon\u003dFalse,\n\t\t\tparams\u003d{\n\t\t\t\t\"title\": \"Unsaved Changes\",\n\t\t\t\t\"message\": \"You have unsaved changes to this Location Type Definition. Save before closing?\"\n\t\t\t}\n\t\t)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -1136,28 +1227,42 @@
         {
           "messageType": "definitionClick",
           "pageScope": true,
-          "script": "\tdefId \u003d payload.get(\"id\") if payload else None\n\tif defId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Click error\", \"Definition click had no id; payload\u003d\" + str(payload), \"warning\")\n\t\treturn\n\tfor d in (self.view.custom.definitions or []):\n\t\tif d.get(\"Id\") \u003d\u003d defId:\n\t\t\tself.view.custom.selectedDefId \u003d defId\n\t\t\tself.view.custom.meta \u003d BlueRidge.Location.LocationTypeDefinition.metaFromDefinition(d)\n\t\t\tself.view.custom.attributesDraft \u003d BlueRidge.Location.LocationAttributeDefinition.listByDefinition(defId)\n\t\t\tself.view.custom.mode \u003d \"update\"\n\t\t\treturn\n\tBlueRidge.Common.Notify.toast(\"Stale selection\", \"Definition \" + str(defId) + \" not in current list -- selection ignored.\", \"warning\")",
+          "script": "\tdefId \u003d payload.get(\"id\") if payload else None\n\tif defId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Click error\", \"Definition click had no id; payload\u003d\" + str(payload), \"warning\")\n\t\treturn\n\tfor d in (self.view.custom.definitions or []):\n\t\tif d.get(\"Id\") \u003d\u003d defId:\n\t\t\tself.view.custom.selectedDefId \u003d defId\n\t\t\tmeta \u003d BlueRidge.Location.LocationTypeDefinition.metaFromDefinition(d)\n\t\t\tattrs \u003d BlueRidge.Location.LocationAttributeDefinition.getAll(defId)\n\t\t\tself.view.custom.selected \u003d {\n\t\t\t\t\"meta\":       meta,\n\t\t\t\t\"attributes\": attrs\n\t\t\t}\n\t\t\tself.view.custom.editDraft \u003d {\n\t\t\t\t\"meta\":       dict(meta) if meta else None,\n\t\t\t\t\"attributes\": [dict(a) for a in (attrs or [])]\n\t\t\t}\n\t\t\tself.view.custom.mode \u003d \"update\"\n\t\t\treturn\n\tBlueRidge.Common.Notify.toast(\"Stale selection\", \"Definition \" + str(defId) + \" not in current list -- selection ignored.\", \"warning\")",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "attrDraftUpdate",
           "pageScope": true,
-          "script": "\tidx \u003d payload.get(\"index\")\n\tfield \u003d payload.get(\"field\")\n\tvalue \u003d payload.get(\"value\")\n\tdrafts \u003d list(self.view.custom.attributesDraft or [])\n\tif idx is not None and 0 \u003c\u003d idx \u003c len(drafts):\n\t\trow \u003d dict(drafts[idx])\n\t\trow[field] \u003d value\n\t\tdrafts[idx] \u003d row\n\t\tself.view.custom.attributesDraft \u003d drafts",
+          "script": "\tidx \u003d payload.get(\"index\")\n\tfield \u003d payload.get(\"field\")\n\tvalue \u003d payload.get(\"value\")\n\tdraft \u003d self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\tattrs \u003d list(draft.get(\"attributes\") or [])\n\tif idx is not None and 0 \u003c\u003d idx \u003c len(attrs):\n\t\trow \u003d dict(attrs[idx])\n\t\trow[field] \u003d value\n\t\tattrs[idx] \u003d row\n\t\tself.view.custom.editDraft \u003d {\"meta\": draft.get(\"meta\"), \"attributes\": attrs}",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "attrDraftRemove",
           "pageScope": true,
-          "script": "\tidx \u003d payload.get(\"index\")\n\tdrafts \u003d list(self.view.custom.attributesDraft or [])\n\tif idx is not None and 0 \u003c\u003d idx \u003c len(drafts):\n\t\tdrafts.pop(idx)\n\t\tself.view.custom.attributesDraft \u003d drafts",
+          "script": "\tidx \u003d payload.get(\"index\")\n\tdraft \u003d self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\tattrs \u003d list(draft.get(\"attributes\") or [])\n\tif idx is not None and 0 \u003c\u003d idx \u003c len(attrs):\n\t\tattrs.pop(idx)\n\t\tself.view.custom.editDraft \u003d {\"meta\": draft.get(\"meta\"), \"attributes\": attrs}",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "attrDraftMove",
           "pageScope": true,
-          "script": "\tidx \u003d payload.get(\"index\")\n\tdirection \u003d payload.get(\"direction\")\n\tdrafts \u003d list(self.view.custom.attributesDraft or [])\n\tif idx is None:\n\t\treturn\n\tif direction \u003d\u003d \"up\" and idx \u003e 0:\n\t\tdrafts[idx-1], drafts[idx] \u003d drafts[idx], drafts[idx-1]\n\telif direction \u003d\u003d \"down\" and idx \u003c len(drafts) - 1:\n\t\tdrafts[idx+1], drafts[idx] \u003d drafts[idx], drafts[idx+1]\n\tself.view.custom.attributesDraft \u003d drafts",
+          "script": "\tidx \u003d payload.get(\"index\")\n\tdirection \u003d payload.get(\"direction\")\n\tdraft \u003d self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\tattrs \u003d list(draft.get(\"attributes\") or [])\n\tif idx is None:\n\t\treturn\n\tif direction \u003d\u003d \"up\" and idx \u003e 0:\n\t\tattrs[idx-1], attrs[idx] \u003d attrs[idx], attrs[idx-1]\n\telif direction \u003d\u003d \"down\" and idx \u003c len(attrs) - 1:\n\t\tattrs[idx+1], attrs[idx] \u003d attrs[idx], attrs[idx+1]\n\tself.view.custom.editDraft \u003d {\"meta\": draft.get(\"meta\"), \"attributes\": attrs}",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "confirmUnsavedResult",
+          "pageScope": true,
+          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tif action \u003d\u003d \"save\":\n\t\tdraft \u003d self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\t\tresult \u003d BlueRidge.Location.LocationTypeDefinition.handleSaveAll(draft.get(\"meta\"), draft.get(\"attributes\"))\n\t\tif result and result.get(\"Status\"):\n\t\t\tsystem.perspective.closePopup(id\u003d\"mpp-loc-type-editor\")\n\telif action \u003d\u003d \"discard\":\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-loc-type-editor\")",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "iconPickerResult",
+          "pageScope": true,
+          "script": "\ticon \u003d payload.get(\"icon\") if payload else None\n\tif icon is None:\n\t\treturn\n\tdraft \u003d self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\tmeta \u003d dict(draft.get(\"meta\") or {})\n\tmeta[\"Icon\"] \u003d icon\n\tself.view.custom.editDraft \u003d {\n\t\t\"meta\":       meta,\n\t\t\"attributes\": draft.get(\"attributes\") or []\n\t}",
           "sessionScope": false,
           "viewScope": false
         }
