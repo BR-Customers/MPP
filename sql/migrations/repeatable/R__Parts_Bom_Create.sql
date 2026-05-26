@@ -112,13 +112,17 @@ BEGIN
         IF @@TRANCOUNT > 0
             ROLLBACK TRANSACTION;
 
+        DECLARE @ErrNum   INT            = ERROR_NUMBER();
         DECLARE @ErrMsg   NVARCHAR(4000) = ERROR_MESSAGE();
         DECLARE @ErrSev   INT            = ERROR_SEVERITY();
         DECLARE @ErrState INT            = ERROR_STATE();
 
         SET @Status  = 0;
-        SET @Message = N'Unexpected error: ' + LEFT(@ErrMsg, 400);
         SET @NewId   = NULL;
+        IF @ErrNum IN (2601, 2627)
+            SET @Message = N'A draft BOM already exists for this Item. Open it or discard it before creating a new version.';
+        ELSE
+            SET @Message = N'Unexpected error: ' + LEFT(@ErrMsg, 400);
 
         BEGIN TRY
             EXEC Audit.Audit_LogFailure
@@ -132,7 +136,8 @@ BEGIN
 
         SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
 
-        RAISERROR(@ErrMsg, @ErrSev, @ErrState);
+        IF @ErrNum NOT IN (2601, 2627)
+            RAISERROR(@ErrMsg, @ErrSev, @ErrState);
     END CATCH
 END;
 GO

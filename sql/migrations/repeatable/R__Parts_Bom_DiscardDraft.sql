@@ -1,38 +1,29 @@
 -- =============================================
--- Procedure:   Parts.Bom_Deprecate
+-- Procedure:   Parts.Bom_DiscardDraft
 -- Author:      Blue Ridge Automation
--- Created:     2026-04-14
--- Version:     3.0
+-- Created:     2026-05-26
+-- Version:     1.0
 --
 -- Description:
---   Soft-deletes an active Bom by setting DeprecatedAt.
+--   Physically deletes a Draft BOM and all of its BomLine children.
+--   Target must be Draft (PublishedAt IS NULL AND DeprecatedAt IS NULL).
+--   Captures full pre-delete state as OldValue in Audit.ConfigLog so the
+--   draft is forensically reconstructable if needed.
 --
---   Production history is preserved via the immutable snapshot captured
---   on each Lot's BOM at release time -- deprecating a Bom does not
---   invalidate any in-flight or historical production. Engineering uses
---   this to retire stale versions once a newer version has been created
---   and validated.
---
---   Idempotent: returns Status=1 + "Already deprecated." when target is
---   already deprecated. Rejects Draft rows (use Bom_DiscardDraft instead).
---
---   Active-WO guard: stubbed for Arc 2 — when Workorder schema lands,
---   reject if any active WorkOrder references this Bom.
+--   Rejects published or deprecated BOMs (those are immutable; use
+--   Bom_Deprecate for published ones).
 --
 -- Parameters (input):
---   @Id BIGINT        - Required.
+--   @Id        BIGINT - Required.
 --   @AppUserId BIGINT - Required for audit.
 --
 -- Result set:
---   Single row with Status (BIT), Message (NVARCHAR).
+--   Status (BIT), Message (NVARCHAR).
 --
 -- Change Log:
---   2026-04-14 - 1.0 - Initial version (OUTPUT params)
---   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
---   2026-05-26 - 3.0 - Idempotent already-deprecated path returns
---                      Status=1; Draft rejection; Arc 2 WO guard stub.
+--   2026-05-26 - 1.0 - Initial.
 -- =============================================
-CREATE OR ALTER PROCEDURE Parts.Bom_Deprecate
+CREATE OR ALTER PROCEDURE Parts.Bom_DiscardDraft
     @Id        BIGINT,
     @AppUserId BIGINT
 AS
@@ -43,13 +34,14 @@ BEGIN
     DECLARE @Status  BIT           = 0;
     DECLARE @Message NVARCHAR(500) = N'Unknown error';
 
-    DECLARE @ProcName NVARCHAR(200) = N'Parts.Bom_Deprecate';
+    DECLARE @ProcName NVARCHAR(200) = N'Parts.Bom_DiscardDraft';
     DECLARE @Params   NVARCHAR(MAX) =
         (SELECT @Id AS Id FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
     DECLARE @VersionNumber       INT          = NULL;
     DECLARE @ExistingPublishedAt DATETIME2(3) = NULL;
     DECLARE @ExistingDeprecatedAt DATETIME2(3) = NULL;
+    DECLARE @OldValue            NVARCHAR(MAX);
 
     BEGIN TRY
         IF @Id IS NULL OR @AppUserId IS NULL
@@ -57,7 +49,7 @@ BEGIN
             SET @Message = N'Required parameter missing.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'Bom',
-                @EntityId = @Id, @LogEventTypeCode = N'Deprecated',
+                @EntityId = @Id, @LogEventTypeCode = N'Deleted',
                 @FailureReason = @Message, @ProcedureName = @ProcName,
                 @AttemptedParameters = @Params;
             SELECT @Status AS Status, @Message AS Message;
@@ -74,74 +66,60 @@ BEGIN
             SET @Message = N'BOM not found.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'Bom',
-                @EntityId = @Id, @LogEventTypeCode = N'Deprecated',
+                @EntityId = @Id, @LogEventTypeCode = N'Deleted',
                 @FailureReason = @Message, @ProcedureName = @ProcName,
                 @AttemptedParameters = @Params;
             SELECT @Status AS Status, @Message AS Message;
             RETURN;
         END
 
-        -- Idempotent — already deprecated
-        IF @ExistingDeprecatedAt IS NOT NULL
+        IF @ExistingPublishedAt IS NOT NULL OR @ExistingDeprecatedAt IS NOT NULL
         BEGIN
-            SET @Status  = 1;
-            SET @Message = N'Already deprecated.';
-            SELECT @Status AS Status, @Message AS Message;
-            RETURN;
-        END
-
-        -- Draft rows can't be deprecated — use DiscardDraft
-        IF @ExistingPublishedAt IS NULL
-        BEGIN
-            SET @Message = N'Cannot deprecate a draft BOM. Use Discard Draft instead.';
+            SET @Message = N'Cannot discard a published or deprecated BOM.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'Bom',
-                @EntityId = @Id, @LogEventTypeCode = N'Deprecated',
+                @EntityId = @Id, @LogEventTypeCode = N'Deleted',
                 @FailureReason = @Message, @ProcedureName = @ProcName,
                 @AttemptedParameters = @Params;
             SELECT @Status AS Status, @Message AS Message;
             RETURN;
         END
 
-        -- TODO Arc 2: reject if any active WorkOrder references this Bom
-        -- IF EXISTS (SELECT 1 FROM Workorder.WorkOrder
-        --            WHERE BomId = @Id AND Status IN (N'Open', N'InProgress'))
-        -- BEGIN
-        --     SET @Message = N'Cannot deprecate: BOM is referenced by an active Work Order.';
-        --     ... reject ...
-        -- END
-
-        -- Capture OldValue for audit
-        DECLARE @OldValue NVARCHAR(MAX) =
-            (SELECT ParentItemId, VersionNumber, EffectiveFrom, PublishedAt, DeprecatedAt
-             FROM Parts.Bom WHERE Id = @Id
-             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+        -- Capture full pre-delete state for audit
+        SET @OldValue = (
+            SELECT
+                (SELECT Id, ParentItemId, VersionNumber, EffectiveFrom, PublishedAt, DeprecatedAt
+                 FROM Parts.Bom WHERE Id = @Id
+                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER) AS Bom,
+                JSON_QUERY((
+                    SELECT Id, ChildItemId, QtyPer, UomId, SortOrder
+                    FROM Parts.BomLine
+                    WHERE BomId = @Id
+                    ORDER BY SortOrder
+                    FOR JSON PATH
+                )) AS Lines
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
 
         BEGIN TRANSACTION;
 
-        UPDATE Parts.Bom
-        SET DeprecatedAt = SYSUTCDATETIME()
-        WHERE Id = @Id;
-
-        DECLARE @NewValue NVARCHAR(MAX) =
-            (SELECT ParentItemId, VersionNumber, EffectiveFrom, PublishedAt, DeprecatedAt
-             FROM Parts.Bom WHERE Id = @Id
-             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+        DELETE FROM Parts.BomLine WHERE BomId = @Id;
+        DELETE FROM Parts.Bom WHERE Id = @Id;
 
         EXEC Audit.Audit_LogConfigChange
             @AppUserId         = @AppUserId,
             @LogEntityTypeCode = N'Bom',
             @EntityId          = @Id,
-            @LogEventTypeCode  = N'Deprecated',
+            @LogEventTypeCode  = N'Deleted',
             @LogSeverityCode   = N'Info',
-            @Description       = N'Bom deprecated.',
+            @Description       = N'Draft BOM discarded (physically deleted).',
             @OldValue          = @OldValue,
-            @NewValue          = @NewValue;
+            @NewValue          = NULL;
 
         COMMIT TRANSACTION;
 
         SET @Status  = 1;
-        SET @Message = N'Deprecated v' + CAST(@VersionNumber AS NVARCHAR(10)) + N'.';
+        SET @Message = N'Draft discarded.';
         SELECT @Status AS Status, @Message AS Message;
     END TRY
     BEGIN CATCH
@@ -158,7 +136,7 @@ BEGIN
         BEGIN TRY
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'Bom',
-                @EntityId = @Id, @LogEventTypeCode = N'Deprecated',
+                @EntityId = @Id, @LogEventTypeCode = N'Deleted',
                 @FailureReason = @Message, @ProcedureName = @ProcName,
                 @AttemptedParameters = @Params;
         END TRY
