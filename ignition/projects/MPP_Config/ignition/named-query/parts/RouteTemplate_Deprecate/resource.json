@@ -12,7 +12,7 @@
     "fallbackValue": "",
     "maxReturnSize": 100,
     "cacheUnit": "SEC",
-    "type": "Update",
+    "type": "Query",
     "enabled": true,
     "cacheAmount": 1,
     "cacheEnabled": false,
