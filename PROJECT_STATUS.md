@@ -47,7 +47,9 @@ Plan deviations (all called out in commit messages):
 
 Commit range: `4e2f47d` (NQ Create) → `8c72bea` (NQ Update) → `bcb4575` (entity script) → `981b816` (ContainerConfig embed) → `7731120` (parent gate) → `61a9eaa` (DetailsHeader excise + tab init fix) → `08256e0` (expr/runScript fixes) → `be207a5` (Identity read-only restore).
 
-**Status**: smoke-pass-1 confirmed by Jacques on cold-open + click-5G0. Deeper smoke (dirty/Save/Discard/ConfirmUnsaved popup flows, item-row switch while dirty, ByWeight TargetWeight validation) deferred to organic verification during Phase 3 + parallel agent work.
+**Status**: full smoke (spec §7 steps 1–11) passed 2026-05-26.
+
+**Late-stage smoke fix (`2817cdd`)**: spec §7 step 4 originally wanted a ConfirmUnsaved popup on tab clicks with revert-to-current-tab semantics. `ia.container.tab` in Ignition 8.3 doesn't expose `instantiation` / `keepAlive` / pre-change events, so the popup-intercept-with-state-preservation pattern is infeasible against that component. Pivoted to the **tab-objects pattern** — `props.tabs` accepts a list of dicts per tab with `text` / `runWhileHidden` / `disabled` fields. New `BlueRidge.Parts.Item.itemMasterTabObjects(sectionDirty, activeTab)` returns objects with `runWhileHidden: true` (keeps inactive embeds mounted, preserves their local editDraft across tab visibility changes) and `disabled: true` on every non-active tab when any section is dirty (locks navigation visually instead of via script intercept). The active tab still shows the `●` dirty-dot prefix as the cue. Item-row click popup intercept stays as-is (separate code path). Spec §7 step 4 should be retro-edited to describe this UX. Reference: [Ignition tab container docs](https://www.docs.inductiveautomation.com/docs/8.3/appendix/components/perspective-components/perspective-container-palette/perspective-tab-container#adding-components-to-tabs).
 
 ### Defect Codes — Task 8 complete (2026-05-20)
 
