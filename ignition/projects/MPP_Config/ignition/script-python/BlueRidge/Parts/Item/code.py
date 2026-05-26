@@ -179,13 +179,32 @@ def getAllForList(searchText="", typeFilter="All Types"):
 
 
 def getInstancesForFlexRepeater(searchText="", typeFilter="All Types", selectedId=0):
-    """Composes the flex-repeater instances payload for the items list.
-    Each instance is {'item': <row>, 'selectedId': <int>}. Replaces the
-    forEach(...) expression Ignition's scanner rejected for nested
-    reference paths inside the row-template dict literal."""
+    """LEGACY -- composes the flex-repeater instances payload by calling
+    getAllForList and wrapping. Kept for any binding that still uses it,
+    but the convention is now: view.custom.items binds to getAllForList,
+    and components bind to view.custom.items via attachSelectedId
+    (pure transform, no DB call from a component-level binding)."""
     selectedId = _u(selectedId) or 0
     rows = getAllForList(searchText, typeFilter)
     return [{"item": r, "selectedId": selectedId} for r in rows]
+
+
+def attachSelectedId(items, selectedId):
+    """Pure transform: takes the items list (already loaded from DB into
+    view.custom.items via getAllForList) and the currently-selected
+    item id, returns the flex-repeater instances payload:
+    [{'item': <row>, 'selectedId': <int>}, ...]
+
+    No DB call -- this is purely a shape transform safe to call from a
+    component binding. View layer:
+      view.custom.items binds to runScript(getAllForList, search, typeFilter)
+      ItemList.props.instances binds to runScript(attachSelectedId,
+                                                  view.custom.items,
+                                                  view.custom.selectedItemId)
+    """
+    items = _u(items) or []
+    selectedId = _u(selectedId) or 0
+    return [{"item": r, "selectedId": selectedId} for r in items]
 
 
 _TAB_LABELS = [

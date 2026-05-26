@@ -10,7 +10,6 @@
       "Pass-Through"
     ],
     "pendingSwitch": null,
-    "refreshTick": 0,
     "search": "",
     "sectionDirty": {
       "boms": false,
@@ -253,7 +252,7 @@
                   "props.instances": {
                     "binding": {
                       "config": {
-                        "expression": "runScript(\"BlueRidge.Parts.Item.getInstancesForFlexRepeater\", 0, {view.custom.search}, {view.custom.typeFilter}, {view.custom.selectedItemId}, {view.custom.refreshTick})"
+                        "expression": "runScript(\"BlueRidge.Parts.Item.attachSelectedId\", 0, {view.custom.items}, {view.custom.selectedItemId})"
                       },
                       "type": "expr"
                     }
@@ -620,7 +619,7 @@
         {
           "messageType": "itemsRefresh",
           "pageScope": true,
-          "script": "\tcurr = self.view.custom.refreshTick or 0\n\tself.view.custom.refreshTick = curr + 1",
+          "script": "\tsearch = self.view.custom.search or \"\"\n\ttypeFilter = self.view.custom.typeFilter or \"All Types\"\n\tself.view.custom.items = BlueRidge.Parts.Item.getAllForList(search, typeFilter)",
           "sessionScope": false,
           "viewScope": false
         },
