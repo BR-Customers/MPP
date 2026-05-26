@@ -617,7 +617,8 @@ IF OBJECT_ID('tempdb..#BomListScratch') IS NOT NULL DROP TABLE #BomListScratch;
 CREATE TABLE #BomListScratch (
     Id BIGINT, ParentItemId BIGINT, VersionNumber INT,
     EffectiveFrom DATETIME2(3), PublishedAt DATETIME2(3), DeprecatedAt DATETIME2(3),
-    CreatedByUserId BIGINT, CreatedByDisplayName NVARCHAR(200), CreatedAt DATETIME2(3)
+    CreatedByUserId BIGINT, CreatedByDisplayName NVARCHAR(200), CreatedAt DATETIME2(3),
+    LineCount INT, [Status] NVARCHAR(20)
 );
 INSERT INTO #BomListScratch EXEC Parts.Bom_ListByParentItem @ParentItemId = @PId, @ActiveOnly = 1;
 DROP TABLE #BomListScratch;
