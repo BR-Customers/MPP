@@ -1,6 +1,33 @@
 # MPP MES — Project Status
 
-**Last updated:** 2026-05-26 (Phase 4 ContainerConfig save + parent gate infrastructure landed on main, 8 commits `4e2f47d`..`be207a5`. Phase 5/6/8 unblocked for parallel agent dispatch; Phase 3 picks up next inline.)
+**Last updated:** 2026-05-26 (Phase 3 Item Master Identity + AddItem CRUD code-complete, smoke partially passed; **MAJOR BUG OPEN** — per-section editDraft drifts from selected during view lifecycle, causing spurious dirty state and blocking navigation. Diagnosis pending.)
+
+---
+
+## 🚨 Active Blocker — Item Master per-section dirty-state drift
+
+**Symptom:** After loading an Item, navigating between items (or sometimes just letting the view sit for a few seconds), `view.custom.editDraft` becomes !=  `view.custom.selected` even with no user input. This triggers `sectionDirtyChanged{isDirty: true}` → ConfirmUnsaved popup blocks `itemRowClicked` navigation → user stuck on current item indefinitely.
+
+**Affected sections:** Identity embed (confirmed), ContainerConfig embed (very likely — same pattern).
+
+**Attempts to date (all partial):**
+
+1. `42ba778` — load() coerces `None → ""` for nullable text-bound fields. Fixed null/literal-"null" rendering.
+2. `12c6a7b` — load() stringifies ALL text-field-bound values including numerics. Fixed int-to-string drift on cold load.
+3. **Still broken** — drift returns within seconds of normal use.
+
+**Hypotheses to test (need diagnostic data from Designer Property Browser):**
+
+- **Wrapper type drift:** `view.custom.editDraft` returns a Java BasicMap or PerspectiveProperty wrapper; bidi-write-back creates a different wrapper type than the one in `selected`; `dict()` deep-unwrap normalizes them but `dict.__eq__` still fails on some leaf wrappers.
+- **Read-only text-field bidi:** PartNumber input has `enabled: false` AND `bidirectional: true`. Maybe the bidi binding does background writes for read-only fields too, drifting representation over time.
+- **Background re-render:** Some Ignition lifecycle event (focus loss, scroll, tab visibility) triggers text-fields to re-write their values, normalizing to a different representation.
+- **Binding evaluation order race:** `custom.isDirty`'s `runScript(...)` expression evaluates in a context where `editDraft` and `selected` references diverge transiently.
+
+**Next step:** capture full editDraft vs selected snapshot (key/value/type for each) when dirty spontaneously triggers, identify the drifting keys, then fix the actual mechanism rather than guessing categories.
+
+**Quick workaround if needed for demo:** any time dirty fires spuriously, click Discard on the affected section — that does `editDraft = dict(selected)` and clears dirty until the next drift cycle.
+
+---
 
 ---
 
