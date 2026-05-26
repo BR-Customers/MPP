@@ -543,12 +543,12 @@
         {
           "name": "openDeprecateConfirm",
           "params": [],
-          "script": "\tsel = self.view.custom.selected or {}\n\tbomId = sel.get(\"id\")\n\tver = sel.get(\"versionNumber\")\n\tif not bomId:\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid=\"mpp-confirm-action\",\n\t\tview=\"BlueRidge/Components/Popups/ConfirmAction\",\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t\"title\":        \"Deprecate BOM\",\n\t\t\t\"message\":      \"Deprecate v\" + str(ver) + \"? This retires the version from production. Existing Work Orders are unaffected.\",\n\t\t\t\"confirmLabel\": \"Deprecate\",\n\t\t\t\"cancelLabel\":  \"Cancel\",\n\t\t\t\"confirmStyle\": \"btn btn-danger btn-sm\",\n\t\t\t\"replyMessage\": \"bomConfirmDeprecateResult\",\n\t\t\t\"context\":      bomId,\n\t\t},\n\t)"
+          "script": "\tsel = self.view.custom.selected or {}\n\tbomId = sel.get(\"id\")\n\tver = sel.get(\"versionNumber\")\n\tif not bomId:\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid=\"mpp-confirm-destructive\",\n\t\tview=\"BlueRidge/Components/Popups/ConfirmDestructive\",\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t\"title\":        \"Deprecate BOM\",\n\t\t\t\"message\":      \"Deprecate v\" + str(ver) + \"? This retires the version from production. Existing Work Orders are unaffected.\",\n\t\t\t\"confirmLabel\": \"Deprecate\",\n\t\t\t\"cancelLabel\":  \"Cancel\",\n\t\t\t\"confirmClass\": \"btn btn-danger btn-sm\",\n\t\t\t\"replyMessage\": \"bomConfirmDeprecateResult\",\n\t\t},\n\t)"
         },
         {
           "name": "openDiscardDraftConfirm",
           "params": [],
-          "script": "\tdraft = self.view.custom.editDraft or {}\n\tbomId = draft.get(\"id\")\n\tif not bomId:\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid=\"mpp-confirm-action\",\n\t\tview=\"BlueRidge/Components/Popups/ConfirmAction\",\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t\"title\":        \"Discard Draft\",\n\t\t\t\"message\":      \"Discard this draft and all unsaved edits? This cannot be undone.\",\n\t\t\t\"confirmLabel\": \"Discard\",\n\t\t\t\"cancelLabel\":  \"Cancel\",\n\t\t\t\"confirmStyle\": \"btn btn-danger btn-sm\",\n\t\t\t\"replyMessage\": \"bomConfirmDiscardResult\",\n\t\t\t\"context\":      bomId,\n\t\t},\n\t)"
+          "script": "\tdraft = self.view.custom.editDraft or {}\n\tbomId = draft.get(\"id\")\n\tif not bomId:\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid=\"mpp-confirm-destructive\",\n\t\tview=\"BlueRidge/Components/Popups/ConfirmDestructive\",\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t\"title\":        \"Discard Draft\",\n\t\t\t\"message\":      \"Discard this draft and all unsaved edits? This cannot be undone.\",\n\t\t\t\"confirmLabel\": \"Discard\",\n\t\t\t\"cancelLabel\":  \"Cancel\",\n\t\t\t\"confirmClass\": \"btn btn-danger btn-sm\",\n\t\t\t\"replyMessage\": \"bomConfirmDiscardResult\",\n\t\t},\n\t)"
         },
         {
           "name": "handleAddComponent",
@@ -619,14 +619,14 @@
           "pageScope": true,
           "sessionScope": false,
           "viewScope": false,
-          "script": "\tif not payload:\n\t\treturn\n\tif payload.get(\"action\") != \"confirm\":\n\t\treturn\n\tbomId = payload.get(\"context\")\n\tif not bomId:\n\t\treturn\n\tresult = BlueRidge.Parts.Bom.handleDeprecate(bomId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"BOM deprecated\")\n\tif result and result.get(\"Status\"):\n\t\tself.refreshVersionList()\n\t\tself.loadActiveVersion()"
+          "script": "\tif not payload:\n\t\treturn\n\tif payload.get(\"action\") != \"confirm\":\n\t\treturn\n\tsel = self.view.custom.selected or {}\n\tbomId = sel.get(\"id\")\n\tif not bomId:\n\t\treturn\n\tresult = BlueRidge.Parts.Bom.handleDeprecate(bomId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"BOM deprecated\")\n\tif result and result.get(\"Status\"):\n\t\tself.refreshVersionList()\n\t\tself.loadActiveVersion()"
         },
         {
           "messageType": "bomConfirmDiscardResult",
           "pageScope": true,
           "sessionScope": false,
           "viewScope": false,
-          "script": "\tif not payload:\n\t\treturn\n\tif payload.get(\"action\") != \"confirm\":\n\t\treturn\n\tbomId = payload.get(\"context\")\n\tif not bomId:\n\t\treturn\n\tresult = BlueRidge.Parts.Bom.handleDiscardDraft(bomId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Draft discarded\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.activeVersionId = None\n\t\tself.refreshVersionList()\n\t\tvers = self.view.custom.versions or []\n\t\tif vers:\n\t\t\tself.view.custom.activeVersionId = vers[0].get(\"Id\")"
+          "script": "\tif not payload:\n\t\treturn\n\tif payload.get(\"action\") != \"confirm\":\n\t\treturn\n\tdraft = self.view.custom.editDraft or {}\n\tbomId = draft.get(\"id\")\n\tif not bomId:\n\t\treturn\n\tresult = BlueRidge.Parts.Bom.handleDiscardDraft(bomId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Draft discarded\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.activeVersionId = None\n\t\tself.refreshVersionList()\n\t\tvers = self.view.custom.versions or []\n\t\tif vers:\n\t\t\tself.view.custom.activeVersionId = vers[0].get(\"Id\")"
         }
       ]
     }
