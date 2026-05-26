@@ -90,6 +90,32 @@ def getOne(itemId):
         return None
 
 
+_ITEM_SHAPE_KEYS = (
+    "Id", "PartNumber", "Description",
+    "ItemTypeId", "ItemTypeName",
+    "UomId", "UomCode",
+    "WeightUomId", "WeightUomCode",
+    "MacolaPartNumber", "CountryOfOrigin",
+    "UnitWeight", "DefaultSubLotQty", "PartsPerBasket",
+    "MaxLotSize", "MaxParts",
+    "CreatedAt", "CreatedByUserId",
+    "UpdatedAt", "UpdatedByUserId",
+    "DeprecatedAt",
+)
+
+
+def getOneOrEmpty(itemId):
+    """Like getOne but returns the full Item key-shape with null values
+    instead of None when itemId is null/missing. Designed for use as a
+    runScript binding source for view.custom.selectedItem where bindings
+    traverse the dict on every render — None breaks Quality, empty-shape
+    {Id: None, PartNumber: None, ...} renders cleanly."""
+    row = getOne(itemId)
+    if row:
+        return row
+    return dict((k, None) for k in _ITEM_SHAPE_KEYS)
+
+
 def mapItemRowsForList(rows, typeFilter="All Types"):
     """Flex-repeater instances transform.
 
