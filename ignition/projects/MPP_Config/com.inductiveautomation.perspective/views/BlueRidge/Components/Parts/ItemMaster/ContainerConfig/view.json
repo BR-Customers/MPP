@@ -1,93 +1,64 @@
 {
   "custom": {
-    "selected": {
-      "Id": null,
-      "ItemId": null,
-      "TraysPerContainer": null,
-      "PartsPerTray": null,
-      "IsSerialized": false,
-      "ClosureMethod": null,
-      "TargetWeight": null,
-      "DunnageCode": null,
-      "CustomerCode": null
-    },
     "editDraft": {
-      "Id": null,
-      "ItemId": null,
-      "TraysPerContainer": null,
-      "PartsPerTray": null,
-      "IsSerialized": false,
       "ClosureMethod": null,
-      "TargetWeight": null,
+      "CustomerCode": null,
       "DunnageCode": null,
-      "CustomerCode": null
+      "Id": null,
+      "IsSerialized": false,
+      "ItemId": null,
+      "PartsPerTray": null,
+      "TargetWeight": null,
+      "TraysPerContainer": null
     },
-    "isDirty": false
+    "isDirty": false,
+    "selected": {
+      "ClosureMethod": null,
+      "CustomerCode": null,
+      "DunnageCode": null,
+      "Id": null,
+      "IsSerialized": false,
+      "ItemId": null,
+      "PartsPerTray": null,
+      "TargetWeight": null,
+      "TraysPerContainer": null
+    }
   },
   "params": {
     "value": 0
   },
   "propConfig": {
-    "params.value": {
-      "paramDirection": "input",
-      "onChange": {
-        "enabled": true,
-        "script": "\tself.rootContainer.load()"
-      }
-    },
     "custom.isDirty": {
       "binding": {
-        "type": "expr",
         "config": {
           "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.editDraft}) != runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.selected})"
-        }
+        },
+        "type": "expr"
       },
       "onChange": {
         "enabled": true,
         "script": "\tsystem.perspective.sendMessage(\"sectionDirtyChanged\", payload={\"section\": \"containerConfig\", \"isDirty\": bool(currentValue.value)}, scope=\"page\")"
       }
+    },
+    "params.value": {
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.rootContainer.load()"
+      },
+      "paramDirection": "input"
     }
   },
   "props": {
     "defaultSize": {
-      "width": 800,
-      "height": 220
+      "height": 220,
+      "width": 800
     }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": {
-      "name": "root"
-    },
-    "props": {
-      "direction": "column",
-      "style": {
-        "classes": "detail-panel",
-        "padding": "12px 14px",
-        "gap": "10px",
-        "height": "100%"
-      }
-    },
     "children": [
       {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "HeaderRow"
-        },
-        "position": {
-          "basis": "auto"
-        },
-        "props": {
-          "direction": "row",
-          "alignItems": "center",
-          "style": {
-            "gap": "8px",
-            "marginBottom": "4px"
-          }
-        },
         "children": [
           {
-            "type": "ia.display.label",
             "meta": {
               "name": "PanelHeader"
             },
@@ -95,15 +66,15 @@
               "basis": "auto"
             },
             "props": {
-              "text": "Container Configuration",
               "style": {
                 "fontSize": "13px",
                 "fontWeight": "600"
-              }
-            }
+              },
+              "text": "Container Configuration"
+            },
+            "type": "ia.display.label"
           },
           {
-            "type": "ia.display.label",
             "meta": {
               "name": "Spacer"
             },
@@ -112,10 +83,21 @@
             },
             "props": {
               "text": ""
-            }
+            },
+            "type": "ia.display.label"
           },
           {
-            "type": "ia.input.button",
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleDiscard()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
             "meta": {
               "name": "BtnDiscard"
             },
@@ -125,33 +107,33 @@
             "propConfig": {
               "meta.visible": {
                 "binding": {
-                  "type": "property",
                   "config": {
                     "path": "view.custom.isDirty"
-                  }
+                  },
+                  "type": "property"
                 }
               }
             },
             "props": {
-              "text": "Discard",
               "style": {
                 "classes": "btn btn-sm"
-              }
+              },
+              "text": "Discard"
             },
+            "type": "ia.input.button"
+          },
+          {
             "events": {
               "component": {
                 "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
                   "config": {
-                    "script": "\tself.view.rootContainer.handleDiscard()"
-                  }
+                    "script": "\tself.view.rootContainer.handleSave()"
+                  },
+                  "scope": "G",
+                  "type": "script"
                 }
               }
-            }
-          },
-          {
-            "type": "ia.input.button",
+            },
             "meta": {
               "name": "BtnSave"
             },
@@ -161,51 +143,84 @@
             "propConfig": {
               "meta.visible": {
                 "binding": {
-                  "type": "property",
                   "config": {
                     "path": "view.custom.isDirty"
-                  }
+                  },
+                  "type": "property"
                 }
               }
             },
             "props": {
-              "text": "Save",
               "style": {
                 "classes": "btn btn-primary btn-sm"
-              }
+              },
+              "text": "Save"
             },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\tself.view.rootContainer.handleSave()"
-                  }
-                }
-              }
-            }
+            "type": "ia.input.button"
           }
-        ]
-      },
-      {
-        "type": "ia.container.flex",
+        ],
         "meta": {
-          "name": "FieldRow1"
+          "name": "HeaderRow"
         },
         "position": {
           "basis": "auto"
         },
         "props": {
+          "alignItems": "center",
           "direction": "row",
           "style": {
-            "classes": "field-row",
-            "gap": "12px"
+            "gap": "8px",
+            "marginBottom": "4px"
           }
         },
+        "type": "ia.container.flex"
+      },
+      {
         "children": [
           {
-            "type": "ia.container.flex",
+            "children": [
+              {
+                "meta": {
+                  "name": "LabelTraysPerContainer"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Trays Per Container"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "InputTraysPerContainer"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.TraysPerContainer"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "search-input",
+                    "width": "80px"
+                  }
+                },
+                "type": "ia.input.text-field"
+              }
+            ],
             "meta": {
               "name": "FieldTraysPerContainer"
             },
@@ -219,26 +234,28 @@
                 "gap": "2px"
               }
             },
+            "type": "ia.container.flex"
+          },
+          {
             "children": [
               {
-                "type": "ia.display.label",
                 "meta": {
-                  "name": "LabelTraysPerContainer"
+                  "name": "LabelPartsPerTray"
                 },
                 "position": {
                   "basis": "auto"
                 },
                 "props": {
-                  "text": "Trays Per Container",
                   "style": {
                     "classes": "field-label"
-                  }
-                }
+                  },
+                  "text": "Parts Per Tray"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.text-field",
                 "meta": {
-                  "name": "InputTraysPerContainer"
+                  "name": "InputPartsPerTray"
                 },
                 "position": {
                   "basis": "auto"
@@ -246,11 +263,11 @@
                 "propConfig": {
                   "props.text": {
                     "binding": {
-                      "type": "property",
                       "config": {
                         "bidirectional": true,
-                        "path": "view.custom.editDraft.TraysPerContainer"
-                      }
+                        "path": "view.custom.editDraft.PartsPerTray"
+                      },
+                      "type": "property"
                     }
                   }
                 },
@@ -259,12 +276,10 @@
                     "classes": "search-input",
                     "width": "80px"
                   }
-                }
+                },
+                "type": "ia.input.text-field"
               }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
+            ],
             "meta": {
               "name": "FieldPartsPerTray"
             },
@@ -278,68 +293,11 @@
                 "gap": "2px"
               }
             },
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "LabelPartsPerTray"
-                },
-                "position": {
-                  "basis": "auto"
-                },
-                "props": {
-                  "text": "Parts Per Tray",
-                  "style": {
-                    "classes": "field-label"
-                  }
-                }
-              },
-              {
-                "type": "ia.input.text-field",
-                "meta": {
-                  "name": "InputPartsPerTray"
-                },
-                "position": {
-                  "basis": "auto"
-                },
-                "propConfig": {
-                  "props.text": {
-                    "binding": {
-                      "type": "property",
-                      "config": {
-                        "bidirectional": true,
-                        "path": "view.custom.editDraft.PartsPerTray"
-                      }
-                    }
-                  }
-                },
-                "props": {
-                  "style": {
-                    "classes": "search-input",
-                    "width": "80px"
-                  }
-                }
-              }
-            ]
+            "type": "ia.container.flex"
           },
           {
-            "type": "ia.container.flex",
-            "meta": {
-              "name": "FieldIsSerialized"
-            },
-            "position": {
-              "basis": "auto"
-            },
-            "props": {
-              "direction": "column",
-              "style": {
-                "classes": "field",
-                "gap": "2px"
-              }
-            },
             "children": [
               {
-                "type": "ia.display.label",
                 "meta": {
                   "name": "LabelIsSerialized"
                 },
@@ -347,14 +305,14 @@
                   "basis": "auto"
                 },
                 "props": {
-                  "text": "Serialized",
                   "style": {
                     "classes": "field-label"
-                  }
-                }
+                  },
+                  "text": "Serialized"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.dropdown",
                 "meta": {
                   "name": "DropdownIsSerialized"
                 },
@@ -364,11 +322,11 @@
                 "propConfig": {
                   "props.value": {
                     "binding": {
-                      "type": "property",
                       "config": {
                         "bidirectional": true,
                         "path": "view.custom.editDraft.IsSerialized"
-                      }
+                      },
+                      "type": "property"
                     }
                   }
                 },
@@ -386,32 +344,12 @@
                   "style": {
                     "classes": "select"
                   }
-                }
+                },
+                "type": "ia.input.dropdown"
               }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "FieldRow2"
-        },
-        "position": {
-          "basis": "auto"
-        },
-        "props": {
-          "direction": "row",
-          "style": {
-            "classes": "field-row",
-            "gap": "12px"
-          }
-        },
-        "children": [
-          {
-            "type": "ia.container.flex",
+            ],
             "meta": {
-              "name": "FieldClosureMethod"
+              "name": "FieldIsSerialized"
             },
             "position": {
               "basis": "auto"
@@ -423,9 +361,29 @@
                 "gap": "2px"
               }
             },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "FieldRow1"
+        },
+        "position": {
+          "basis": "auto"
+        },
+        "props": {
+          "direction": "row",
+          "style": {
+            "classes": "field-row",
+            "gap": "12px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
             "children": [
               {
-                "type": "ia.display.label",
                 "meta": {
                   "name": "LabelClosureMethod"
                 },
@@ -433,14 +391,14 @@
                   "basis": "auto"
                 },
                 "props": {
-                  "text": "Closure Method",
                   "style": {
                     "classes": "field-label"
-                  }
-                }
+                  },
+                  "text": "Closure Method"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.dropdown",
                 "meta": {
                   "name": "DropdownClosureMethod"
                 },
@@ -450,11 +408,11 @@
                 "propConfig": {
                   "props.value": {
                     "binding": {
-                      "type": "property",
                       "config": {
                         "bidirectional": true,
                         "path": "view.custom.editDraft.ClosureMethod"
-                      }
+                      },
+                      "type": "property"
                     }
                   }
                 },
@@ -476,12 +434,69 @@
                   "style": {
                     "classes": "select"
                   }
-                }
+                },
+                "type": "ia.input.dropdown"
               }
-            ]
+            ],
+            "meta": {
+              "name": "FieldClosureMethod"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "field",
+                "gap": "2px"
+              }
+            },
+            "type": "ia.container.flex"
           },
           {
-            "type": "ia.container.flex",
+            "children": [
+              {
+                "meta": {
+                  "name": "LabelTargetWeight"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Target Weight"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "InputTargetWeight"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.TargetWeight"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "search-input",
+                    "width": "100px"
+                  }
+                },
+                "type": "ia.input.text-field"
+              }
+            ],
             "meta": {
               "name": "FieldTargetWeight"
             },
@@ -491,10 +506,10 @@
             "propConfig": {
               "position.display": {
                 "binding": {
-                  "type": "expr",
                   "config": {
                     "expression": "{view.custom.editDraft.ClosureMethod} = \"ByWeight\""
-                  }
+                  },
+                  "type": "expr"
                 }
               }
             },
@@ -505,26 +520,28 @@
                 "gap": "2px"
               }
             },
+            "type": "ia.container.flex"
+          },
+          {
             "children": [
               {
-                "type": "ia.display.label",
                 "meta": {
-                  "name": "LabelTargetWeight"
+                  "name": "LabelDunnageCode"
                 },
                 "position": {
                   "basis": "auto"
                 },
                 "props": {
-                  "text": "Target Weight",
                   "style": {
                     "classes": "field-label"
-                  }
-                }
+                  },
+                  "text": "Dunnage Code"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.text-field",
                 "meta": {
-                  "name": "InputTargetWeight"
+                  "name": "InputDunnageCode"
                 },
                 "position": {
                   "basis": "auto"
@@ -532,25 +549,23 @@
                 "propConfig": {
                   "props.text": {
                     "binding": {
-                      "type": "property",
                       "config": {
                         "bidirectional": true,
-                        "path": "view.custom.editDraft.TargetWeight"
-                      }
+                        "path": "view.custom.editDraft.DunnageCode"
+                      },
+                      "type": "property"
                     }
                   }
                 },
                 "props": {
                   "style": {
                     "classes": "search-input",
-                    "width": "100px"
+                    "width": "120px"
                   }
-                }
+                },
+                "type": "ia.input.text-field"
               }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
+            ],
             "meta": {
               "name": "FieldDunnageCode"
             },
@@ -564,26 +579,28 @@
                 "gap": "2px"
               }
             },
+            "type": "ia.container.flex"
+          },
+          {
             "children": [
               {
-                "type": "ia.display.label",
                 "meta": {
-                  "name": "LabelDunnageCode"
+                  "name": "LabelCustomerCode"
                 },
                 "position": {
                   "basis": "auto"
                 },
                 "props": {
-                  "text": "Dunnage Code",
                   "style": {
                     "classes": "field-label"
-                  }
-                }
+                  },
+                  "text": "Customer Code"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.text-field",
                 "meta": {
-                  "name": "InputDunnageCode"
+                  "name": "InputCustomerCode"
                 },
                 "position": {
                   "basis": "auto"
@@ -591,25 +608,23 @@
                 "propConfig": {
                   "props.text": {
                     "binding": {
-                      "type": "property",
                       "config": {
                         "bidirectional": true,
-                        "path": "view.custom.editDraft.DunnageCode"
-                      }
+                        "path": "view.custom.editDraft.CustomerCode"
+                      },
+                      "type": "property"
                     }
                   }
                 },
                 "props": {
                   "style": {
                     "classes": "search-input",
-                    "width": "120px"
+                    "width": "140px"
                   }
-                }
+                },
+                "type": "ia.input.text-field"
               }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
+            ],
             "meta": {
               "name": "FieldCustomerCode"
             },
@@ -623,59 +638,43 @@
                 "gap": "2px"
               }
             },
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "LabelCustomerCode"
-                },
-                "position": {
-                  "basis": "auto"
-                },
-                "props": {
-                  "text": "Customer Code",
-                  "style": {
-                    "classes": "field-label"
-                  }
-                }
-              },
-              {
-                "type": "ia.input.text-field",
-                "meta": {
-                  "name": "InputCustomerCode"
-                },
-                "position": {
-                  "basis": "auto"
-                },
-                "propConfig": {
-                  "props.text": {
-                    "binding": {
-                      "type": "property",
-                      "config": {
-                        "bidirectional": true,
-                        "path": "view.custom.editDraft.CustomerCode"
-                      }
-                    }
-                  }
-                },
-                "props": {
-                  "style": {
-                    "classes": "search-input",
-                    "width": "140px"
-                  }
-                }
-              }
-            ]
+            "type": "ia.container.flex"
           }
-        ]
+        ],
+        "meta": {
+          "name": "FieldRow2"
+        },
+        "position": {
+          "basis": "auto"
+        },
+        "props": {
+          "direction": "row",
+          "style": {
+            "classes": "field-row",
+            "gap": "12px"
+          }
+        },
+        "type": "ia.container.flex"
       }
     ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "detail-panel",
+        "gap": "10px",
+        "height": "100%",
+        "padding": "12px 14px"
+      }
+    },
     "scripts": {
       "customMethods": [
         {
           "name": "load",
           "params": [],
-          "script": "\titemId = self.view.params.value\n\tif not itemId:\n\t\tempty = {\n\t\t\t\"Id\": None, \"ItemId\": None,\n\t\t\t\"TraysPerContainer\": None, \"PartsPerTray\": None,\n\t\t\t\"IsSerialized\": False,\n\t\t\t\"ClosureMethod\": None, \"TargetWeight\": None,\n\t\t\t\"DunnageCode\": None, \"CustomerCode\": None,\n\t\t}\n\t\tself.view.custom.selected  = dict(empty)\n\t\tself.view.custom.editDraft = dict(empty)\n\t\treturn\n\trow = BlueRidge.Parts.ContainerConfig.getByItem(itemId) or {}\n\tloaded = {\n\t\t\"Id\":                row.get(\"Id\"),\n\t\t\"ItemId\":            itemId,\n\t\t\"TraysPerContainer\": row.get(\"TraysPerContainer\"),\n\t\t\"PartsPerTray\":      row.get(\"PartsPerTray\"),\n\t\t\"IsSerialized\":      bool(row.get(\"IsSerialized\", False)),\n\t\t\"ClosureMethod\":     row.get(\"ClosureMethod\"),\n\t\t\"TargetWeight\":      row.get(\"TargetWeight\"),\n\t\t\"DunnageCode\":       row.get(\"DunnageCode\"),\n\t\t\"CustomerCode\":      row.get(\"CustomerCode\"),\n\t}\n\tself.view.custom.selected  = dict(loaded)\n\tself.view.custom.editDraft = dict(loaded)"
+          "script": "\titemId = self.view.params.value\n\tdef _e(v):\n\t\treturn \"\" if v is None else v\n\tif not itemId:\n\t\tempty = {\n\t\t\t\"Id\": None, \"ItemId\": None,\n\t\t\t\"TraysPerContainer\": \"\", \"PartsPerTray\": \"\",\n\t\t\t\"IsSerialized\": False,\n\t\t\t\"ClosureMethod\": None, \"TargetWeight\": \"\",\n\t\t\t\"DunnageCode\": \"\", \"CustomerCode\": \"\",\n\t\t}\n\t\tself.view.custom.selected  = dict(empty)\n\t\tself.view.custom.editDraft = dict(empty)\n\t\treturn\n\trow = BlueRidge.Parts.ContainerConfig.getByItem(itemId) or {}\n\tloaded = {\n\t\t\"Id\":                row.get(\"Id\"),\n\t\t\"ItemId\":            itemId,\n\t\t\"TraysPerContainer\": _e(row.get(\"TraysPerContainer\")),\n\t\t\"PartsPerTray\":      _e(row.get(\"PartsPerTray\")),\n\t\t\"IsSerialized\":      bool(row.get(\"IsSerialized\", False)),\n\t\t\"ClosureMethod\":     row.get(\"ClosureMethod\"),\n\t\t\"TargetWeight\":      _e(row.get(\"TargetWeight\")),\n\t\t\"DunnageCode\":       _e(row.get(\"DunnageCode\")),\n\t\t\"CustomerCode\":      _e(row.get(\"CustomerCode\")),\n\t}\n\tself.view.custom.selected  = dict(loaded)\n\tself.view.custom.editDraft = dict(loaded)"
         },
         {
           "name": "handleSave",
@@ -692,18 +691,19 @@
         {
           "messageType": "sectionSaveRequested",
           "pageScope": true,
+          "script": "\tif payload and payload.get(\"section\") == \"containerConfig\":\n\t\tself.handleSave()",
           "sessionScope": false,
-          "viewScope": false,
-          "script": "\tif payload and payload.get(\"section\") == \"containerConfig\":\n\t\tself.handleSave()"
+          "viewScope": false
         },
         {
           "messageType": "sectionDiscardRequested",
           "pageScope": true,
+          "script": "\tif payload and payload.get(\"section\") == \"containerConfig\":\n\t\tself.handleDiscard()",
           "sessionScope": false,
-          "viewScope": false,
-          "script": "\tif payload and payload.get(\"section\") == \"containerConfig\":\n\t\tself.handleDiscard()"
+          "viewScope": false
         }
       ]
-    }
+    },
+    "type": "ia.container.flex"
   }
 }
