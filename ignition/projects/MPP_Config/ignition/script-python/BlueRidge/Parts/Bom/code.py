@@ -239,7 +239,7 @@ def listAvailableItems(parentItemId, searchText=None):
 def listUoms():
     """Returns list[dict] of all active UOM rows."""
     try:
-        rows = BlueRidge.Common.Db.execList("parts/Uom_List", {})
+        rows = BlueRidge.Common.Db.execList("parts/Uom_List", {"includeDeprecated": False})
         return rows or []
     except Exception as e:
         BlueRidge.Common.Util.log("listUoms failed: %s" % str(e))
