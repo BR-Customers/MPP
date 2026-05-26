@@ -1,5 +1,5 @@
 -- ============================================================
--- Migration:   0015_parts_bom_unique_draft.sql
+-- Migration:   0016_parts_bom_unique_draft.sql
 -- Author:      Blue Ridge Automation
 -- Date:        2026-05-26
 -- Description: Filtered UNIQUE index on Parts.Bom(ParentItemId)
@@ -20,9 +20,9 @@
 
 BEGIN TRANSACTION;
 
-IF EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = '0015_parts_bom_unique_draft')
+IF EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = '0016_parts_bom_unique_draft')
 BEGIN
-    PRINT 'Migration 0015 already applied -- skipping.';
+    PRINT 'Migration 0016 already applied -- skipping.';
     COMMIT;
     RETURN;
 END
@@ -52,9 +52,9 @@ END
 -- ============================================================
 INSERT INTO dbo.SchemaVersion (MigrationId, Description)
 VALUES (
-    '0015_parts_bom_unique_draft',
+    '0016_parts_bom_unique_draft',
     'Filtered UNIQUE on Parts.Bom(ParentItemId) WHERE PublishedAt IS NULL AND DeprecatedAt IS NULL. One active Draft per parent Item. Defends Bom_CreateNewVersion against concurrent draft creation.'
 );
 
 COMMIT TRANSACTION;
-PRINT 'Migration 0015 completed: filtered UNIQUE index UX_Bom_ActiveDraft created on Parts.Bom.';
+PRINT 'Migration 0016 completed: filtered UNIQUE index UX_Bom_ActiveDraft created on Parts.Bom.';

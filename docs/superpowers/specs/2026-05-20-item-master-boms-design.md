@@ -91,7 +91,7 @@ Phase 6 deliverables:
 
 **No DeprecatedAt on `BomLine`** — confirmed against current data model. Lifecycle lives on parent `Bom`. Line reconciliation is physical INSERT / UPDATE / DELETE inside an active Draft Bom.
 
-### 3.2 New migration: `0015_parts_bom_unique_draft.sql`
+### 3.2 New migration: `0016_parts_bom_unique_draft.sql`
 
 Filtered UNIQUE index enforcing one draft per ParentItemId:
 
@@ -103,7 +103,7 @@ CREATE UNIQUE INDEX UX_Bom_ActiveDraft
 
 **Why:** Prevents two engineers from opening parallel drafts of the same BOM, which would race on Publish and produce ambiguous "active version" state. UX-level we also gate the [New Version] button on `existing draft count == 0` for the active ParentItemId, but the DB index is the safety net.
 
-**Note on migration sequencing:** This migration would normally be `0015`, but Arc 2 Phase 1's `0015_arc2_phase1_shop_floor_foundation.sql` may land between when this spec is approved and when Phase 6 executes. The Phase 6 plan will pick the next available migration number at execution time. The migration body is independent of Arc 2 content.
+**Note on migration sequencing:** Landed as `0016_parts_bom_unique_draft.sql` because `0015_audit_add_event_type_deleted.sql` (Routes Phase 5) took the 0015 slot. The migration body is independent of the audit event-type change.
 
 ### 3.3 Validation rules embedded in procs
 
@@ -305,7 +305,7 @@ editDraft.boms:
 
 | File | Type | Purpose |
 |---|---|---|
-| `0015_parts_bom_unique_draft.sql` (number TBD at execution) | migration | Filtered UNIQUE index on `Parts.Bom(ParentItemId)` WHERE `PublishedAt IS NULL AND DeprecatedAt IS NULL` |
+| `0016_parts_bom_unique_draft.sql` | migration | Filtered UNIQUE index on `Parts.Bom(ParentItemId)` WHERE `PublishedAt IS NULL AND DeprecatedAt IS NULL` |
 
 ### 6.2 New repeatable procs
 
@@ -562,7 +562,7 @@ Where Phase 5 (Routes) is likely to share mechanics with Phase 6 (this), called 
 ## 10. Acceptance Criteria (what "Done" looks like for Phase 6)
 
 1. SQL test suite extends from 937 → 970+ passing (all new procs + tests landed).
-2. `Reset-DevDatabase.ps1` runs clean — new migration `0015_parts_bom_unique_draft.sql` applies; new repeatable procs apply; new test files exercise.
+2. `Reset-DevDatabase.ps1` runs clean — new migration `0016_parts_bom_unique_draft.sql` applies; new repeatable procs apply; new test files exercise.
 3. Designer scan returns HTTP 200; no NPEs on any new NQ.
 4. BOMs tab loads with real DB data for the selected Item:
    - Version dropdown populated.
