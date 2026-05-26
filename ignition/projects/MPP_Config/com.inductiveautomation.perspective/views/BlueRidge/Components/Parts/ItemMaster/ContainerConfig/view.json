@@ -1,35 +1,57 @@
 {
   "custom": {
-    "data": {
-      "TraysPerContainer": 0,
-      "PartsPerTray": 0,
+    "selected": {
+      "Id": null,
+      "ItemId": null,
+      "TraysPerContainer": null,
+      "PartsPerTray": null,
       "IsSerialized": false,
-      "DunnageCode": "",
-      "CustomerCode": "",
-      "ClosureMethod": "",
-      "TargetWeight": 0
-    }
+      "ClosureMethod": null,
+      "TargetWeight": null,
+      "DunnageCode": null,
+      "CustomerCode": null
+    },
+    "editDraft": {
+      "Id": null,
+      "ItemId": null,
+      "TraysPerContainer": null,
+      "PartsPerTray": null,
+      "IsSerialized": false,
+      "ClosureMethod": null,
+      "TargetWeight": null,
+      "DunnageCode": null,
+      "CustomerCode": null
+    },
+    "isDirty": false
   },
   "params": {
     "value": 0
   },
   "propConfig": {
     "params.value": {
-      "paramDirection": "input"
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.rootContainer.load()"
+      }
     },
-    "custom.data": {
+    "custom.isDirty": {
       "binding": {
         "type": "expr",
         "config": {
-          "expression": "runScript(\"BlueRidge.Parts.ContainerConfig.getByItem\", 0, {view.params.value})"
+          "expression": "{view.custom.editDraft} != {view.custom.selected}"
         }
+      },
+      "onChange": {
+        "enabled": true,
+        "script": "\tsystem.perspective.sendMessage(\"sectionDirtyChanged\", payload={\"section\": \"containerConfig\", \"isDirty\": bool(currentValue.value)}, scope=\"page\")"
       }
     }
   },
   "props": {
     "defaultSize": {
       "width": 800,
-      "height": 200
+      "height": 220
     }
   },
   "root": {
@@ -48,21 +70,123 @@
     },
     "children": [
       {
-        "type": "ia.display.label",
+        "type": "ia.container.flex",
         "meta": {
-          "name": "PanelHeader"
+          "name": "HeaderRow"
         },
         "position": {
           "basis": "auto"
         },
         "props": {
-          "text": "Container Configuration",
+          "direction": "row",
+          "alignItems": "center",
           "style": {
-            "fontSize": "13px",
-            "fontWeight": "600",
+            "gap": "8px",
             "marginBottom": "4px"
           }
-        }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "PanelHeader"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "props": {
+              "text": "Container Configuration",
+              "style": {
+                "fontSize": "13px",
+                "fontWeight": "600"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Spacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "text": ""
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "BtnDiscard"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "propConfig": {
+              "meta.visible": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.isDirty"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Discard",
+              "style": {
+                "classes": "btn btn-sm"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleDiscard()"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "BtnSave"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "propConfig": {
+              "meta.visible": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.isDirty"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Save",
+              "style": {
+                "classes": "btn btn-primary btn-sm"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleSave()"
+                  }
+                }
+              }
+            }
+          }
+        ]
       },
       {
         "type": "ia.container.flex",
@@ -125,7 +249,7 @@
                       "type": "property",
                       "config": {
                         "bidirectional": true,
-                        "path": "view.custom.data.TraysPerContainer"
+                        "path": "view.custom.editDraft.TraysPerContainer"
                       }
                     }
                   }
@@ -184,7 +308,7 @@
                       "type": "property",
                       "config": {
                         "bidirectional": true,
-                        "path": "view.custom.data.PartsPerTray"
+                        "path": "view.custom.editDraft.PartsPerTray"
                       }
                     }
                   }
@@ -243,7 +367,7 @@
                       "type": "property",
                       "config": {
                         "bidirectional": true,
-                        "path": "view.custom.data.IsSerialized"
+                        "path": "view.custom.editDraft.IsSerialized"
                       }
                     }
                   }
@@ -329,7 +453,7 @@
                       "type": "property",
                       "config": {
                         "bidirectional": true,
-                        "path": "view.custom.data.ClosureMethod"
+                        "path": "view.custom.editDraft.ClosureMethod"
                       }
                     }
                   }
@@ -351,6 +475,75 @@
                   ],
                   "style": {
                     "classes": "select"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "FieldTargetWeight"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.custom.editDraft.ClosureMethod} = \"ByWeight\""
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "field",
+                "gap": "2px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "LabelTargetWeight"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "props": {
+                  "text": "Target Weight",
+                  "style": {
+                    "classes": "field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": {
+                  "name": "InputTargetWeight"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.TargetWeight"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "search-input",
+                    "width": "100px"
                   }
                 }
               }
@@ -401,7 +594,7 @@
                       "type": "property",
                       "config": {
                         "bidirectional": true,
-                        "path": "view.custom.data.DunnageCode"
+                        "path": "view.custom.editDraft.DunnageCode"
                       }
                     }
                   }
@@ -460,7 +653,7 @@
                       "type": "property",
                       "config": {
                         "bidirectional": true,
-                        "path": "view.custom.data.CustomerCode"
+                        "path": "view.custom.editDraft.CustomerCode"
                       }
                     }
                   }
@@ -476,6 +669,41 @@
           }
         ]
       }
-    ]
+    ],
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "load",
+          "params": [],
+          "script": "\titemId = self.view.params.value\n\tif not itemId:\n\t\tempty = {\n\t\t\t\"Id\": None, \"ItemId\": None,\n\t\t\t\"TraysPerContainer\": None, \"PartsPerTray\": None,\n\t\t\t\"IsSerialized\": False,\n\t\t\t\"ClosureMethod\": None, \"TargetWeight\": None,\n\t\t\t\"DunnageCode\": None, \"CustomerCode\": None,\n\t\t}\n\t\tself.view.custom.selected  = dict(empty)\n\t\tself.view.custom.editDraft = dict(empty)\n\t\treturn\n\trow = BlueRidge.Parts.ContainerConfig.getByItem(itemId) or {}\n\tloaded = {\n\t\t\"Id\":                row.get(\"Id\"),\n\t\t\"ItemId\":            itemId,\n\t\t\"TraysPerContainer\": row.get(\"TraysPerContainer\"),\n\t\t\"PartsPerTray\":      row.get(\"PartsPerTray\"),\n\t\t\"IsSerialized\":      bool(row.get(\"IsSerialized\", False)),\n\t\t\"ClosureMethod\":     row.get(\"ClosureMethod\"),\n\t\t\"TargetWeight\":      row.get(\"TargetWeight\"),\n\t\t\"DunnageCode\":       row.get(\"DunnageCode\"),\n\t\t\"CustomerCode\":      row.get(\"CustomerCode\"),\n\t}\n\tself.view.custom.selected  = dict(loaded)\n\tself.view.custom.editDraft = dict(loaded)"
+        },
+        {
+          "name": "handleSave",
+          "params": [],
+          "script": "\tdraft = self.view.custom.editDraft or {}\n\titemId = self.view.params.value\n\tif not itemId:\n\t\tBlueRidge.Common.Notify.toast(\"No item selected\", \"Select an item before saving container configuration.\", \"warning\")\n\t\treturn\n\tdef _toNum(v):\n\t\tif v is None or v == \"\":\n\t\t\treturn None\n\t\ttry:\n\t\t\treturn int(v)\n\t\texcept (ValueError, TypeError):\n\t\t\ttry:\n\t\t\t\treturn float(v)\n\t\t\texcept (ValueError, TypeError):\n\t\t\t\treturn None\n\ttrays = _toNum(draft.get(\"TraysPerContainer\"))\n\tpartsPerTray = _toNum(draft.get(\"PartsPerTray\"))\n\tif trays is None or trays <= 0:\n\t\tBlueRidge.Common.Notify.toast(\"Trays per Container required\", \"Enter a positive number of trays per container.\", \"warning\")\n\t\treturn\n\tif partsPerTray is None or partsPerTray <= 0:\n\t\tBlueRidge.Common.Notify.toast(\"Parts per Tray required\", \"Enter a positive number of parts per tray.\", \"warning\")\n\t\treturn\n\ttargetWeight = None\n\tif draft.get(\"ClosureMethod\") == \"ByWeight\":\n\t\ttargetWeight = _toNum(draft.get(\"TargetWeight\"))\n\t\tif targetWeight is None or targetWeight <= 0:\n\t\t\tBlueRidge.Common.Notify.toast(\"Target Weight required\", \"ByWeight closure requires a positive target weight.\", \"warning\")\n\t\t\treturn\n\tpayload = dict(draft)\n\tpayload[\"ItemId\"] = itemId\n\tpayload[\"TraysPerContainer\"] = trays\n\tpayload[\"PartsPerTray\"] = partsPerTray\n\tpayload[\"TargetWeight\"] = targetWeight\n\tif payload.get(\"Id\"):\n\t\tresult = BlueRidge.Parts.ContainerConfig.update(payload)\n\t\tsuccessTitle = \"Container config updated\"\n\telse:\n\t\tresult = BlueRidge.Parts.ContainerConfig.add(payload)\n\t\tsuccessTitle = \"Container config saved\"\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle)\n\tif result and result.get(\"Status\"):\n\t\tself.load()"
+        },
+        {
+          "name": "handleDiscard",
+          "params": [],
+          "script": "\tself.view.custom.editDraft = dict(self.view.custom.selected)"
+        }
+      ],
+      "messageHandlers": [
+        {
+          "messageType": "sectionSaveRequested",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif payload and payload.get(\"section\") == \"containerConfig\":\n\t\tself.handleSave()"
+        },
+        {
+          "messageType": "sectionDiscardRequested",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif payload and payload.get(\"section\") == \"containerConfig\":\n\t\tself.handleDiscard()"
+        }
+      ]
+    }
   }
 }
