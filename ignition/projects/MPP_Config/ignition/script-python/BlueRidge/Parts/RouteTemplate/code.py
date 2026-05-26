@@ -171,6 +171,33 @@ def getOperationTemplatesByArea(areaLocationId, includeDeprecated=False):
     )
 
 
+def createInitial(itemId, name=None, effectiveFrom=None, appUserId=None):
+    """Creates the first Draft RouteTemplate (VersionNumber=1) for an Item
+    that has no existing routes. Wraps Parts.RouteTemplate_Create which
+    produces an empty Draft with no steps. The caller then drives the user
+    into Draft edit mode to add the first step(s).
+
+    Use this only when listVersions(itemId) returned an empty list --
+    for subsequent versions, use createNewVersion which clones a parent's
+    steps.
+    """
+    itemId        = _u(itemId)
+    name          = _u(name)
+    effectiveFrom = _u(effectiveFrom)
+    appUserId     = appUserId or BlueRidge.Common.Util._currentAppUserId()
+    if not name:
+        name = "Route v1"
+    return BlueRidge.Common.Db.execMutation(
+        "parts/RouteTemplate_Create",
+        {
+            "itemId":        itemId,
+            "name":          name,
+            "effectiveFrom": effectiveFrom,
+            "appUserId":     appUserId,
+        },
+    )
+
+
 def createNewVersion(parentRouteTemplateId, effectiveFrom=None, appUserId=None):
     """Clones the parent RouteTemplate into a new Draft, copying every
     RouteStep. Rejects if any active Draft already exists for the parent's
