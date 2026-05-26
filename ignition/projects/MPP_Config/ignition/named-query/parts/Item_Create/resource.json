@@ -1,0 +1,95 @@
+{
+  "scope": "DG",
+  "version": 2,
+  "restricted": false,
+  "overridable": true,
+  "files": [
+    "query.sql"
+  ],
+  "attributes": {
+    "useMaxReturnSize": false,
+    "autoBatchEnabled": false,
+    "fallbackValue": "",
+    "maxReturnSize": 100,
+    "cacheUnit": "SEC",
+    "type": "Query",
+    "enabled": true,
+    "cacheAmount": 1,
+    "cacheEnabled": false,
+    "database": "MPP",
+    "fallbackEnabled": false,
+    "lastModificationSignature": "",
+    "permissions": [
+      {
+        "zone": "",
+        "role": ""
+      }
+    ],
+    "lastModification": {
+      "actor": "claude",
+      "timestamp": "2026-05-26T00:00:00Z"
+    },
+    "parameters": [
+      {
+        "type": "Parameter",
+        "identifier": "partNumber",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "itemTypeId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "description",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "macolaPartNumber",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "defaultSubLotQty",
+        "sqlType": 2
+      },
+      {
+        "type": "Parameter",
+        "identifier": "maxLotSize",
+        "sqlType": 2
+      },
+      {
+        "type": "Parameter",
+        "identifier": "uomId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "unitWeight",
+        "sqlType": 5
+      },
+      {
+        "type": "Parameter",
+        "identifier": "weightUomId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "countryOfOrigin",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "maxParts",
+        "sqlType": 2
+      },
+      {
+        "type": "Parameter",
+        "identifier": "appUserId",
+        "sqlType": 3
+      }
+    ]
+  }
+}
