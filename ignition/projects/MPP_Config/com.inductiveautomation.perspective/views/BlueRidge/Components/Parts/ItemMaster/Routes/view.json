@@ -17,6 +17,7 @@
       "CreatedAt": ""
     },
     "selectedSteps": [],
+    "selectedStepsView": [],
     "mode": "view",
     "areas": [],
     "opTemplatesByArea": {},
@@ -55,6 +56,10 @@
         "config": {
           "expression": "runScript(\"BlueRidge.Parts.RouteTemplate.listVersions\", 0, {view.custom.itemId}, {view.custom.showDeprecated})"
         }
+      },
+      "onChange": {
+        "enabled": true,
+        "script": "\tcurr = currentValue.value if currentValue is not None else []\n\tif self.view.custom.selectedVersionId and self.view.custom.selectedVersionId > 0:\n\t\treturn\n\tactive = None\n\tfor v in (curr or []):\n\t\tif v.get('PublishedAt') and not v.get('DeprecatedAt'):\n\t\t\tactive = v\n\t\t\tbreak\n\tif active:\n\t\tself.view.custom.selectedVersionId = active['Id']\n\telif curr:\n\t\tself.view.custom.selectedVersionId = curr[0]['Id']\n\telse:\n\t\tself.view.custom.selectedVersionId = 0"
       }
     },
     "custom.selectedHeader": {
@@ -73,18 +78,26 @@
         }
       }
     },
+    "custom.selectedStepsView": {
+      "binding": {
+        "type": "property",
+        "config": {
+          "path": "view.custom.selectedSteps"
+        },
+        "transforms": [
+          {
+            "code": "\tout = []\n\tfor r in (value or []):\n\t\tr = r or {}\n\t\tout.append({'seq': r.get('SequenceNumber'), 'areaName': r.get('OperationAreaName') or '', 'opCode': r.get('OperationCode') or '', 'opName': r.get('OperationName') or '', 'isRequired': bool(r.get('IsRequired')), 'dataFields': r.get('DataCollectionSummary') or ''})\n\treturn out",
+            "type": "script"
+          }
+        ]
+      }
+    },
     "custom.areas": {
       "binding": {
         "type": "expr",
         "config": {
           "expression": "runScript(\"BlueRidge.Location.Location.getAllAreas\", 0, false)"
         }
-      }
-    },
-    "custom.versions.onChange": {
-      "onChange": {
-        "enabled": true,
-        "script": "\tcurr = currentValue.value if currentValue is not None else []\n\tif self.view.custom.selectedVersionId and self.view.custom.selectedVersionId > 0:\n\t\treturn\n\tactive = None\n\tfor v in (curr or []):\n\t\tif v.get('PublishedAt') and not v.get('DeprecatedAt'):\n\t\t\tactive = v\n\t\t\tbreak\n\tif active:\n\t\tself.view.custom.selectedVersionId = active['Id']\n\telif curr:\n\t\tself.view.custom.selectedVersionId = curr[0]['Id']\n\telse:\n\t\tself.view.custom.selectedVersionId = 0"
       }
     }
   },
@@ -113,11 +126,6 @@
           "name": "broadcastDirty",
           "params": ["isDirty"],
           "script": "\tsystem.perspective.sendMessage('sectionDirtyChanged', payload={'section': 'routes', 'isDirty': bool(isDirty)}, scope='page')"
-        },
-        {
-          "name": "computeDirty",
-          "params": [],
-          "script": "\timport json\n\ta = self.view.custom.draftEditDraft\n\tb = self.view.custom.draftSelected\n\ttry:\n\t\tdirty = json.dumps(a, sort_keys=True) != json.dumps(b, sort_keys=True)\n\texcept Exception:\n\t\tdirty = True\n\treturn dirty"
         },
         {
           "name": "reloadVersions",
@@ -155,13 +163,13 @@
             "propConfig": {
               "props.options": {
                 "binding": {
-                  "type": "expr",
+                  "type": "property",
                   "config": {
-                    "expression": "runScript(\"BlueRidge.Parts.RouteTemplate.listVersions\", 0, {view.custom.itemId}, {view.custom.showDeprecated})"
+                    "path": "view.custom.versions"
                   },
                   "transforms": [
                     {
-                      "code": "\tout = []\n\tfor v in (value or []):\n\t\tvnum = v.get('VersionNumber', 0)\n\t\tname = v.get('Name') or ''\n\t\tif v.get('DeprecatedAt'):\n\t\t\tstate = 'Deprecated'\n\t\telif v.get('PublishedAt'):\n\t\t\tstate = 'Published'\n\t\telse:\n\t\t\tstate = 'Draft'\n\t\tlabel = 'v%s — %s (%s)' % (vnum, name, state)\n\t\tout.append({'label': label, 'value': v.get('Id')})\n\treturn out",
+                      "code": "\tout = []\n\tfor v in (value or []):\n\t\tvnum = v.get('VersionNumber', 0)\n\t\tname = v.get('Name') or ''\n\t\tif v.get('DeprecatedAt'):\n\t\t\tstate = 'Deprecated'\n\t\telif v.get('PublishedAt'):\n\t\t\tstate = 'Published'\n\t\telse:\n\t\t\tstate = 'Draft'\n\t\tlabel = 'v' + str(vnum) + ' -- ' + name + ' (' + state + ')'\n\t\tout.append({'label': label, 'value': v.get('Id')})\n\treturn out",
                       "type": "script"
                     }
                   ]
@@ -243,23 +251,50 @@
             }
           },
           {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "DraftDirtyIndicator"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.custom.mode} = 'draft'"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Editing draft",
+              "style": {
+                "color": "var(--mpp-state-warn-fg)",
+                "fontSize": "11px",
+                "fontStyle": "italic"
+              }
+            }
+          },
+          {
             "type": "ia.input.text-field",
             "meta": {
               "name": "DraftEffectiveFromField"
             },
             "position": {
               "basis": "200px",
-              "shrink": 0,
-              "display": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "if({view.custom.mode} = 'draft', 'flex', 'none')"
+                    "expression": "{view.custom.mode} = 'draft'"
                   }
                 }
-              }
-            },
-            "propConfig": {
+              },
               "props.text": {
                 "binding": {
                   "type": "property",
@@ -292,12 +327,14 @@
               "name": "BtnNewVersion"
             },
             "position": {
-              "shrink": 0,
-              "display": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "if({view.custom.mode} = 'view', 'flex', 'none')"
+                    "expression": "{view.custom.mode} = 'view'"
                   }
                 }
               }
@@ -314,7 +351,7 @@
                   "type": "script",
                   "scope": "G",
                   "config": {
-                    "script": "\tparentId = self.view.custom.selectedVersionId\n\tif not parentId or parentId <= 0:\n\t\tBlueRidge.Common.Notify.toast('Cannot create version', 'No source version selected.', 'warn', 5)\n\t\treturn\n\tresult = BlueRidge.Parts.RouteTemplate.createNewVersion(parentId, None)\n\tBlueRidge.Common.Ui.notifyResult(result, 'New version', 'Draft created.', 'Create failed')\n\tif not result or not result.get('Status'):\n\t\treturn\n\tnewDraftId = result['NewId']\n\tself.view.custom.draftId = newDraftId\n\theader = BlueRidge.Parts.RouteTemplate.getHeader(newDraftId)\n\tsteps = BlueRidge.Parts.RouteTemplate.getSteps(newDraftId)\n\tdraft = {'Id': newDraftId, 'Name': header.get('Name', ''), 'EffectiveFrom': str(header.get('EffectiveFrom', '') or '')[:10], 'steps': [dict(s) for s in (steps or [])]}\n\tself.view.custom.draftEditDraft = dict(draft)\n\tself.view.custom.draftSelected = {'Id': newDraftId, 'Name': dict(draft)['Name'], 'EffectiveFrom': dict(draft)['EffectiveFrom'], 'steps': [dict(s) for s in (steps or [])]}\n\tself.view.custom.mode = 'draft'\n\tself.view.custom.selectedVersionId = newDraftId\n\tself.view.rootContainer.reloadVersions()\n\tself.view.rootContainer.broadcastDirty(False)"
+                    "script": "\tparentId = self.view.custom.selectedVersionId\n\tBlueRidge.Common.Util.log('BtnNewVersion click; parentId=%s' % parentId)\n\tif not parentId or parentId <= 0:\n\t\tBlueRidge.Common.Notify.toast('Cannot create version', 'No source version selected.', 'warn', 5)\n\t\treturn\n\tresult = BlueRidge.Parts.RouteTemplate.createNewVersion(parentId, None)\n\tBlueRidge.Common.Ui.notifyResult(result, 'New version', 'Draft created.', 'Create failed')\n\tif not result or not result.get('Status'):\n\t\treturn\n\tnewDraftId = result['NewId']\n\tself.view.custom.draftId = newDraftId\n\theader = BlueRidge.Parts.RouteTemplate.getHeader(newDraftId) or {}\n\tsteps = BlueRidge.Parts.RouteTemplate.getSteps(newDraftId) or []\n\teffStr = str(header.get('EffectiveFrom') or '')[:10]\n\tdraft = {'Id': newDraftId, 'Name': header.get('Name', ''), 'EffectiveFrom': effStr, 'steps': [dict(s) for s in steps]}\n\tself.view.custom.draftEditDraft = dict(draft)\n\tself.view.custom.draftSelected = {'Id': newDraftId, 'Name': header.get('Name', ''), 'EffectiveFrom': effStr, 'steps': [dict(s) for s in steps]}\n\tself.view.custom.mode = 'draft'\n\tself.view.custom.selectedVersionId = newDraftId\n\tself.view.rootContainer.reloadVersions()\n\tself.view.rootContainer.broadcastDirty(False)"
                   }
                 }
               }
@@ -326,22 +363,14 @@
               "name": "BtnSaveDraft"
             },
             "position": {
-              "shrink": 0,
-              "display": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "if({view.custom.mode} = 'draft', 'flex', 'none')"
-                  }
-                }
-              }
+              "shrink": 0
             },
             "propConfig": {
-              "props.text": {
+              "position.display": {
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "if(runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.draftEditDraft}) != runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.draftSelected}), 'Save ●', 'Save')"
+                    "expression": "{view.custom.mode} = 'draft'"
                   }
                 }
               }
@@ -370,12 +399,14 @@
               "name": "BtnPublish"
             },
             "position": {
-              "shrink": 0,
-              "display": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "if({view.custom.mode} = 'draft', 'flex', 'none')"
+                    "expression": "{view.custom.mode} = 'draft'"
                   }
                 }
               }
@@ -404,12 +435,14 @@
               "name": "BtnDiscardDraft"
             },
             "position": {
-              "shrink": 0,
-              "display": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "if({view.custom.mode} = 'draft', 'flex', 'none')"
+                    "expression": "{view.custom.mode} = 'draft'"
                   }
                 }
               }
@@ -426,7 +459,7 @@
                   "type": "script",
                   "scope": "G",
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\n\t\tid='mpp-confirm-destructive',\n\t\tview='BlueRidge/Components/Popups/ConfirmDestructive',\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={'title': 'Discard Draft?', 'message': 'This deletes the unpublished draft entirely. It cannot be undone.', 'confirmLabel': 'Discard Draft', 'replyMessage': 'routeConfirmDiscard'}\n\t)"
+                    "script": "\tsystem.perspective.openPopup(id='mpp-confirm-destructive', view='BlueRidge/Components/Popups/ConfirmDestructive', modal=True, showCloseIcon=False, params={'title': 'Discard Draft?', 'message': 'This deletes the unpublished draft entirely. It cannot be undone.', 'confirmLabel': 'Discard Draft', 'replyMessage': 'routeConfirmDiscard'})"
                   }
                 }
               }
@@ -440,12 +473,14 @@
           "name": "PublishedPanel"
         },
         "position": {
-          "grow": 1,
-          "display": {
+          "grow": 1
+        },
+        "propConfig": {
+          "position.display": {
             "binding": {
               "type": "expr",
               "config": {
-                "expression": "if({view.custom.mode} = 'view', 'flex', 'none')"
+                "expression": "{view.custom.mode} = 'view'"
               }
             }
           }
@@ -471,7 +506,7 @@
                 "binding": {
                   "type": "property",
                   "config": {
-                    "path": "view.custom.selectedSteps"
+                    "path": "view.custom.selectedStepsView"
                   }
                 }
               }
@@ -480,37 +515,37 @@
               "columns": [
                 {
                   "editable": false,
-                  "field": "SequenceNumber",
+                  "field": "seq",
                   "header": "#",
                   "width": 50
                 },
                 {
                   "editable": false,
-                  "field": "OperationAreaName",
+                  "field": "areaName",
                   "header": "Area",
                   "width": 140
                 },
                 {
                   "editable": false,
-                  "field": "OperationCode",
+                  "field": "opCode",
                   "header": "Operation Code",
                   "width": 140
                 },
                 {
                   "editable": false,
-                  "field": "OperationName",
+                  "field": "opName",
                   "header": "Operation Name"
                 },
                 {
                   "editable": false,
-                  "field": "IsRequired",
+                  "field": "isRequired",
                   "header": "Required",
                   "render": "boolean",
                   "width": 80
                 },
                 {
                   "editable": false,
-                  "field": "DataCollectionSummary",
+                  "field": "dataFields",
                   "header": "Data Collection"
                 }
               ],
@@ -549,12 +584,14 @@
           "name": "DraftPanel"
         },
         "position": {
-          "grow": 1,
-          "display": {
+          "grow": 1
+        },
+        "propConfig": {
+          "position.display": {
             "binding": {
               "type": "expr",
               "config": {
-                "expression": "if({view.custom.mode} = 'draft', 'flex', 'none')"
+                "expression": "{view.custom.mode} = 'draft'"
               }
             }
           }
@@ -580,13 +617,13 @@
             "propConfig": {
               "props.instances": {
                 "binding": {
-                  "type": "expr",
+                  "type": "property",
                   "config": {
-                    "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.draftEditDraft.steps})"
+                    "path": "view.custom.draftEditDraft.steps"
                   },
                   "transforms": [
                     {
-                      "code": "\timport json\n\ttry:\n\t\tsteps = json.loads(value) if isinstance(value, basestring) else (value or [])\n\texcept Exception:\n\t\tsteps = value or []\n\tareas = self.view.custom.areas or []\n\topCache = self.view.custom.opTemplatesByArea or {}\n\tout = []\n\ttotal = len(steps)\n\tfor i, s in enumerate(steps):\n\t\ts = s or {}\n\t\tout.append({'instancePosition': {}, 'instanceStyle': {}, 'rowIndex': i, 'step': s, 'areas': areas, 'opTemplatesByArea': opCache, 'isFirst': (i == 0), 'isLast': (i == total - 1)})\n\treturn out",
+                      "code": "\tsteps = value or []\n\tareas = self.view.custom.areas or []\n\topCache = self.view.custom.opTemplatesByArea or {}\n\tout = []\n\ttotal = len(steps)\n\tfor i, s in enumerate(steps):\n\t\ts = s or {}\n\t\tout.append({'instancePosition': {}, 'instanceStyle': {}, 'rowIndex': i, 'step': dict(s), 'areas': areas, 'opTemplatesByArea': opCache, 'isFirst': (i == 0), 'isLast': (i == total - 1)})\n\treturn out",
                       "type": "script"
                     }
                   ]
@@ -626,7 +663,7 @@
                   "type": "script",
                   "scope": "G",
                   "config": {
-                    "script": "\tdraft = self.view.custom.draftEditDraft\n\tsteps = list(draft.get('steps') or [])\n\tsteps.append({'Id': None, 'SequenceNumber': len(steps) + 1, 'OperationAreaLocationId': None, 'OperationAreaName': '', 'OperationTemplateId': None, 'OperationCode': '', 'OperationName': '', 'OperationVersionNumber': None, 'DataCollectionSummary': '', 'IsRequired': True, 'Description': None})\n\tnewDraft = {'Id': draft.get('Id'), 'Name': draft.get('Name'), 'EffectiveFrom': draft.get('EffectiveFrom'), 'steps': steps}\n\tself.view.custom.draftEditDraft = newDraft\n\tself.view.rootContainer.broadcastDirty(True)"
+                    "script": "\tBlueRidge.Common.Util.log('BtnAddStep click')\n\tdraft = self.view.custom.draftEditDraft or {}\n\tsteps = list(draft.get('steps') or [])\n\tsteps.append({'Id': None, 'SequenceNumber': len(steps) + 1, 'OperationAreaLocationId': None, 'OperationAreaName': '', 'OperationTemplateId': None, 'OperationCode': '', 'OperationName': '', 'OperationVersionNumber': None, 'DataCollectionSummary': '', 'IsRequired': True, 'Description': None})\n\tnewDraft = {'Id': draft.get('Id'), 'Name': draft.get('Name'), 'EffectiveFrom': draft.get('EffectiveFrom'), 'steps': steps}\n\tself.view.custom.draftEditDraft = newDraft\n\tself.view.rootContainer.broadcastDirty(True)"
                   }
                 }
               }
@@ -635,17 +672,6 @@
         ]
       }
     ],
-    "events": {
-      "dom": {
-        "onMessage": {
-          "type": "script",
-          "scope": "G",
-          "config": {
-            "script": ""
-          }
-        }
-      }
-    },
     "messageHandlers": [
       {
         "messageType": "routeConfirmDiscard",
