@@ -1374,7 +1374,7 @@
           "sessionScope": false,
           "viewScope": false,
           "config": {
-            "script": "\taction = payload.get('action') if payload else None\n\tif action != 'confirm':\n\t\treturn\n\tdraftId = self.view.custom.draftId\n\tif not draftId or draftId <= 0:\n\t\tBlueRidge.Common.Notify.toast('Discard', 'No draft to discard.', 'warn', 5)\n\t\treturn\n\tresult = BlueRidge.Parts.RouteTemplate.discardDraft(draftId)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Discard', 'Draft discarded.', 'Discard failed')\n\tif not result or not result.get('Status'):\n\t\treturn\n\tself.view.custom.draftId = 0\n\tself.view.custom.draftEditDraft = {'Id': 0, 'Name': '', 'EffectiveFrom': '', 'steps': []}\n\tself.view.custom.draftSelected = {'Id': 0, 'Name': '', 'EffectiveFrom': '', 'steps': []}\n\tself.view.custom.mode = 'view'\n\tself.view.custom.selectedVersionId = 0\n\tself.rootContainer.reloadVersions()\n\tself.rootContainer.broadcastDirty(False)"
+            "script": "\tdef _g(obj, key):\n\t\ttry:\n\t\t\treturn obj[key]\n\t\texcept Exception:\n\t\t\treturn None\n\taction = _g(payload, 'action') if payload is not None else None\n\tBlueRidge.Common.Util.log('routeConfirmDiscard action=%s draftId=%s' % (action, self.view.custom.draftId))\n\tif action != 'confirm':\n\t\treturn\n\tdraftId = self.view.custom.draftId\n\tif not draftId or draftId <= 0:\n\t\tBlueRidge.Common.Notify.toast('Discard', 'No draft to discard.', 'warn', 5)\n\t\treturn\n\tresult = BlueRidge.Parts.RouteTemplate.discardDraft(draftId)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Discard', 'Draft discarded.', 'Discard failed')\n\tif not result or not result.get('Status'):\n\t\treturn\n\tself.view.custom.draftId = 0\n\tself.view.custom.draftEditDraft = {'Id': 0, 'Name': '', 'EffectiveFrom': '', 'steps': []}\n\tself.view.custom.draftSelected = {'Id': 0, 'Name': '', 'EffectiveFrom': '', 'steps': []}\n\tself.view.custom.mode = 'view'\n\tself.view.custom.selectedVersionId = 0\n\tself.rootContainer.reloadVersions()\n\tself.rootContainer.broadcastDirty(False)"
           }
         },
         {
@@ -1383,7 +1383,7 @@
           "sessionScope": false,
           "viewScope": false,
           "config": {
-            "script": "\tif not payload or payload.get('section') != 'routes':\n\t\treturn\n\tif self.view.custom.mode != 'draft':\n\t\treturn\n\tdraft = self.view.custom.draftEditDraft\n\tresult = BlueRidge.Parts.RouteTemplate.saveAll(self.view.custom.draftId, draft.get('Name'), draft.get('EffectiveFrom'), draft.get('steps') or [])\n\tBlueRidge.Common.Ui.notifyResult(result, 'Route saved', 'Route saved.', 'Save failed')\n\tif not result or not result.get('Status'):\n\t\treturn\n\tself.view.custom.draftSelected = {'Id': draft.get('Id'), 'Name': draft.get('Name'), 'EffectiveFrom': draft.get('EffectiveFrom'), 'steps': [dict(s) for s in (draft.get('steps') or [])]}\n\tself.rootContainer.reloadVersions()\n\tself.rootContainer.broadcastDirty(False)"
+            "script": "\tdef _g(obj, key):\n\t\ttry:\n\t\t\treturn obj[key]\n\t\texcept Exception:\n\t\t\treturn None\n\tif payload is None or _g(payload, 'section') != 'routes':\n\t\treturn\n\tif self.view.custom.mode != 'draft':\n\t\treturn\n\tdraft = self.view.custom.draftEditDraft\n\tname = _g(draft, 'Name')\n\teff = _g(draft, 'EffectiveFrom')\n\trawSteps = _g(draft, 'steps') or []\n\tsteps = list(rawSteps)\n\tresult = BlueRidge.Parts.RouteTemplate.saveAll(self.view.custom.draftId, name, eff, steps)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Route saved', 'Route saved.', 'Save failed')\n\tif not result or not result.get('Status'):\n\t\treturn\n\tself.view.custom.draftSelected = {'Id': _g(draft, 'Id'), 'Name': name, 'EffectiveFrom': eff, 'steps': [dict(s) for s in steps]}\n\tself.rootContainer.reloadVersions()\n\tself.rootContainer.broadcastDirty(False)"
           }
         },
         {
@@ -1392,7 +1392,7 @@
           "sessionScope": false,
           "viewScope": false,
           "config": {
-            "script": "\tif not payload or payload.get('section') != 'routes':\n\t\treturn\n\tif self.view.custom.mode != 'draft':\n\t\treturn\n\tsel = self.view.custom.draftSelected\n\tself.view.custom.draftEditDraft = {'Id': sel.get('Id'), 'Name': sel.get('Name'), 'EffectiveFrom': sel.get('EffectiveFrom'), 'steps': [dict(s) for s in (sel.get('steps') or [])]}\n\tself.rootContainer.broadcastDirty(False)"
+            "script": "\tdef _g(obj, key):\n\t\ttry:\n\t\t\treturn obj[key]\n\t\texcept Exception:\n\t\t\treturn None\n\tif payload is None or _g(payload, 'section') != 'routes':\n\t\treturn\n\tif self.view.custom.mode != 'draft':\n\t\treturn\n\tsel = self.view.custom.draftSelected\n\trawSteps = _g(sel, 'steps') or []\n\tself.view.custom.draftEditDraft = {'Id': _g(sel, 'Id'), 'Name': _g(sel, 'Name'), 'EffectiveFrom': _g(sel, 'EffectiveFrom'), 'steps': [dict(s) for s in list(rawSteps)]}\n\tself.rootContainer.broadcastDirty(False)"
           }
         },
         {
@@ -1401,7 +1401,7 @@
           "sessionScope": false,
           "viewScope": false,
           "config": {
-            "script": "\tif not payload:\n\t\treturn\n\tidx = payload.get('rowIndex')\n\tnewStep = payload.get('step')\n\tif idx is None or newStep is None:\n\t\treturn\n\tdraft = self.view.custom.draftEditDraft\n\tsteps = list(draft.get('steps') or [])\n\tif idx < 0 or idx >= len(steps):\n\t\treturn\n\tsteps[idx] = dict(newStep)\n\tnewDraft = {'Id': draft.get('Id'), 'Name': draft.get('Name'), 'EffectiveFrom': draft.get('EffectiveFrom'), 'steps': steps}\n\tself.view.custom.draftEditDraft = newDraft\n\tself.rootContainer.broadcastDirty(True)"
+            "script": "\tdef _g(obj, key):\n\t\ttry:\n\t\t\treturn obj[key]\n\t\texcept Exception:\n\t\t\treturn None\n\tif payload is None:\n\t\treturn\n\tidx = _g(payload, 'rowIndex')\n\tnewStep = _g(payload, 'step')\n\tBlueRidge.Common.Util.log('routeStepChanged idx=%s' % idx)\n\tif idx is None or newStep is None:\n\t\treturn\n\tdraft = self.view.custom.draftEditDraft\n\trawSteps = _g(draft, 'steps') or []\n\tsteps = list(rawSteps)\n\tif idx < 0 or idx >= len(steps):\n\t\treturn\n\tsteps[idx] = dict(newStep) if isinstance(newStep, dict) else newStep\n\tnewDraft = {'Id': _g(draft, 'Id'), 'Name': _g(draft, 'Name'), 'EffectiveFrom': _g(draft, 'EffectiveFrom'), 'steps': steps}\n\tself.view.custom.draftEditDraft = newDraft\n\tself.rootContainer.broadcastDirty(True)"
           }
         },
         {
@@ -1410,7 +1410,7 @@
           "sessionScope": false,
           "viewScope": false,
           "config": {
-            "script": "\tif not payload:\n\t\treturn\n\tidx = payload.get('rowIndex')\n\tif idx is None or idx <= 0:\n\t\treturn\n\tdraft = self.view.custom.draftEditDraft\n\tsteps = list(draft.get('steps') or [])\n\tif idx >= len(steps):\n\t\treturn\n\tsteps[idx-1], steps[idx] = steps[idx], steps[idx-1]\n\tnewDraft = {'Id': draft.get('Id'), 'Name': draft.get('Name'), 'EffectiveFrom': draft.get('EffectiveFrom'), 'steps': steps}\n\tself.view.custom.draftEditDraft = newDraft\n\tself.rootContainer.broadcastDirty(True)"
+            "script": "\tdef _g(obj, key):\n\t\ttry:\n\t\t\treturn obj[key]\n\t\texcept Exception:\n\t\t\treturn None\n\tif payload is None:\n\t\treturn\n\tidx = _g(payload, 'rowIndex')\n\tBlueRidge.Common.Util.log('routeStepMoveUp idx=%s' % idx)\n\tif idx is None or idx <= 0:\n\t\treturn\n\tdraft = self.view.custom.draftEditDraft\n\trawSteps = _g(draft, 'steps') or []\n\tsteps = list(rawSteps)\n\tif idx >= len(steps):\n\t\treturn\n\tsteps[idx-1], steps[idx] = steps[idx], steps[idx-1]\n\tnewDraft = {'Id': _g(draft, 'Id'), 'Name': _g(draft, 'Name'), 'EffectiveFrom': _g(draft, 'EffectiveFrom'), 'steps': steps}\n\tself.view.custom.draftEditDraft = newDraft\n\tself.rootContainer.broadcastDirty(True)"
           }
         },
         {
@@ -1419,7 +1419,7 @@
           "sessionScope": false,
           "viewScope": false,
           "config": {
-            "script": "\tif not payload:\n\t\treturn\n\tidx = payload.get('rowIndex')\n\tdraft = self.view.custom.draftEditDraft\n\tsteps = list(draft.get('steps') or [])\n\tif idx is None or idx < 0 or idx >= len(steps) - 1:\n\t\treturn\n\tsteps[idx+1], steps[idx] = steps[idx], steps[idx+1]\n\tnewDraft = {'Id': draft.get('Id'), 'Name': draft.get('Name'), 'EffectiveFrom': draft.get('EffectiveFrom'), 'steps': steps}\n\tself.view.custom.draftEditDraft = newDraft\n\tself.rootContainer.broadcastDirty(True)"
+            "script": "\tdef _g(obj, key):\n\t\ttry:\n\t\t\treturn obj[key]\n\t\texcept Exception:\n\t\t\treturn None\n\tif payload is None:\n\t\treturn\n\tidx = _g(payload, 'rowIndex')\n\tBlueRidge.Common.Util.log('routeStepMoveDown idx=%s' % idx)\n\tdraft = self.view.custom.draftEditDraft\n\trawSteps = _g(draft, 'steps') or []\n\tsteps = list(rawSteps)\n\tif idx is None or idx < 0 or idx >= len(steps) - 1:\n\t\treturn\n\tsteps[idx+1], steps[idx] = steps[idx], steps[idx+1]\n\tnewDraft = {'Id': _g(draft, 'Id'), 'Name': _g(draft, 'Name'), 'EffectiveFrom': _g(draft, 'EffectiveFrom'), 'steps': steps}\n\tself.view.custom.draftEditDraft = newDraft\n\tself.rootContainer.broadcastDirty(True)"
           }
         },
         {
@@ -1428,7 +1428,7 @@
           "sessionScope": false,
           "viewScope": false,
           "config": {
-            "script": "\tif not payload:\n\t\treturn\n\tidx = payload.get('rowIndex')\n\tif idx is None:\n\t\treturn\n\tdraft = self.view.custom.draftEditDraft\n\tsteps = list(draft.get('steps') or [])\n\tif idx < 0 or idx >= len(steps):\n\t\treturn\n\tdel steps[idx]\n\tnewDraft = {'Id': draft.get('Id'), 'Name': draft.get('Name'), 'EffectiveFrom': draft.get('EffectiveFrom'), 'steps': steps}\n\tself.view.custom.draftEditDraft = newDraft\n\tself.rootContainer.broadcastDirty(True)"
+            "script": "\tdef _g(obj, key):\n\t\ttry:\n\t\t\treturn obj[key]\n\t\texcept Exception:\n\t\t\treturn None\n\tif payload is None:\n\t\treturn\n\tidx = _g(payload, 'rowIndex')\n\tBlueRidge.Common.Util.log('routeStepRemove idx=%s' % idx)\n\tif idx is None:\n\t\treturn\n\tdraft = self.view.custom.draftEditDraft\n\trawSteps = _g(draft, 'steps') or []\n\tsteps = list(rawSteps)\n\tif idx < 0 or idx >= len(steps):\n\t\treturn\n\tdel steps[idx]\n\tnewDraft = {'Id': _g(draft, 'Id'), 'Name': _g(draft, 'Name'), 'EffectiveFrom': _g(draft, 'EffectiveFrom'), 'steps': steps}\n\tself.view.custom.draftEditDraft = newDraft\n\tself.rootContainer.broadcastDirty(True)"
           }
         }
       ]
