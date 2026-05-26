@@ -369,7 +369,10 @@ SELECT @RtId = Id FROM Parts.RouteTemplate WHERE Name = N'TEST-RT-001';
 CREATE TABLE #StepList (
     Id BIGINT, RouteTemplateId BIGINT, SequenceNumber INT,
     OperationTemplateId BIGINT, OperationCode NVARCHAR(50),
-    OperationName NVARCHAR(200), IsRequired BIT, Description NVARCHAR(500)
+    OperationName NVARCHAR(200), OperationVersionNumber INT,
+    OperationAreaLocationId BIGINT, OperationAreaName NVARCHAR(200),
+    DataCollectionSummary NVARCHAR(MAX),
+    IsRequired BIT, Description NVARCHAR(500)
 );
 INSERT INTO #StepList EXEC Parts.RouteStep_ListByRoute @RouteTemplateId = @RtId;
 DECLARE @StepCount INT = (SELECT COUNT(*) FROM #StepList);
