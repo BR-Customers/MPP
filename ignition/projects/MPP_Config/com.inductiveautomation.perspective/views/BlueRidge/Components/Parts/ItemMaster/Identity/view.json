@@ -1,0 +1,1067 @@
+{
+  "custom": {
+    "selected": {
+      "Id": null,
+      "PartNumber": null,
+      "Description": null,
+      "ItemTypeId": null,
+      "ItemTypeName": null,
+      "UomId": null,
+      "UomCode": null,
+      "WeightUomId": null,
+      "WeightUomCode": null,
+      "MacolaPartNumber": null,
+      "CountryOfOrigin": null,
+      "UnitWeight": null,
+      "DefaultSubLotQty": null,
+      "MaxLotSize": null,
+      "MaxParts": null
+    },
+    "editDraft": {
+      "Id": null,
+      "PartNumber": null,
+      "Description": null,
+      "ItemTypeId": null,
+      "ItemTypeName": null,
+      "UomId": null,
+      "UomCode": null,
+      "WeightUomId": null,
+      "WeightUomCode": null,
+      "MacolaPartNumber": null,
+      "CountryOfOrigin": null,
+      "UnitWeight": null,
+      "DefaultSubLotQty": null,
+      "MaxLotSize": null,
+      "MaxParts": null
+    },
+    "isDirty": false,
+    "uomOptions": [],
+    "uomOptionsWithBlank": []
+  },
+  "params": {
+    "value": 0
+  },
+  "propConfig": {
+    "params.value": {
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.rootContainer.load()"
+      }
+    },
+    "custom.isDirty": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.editDraft}) != runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.selected})"
+        }
+      },
+      "onChange": {
+        "enabled": true,
+        "script": "\tsystem.perspective.sendMessage(\"sectionDirtyChanged\", payload={\"section\": \"identity\", \"isDirty\": bool(currentValue.value)}, scope=\"page\")"
+      }
+    },
+    "custom.uomOptions": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Uom.getForDropdown\", 0)"
+        }
+      }
+    },
+    "custom.uomOptionsWithBlank": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Uom.getForDropdown\", 0, true)"
+        }
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 1040,
+      "height": 220
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "detail-panel",
+        "padding": "10px 14px",
+        "gap": "8px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "HeaderRow"
+        },
+        "position": {
+          "basis": "auto"
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "gap": "8px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "SummaryText"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "coalesce({view.custom.editDraft.PartNumber}, '') + ' — ' + coalesce({view.custom.editDraft.Description}, '')"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontSize": "13px",
+                "fontWeight": "600"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "SummaryBadge"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.editDraft.ItemTypeName"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "badge badge-published"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "HeaderSpacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "text": ""
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "BtnDiscard"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "propConfig": {
+              "meta.visible": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.isDirty"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Discard",
+              "style": {
+                "classes": "btn btn-sm"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleDiscard()"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "BtnSave"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "propConfig": {
+              "meta.visible": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.isDirty"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Save",
+              "style": {
+                "classes": "btn btn-primary btn-sm"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleSave()"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "BtnDeprecate"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "props": {
+              "text": "Deprecate",
+              "style": {
+                "classes": "btn btn-danger btn-sm"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleDeprecate()"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "FieldRow1"
+        },
+        "position": {
+          "basis": "auto"
+        },
+        "props": {
+          "direction": "row",
+          "style": {
+            "classes": "field-row",
+            "gap": "12px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "FieldPartNumber"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "field",
+                "gap": "2px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Label"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "props": {
+                  "text": "Part Number",
+                  "style": {
+                    "classes": "field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": {
+                  "name": "Input"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.PartNumber"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "enabled": false,
+                  "style": {
+                    "background": "var(--mpp-surface-card)",
+                    "classes": "search-input",
+                    "color": "var(--mpp-text-muted)",
+                    "width": "160px"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "FieldItemType"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "field",
+                "gap": "2px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Label"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "props": {
+                  "text": "Item Type",
+                  "style": {
+                    "classes": "field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": {
+                  "name": "Input"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "bidirectional": false,
+                        "path": "view.custom.editDraft.ItemTypeName"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "enabled": false,
+                  "style": {
+                    "background": "var(--mpp-surface-card)",
+                    "classes": "search-input",
+                    "color": "var(--mpp-text-muted)",
+                    "width": "160px"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "FieldUom"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "field",
+                "gap": "2px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Label"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "props": {
+                  "text": "UOM",
+                  "style": {
+                    "classes": "field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.dropdown",
+                "meta": {
+                  "name": "Input"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "propConfig": {
+                  "props.value": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.UomId"
+                      }
+                    }
+                  },
+                  "props.options": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.uomOptions"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "select",
+                    "width": "120px"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "FieldRow2"
+        },
+        "position": {
+          "basis": "auto"
+        },
+        "props": {
+          "direction": "row",
+          "style": {
+            "classes": "field-row",
+            "gap": "12px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "FieldDescription"
+            },
+            "position": {
+              "basis": "200px",
+              "grow": 2
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "field",
+                "gap": "2px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Label"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "props": {
+                  "text": "Description",
+                  "style": {
+                    "classes": "field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": {
+                  "name": "Input"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.Description"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "search-input",
+                    "width": "100%"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "FieldMacola"
+            },
+            "position": {
+              "basis": "100px",
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "field",
+                "gap": "2px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Label"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "props": {
+                  "text": "Macola Part #",
+                  "style": {
+                    "classes": "field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": {
+                  "name": "Input"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.MacolaPartNumber"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "search-input",
+                    "width": "100%"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "FieldRow3"
+        },
+        "position": {
+          "basis": "auto"
+        },
+        "props": {
+          "direction": "row",
+          "style": {
+            "classes": "field-row",
+            "gap": "12px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "FieldUnitWeight"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "field",
+                "gap": "2px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Label"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "props": {
+                  "text": "Unit Weight",
+                  "style": {
+                    "classes": "field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": {
+                  "name": "Input"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.UnitWeight"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "search-input",
+                    "width": "100px"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "FieldWeightUom"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "field",
+                "gap": "2px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Label"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "props": {
+                  "text": "Weight UOM",
+                  "style": {
+                    "classes": "field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.dropdown",
+                "meta": {
+                  "name": "Input"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "propConfig": {
+                  "props.value": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.WeightUomId"
+                      }
+                    }
+                  },
+                  "props.options": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.uomOptionsWithBlank"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "select",
+                    "width": "120px"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "FieldDefaultSubLotQty"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "field",
+                "gap": "2px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Label"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "props": {
+                  "text": "Default Sub-Lot Qty",
+                  "style": {
+                    "classes": "field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": {
+                  "name": "Input"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.DefaultSubLotQty"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "search-input",
+                    "width": "100px"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "FieldPartsPerBasket"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "field",
+                "gap": "2px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Label"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "props": {
+                  "text": "Parts Per Basket",
+                  "style": {
+                    "classes": "field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": {
+                  "name": "Input"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.MaxLotSize"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "search-input",
+                    "width": "100px"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "FieldRow4"
+        },
+        "position": {
+          "basis": "auto"
+        },
+        "props": {
+          "direction": "row",
+          "style": {
+            "classes": "field-row",
+            "gap": "12px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "FieldCountryOfOrigin"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "field",
+                "gap": "2px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Label"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "props": {
+                  "text": "Country of Origin",
+                  "style": {
+                    "classes": "field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": {
+                  "name": "Input"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.CountryOfOrigin"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "US, JP, MX, ...",
+                  "style": {
+                    "classes": "search-input",
+                    "width": "120px"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "FieldMaxParts"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "field",
+                "gap": "2px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Label"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "props": {
+                  "text": "Max Parts (per container)",
+                  "style": {
+                    "classes": "field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": {
+                  "name": "Input"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.MaxParts"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "Optional",
+                  "style": {
+                    "classes": "search-input",
+                    "width": "120px"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "load",
+          "params": [],
+          "script": "\titemId = self.view.params.value\n\trow = BlueRidge.Parts.Item.getOneOrEmpty(itemId)\n\tloaded = {\n\t\t\"Id\":               row.get(\"Id\"),\n\t\t\"PartNumber\":       row.get(\"PartNumber\"),\n\t\t\"Description\":      row.get(\"Description\"),\n\t\t\"ItemTypeId\":       row.get(\"ItemTypeId\"),\n\t\t\"ItemTypeName\":     row.get(\"ItemTypeName\"),\n\t\t\"UomId\":            row.get(\"UomId\"),\n\t\t\"UomCode\":          row.get(\"UomCode\"),\n\t\t\"WeightUomId\":      row.get(\"WeightUomId\"),\n\t\t\"WeightUomCode\":    row.get(\"WeightUomCode\"),\n\t\t\"MacolaPartNumber\": row.get(\"MacolaPartNumber\"),\n\t\t\"CountryOfOrigin\":  row.get(\"CountryOfOrigin\"),\n\t\t\"UnitWeight\":       row.get(\"UnitWeight\"),\n\t\t\"DefaultSubLotQty\": row.get(\"DefaultSubLotQty\"),\n\t\t\"MaxLotSize\":       row.get(\"MaxLotSize\"),\n\t\t\"MaxParts\":         row.get(\"MaxParts\"),\n\t}\n\tself.view.custom.selected  = dict(loaded)\n\tself.view.custom.editDraft = dict(loaded)"
+        },
+        {
+          "name": "handleSave",
+          "params": [],
+          "script": "\tdraft = self.view.custom.editDraft or {}\n\titemId = draft.get(\"Id\")\n\tif not itemId:\n\t\tBlueRidge.Common.Notify.toast(\"Nothing to save\", \"Select an item first.\", \"warning\")\n\t\treturn\n\tif not draft.get(\"UomId\"):\n\t\tBlueRidge.Common.Notify.toast(\"UOM required\", \"Pick a UOM before saving.\", \"warning\")\n\t\treturn\n\tdef _toNum(v):\n\t\tif v is None or v == \"\":\n\t\t\treturn None\n\t\ttry:\n\t\t\treturn int(v)\n\t\texcept (ValueError, TypeError):\n\t\t\ttry:\n\t\t\t\treturn float(v)\n\t\t\texcept (ValueError, TypeError):\n\t\t\t\treturn None\n\tpayload = dict(draft)\n\tpayload[\"DefaultSubLotQty\"] = _toNum(draft.get(\"DefaultSubLotQty\"))\n\tpayload[\"MaxLotSize\"]       = _toNum(draft.get(\"MaxLotSize\"))\n\tpayload[\"UnitWeight\"]       = _toNum(draft.get(\"UnitWeight\"))\n\tpayload[\"MaxParts\"]         = _toNum(draft.get(\"MaxParts\"))\n\tresult = BlueRidge.Parts.Item.update(payload)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Item updated\")\n\tif result and result.get(\"Status\"):\n\t\tself.load()\n\t\tsystem.perspective.sendMessage(\"itemsRefresh\", scope=\"page\")"
+        },
+        {
+          "name": "handleDiscard",
+          "params": [],
+          "script": "\tself.view.custom.editDraft = dict(self.view.custom.selected)"
+        },
+        {
+          "name": "handleDeprecate",
+          "params": [],
+          "script": "\titemId = (self.view.custom.editDraft or {}).get(\"Id\") or (self.view.custom.selected or {}).get(\"Id\")\n\tif not itemId:\n\t\treturn\n\tresult = BlueRidge.Parts.Item.deprecate(itemId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Item deprecated\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"itemsRefresh\", scope=\"page\")\n\t\tsystem.perspective.sendMessage(\"itemDeprecated\", payload={\"id\": itemId}, scope=\"page\")"
+        }
+      ],
+      "messageHandlers": [
+        {
+          "messageType": "sectionSaveRequested",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif payload and payload.get(\"section\") == \"identity\":\n\t\tself.handleSave()"
+        },
+        {
+          "messageType": "sectionDiscardRequested",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif payload and payload.get(\"section\") == \"identity\":\n\t\tself.handleDiscard()"
+        }
+      ]
+    }
+  }
+}
