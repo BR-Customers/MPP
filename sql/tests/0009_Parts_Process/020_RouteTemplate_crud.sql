@@ -658,6 +658,16 @@ SELECT @V1Id   = Id FROM Parts.RouteTemplate WHERE Name = N'TEST-RT-001';
 
 SELECT @V1Steps = COUNT(*) FROM Parts.RouteStep WHERE RouteTemplateId = @V1Id;
 
+-- Publish v1 first. _CreateNewVersion now enforces a single-Draft-per-Item
+-- guard: it rejects when an active Draft already exists for the same Item.
+-- v1 has been a Draft up through Test 14; publish it here so the v2 clone
+-- below is allowed. (Test 17 publishes again — that call returns Status=0,
+-- which the test does not assert on, then directly backdates the row.)
+CREATE TABLE #RtPubV1 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #RtPubV1
+EXEC Parts.RouteTemplate_Publish @Id = @V1Id, @AppUserId = 1;
+DROP TABLE #RtPubV1;
+
 CREATE TABLE #Rc9 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #Rc9
 EXEC Parts.RouteTemplate_CreateNewVersion
@@ -1044,6 +1054,60 @@ EXEC test.Assert_IsEqual
     @TestName = N'[RtPublishTwice] Message indicates already published',
     @Expected = N'1',
     @Actual   = @TwiceMsg;
+GO
+
+-- =============================================
+-- Test 26 (Phase 5): Single-Draft-per-Item guard on _CreateNewVersion
+--   At this point v1 Deprecated, v2 Published, v3 Published, no Drafts.
+--   First _CreateNewVersion → v4 Draft → Status=1.
+--   Second _CreateNewVersion → rejected (v4 is the active Draft).
+-- =============================================
+DECLARE @S       BIT,
+        @M       NVARCHAR(500),
+        @SStr    NVARCHAR(1),
+        @ItemId  BIGINT,
+        @V3Id    BIGINT,
+        @V4Id    BIGINT;
+
+SELECT @ItemId = Id FROM Parts.Item WHERE PartNumber = N'TEST-RT-ITEM-001';
+SELECT @V3Id = Id FROM Parts.RouteTemplate WHERE ItemId = @ItemId AND VersionNumber = 3;
+
+-- First CreateNewVersion → v4 Draft, expected to succeed
+CREATE TABLE #Rc12 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #Rc12
+EXEC Parts.RouteTemplate_CreateNewVersion
+    @ParentRouteTemplateId = @V3Id,
+    @AppUserId             = 1;
+SELECT @S = Status, @M = Message, @V4Id = NewId FROM #Rc12;
+DROP TABLE #Rc12;
+
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtDraftGuard] First CreateNewVersion succeeds (v4 Draft)',
+    @Expected = N'1',
+    @Actual   = @SStr;
+
+-- Second CreateNewVersion on same Item → rejected by single-Draft guard
+CREATE TABLE #Rc13 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #Rc13
+EXEC Parts.RouteTemplate_CreateNewVersion
+    @ParentRouteTemplateId = @V3Id,
+    @AppUserId             = 1;
+SELECT @S = Status, @M = Message FROM #Rc13;
+DROP TABLE #Rc13;
+
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtDraftGuard] Second CreateNewVersion rejected (Status=0)',
+    @Expected = N'0',
+    @Actual   = @SStr;
+
+DECLARE @DraftMsg NVARCHAR(1) = CASE
+    WHEN @M LIKE N'%Draft for this Item already exists%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtDraftGuard] Message names the single-Draft guard',
+    @Expected = N'1',
+    @Actual   = @DraftMsg;
 GO
 
 -- =============================================

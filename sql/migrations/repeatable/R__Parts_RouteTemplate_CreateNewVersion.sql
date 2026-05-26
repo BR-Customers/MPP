@@ -2,7 +2,7 @@
 -- Procedure:   Parts.RouteTemplate_CreateNewVersion
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     2.0
+-- Version:     3.0
 --
 -- Description:
 --   Clone-to-modify: creates a new RouteTemplate row for the same Item as
@@ -14,6 +14,10 @@
 --
 --   The parent row is left untouched — engineering can deprecate it
 --   manually via _Deprecate. Steps from the parent are not modified.
+--
+--   Single-Draft-per-Item: rejects when an active Draft already exists
+--   for the parent's ItemId. Engineering must Publish or DiscardDraft
+--   the open Draft before creating another.
 --
 -- Parameters (input):
 --   @ParentRouteTemplateId BIGINT - The source version to clone. Required.
@@ -28,6 +32,9 @@
 -- Change Log:
 --   2026-04-14 - 1.0 - Initial version (OUTPUT params)
 --   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
+--   2026-05-20 - 3.0 - Single-Draft-per-Item guard. Rejects when an
+--                      active Draft (PublishedAt NULL, DeprecatedAt NULL)
+--                      already exists for the parent's ItemId.
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.RouteTemplate_CreateNewVersion
     @ParentRouteTemplateId BIGINT,
@@ -74,14 +81,37 @@ BEGIN
             RETURN;
         END
 
+        -- Single-Draft-per-Item guard. Resolve the parent's ItemId, then
+        -- reject if any active Draft already exists for that Item.
+        DECLARE @ParentItemId BIGINT;
+        SELECT @ParentItemId = ItemId
+        FROM Parts.RouteTemplate
+        WHERE Id = @ParentRouteTemplateId;
+
+        IF EXISTS (
+            SELECT 1 FROM Parts.RouteTemplate
+            WHERE ItemId = @ParentItemId
+              AND PublishedAt IS NULL
+              AND DeprecatedAt IS NULL
+        )
+        BEGIN
+            SET @Message = N'A Draft for this Item already exists. Publish or discard it before creating another.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'Route',
+                @EntityId = @ParentRouteTemplateId, @LogEventTypeCode = N'Created',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+            RETURN;
+        END
+
         DECLARE @EffFrom DATETIME2(3) = ISNULL(@EffectiveFrom, SYSUTCDATETIME());
 
         BEGIN TRANSACTION;
 
-        -- Capture the parent's ItemId and Name
-        DECLARE @ParentItemId BIGINT, @ParentName NVARCHAR(200);
-        SELECT @ParentItemId = ItemId,
-               @ParentName   = Name
+        -- Capture the parent's Name (ItemId already resolved above)
+        DECLARE @ParentName NVARCHAR(200);
+        SELECT @ParentName = Name
         FROM Parts.RouteTemplate
         WHERE Id = @ParentRouteTemplateId;
 
