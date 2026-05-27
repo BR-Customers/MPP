@@ -1278,6 +1278,7 @@
                 "basis": "44px",
                 "shrink": 0
               },
+              "elementStyle": { "maxHeight": "60px" },
               "path": "BlueRidge/Components/Parts/ItemMaster/DraftStepRow",
               "style": {
                 "gap": "4px"
