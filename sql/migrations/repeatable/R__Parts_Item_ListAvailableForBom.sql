@@ -9,6 +9,7 @@
 --   components of the given parent Item. Excludes:
 --     - The parent Item itself (no self-reference)
 --     - Deprecated Items
+--     - Finished Goods (never BOM components per business rule)
 --
 --   Optional @SearchText applies a prefix match on PartNumber OR
 --   substring match on Description.
@@ -30,6 +31,8 @@
 --
 -- Change Log:
 --   2026-05-26 - 1.0 - Initial.
+--   2026-05-27 - 1.1 - Exclude Finished Goods (never valid as BOM
+--                      components -- they ARE the BOM parent).
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.Item_ListAvailableForBom
     @ParentItemId BIGINT,
@@ -53,6 +56,7 @@ BEGIN
     INNER JOIN Parts.Uom u       ON u.Id  = i.UomId
     WHERE i.DeprecatedAt IS NULL
       AND i.Id <> @ParentItemId
+      AND it.Name <> N'Finished Good'
       AND (
             @Like IS NULL
          OR i.PartNumber LIKE @Like + N'%'

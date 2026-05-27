@@ -263,6 +263,9 @@
                   "elementPosition": {
                     "basis": "auto"
                   },
+                  "elementStyle": {
+                    "maxHeight": "60px"
+                  },
                   "path": "BlueRidge/Components/Parts/ItemMaster/ItemRow",
                   "style": {
                     "overflowY": "auto",

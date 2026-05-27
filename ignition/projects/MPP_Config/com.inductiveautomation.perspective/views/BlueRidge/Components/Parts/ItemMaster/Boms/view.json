@@ -24,6 +24,7 @@
         "lines": []
       }
     },
+    "isDirty": false,
     "activeVersionId": null,
     "includeDeprecated": false,
     "versions": [],
@@ -120,10 +121,16 @@
             "propConfig": {
               "props.options": {
                 "binding": {
-                  "type": "expr",
+                  "type": "property",
                   "config": {
-                    "expression": "forEach({view.custom.versions}, {\"label\": \"v\" + toStr(it.VersionNumber) + \" — \" + it.Status + if(it.effectiveFromDisplay != \"\", \" (Eff \" + it.effectiveFromDisplay + \")\", \"\"), \"value\": it.Id})"
-                  }
+                    "path": "view.custom.versions"
+                  },
+                  "transforms": [
+                    {
+                      "type": "script",
+                      "code": "\tout = []\n\tfor v in (value or []):\n\t\tv = v or {}\n\t\tvnum = v.get('VersionNumber', 0)\n\t\tstatus = v.get('Status') or ''\n\t\teffDisp = v.get('effectiveFromDisplay') or ''\n\t\tlabel = 'v' + str(vnum) + ' — ' + status\n\t\tif effDisp:\n\t\t\tlabel = label + ' (Eff ' + effDisp + ')'\n\t\tout.append({'label': label, 'value': v.get('Id')})\n\treturn out"
+                    }
+                  ]
                 }
               },
               "props.value": {
@@ -401,11 +408,11 @@
         },
         "children": [
           { "type": "ia.display.label", "meta": { "name": "ColHash" }, "position": { "basis": "36px", "shrink": 0 }, "props": { "text": "#", "style": { "textAlign": "right" } } },
-          { "type": "ia.display.label", "meta": { "name": "ColMove" }, "position": { "basis": "52px", "shrink": 0 }, "propConfig": { "meta.visible": { "binding": { "type": "expr", "config": { "expression": "{view.custom.state.editDraft.status} = \"Draft\"" } } } }, "props": { "text": "" } },
+          { "type": "ia.container.flex", "meta": { "name": "ColMove" }, "position": { "basis": "72px", "shrink": 0 }, "propConfig": { "position.display": { "binding": { "type": "expr", "config": { "expression": "{view.custom.state.editDraft.status} = \"Draft\"" } } } } },
           { "type": "ia.display.label", "meta": { "name": "ColComp" }, "position": { "grow": 1, "basis": "0" }, "props": { "text": "Component" } },
           { "type": "ia.display.label", "meta": { "name": "ColQty" }, "position": { "basis": "80px", "shrink": 0 }, "props": { "text": "Qty Per", "style": { "textAlign": "right" } } },
           { "type": "ia.display.label", "meta": { "name": "ColUom" }, "position": { "basis": "90px", "shrink": 0 }, "props": { "text": "UOM" } },
-          { "type": "ia.display.label", "meta": { "name": "ColRm" }, "position": { "basis": "40px", "shrink": 0 }, "propConfig": { "meta.visible": { "binding": { "type": "expr", "config": { "expression": "{view.custom.state.editDraft.status} = \"Draft\"" } } } }, "props": { "text": "" } }
+          { "type": "ia.container.flex", "meta": { "name": "ColRm" }, "position": { "basis": "40px", "shrink": 0 }, "propConfig": { "position.display": { "binding": { "type": "expr", "config": { "expression": "{view.custom.state.editDraft.status} = \"Draft\"" } } } } }
         ]
       },
       {
@@ -415,17 +422,24 @@
         "propConfig": {
           "props.instances": {
             "binding": {
-              "type": "expr",
+              "type": "property",
               "config": {
-                "expression": "forEach({view.custom.state.editDraft.lines}, {\"line\": it, \"rowIndex\": index, \"mode\": if({view.custom.state.editDraft.status} = \"Draft\", \"draft\", if({view.custom.state.editDraft.status} = \"Deprecated\", \"deprecated\", \"published\")), \"lineCount\": len({view.custom.state.editDraft.lines}), \"availableItems\": {view.custom.availableItems}, \"uoms\": {view.custom.uoms}})"
-              }
+                "path": "view.custom.state.editDraft.lines"
+              },
+              "transforms": [
+                {
+                  "type": "script",
+                  "code": "\tlines = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\tstate = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state) or {}\n\teditDraft = state.get('editDraft') or {}\n\tstatus = editDraft.get('status') or ''\n\tif status == 'Draft':\n\t\tmode = 'draft'\n\telif status == 'Deprecated':\n\t\tmode = 'deprecated'\n\telse:\n\t\tmode = 'published'\n\tavail = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.availableItems) or []\n\tuoms = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.uoms) or []\n\ttotal = len(lines)\n\tout = []\n\tfor i, ln in enumerate(lines):\n\t\tln = ln or {}\n\t\tout.append({'line': ln, 'rowIndex': i, 'mode': mode, 'lineCount': total, 'availableItems': avail, 'uoms': uoms})\n\treturn out"
+                }
+              ]
             }
           }
         },
         "props": {
           "direction": "column",
           "elementPosition": { "basis": "auto" },
-          "path": "BlueRidge/Components/Parts/ItemMaster/Boms/BomLineRow",
+          "elementStyle": { "maxHeight": "44px" },
+          "path": "BlueRidge/Components/Parts/ItemMaster/BomLineRow",
           "style": {
             "overflowY": "auto"
           },
@@ -524,7 +538,7 @@
         {
           "name": "handleNewVersion",
           "params": [],
-          "script": "\titemId = self.view.params.value\n\tresult = BlueRidge.Parts.Bom.handleCreateOrCloneVersion(itemId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"New draft version created\")\n\tif result and result.get(\"Status\"):\n\t\tnewId = result.get(\"NewId\")\n\t\tself.refreshVersionList()\n\t\tif newId:\n\t\t\tself.view.custom.activeVersionId = newId"
+          "script": "\titemId = self.view.params.value\n\tresult = BlueRidge.Parts.Bom.handleCreateOrCloneVersion(itemId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"New draft version created\")\n\tif not (result and result.get(\"Status\")):\n\t\treturn\n\tnewId = result.get(\"NewId\")\n\tself.refreshVersionList()\n\tif not newId:\n\t\treturn\n\tself.view.custom.activeVersionId = newId\n\tbundle = BlueRidge.Parts.Bom.getOneFull(newId)\n\tself.view.custom.state = {\"selected\": bundle, \"editDraft\": self._cloneBundle(bundle)}"
         },
         {
           "name": "refreshVersionList",
@@ -570,6 +584,16 @@
           "name": "_applyItemChange",
           "params": ["idx", "newItemId"],
           "script": "\tdraft = dict(self.view.custom.state.editDraft or {})\n\tlines = list(draft.get(\"lines\") or [])\n\tif idx < 0 or idx >= len(lines):\n\t\treturn\n\tavail = self.view.custom.availableItems or []\n\tpicked = None\n\tfor it in avail:\n\t\tif it.get(\"Id\") == newItemId:\n\t\t\tpicked = it\n\t\t\tbreak\n\tln = dict(lines[idx])\n\tln[\"childItemId\"] = newItemId\n\tif picked:\n\t\tln[\"partNumber\"]    = picked.get(\"PartNumber\") or \"\"\n\t\tln[\"componentName\"] = picked.get(\"Description\") or \"\"\n\t\tif not ln.get(\"uomId\"):\n\t\t\tln[\"uomId\"]   = picked.get(\"DefaultUomId\")\n\t\t\tln[\"uomCode\"] = picked.get(\"DefaultUomCode\") or \"\"\n\tlines[idx] = ln\n\tdraft[\"lines\"] = lines\n\tself.view.custom.state.editDraft = draft"
+        },
+        {
+          "name": "_applyQtyChange",
+          "params": ["idx", "newQty"],
+          "script": "\tdraft = dict(self.view.custom.state.editDraft or {})\n\tlines = list(draft.get(\"lines\") or [])\n\tif idx < 0 or idx >= len(lines):\n\t\treturn\n\tln = dict(lines[idx])\n\ttry:\n\t\tqty = int(newQty)\n\texcept (ValueError, TypeError):\n\t\ttry:\n\t\t\tqty = float(newQty)\n\t\texcept (ValueError, TypeError):\n\t\t\tqty = newQty\n\tln[\"qtyPer\"] = qty\n\tlines[idx] = ln\n\tdraft[\"lines\"] = lines\n\tself.view.custom.state.editDraft = draft"
+        },
+        {
+          "name": "_applyUomChange",
+          "params": ["idx", "newUomId"],
+          "script": "\tdraft = dict(self.view.custom.state.editDraft or {})\n\tlines = list(draft.get(\"lines\") or [])\n\tif idx < 0 or idx >= len(lines):\n\t\treturn\n\tuoms = self.view.custom.uoms or []\n\tpicked = None\n\tfor u in uoms:\n\t\tif u.get(\"Id\") == newUomId:\n\t\t\tpicked = u\n\t\t\tbreak\n\tln = dict(lines[idx])\n\tln[\"uomId\"] = newUomId\n\tif picked:\n\t\tln[\"uomCode\"] = picked.get(\"Code\") or \"\"\n\tlines[idx] = ln\n\tdraft[\"lines\"] = lines\n\tself.view.custom.state.editDraft = draft"
         }
       ],
       "messageHandlers": [
@@ -614,6 +638,20 @@
           "sessionScope": false,
           "viewScope": false,
           "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tnewItemId = payload.get(\"newItemId\")\n\tself._applyItemChange(idx, newItemId)"
+        },
+        {
+          "messageType": "bomLineQtyChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tnewQty = payload.get(\"newQty\")\n\tself._applyQtyChange(idx, newQty)"
+        },
+        {
+          "messageType": "bomLineUomChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tnewUomId = payload.get(\"newUomId\")\n\tself._applyUomChange(idx, newUomId)"
         },
         {
           "messageType": "bomConfirmDeprecateResult",
