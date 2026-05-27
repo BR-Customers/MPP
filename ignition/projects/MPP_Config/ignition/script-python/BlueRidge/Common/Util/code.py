@@ -369,15 +369,24 @@ def prettyJson(jsonString):
 
 def convertWrapperObjectToJson(obj):
     """
-    Convert a Jython PyDictionary / PyList wrapper object into a Gson-safe
-    JSON value before passing as a named-query parameter. Required when a
-    view hands a self.custom.* dict to a script that forwards it to an NQ
-    that expects NVARCHAR(MAX) JSON.
+    Deep-unwrap a wrapped container (java.util.HashMap of BasicQualifiedValue,
+    QualifiedValue, JavaCollection, nested combinations) into a Python-native
+    structure, then JSON-encode it. Returns the JSON string.
+
+    Used by the dirty-state binding expressions on the per-section ownership
+    embeds (Identity / ContainerConfig / Routes / BOMs) where editDraft and
+    selected come into the runScript wrapped as BasicQualifiedValue leaves
+    inside a HashMap. Comparing those raw dicts via != is unstable (the QV
+    timestamp/quality differs across reads even when the underlying value is
+    identical). Routing both sides through this helper -- which strips the
+    QV wrappers via extractQualifiedValues, then jsonEncodes -- yields
+    type-stable, ordering-stable strings that compare correctly.
 
     Args:
-        obj: Any PyDictionary, PyList, or nested combination.
+        obj: Any wrapped container, plain Python dict/list, or primitive.
 
     Returns:
-        The Gson-safe equivalent ready to be jsonEncoded.
+        str: JSON-encoded string. Compare two of these for type-stable
+             dirty detection. Returns "null" for None.
     """
-    return TypeUtilities.pyToGson(obj)
+    return system.util.jsonEncode(extractQualifiedValues(obj))

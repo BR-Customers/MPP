@@ -1,38 +1,40 @@
 {
   "custom": {
-    "editDraft": {
-      "CountryOfOrigin": "US",
-      "DefaultSubLotQty": 24,
-      "Description": "5G0 Front Cover Assembly",
-      "Id": 1,
-      "ItemTypeId": 4,
-      "ItemTypeName": "Finished Good",
-      "MacolaPartNumber": "5G0-FC-001",
-      "MaxLotSize": null,
-      "MaxParts": 500,
-      "PartNumber": "5G0",
-      "UnitWeight": 3.25,
-      "UomCode": "EA",
-      "UomId": 1,
-      "WeightUomCode": "LB",
-      "WeightUomId": 2
-    },
-    "selected": {
-      "CountryOfOrigin": "US",
-      "DefaultSubLotQty": 24,
-      "Description": "5G0 Front Cover Assembly",
-      "Id": 1,
-      "ItemTypeId": 4,
-      "ItemTypeName": "Finished Good",
-      "MacolaPartNumber": "5G0-FC-001",
-      "MaxLotSize": null,
-      "MaxParts": 500,
-      "PartNumber": "5G0",
-      "UnitWeight": 3.25,
-      "UomCode": "EA",
-      "UomId": 1,
-      "WeightUomCode": "LB",
-      "WeightUomId": 2
+    "state": {
+      "editDraft": {
+        "CountryOfOrigin": "US",
+        "DefaultSubLotQty": 24,
+        "Description": "5G0 Front Cover Assembly",
+        "Id": 1,
+        "ItemTypeId": 4,
+        "ItemTypeName": "Finished Good",
+        "MacolaPartNumber": "5G0-FC-001",
+        "MaxLotSize": null,
+        "MaxParts": 500,
+        "PartNumber": "5G0",
+        "UnitWeight": 3.25,
+        "UomCode": "EA",
+        "UomId": 1,
+        "WeightUomCode": "LB",
+        "WeightUomId": 2
+      },
+      "selected": {
+        "CountryOfOrigin": "US",
+        "DefaultSubLotQty": 24,
+        "Description": "5G0 Front Cover Assembly",
+        "Id": 1,
+        "ItemTypeId": 4,
+        "ItemTypeName": "Finished Good",
+        "MacolaPartNumber": "5G0-FC-001",
+        "MaxLotSize": null,
+        "MaxParts": 500,
+        "PartNumber": "5G0",
+        "UnitWeight": 3.25,
+        "UomCode": "EA",
+        "UomId": 1,
+        "WeightUomCode": "LB",
+        "WeightUomId": 2
+      }
     }
   },
   "params": {
@@ -42,7 +44,7 @@
     "custom.isDirty": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.editDraft}) != runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.selected})"
+          "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.editDraft}) != runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.selected})"
         },
         "type": "expr"
       },
@@ -93,7 +95,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "coalesce({view.custom.editDraft.PartNumber}, '') + ' — ' + coalesce({view.custom.editDraft.Description}, '')"
+                    "expression": "coalesce({view.custom.state.editDraft.PartNumber}, '') + ' — ' + coalesce({view.custom.state.editDraft.Description}, '')"
                   },
                   "type": "expr"
                 }
@@ -115,7 +117,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "path": "view.custom.editDraft.ItemTypeName"
+                    "path": "view.custom.state.editDraft.ItemTypeName"
                   },
                   "type": "property"
                 }
@@ -263,7 +265,7 @@
                     "binding": {
                       "config": {
                         "bidirectional": true,
-                        "path": "view.custom.editDraft.PartNumber"
+                        "path": "view.custom.state.editDraft.PartNumber"
                       },
                       "type": "property"
                     }
@@ -316,7 +318,7 @@
                     "binding": {
                       "config": {
                         "bidirectional": false,
-                        "path": "view.custom.editDraft.ItemTypeName"
+                        "path": "view.custom.state.editDraft.ItemTypeName"
                       },
                       "type": "property"
                     }
@@ -377,7 +379,7 @@
                     "binding": {
                       "config": {
                         "bidirectional": true,
-                        "path": "view.custom.editDraft.UomId"
+                        "path": "view.custom.state.editDraft.UomId"
                       },
                       "type": "property"
                     }
@@ -441,7 +443,7 @@
                     "binding": {
                       "config": {
                         "bidirectional": true,
-                        "path": "view.custom.editDraft.Description"
+                        "path": "view.custom.state.editDraft.Description"
                       },
                       "type": "property"
                     }
@@ -495,7 +497,7 @@
                     "binding": {
                       "config": {
                         "bidirectional": true,
-                        "path": "view.custom.editDraft.MacolaPartNumber"
+                        "path": "view.custom.state.editDraft.MacolaPartNumber"
                       },
                       "type": "property"
                     }
@@ -563,7 +565,7 @@
                     "binding": {
                       "config": {
                         "bidirectional": true,
-                        "path": "view.custom.editDraft.UnitWeight"
+                        "path": "view.custom.state.editDraft.UnitWeight"
                       },
                       "type": "property"
                     }
@@ -621,7 +623,7 @@
                     "binding": {
                       "config": {
                         "bidirectional": true,
-                        "path": "view.custom.editDraft.WeightUomId"
+                        "path": "view.custom.state.editDraft.WeightUomId"
                       },
                       "type": "property"
                     }
@@ -671,7 +673,7 @@
                     "binding": {
                       "config": {
                         "bidirectional": true,
-                        "path": "view.custom.editDraft.DefaultSubLotQty"
+                        "path": "view.custom.state.editDraft.DefaultSubLotQty"
                       },
                       "type": "property"
                     }
@@ -721,7 +723,7 @@
                     "binding": {
                       "config": {
                         "bidirectional": true,
-                        "path": "view.custom.editDraft.MaxLotSize"
+                        "path": "view.custom.state.editDraft.MaxLotSize"
                       },
                       "type": "property"
                     }
@@ -785,7 +787,7 @@
                     "binding": {
                       "config": {
                         "bidirectional": true,
-                        "path": "view.custom.editDraft.CountryOfOrigin"
+                        "path": "view.custom.state.editDraft.CountryOfOrigin"
                       },
                       "type": "property"
                     }
@@ -836,7 +838,7 @@
                     "binding": {
                       "config": {
                         "bidirectional": true,
-                        "path": "view.custom.editDraft.MaxParts"
+                        "path": "view.custom.state.editDraft.MaxParts"
                       },
                       "type": "property"
                     }
@@ -893,22 +895,22 @@
         {
           "name": "load",
           "params": [],
-          "script": "\titemId = self.view.params.value\n\trow = BlueRidge.Parts.Item.getOneOrEmpty(itemId)\n\tdef _s(v):\n\t\treturn \"\" if v is None else (v if isinstance(v, basestring) else unicode(v))\n\tloaded = {\n\t\t\"Id\":               row.get(\"Id\"),\n\t\t\"PartNumber\":       _s(row.get(\"PartNumber\")),\n\t\t\"Description\":      _s(row.get(\"Description\")),\n\t\t\"ItemTypeId\":       row.get(\"ItemTypeId\"),\n\t\t\"ItemTypeName\":     _s(row.get(\"ItemTypeName\")),\n\t\t\"UomId\":            row.get(\"UomId\"),\n\t\t\"UomCode\":          _s(row.get(\"UomCode\")),\n\t\t\"WeightUomId\":      row.get(\"WeightUomId\"),\n\t\t\"WeightUomCode\":    _s(row.get(\"WeightUomCode\")),\n\t\t\"MacolaPartNumber\": _s(row.get(\"MacolaPartNumber\")),\n\t\t\"CountryOfOrigin\":  _s(row.get(\"CountryOfOrigin\")),\n\t\t\"UnitWeight\":       _s(row.get(\"UnitWeight\")),\n\t\t\"DefaultSubLotQty\": _s(row.get(\"DefaultSubLotQty\")),\n\t\t\"MaxLotSize\":       _s(row.get(\"MaxLotSize\")),\n\t\t\"MaxParts\":         _s(row.get(\"MaxParts\")),\n\t}\n\tself.view.custom.selected  = dict(loaded)\n\tself.view.custom.editDraft = dict(loaded)"
+          "script": "\titemId = self.view.params.value\n\trow = BlueRidge.Parts.Item.getOneOrEmpty(itemId)\n\tdef _s(v):\n\t\treturn \"\" if v is None else (v if isinstance(v, basestring) else unicode(v))\n\tloaded = {\n\t\t\"Id\":               row.get(\"Id\"),\n\t\t\"PartNumber\":       _s(row.get(\"PartNumber\")),\n\t\t\"Description\":      _s(row.get(\"Description\")),\n\t\t\"ItemTypeId\":       row.get(\"ItemTypeId\"),\n\t\t\"ItemTypeName\":     _s(row.get(\"ItemTypeName\")),\n\t\t\"UomId\":            row.get(\"UomId\"),\n\t\t\"UomCode\":          _s(row.get(\"UomCode\")),\n\t\t\"WeightUomId\":      row.get(\"WeightUomId\"),\n\t\t\"WeightUomCode\":    _s(row.get(\"WeightUomCode\")),\n\t\t\"MacolaPartNumber\": _s(row.get(\"MacolaPartNumber\")),\n\t\t\"CountryOfOrigin\":  _s(row.get(\"CountryOfOrigin\")),\n\t\t\"UnitWeight\":       _s(row.get(\"UnitWeight\")),\n\t\t\"DefaultSubLotQty\": _s(row.get(\"DefaultSubLotQty\")),\n\t\t\"MaxLotSize\":       _s(row.get(\"MaxLotSize\")),\n\t\t\"MaxParts\":         _s(row.get(\"MaxParts\")),\n\t}\n\tself.view.custom.state = {\"selected\": dict(loaded), \"editDraft\": dict(loaded)}"
         },
         {
           "name": "handleSave",
           "params": [],
-          "script": "\tdraft = self.view.custom.editDraft or {}\n\titemId = draft.get(\"Id\")\n\tif not itemId:\n\t\tBlueRidge.Common.Notify.toast(\"Nothing to save\", \"Select an item first.\", \"warning\")\n\t\treturn\n\tif not draft.get(\"UomId\"):\n\t\tBlueRidge.Common.Notify.toast(\"UOM required\", \"Pick a UOM before saving.\", \"warning\")\n\t\treturn\n\tdef _toNum(v):\n\t\tif v is None or v == \"\":\n\t\t\treturn None\n\t\ttry:\n\t\t\treturn int(v)\n\t\texcept (ValueError, TypeError):\n\t\t\ttry:\n\t\t\t\treturn float(v)\n\t\t\texcept (ValueError, TypeError):\n\t\t\t\treturn None\n\tpayload = dict(draft)\n\tpayload[\"DefaultSubLotQty\"] = _toNum(draft.get(\"DefaultSubLotQty\"))\n\tpayload[\"MaxLotSize\"]       = _toNum(draft.get(\"MaxLotSize\"))\n\tpayload[\"UnitWeight\"]       = _toNum(draft.get(\"UnitWeight\"))\n\tpayload[\"MaxParts\"]         = _toNum(draft.get(\"MaxParts\"))\n\tresult = BlueRidge.Parts.Item.update(payload)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Item updated\")\n\tif result and result.get(\"Status\"):\n\t\tself.load()\n\t\tsystem.perspective.sendMessage(\"itemsRefresh\", scope=\"page\")"
+          "script": "\tdraft = self.view.custom.state.editDraft or {}\n\titemId = draft.get(\"Id\")\n\tif not itemId:\n\t\tBlueRidge.Common.Notify.toast(\"Nothing to save\", \"Select an item first.\", \"warning\")\n\t\treturn\n\tif not draft.get(\"UomId\"):\n\t\tBlueRidge.Common.Notify.toast(\"UOM required\", \"Pick a UOM before saving.\", \"warning\")\n\t\treturn\n\tdef _toNum(v):\n\t\tif v is None or v == \"\":\n\t\t\treturn None\n\t\ttry:\n\t\t\treturn int(v)\n\t\texcept (ValueError, TypeError):\n\t\t\ttry:\n\t\t\t\treturn float(v)\n\t\t\texcept (ValueError, TypeError):\n\t\t\t\treturn None\n\tpayload = dict(draft)\n\tpayload[\"DefaultSubLotQty\"] = _toNum(draft.get(\"DefaultSubLotQty\"))\n\tpayload[\"MaxLotSize\"]       = _toNum(draft.get(\"MaxLotSize\"))\n\tpayload[\"UnitWeight\"]       = _toNum(draft.get(\"UnitWeight\"))\n\tpayload[\"MaxParts\"]         = _toNum(draft.get(\"MaxParts\"))\n\tresult = BlueRidge.Parts.Item.update(payload)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Item updated\")\n\tif result and result.get(\"Status\"):\n\t\tself.load()\n\t\tsystem.perspective.sendMessage(\"itemsRefresh\", scope=\"page\")"
         },
         {
           "name": "handleDiscard",
           "params": [],
-          "script": "\tself.view.custom.editDraft = dict(self.view.custom.selected)"
+          "script": "\tself.view.custom.state.editDraft = dict(self.view.custom.state.selected)"
         },
         {
           "name": "handleDeprecate",
           "params": [],
-          "script": "\titemId = (self.view.custom.editDraft or {}).get(\"Id\") or (self.view.custom.selected or {}).get(\"Id\")\n\tif not itemId:\n\t\treturn\n\tresult = BlueRidge.Parts.Item.deprecate(itemId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Item deprecated\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"itemsRefresh\", scope=\"page\")\n\t\tsystem.perspective.sendMessage(\"itemDeprecated\", payload={\"id\": itemId}, scope=\"page\")"
+          "script": "\titemId = (self.view.custom.state.editDraft or {}).get(\"Id\") or (self.view.custom.state.selected or {}).get(\"Id\")\n\tif not itemId:\n\t\treturn\n\tresult = BlueRidge.Parts.Item.deprecate(itemId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Item deprecated\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"itemsRefresh\", scope=\"page\")\n\t\tsystem.perspective.sendMessage(\"itemDeprecated\", payload={\"id\": itemId}, scope=\"page\")"
         }
       ],
       "extensionFunctions": null,

@@ -314,6 +314,7 @@ Full vertical stack scaffolded 2026-05-13. Convention-rectification pass landed 
 - Memory file revision-history-format trim: applied to FDS only; not yet to Data Model + OIR.
 - FDS-06-028 wording sharpen — WO Auto-Finish (§6.10) prose still mentions "camera-count mode" pre-tray-reframe. Low priority.
 - ~~**Latent NQ v1 schema bug:** at least `location/Get/resource.json` is `version: 1`~~ — resolved 2026-05-14 (bumped to v2 with corrected sqlType enum). See `feedback_ignition_nq_resource_schema.md` memory for the empirically-verified Designer sqlType table.
+- **Audit Log UI revisit** (Jacques, 2026-05-27) — current FailureLog + AuditLog browser pages work for Phase 3 verification but the UI itself wants another design pass at some point. Not blocking anything; revisit when there's a natural opening between feature work.
 
 ### Deferred follow-ups tied to future Config Tool surfaces
 
