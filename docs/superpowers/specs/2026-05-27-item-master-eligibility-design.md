@@ -58,11 +58,11 @@ Existing unique index `UQ_ItemLocation_ActiveItemLocation` on `(ItemId, Location
 │  Eligibility for 5G0 — Front Cover Assembly       [Discard] [Save]          │
 │                                                                             │
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │ #  Move      Location                          Consumption  Qty Fields  × │
+│  │ #   Location                              Consumption  Qty Fields    × │
 │  │ ──────────────────────────────────────────────────────────────────── │    │
-│  │ 1  [▲][▼]   [DC-007 — DC Machine 7 (Cell)  ▼]    [☐]                [×]│    │
-│  │ 2  [▲][▼]   [TR — Trim Shop (Area)         ▼]    [☑]  Min[50] Max[200] Default[100]  [×]│    │
-│  │ 3  [▲][▼]   [DC — Die Cast (Area)          ▼]    [☐]                [×]│    │
+│  │ 1   [DC — Die Cast (Area)            ▼]    [☐]                    [×]│    │
+│  │ 2   [TR — Trim Shop (Area)           ▼]    [☑]  Min[50] Max[200] Def[100]  [×]│    │
+│  │ 3   [DC-007 — DC Machine 7 (Cell)    ▼]    [☐]                    [×]│    │
 │  └─────────────────────────────────────────────────────────────────────┘    │
 │                                                                             │
 │  [ + Add Location ]                                                         │
@@ -71,16 +71,17 @@ Existing unique index `UQ_ItemLocation_ActiveItemLocation` on `(ItemId, Location
 
 ### 4.2 Row Components
 
-Each row in the LinesRepeater is an embedded sub-view `BlueRidge/Components/Parts/ItemMaster/EligibilityRow/`. The row mirrors `BomLineRow` for sizing and uniform 30px control heights.
+Each row in the LinesRepeater is an embedded sub-view `BlueRidge/Components/Parts/ItemMaster/EligibilityRow/`. The row mirrors `BomLineRow` for sizing and uniform 30px control heights. Column headers live in the parent Eligibility view above the LinesRepeater, mirroring the BOMs ColumnHeader pattern (the row sub-view contains only controls, not labels).
 
 | Column | Width | Component | Notes |
 |---|---|---|---|
-| `#` | 36px | `ia.display.label` | 1-indexed row number |
-| Move | 72px | `ia.container.flex` | Up + Down `ia.input.button` side-by-side. Pure local-order reordering. |
+| `#` | 36px | `ia.display.label` | 1-indexed row number (from `params.rowIndex + 1`) |
 | Location | grow 1 | `ia.input.dropdown` | Typeahead, filterable, options sorted by `(tierOrdinal, code)` with tier in label |
-| IsConsumptionPoint | 36px | `ia.input.checkbox` | Toggles visibility of qty fields |
+| IsConsumptionPoint | 60px | `ia.input.checkbox` | Toggles visibility of qty fields. Header label above reads "Consumption". |
 | Min / Max / Default | 240px combined | 3 × `ia.input.text-field` | `position.display` bound to `IsConsumptionPoint`; collapses when unchecked |
 | Remove | 40px | `ia.input.button` | × symbol |
+
+**No reorder arrows.** `Parts.ItemLocation` has no `SortOrder` column. Rows display in canonical sort order from `Parts.ItemLocation_ListByItem` (sorted `(LocationTierOrdinal ASC, LocationCode ASC)`). New rows added in the editor session append at the bottom of `state.editDraft.rows`; on next save+reload they slot into their canonical position. This avoids ephemeral reorderings that don't persist.
 
 When `IsConsumptionPoint` is unchecked, the three qty fields collapse via `position.display` (not `meta.visible` — they share no layout slot with other content, so collapse is preferred). Row width adjusts naturally.
 
@@ -148,9 +149,8 @@ Embed-to-parent communication mirrors `BomLineRow` (see `feedback_ignition_no_fo
 | Location dropdown `onActionPerformed` | `eligibilityRowLocationChanged` | `{rowIndex, newLocationId}` | `_applyLocationChange(rowIndex, newLocationId)` — looks up Location label from `locationOptions`, updates row |
 | IsConsumptionPoint checkbox `onActionPerformed` | `eligibilityRowConsumptionChanged` | `{rowIndex, isConsumptionPoint}` | `_applyConsumptionChange(rowIndex, flag)` — toggles flag, zeros qty fields if turning off |
 | Min/Max/Default text-field `dom.onBlur` | `eligibilityRowQtyChanged` | `{rowIndex, field, newValue}` | `_applyQtyChange(rowIndex, field, value)` — sets the field, coerces to int |
-| Up/Down arrow `onActionPerformed` | `eligibilityRowMoveUp` / `MoveDown` | `{rowIndex}` | `_swapRows(rowIndex, rowIndex ± 1)` |
 | Remove × `onActionPerformed` | `eligibilityRowRemove` | `{rowIndex}` | `_removeRow(rowIndex)` |
-| + Add Location button | `eligibilityRowAdd` (or direct customMethod) | none | `_addRow()` — appends empty row with `id: null`, `isConsumptionPoint: false`, all qty NULL |
+| + Add Location button | direct customMethod call (lives on parent root) | none | `addRow()` — appends empty row with `id: null`, `isConsumptionPoint: false`, all qty NULL |
 
 Bidi binding on row fields to `view.params.rowData.X` is NOT used — parent params are input-only and the writes would be silently dropped. Message-based propagation is the established pattern.
 
@@ -267,16 +267,15 @@ Drafted in the spirit of the BOMs smoke (B1–B13). To be expanded into the impl
 3. **Pick a Location** — type a few chars, pick `DC-007 — DC Machine 7 (Cell)`. Row updates with the chosen Location label.
 4. **Toggle consumption point** — check the IsConsumptionPoint checkbox. Min/Max/Default fields appear via position.display. Uncheck — fields collapse back.
 5. **Enter qty bounds** — Min=50, Max=200, Default=100. Tab through. State updates.
-6. **Reorder** — `▲`/`▼` arrows swap row positions in editDraft.
-7. **Remove row** — `×` deletes the row from editDraft locally.
-8. **Save** — click Save. Toast "Eligibility saved. <N> rows updated." (or similar). Dirty clears. Tabs re-enable. Reload — changes persist.
-9. **Validation: duplicate Location** — add a row pointing at a Location already in the list (e.g., DC-007 twice). Save → toast "Duplicate Item+Location pairing." No changes commit.
-10. **Validation: consumption-point qty missing** — toggle IsConsumptionPoint on, leave Min blank. Save → toast "Min/Max/Default required when consumption point is enabled." No commit.
-11. **Validation: Min > Max** — Min=200, Max=50. Save → toast "Min must be ≤ Max." No commit.
-12. **Discard** — make edits, click Discard. State reverts to last saved. Dirty clears.
-13. **Tab-switch gate** — make edits, click another tab → tab is visually disabled. Click another item row → ConfirmUnsaved popup fires.
-14. **Reactivation** — deprecate an Item-Location pair (Save with the row removed from editDraft). Then add a new row pointing at the same Location. Save → proc reactivates the deprecated row (no new Id created). Verify by querying `Parts.ItemLocation` — the original `Id` should now have `DeprecatedAt = NULL`.
-15. **Audit** — open `/audit` → `Audit.ConfigLog` shows one Updated row per save with full `OldValue` / `NewValue` JSON delta.
+6. **Remove row** — `×` deletes the row from editDraft locally.
+7. **Save** — click Save. Toast "Eligibility saved. <N> rows updated." (or similar). Dirty clears. Tabs re-enable. Reload — changes persist and rows return in canonical `(tierOrdinal, code)` order.
+8. **Validation: duplicate Location** — add a row pointing at a Location already in the list (e.g., DC-007 twice). Save → toast "Duplicate Item+Location pairing." No changes commit.
+9. **Validation: consumption-point qty missing** — toggle IsConsumptionPoint on, leave Min blank. Save → toast "Min/Max/Default required when consumption point is enabled." No commit.
+10. **Validation: Min > Max** — Min=200, Max=50. Save → toast "Min must be ≤ Max." No commit.
+11. **Discard** — make edits, click Discard. State reverts to last saved. Dirty clears.
+12. **Tab-switch gate** — make edits, click another tab → tab is visually disabled. Click another item row → ConfirmUnsaved popup fires.
+13. **Reactivation** — deprecate an Item-Location pair (Save with the row removed from editDraft). Then add a new row pointing at the same Location. Save → proc reactivates the deprecated row (no new Id created). Verify by querying `Parts.ItemLocation` — the original `Id` should now have `DeprecatedAt = NULL`.
+14. **Audit** — open `/audit` → `Audit.ConfigLog` shows one Updated row per save with full `OldValue` / `NewValue` JSON delta.
 
 ## 10. Decisions + Rejected Alternatives
 
