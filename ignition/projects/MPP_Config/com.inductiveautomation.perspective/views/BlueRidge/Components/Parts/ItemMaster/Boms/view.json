@@ -373,7 +373,7 @@
                   "type": "script",
                   "scope": "G",
                   "config": {
-                    "script": "\tself.view.rootContainer.handlePublish()"
+                    "script": "\tself.view.rootContainer.requestPublish()"
                   }
                 }
               }
@@ -556,6 +556,11 @@
           "script": "\tdraft = self.view.custom.state.editDraft or {}\n\tbomId = draft.get(\"id\")\n\tif not bomId:\n\t\tBlueRidge.Common.Notify.toast(\"No draft selected\", \"Cannot publish: no draft BOM is currently active.\", \"warning\")\n\t\treturn\n\teffDisplay = draft.get(\"effectiveFromDisplay\") or \"\"\n\teffDisplay = effDisplay.strip() if isinstance(effDisplay, basestring) else effDisplay\n\tif not effDisplay:\n\t\tBlueRidge.Common.Notify.toast(\"Effective From required\", \"Enter an effective date before publishing.\", \"warning\")\n\t\treturn\n\tlines = draft.get(\"lines\") or []\n\tif not lines:\n\t\tBlueRidge.Common.Notify.toast(\"At least one line required\", \"Add at least one component before publishing.\", \"warning\")\n\t\treturn\n\tresult = BlueRidge.Parts.Bom.handlePublish(bomId, effDisplay, lines)\n\tBlueRidge.Common.Ui.notifyResult(result, \"BOM published\")\n\tif result and result.get(\"Status\"):\n\t\tself.refreshVersionList()\n\t\tself.loadActiveVersion()"
         },
         {
+          "name": "requestPublish",
+          "params": [],
+          "script": "\tdraft = self.view.custom.state.editDraft or {}\n\tdraftId = draft.get(\"id\")\n\tdraftVer = draft.get(\"versionNumber\")\n\tif not draftId:\n\t\treturn\n\tpriorVer = None\n\tfor v in (self.view.custom.versions or []):\n\t\tif not v:\n\t\t\tcontinue\n\t\tif v.get(\"Id\") == draftId:\n\t\t\tcontinue\n\t\tif (v.get(\"Status\") or \"\") == \"Published\":\n\t\t\tpriorVer = v.get(\"VersionNumber\")\n\t\t\tbreak\n\tif priorVer is None:\n\t\tself.handlePublish()\n\t\treturn\n\tmsg = \"Publish v\" + str(draftVer) + \"? This will deprecate v\" + str(priorVer) + \" (currently active in production).\"\n\tsystem.perspective.openPopup(\n\t\tid=\"mpp-confirm-destructive\",\n\t\tview=\"BlueRidge/Components/Popups/ConfirmDestructive\",\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t\"title\":        \"Publish BOM\",\n\t\t\t\"message\":      msg,\n\t\t\t\"confirmLabel\": \"Publish\",\n\t\t\t\"cancelLabel\":  \"Cancel\",\n\t\t\t\"confirmClass\": \"btn btn-primary btn-sm\",\n\t\t\t\"replyMessage\": \"bomConfirmPublishResult\",\n\t\t},\n\t)"
+        },
+        {
           "name": "openDeprecateConfirm",
           "params": [],
           "script": "\tsel = self.view.custom.state.selected or {}\n\tbomId = sel.get(\"id\")\n\tver = sel.get(\"versionNumber\")\n\tif not bomId:\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid=\"mpp-confirm-destructive\",\n\t\tview=\"BlueRidge/Components/Popups/ConfirmDestructive\",\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t\"title\":        \"Deprecate BOM\",\n\t\t\t\"message\":      \"Deprecate v\" + str(ver) + \"? This retires the version from production. Existing Work Orders are unaffected.\",\n\t\t\t\"confirmLabel\": \"Deprecate\",\n\t\t\t\"cancelLabel\":  \"Cancel\",\n\t\t\t\"confirmClass\": \"btn btn-danger btn-sm\",\n\t\t\t\"replyMessage\": \"bomConfirmDeprecateResult\",\n\t\t},\n\t)"
@@ -652,6 +657,13 @@
           "sessionScope": false,
           "viewScope": false,
           "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tnewUomId = payload.get(\"newUomId\")\n\tself._applyUomChange(idx, newUomId)"
+        },
+        {
+          "messageType": "bomConfirmPublishResult",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tif payload.get(\"action\") != \"confirm\":\n\t\treturn\n\tself.handlePublish()"
         },
         {
           "messageType": "bomConfirmDeprecateResult",

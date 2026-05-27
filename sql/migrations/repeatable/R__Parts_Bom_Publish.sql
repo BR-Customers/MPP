@@ -2,14 +2,22 @@
 -- Procedure:   Parts.Bom_Publish
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     3.0
+-- Version:     4.0
 --
 -- Description:
 --   Flips a Draft BOM to Published by setting PublishedAt =
 --   SYSUTCDATETIME(). One-way transition. Optionally accepts
 --   @EffectiveFrom override and @LinesJson — when @LinesJson is non-NULL,
 --   the proc internally invokes Bom_SaveDraft logic first (save-and-publish
---   in one round-trip). Rejects in any of:
+--   in one round-trip).
+--
+--   Atomic auto-deprecation: when this version is published, any prior
+--   version for the same ParentItemId that is currently Published-and-
+--   not-Deprecated is stamped with DeprecatedAt = SYSUTCDATETIME() in
+--   the same transaction. Enforces the versioned-entity invariant: at
+--   most one Published-and-not-Deprecated BOM exists per ParentItemId.
+--
+--   Rejects in any of:
 --     - Target Bom is missing
 --     - Target Bom is Deprecated
 --     - Target Bom is already Published
@@ -33,6 +41,10 @@
 --   2026-05-26 - 3.0 - Added @EffectiveFrom + @LinesJson save-and-publish
 --                      params. Added min-1-line and EffectiveFrom guards.
 --                      Echo NewId in result set for entity-script convention.
+--   2026-05-27 - 4.0 - Atomically auto-deprecate the prior Published version
+--                      (same ParentItemId, DeprecatedAt IS NULL) when this
+--                      version flips to Published. Enforces single-Published
+--                      invariant per the versioned-entity workflow convention.
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.Bom_Publish
     @Id            BIGINT,
@@ -295,6 +307,21 @@ BEGIN
             WHERE i.Id IS NULL;
         END
 
+        -- Auto-deprecate the prior Published version for this ParentItemId.
+        -- The versioned-entity workflow guarantees at most one such row at
+        -- any time, but the UPDATE is set-based so a defensive cleanup of
+        -- multiple stale Published rows also works correctly. Capture each
+        -- auto-deprecated VersionNumber so the success message can name them.
+        DECLARE @DeprecatedVersions TABLE (VersionNumber INT);
+
+        UPDATE Parts.Bom
+        SET DeprecatedAt = SYSUTCDATETIME()
+        OUTPUT inserted.VersionNumber INTO @DeprecatedVersions
+        WHERE ParentItemId = @ParentItemId
+          AND Id <> @Id
+          AND PublishedAt IS NOT NULL
+          AND DeprecatedAt IS NULL;
+
         UPDATE Parts.Bom
         SET PublishedAt   = SYSUTCDATETIME(),
             EffectiveFrom = @TargetEffFrom
@@ -312,8 +339,16 @@ BEGIN
 
         COMMIT TRANSACTION;
 
+        DECLARE @DepSuffix NVARCHAR(200) = N'';
+        IF EXISTS (SELECT 1 FROM @DeprecatedVersions)
+        BEGIN
+            SELECT @DepSuffix = N' Deprecated ' +
+                STRING_AGG(N'v' + CAST(VersionNumber AS NVARCHAR(10)), N', ') + N'.'
+            FROM @DeprecatedVersions;
+        END
+
         SET @Status  = 1;
-        SET @Message = N'Published v' + CAST(@VersionNumber AS NVARCHAR(10)) + N'.';
+        SET @Message = N'Published v' + CAST(@VersionNumber AS NVARCHAR(10)) + N'.' + @DepSuffix;
         SELECT @Status AS Status, @Message AS Message;
     END TRY
     BEGIN CATCH
