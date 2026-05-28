@@ -25,13 +25,13 @@
         "transforms": [
           {
             "type": "script",
-            "code": "\tstate = BlueRidge.Common.Util.extractQualifiedValues(value) or {}\n\tsel = (state.get(\"selected\") or {}).get(\"rows\") or []\n\tedt = (state.get(\"editDraft\") or {}).get(\"rows\") or []\n\treturn system.util.jsonEncode(sel) != system.util.jsonEncode(edt)"
+            "code": "\tstate = BlueRidge.Common.Util.extractQualifiedValues(value) or {}\n\tsel = (state.get(\"selected\") or {}).get(\"rows\") or []\n\tedt = (state.get(\"editDraft\") or {}).get(\"rows\") or []\n\tdirty = (sel != edt)\n\tBlueRidge.Common.Util.log(\"isDirty transform: sel_len=%d edt_len=%d dirty=%s\" % (len(sel), len(edt), dirty))\n\treturn dirty"
           }
         ]
       },
       "onChange": {
         "enabled": true,
-        "script": "\tsystem.perspective.sendMessage(\"sectionDirtyChanged\", payload={\"section\": \"eligibility\", \"isDirty\": bool(currentValue.value)}, scope=\"page\")"
+        "script": "\tBlueRidge.Common.Util.log(\"isDirty onChange: value=%s\" % currentValue.value)\n\tsystem.perspective.sendMessage(\"sectionDirtyChanged\", payload={\"section\": \"eligibility\", \"isDirty\": bool(currentValue.value)}, scope=\"page\")"
       }
     },
     "custom.locationOptions": {
