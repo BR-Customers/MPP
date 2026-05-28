@@ -1,107 +1,132 @@
 {
   "custom": {
-    "selectedArea": "All Areas",
-    "rows": []
+    "state": {
+      "selected":  { "rows": [] },
+      "editDraft": { "rows": [] }
+    },
+    "isDirty": false,
+    "locationOptions": []
   },
   "params": {
     "value": 0
   },
   "propConfig": {
     "params.value": {
-      "paramDirection": "input"
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.rootContainer.load()"
+      }
+    },
+    "custom.isDirty": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.editDraft}) != runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.selected})"
+        }
+      },
+      "onChange": {
+        "enabled": true,
+        "script": "\tsystem.perspective.sendMessage(\"sectionDirtyChanged\", payload={\"section\": \"eligibility\", \"isDirty\": bool(currentValue.value)}, scope=\"page\")"
+      }
+    },
+    "custom.locationOptions": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Eligibility.listLocationOptions\", 0)"
+        }
+      }
     }
   },
   "props": {
-    "defaultSize": {
-      "width": 800,
-      "height": 280
-    }
+    "defaultSize": { "height": 360, "width": 1200 }
   },
   "root": {
     "type": "ia.container.flex",
-    "meta": {
-      "name": "root"
-    },
+    "meta": { "name": "root" },
     "props": {
       "direction": "column",
       "style": {
-        "gap": "10px",
-        "height": "100%"
+        "classes": "detail-panel",
+        "gap": "8px",
+        "padding": "10px 14px"
       }
     },
     "children": [
       {
         "type": "ia.container.flex",
-        "meta": {
-          "name": "FilterRow"
-        },
-        "position": {
-          "basis": "auto"
-        },
+        "meta": { "name": "HeaderRow" },
+        "position": { "basis": "auto" },
         "props": {
           "direction": "row",
           "alignItems": "center",
-          "style": {
-            "gap": "8px"
-          }
+          "style": { "gap": "8px" }
         },
         "children": [
           {
             "type": "ia.display.label",
-            "meta": {
-              "name": "LabelArea"
-            },
-            "position": {
-              "basis": "auto"
+            "meta": { "name": "PanelHeader" },
+            "props": {
+              "text": "Eligibility",
+              "style": { "fontSize": "13px", "fontWeight": "600" }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "Spacer" },
+            "position": { "grow": 1 },
+            "props": { "text": "" }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "BtnDiscard" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "meta.visible": {
+                "binding": {
+                  "type": "property",
+                  "config": { "path": "view.custom.isDirty" }
+                }
+              }
             },
             "props": {
-              "text": "Area:",
-              "style": {
-                "fontSize": "12px",
-                "color": "var(--mpp-text-muted)"
+              "text": "Discard",
+              "style": { "classes": "btn btn-sm" }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": { "script": "\tself.view.rootContainer.handleDiscard()" }
+                }
               }
             }
           },
           {
-            "type": "ia.input.dropdown",
-            "meta": {
-              "name": "DropdownArea"
-            },
-            "position": {
-              "basis": "auto"
-            },
+            "type": "ia.input.button",
+            "meta": { "name": "BtnSave" },
+            "position": { "shrink": 0 },
             "propConfig": {
-              "props.value": {
+              "props.enabled": {
                 "binding": {
                   "type": "property",
-                  "config": {
-                    "bidirectional": true,
-                    "path": "view.custom.selectedArea"
-                  }
+                  "config": { "path": "view.custom.isDirty" }
                 }
               }
             },
             "props": {
-              "options": [
-                {
-                  "label": "All Areas",
-                  "value": "All Areas"
-                },
-                {
-                  "label": "Die Cast",
-                  "value": "Die Cast"
-                },
-                {
-                  "label": "Trim Shop",
-                  "value": "Trim Shop"
-                },
-                {
-                  "label": "Machine Shop",
-                  "value": "Machine Shop"
+              "text": "Save",
+              "style": { "classes": "btn btn-primary btn-sm" }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": { "script": "\tself.view.rootContainer.handleSave()" }
                 }
-              ],
-              "style": {
-                "classes": "select"
               }
             }
           }
@@ -109,115 +134,157 @@
       },
       {
         "type": "ia.container.flex",
-        "meta": {
-          "name": "Panel"
+        "meta": { "name": "ColumnHeader" },
+        "position": { "basis": "auto" },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": { "gap": "6px", "padding": "0 10px" }
         },
-        "position": {
-          "grow": 1
+        "children": [
+          { "type": "ia.display.label", "meta": { "name": "ColHash" }, "position": { "basis": "36px", "shrink": 0 }, "props": { "text": "#", "style": { "color": "var(--mpp-text-muted)", "fontSize": "11px", "textAlign": "right" } } },
+          { "type": "ia.display.label", "meta": { "name": "ColLocation" }, "position": { "grow": 1, "basis": "0" }, "props": { "text": "Location", "style": { "color": "var(--mpp-text-muted)", "fontSize": "11px" } } },
+          { "type": "ia.display.label", "meta": { "name": "ColCsp" }, "position": { "basis": "60px", "shrink": 0 }, "props": { "text": "Consumption", "style": { "color": "var(--mpp-text-muted)", "fontSize": "11px" } } },
+          { "type": "ia.display.label", "meta": { "name": "ColMin" }, "position": { "basis": "80px", "shrink": 0 }, "props": { "text": "Min", "style": { "color": "var(--mpp-text-muted)", "fontSize": "11px", "textAlign": "right" } } },
+          { "type": "ia.display.label", "meta": { "name": "ColMax" }, "position": { "basis": "80px", "shrink": 0 }, "props": { "text": "Max", "style": { "color": "var(--mpp-text-muted)", "fontSize": "11px", "textAlign": "right" } } },
+          { "type": "ia.display.label", "meta": { "name": "ColDef" }, "position": { "basis": "80px", "shrink": 0 }, "props": { "text": "Default", "style": { "color": "var(--mpp-text-muted)", "fontSize": "11px", "textAlign": "right" } } },
+          { "type": "ia.display.label", "meta": { "name": "ColRm" }, "position": { "basis": "40px", "shrink": 0 }, "props": { "text": "" } }
+        ]
+      },
+      {
+        "type": "ia.display.flex-repeater",
+        "meta": { "name": "RowsRepeater" },
+        "position": { "grow": 1, "basis": "0" },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "type": "property",
+              "config": { "path": "view.custom.state.editDraft.rows" },
+              "transforms": [
+                {
+                  "type": "script",
+                  "code": "\trows = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\topts = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.locationOptions) or []\n\tout = []\n\tfor i, r in enumerate(rows):\n\t\tr = r or {}\n\t\tout.append({'rowIndex': i, 'row': r, 'locationOptions': opts})\n\treturn out"
+                }
+              ]
+            }
+          }
         },
         "props": {
           "direction": "column",
-          "style": {
-            "classes": "detail-panel",
-            "overflow": "hidden"
-          }
+          "elementPosition": { "basis": "auto" },
+          "elementStyle": { "maxHeight": "44px" },
+          "path": "BlueRidge/Components/Parts/ItemMaster/EligibilityRow",
+          "style": { "overflowY": "auto" },
+          "useDefaultViewHeight": false,
+          "useDefaultViewWidth": false
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": { "name": "BtnAddRow" },
+        "position": { "basis": "auto", "shrink": 0 },
+        "props": {
+          "text": "+ Add Location",
+          "style": { "classes": "btn btn-sm" }
         },
-        "children": [
-          {
-            "type": "ia.container.flex",
-            "meta": {
-              "name": "PanelHeader"
-            },
-            "position": {
-              "basis": "auto"
-            },
-            "props": {
-              "direction": "row",
-              "style": {
-                "padding": "8px 12px",
-                "borderBottom": "1px solid var(--mpp-border-subtle)"
-              }
-            },
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "PanelHeaderLabel"
-                },
-                "position": {
-                  "basis": "auto"
-                },
-                "propConfig": {
-                  "props.text": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "'Machine Eligibility \u2014 ' + {view.custom.selectedArea} + ' area'"
-                      }
-                    }
-                  }
-                },
-                "props": {
-                  "style": {
-                    "fontSize": "13px",
-                    "fontWeight": "600"
-                  }
-                }
-              }
-            ]
-          },
-          {
-            "type": "ia.display.table",
-            "meta": {
-              "name": "MachineTable"
-            },
-            "position": {
-              "basis": "auto"
-            },
-            "propConfig": {
-              "props.data": {
-                "binding": {
-                  "type": "property",
-                  "config": {
-                    "path": "view.custom.rows"
-                  }
-                }
-              }
-            },
-            "props": {
-              "columns": [
-                {
-                  "field": "machineName",
-                  "header": "Machine"
-                },
-                {
-                  "field": "code",
-                  "header": "Code",
-                  "width": 100
-                },
-                {
-                  "field": "tonnage",
-                  "header": "Tonnage",
-                  "width": 110
-                },
-                {
-                  "field": "eligible",
-                  "header": "Eligible",
-                  "width": 90,
-                  "render": "boolean",
-                  "editable": true
-                }
-              ],
-              "rows": {
-                "height": 32
-              },
-              "style": {
-                "classes": "data-table"
-              }
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": { "script": "\tself.view.rootContainer.addRow()" }
             }
           }
-        ]
+        }
       }
-    ]
+    ],
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "load",
+          "params": [],
+          "script": "\titemId = self.view.params.value\n\tif not itemId:\n\t\tempty = {\"rows\": []}\n\t\tself.view.custom.state = {\"selected\": dict(empty), \"editDraft\": dict(empty)}\n\t\treturn\n\trawRows = BlueRidge.Parts.Eligibility.listByItem(itemId) or []\n\tloaded = []\n\tfor r in rawRows:\n\t\tr = r or {}\n\t\tloaded.append({\n\t\t\t\"id\":                  r.get(\"Id\"),\n\t\t\t\"locationId\":          r.get(\"LocationId\"),\n\t\t\t\"locationLabel\":       (r.get(\"LocationCode\") or \"\") + \" \\u2014 \" + (r.get(\"LocationName\") or \"\") + \" (\" + (r.get(\"DefinitionName\") or \"\") + \")\",\n\t\t\t\"locationTierOrdinal\": r.get(\"TierOrdinal\"),\n\t\t\t\"isConsumptionPoint\":  bool(r.get(\"IsConsumptionPoint\")),\n\t\t\t\"minQuantity\":         r.get(\"MinQuantity\"),\n\t\t\t\"maxQuantity\":         r.get(\"MaxQuantity\"),\n\t\t\t\"defaultQuantity\":     r.get(\"DefaultQuantity\"),\n\t\t})\n\tself.view.custom.state = {\"selected\": {\"rows\": loaded}, \"editDraft\": {\"rows\": [dict(r) for r in loaded]}}"
+        },
+        {
+          "name": "handleSave",
+          "params": [],
+          "script": "\titemId = self.view.params.value\n\tif not itemId:\n\t\tBlueRidge.Common.Notify.toast(\"No item selected\", \"Pick an item before saving.\", \"warning\")\n\t\treturn\n\tdraft = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {}\n\trows = draft.get(\"rows\") or []\n\tresult = BlueRidge.Parts.Eligibility.handleSaveAll(itemId, rows)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Eligibility saved\")\n\tif result and result.get(\"Status\"):\n\t\tself.load()"
+        },
+        {
+          "name": "handleDiscard",
+          "params": [],
+          "script": "\tselected = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\tself.view.custom.state = {\"selected\": selected, \"editDraft\": {\"rows\": [dict(r) for r in (selected.get(\"rows\") or [])]}}"
+        },
+        {
+          "name": "addRow",
+          "params": [],
+          "script": "\tdraft = dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {\"rows\": []})\n\trows = list(draft.get(\"rows\") or [])\n\trows.append({\n\t\t\"id\":                  None,\n\t\t\"locationId\":          None,\n\t\t\"locationLabel\":       \"\",\n\t\t\"locationTierOrdinal\": None,\n\t\t\"isConsumptionPoint\":  False,\n\t\t\"minQuantity\":         None,\n\t\t\"maxQuantity\":         None,\n\t\t\"defaultQuantity\":     None,\n\t})\n\tdraft[\"rows\"] = rows\n\tselected = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\tself.view.custom.state = {\"selected\": selected, \"editDraft\": draft}"
+        },
+        {
+          "name": "_applyLocationChange",
+          "params": ["idx", "newLocationId"],
+          "script": "\tdraft = dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {\"rows\": []})\n\trows = list(draft.get(\"rows\") or [])\n\tif idx < 0 or idx >= len(rows):\n\t\treturn\n\topts = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.locationOptions) or []\n\tpicked = None\n\tfor o in opts:\n\t\tif o.get(\"Id\") == newLocationId:\n\t\t\tpicked = o\n\t\t\tbreak\n\trow = dict(rows[idx])\n\trow[\"locationId\"] = newLocationId\n\tif picked:\n\t\trow[\"locationLabel\"]       = picked.get(\"DisplayLabel\") or \"\"\n\t\trow[\"locationTierOrdinal\"] = picked.get(\"TierOrdinal\")\n\trows[idx] = row\n\tdraft[\"rows\"] = rows\n\tselected = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\tself.view.custom.state = {\"selected\": selected, \"editDraft\": draft}"
+        },
+        {
+          "name": "_applyConsumptionChange",
+          "params": ["idx", "isConsumptionPoint"],
+          "script": "\tdraft = dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {\"rows\": []})\n\trows = list(draft.get(\"rows\") or [])\n\tif idx < 0 or idx >= len(rows):\n\t\treturn\n\trow = dict(rows[idx])\n\trow[\"isConsumptionPoint\"] = bool(isConsumptionPoint)\n\tif not row[\"isConsumptionPoint\"]:\n\t\trow[\"minQuantity\"] = None\n\t\trow[\"maxQuantity\"] = None\n\t\trow[\"defaultQuantity\"] = None\n\trows[idx] = row\n\tdraft[\"rows\"] = rows\n\tselected = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\tself.view.custom.state = {\"selected\": selected, \"editDraft\": draft}"
+        },
+        {
+          "name": "_applyQtyChange",
+          "params": ["idx", "field", "newValue"],
+          "script": "\tdraft = dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {\"rows\": []})\n\trows = list(draft.get(\"rows\") or [])\n\tif idx < 0 or idx >= len(rows):\n\t\treturn\n\trow = dict(rows[idx])\n\tcoerced = None\n\tif newValue not in (None, \"\"):\n\t\ttry:\n\t\t\tcoerced = int(newValue)\n\t\texcept (ValueError, TypeError):\n\t\t\ttry:\n\t\t\t\tcoerced = float(newValue)\n\t\t\texcept (ValueError, TypeError):\n\t\t\t\tcoerced = newValue\n\trow[field] = coerced\n\trows[idx] = row\n\tdraft[\"rows\"] = rows\n\tselected = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\tself.view.custom.state = {\"selected\": selected, \"editDraft\": draft}"
+        },
+        {
+          "name": "_removeRow",
+          "params": ["idx"],
+          "script": "\tdraft = dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {\"rows\": []})\n\trows = list(draft.get(\"rows\") or [])\n\tif idx < 0 or idx >= len(rows):\n\t\treturn\n\tdel rows[idx]\n\tdraft[\"rows\"] = rows\n\tselected = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\tself.view.custom.state = {\"selected\": selected, \"editDraft\": draft}"
+        }
+      ],
+      "messageHandlers": [
+        {
+          "messageType": "sectionSaveRequested",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif payload and payload.get(\"section\") == \"eligibility\":\n\t\tself.handleSave()"
+        },
+        {
+          "messageType": "sectionDiscardRequested",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif payload and payload.get(\"section\") == \"eligibility\":\n\t\tself.handleDiscard()"
+        },
+        {
+          "messageType": "eligibilityRowLocationChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tself._applyLocationChange(idx, payload.get(\"newLocationId\"))"
+        },
+        {
+          "messageType": "eligibilityRowConsumptionChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tself._applyConsumptionChange(idx, payload.get(\"isConsumptionPoint\"))"
+        },
+        {
+          "messageType": "eligibilityRowQtyChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tself._applyQtyChange(idx, payload.get(\"field\"), payload.get(\"newValue\"))"
+        },
+        {
+          "messageType": "eligibilityRowRemove",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tself._removeRow(idx)"
+        }
+      ]
+    }
   }
 }
