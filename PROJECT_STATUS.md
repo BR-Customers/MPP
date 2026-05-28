@@ -1,110 +1,41 @@
 # MPP MES — Project Status
 
-**Last updated:** 2026-05-26 (Phase 6 BOMs landed on main via rebase + ff-merge; SQL tests **1034/1034**. **MAJOR BUG STILL OPEN** — per-section editDraft drift; BOMs `43c20bd` isDirty deep-compare via `Common.Util.convertWrapperObjectToJson` round-trip is the candidate fix-pattern to try on Identity/ContainerConfig.)
+**Last updated:** 2026-05-28 (Phase 3 + Phase 6 BOMs both green; per-section dirty-drift blocker **resolved** via atomic state writes + deep QV unwrap; Phase 8 Eligibility spec + plan committed, awaiting implementation. SQL tests **1034/1034**.)
 
 ---
 
-## 🔖 Next Session Pickup — Item Master Phase 3 (paused 2026-05-26)
+## 🔖 Next Session Pickup — Phase 8 Eligibility implementation
 
-**State of play.** Phase 3 (Item Master Identity + AddItem CRUD) is **code-complete on main** (commits below). Phase 5 Routes and Phase 6 BOMs also landed in parallel during this session — Routes via Agent A pushing directly to main; BOMs via Agent B + rebase merge. **One MAJOR blocker remains** before Phase 3 can be marked done: spurious dirty-state drift on Identity (and probably ContainerConfig) that locks item-to-item navigation. See "Active Blocker" section below for full diagnosis-to-date.
+**State of play.** Phase 3 (Item Master Identity + AddItem CRUD) and Phase 6 (BOMs editor end-to-end) are both fully smoke-tested and shipped on main. The blocker that gated Phase 3 closeout — spurious per-section dirty-drift — was traced to two compounding bugs and fixed (see "Recently closed" below). Phase 8 Eligibility editor has a **complete spec + implementation plan committed and pushed** but no code has landed yet.
 
 **First three steps on resume:**
 
-1. **Sync up.** Pull origin/main; verify clean tree; read this whole status doc top to bottom because the parallel-agent activity has changed a lot of files (Routes flex-repeater patterns, BOMs reusable ConfirmAction popup, ConfirmDestructive popup, etc.).
+1. **Sync up + verify clean tree.**
    ```
    git fetch origin && git pull --ff-only origin main
-   git log --oneline -30                          # see what landed
-   git status                                      # should be clean
+   git status   # should be clean except untracked plant-layout PDF + tools/plant-layout-mapper/
    ```
 
-2. **Diagnostic capture before any code changes.** Open Item Master in Designer, click an item with non-null values, wait a few seconds until "Item Master • Unsaved changes" appears with no user input, then:
-   - Select the **Identity** embedded view in the project browser.
-   - In the Property Browser, capture **every key + value of `view.custom.editDraft`** AND **every key + value of `view.custom.selected`**.
-   - Diff them — note which keys differ AND what the difference looks like (type, wrapper class, whitespace, anything visible).
-   - Also note: is `view.custom.isDirty` showing `true` while the dicts look identical to your eye? (Different bug class.)
+2. **Read the Phase 8 spec + plan before touching code.**
+   - Spec: `docs/superpowers/specs/2026-05-27-item-master-eligibility-design.md` (commits `03c50e0` initial + `8fc736d` self-review)
+   - Plan: `docs/superpowers/plans/2026-05-27-item-master-eligibility.md` (commit `84a2a0b`)
+   - Pattern memory: `project_mpp_item_master_pattern` (now includes the 2026-05-27 atomic-state-write addendum)
 
-3. **Read these before touching code:**
-   - `docs/superpowers/plans/2026-05-26-item-master-phase3.md` — the plan we executed
-   - `docs/superpowers/specs/2026-05-20-item-master-phase3-design.md` — the spec
-   - `ignition/projects/MPP_Config/com.inductiveautomation.perspective/views/BlueRidge/Components/Parts/ItemMaster/Identity/view.json` — the new embed
-   - `BlueRidge.Common.Util.convertWrapperObjectToJson` (in `Common/Util/code.py`) — Jacques changed this to `return dict(obj)` mid-session; that fix unblocked dirty-detection and immediately exposed this drift bug. Worth checking whether `dict()` is a shallow vs deep unwrap — if shallow, leaf Java wrappers in editDraft vs selected could still mismatch even when both serialize to the same JSON-string.
-   - `43c20bd` BOMs isDirty fix — same JSON-round-trip pattern, may have lessons for Identity/ContainerConfig.
+3. **Execute the plan.** 10 tasks, SQL-first sequencing: SaveAll proc → picker proc → ListByItem update → tests → NQ wrappers → entity script → EligibilityRow sub-view → Eligibility parent embed rewrite → manual Designer smoke per spec §9. Each plan task has exact file paths, complete code blocks, expected sqlcmd output, scan steps, commit messages. Recommended runner: subagent-driven-development.
 
-**Smoke checklist progress:**
+**Phase 8 design decisions locked (don't re-litigate):**
+- Tiered list editor — one row per `Parts.ItemLocation` row, not a per-Cell effective grid.
+- Location picker = single typeahead dropdown grouped by tier; sort `(tierOrdinal, code)` with tier name in label.
+- **No** Item-Type × Location-Type business-rule enforcement in client. Engineer is trusted; runtime scan-in (`ItemLocation_IsEligible`) catches misconfigurations. Per Jacques: business logic does NOT live in Python (see `feedback_no_business_logic_in_python` memory).
+- Bundled SaveAll commit model — `Parts.ItemLocation_SaveAllForItem` reconciles add / update / deprecate / reactivate-deprecated atomically.
+- Soft delete via `DeprecatedAt`; single `Audit.ConfigLog` row per save with full OldValue / NewValue JSON.
+- No row reorder arrows (canonical sort from the read proc).
+- Schema already supports the design — consumption-metadata columns landed in migration 0010. No new migration needed.
 
-| Step | Status |
-|---|---|
-| 1. Cold open populates list | ✅ PASS |
-| 2. Click 5G0 populates Identity | ✅ PASS |
-| 3. Edit Description → dirty dot, tabs disable | ✅ PASS |
-| 4. Save → toast + dirty clears + list refreshes | ✅ PASS |
-| 5. Discard reverts; dirty clears | ✅ PASS |
-| 6. UnitWeight w/o WeightUOM → proc rejects | ✅ PASS |
-| 7. MaxParts = 0 → proc rejects | ✅ PASS |
-| 8. +Add Item opens | ✅ PASS |
-| 9. Create succeeds (toast) | ✅ PASS |
-| 9b. New row appears in list without manual refresh | 🟡 Fix in `13356bd` (refactored binding to read from `view.custom.items` via pure transform) — needs retest |
-| **Cross-item nav without changes** | ❌ **BLOCKER** — see Active Blocker section |
-| 10–15 | ⏳ Gated on blocker |
-
-**Phase 3 commit chain since `752d86a`:**
-```
-5526ec3 NQ parts/Item_Create
-9aba45d NQ parts/Item_Update
-1595f6e NQ parts/Item_Deprecate
-0c31eba NQ parts/ItemType_List
-5fa3fbe NQ parts/Uom_List
-aaab0be BlueRidge.Parts.ItemType entity script
-07c0711 BlueRidge.Parts.Uom entity script
-f4021f7 Item.add + update + deprecate + emptyMeta
-3466643 Identity embed (per-section ownership)
-471d2b8 Wire AddItem popup to Item.add
-3973be8 Swap DetailsHeader for Identity embed
-1965f56 itemsRefresh direct write (1st refresh attempt — wrong target)
-42ba778 load() coerces None -> "" for nullable text fields
-12c6a7b load() stringifies numerics + refreshTick (architectural violation)
-13356bd attachSelectedId pure transform; ItemList binds to view.custom.items
-1fabed2 docs(status): log blocker
-1fabed2..HEAD docs(status): pickup note + BOMs/Routes parallel work landed
-```
-
-**Lessons captured this session (don't re-litigate):**
-- `convertWrapperObjectToJson` is `dict(obj)`, not `pyToGson(obj)`. (Jacques's fix — supersedes my earlier wrong implementation.)
-- Component-level bindings must NOT call DB-hitting helpers like `getAllForList` directly. The three-layer convention is: `view.custom.X` does the DB fetch via runScript; components bind to `view.custom.X` with a pure transform if reshape is needed. (My `12c6a7b` violated this; `13356bd` corrected with `attachSelectedId` pure transform.)
-- `ia.container.tab` in 8.3 doesn't support intercept-with-state-preservation. Use tabs-as-objects with `runWhileHidden: true` + `disabled` per-tab. Already in place via `itemMasterTabObjects` helper.
-- Don't swap out working UI components without asking. Stick to the smallest change that fixes the bug.
-
-**Parallel agent activity to be aware of:**
-- Phase 5 (Routes): landed by Agent A pushing directly to main. Many commits between `f32f312` and `0151dbc`. There are several `fix(routes)` commits — likely Routes has its own polish round still going.
-- Phase 6 (BOMs): landed by Agent B via rebase-merge. `971c2f4..38639a1` plus three rebase fixups + `43c20bd` isDirty backport + `705986e` SQL hot-fix. SQL test count went from 937 to **1034**.
-- Phase 8 (Eligibility): no commits visible — that agent may not have started, or may still be in a worktree.
-
-**Workaround for demo purposes** until the drift bug is fixed: when ConfirmUnsaved fires spuriously, click **Discard & Close** — it resets `editDraft = dict(selected)`, clears dirty until the next drift cycle (a few seconds).
-
----
-
-## 🚨 Active Blocker — Item Master per-section dirty-state drift
-
-**Symptom:** After loading an Item, navigating between items (or sometimes just letting the view sit for a few seconds), `view.custom.editDraft` becomes !=  `view.custom.selected` even with no user input. This triggers `sectionDirtyChanged{isDirty: true}` → ConfirmUnsaved popup blocks `itemRowClicked` navigation → user stuck on current item indefinitely.
-
-**Affected sections:** Identity embed (confirmed), ContainerConfig embed (very likely — same pattern), BOMs embed (very likely — same pattern; landed 2026-05-26 with isDirty deep-compare via JSON round-trip already applied — **try porting commit `43c20bd` to Identity + ContainerConfig as the first diagnostic step**).
-
-**Attempts to date (all partial):**
-
-1. `42ba778` — load() coerces `None → ""` for nullable text-bound fields. Fixed null/literal-"null" rendering.
-2. `12c6a7b` — load() stringifies ALL text-field-bound values including numerics. Fixed int-to-string drift on cold load.
-3. **Still broken** — drift returns within seconds of normal use.
-
-**Hypotheses to test (need diagnostic data from Designer Property Browser):**
-
-- **Wrapper type drift:** `view.custom.editDraft` returns a Java BasicMap or PerspectiveProperty wrapper; bidi-write-back creates a different wrapper type than the one in `selected`; `dict()` deep-unwrap normalizes them but `dict.__eq__` still fails on some leaf wrappers.
-- **Read-only text-field bidi:** PartNumber input has `enabled: false` AND `bidirectional: true`. Maybe the bidi binding does background writes for read-only fields too, drifting representation over time.
-- **Background re-render:** Some Ignition lifecycle event (focus loss, scroll, tab visibility) triggers text-fields to re-write their values, normalizing to a different representation.
-- **Binding evaluation order race:** `custom.isDirty`'s `runScript(...)` expression evaluates in a context where `editDraft` and `selected` references diverge transiently.
-
-**Next step:** capture full editDraft vs selected snapshot (key/value/type for each) when dirty spontaneously triggers, identify the drifting keys, then fix the actual mechanism rather than guessing categories.
-
-**Quick workaround if needed for demo:** any time dirty fires spuriously, click Discard on the affected section — that does `editDraft = dict(selected)` and clears dirty until the next drift cycle.
+**Other open items not blocking Phase 8:**
+- Orphan Draft BOM rows in dev DB from yesterday's pre-fix `+ New Version` clicks (Bom_CreateNewVersion succeeded server-side but client got an exception from the JDBC UpdateQuery mismatch — see `feedback_ignition_nq_type_for_status_row_procs` memory). Worth a manual cleanup pass before further BOM testing.
+- Audit Log UI revisit (Jacques flagged 2026-05-27, logged under Non-blocking polish below).
+- OI-35 Architecture Decision Gate still gating Arc 2 Phase 1 SQL build (independent of this work).
 
 ---
 
@@ -128,6 +59,47 @@ The Item Master design has been **reworked from bundled-editDraft + bidi-Object-
 ---
 
 ## ✅ Recently closed
+
+### Item Master Phase 3 dirty-drift blocker resolved + Phase 6 BOMs smoke green (2026-05-27 → 2026-05-28)
+
+Closed out the per-section dirty-drift blocker that had been gating Phase 3 closeout for a week. Two compounding bugs in `BlueRidge.Common.Util.convertWrapperObjectToJson` + `load()` racing:
+
+1. **Shallow unwrap.** `convertWrapperObjectToJson` was `return dict(obj)` — handed back a Python dict containing raw `BasicQualifiedValue` leaves. The dirty-binding expression then either compared two dicts whose Java-wrapper identities drifted between reads (false-positive dirty), or — once `system.util.jsonEncode(dict(obj))` was tried — choked because jsonEncode can't serialize raw QV objects (binding evaluated to null, "Error_Configuration"). Fix: `return system.util.jsonEncode(extractQualifiedValues(obj))`. The existing `extractQualifiedValues` already handles `JavaMap` + `QualifiedValue` recursively — which is exactly the shape that arrives at runScript (`HashMap` of `BasicQualifiedValue`). Confirmed via diagnostic logging that captured both sides' types + reprs.
+
+2. **Load-race architecture.** Even with deep unwrap, the dirty-binding still fired spuriously on cross-item nav because `load()` was writing `self.view.custom.selected = X; self.view.custom.editDraft = X` as two SEQUENTIAL property assignments. Between the writes the binding evaluated with `selected = new item, editDraft = old item` → dirty=true → `sectionDirtyChanged{isDirty:true}` propagated → parent latched `sectionDirty.<section> = true`. The subsequent dirty=false transition either coalesced or arrived after the parent already gated navigation. **Fix:** wrap both in a single `view.custom.state` parent property and write atomically: `self.view.custom.state = {"selected": dict(loaded), "editDraft": dict(loaded)}`. Applied to Identity, ContainerConfig, BOMs (per-section ownership), and Routes (the only one that uses explicit `broadcastDirty()` instead of binding-driven dirty).
+
+**Phase 3 smoke (steps 1–16, including the previously-blocked cross-item nav steps 10–16) all PASS.**
+
+**Phase 6 BOMs end-to-end smoke (B1–B13) also all PASS** in the same multi-day session. Numerous fixes layered on top of the per-section state refactor:
+
+- **Six BOM mutation NQs** (`Bom_Create`, `Bom_CreateNewVersion`, `Bom_Publish`, `Bom_SaveDraft`, `Bom_Deprecate`, `Bom_DiscardDraft`) were mistyped as `UpdateQuery`. JDBC's executeUpdate path throws on the status-row SELECT every project mutation proc returns — "A result set was generated for update." The procs succeeded server-side, but client got an exception, no toast fired, no UI updated. Flipped all six to `type: "Query"`. New memory: `feedback_ignition_nq_type_for_status_row_procs`.
+- **`forEach` in Ignition expressions doesn't exist.** Four BOMs/BomLineRow bindings (`VersionDropdown.options`, `LinesRepeater.instances`, `ItemPicker.options`, `UomEdit.options`) had been authored as `forEach({list}, {label: ..., value: ...})` expressions and silently failed with "Nested paths not allowed" / "TagPathFormatException". Converted all four to property binding + script transform, mirroring Routes' working pattern. New memory: `feedback_ignition_no_foreach_in_expressions`.
+- **`BomLineRow` was nested under `Boms/`.** Same "Ignition can't load views nested under other views" trap that hit `DraftStepRow` yesterday. Moved to `ItemMaster/BomLineRow/` as a sibling of the other section embeds.
+- **Embed sub-view params are input-only.** `BomLineRow.QtyEdit` + `UomEdit` were bidi-bound to `view.params.line.X` — writes silently dropped, never reaching the parent. Save Draft stayed disabled after qty edits; UOM "reverted to EA" on every pick. Added page-scoped `bomLineQtyChanged` + `bomLineUomChanged` messages with `_applyQtyChange` + `_applyUomChange` customMethods on the parent. New memory: `feedback_ignition_embed_params_input_only`.
+- **`handleNewVersion` didn't load state inline.** Was relying on `activeVersionId.onChange` → `loadActiveVersion()` chain to populate the new draft's content. The chain didn't reliably fire. Now `handleNewVersion` explicitly fetches the bundle and writes `view.custom.state = {selected, editDraft}` synchronously, same pattern Routes' `BtnNewVersion` uses.
+- **Single-Published invariant + pre-publish confirmation UX.** Catching that v1 + v2 could both have `DeprecatedAt IS NULL` for the same `ParentItemId`: `Bom_Publish` now auto-deprecates any prior Published version in the same transaction, with an `OUTPUT inserted.VersionNumber INTO @DeprecatedVersions` so the success message reads "Published v2. Deprecated v1." Publish button now routes through a new `requestPublish` customMethod that inspects `view.custom.versions` for a prior Published row — if found, opens the existing `ConfirmDestructive` popup ("Publish v2? This will deprecate v1 currently active in production."); first publish goes direct. Commit `f6df905`.
+- **Layout polish.** ColMove/ColRm header placeholders converted from empty `ia.display.label` to empty `ia.container.flex` so they reserve slot width when invisible (labels collapse on `meta.visible: false`). Draft/Published alternate columns switched from `meta.visible` to `position.display` (alternates that share a column should collapse, not both reserve space). All BomLineRow controls get uniform `height: 30px` so bottom edges align. ColArrows widened 52px → 72px so arrows fit side-by-side.
+- **Component filter.** `Parts.ItemLocation_ListAvailableForBom` excludes `ItemType.Name = N'Finished Good'` per business rule (BOM components are never Finished Goods).
+
+Commit chain on main (this session): `bd00c5e` (per-section atomic state writes + extractQualifiedValues chain) → `5b13cc1` (yesterday's DraftStepRow polish) → `44ec8b7` (script-console demo) → `1049ea3` (BOMs end-to-end smoke fixes bundle) → `c27c36d` (Routes elementStyle parity) → `f6df905` (BOMs Publish invariant + UX).
+
+**Memory updates (durable lessons captured):**
+- `project_mpp_item_master_pattern` — added "Atomic state writes" addendum documenting the `view.custom.state = {selected, editDraft}` single-write rule + the `convertWrapperObjectToJson` co-fix.
+- `feedback_ignition_nq_type_for_status_row_procs` — NEW. Mutation procs returning status-row SELECT must have NQ `type: "Query"`, not `UpdateQuery`.
+- `feedback_ignition_no_foreach_in_expressions` — NEW. Ignition expression language has no iteration primitive; use property + script transform.
+- `feedback_ignition_embed_params_input_only` — NEW. Sub-view params are input-only; bidi writes to nested paths under `view.params.X` get silently dropped; use page-scoped messages.
+- `feedback_no_business_logic_in_python` — NEW. Jacques rule: business rules (compatibility matrices, validation thresholds, etc.) live in SQL, never in Python entity scripts.
+- `CLAUDE.md` § Compound editors with per-section ownership — strengthened with the atomic-state-write paragraph + embed-to-parent propagation paragraph.
+
+### Item Master Phase 8 Eligibility — spec + implementation plan committed (2026-05-27)
+
+Brainstormed + designed + planned. Code not yet landed.
+
+- Spec: `docs/superpowers/specs/2026-05-27-item-master-eligibility-design.md` (commits `03c50e0` + `8fc736d` self-review).
+- Plan: `docs/superpowers/plans/2026-05-27-item-master-eligibility.md` (commit `84a2a0b`). 10 tasks, SQL-first, every task has exact file paths + complete code blocks + expected sqlcmd output.
+- Pattern: per-section ownership with atomic state writes (same pattern locked in Phase 3 fix).
+- Editor model: tiered list (one row per `Parts.ItemLocation` row), single typeahead Location dropdown grouped by tier, bundled SaveAll proc with reactivate-deprecated semantics, no client-side business-rule enforcement.
+- Schema already supports the design — `Parts.ItemLocation` already has the consumption-metadata columns from migration 0010. No new migration needed.
 
 ### Item Master Phase 6 — BOMs versioning workflow landed via rebase + ff-merge (2026-05-26)
 
