@@ -25,13 +25,13 @@
         "transforms": [
           {
             "type": "script",
-            "code": "\tstate = BlueRidge.Common.Util.extractQualifiedValues(value) or {}\n\tsel = (state.get(\"selected\") or {}).get(\"rows\") or []\n\tedt = (state.get(\"editDraft\") or {}).get(\"rows\") or []\n\tdirty = (sel != edt)\n\tBlueRidge.Common.Util.log(\"isDirty transform: sel_len=%d edt_len=%d dirty=%s\" % (len(sel), len(edt), dirty))\n\treturn dirty"
+            "code": "\tstate = BlueRidge.Common.Util.extractQualifiedValues(value) or {}\n\tsel = (state.get(\"selected\") or {}).get(\"rows\") or []\n\tedt = (state.get(\"editDraft\") or {}).get(\"rows\") or []\n\treturn BlueRidge.Common.Util.convertWrapperObjectToJson(sel) != BlueRidge.Common.Util.convertWrapperObjectToJson(edt)"
           }
         ]
       },
       "onChange": {
         "enabled": true,
-        "script": "\tBlueRidge.Common.Util.log(\"isDirty onChange: value=%s\" % currentValue.value)\n\tsystem.perspective.sendMessage(\"sectionDirtyChanged\", payload={\"section\": \"eligibility\", \"isDirty\": bool(currentValue.value)}, scope=\"page\")"
+        "script": "\tsystem.perspective.sendMessage(\"sectionDirtyChanged\", payload={\"section\": \"eligibility\", \"isDirty\": bool(currentValue.value)}, scope=\"page\")"
       }
     },
     "custom.locationOptions": {
@@ -212,7 +212,7 @@
         {
           "name": "handleSave",
           "params": [],
-          "script": "\titemId = self.view.params.value\n\tif not itemId:\n\t\tBlueRidge.Common.Notify.toast(\"No item selected\", \"Pick an item before saving.\", \"warning\")\n\t\treturn\n\tdraft = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {}\n\trows = draft.get(\"rows\") or []\n\tresult = BlueRidge.Parts.Eligibility.handleSaveAll(itemId, rows)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Eligibility saved\")\n\tBlueRidge.Common.Util.log(\"handleSave result=%s status_truthy=%s\" % (result, bool(result and result.get(\"Status\"))))\n\tif result and result.get(\"Status\"):\n\t\tself.load()\n\t\tBlueRidge.Common.Util.log(\"handleSave post-load rows=%d\" % len((BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {}).get(\"rows\") or []))"
+          "script": "\titemId = self.view.params.value\n\tif not itemId:\n\t\tBlueRidge.Common.Notify.toast(\"No item selected\", \"Pick an item before saving.\", \"warning\")\n\t\treturn\n\tdraft = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {}\n\trows = draft.get(\"rows\") or []\n\tresult = BlueRidge.Parts.Eligibility.handleSaveAll(itemId, rows)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Eligibility saved\")\n\tif result and result.get(\"Status\"):\n\t\tself.load()"
         },
         {
           "name": "handleDiscard",
