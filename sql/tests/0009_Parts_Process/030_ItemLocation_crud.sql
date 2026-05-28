@@ -204,6 +204,7 @@ CREATE TABLE #IlByItem1 (
     Id BIGINT, ItemId BIGINT, LocationId BIGINT,
     LocationName NVARCHAR(200), LocationCode NVARCHAR(50),
     DefinitionName NVARCHAR(200),
+    TierOrdinal INT,
     MinQuantity INT, MaxQuantity INT, DefaultQuantity INT,
     IsConsumptionPoint BIT,
     CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
@@ -264,6 +265,7 @@ CREATE TABLE #IlByItem2 (
     Id BIGINT, ItemId BIGINT, LocationId BIGINT,
     LocationName NVARCHAR(200), LocationCode NVARCHAR(50),
     DefinitionName NVARCHAR(200),
+    TierOrdinal INT,
     MinQuantity INT, MaxQuantity INT, DefaultQuantity INT,
     IsConsumptionPoint BIT,
     CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
