@@ -1,41 +1,35 @@
 # MPP MES — Project Status
 
-**Last updated:** 2026-05-28 (Phase 3 + Phase 6 BOMs both green; per-section dirty-drift blocker **resolved** via atomic state writes + deep QV unwrap; Phase 8 Eligibility spec + plan committed, awaiting implementation. SQL tests **1034/1034**.)
+**Last updated:** 2026-05-28 (Phase 8 Eligibility editor end-to-end green — all 14 spec §9 smoke steps pass. Phase 3 + Phase 6 BOMs also fully green from earlier in the same session. SQL tests **1048/1048**.)
 
 ---
 
-## 🔖 Next Session Pickup — Phase 8 Eligibility implementation
+## 🔖 Next Session Pickup — finish Audit Log "Changes" column (Designer-side) → then Phase 7 QualitySpec cross-nav
 
-**State of play.** Phase 3 (Item Master Identity + AddItem CRUD) and Phase 6 (BOMs editor end-to-end) are both fully smoke-tested and shipped on main. The blocker that gated Phase 3 closeout — spurious per-section dirty-drift — was traced to two compounding bugs and fixed (see "Recently closed" below). Phase 8 Eligibility editor has a **complete spec + implementation plan committed and pushed** but no code has landed yet.
+**State of play.** Item Master is fully wired across all 5 tabs now that Phase 8 Eligibility landed today. Phase 7 (QualitySpecs cross-navigation — the "Go to spec" button per row) is the only remaining Item-Master roadmap item, and it's a small enhancement. The **active** in-flight work is the AuditLog "Changes" column workstream from 2026-05-27 evening that has uncommitted script changes sitting in the working tree plus a documented next-step Designer column add.
 
 **First three steps on resume:**
 
 1. **Sync up + verify clean tree.**
    ```
    git fetch origin && git pull --ff-only origin main
-   git status   # should be clean except untracked plant-layout PDF + tools/plant-layout-mapper/
+   git status   # should show 5 modified files (the audit-log "Changes" column WIP) + untracked HANDOFF_AUDIT_LOG_2026-05-28.md + plant-layout PDF + tools/plant-layout-mapper/
    ```
 
-2. **Read the Phase 8 spec + plan before touching code.**
-   - Spec: `docs/superpowers/specs/2026-05-27-item-master-eligibility-design.md` (commits `03c50e0` initial + `8fc736d` self-review)
-   - Plan: `docs/superpowers/plans/2026-05-27-item-master-eligibility.md` (commit `84a2a0b`)
-   - Pattern memory: `project_mpp_item_master_pattern` (now includes the 2026-05-27 atomic-state-write addendum)
+2. **Finish the AuditLog "Changes" column** per `HANDOFF_AUDIT_LOG_2026-05-28.md` at the repo root. Three remaining steps (Designer-only, ~10 min):
+   - Add the new `ChangesSummary` column to the AuditTable's `props.columns` (between Event and Severity)
+   - Drop the meaningless `EntityId` column from the table
+   - Re-test row click → ConfigChangeDetail popup still opens with side-by-side Old/New JSON
+   - Commit + push the 4 already-modified files plus the Designer-side view edit
+   - Delete `HANDOFF_AUDIT_LOG_2026-05-28.md` after the commit lands
 
-3. **Execute the plan.** 10 tasks, SQL-first sequencing: SaveAll proc → picker proc → ListByItem update → tests → NQ wrappers → entity script → EligibilityRow sub-view → Eligibility parent embed rewrite → manual Designer smoke per spec §9. Each plan task has exact file paths, complete code blocks, expected sqlcmd output, scan steps, commit messages. Recommended runner: subagent-driven-development.
+3. **Phase 7 QualitySpecs cross-nav** (after audit log column closes). The QualitySpecs tab view currently has a literal placeholder line "Phase 7 will add a 'Go to spec' navigation button per row." Wire a row-level "Go to spec" button (or click-on-row) that navigates to the existing QualitySpec editor surface (or opens it as a popup if no top-level page yet). Small spec + plan should run ~1 session.
 
-**Phase 8 design decisions locked (don't re-litigate):**
-- Tiered list editor — one row per `Parts.ItemLocation` row, not a per-Cell effective grid.
-- Location picker = single typeahead dropdown grouped by tier; sort `(tierOrdinal, code)` with tier name in label.
-- **No** Item-Type × Location-Type business-rule enforcement in client. Engineer is trusted; runtime scan-in (`ItemLocation_IsEligible`) catches misconfigurations. Per Jacques: business logic does NOT live in Python (see `feedback_no_business_logic_in_python` memory).
-- Bundled SaveAll commit model — `Parts.ItemLocation_SaveAllForItem` reconciles add / update / deprecate / reactivate-deprecated atomically.
-- Soft delete via `DeprecatedAt`; single `Audit.ConfigLog` row per save with full OldValue / NewValue JSON.
-- No row reorder arrows (canonical sort from the read proc).
-- Schema already supports the design — consumption-metadata columns landed in migration 0010. No new migration needed.
-
-**Other open items not blocking Phase 8:**
-- Orphan Draft BOM rows in dev DB from yesterday's pre-fix `+ New Version` clicks (Bom_CreateNewVersion succeeded server-side but client got an exception from the JDBC UpdateQuery mismatch — see `feedback_ignition_nq_type_for_status_row_procs` memory). Worth a manual cleanup pass before further BOM testing.
-- Audit Log UI revisit (Jacques flagged 2026-05-27, logged under Non-blocking polish below).
-- OI-35 Architecture Decision Gate still gating Arc 2 Phase 1 SQL build (independent of this work).
+**Other open Ignition items not blocking the above:**
+- Audit Log UI revisit (Jacques flagged 2026-05-27). The Changes-column work addresses the most acute pain; broader UX rework still wanted at some point but no concrete spec yet. Lower priority than #1/#2 above.
+- DieCastMachine Cell read-only mounted-Tool status panel (Plant Hierarchy editor) — deferred until Tools master Config Tool surface exists. See "Deferred follow-ups" section below.
+- Orphan Draft BOM rows in dev DB from pre-fix `+ New Version` clicks may still need a manual cleanup pass before further BOM testing (see `feedback_ignition_nq_type_for_status_row_procs` memory).
+- OI-35 Architecture Decision Gate still gating Arc 2 Phase 1 SQL build (independent of any Item Master / audit work).
 
 ---
 
@@ -59,6 +53,25 @@ The Item Master design has been **reworked from bundled-editDraft + bidi-Object-
 ---
 
 ## ✅ Recently closed
+
+### Item Master Phase 8 Eligibility editor — end-to-end smoke green (2026-05-28)
+
+Closed out Phase 8 — the last big tab in the Item Master refactor. Full vertical stack landed in 16 commits (`31f66cb`..`0a83224`), all 14 spec §9 smoke steps pass:
+
+- **SQL** — `Parts.ItemLocation_SaveAllForItem` (bundled reconcile: add / update / deprecate / reactivate-deprecated all atomically), `Location.Location_ListForEligibilityPicker` (tier-grouped picker read with `NCHAR(8212)` em-dash to avoid `sqlcmd` codepage trap), `Parts.ItemLocation_ListByItem` bumped to v3.0 (added `TierOrdinal`, re-sorted `(tierOrdinal, code)`). 11 SaveAll tests + 3 picker tests pass. Existing 64 ItemLocation CRUD tests still pass after widening `#IlByItem1`/`#IlByItem2` scratch tables for the new column. **1048/1048 SQL tests passing.**
+- **Ignition** — 3 NQ wrappers (SaveAll + picker + **previously-missing** `ItemLocation_ListByItem` read NQ — `6527d24` was the root cause of all the post-save dirty-stuck symptoms, see below), `BlueRidge.Parts.Eligibility` entity script, new `EligibilityRow` sub-view (page-scoped message propagation per `feedback_ignition_embed_params_input_only`), and full rewrite of `Eligibility/view.json` per per-section ownership pattern matching BOMs.
+- **Pattern adherence** — `isDirty` binding uses the canonical BOMs-equivalent `runScript("BlueRidge.Common.Util.convertWrapperObjectToJson", 0, {view.custom.state.editDraft.rows}) != ...{state.selected.rows}` expression. No divergence from the per-section ownership convention.
+
+**Process lesson (captured as memory `feedback_check_nq_files_first`)**: I spent four rounds patching the `isDirty` binding (property+transform variants, type comparison tweaks, deep-path watching theories) chasing a "save success toast but dirty stays true" symptom. The actual root cause was a missing NQ file (`parts/ItemLocation_ListByItem`) which the plan had assumed already existed. `load()` was failing silently with `java.lang.Exception: Named query not found` every call, so `state.selected` never reset post-save. **Lesson:** when a new editor following an established pattern misbehaves in surprising ways, FIRST check the gateway log for `Named query not found` traces — don't immediately blame the binding or comparison logic. 30-second diagnostic vs hours of binding archaeology.
+
+**Plan deviations (all documented in commits):**
+- Tier filter in tests uses `lt.Code = N'Area'` / `N'Cell'`, not `ltd.Name = N'Area'` — dev seeds carry definition names like `'Production Area'` / `'CNC Machine'`.
+- Test Item insert uses `CreatedByUserId` (Parts.Item has no `IsActive` column).
+- Picker proc uses `NCHAR(8212)` (em-dash codepoint) instead of literal em-dash in source — sqlcmd was loading the UTF-8 source file with the Win-1252 codepage and storing the wrong 3-byte sequence in the proc body. Same fix applied to the test's LIKE pattern via `@Sep NVARCHAR(5) = NCHAR(8212)`.
+- Row qty fields (`Min`/`Max`/`Default`) use `meta.visible` not `position.display` so the 240px slot stays reserved when `IsConsumptionPoint` is off (uniform row geometry per user feedback).
+- Save (`props.enabled`) + Discard (`meta.visible`) wrap `view.custom.isDirty` in `if(isNull(...), false, ...)` defensive guard so a transient Quality-Bad doesn't cascade to Component Error.
+
+Audit-log "Changes" column work from 2026-05-27 evening is still uncommitted in working tree alongside the Phase 8 commits — see "Next Session Pickup" above. The two workstreams touched disjoint files; no interference.
 
 ### Item Master Phase 3 dirty-drift blocker resolved + Phase 6 BOMs smoke green (2026-05-27 → 2026-05-28)
 
@@ -277,9 +290,9 @@ Per-schema tabs are the source of truth and remain canonical until next regen.
 
 Initial v1 build at `docs_portal/`. See "Recent Change Narrative" entry below for details.
 
-### LocationTypeEditor modal — 🟡 IN-PROGRESS (convention rectification landed 2026-05-14, Designer smoke-test pending)
+### LocationTypeEditor modal — ✅ closed 2026-05-15
 
-Full vertical stack scaffolded 2026-05-13. Convention-rectification pass landed 2026-05-14 — entity scripts retrofitted through `Common.Db`/`Common.Util`/`Common.Ui`, view restructured to `editDraft`/`selected` pattern with dirty indicator + Cancel button, NQs normalized to camelCase + Designer-canonical sqlType enum. **Pending verification next session:** Designer-side modal rendering with the new pattern (tier dropdown → definitions list → details panel → Save with dirty indicator → Cancel revert → Deprecate FK guard). 907/907 SQL tests still passing.
+Full vertical stack landed 2026-05-13, convention-rectification pass 2026-05-14, all 8 smoke flows pass 2026-05-15 (commits `f469061` + `7ab9cd3`). Audit verified via `Audit.ConfigLog` rows. Marker removed from this section; historical detail in the "Recent Change Narrative" entries below.
 
 ### Non-blocking polish
 
