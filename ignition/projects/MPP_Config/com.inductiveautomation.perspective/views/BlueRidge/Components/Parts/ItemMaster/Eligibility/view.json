@@ -85,8 +85,8 @@
             "propConfig": {
               "meta.visible": {
                 "binding": {
-                  "type": "property",
-                  "config": { "path": "view.custom.isDirty" }
+                  "type": "expr",
+                  "config": { "expression": "if(isNull({view.custom.isDirty}), false, {view.custom.isDirty})" }
                 }
               }
             },
@@ -111,8 +111,8 @@
             "propConfig": {
               "props.enabled": {
                 "binding": {
-                  "type": "property",
-                  "config": { "path": "view.custom.isDirty" }
+                  "type": "expr",
+                  "config": { "expression": "if(isNull({view.custom.isDirty}), false, {view.custom.isDirty})" }
                 }
               }
             },

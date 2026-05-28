@@ -130,7 +130,7 @@
         "meta": { "name": "MinField" },
         "position": { "basis": "80px", "shrink": 0 },
         "propConfig": {
-          "position.display": {
+          "meta.visible": {
             "binding": {
               "type": "expr",
               "config": { "expression": "{view.params.row.isConsumptionPoint} = true" }
@@ -164,7 +164,7 @@
         "meta": { "name": "MaxField" },
         "position": { "basis": "80px", "shrink": 0 },
         "propConfig": {
-          "position.display": {
+          "meta.visible": {
             "binding": {
               "type": "expr",
               "config": { "expression": "{view.params.row.isConsumptionPoint} = true" }
@@ -198,7 +198,7 @@
         "meta": { "name": "DefaultField" },
         "position": { "basis": "80px", "shrink": 0 },
         "propConfig": {
-          "position.display": {
+          "meta.visible": {
             "binding": {
               "type": "expr",
               "config": { "expression": "{view.params.row.isConsumptionPoint} = true" }

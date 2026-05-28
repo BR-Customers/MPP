@@ -32,7 +32,7 @@ BEGIN
         l.Name,
         ltd.Name                                                AS TierName,
         lt.HierarchyLevel                                       AS TierOrdinal,
-        l.Code + N' — ' + l.Name + N' (' + ltd.Name + N')'     AS DisplayLabel
+        l.Code + N' ' + NCHAR(8212) + N' ' + l.Name + N' (' + ltd.Name + N')' AS DisplayLabel
     FROM Location.Location l
     INNER JOIN Location.LocationTypeDefinition ltd ON ltd.Id = l.LocationTypeDefinitionId
     INNER JOIN Location.LocationType            lt  ON lt.Id  = ltd.LocationTypeId

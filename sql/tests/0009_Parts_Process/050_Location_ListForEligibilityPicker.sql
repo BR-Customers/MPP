@@ -63,8 +63,9 @@ CREATE TABLE #P3 (
 );
 INSERT INTO #P3 EXEC Location.Location_ListForEligibilityPicker;
 
+DECLARE @Sep NVARCHAR(5) = NCHAR(8212);
 DECLARE @AnyMatch NVARCHAR(1) =
-    CASE WHEN EXISTS (SELECT 1 FROM #P3 WHERE DisplayLabel LIKE N'% — % (%)') THEN N'1' ELSE N'0' END;
+    CASE WHEN EXISTS (SELECT 1 FROM #P3 WHERE DisplayLabel LIKE N'% ' + @Sep + N' % (%)') THEN N'1' ELSE N'0' END;
 EXEC test.Assert_IsEqual
     @TestName = N'[PickerLabel] DisplayLabel matches "code — name (tier)" shape',
     @Expected = N'1',
