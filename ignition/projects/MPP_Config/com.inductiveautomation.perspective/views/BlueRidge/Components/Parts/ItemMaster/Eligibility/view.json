@@ -20,14 +20,10 @@
     },
     "custom.isDirty": {
       "binding": {
-        "type": "property",
-        "config": { "path": "view.custom.state" },
-        "transforms": [
-          {
-            "type": "script",
-            "code": "\tstate = BlueRidge.Common.Util.extractQualifiedValues(value) or {}\n\tsel = (state.get(\"selected\") or {}).get(\"rows\") or []\n\tedt = (state.get(\"editDraft\") or {}).get(\"rows\") or []\n\treturn BlueRidge.Common.Util.convertWrapperObjectToJson(sel) != BlueRidge.Common.Util.convertWrapperObjectToJson(edt)"
-          }
-        ]
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.editDraft.rows}) != runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.selected.rows})"
+        }
       },
       "onChange": {
         "enabled": true,
