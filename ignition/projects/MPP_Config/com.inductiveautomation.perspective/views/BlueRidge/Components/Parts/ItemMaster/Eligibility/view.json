@@ -20,10 +20,14 @@
     },
     "custom.isDirty": {
       "binding": {
-        "type": "expr",
-        "config": {
-          "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.editDraft.rows}) != runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.selected.rows})"
-        }
+        "type": "property",
+        "config": { "path": "view.custom.state" },
+        "transforms": [
+          {
+            "type": "script",
+            "code": "\tstate = BlueRidge.Common.Util.extractQualifiedValues(value) or {}\n\tsel = (state.get(\"selected\") or {}).get(\"rows\") or []\n\tedt = (state.get(\"editDraft\") or {}).get(\"rows\") or []\n\treturn system.util.jsonEncode(sel) != system.util.jsonEncode(edt)"
+          }
+        ]
       },
       "onChange": {
         "enabled": true,
@@ -208,7 +212,7 @@
         {
           "name": "handleSave",
           "params": [],
-          "script": "\titemId = self.view.params.value\n\tif not itemId:\n\t\tBlueRidge.Common.Notify.toast(\"No item selected\", \"Pick an item before saving.\", \"warning\")\n\t\treturn\n\tdraft = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {}\n\trows = draft.get(\"rows\") or []\n\tresult = BlueRidge.Parts.Eligibility.handleSaveAll(itemId, rows)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Eligibility saved\")\n\tif result and result.get(\"Status\"):\n\t\tself.load()"
+          "script": "\titemId = self.view.params.value\n\tif not itemId:\n\t\tBlueRidge.Common.Notify.toast(\"No item selected\", \"Pick an item before saving.\", \"warning\")\n\t\treturn\n\tdraft = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {}\n\trows = draft.get(\"rows\") or []\n\tresult = BlueRidge.Parts.Eligibility.handleSaveAll(itemId, rows)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Eligibility saved\")\n\tBlueRidge.Common.Util.log(\"handleSave result=%s status_truthy=%s\" % (result, bool(result and result.get(\"Status\"))))\n\tif result and result.get(\"Status\"):\n\t\tself.load()\n\t\tBlueRidge.Common.Util.log(\"handleSave post-load rows=%d\" % len((BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {}).get(\"rows\") or []))"
         },
         {
           "name": "handleDiscard",
