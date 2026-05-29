@@ -244,11 +244,37 @@ Worked examples for every audit-writing proc area, showing the convention applie
 | Severity | unchanged |
 | Changes | **kept** (yesterday's `summarizeJsonDiff` column); now genuinely useful because the JSON contains resolved names |
 
-### 6.2 ConfigChangeDetail popup
+### 6.2 ConfigChangeDetail popup — currently broken, fix is in scope
 
-Already renders `OldValue` and `NewValue` side-by-side via `Common.Util.prettyJson`. No structural changes needed — the resolved-name JSON is just nicer to read.
+The `BlueRidge/Components/Popups/ConfigChangeDetail` popup was built in the 2026-05-19 audit-pages work to render `OldValue` and `NewValue` side-by-side via `Common.Util.prettyJson`. **It is currently not working** (Jacques 2026-05-28). Diagnosing + fixing the popup is **in scope** for this refactor — it's the load-bearing surface for the "show me the full unabridged diff" user flow described in §6.3 below, and without it the truncation-and-recover story isn't actually recoverable.
 
-Optional polish (later): per-field highlighting of changes (red strikethrough on removed lines, green on added). Mentioned in audit handoff doc as a "nice to have not done". Not required for this refactor.
+Diagnostic to run first (Slice 1):
+- Open `/audit` → click any existing ConfigLog row → observe whether the popup opens at all, opens-but-empty, or opens-with-error.
+- If silent no-op: check the row-click handler scope (`scope: "G"` per `feedback_ignition_popup_open_scope.md` — common failure mode where `scope: "C"` silently drops `system.perspective.openPopup` calls).
+- If opens-but-empty: check the `viewParams` payload — `OldValue` / `NewValue` may not be reaching the popup's bound props.
+- If opens-with-error: check the popup's bindings against the actual ConfigLog row shape returned by `BlueRidge.Audit.ConfigLog.search` (may have drifted from when the popup was built).
+
+Fix lands in Slice 1 alongside the column rename and EntityId drop. Acceptance: clicking any ConfigLog row in the AuditLog table opens the popup with both `OldValue` and `NewValue` JSON pretty-printed and side-by-side; close button works; subsequent row clicks open with the new row's data.
+
+Optional polish (later, NOT this refactor): per-field highlighting of changes (red strikethrough on removed lines, green on added). Mentioned in audit handoff doc as a "nice to have not done". Defer until the basic popup is verified working.
+
+### 6.3 Auditor user flow
+
+The whole point of the truncation + cap rules in §3.4 is that **no data is ever lost** — the at-a-glance Description narrative is recoverable in two clicks. End-to-end flow:
+
+1. **Auditor opens `/audit`** → AuditLog table renders with Date / User / Event / Entity Type / Activity / Severity / Changes columns. Default last-7-days filter.
+2. **Auditor scans Activity column** — each row reads as `<Subject> · <Category> · <Action summary>`. Large changes show `+N more` overflow counters. 500-char cap keeps rows visually consistent.
+3. **A row looks suspicious or interesting** (e.g., "Why was DC-401 removed from 5G0?", "Who deprecated the v2 BOM?") — auditor clicks the row.
+4. **`ConfigChangeDetail` popup opens** showing the full `OldValue` (left) and `NewValue` (right) JSON, pretty-printed via `Common.Util.prettyJson`. With FK resolution per §4, JSON reads `LocationId: {Id: 3, Code: "DIECAST", Name: "Die Cast"}` — no DB lookups required.
+5. **Auditor closes the popup** → table state preserved (filters intact, scroll position retained). Free to click another row immediately.
+
+No JOINs against `Parts.Item` / `Location.Location` / etc. ever happen on the auditor side. Every name needed for the audit narrative was resolved at write time and lives in the row.
+
+Failure modes the user flow defends against:
+- **Entity later renamed** — audit row still shows the name as it was at write time (per §4.2).
+- **Entity later deprecated** — audit row still shows the name; no NULL / "deleted" markers.
+- **Very large change set** — Description truncates gracefully; full diff still in popup.
+- **JSON readability for very deep nesting** — `prettyJson` handles arbitrary depth; popup is scrollable.
 
 ## 7. Refactor Approach
 
@@ -272,7 +298,7 @@ Eight independent slices. Each slice ships its own commit chain + updated tests 
 
 | # | Slice | Procs touched | Tests touched | Effort |
 |---|---|---|---|---|
-| 1 | **Convention spec + UI** (this doc + UI changes) | 0 SQL | 0 SQL | 1 session — lands the convention doc, AuditLog UI Activity column rename + wrap, EntityId drop, Changes column finish |
+| 1 | **Convention spec + UI** (this doc + UI changes) | 0 SQL | 0 SQL | 1 session — lands the convention doc, AuditLog UI Activity column rename + wrap, EntityId drop, Changes column finish, **+ diagnose and fix ConfigChangeDetail popup (currently broken, see §6.2)** |
 | 2 | **Eligibility** (reference impl) | `ItemLocation_SaveAllForItem` | `040_ItemLocation_SaveAllForItem.sql` | 1 session |
 | 3 | **BOMs** | `Bom_Create`, `_CreateNewVersion`, `_SaveDraft`, `_Publish`, `_Deprecate`, `_DiscardDraft` | `010_Bom_crud.sql` and siblings | 1 session |
 | 4 | **Routes** | `RouteTemplate_Create`, `_CreateNewVersion`, `_SaveAll`, `_Publish`, `_Deprecate`, `_DiscardDraft` | `020`-`031` Route tests | 1 session |
