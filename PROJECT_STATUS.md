@@ -1,6 +1,6 @@
 # MPP MES — Project Status
 
-**Last updated:** 2026-05-28 (Audit-readability refactor Slice 1 landed: convention codified + UI changes + ConfigChangeDetail popup fixed. Earlier same session: Phase 8 Eligibility end-to-end green. SQL tests **1054/1054**.)
+**Last updated:** 2026-05-28 (Audit-readability refactor Slice 1 landed: convention codified + UI changes + ConfigChangeDetail popup fixed. Earlier same session: Phase 8 Eligibility end-to-end green. SQL tests **1054/1054**. Also this session: **Quality Spec Config Tool spec + implementation plan committed** — `docs/superpowers/specs/2026-05-28-quality-spec-config-tool-design.md` (`4d4b07b`) + `docs/superpowers/plans/2026-05-28-quality-spec-config-tool.md` (`35859a1`); queued as the next major build after the audit refactor finishes.)
 
 ---
 
@@ -38,8 +38,12 @@ Now Eligibility's `Parts.ItemLocation_SaveAllForItem` becomes the reference proc
 | 7 | LocationTypeEditor (2 procs) | 1 session |
 | 8 | Downtime + Defect Codes (6 procs) | 1 session |
 
+**After the audit refactor: build the Quality Spec Config Tool.** Spec + plan committed this session (see below). It is the next major feature build once the refactor slices land. Quality-spec audit rows are designed to the readability convention from day one (so quality never needs its own backport slice), and render best once Slice 1's AuditLog UI + ConfigChangeDetail popup are in place — which they now are.
+
+> **Build heads-up for the quality-spec plan:** Slice 1 deployed `Audit.ufn_MidDot` + `Audit.ufn_TruncateActivity`. The quality-spec plan (written before Slice 1 landed) inlines `NCHAR(183)` in its audit-prose blocks — when executing Phase A, use the deployed helper functions instead for consistency with the rest of the refactored procs.
+
 **Other open Ignition items not blocking the above:**
-- Phase 7 QualitySpecs cross-nav — last remaining Item Master tab work. The QualitySpecs view has a literal placeholder text "Phase 7 will add a 'Go to spec' navigation button per row." Small enhancement; one short spec + plan + session.
+- Phase 7 QualitySpecs cross-nav — **now folded into the Quality Spec Config Tool plan** (Phase H: "Go to spec →" navigates to the new standalone `/quality-specs` screen). No longer a standalone task; the cross-nav needs the standalone screen as its target.
 - DieCastMachine Cell read-only mounted-Tool status panel — deferred until Tools master Config Tool surface exists.
 - Orphan Draft BOM rows in dev DB from pre-fix `+ New Version` clicks may still need a manual cleanup pass.
 - OI-35 Architecture Decision Gate still gating Arc 2 Phase 1 SQL build (independent of any Ignition work).
@@ -66,6 +70,21 @@ The Item Master design has been **reworked from bundled-editDraft + bidi-Object-
 ---
 
 ## ✅ Recently closed
+
+### Quality Spec Config Tool — design + implementation plan committed (2026-05-28)
+
+Brainstormed → designed → planned. No code yet; queued behind the audit refactor.
+
+- **Spec:** `docs/superpowers/specs/2026-05-28-quality-spec-config-tool-design.md` (`4d4b07b`).
+- **Plan:** `docs/superpowers/plans/2026-05-28-quality-spec-config-tool.md` (`35859a1`). 9 phases / ~18 tasks, SQL-first, complete code for net-new SQL + entity script, mirror-with-deltas for the large views.
+- **Key finding:** the Quality SQL layer was **already built** (migration `0008` + ~20 procs + `sql/tests/0011_Quality_Spec/`). This build is mostly Ignition front-end plus a contained SQL delta.
+- **Design decisions captured this session:**
+  - Standalone `/quality-specs` master-detail screen (NOT an Item Master tab — the mockup designs it standalone; Item Master tab stays link-only) + Phase 7 "Go to spec →" cross-nav folded in.
+  - Lifecycle: Draft/Published/Deprecated (BOMs vocabulary on the built procs), but **date-resolved active versions — Publish does NOT auto-deprecate the prior Published version** (`_GetActiveForSpec @AsOfDate` resolves the active one; future-effective Published = "Scheduled" badge). This reconciles the mockup's Active/Pending model with the built Draft/Published procs.
+  - `QualitySpecAttribute.UomId` FK dropdown (not free text) → SQL delta: migration `0017` adds the FK.
+  - Add `QualitySpec_Deprecate` header soft-delete proc (+ `QualitySpec.DeprecatedAt`); add bundled `QualitySpecVersion_SaveDraft` (per the editDraft/explicit-Save convention; the per-action `_Add/_Update/_MoveUp/...` procs stay but aren't called per-click).
+  - **Audit-readability convention applied to every quality-spec mutation proc from day one** (per the audit refactor spec §3/§4 + a richer quality catalog in the design §7) — so quality specs never need a backport slice.
+- **Front-end reference:** mirrors the BOMs versioned-editor impl (`BlueRidge.Parts.Bom` + `Components/Parts/ItemMaster/Boms` + `BomLineRow`) — atomic state writes, binding-based dirty, input-only embeds via page-scoped messages — but in a standalone `LocationTypeEditor`-style shell.
 
 ### Audit-readability refactor Slice 1 landed (2026-05-28)
 
