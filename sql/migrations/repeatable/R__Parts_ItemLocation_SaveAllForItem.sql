@@ -2,7 +2,7 @@
 -- Procedure:   Parts.ItemLocation_SaveAllForItem
 -- Author:      Blue Ridge Automation
 -- Created:     2026-05-27
--- Version:     1.1
+-- Version:     1.3
 --
 -- Description:
 --   Bundled SaveAll for an Item's eligibility map. Accepts the Item's
@@ -323,7 +323,7 @@ BEGIN
             STUFF(
                 CONCAT(
                     CASE WHEN OldIsConsumption <> NewIsConsumption
-                         THEN N', IsConsumptionPoint ' + CAST(OldIsConsumption AS NVARCHAR) + NCHAR(8594) + CAST(NewIsConsumption AS NVARCHAR)
+                         THEN N', IsConsumptionPoint ' + CASE WHEN OldIsConsumption = 1 THEN N'true' ELSE N'false' END + NCHAR(8594) + CASE WHEN NewIsConsumption = 1 THEN N'true' ELSE N'false' END
                          ELSE N'' END,
                     CASE WHEN ISNULL(OldMin, -1) <> ISNULL(NewMin, -1)
                          THEN N', MinQuantity ' + ISNULL(CAST(OldMin AS NVARCHAR), N'null') + NCHAR(8594) + ISNULL(CAST(NewMin AS NVARCHAR), N'null')
@@ -372,9 +372,10 @@ BEGIN
                                CASE WHEN @RemoveOverflow > 0 THEN N', -' + CAST(@RemoveOverflow AS NVARCHAR) + N' more' ELSE N'' END +
                                N'; ';
 
-        -- Strip trailing "; "
-        IF LEN(@ActionParts) >= 2
-            SET @ActionParts = LEFT(@ActionParts, LEN(@ActionParts) - 2);
+        -- Strip trailing "; " (use DATALENGTH: LEN() ignores trailing spaces and
+        -- would eat one real character off the last specific)
+        IF DATALENGTH(@ActionParts) >= 4
+            SET @ActionParts = LEFT(@ActionParts, DATALENGTH(@ActionParts) / 2 - 2);
 
         IF @ActionParts = N''
             SET @ActionParts = N'No-op save';

@@ -388,5 +388,63 @@ EXEC test.Assert_IsEqual
     @Actual   = @WithinCap;
 GO
 
+-- =============================================
+-- Test 13: Update narrative renders the '~' path correctly
+--   Reset, add a consumption-point row (band 0/10/5), then flip
+--   IsConsumptionPoint -> false (forces qtys NULL). Asserts:
+--     (a) boolean renders as words: IsConsumptionPoint true->false
+--     (b) the LAST specific is NOT truncated by one char (DATALENGTH
+--         vs LEN trailing-space bug) -> "DefaultQuantity 5->null" intact
+-- =============================================
+DECLARE @TestItemId BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'TEST-ELIG-ITEM-001');
+DECLARE @ItemLocTypeId BIGINT = (SELECT Id FROM Audit.LogEntityType WHERE Code = N'ItemLocation');
+DECLARE @LocId BIGINT = (SELECT TOP 1 l.Id
+                          FROM Location.Location l
+                          INNER JOIN Location.LocationTypeDefinition ltd ON ltd.Id = l.LocationTypeDefinitionId
+                          INNER JOIN Location.LocationType            lt  ON lt.Id  = ltd.LocationTypeId
+                          WHERE lt.Code = N'Cell' AND l.DeprecatedAt IS NULL
+                          ORDER BY l.Code);
+
+-- Reset to empty, then add a consumption-point row with a valid band
+EXEC Parts.ItemLocation_SaveAllForItem @ItemId = @TestItemId, @RowsJson = N'[]', @AppUserId = 1;
+DECLARE @JsonAdd NVARCHAR(MAX) =
+    N'[{"Id":null,"LocationId":' + CAST(@LocId AS NVARCHAR(20)) +
+    N',"IsConsumptionPoint":true,"MinQuantity":0,"MaxQuantity":10,"DefaultQuantity":5}]';
+CREATE TABLE #R13a (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #R13a
+EXEC Parts.ItemLocation_SaveAllForItem @ItemId = @TestItemId, @RowsJson = @JsonAdd, @AppUserId = 1;
+DROP TABLE #R13a;
+
+-- Capture the active row Id, then update it: flip consumption -> false
+DECLARE @ILId BIGINT = (SELECT Id FROM Parts.ItemLocation
+                        WHERE ItemId = @TestItemId AND LocationId = @LocId AND DeprecatedAt IS NULL);
+DECLARE @JsonUpd NVARCHAR(MAX) =
+    N'[{"Id":' + CAST(@ILId AS NVARCHAR(20)) + N',"LocationId":' + CAST(@LocId AS NVARCHAR(20)) +
+    N',"IsConsumptionPoint":false,"MinQuantity":null,"MaxQuantity":null,"DefaultQuantity":null}]';
+CREATE TABLE #R13b (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #R13b
+EXEC Parts.ItemLocation_SaveAllForItem @ItemId = @TestItemId, @RowsJson = @JsonUpd, @AppUserId = 1;
+DROP TABLE #R13b;
+
+DECLARE @Desc NVARCHAR(500) = (SELECT TOP 1 Description FROM Audit.ConfigLog
+                               WHERE EntityId = @TestItemId AND LogEntityTypeId = @ItemLocTypeId
+                               ORDER BY Id DESC);
+
+DECLARE @BoolWords NVARCHAR(1) =
+    CASE WHEN @Desc LIKE N'%IsConsumptionPoint true' + NCHAR(8594) + N'false%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[EligUpdateBool] Boolean renders as true->false words',
+    @Expected = N'1',
+    @Actual   = @BoolWords;
+
+-- The last specific must survive intact (regression: LEN trailing-space off-by-one)
+DECLARE @TailIntact NVARCHAR(1) =
+    CASE WHEN @Desc LIKE N'%DefaultQuantity 5' + NCHAR(8594) + N'null; %rows' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[EligUpdateTail] Last specific not truncated (DefaultQuantity 5->null intact)',
+    @Expected = N'1',
+    @Actual   = @TailIntact;
+GO
+
 EXEC test.EndTestFile;
 GO
