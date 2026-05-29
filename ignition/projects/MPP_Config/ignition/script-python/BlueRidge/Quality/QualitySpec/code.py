@@ -134,6 +134,48 @@ def getAllForList(filter=None):
     return out
 
 
+def buildSpecListRows(specs, selectedSpecId):
+    """Pure transform for the SpecListRow flex-repeater. Takes the list rows
+    (already loaded into view.custom.specs by getAllForList) plus the
+    currently-selected spec id, derives the per-row link subline + state
+    badge, and injects selectedSpecId for the active-row highlight. Returns
+    flat per-row dicts matching SpecListRow's input params:
+      [{specId, name, sub, state, selectedSpecId}, ...]
+
+    No DB call -- safe to call from a component (props.instances) binding.
+    """
+    specs = _u(specs) or []
+    selectedSpecId = _u(selectedSpecId)
+    midDot = u" \u00b7 "
+    out = []
+    for s in specs:
+        s = _u(s) or {}
+        itemCode = s.get("itemCode") or ""
+        opCode = s.get("opCode") or ""
+        parts = []
+        if itemCode:
+            parts.append("Item: " + itemCode)
+        if opCode:
+            parts.append("Op: " + opCode)
+        sub = midDot.join(parts) if parts else "Unlinked"
+        active = s.get("activeVersionCount") or 0
+        vc = s.get("versionCount") or 0
+        if active > 0:
+            state = "Active"
+        elif vc > 0:
+            state = "Draft"
+        else:
+            state = "New"
+        out.append({
+            "specId": s.get("id"),
+            "name": s.get("name") or "",
+            "sub": sub,
+            "state": state,
+            "selectedSpecId": selectedSpecId,
+        })
+    return out
+
+
 def getSpecHeader(specId):
     """Header dict (name, description, link display) or empty shape."""
     specId = _u(specId)
