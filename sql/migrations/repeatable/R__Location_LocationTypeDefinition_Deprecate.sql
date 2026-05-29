@@ -2,7 +2,7 @@
 -- Procedure:   Location.LocationTypeDefinition_Deprecate
 -- Author:      Blue Ridge Automation
 -- Created:     2026-05-13
--- Version:     1.0
+-- Version:     1.1
 --
 -- Description:
 --   Soft-deletes a LocationTypeDefinition by setting DeprecatedAt,
@@ -39,6 +39,10 @@
 --
 -- Change Log:
 --   2026-05-13 - 1.0 - Initial version
+--   2026-05-29 - 1.1 - Audit-readability convention (Slice 7 LocationTypeEditor):
+--                       SUBJECT . Deprecated (cascade: N attributes deprecated)
+--                       Description; OldValue carries resolved tier FK -> {Id, Name}
+--                       and the deprecated snapshot, NewValue = NULL.
 -- =============================================
 CREATE OR ALTER PROCEDURE Location.LocationTypeDefinition_Deprecate
     @Id        BIGINT,
@@ -60,7 +64,12 @@ BEGIN
     DECLARE @ChildCount       INT;
     DECLARE @ChildCountStr    NVARCHAR(10);
     DECLARE @OldValue         NVARCHAR(MAX);
-    DECLARE @NewValue         NVARCHAR(MAX);
+
+    -- Audit narrative (convention SUBJECT . ACTION) ----------------------
+    DECLARE @DefName  NVARCHAR(200);
+    DECLARE @TierId   BIGINT;
+    DECLARE @Subject  NVARCHAR(400);
+    DECLARE @Activity NVARCHAR(500);
 
     BEGIN TRY
         -- ====================
@@ -132,13 +141,40 @@ BEGIN
         END
 
         -- ====================
-        -- Capture pre-mutation state for audit
+        -- Audit narrative + resolved JSON (built from PRE-mutation state)
         -- ====================
+        SELECT @DefName = Name, @TierId = LocationTypeId
+        FROM Location.LocationTypeDefinition WHERE Id = @Id;
+
+        -- Active children that will cascade. Computed pre-mutation: the cascade
+        -- UPDATE below deprecates exactly this set.
+        SELECT @ChildCount = COUNT(*)
+        FROM Location.LocationAttributeDefinition
+        WHERE LocationTypeDefinitionId = @Id AND DeprecatedAt IS NULL;
+
+        -- Subject conveys the category; tier omitted from prose per convention.
+        SET @Subject = N'Location Type Definition "' + @DefName + N'"';
+
+        -- ACTION: Deprecated (cascade: N attributes deprecated). Omit the
+        -- cascade clause when no active children.
+        SET @Activity = Audit.ufn_TruncateActivity(
+            @Subject + N' ' + Audit.ufn_MidDot() + N' Deprecated' +
+            CASE WHEN @ChildCount > 0
+                 THEN N' (cascade: ' + CAST(@ChildCount AS NVARCHAR(10))
+                      + N' attribute' + CASE WHEN @ChildCount = 1 THEN N'' ELSE N's' END
+                      + N' deprecated)'
+                 ELSE N'' END);
+
+        -- OldValue: the snapshot being deprecated, with resolved tier FK.
+        -- NewValue = NULL (deprecation has no meaningful post-state diff).
         SET @OldValue = (
             SELECT
-                (SELECT Id, LocationTypeId, Code, Name, Icon, Description, DeprecatedAt
-                 FROM Location.LocationTypeDefinition WHERE Id = @Id
-                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER) AS Definition,
+                JSON_QUERY((SELECT lt.Id, lt.Name
+                            FROM Location.LocationType lt WHERE lt.Id = @TierId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS LocationType,
+                JSON_QUERY((SELECT Id, Code, Name, Icon, [Description]
+                            FROM Location.LocationTypeDefinition WHERE Id = @Id
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Definition,
                 JSON_QUERY((
                     SELECT Id, AttributeName, SortOrder
                     FROM Location.LocationAttributeDefinition
@@ -165,24 +201,15 @@ BEGIN
 
         SET @ChildCount = @@ROWCOUNT;
 
-        SET @NewValue = (
-            SELECT
-                (SELECT Id, DeprecatedAt
-                 FROM Location.LocationTypeDefinition WHERE Id = @Id
-                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER) AS Definition,
-                @ChildCount AS ChildrenCascaded
-            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
-        );
-
         EXEC Audit.Audit_LogConfigChange
             @AppUserId         = @AppUserId,
             @LogEntityTypeCode = N'LocationTypeDef',
             @EntityId          = @Id,
             @LogEventTypeCode  = N'Deprecated',
             @LogSeverityCode   = N'Info',
-            @Description       = N'LocationTypeDefinition deprecated (cascade to children).',
+            @Description       = @Activity,
             @OldValue          = @OldValue,
-            @NewValue          = @NewValue;
+            @NewValue          = NULL;
 
         COMMIT TRANSACTION;
 

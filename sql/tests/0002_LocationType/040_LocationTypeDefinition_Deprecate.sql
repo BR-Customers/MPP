@@ -213,6 +213,71 @@ EXEC test.Assert_IsEqual
 GO
 
 -- =============================================
+-- Test 5b: Audit-readability convention (Slice 7)
+--   Create a fresh definition with 2 children, deprecate it, and assert
+--   the resulting ConfigLog.Description matches the convention shape and
+--   that OldValue carries the resolved tier FK sub-object.
+-- =============================================
+DECLARE @CellId BIGINT = (SELECT Id FROM Location.LocationType WHERE Code = N'Cell');
+DECLARE @LtdTypeId BIGINT = (SELECT Id FROM Audit.LogEntityType WHERE Code = N'LocationTypeDef');
+DECLARE @ConvJson NVARCHAR(MAX) = N'[
+    {"Id":null,"AttributeName":"AttrX","DataType":"INT"},
+    {"Id":null,"AttributeName":"AttrY","DataType":"NVARCHAR"}
+]';
+DECLARE @ConvId BIGINT;
+
+CREATE TABLE #R5bSetup (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #R5bSetup
+EXEC Location.LocationTypeDefinition_SaveAll
+    @Id              = NULL,
+    @LocationTypeId  = @CellId,
+    @Code            = N'TST-LTD-S7-DEP',
+    @Name            = N'S7 Dep Convention Def',
+    @AppUserId       = 1,
+    @AttributesJson  = @ConvJson;
+SELECT @ConvId = NewId FROM #R5bSetup;
+DROP TABLE #R5bSetup;
+
+CREATE TABLE #R5b (Status BIT, Message NVARCHAR(500));
+INSERT INTO #R5b
+EXEC Location.LocationTypeDefinition_Deprecate
+    @Id        = @ConvId,
+    @AppUserId = 1;
+DROP TABLE #R5b;
+
+-- Description: SUBJECT . Deprecated (cascade: 2 attributes deprecated)
+DECLARE @DepDesc NVARCHAR(500) = (SELECT TOP 1 Description FROM Audit.ConfigLog
+                                  WHERE EntityId = @ConvId AND LogEntityTypeId = @LtdTypeId
+                                    AND LogEventTypeId = (SELECT Id FROM Audit.LogEventType WHERE Code = N'Deprecated')
+                                  ORDER BY Id DESC);
+DECLARE @DepPattern NVARCHAR(300) =
+    N'Location Type Definition "S7 Dep Convention Def" ' + Audit.ufn_MidDot()
+    + N' Deprecated (cascade: 2 attributes deprecated)';
+DECLARE @DepMatch NVARCHAR(1) = CASE WHEN @DepDesc LIKE @DepPattern THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[S7DepDesc] Deprecate Description matches SUBJECT . Deprecated (cascade: N attributes deprecated)',
+    @Expected = N'1',
+    @Actual   = @DepMatch;
+
+-- OldValue carries resolved tier FK {Id, Name:Cell}; NewValue is NULL
+DECLARE @DepOld NVARCHAR(MAX) = (SELECT TOP 1 OldValue FROM Audit.ConfigLog
+                                 WHERE EntityId = @ConvId AND LogEntityTypeId = @LtdTypeId
+                                   AND LogEventTypeId = (SELECT Id FROM Audit.LogEventType WHERE Code = N'Deprecated')
+                                 ORDER BY Id DESC);
+DECLARE @DepFk NVARCHAR(1) =
+    CASE WHEN @DepOld LIKE N'%"LocationType":%' AND @DepOld LIKE N'%"Name":"Cell"%'
+         THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[S7DepFk] OldValue carries resolved LocationType {Id, Name:Cell}',
+    @Expected = N'1',
+    @Actual   = @DepFk;
+
+-- Cleanup the convention fixture
+DELETE FROM Location.LocationAttributeDefinition WHERE LocationTypeDefinitionId = @ConvId;
+DELETE FROM Location.LocationTypeDefinition WHERE Id = @ConvId;
+GO
+
+-- =============================================
 -- Test 6: Audit trail -- success Deprecate logged to ConfigLog,
 --                       rejections logged to FailureLog
 -- =============================================

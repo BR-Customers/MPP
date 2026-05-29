@@ -2,7 +2,7 @@
 -- Procedure:   Location.LocationTypeDefinition_SaveAll
 -- Author:      Blue Ridge Automation
 -- Created:     2026-05-13
--- Version:     1.0
+-- Version:     1.1
 --
 -- Description:
 --   Bundled save for a LocationTypeDefinition and its child
@@ -68,6 +68,11 @@
 --
 -- Change Log:
 --   2026-05-13 - 1.0 - Initial version
+--   2026-05-29 - 1.1 - Audit-readability convention (Slice 7 LocationTypeEditor):
+--                       SUBJECT . ACTION Description with +Attribute / -Attribute /
+--                       ~Attribute classification (3-per-op cap + overflow), resolved
+--                       header LocationTypeId -> {Id, Name} FK sub-object, BIT diffs
+--                       rendered as words. Narrative + JSON built from PRE-mutation state.
 -- =============================================
 CREATE OR ALTER PROCEDURE Location.LocationTypeDefinition_SaveAll
     @Id              BIGINT          = NULL,
@@ -102,6 +107,11 @@ BEGIN
     DECLARE @CountAttrsStr          NVARCHAR(10);
     DECLARE @OldValue               NVARCHAR(MAX);
     DECLARE @NewValue               NVARCHAR(MAX);
+
+    -- Audit narrative (convention SUBJECT . ACTION) ----------------------
+    DECLARE @TierName NVARCHAR(100);
+    DECLARE @Subject  NVARCHAR(400);
+    DECLARE @Activity NVARCHAR(500);
 
     DECLARE @ProcName NVARCHAR(200) = N'Location.LocationTypeDefinition_SaveAll';
     DECLARE @Params   NVARCHAR(MAX) =
@@ -262,6 +272,59 @@ BEGIN
                 RETURN;
             END
 
+            -- ===== Audit narrative + resolved JSON (built from PRE-mutation state) =====
+            -- Subject + tier name (convention SUBJECT). Tier name resolves the
+            -- LocationTypeId FK; category is implied by the Subject, so omitted.
+            SELECT @TierName = Name FROM Location.LocationType WHERE Id = @LocationTypeId;
+
+            SET @Subject = N'Location Type Definition "' + @Name + N'" ('
+                         + ISNULL(@TierName, N'?') + N' tier)';
+
+            -- Create: every incoming attribute is an add (+Attribute <Name>),
+            -- capped at 3 with overflow.
+            DECLARE @CreateAdds     NVARCHAR(MAX) = N'';
+            DECLARE @CreateOverflow INT = 0;
+
+            ;WITH ranked AS (
+                SELECT AttributeName, ROW_NUMBER() OVER (ORDER BY RowIndex) AS rn
+                FROM @Incoming
+            )
+            SELECT @CreateAdds = STRING_AGG(N'+Attribute ' + AttributeName, N', ')
+                                 WITHIN GROUP (ORDER BY rn)
+            FROM ranked WHERE rn <= 3;
+            SELECT @CreateOverflow = COUNT(*) - 3 FROM @Incoming;
+            IF @CreateOverflow < 0 SET @CreateOverflow = 0;
+
+            DECLARE @CreateAction NVARCHAR(MAX) = N'Created';
+            IF NULLIF(@CreateAdds, N'') IS NOT NULL
+                SET @CreateAction = @CreateAction + N'; ' + @CreateAdds +
+                    CASE WHEN @CreateOverflow > 0
+                         THEN N', +' + CAST(@CreateOverflow AS NVARCHAR(10)) + N' more'
+                         ELSE N'' END;
+
+            SET @Activity = Audit.ufn_TruncateActivity(
+                @Subject + N' ' + Audit.ufn_MidDot() + N' ' + @CreateAction);
+
+            -- NewValue: post-state intent with resolved tier FK sub-object.
+            SET @NewValue = (
+                SELECT
+                    JSON_QUERY((SELECT lt.Id, lt.Name
+                                FROM Location.LocationType lt WHERE lt.Id = @LocationTypeId
+                                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS LocationType,
+                    @Code        AS Code,
+                    @Name        AS Name,
+                    @Icon        AS Icon,
+                    @Description AS [Description],
+                    JSON_QUERY((
+                        SELECT i.AttributeName, i.DataType, i.IsRequired,
+                               i.DefaultValue, i.Uom, i.RowIndex AS SortOrder, i.[Description]
+                        FROM @Incoming i
+                        ORDER BY i.RowIndex
+                        FOR JSON PATH
+                    )) AS Attributes
+                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+            );
+
             -- ----- Mutation (atomic) -----
             BEGIN TRANSACTION;
 
@@ -286,9 +349,9 @@ BEGIN
                 @EntityId          = @NewId,
                 @LogEventTypeCode  = N'Created',
                 @LogSeverityCode   = N'Info',
-                @Description       = N'LocationTypeDefinition created with attribute schema.',
+                @Description       = @Activity,
                 @OldValue          = NULL,
-                @NewValue          = @Params;
+                @NewValue          = @NewValue;
 
             COMMIT TRANSACTION;
 
@@ -378,15 +441,131 @@ BEGIN
                 RETURN;
             END
 
-            -- Capture pre-mutation state for audit diff
+            -- ===== Audit narrative (built from PRE-mutation state) =====
+            -- Subject + tier name. On update the Name may have changed; the
+            -- Subject uses the submitted @Name (the post-save display name).
+            SELECT @TierName = Name FROM Location.LocationType WHERE Id = @ExistingLocationTypeId;
+
+            SET @Subject = N'Location Type Definition "' + @Name + N'"';
+
+            -- Change-set classification: +Attribute (insert), -Attribute
+            -- (deprecate-by-omit), ~Attribute (rename of an Id-matched child).
+            DECLARE @Changes TABLE (
+                ChangeKind  NCHAR(1)      NOT NULL,  -- '+' / '-' / '~'
+                SortKey     INT           NOT NULL,
+                OldName     NVARCHAR(100) NULL,
+                NewName     NVARCHAR(100) NULL
+            );
+
+            -- ADDS: incoming Id IS NULL
+            INSERT INTO @Changes (ChangeKind, SortKey, NewName)
+            SELECT N'+', i.RowIndex, i.AttributeName
+            FROM @Incoming i
+            WHERE i.Id IS NULL;
+
+            -- REMOVES: active child whose Id is not in incoming (deprecate-by-omit)
+            INSERT INTO @Changes (ChangeKind, SortKey, OldName)
+            SELECT N'-', ROW_NUMBER() OVER (ORDER BY lad.SortOrder), lad.AttributeName
+            FROM Location.LocationAttributeDefinition lad
+            WHERE lad.LocationTypeDefinitionId = @Id
+              AND lad.DeprecatedAt IS NULL
+              AND NOT EXISTS (SELECT 1 FROM @Incoming i WHERE i.Id = lad.Id);
+
+            -- RENAMES: Id-matched child whose AttributeName changed (~old -> new).
+            -- Only the rename is surfaced in prose; other field edits on a
+            -- matched row do not flip the ~ specific.
+            INSERT INTO @Changes (ChangeKind, SortKey, OldName, NewName)
+            SELECT N'~', ROW_NUMBER() OVER (ORDER BY lad.SortOrder),
+                   lad.AttributeName, i.AttributeName
+            FROM @Incoming i
+            INNER JOIN Location.LocationAttributeDefinition lad
+                ON lad.Id = i.Id
+               AND lad.LocationTypeDefinitionId = @Id
+               AND lad.DeprecatedAt IS NULL
+            WHERE lad.AttributeName <> i.AttributeName;
+
+            -- Per-operation prose, capped at 3 each with overflow.
+            DECLARE @AddSpecifics    NVARCHAR(MAX) = N'';
+            DECLARE @AddOverflow     INT = 0;
+            DECLARE @RemoveSpecifics NVARCHAR(MAX) = N'';
+            DECLARE @RemoveOverflow  INT = 0;
+            DECLARE @RenameSpecifics NVARCHAR(MAX) = N'';
+            DECLARE @RenameOverflow  INT = 0;
+
+            ;WITH ranked AS (
+                SELECT NewName, ROW_NUMBER() OVER (ORDER BY SortKey) AS rn
+                FROM @Changes WHERE ChangeKind = N'+'
+            )
+            SELECT @AddSpecifics = STRING_AGG(N'+Attribute ' + NewName, N'; ')
+                                   WITHIN GROUP (ORDER BY rn)
+            FROM ranked WHERE rn <= 3;
+            SELECT @AddOverflow = COUNT(*) - 3 FROM @Changes WHERE ChangeKind = N'+';
+            IF @AddOverflow < 0 SET @AddOverflow = 0;
+
+            ;WITH ranked AS (
+                SELECT OldName, ROW_NUMBER() OVER (ORDER BY SortKey) AS rn
+                FROM @Changes WHERE ChangeKind = N'-'
+            )
+            SELECT @RemoveSpecifics = STRING_AGG(N'-Attribute ' + OldName, N'; ')
+                                      WITHIN GROUP (ORDER BY rn)
+            FROM ranked WHERE rn <= 3;
+            SELECT @RemoveOverflow = COUNT(*) - 3 FROM @Changes WHERE ChangeKind = N'-';
+            IF @RemoveOverflow < 0 SET @RemoveOverflow = 0;
+
+            ;WITH ranked AS (
+                SELECT OldName, NewName, ROW_NUMBER() OVER (ORDER BY SortKey) AS rn
+                FROM @Changes WHERE ChangeKind = N'~'
+            )
+            SELECT @RenameSpecifics = STRING_AGG(
+                       N'~Attribute ' + OldName + N' ' + NCHAR(8594) + N' ' + NewName, N'; ')
+                       WITHIN GROUP (ORDER BY rn)
+            FROM ranked WHERE rn <= 3;
+            SELECT @RenameOverflow = COUNT(*) - 3 FROM @Changes WHERE ChangeKind = N'~';
+            IF @RenameOverflow < 0 SET @RenameOverflow = 0;
+
+            DECLARE @ActionParts NVARCHAR(MAX) = N'';
+
+            IF NULLIF(@AddSpecifics, N'') IS NOT NULL
+                SET @ActionParts = @ActionParts + @AddSpecifics +
+                    CASE WHEN @AddOverflow > 0
+                         THEN N'; +' + CAST(@AddOverflow AS NVARCHAR(10)) + N' more'
+                         ELSE N'' END + N'; ';
+
+            IF NULLIF(@RemoveSpecifics, N'') IS NOT NULL
+                SET @ActionParts = @ActionParts + @RemoveSpecifics +
+                    CASE WHEN @RemoveOverflow > 0
+                         THEN N'; -' + CAST(@RemoveOverflow AS NVARCHAR(10)) + N' more'
+                         ELSE N'' END + N'; ';
+
+            IF NULLIF(@RenameSpecifics, N'') IS NOT NULL
+                SET @ActionParts = @ActionParts + @RenameSpecifics +
+                    CASE WHEN @RenameOverflow > 0
+                         THEN N'; ~' + CAST(@RenameOverflow AS NVARCHAR(10)) + N' more'
+                         ELSE N'' END + N'; ';
+
+            -- Strip trailing "; " (DATALENGTH/2 - 2; NEVER LEN, which eats a
+            -- real trailing character off the last specific).
+            IF DATALENGTH(@ActionParts) >= 4
+                SET @ActionParts = LEFT(@ActionParts, DATALENGTH(@ActionParts) / 2 - 2);
+
+            IF @ActionParts = N''
+                SET @ActionParts = N'Updated (no attribute changes)';
+
+            SET @Activity = Audit.ufn_TruncateActivity(
+                @Subject + N' ' + Audit.ufn_MidDot() + N' ' + @ActionParts);
+
+            -- Capture pre-mutation state for audit diff, with resolved tier FK.
             SET @OldValue = (
                 SELECT
-                    (SELECT Id, LocationTypeId, Code, Name, Icon, Description
-                     FROM Location.LocationTypeDefinition WHERE Id = @Id
-                     FOR JSON PATH, WITHOUT_ARRAY_WRAPPER) AS Definition,
+                    JSON_QUERY((SELECT lt.Id, lt.Name
+                                FROM Location.LocationType lt WHERE lt.Id = @ExistingLocationTypeId
+                                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS LocationType,
+                    JSON_QUERY((SELECT Id, Code, Name, Icon, [Description]
+                                FROM Location.LocationTypeDefinition WHERE Id = @Id
+                                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Definition,
                     JSON_QUERY((
                         SELECT Id, AttributeName, DataType, IsRequired, DefaultValue,
-                               Uom, SortOrder, Description
+                               Uom, SortOrder, [Description]
                         FROM Location.LocationAttributeDefinition
                         WHERE LocationTypeDefinitionId = @Id AND DeprecatedAt IS NULL
                         ORDER BY SortOrder
@@ -437,15 +616,18 @@ BEGIN
             FROM @Incoming i
             WHERE i.Id IS NULL;
 
-            -- Capture post-mutation state for audit diff
+            -- Capture post-mutation state for audit diff, with resolved tier FK.
             SET @NewValue = (
                 SELECT
-                    (SELECT Id, LocationTypeId, Code, Name, Icon, Description
-                     FROM Location.LocationTypeDefinition WHERE Id = @Id
-                     FOR JSON PATH, WITHOUT_ARRAY_WRAPPER) AS Definition,
+                    JSON_QUERY((SELECT lt.Id, lt.Name
+                                FROM Location.LocationType lt WHERE lt.Id = @ExistingLocationTypeId
+                                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS LocationType,
+                    JSON_QUERY((SELECT Id, Code, Name, Icon, [Description]
+                                FROM Location.LocationTypeDefinition WHERE Id = @Id
+                                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Definition,
                     JSON_QUERY((
                         SELECT Id, AttributeName, DataType, IsRequired, DefaultValue,
-                               Uom, SortOrder, Description
+                               Uom, SortOrder, [Description]
                         FROM Location.LocationAttributeDefinition
                         WHERE LocationTypeDefinitionId = @Id AND DeprecatedAt IS NULL
                         ORDER BY SortOrder
@@ -460,7 +642,7 @@ BEGIN
                 @EntityId          = @Id,
                 @LogEventTypeCode  = N'Updated',
                 @LogSeverityCode   = N'Info',
-                @Description       = N'LocationTypeDefinition saved with attribute reconciliation.',
+                @Description       = @Activity,
                 @OldValue          = @OldValue,
                 @NewValue          = @NewValue;
 

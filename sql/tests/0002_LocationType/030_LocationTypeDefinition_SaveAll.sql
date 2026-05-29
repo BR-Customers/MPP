@@ -523,12 +523,103 @@ EXEC test.Assert_IsTrue
 GO
 
 -- =============================================
+-- Test 13: Audit-readability convention (Slice 7)
+--   Create a definition with 3 attributes, then update it with a mixed
+--   delta (rename one, drop one, add one). Asserts the resulting
+--   ConfigLog.Description matches the SUBJECT . ACTION convention shape
+--   and that the resolved JSON carries the tier FK sub-object.
+-- =============================================
+DECLARE @CellId BIGINT = (SELECT Id FROM Location.LocationType WHERE Code = N'Cell');
+DECLARE @LtdTypeId BIGINT = (SELECT Id FROM Audit.LogEntityType WHERE Code = N'LocationTypeDef');
+DECLARE @S BIT, @M NVARCHAR(500), @NewId BIGINT;
+
+-- Create with 3 attributes
+DECLARE @CreateJson NVARCHAR(MAX) = N'[
+    {"Id":null,"AttributeName":"Building","DataType":"NVARCHAR","IsRequired":1},
+    {"Id":null,"AttributeName":"Floor","DataType":"INT","IsRequired":0},
+    {"Id":null,"AttributeName":"SquareFt","DataType":"DECIMAL","IsRequired":0}
+]';
+CREATE TABLE #R13c (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #R13c
+EXEC Location.LocationTypeDefinition_SaveAll
+    @Id              = NULL,
+    @LocationTypeId  = @CellId,
+    @Code            = N'TST-LTD-S7',
+    @Name            = N'S7 Convention Def',
+    @AppUserId       = 1,
+    @AttributesJson  = @CreateJson;
+SELECT @NewId = NewId FROM #R13c;
+DROP TABLE #R13c;
+
+-- Assert create-mode Description: SUBJECT (tier) . Created; +Attribute ...
+DECLARE @CreateDesc NVARCHAR(500) = (SELECT TOP 1 Description FROM Audit.ConfigLog
+                                     WHERE EntityId = @NewId AND LogEntityTypeId = @LtdTypeId
+                                     ORDER BY Id DESC);
+DECLARE @CreatePattern NVARCHAR(300) =
+    N'Location Type Definition "S7 Convention Def" (Cell tier) ' + Audit.ufn_MidDot()
+    + N' Created; +Attribute Building%';
+DECLARE @CreateMatch NVARCHAR(1) = CASE WHEN @CreateDesc LIKE @CreatePattern THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[S7CreateDesc] Create Description matches SUBJECT (tier) . Created; +Attribute',
+    @Expected = N'1',
+    @Actual   = @CreateMatch;
+
+-- Assert create-mode NewValue carries resolved tier FK {Id, Name}
+DECLARE @CreateNew NVARCHAR(MAX) = (SELECT TOP 1 NewValue FROM Audit.ConfigLog
+                                    WHERE EntityId = @NewId AND LogEntityTypeId = @LtdTypeId
+                                    ORDER BY Id DESC);
+DECLARE @CreateFk NVARCHAR(1) =
+    CASE WHEN @CreateNew LIKE N'%"LocationType":%' AND @CreateNew LIKE N'%"Name":"Cell"%'
+         THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[S7CreateFk] NewValue carries resolved LocationType {Id, Name:Cell}',
+    @Expected = N'1',
+    @Actual   = @CreateFk;
+
+-- Update: rename SquareFt -> SquareFootage, drop Floor, add Wing.
+DECLARE @BuildingId BIGINT = (SELECT Id FROM Location.LocationAttributeDefinition
+    WHERE LocationTypeDefinitionId = @NewId AND AttributeName = N'Building' AND DeprecatedAt IS NULL);
+DECLARE @SquareFtId BIGINT = (SELECT Id FROM Location.LocationAttributeDefinition
+    WHERE LocationTypeDefinitionId = @NewId AND AttributeName = N'SquareFt' AND DeprecatedAt IS NULL);
+DECLARE @UpdJson NVARCHAR(MAX) = N'[
+    {"Id":' + CAST(@BuildingId AS NVARCHAR(20)) + N',"AttributeName":"Building","DataType":"NVARCHAR","IsRequired":1},
+    {"Id":' + CAST(@SquareFtId AS NVARCHAR(20)) + N',"AttributeName":"SquareFootage","DataType":"DECIMAL","IsRequired":0},
+    {"Id":null,"AttributeName":"Wing","DataType":"NVARCHAR","IsRequired":0}
+]';
+CREATE TABLE #R13u (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #R13u
+EXEC Location.LocationTypeDefinition_SaveAll
+    @Id              = @NewId,
+    @LocationTypeId  = @CellId,
+    @Code            = N'TST-LTD-S7',
+    @Name            = N'S7 Convention Def',
+    @AppUserId       = 1,
+    @AttributesJson  = @UpdJson;
+DROP TABLE #R13u;
+
+-- Assert update-mode Description: contains the ~Attribute rename old -> new
+DECLARE @UpdDesc NVARCHAR(500) = (SELECT TOP 1 Description FROM Audit.ConfigLog
+                                  WHERE EntityId = @NewId AND LogEntityTypeId = @LtdTypeId
+                                  ORDER BY Id DESC);
+DECLARE @UpdMatch NVARCHAR(1) =
+    CASE WHEN @UpdDesc LIKE N'Location Type Definition "S7 Convention Def" ' + Audit.ufn_MidDot() + N'%'
+              AND @UpdDesc LIKE N'%~Attribute SquareFt ' + NCHAR(8594) + N' SquareFootage%'
+              AND @UpdDesc LIKE N'%-Attribute Floor%'
+              AND @UpdDesc LIKE N'%+Attribute Wing%'
+         THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[S7UpdateDesc] Update Description has +Attribute / -Attribute / ~Attribute old->new',
+    @Expected = N'1',
+    @Actual   = @UpdMatch;
+GO
+
+-- =============================================
 -- Cleanup: remove test definitions and their children to restore seed state
 -- =============================================
 DECLARE @CleanupIds TABLE (Id BIGINT);
 INSERT INTO @CleanupIds (Id)
 SELECT Id FROM Location.LocationTypeDefinition
-WHERE Code IN (N'TestDef_Press', N'TestDef_EmptyAttrs');
+WHERE Code IN (N'TestDef_Press', N'TestDef_EmptyAttrs', N'TST-LTD-S7');
 
 DELETE FROM Location.LocationAttributeDefinition
 WHERE LocationTypeDefinitionId IN (SELECT Id FROM @CleanupIds);
