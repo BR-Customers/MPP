@@ -1,35 +1,48 @@
 # MPP MES — Project Status
 
-**Last updated:** 2026-05-28 (Phase 8 Eligibility editor end-to-end green — all 14 spec §9 smoke steps pass. Phase 3 + Phase 6 BOMs also fully green from earlier in the same session. SQL tests **1048/1048**.)
+**Last updated:** 2026-05-28 (Audit-readability refactor Slice 1 landed: convention codified + UI changes + ConfigChangeDetail popup fixed. Earlier same session: Phase 8 Eligibility end-to-end green. SQL tests **1054/1054**.)
 
 ---
 
-## 🔖 Next Session Pickup — finish Audit Log "Changes" column (Designer-side) → then Phase 7 QualitySpec cross-nav
+## 🔖 Next Session Pickup — Audit Readability Refactor Slice 2 (Eligibility proc reference impl)
 
-**State of play.** Item Master is fully wired across all 5 tabs now that Phase 8 Eligibility landed today. Phase 7 (QualitySpecs cross-navigation — the "Go to spec" button per row) is the only remaining Item-Master roadmap item, and it's a small enhancement. The **active** in-flight work is the AuditLog "Changes" column workstream from 2026-05-27 evening that has uncommitted script changes sitting in the working tree plus a documented next-step Designer column add.
+**State of play.** Audit-readability refactor Slice 1 is fully landed. The `SUBJECT · CATEGORY · ACTION` convention is codified in `sql_best_practices_mes.md` + CLAUDE.md; two helper functions (`Audit.ufn_MidDot`, `Audit.ufn_TruncateActivity`) deployed and tested; the AuditLog table got the EntityId-drop + ChangesSummary column add + Description→Activity rename; and the broken ConfigChangeDetail popup was diagnosed and fixed (three layered bugs: wrong event name `onRowClick` vs `onSelectionChange`, attribute-vs-dict read pattern on the event payload, and a `coalesce(BIGINT, String)` type mismatch in EntityLine).
+
+Now Eligibility's `Parts.ItemLocation_SaveAllForItem` becomes the reference proc impl of the convention, after which Slices 3-8 mirror it across the rest of the audit-writing procs.
 
 **First three steps on resume:**
 
 1. **Sync up + verify clean tree.**
    ```
    git fetch origin && git pull --ff-only origin main
-   git status   # should show 5 modified files (the audit-log "Changes" column WIP) + untracked HANDOFF_AUDIT_LOG_2026-05-28.md + plant-layout PDF + tools/plant-layout-mapper/
+   git status   # should be clean except untracked plant-layout PDF + tools/plant-layout-mapper/
    ```
 
-2. **Finish the AuditLog "Changes" column** per `HANDOFF_AUDIT_LOG_2026-05-28.md` at the repo root. Three remaining steps (Designer-only, ~10 min):
-   - Add the new `ChangesSummary` column to the AuditTable's `props.columns` (between Event and Severity)
-   - Drop the meaningless `EntityId` column from the table
-   - Re-test row click → ConfigChangeDetail popup still opens with side-by-side Old/New JSON
-   - Commit + push the 4 already-modified files plus the Designer-side view edit
-   - Delete `HANDOFF_AUDIT_LOG_2026-05-28.md` after the commit lands
+2. **Read Slice 2 in the implementation plan** at `docs/superpowers/plans/2026-05-28-audit-readability-refactor.md` — Tasks 2.1 through 2.10. The plan has exact SQL code blocks for the `@Changes` change-set classification temp table, the Activity prose composer (with 3-specifics cap + overflow counters), and the FK-resolved `OldValue` / `NewValue` JSON via `FOR JSON PATH` with Location subqueries.
 
-3. **Phase 7 QualitySpecs cross-nav** (after audit log column closes). The QualitySpecs tab view currently has a literal placeholder line "Phase 7 will add a 'Go to spec' navigation button per row." Wire a row-level "Go to spec" button (or click-on-row) that navigates to the existing QualitySpec editor surface (or opens it as a popup if no top-level page yet). Small spec + plan should run ~1 session.
+3. **Execute Slice 2.** Refactor `Parts.ItemLocation_SaveAllForItem`, update tests with 4 new convention-shape assertions, deploy, smoke through `/items → Eligibility → Save → /audit`. Expected Activity prose shape after Slice 2:
+
+   `5G0 — Front Cover Assembly · Eligibility · +DIECAST (Production Area); -DC-401; ~DC-501 IsConsumptionPoint false→true; 4 rows`
+
+   Expected `NewValue` JSON: `Location: {Id, Code, Name}` resolved sub-objects in place of bare `LocationId: 4`.
+
+**Slice queue after Slice 2:**
+
+| # | Slice | Effort |
+|---|---|---|
+| 2.5 | ConfigChangeDetail popup diff highlighting via `ia.display.markdown` + new `Common.Util.prettyJsonDiff` helper (depends on Slice 2's resolved-name JSON to be useful) | 1 session |
+| 3 | BOMs procs (6) | 1 session |
+| 4 | Routes procs (6) | 1 session |
+| 5 | Item core — Identity + ContainerConfig (5 procs) | 1 session |
+| 6 | Plant Hierarchy (~5 procs) | 1 session |
+| 7 | LocationTypeEditor (2 procs) | 1 session |
+| 8 | Downtime + Defect Codes (6 procs) | 1 session |
 
 **Other open Ignition items not blocking the above:**
-- Audit Log UI revisit (Jacques flagged 2026-05-27). The Changes-column work addresses the most acute pain; broader UX rework still wanted at some point but no concrete spec yet. Lower priority than #1/#2 above.
-- DieCastMachine Cell read-only mounted-Tool status panel (Plant Hierarchy editor) — deferred until Tools master Config Tool surface exists. See "Deferred follow-ups" section below.
-- Orphan Draft BOM rows in dev DB from pre-fix `+ New Version` clicks may still need a manual cleanup pass before further BOM testing (see `feedback_ignition_nq_type_for_status_row_procs` memory).
-- OI-35 Architecture Decision Gate still gating Arc 2 Phase 1 SQL build (independent of any Item Master / audit work).
+- Phase 7 QualitySpecs cross-nav — last remaining Item Master tab work. The QualitySpecs view has a literal placeholder text "Phase 7 will add a 'Go to spec' navigation button per row." Small enhancement; one short spec + plan + session.
+- DieCastMachine Cell read-only mounted-Tool status panel — deferred until Tools master Config Tool surface exists.
+- Orphan Draft BOM rows in dev DB from pre-fix `+ New Version` clicks may still need a manual cleanup pass.
+- OI-35 Architecture Decision Gate still gating Arc 2 Phase 1 SQL build (independent of any Ignition work).
 
 ---
 
@@ -53,6 +66,27 @@ The Item Master design has been **reworked from bundled-editDraft + bidi-Object-
 ---
 
 ## ✅ Recently closed
+
+### Audit-readability refactor Slice 1 landed (2026-05-28)
+
+First slice of the project-wide audit-log readability refactor spec'd at `docs/superpowers/specs/2026-05-28-audit-readability-refactor-design.md`. Five tasks landed across 6 commits:
+
+- **Helpers**: `Audit.ufn_MidDot()` returns `NCHAR(183)` middle-dot separator; `Audit.ufn_TruncateActivity(@text)` applies the 500-char cap with `NCHAR(8230)` ellipsis suffix on overflow + NULL passthrough. 6 truncate tests pass. **1054/1054 SQL tests total.**
+- **Convention codified**: `sql_best_practices_mes.md` gained a full "Audit Log Description Convention" section covering the `SUBJECT · CATEGORY · ACTION` shape, verb/symbol vocabulary, field-diff notation, truncation rules, and FK-resolution rule. CLAUDE.md gained a brief pointer subsection. New procs inherit the convention; existing procs migrate as touched in Slices 2-8.
+- **AuditLog UI**: dropped meaningless numeric `EntityId` column; added `ChangesSummary` column between Event and Severity (powered by yesterday's `BlueRidge.Common.Util.summarizeJsonDiff` helper); renamed `Description` column header to `Activity`. Scoped monospace+ellipsis CSS for the Changes column under `.psc-audit-log-table`. Absorbed yesterday's `HANDOFF_AUDIT_LOG_2026-05-28.md` (handoff deleted).
+- **Popup fixed**: `BlueRidge/Components/Popups/ConfigChangeDetail` opens correctly on row click. Three bugs found via a one-shot diagnostic log of `event.keys()` + `str(event)`:
+  1. Event name was `onRowClick` which `ia.display.table` doesn't dispatch in 8.3 — silent no-op, nothing in logs. Standard event is `onSelectionChange`. Switched.
+  2. Event payload is a PyDictionary not an object. `hasattr(event, "selection")` returned False because `selection` would be a KEY not attr. Plus event uses `selectedRow` (int index) not `selection` (array). Plus `if not sel:` would silently return on `selectedRow=0`. Switched to dict `.get()` + explicit `if sel is None` check.
+  3. EntityLine binding used `coalesce(BIGINT entityId, '(new)')` which fails Quality due to type mismatch. Rendered as 'null' + red error indicator. Switched to `if(isNull(...), '(new)', toStr(...))` to force string type.
+
+Commit chain on main: `159bc73` (ufn_MidDot) → `66a7ab5` (ufn_TruncateActivity + tests) → `2d0b16b` (convention codified) → `129aaa9` (AuditLog UI + handoff absorption) → `91fa14d` (popup fixes + Slice 2.5 plan add).
+
+Slice 2.5 added to the implementation plan: diff highlighting on the popup via `ia.display.markdown` + new `Common.Util.prettyJsonDiff` helper. Deferred until after Slice 2 lands resolved-name JSON, because highlighting bare-ID diffs `LocationId 4 → 5` is useless whereas `Location DC-401 → DC-402` is actionable.
+
+**Lessons captured (no new memories this slice, but noted for future):**
+- `ia.display.table` standard event for row clicks in 8.3 is `onSelectionChange`, NOT `onRowClick`. Silent no-op if event name is wrong — no error logged anywhere. Diagnostic was to add `log("event attrs=" + str(dir(event)))` at script entry; if log doesn't appear, event isn't dispatched.
+- `event` payload for `onSelectionChange` is a PyDictionary with keys `selectedRow` (int), `selectedColumn` (str), `data` (the visible-column subset of the row, NOT the full row data). For full row use `self.props.data[idx]`.
+- `event.get("selectedRow")` returns 0 for the first row — using truthy `if not sel: return` silently breaks on that row. Use explicit `if sel is None: return`.
 
 ### Item Master Phase 8 Eligibility editor — end-to-end smoke green (2026-05-28)
 
