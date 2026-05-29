@@ -71,7 +71,7 @@
               "props.style.classes": {
                 "binding": {
                   "config": {
-                    "expression": "if({view.params.state} = \"Published\", \"badge badge-published\", if({view.params.state} = \"Draft\", \"badge badge-warn\", if({view.params.state} = \"Deprecated\", \"badge badge-muted\", \"badge badge-purple\")))"
+                    "expression": "if({view.params.state} = \"Active\", \"badge badge-published\", if({view.params.state} = \"Published\", \"badge badge-published\", if({view.params.state} = \"Scheduled\", \"badge badge-info\", if({view.params.state} = \"Superseded\", \"badge badge-muted\", if({view.params.state} = \"Draft\", \"badge badge-draft\", if({view.params.state} = \"Deprecated\", \"badge badge-muted\", \"badge badge-muted\"))))))"
                   },
                   "type": "expr"
                 }

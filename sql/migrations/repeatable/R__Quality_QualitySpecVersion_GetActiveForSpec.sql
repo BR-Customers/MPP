@@ -2,7 +2,7 @@
 -- Procedure:   Quality.QualitySpecVersion_GetActiveForSpec
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     1.0
+-- Version:     1.1
 --
 -- Description:
 --   Returns the currently active (published, non-deprecated) version
@@ -24,6 +24,8 @@
 --
 -- Change Log:
 --   2026-04-14 - 1.0 - Initial version
+--   2026-05-29 - 1.1 - Added deterministic tiebreaker (VersionNumber DESC) so
+--                       equal-EffectiveFrom publishes resolve consistently.
 -- =============================================
 CREATE OR ALTER PROCEDURE Quality.QualitySpecVersion_GetActiveForSpec
     @QualitySpecId BIGINT,
@@ -52,6 +54,6 @@ BEGIN
       AND qsv.PublishedAt IS NOT NULL
       AND qsv.DeprecatedAt IS NULL
       AND qsv.EffectiveFrom <= @AsOf
-    ORDER BY qsv.EffectiveFrom DESC;
+    ORDER BY qsv.EffectiveFrom DESC, qsv.VersionNumber DESC;
 END
 GO

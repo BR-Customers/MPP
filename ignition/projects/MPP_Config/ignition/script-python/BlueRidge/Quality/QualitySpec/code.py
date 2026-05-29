@@ -182,21 +182,23 @@ def buildVersionHistoryRows(versions):
     listVersions) and flattens them to the row sub-view's input params:
       [{version, state, effectiveFrom, createdBy, createdAt}, ...]
 
-    State is re-derived from PublishedAt / DeprecatedAt so the badge is
-    independent of the proc's State column. No DB call -- safe to call from
-    a component (props.instances) binding. No non-ASCII placeholders: blank
-    fields render as "" so nothing mojibakes.
+    State uses the proc's date-resolved State column (Active / Scheduled /
+    Superseded / Draft / Deprecated). A fallback derive from PublishedAt /
+    DeprecatedAt is kept for safety if the proc row omits State. No DB call --
+    safe to call from a component (props.instances) binding. No non-ASCII
+    placeholders: blank fields render as "" so nothing mojibakes.
     """
     versions = _u(versions) or []
     out = []
     for v in versions:
         v = _u(v) or {}
         if v.get("DeprecatedAt") is not None:
-            state = "Deprecated"
+            fallback = "Deprecated"
         elif v.get("PublishedAt") is None:
-            state = "Draft"
+            fallback = "Draft"
         else:
-            state = "Published"
+            fallback = "Published"
+        state = v.get("State") or fallback
         createdAt = v.get("CreatedAt")
         createdAtDisp = str(createdAt)[:16] if createdAt is not None else ""
         out.append({
