@@ -2,7 +2,7 @@
 -- Procedure:   Oee.DowntimeReasonCode_Create
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-15
--- Version:     1.0
+-- Version:     1.1
 --
 -- Description:
 --   Creates a new downtime reason code. Code must be globally
@@ -32,6 +32,9 @@
 --
 -- Change Log:
 --   2026-04-15 - 1.0 - Initial version
+--   2026-05-29 - 1.1 - Audit-readability convention (Slice 8 Downtime+Defect
+--                       codes): SUBJECT . ACTION narrative Description +
+--                       resolved-FK OldValue/NewValue JSON.
 -- =============================================
 CREATE OR ALTER PROCEDURE Oee.DowntimeReasonCode_Create
     @Code                 NVARCHAR(20),
@@ -148,15 +151,49 @@ BEGIN
 
         SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
 
+        -- ===== Audit narrative + resolved JSON =====
+
+        -- Resolve the Area name for the subject parenthetical
+        DECLARE @AreaName NVARCHAR(200) =
+            (SELECT Name FROM Location.Location WHERE Id = @AreaLocationId);
+
+        DECLARE @Subject NVARCHAR(600) =
+            N'Downtime Code ' + LTRIM(RTRIM(@Code)) + N' ' + NCHAR(8212) + N' ' + LTRIM(RTRIM(@Description))
+            + CASE WHEN @AreaName IS NOT NULL
+                   THEN N' (' + @AreaName
+                        + CASE WHEN ISNULL(@IsExcused, 0) = 1 THEN N', Excused' ELSE N'' END
+                        + N')'
+                   ELSE N'' END;
+
+        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(
+            @Subject + N' ' + Audit.ufn_MidDot() + N' Created');
+
+        -- NewValue: created snapshot with resolved FK sub-objects
+        DECLARE @NewValueResolved NVARCHAR(MAX) = (
+            SELECT
+                drc.Code,
+                drc.Description,
+                JSON_QUERY((SELECT l.Id, l.Code, l.Name
+                            FROM Location.Location l WHERE l.Id = drc.AreaLocationId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))            AS Area,
+                JSON_QUERY((SELECT drt.Id, drt.Code, drt.Name
+                            FROM Oee.DowntimeReasonType drt WHERE drt.Id = drc.DowntimeReasonTypeId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))            AS ReasonType,
+                drc.DowntimeSourceCodeId,
+                drc.IsExcused
+            FROM Oee.DowntimeReasonCode drc
+            WHERE drc.Id = @NewId
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+
         EXEC Audit.Audit_LogConfigChange
             @AppUserId         = @AppUserId,
             @LogEntityTypeCode = N'DowntimeReasonCode',
             @EntityId          = @NewId,
             @LogEventTypeCode  = N'Created',
             @LogSeverityCode   = N'Info',
-            @Description       = N'Downtime reason code created.',
+            @Description       = @Activity,
             @OldValue          = NULL,
-            @NewValue          = @Params;
+            @NewValue          = @NewValueResolved;
 
         COMMIT TRANSACTION;
 

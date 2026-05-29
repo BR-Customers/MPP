@@ -2,7 +2,7 @@
 -- Procedure:   Quality.DefectCode_Create
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     2.0
+-- Version:     2.1
 --
 -- Description:
 --   Creates a new defect code. Code must be unique.
@@ -27,6 +27,9 @@
 -- Change Log:
 --   2026-04-14 - 1.0 - Initial version
 --   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
+--   2026-05-29 - 2.1 - Audit-readability convention (Slice 8 Downtime+Defect
+--                       codes): SUBJECT . ACTION narrative Description +
+--                       resolved-FK OldValue/NewValue JSON.
 -- =============================================
 CREATE OR ALTER PROCEDURE Quality.DefectCode_Create
     @Code            NVARCHAR(20),
@@ -109,15 +112,40 @@ BEGIN
 
         SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
 
+        -- ===== Audit narrative + resolved JSON =====
+
+        DECLARE @AreaName NVARCHAR(200) =
+            (SELECT Name FROM Location.Location WHERE Id = @AreaLocationId);
+
+        DECLARE @Subject NVARCHAR(600) =
+            N'Defect Code ' + LTRIM(RTRIM(@Code)) + N' ' + NCHAR(8212) + N' ' + LTRIM(RTRIM(@Description))
+            + CASE WHEN @AreaName IS NOT NULL THEN N' (' + @AreaName + N')' ELSE N'' END;
+
+        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(
+            @Subject + N' ' + Audit.ufn_MidDot() + N' Created');
+
+        -- NewValue: created snapshot with resolved Area sub-object
+        DECLARE @NewValueResolved NVARCHAR(MAX) = (
+            SELECT
+                dc.Code,
+                dc.Description,
+                JSON_QUERY((SELECT l.Id, l.Code, l.Name
+                            FROM Location.Location l WHERE l.Id = dc.AreaLocationId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))            AS Area,
+                dc.IsExcused
+            FROM Quality.DefectCode dc
+            WHERE dc.Id = @NewId
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+
         EXEC Audit.Audit_LogConfigChange
             @AppUserId         = @AppUserId,
             @LogEntityTypeCode = N'DefectCode',
             @EntityId          = @NewId,
             @LogEventTypeCode  = N'Created',
             @LogSeverityCode   = N'Info',
-            @Description       = N'Defect code created.',
+            @Description       = @Activity,
             @OldValue          = NULL,
-            @NewValue          = @Params;
+            @NewValue          = @NewValueResolved;
 
         COMMIT TRANSACTION;
 

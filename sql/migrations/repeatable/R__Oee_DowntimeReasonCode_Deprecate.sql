@@ -2,7 +2,7 @@
 -- Procedure:   Oee.DowntimeReasonCode_Deprecate
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-15
--- Version:     1.0
+-- Version:     1.1
 --
 -- Description:
 --   Soft-deletes a downtime reason code by setting DeprecatedAt.
@@ -22,6 +22,9 @@
 --
 -- Change Log:
 --   2026-04-15 - 1.0 - Initial version
+--   2026-05-29 - 1.1 - Audit-readability convention (Slice 8 Downtime+Defect
+--                       codes): SUBJECT . ACTION narrative Description +
+--                       resolved-FK OldValue/NewValue JSON.
 -- =============================================
 CREATE OR ALTER PROCEDURE Oee.DowntimeReasonCode_Deprecate
     @Id        BIGINT,
@@ -58,10 +61,20 @@ BEGIN
         -- Existence checks
         -- ====================
         DECLARE @Code         NVARCHAR(20);
+        DECLARE @OldDesc      NVARCHAR(500);
+        DECLARE @OldAreaId    BIGINT;
+        DECLARE @OldTypeId    BIGINT;
+        DECLARE @OldSourceId  BIGINT;
+        DECLARE @OldIsExcused BIT;
         DECLARE @DeprecatedAt DATETIME2(3);
         DECLARE @RowExists    BIT = 0;
 
         SELECT @Code         = Code,
+               @OldDesc      = Description,
+               @OldAreaId    = AreaLocationId,
+               @OldTypeId    = DowntimeReasonTypeId,
+               @OldSourceId  = DowntimeSourceCodeId,
+               @OldIsExcused = IsExcused,
                @DeprecatedAt = DeprecatedAt,
                @RowExists    = 1
         FROM Oee.DowntimeReasonCode WHERE Id = @Id;
@@ -121,6 +134,28 @@ BEGIN
         END
 
         -- ====================
+        -- Audit narrative + resolved JSON (built from PRE-mutation state)
+        -- ====================
+        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(
+            N'Downtime Code ' + @Code + N' ' + Audit.ufn_MidDot() + N' Deprecated');
+
+        -- OldValue: pre-mutation snapshot with resolved FK sub-objects;
+        -- NewValue is NULL for a Deprecate.
+        DECLARE @OldValueResolved NVARCHAR(MAX) =
+            (SELECT
+                 @Code AS Code,
+                 @OldDesc AS Description,
+                 JSON_QUERY((SELECT l.Id, l.Code, l.Name
+                             FROM Location.Location l WHERE l.Id = @OldAreaId
+                             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))   AS Area,
+                 JSON_QUERY((SELECT drt.Id, drt.Code, drt.Name
+                             FROM Oee.DowntimeReasonType drt WHERE drt.Id = @OldTypeId
+                             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))   AS ReasonType,
+                 @OldSourceId AS DowntimeSourceCodeId,
+                 @OldIsExcused AS IsExcused
+             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+
+        -- ====================
         -- Mutation (atomic)
         -- ====================
         BEGIN TRANSACTION;
@@ -137,9 +172,9 @@ BEGIN
             @EntityId          = @Id,
             @LogEventTypeCode  = N'Deprecated',
             @LogSeverityCode   = N'Warning',
-            @Description       = N'Downtime reason code deprecated.',
-            @OldValue          = N'{"DeprecatedAt":null}',
-            @NewValue          = @Params;
+            @Description       = @Activity,
+            @OldValue          = @OldValueResolved,
+            @NewValue          = NULL;
 
         COMMIT TRANSACTION;
 

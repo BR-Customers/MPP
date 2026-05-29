@@ -2,7 +2,7 @@
 -- Procedure:   Quality.DefectCode_Deprecate
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     2.0
+-- Version:     2.1
 --
 -- Description:
 --   Soft-deletes a defect code by setting DeprecatedAt. The
@@ -25,6 +25,9 @@
 -- Change Log:
 --   2026-04-14 - 1.0 - Initial version
 --   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
+--   2026-05-29 - 2.1 - Audit-readability convention (Slice 8 Downtime+Defect
+--                       codes): SUBJECT . ACTION narrative Description +
+--                       resolved-FK OldValue/NewValue JSON.
 -- =============================================
 CREATE OR ALTER PROCEDURE Quality.DefectCode_Deprecate
     @Id        BIGINT,
@@ -61,10 +64,16 @@ BEGIN
         -- Existence checks
         -- ====================
         DECLARE @Code         NVARCHAR(20);
+        DECLARE @OldDesc      NVARCHAR(500);
+        DECLARE @OldAreaId    BIGINT;
+        DECLARE @OldIsExcused BIT;
         DECLARE @DeprecatedAt DATETIME2(3);
         DECLARE @RowExists    BIT = 0;
 
         SELECT @Code         = Code,
+               @OldDesc      = Description,
+               @OldAreaId    = AreaLocationId,
+               @OldIsExcused = IsExcused,
                @DeprecatedAt = DeprecatedAt,
                @RowExists    = 1
         FROM Quality.DefectCode WHERE Id = @Id;
@@ -94,6 +103,24 @@ BEGIN
         END
 
         -- ====================
+        -- Audit narrative + resolved JSON (built from PRE-mutation state)
+        -- ====================
+        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(
+            N'Defect Code ' + @Code + N' ' + Audit.ufn_MidDot() + N' Deprecated');
+
+        -- OldValue: pre-mutation snapshot with resolved Area sub-object;
+        -- NewValue is NULL for a Deprecate.
+        DECLARE @OldValueResolved NVARCHAR(MAX) =
+            (SELECT
+                 @Code AS Code,
+                 @OldDesc AS Description,
+                 JSON_QUERY((SELECT l.Id, l.Code, l.Name
+                             FROM Location.Location l WHERE l.Id = @OldAreaId
+                             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))   AS Area,
+                 @OldIsExcused AS IsExcused
+             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+
+        -- ====================
         -- Mutation (atomic)
         -- ====================
         BEGIN TRANSACTION;
@@ -108,9 +135,9 @@ BEGIN
             @EntityId          = @Id,
             @LogEventTypeCode  = N'Deprecated',
             @LogSeverityCode   = N'Warning',
-            @Description       = N'Defect code deprecated.',
-            @OldValue          = N'{"DeprecatedAt":null}',
-            @NewValue          = @Params;
+            @Description       = @Activity,
+            @OldValue          = @OldValueResolved,
+            @NewValue          = NULL;
 
         COMMIT TRANSACTION;
 

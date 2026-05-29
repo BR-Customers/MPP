@@ -451,10 +451,130 @@ EXEC test.Assert_Contains
 GO
 
 -- =============================================
+-- Slice 8 (audit-readability): Create Description carries
+--   "Downtime Code <Code> — <Name> (<AreaName>, Excused) · Created"
+--   and NewValue JSON carries a resolved Area sub-object.
+-- =============================================
+DECLARE @S BIT, @M NVARCHAR(500), @NewId BIGINT;
+
+CREATE TABLE #RS8a (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #RS8a EXEC Oee.DowntimeReasonCode_Create
+    @Code                 = N'TST-DT-S8',
+    @Description          = N'Mechanical',
+    @AreaLocationId       = 3,         -- Die Cast
+    @DowntimeReasonTypeId = 1,
+    @IsExcused            = 1,
+    @AppUserId            = 1;
+SELECT @S = Status, @M = Message, @NewId = NewId FROM #RS8a;
+DROP TABLE #RS8a;
+
+DECLARE @EntTypeId BIGINT = (SELECT Id FROM Audit.LogEntityType WHERE Code = N'DowntimeReasonCode');
+
+DECLARE @Desc NVARCHAR(500) = (SELECT TOP 1 Description FROM Audit.ConfigLog
+                               WHERE EntityId = @NewId AND LogEntityTypeId = @EntTypeId
+                               ORDER BY Id DESC);
+DECLARE @CreatePattern NVARCHAR(300) =
+    N'Downtime Code TST-DT-S8 ' + NCHAR(8212) + N' Mechanical (%, Excused) '
+    + Audit.ufn_MidDot() + N' Created';
+DECLARE @CreateMatch NVARCHAR(1) = CASE WHEN @Desc LIKE @CreatePattern THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'DRC_Create[S8Activity]: Description matches SUBJECT mid-dot Created',
+    @Expected = N'1',
+    @Actual   = @CreateMatch;
+
+DECLARE @NewVal NVARCHAR(MAX) = (SELECT TOP 1 NewValue FROM Audit.ConfigLog
+                                 WHERE EntityId = @NewId AND LogEntityTypeId = @EntTypeId
+                                 ORDER BY Id DESC);
+DECLARE @CreateJson NVARCHAR(1) =
+    CASE WHEN JSON_VALUE(@NewVal, '$.Area.Name') IS NOT NULL THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'DRC_Create[S8Json]: NewValue has resolved Area.Name',
+    @Expected = N'1',
+    @Actual   = @CreateJson;
+GO
+
+-- =============================================
+-- Slice 8: Update Description carries the field-diff list with
+--   boolean rendered as words and string fields quoted.
+-- =============================================
+DECLARE @S BIT, @M NVARCHAR(500);
+DECLARE @TargetId BIGINT = (SELECT Id FROM Oee.DowntimeReasonCode WHERE Code = N'TST-DT-S8');
+
+CREATE TABLE #RS8b (Status BIT, Message NVARCHAR(500));
+INSERT INTO #RS8b EXEC Oee.DowntimeReasonCode_Update
+    @Id                   = @TargetId,
+    @Description          = N'Mechanical Failure',
+    @AreaLocationId       = 3,
+    @DowntimeReasonTypeId = 1,
+    @IsExcused            = 0,         -- flip true -> false
+    @AppUserId            = 1;
+SELECT @S = Status, @M = Message FROM #RS8b;
+DROP TABLE #RS8b;
+
+DECLARE @EntTypeId BIGINT = (SELECT Id FROM Audit.LogEntityType WHERE Code = N'DowntimeReasonCode');
+DECLARE @Desc NVARCHAR(500) = (SELECT TOP 1 Description FROM Audit.ConfigLog
+                               WHERE EntityId = @TargetId AND LogEntityTypeId = @EntTypeId
+                               ORDER BY Id DESC);
+DECLARE @UpdPattern NVARCHAR(400) =
+    N'Downtime Code TST-DT-S8 ' + Audit.ufn_MidDot()
+    + N' Updated Name "Mechanical" ' + NCHAR(8594) + N' "Mechanical Failure"%Excused true '
+    + NCHAR(8594) + N' false%';
+DECLARE @UpdMatch NVARCHAR(1) = CASE WHEN @Desc LIKE @UpdPattern THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'DRC_Update[S8Activity]: Description has Name diff + Excused true->false words',
+    @Expected = N'1',
+    @Actual   = @UpdMatch;
+
+DECLARE @OldVal NVARCHAR(MAX) = (SELECT TOP 1 OldValue FROM Audit.ConfigLog
+                                 WHERE EntityId = @TargetId AND LogEntityTypeId = @EntTypeId
+                                 ORDER BY Id DESC);
+DECLARE @UpdJson NVARCHAR(1) =
+    CASE WHEN JSON_VALUE(@OldVal, '$.Area.Name') IS NOT NULL THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'DRC_Update[S8Json]: OldValue has resolved Area.Name',
+    @Expected = N'1',
+    @Actual   = @UpdJson;
+GO
+
+-- =============================================
+-- Slice 8: Deprecate Description is verb-form; OldValue resolved.
+-- =============================================
+DECLARE @S BIT, @M NVARCHAR(500);
+DECLARE @TargetId BIGINT = (SELECT Id FROM Oee.DowntimeReasonCode WHERE Code = N'TST-DT-S8');
+
+CREATE TABLE #RS8c (Status BIT, Message NVARCHAR(500));
+INSERT INTO #RS8c EXEC Oee.DowntimeReasonCode_Deprecate
+    @Id = @TargetId, @AppUserId = 1;
+DROP TABLE #RS8c;
+
+DECLARE @EntTypeId BIGINT = (SELECT Id FROM Audit.LogEntityType WHERE Code = N'DowntimeReasonCode');
+DECLARE @Desc NVARCHAR(500) = (SELECT TOP 1 Description FROM Audit.ConfigLog
+                               WHERE EntityId = @TargetId AND LogEntityTypeId = @EntTypeId
+                               ORDER BY Id DESC);
+DECLARE @DepPattern NVARCHAR(200) =
+    N'Downtime Code TST-DT-S8 ' + Audit.ufn_MidDot() + N' Deprecated';
+DECLARE @DepMatch NVARCHAR(1) = CASE WHEN @Desc LIKE @DepPattern THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'DRC_Deprecate[S8Activity]: Description is "<Code> mid-dot Deprecated"',
+    @Expected = N'1',
+    @Actual   = @DepMatch;
+
+DECLARE @OldVal NVARCHAR(MAX) = (SELECT TOP 1 OldValue FROM Audit.ConfigLog
+                                 WHERE EntityId = @TargetId AND LogEntityTypeId = @EntTypeId
+                                 ORDER BY Id DESC);
+DECLARE @DepJson NVARCHAR(1) =
+    CASE WHEN JSON_VALUE(@OldVal, '$.Area.Name') IS NOT NULL THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'DRC_Deprecate[S8Json]: OldValue has resolved Area.Name',
+    @Expected = N'1',
+    @Actual   = @DepJson;
+GO
+
+-- =============================================
 -- Cleanup: remove test rows so the suite is re-runnable
 -- =============================================
 DELETE FROM Oee.DowntimeReasonCode
-WHERE Code IN (N'TEST-DRC-001', N'TEST-DRC-002');
+WHERE Code IN (N'TEST-DRC-001', N'TEST-DRC-002', N'TST-DT-S8');
 GO
 
 EXEC test.EndTestFile;
