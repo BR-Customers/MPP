@@ -223,6 +223,59 @@
             "type": "ia.display.label"
           },
           {
+            "meta": {
+              "name": "ChangesHeader"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "11px",
+                "fontWeight": "600",
+                "letterSpacing": "0.05em",
+                "marginTop": "8px",
+                "textTransform": "uppercase"
+              },
+              "text": "Changes"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "ChangesDiff"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.source": {
+                "binding": {
+                  "config": {
+                    "expression": "runScript(\"BlueRidge.Common.Util.prettyJsonDiff\", 0, {view.params.oldValue}, {view.params.newValue})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "markdown": {
+                "escapeHtml": false
+              },
+              "source": "",
+              "style": {
+                "background": "var(--mpp-surface-card)",
+                "border": "1px solid var(--mpp-border-subtle)",
+                "borderRadius": "6px",
+                "maxHeight": "220px",
+                "overflow": "auto",
+                "padding": "10px 12px"
+              }
+            },
+            "type": "ia.display.markdown"
+          },
+          {
             "children": [
               {
                 "children": [
