@@ -2395,7 +2395,7 @@
         {
           "name": "handleNewVersion",
           "params": [],
-          "script": "\tspecId \u003d self.view.custom.selectedSpecId\n\tif not specId:\n\t\treturn\n\tres \u003d BlueRidge.Quality.QualitySpec.createNewVersion(specId)\n\tBlueRidge.Common.Ui.notifyResult(res, \"New draft version created\")\n\tif not (res and res.get(\"Status\")):\n\t\treturn\n\tnewId \u003d res.get(\"NewId\")\n\tself.refreshVersions()\n\tif newId:\n\t\tself.view.custom.activeVersionId \u003d newId"
+          "script": "\tspecId \u003d self.view.custom.selectedSpecId\n\tif not specId:\n\t\treturn\n\tres \u003d BlueRidge.Quality.QualitySpec.createNewVersion(specId)\n\tBlueRidge.Common.Ui.notifyResult(res, \"New draft version created\")\n\tif not (res and res.get(\"Status\")):\n\t\treturn\n\tnewId \u003d res.get(\"NewId\")\n\tself.refreshVersions()\n\tself.refreshSpecs()\n\tif newId:\n\t\tself.view.custom.activeVersionId \u003d newId"
         },
         {
           "name": "handleSaveDraft",
@@ -2405,7 +2405,7 @@
         {
           "name": "handlePublish",
           "params": [],
-          "script": "\tdraft \u003d self.view.custom.state.editDraft or {}\n\tvid \u003d draft.get(\"id\")\n\tif not vid:\n\t\tBlueRidge.Common.Notify.toast(\"No draft selected\", \"No draft version is active.\", \"warning\")\n\t\treturn\n\teff \u003d draft.get(\"effectiveFromDisplay\") or \"\"\n\teff \u003d eff.strip() if isinstance(eff, basestring) else eff\n\tif not eff:\n\t\tBlueRidge.Common.Notify.toast(\"Effective From required\", \"Enter an effective date before publishing.\", \"warning\")\n\t\treturn\n\tattrs \u003d draft.get(\"attributes\") or []\n\tif not attrs:\n\t\tBlueRidge.Common.Notify.toast(\"At least one attribute required\", \"Add at least one attribute before publishing.\", \"warning\")\n\t\treturn\n\tres \u003d BlueRidge.Quality.QualitySpec.publish(vid, eff, attrs)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Version published\")\n\tif res and res.get(\"Status\"):\n\t\tself.refreshVersions()\n\t\tself.loadActiveVersion()"
+          "script": "\tdraft \u003d self.view.custom.state.editDraft or {}\n\tvid \u003d draft.get(\"id\")\n\tif not vid:\n\t\tBlueRidge.Common.Notify.toast(\"No draft selected\", \"No draft version is active.\", \"warning\")\n\t\treturn\n\teff \u003d draft.get(\"effectiveFromDisplay\") or \"\"\n\teff \u003d eff.strip() if isinstance(eff, basestring) else eff\n\tif not eff:\n\t\tBlueRidge.Common.Notify.toast(\"Effective From required\", \"Enter an effective date before publishing.\", \"warning\")\n\t\treturn\n\tattrs \u003d draft.get(\"attributes\") or []\n\tif not attrs:\n\t\tBlueRidge.Common.Notify.toast(\"At least one attribute required\", \"Add at least one attribute before publishing.\", \"warning\")\n\t\treturn\n\tres \u003d BlueRidge.Quality.QualitySpec.publish(vid, eff, attrs)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Version published\")\n\tif res and res.get(\"Status\"):\n\t\tself.refreshVersions()\n\t\tself.loadActiveVersion()\n\t\tself.refreshSpecs()"
         },
         {
           "name": "openDeprecateSpecConfirm",
@@ -2495,14 +2495,14 @@
         {
           "messageType": "qsConfirmDiscardResult",
           "pageScope": true,
-          "script": "\tif not payload or payload.get(\"action\") !\u003d \"confirm\":\n\t\treturn\n\tdraft \u003d self.view.custom.state.editDraft or {}\n\tvid \u003d draft.get(\"id\")\n\tif not vid:\n\t\treturn\n\tres \u003d BlueRidge.Quality.QualitySpec.discardDraft(vid)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Draft discarded\")\n\tif res and res.get(\"Status\"):\n\t\tself.view.custom.activeVersionId \u003d None\n\t\tself.refreshVersions()\n\t\tvers \u003d self.view.custom.versions or []\n\t\tif vers:\n\t\t\tself.view.custom.activeVersionId \u003d vers[0].get(\"Id\")",
+          "script": "\tif not payload or payload.get(\"action\") !\u003d \"confirm\":\n\t\treturn\n\tdraft \u003d self.view.custom.state.editDraft or {}\n\tvid \u003d draft.get(\"id\")\n\tif not vid:\n\t\treturn\n\tres \u003d BlueRidge.Quality.QualitySpec.discardDraft(vid)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Draft discarded\")\n\tif res and res.get(\"Status\"):\n\t\tself.view.custom.activeVersionId \u003d None\n\t\tself.refreshVersions()\n\t\tself.refreshSpecs()\n\t\tvers \u003d self.view.custom.versions or []\n\t\tif vers:\n\t\t\tself.view.custom.activeVersionId \u003d vers[0].get(\"Id\")",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "qsConfirmDeprecateVersionResult",
           "pageScope": true,
-          "script": "\tif not payload or payload.get(\"action\") !\u003d \"confirm\":\n\t\treturn\n\tsel \u003d self.view.custom.state.selected or {}\n\tvid \u003d sel.get(\"id\")\n\tif not vid:\n\t\treturn\n\tres \u003d BlueRidge.Quality.QualitySpec.deprecateVersion(vid)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Version deprecated\")\n\tif res and res.get(\"Status\"):\n\t\tself.refreshVersions()\n\t\tself.loadActiveVersion()",
+          "script": "\tif not payload or payload.get(\"action\") !\u003d \"confirm\":\n\t\treturn\n\tsel \u003d self.view.custom.state.selected or {}\n\tvid \u003d sel.get(\"id\")\n\tif not vid:\n\t\treturn\n\tres \u003d BlueRidge.Quality.QualitySpec.deprecateVersion(vid)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Version deprecated\")\n\tif res and res.get(\"Status\"):\n\t\tself.refreshVersions()\n\t\tself.loadActiveVersion()\n\t\tself.refreshSpecs()",
           "sessionScope": false,
           "viewScope": false
         },
