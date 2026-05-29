@@ -333,10 +333,14 @@ def deprecateSpec(specId):
         "appUserId": BlueRidge.Common.Util._currentAppUserId()})
 
 
-def createNewVersion(specId):
-    """Routes: no versions -> QualitySpecVersion_Create (v1); else clone
-    latest non-deprecated via _CreateNewVersion. Refuses if a Draft exists."""
+def createNewVersion(specId, sourceVersionId=None):
+    """Routes: no versions -> QualitySpecVersion_Create (v1); else clone the
+    currently SELECTED version (sourceVersionId) as the template, falling back
+    to the latest non-deprecated when no/invalid selection is given.
+    _CreateNewVersion can clone any source (published or deprecated). Refuses
+    if a Draft already exists."""
     specId = _u(specId)
+    sourceVersionId = _u(sourceVersionId)
     if not specId:
         return {"Status": False, "Message": "No spec selected.", "NewId": None}
     vers = listVersions(specId, True)
@@ -349,8 +353,15 @@ def createNewVersion(specId):
             return {"Status": False, "Message":
                     "A draft already exists for this spec. Open or discard it first.",
                     "NewId": None}
-    nonDep = [v for v in vers if v.get("DeprecatedAt") is None]
-    source = (nonDep[0] if nonDep else vers[0]).get("Id")
+    source = None
+    if sourceVersionId is not None:
+        for v in vers:
+            if v.get("Id") == sourceVersionId:
+                source = sourceVersionId
+                break
+    if source is None:
+        nonDep = [v for v in vers if v.get("DeprecatedAt") is None]
+        source = (nonDep[0] if nonDep else vers[0]).get("Id")
     return BlueRidge.Common.Db.execMutation("quality/QualitySpecVersion_CreateNewVersion",
         {"sourceVersionId": source, "effectiveFrom": None,
          "appUserId": BlueRidge.Common.Util._currentAppUserId()})
