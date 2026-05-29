@@ -2,7 +2,7 @@
 -- Procedure:   Location.Location_Deprecate
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-13
--- Version:     2.0
+-- Version:     2.1
 --
 -- Description:
 --   Soft-deletes a Location by setting DeprecatedAt. Validates that the
@@ -29,6 +29,9 @@
 -- Change Log:
 --   2026-04-13 - 1.0 - Initial version
 --   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
+--   2026-05-29 - 2.1 - Audit-readability convention (Slice 6 Plant Hierarchy):
+--                       human-readable Description narrative + resolved-FK
+--                       OldValue/NewValue JSON. New = NULL on deprecate.
 -- =============================================
 CREATE OR ALTER PROCEDURE Location.Location_Deprecate
     @Id        BIGINT,
@@ -123,23 +126,38 @@ BEGIN
         -- TODO: check Lots.Lot.CurrentLocationId when Lots schema exists
 
         -- ====================
-        -- Capture old values for audit
+        -- Capture old values for audit (BEFORE the mutation)
         -- ====================
-        DECLARE @OldValue NVARCHAR(MAX);
-        DECLARE @ParentId BIGINT;
-        SELECT @OldValue =
-            (SELECT Name,
-                    Code,
-                    Description,
-                    SortOrder,
-                    ParentLocationId,
-                    DeprecatedAt
-             FROM Location.Location
-             WHERE Id = @Id
-             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER),
-               @ParentId = ParentLocationId
+        DECLARE @ParentId BIGINT, @LocCode NVARCHAR(50), @LocName NVARCHAR(200);
+        SELECT @ParentId = ParentLocationId,
+               @LocCode  = Code,
+               @LocName  = Name
         FROM Location.Location
         WHERE Id = @Id;
+
+        -- Resolved-FK OldValue snapshot (pre-deprecate state)
+        DECLARE @OldValue NVARCHAR(MAX) = (
+            SELECT
+                l.Name,
+                l.Code,
+                l.Description,
+                l.SortOrder,
+                JSON_QUERY((SELECT p.Id, p.Code, p.Name
+                            FROM Location.Location p WHERE p.Id = l.ParentLocationId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))                  AS Parent,
+                JSON_QUERY((SELECT ltd.Id, ltd.Name
+                            FROM Location.LocationTypeDefinition ltd WHERE ltd.Id = l.LocationTypeDefinitionId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))                  AS LocationTypeDefinition
+            FROM Location.Location l
+            WHERE l.Id = @Id
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
+        DECLARE @ActivityRaw NVARCHAR(MAX) =
+            N'Location ' + @LocCode + N' ' + NCHAR(8212) + N' ' + @LocName +
+            N' ' + Audit.ufn_MidDot() + N' Deprecated';
+
+        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
 
         -- ====================
         -- Mutation (atomic)
@@ -177,29 +195,18 @@ BEGIN
             INNER JOIN Renumbered r ON r.Id = loc.Id;
         END
 
-        -- Capture new state for audit
-        DECLARE @NewValue NVARCHAR(MAX);
-        SELECT @NewValue =
-            (SELECT Name,
-                    Code,
-                    Description,
-                    SortOrder,
-                    ParentLocationId,
-                    DeprecatedAt
-             FROM Location.Location
-             WHERE Id = @Id
-             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
-
-        -- Success audit INSIDE the transaction
+        -- Success audit INSIDE the transaction.
+        -- NewValue is NULL on deprecate per audit-readability convention
+        -- (the entity ceases to be active; Old holds the final snapshot).
         EXEC Audit.Audit_LogConfigChange
             @AppUserId         = @AppUserId,
             @LogEntityTypeCode = N'Location',
             @EntityId          = @Id,
             @LogEventTypeCode  = N'Deprecated',
             @LogSeverityCode   = N'Info',
-            @Description       = N'Location deprecated.',
+            @Description       = @Activity,
             @OldValue          = @OldValue,
-            @NewValue          = @NewValue;
+            @NewValue          = NULL;
 
         COMMIT TRANSACTION;
 

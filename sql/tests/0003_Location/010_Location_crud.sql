@@ -609,6 +609,87 @@ EXEC test.Assert_IsEqual
 GO
 
 -- =============================================
+-- Test 16: Audit-readability — Create narrative + resolved-FK JSON
+--   The Madison Plant (MPP-MADISON) was created under the MPP enterprise root.
+-- =============================================
+DECLARE @CreateDesc NVARCHAR(500), @CreateNew NVARCHAR(MAX);
+SELECT TOP 1 @CreateDesc = cl.Description, @CreateNew = cl.NewValue
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType let ON let.Id = cl.LogEntityTypeId
+WHERE let.Code = N'Location'
+  AND cl.Description LIKE N'Location MPP-MADISON %'
+  AND cl.Description LIKE N'% Created%'
+ORDER BY cl.Id DESC;
+
+EXEC test.Assert_Contains
+    @TestName    = N'Create audit: Description matches "Location <Code> ... Created under ..."',
+    @HaystackStr = @CreateDesc,
+    @NeedleStr   = N'Created under MPP';
+
+EXEC test.Assert_Contains
+    @TestName    = N'Create audit: NewValue JSON carries LocationTypeDefinition FK sub-object',
+    @HaystackStr = @CreateNew,
+    @NeedleStr   = N'"LocationTypeDefinition":{';
+
+EXEC test.Assert_Contains
+    @TestName    = N'Create audit: NewValue JSON carries Parent FK sub-object',
+    @HaystackStr = @CreateNew,
+    @NeedleStr   = N'"Parent":{';
+GO
+
+-- =============================================
+-- Test 17: Audit-readability — Update narrative + resolved-FK JSON
+--   MPP-DC was renamed in Test 10.
+-- =============================================
+DECLARE @UpdateDesc NVARCHAR(500), @UpdateOld NVARCHAR(MAX);
+SELECT TOP 1 @UpdateDesc = cl.Description, @UpdateOld = cl.OldValue
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType let ON let.Id = cl.LogEntityTypeId
+WHERE let.Code = N'Location'
+  AND cl.Description LIKE N'Location MPP-DC % Updated %'
+ORDER BY cl.Id DESC;
+
+EXEC test.Assert_Contains
+    @TestName    = N'Update audit: Description shows a Name field diff arrow',
+    @HaystackStr = @UpdateDesc,
+    @NeedleStr   = N'Name "';
+
+EXEC test.Assert_Contains
+    @TestName    = N'Update audit: OldValue JSON carries LocationTypeDefinition FK sub-object',
+    @HaystackStr = @UpdateOld,
+    @NeedleStr   = N'"LocationTypeDefinition":{';
+GO
+
+-- =============================================
+-- Test 18: Audit-readability — Deprecate narrative + resolved-FK JSON
+--   MPP-CNC (CNC Area) was deprecated in Test 12.
+-- =============================================
+DECLARE @DepDesc NVARCHAR(500), @DepOld NVARCHAR(MAX), @DepNew NVARCHAR(MAX);
+SELECT TOP 1 @DepDesc = cl.Description, @DepOld = cl.OldValue, @DepNew = cl.NewValue
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType let ON let.Id = cl.LogEntityTypeId
+WHERE let.Code = N'Location'
+  AND cl.Description LIKE N'Location MPP-CNC % Deprecated'
+ORDER BY cl.Id DESC;
+
+EXEC test.Assert_Contains
+    @TestName    = N'Deprecate audit: Description ends with Deprecated',
+    @HaystackStr = @DepDesc,
+    @NeedleStr   = N'Deprecated';
+
+EXEC test.Assert_Contains
+    @TestName    = N'Deprecate audit: OldValue JSON carries LocationTypeDefinition FK sub-object',
+    @HaystackStr = @DepOld,
+    @NeedleStr   = N'"LocationTypeDefinition":{';
+
+DECLARE @DepNewIsNull NVARCHAR(1) = CASE WHEN @DepNew IS NULL THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'Deprecate audit: NewValue is NULL per convention',
+    @Expected = N'1',
+    @Actual   = @DepNewIsNull;
+GO
+
+-- =============================================
 -- Cleanup: remove test data to restore clean state
 -- =============================================
 
