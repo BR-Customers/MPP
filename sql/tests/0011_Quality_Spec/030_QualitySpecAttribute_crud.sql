@@ -373,7 +373,9 @@ WHERE qs.Name = N'Test Spec For Attributes' AND qsv.VersionNumber = 1;
 
 CREATE TABLE #ListResult (
     Id BIGINT, QualitySpecVersionId BIGINT, AttributeName NVARCHAR(100),
-    DataType NVARCHAR(50), Uom NVARCHAR(20), TargetValue DECIMAL(18,6),
+    DataType NVARCHAR(50), Uom NVARCHAR(20),
+    UomId BIGINT, UomCode NVARCHAR(50), UomName NVARCHAR(200),
+    TargetValue DECIMAL(18,6),
     LowerLimit DECIMAL(18,6), UpperLimit DECIMAL(18,6), IsRequired BIT, SortOrder INT
 );
 
