@@ -61,6 +61,12 @@
 #   2026-05-19 - 1.2 - Add prettyJson. Formats JSON strings with 2-space
 #                      indentation for the FailureDetail audit popup;
 #                      gracefully handles None + malformed input.
+#   2026-05-28 - 1.3 - Add summarizeJsonDiff (+ _formatDiffValue helper)
+#                      for the AuditLog "Changes" column. Compact one-line
+#                      diff summary computed from Audit.ConfigLog
+#                      OldValue / NewValue JSON snapshots. Identity-style
+#                      keys (Id, RowVersion, AppUserId, UserId) are
+#                      excluded so they don't crowd the meaningful fields.
 # =============================================================================
 
 import re
@@ -365,6 +371,139 @@ def prettyJson(jsonString):
         return system.util.jsonEncode(parsed, 2)
     except Exception:
         return jsonString
+
+
+# Identity / audit columns that show up in audit JSON payloads but aren't
+# conceptually "changes" — skip them so the diff summary shows real edits.
+_DIFF_SKIP_KEYS = ("Id", "RowVersion", "AppUserId", "UserId")
+
+
+def _formatDiffValue(value, maxLen=30):
+    """Render one JSON value for the inline ChangesSummary diff string.
+
+    None becomes the empty-set glyph (visually distinct from the literal
+    string 'None'); strings are quoted so spaces read clearly; everything
+    else is str()-ified. Values longer than maxLen are truncated with an
+    ellipsis so a single huge field can't blow the table column out.
+    """
+    if value is None:
+        return u"∅"
+    if isinstance(value, basestring):
+        s = value
+        if len(s) > maxLen:
+            s = s[:maxLen - 1] + u"…"
+        return u'"' + s + u'"'
+    s = unicode(value)
+    if len(s) > maxLen:
+        s = s[:maxLen - 1] + u"…"
+    return s
+
+
+def summarizeJsonDiff(oldJson, newJson, maxFields=3):
+    """Compact one-line diff summary for the AuditLog "Changes" column.
+
+    Compares the OldValue / NewValue JSON snapshots an Audit.ConfigLog row
+    carries and returns a single short string suitable for inline display
+    next to the templated Description. The full pretty-printed payload
+    still lives in the ConfigChangeDetail popup -- this helper is the
+    scannable summary, not the source of truth.
+
+    Output shapes:
+        Create (old NULL):       "+ Code, Name, Description"
+        Deprecate (new NULL):    "- Code, Name, Description"
+        Field added:             "+DeprecatedAt: \"2026-05-28...\""
+        Field removed:           "-LegacyFlag"
+        Field changed:           "CountryOfOrigin: \"US\" -> \"MX\""
+        No meaningful diff:      ""
+        Overflow:                "..., +N more"  (cap = maxFields)
+
+    Identity-style keys (_DIFF_SKIP_KEYS) are filtered before counting so
+    a row whose only "change" is an Id echo renders as "" (truthful).
+
+    Args:
+        oldJson (str | None): Audit.ConfigLog.OldValue JSON string.
+        newJson (str | None): Audit.ConfigLog.NewValue JSON string.
+        maxFields (int):      Inline-display cap; overflow becomes "+N more".
+
+    Returns:
+        str: Compact diff. Empty string when both sides are null,
+             unparseable, or structurally identical after skip-key filtering.
+    """
+    def _decode(s):
+        if s is None:
+            return None
+        try:
+            return system.util.jsonDecode(s)
+        except Exception:
+            return None
+
+    oldObj = _decode(oldJson)
+    newObj = _decode(newJson)
+
+    if oldObj is None and newObj is None:
+        return ""
+
+    def _meaningfulKeys(obj):
+        if not isinstance(obj, dict):
+            return []
+        return [k for k in obj.keys() if k not in _DIFF_SKIP_KEYS]
+
+    if oldObj is None:
+        keys = _meaningfulKeys(newObj)
+        if not keys:
+            return ""
+        shown = keys[:maxFields]
+        suffix = u" +%d more" % (len(keys) - maxFields) if len(keys) > maxFields else u""
+        return u"+ " + u", ".join(shown) + suffix
+
+    if newObj is None:
+        keys = _meaningfulKeys(oldObj)
+        if not keys:
+            return ""
+        shown = keys[:maxFields]
+        suffix = u" +%d more" % (len(keys) - maxFields) if len(keys) > maxFields else u""
+        return u"- " + u", ".join(shown) + suffix
+
+    if not isinstance(oldObj, dict) or not isinstance(newObj, dict):
+        return ""
+
+    # Preserve a stable display order: old keys first, then new-only keys.
+    seen = set()
+    allKeys = []
+    for k in list(oldObj.keys()) + list(newObj.keys()):
+        if k in _DIFF_SKIP_KEYS or k in seen:
+            continue
+        seen.add(k)
+        allKeys.append(k)
+
+    diffs = []
+    for k in allKeys:
+        if k in oldObj and k in newObj:
+            if oldObj[k] != newObj[k]:
+                diffs.append(("change", k, oldObj[k], newObj[k]))
+        elif k in newObj:
+            diffs.append(("add", k, None, newObj[k]))
+        else:
+            diffs.append(("remove", k, oldObj[k], None))
+
+    if not diffs:
+        return ""
+
+    shown = diffs[:maxFields]
+    parts = []
+    for kind, key, oldVal, newVal in shown:
+        if kind == "add":
+            parts.append(u"+%s: %s" % (key, _formatDiffValue(newVal)))
+        elif kind == "remove":
+            parts.append(u"-%s" % key)
+        else:
+            parts.append(u"%s: %s → %s" % (
+                key,
+                _formatDiffValue(oldVal),
+                _formatDiffValue(newVal),
+            ))
+    suffix = u" +%d more" % (len(diffs) - maxFields) if len(diffs) > maxFields else u""
+    return u", ".join(parts) + suffix
 
 
 def convertWrapperObjectToJson(obj):

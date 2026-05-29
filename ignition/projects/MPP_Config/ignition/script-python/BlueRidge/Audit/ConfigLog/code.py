@@ -36,7 +36,8 @@ def search(filter):
               count on exception (toast fires). Each row has columns
               Id, LoggedAt, UserId, UserDisplayName, LogEntityTypeCode,
               LogEntityTypeName, EntityId, LogEventTypeId, LogEventTypeCode,
-              LogSeverityId, LogSeverityCode, Description, OldValue, NewValue.
+              LogSeverityId, LogSeverityCode, Description, OldValue, NewValue,
+              ChangesSummary (computed inline diff for the table column).
     """
     f = _u(filter) or {}
     BlueRidge.Common.Util.log("search filter=%s" % f)
@@ -54,6 +55,11 @@ def search(filter):
         for r in rows:
             if "TotalCount" in r:
                 del r["TotalCount"]
+            # Compact inline diff for the AuditLog "Changes" column. Full
+            # pretty-printed payload still surfaces in ConfigChangeDetail.
+            r["ChangesSummary"] = BlueRidge.Common.Util.summarizeJsonDiff(
+                r.get("OldValue"), r.get("NewValue")
+            )
         return {"rows": rows, "totalCount": totalCount}
     except Exception as e:
         BlueRidge.Common.Util.log("search failed: %s" % str(e))
