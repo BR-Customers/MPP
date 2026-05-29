@@ -1,0 +1,1 @@
+EXEC Quality.QualitySpecAttribute_ListByVersion @QualitySpecVersionId = :qualitySpecVersionId
