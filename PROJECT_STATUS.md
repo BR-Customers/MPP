@@ -1,10 +1,22 @@
 # MPP MES — Project Status
 
-**Last updated:** 2026-05-29 (**Audit-readability refactor COMPLETE — Slices 1–8 + 2.5 all landed.** The `SUBJECT · CATEGORY · ACTION` convention + resolved-FK `OldValue`/`NewValue` JSON now span all ~31 audit-writing procs (Eligibility, BOMs, Routes, Item core, Plant Hierarchy, LocationTypeEditor, Downtime + Defect codes). Slices 3–8 drafted in parallel by subagents, serialized + verified. Slice 2.5 added `Common.Util.prettyJsonDiff` + a colorized unified-diff `ia.display.markdown` block in the ConfigChangeDetail popup. **SQL tests 1136/1136.** Next: build the Quality Spec Config Tool. ⚠️ One visual smoke pending — confirm the popup Changes-diff renders with color in a session.)
+**Last updated:** 2026-05-29 (**Quality Spec Config Tool — backend + main views built (Phases A–E + G); pending human smoke + Phases F/H.** SQL layer (migration 0017, 3 net-new procs `QualitySpecVersion_SaveDraft`/`QualitySpec_Deprecate`/`QualitySpecVersion_DiscardDraft`, readable-audit on all quality procs, **SQL tests 1161/1161**); 14 named queries; extended `BlueRidge.Quality.QualitySpec` entity script (Script-Console-verified); `QualitySpecAttributeRow` sub-view; `/quality-specs` master-detail screen; route + sidebar nav already present. Remaining: **smoke-test `/quality-specs`**, then F (New Spec modal — E has an inline-create stopgap) + H (Item Master "Go to spec →" cross-nav). Earlier today: audit-readability refactor COMPLETE (Slices 1–8 + 2.5); its popup Changes-diff visual smoke also still pending.)
 
 ---
 
-## 🔖 Next Session Pickup — Build the Quality Spec Config Tool (audit refactor is DONE)
+## 🔖 Next Session Pickup — Quality Spec Config Tool: smoke-test `/quality-specs`, then Phases F + H
+
+**State of play.** Backend + the two main views are built and committed (Phases A–E); the route + sidebar entry already exist (G). The tool is reachable at `/quality-specs`. **SQL tests 1161/1161.** Not yet smoke-tested in a session.
+
+**Smoke first (Phase I, focused).** Navigate to `/quality-specs` and walk: library list + search/type filter; `+ New Spec` (currently an inline create — names it "New Quality Spec", you rename); `+ New Version` → v1 Draft; attribute grid (`+ Add Attribute`, DataType=Boolean/Text disables UOM/limits, ▲▼ reorder, ✕ remove, dirty dot, tab/row-switch gated by ConfirmUnsaved); `Save Draft` reload persists UomId; `Publish` (prior Published NOT auto-deprecated; future EffectiveFrom = "Scheduled"); `Deprecate Version`/`Discard Draft`; `Deprecate Spec`; `/audit` shows readable `… · Quality Spec "…" v… · …` rows with resolved `Uom` JSON.
+
+**Riskiest bindings to check first** (flagged by the Phase-E build): (1) library `ia.display.table` row-click uses `onSelectionChange` → `qsSpecRowClicked` (the `event.selectedRow` / guard-`<0` gotcha); (2) inline `+ New Spec` `handleNewSpec`; (3) Version History table reads assumed `CreatedBy*` columns from `QualitySpecVersion_ListBySpec` (render blank if absent, not error). Known SQL gap: `QualitySpec_Get` doesn't SELECT `DeprecatedAt`, so the header can't show a deprecated badge (library already hides deprecated specs) — one-line add + scratch-table widen if needed.
+
+**Then Phases F + H.** F = New Spec modal (`Components/Quality/NewSpecModal`, plan §F1) with Name/Item/Op/Description/EffectiveDate fields; rewire the screen's `+ New Spec` button from the inline `handleNewSpec` to open the modal (`qsSpecCreated` page-msg refreshes + selects). H = Item Master Quality Specs embed "Go to spec →" → `system.perspective.navigate("/quality-specs", {specId})` (or `session.custom.qsIncomingSpecId`); the screen's `initIncoming` already reads it on startup.
+
+---
+
+### (superseded) Build the Quality Spec Config Tool (audit refactor is DONE)
 
 **State of play.** The project-wide audit-readability refactor is **complete across all 8 slices + 2.5**. Every audit-writing proc now emits the `SUBJECT · CATEGORY · ACTION` narrative `Description` + resolved-FK `OldValue`/`NewValue` JSON. **SQL tests 1136/1136.** Slices landed:
 
