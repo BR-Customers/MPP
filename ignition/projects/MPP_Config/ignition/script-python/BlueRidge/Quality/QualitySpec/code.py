@@ -176,6 +176,39 @@ def buildSpecListRows(specs, selectedSpecId):
     return out
 
 
+def buildVersionHistoryRows(versions):
+    """Pure transform for the VersionHistoryRow flex-repeater. Takes the
+    version summary rows (already loaded into view.custom.versions by
+    listVersions) and flattens them to the row sub-view's input params:
+      [{version, state, effectiveFrom, createdBy, createdAt}, ...]
+
+    State is re-derived from PublishedAt / DeprecatedAt so the badge is
+    independent of the proc's State column. No DB call -- safe to call from
+    a component (props.instances) binding. No non-ASCII placeholders: blank
+    fields render as "" so nothing mojibakes.
+    """
+    versions = _u(versions) or []
+    out = []
+    for v in versions:
+        v = _u(v) or {}
+        if v.get("DeprecatedAt") is not None:
+            state = "Deprecated"
+        elif v.get("PublishedAt") is None:
+            state = "Draft"
+        else:
+            state = "Published"
+        createdAt = v.get("CreatedAt")
+        createdAtDisp = str(createdAt)[:16] if createdAt is not None else ""
+        out.append({
+            "version": "v" + str(v.get("VersionNumber")),
+            "state": state,
+            "effectiveFrom": v.get("effectiveFromDisplay") or "",
+            "createdBy": v.get("CreatedByDisplayName") or "",
+            "createdAt": createdAtDisp,
+        })
+    return out
+
+
 def getSpecHeader(specId):
     """Header dict (name, description, link display) or empty shape."""
     specId = _u(specId)

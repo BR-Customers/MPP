@@ -1665,513 +1665,129 @@
                   {
                     "children": [
                       {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "ColVersion"
+                            },
+                            "position": {
+                              "basis": "80px",
+                              "shrink": 0
+                            },
+                            "props": {
+                              "text": "Version"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "ColState"
+                            },
+                            "position": {
+                              "basis": "120px",
+                              "shrink": 0
+                            },
+                            "props": {
+                              "text": "State"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "ColEffectiveFrom"
+                            },
+                            "position": {
+                              "basis": "160px",
+                              "grow": 1
+                            },
+                            "props": {
+                              "text": "Effective From"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "ColCreatedBy"
+                            },
+                            "position": {
+                              "basis": "0",
+                              "grow": 1
+                            },
+                            "props": {
+                              "text": "Created By"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "ColCreatedAt"
+                            },
+                            "position": {
+                              "basis": "160px",
+                              "shrink": 0
+                            },
+                            "props": {
+                              "text": "Created"
+                            },
+                            "type": "ia.display.label"
+                          }
+                        ],
                         "meta": {
-                          "name": "VersionHistoryTable"
+                          "name": "VersionHistoryHeader"
                         },
                         "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "alignItems": "center",
+                          "style": {
+                            "background": "var(--mpp-surface-card)",
+                            "borderBottom": "1px solid var(--mpp-border-subtle)",
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "11px",
+                            "fontWeight": "600",
+                            "gap": "6px",
+                            "letterSpacing": "0.05em",
+                            "padding": "8px 10px",
+                            "textTransform": "uppercase"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "meta": {
+                          "name": "VersionHistoryRepeater"
+                        },
+                        "position": {
+                          "basis": "0",
                           "grow": 1
                         },
                         "propConfig": {
-                          "props.data": {
+                          "props.instances": {
                             "binding": {
                               "config": {
-                                "path": "view.custom.versions"
+                                "expression": "runScript(\"BlueRidge.Quality.QualitySpec.buildVersionHistoryRows\", 0, {view.custom.versions})"
                               },
-                              "transforms": [
-                                {
-                                  "code": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\tout \u003d []\n\tfor v in rows:\n\t\tv \u003d v or {}\n\t\tpub \u003d v.get(\u0027PublishedAt\u0027)\n\t\tdep \u003d v.get(\u0027DeprecatedAt\u0027)\n\t\tif dep is not None:\n\t\t\tstate \u003d \u0027Deprecated\u0027\n\t\telif pub is None:\n\t\t\tstate \u003d \u0027Draft\u0027\n\t\telse:\n\t\t\tstate \u003d \u0027Published\u0027\n\t\tout.append({\n\t\t\t\u0027Version\u0027: \u0027v\u0027 + str(v.get(\u0027VersionNumber\u0027) or \u0027\u0027),\n\t\t\t\u0027EffectiveFrom\u0027: v.get(\u0027effectiveFromDisplay\u0027) or \u0027\u0027,\n\t\t\t\u0027DeprecatedAt\u0027: str(dep)[:10] if dep is not None else \u0027—\u0027,\n\t\t\t\u0027State\u0027: state,\n\t\t\t\u0027CreatedBy\u0027: v.get(\u0027CreatedByName\u0027) or v.get(\u0027CreatedBy\u0027) or \u0027\u0027,\n\t\t\t\u0027CreatedAt\u0027: str(v.get(\u0027CreatedAt\u0027))[:16] if v.get(\u0027CreatedAt\u0027) is not None else \u0027\u0027\n\t\t})\n\treturn out",
-                                  "type": "script"
-                                }
-                              ],
-                              "type": "property"
+                              "type": "expr"
                             }
                           }
                         },
                         "props": {
-                          "columns": [
-                            {
-                              "align": "center",
-                              "boolean": "checkbox",
-                              "dateFormat": "MM/DD/YYYY",
-                              "editable": false,
-                              "field": "Version",
-                              "filter": {
-                                "boolean": "both",
-                                "enabled": false,
-                                "number": {
-                                  "condition": "\u003d",
-                                  "value": null
-                                },
-                                "string": {
-                                  "condition": "contains",
-                                  "value": ""
-                                },
-                                "visible": true
-                              },
-                              "footer": {
-                                "align": "center",
-                                "justify": "left",
-                                "style": {
-                                  "classes": ""
-                                },
-                                "title": ""
-                              },
-                              "header": {
-                                "align": "center",
-                                "justify": "left",
-                                "style": {
-                                  "classes": ""
-                                },
-                                "title": "Version"
-                              },
-                              "justify": "auto",
-                              "nullFormat": {
-                                "nullValue": "",
-                                "strict": false
-                              },
-                              "number": "value",
-                              "numberFormat": "0,0.##",
-                              "progressBar": {
-                                "bar": {
-                                  "color": ""
-                                },
-                                "max": 100,
-                                "min": 0,
-                                "track": {
-                                  "color": ""
-                                },
-                                "value": {
-                                  "enabled": true,
-                                  "format": "0",
-                                  "justify": "center",
-                                  "style": {}
-                                }
-                              },
-                              "render": "auto",
-                              "resizable": false,
-                              "sort": "none",
-                              "sortable": false,
-                              "strictWidth": false,
-                              "style": {
-                                "classes": ""
-                              },
-                              "toggleSwitch": {
-                                "color": {
-                                  "selected": "",
-                                  "unselected": ""
-                                }
-                              },
-                              "viewParams": {},
-                              "viewPath": "",
-                              "visible": true,
-                              "width": 80
-                            },
-                            {
-                              "align": "center",
-                              "boolean": "checkbox",
-                              "dateFormat": "MM/DD/YYYY",
-                              "editable": false,
-                              "field": "EffectiveFrom",
-                              "filter": {
-                                "boolean": "both",
-                                "enabled": false,
-                                "number": {
-                                  "condition": "\u003d",
-                                  "value": null
-                                },
-                                "string": {
-                                  "condition": "contains",
-                                  "value": ""
-                                },
-                                "visible": true
-                              },
-                              "footer": {
-                                "align": "center",
-                                "justify": "left",
-                                "style": {
-                                  "classes": ""
-                                },
-                                "title": ""
-                              },
-                              "header": {
-                                "align": "center",
-                                "justify": "left",
-                                "style": {
-                                  "classes": ""
-                                },
-                                "title": "Effective From"
-                              },
-                              "justify": "auto",
-                              "nullFormat": {
-                                "nullValue": "",
-                                "strict": false
-                              },
-                              "number": "value",
-                              "numberFormat": "0,0.##",
-                              "progressBar": {
-                                "bar": {
-                                  "color": ""
-                                },
-                                "max": 100,
-                                "min": 0,
-                                "track": {
-                                  "color": ""
-                                },
-                                "value": {
-                                  "enabled": true,
-                                  "format": "0",
-                                  "justify": "center",
-                                  "style": {}
-                                }
-                              },
-                              "render": "auto",
-                              "resizable": false,
-                              "sort": "none",
-                              "sortable": false,
-                              "strictWidth": false,
-                              "style": {
-                                "classes": ""
-                              },
-                              "toggleSwitch": {
-                                "color": {
-                                  "selected": "",
-                                  "unselected": ""
-                                }
-                              },
-                              "viewParams": {},
-                              "viewPath": "",
-                              "visible": true,
-                              "width": 0
-                            },
-                            {
-                              "align": "center",
-                              "boolean": "checkbox",
-                              "dateFormat": "MM/DD/YYYY",
-                              "editable": false,
-                              "field": "DeprecatedAt",
-                              "filter": {
-                                "boolean": "both",
-                                "enabled": false,
-                                "number": {
-                                  "condition": "\u003d",
-                                  "value": null
-                                },
-                                "string": {
-                                  "condition": "contains",
-                                  "value": ""
-                                },
-                                "visible": true
-                              },
-                              "footer": {
-                                "align": "center",
-                                "justify": "left",
-                                "style": {
-                                  "classes": ""
-                                },
-                                "title": ""
-                              },
-                              "header": {
-                                "align": "center",
-                                "justify": "left",
-                                "style": {
-                                  "classes": ""
-                                },
-                                "title": "Deprecated At"
-                              },
-                              "justify": "auto",
-                              "nullFormat": {
-                                "nullValue": "",
-                                "strict": false
-                              },
-                              "number": "value",
-                              "numberFormat": "0,0.##",
-                              "progressBar": {
-                                "bar": {
-                                  "color": ""
-                                },
-                                "max": 100,
-                                "min": 0,
-                                "track": {
-                                  "color": ""
-                                },
-                                "value": {
-                                  "enabled": true,
-                                  "format": "0",
-                                  "justify": "center",
-                                  "style": {}
-                                }
-                              },
-                              "render": "auto",
-                              "resizable": false,
-                              "sort": "none",
-                              "sortable": false,
-                              "strictWidth": false,
-                              "style": {
-                                "classes": ""
-                              },
-                              "toggleSwitch": {
-                                "color": {
-                                  "selected": "",
-                                  "unselected": ""
-                                }
-                              },
-                              "viewParams": {},
-                              "viewPath": "",
-                              "visible": true,
-                              "width": 0
-                            },
-                            {
-                              "align": "center",
-                              "boolean": "checkbox",
-                              "dateFormat": "MM/DD/YYYY",
-                              "editable": false,
-                              "field": "State",
-                              "filter": {
-                                "boolean": "both",
-                                "enabled": false,
-                                "number": {
-                                  "condition": "\u003d",
-                                  "value": null
-                                },
-                                "string": {
-                                  "condition": "contains",
-                                  "value": ""
-                                },
-                                "visible": true
-                              },
-                              "footer": {
-                                "align": "center",
-                                "justify": "left",
-                                "style": {
-                                  "classes": ""
-                                },
-                                "title": ""
-                              },
-                              "header": {
-                                "align": "center",
-                                "justify": "left",
-                                "style": {
-                                  "classes": ""
-                                },
-                                "title": "State"
-                              },
-                              "justify": "auto",
-                              "nullFormat": {
-                                "nullValue": "",
-                                "strict": false
-                              },
-                              "number": "value",
-                              "numberFormat": "0,0.##",
-                              "progressBar": {
-                                "bar": {
-                                  "color": ""
-                                },
-                                "max": 100,
-                                "min": 0,
-                                "track": {
-                                  "color": ""
-                                },
-                                "value": {
-                                  "enabled": true,
-                                  "format": "0",
-                                  "justify": "center",
-                                  "style": {}
-                                }
-                              },
-                              "render": "auto",
-                              "resizable": false,
-                              "sort": "none",
-                              "sortable": false,
-                              "strictWidth": false,
-                              "style": {
-                                "classes": ""
-                              },
-                              "toggleSwitch": {
-                                "color": {
-                                  "selected": "",
-                                  "unselected": ""
-                                }
-                              },
-                              "viewParams": {},
-                              "viewPath": "",
-                              "visible": true,
-                              "width": 120
-                            },
-                            {
-                              "align": "center",
-                              "boolean": "checkbox",
-                              "dateFormat": "MM/DD/YYYY",
-                              "editable": false,
-                              "field": "CreatedBy",
-                              "filter": {
-                                "boolean": "both",
-                                "enabled": false,
-                                "number": {
-                                  "condition": "\u003d",
-                                  "value": null
-                                },
-                                "string": {
-                                  "condition": "contains",
-                                  "value": ""
-                                },
-                                "visible": true
-                              },
-                              "footer": {
-                                "align": "center",
-                                "justify": "left",
-                                "style": {
-                                  "classes": ""
-                                },
-                                "title": ""
-                              },
-                              "header": {
-                                "align": "center",
-                                "justify": "left",
-                                "style": {
-                                  "classes": ""
-                                },
-                                "title": "Created By"
-                              },
-                              "justify": "auto",
-                              "nullFormat": {
-                                "nullValue": "",
-                                "strict": false
-                              },
-                              "number": "value",
-                              "numberFormat": "0,0.##",
-                              "progressBar": {
-                                "bar": {
-                                  "color": ""
-                                },
-                                "max": 100,
-                                "min": 0,
-                                "track": {
-                                  "color": ""
-                                },
-                                "value": {
-                                  "enabled": true,
-                                  "format": "0",
-                                  "justify": "center",
-                                  "style": {}
-                                }
-                              },
-                              "render": "auto",
-                              "resizable": false,
-                              "sort": "none",
-                              "sortable": false,
-                              "strictWidth": false,
-                              "style": {
-                                "classes": ""
-                              },
-                              "toggleSwitch": {
-                                "color": {
-                                  "selected": "",
-                                  "unselected": ""
-                                }
-                              },
-                              "viewParams": {},
-                              "viewPath": "",
-                              "visible": true,
-                              "width": 0
-                            },
-                            {
-                              "align": "center",
-                              "boolean": "checkbox",
-                              "dateFormat": "MM/DD/YYYY",
-                              "editable": false,
-                              "field": "CreatedAt",
-                              "filter": {
-                                "boolean": "both",
-                                "enabled": false,
-                                "number": {
-                                  "condition": "\u003d",
-                                  "value": null
-                                },
-                                "string": {
-                                  "condition": "contains",
-                                  "value": ""
-                                },
-                                "visible": true
-                              },
-                              "footer": {
-                                "align": "center",
-                                "justify": "left",
-                                "style": {
-                                  "classes": ""
-                                },
-                                "title": ""
-                              },
-                              "header": {
-                                "align": "center",
-                                "justify": "left",
-                                "style": {
-                                  "classes": ""
-                                },
-                                "title": "Created At"
-                              },
-                              "justify": "auto",
-                              "nullFormat": {
-                                "nullValue": "",
-                                "strict": false
-                              },
-                              "number": "value",
-                              "numberFormat": "0,0.##",
-                              "progressBar": {
-                                "bar": {
-                                  "color": ""
-                                },
-                                "max": 100,
-                                "min": 0,
-                                "track": {
-                                  "color": ""
-                                },
-                                "value": {
-                                  "enabled": true,
-                                  "format": "0",
-                                  "justify": "center",
-                                  "style": {}
-                                }
-                              },
-                              "render": "auto",
-                              "resizable": false,
-                              "sort": "none",
-                              "sortable": false,
-                              "strictWidth": false,
-                              "style": {
-                                "classes": ""
-                              },
-                              "toggleSwitch": {
-                                "color": {
-                                  "selected": "",
-                                  "unselected": ""
-                                }
-                              },
-                              "viewParams": {},
-                              "viewPath": "",
-                              "visible": true,
-                              "width": 0
-                            }
-                          ],
-                          "filtering": {
-                            "enabled": false,
-                            "showInToolbar": false
+                          "direction": "column",
+                          "elementPosition": {
+                            "basis": "auto"
                           },
-                          "footer": {
-                            "enable": false
+                          "elementStyle": {
+                            "maxHeight": "44px"
                           },
-                          "pager": {
-                            "enabled": false
+                          "path": "BlueRidge/Components/Quality/VersionHistoryRow",
+                          "style": {
+                            "overflowY": "auto"
                           },
-                          "rowHeight": 36,
-                          "selection": {
-                            "mode": "none"
-                          },
-                          "showHeader": true,
-                          "toolbar": {
-                            "include": false
-                          }
+                          "useDefaultViewHeight": false,
+                          "useDefaultViewWidth": false
                         },
-                        "type": "ia.display.table"
+                        "type": "ia.display.flex-repeater"
                       }
                     ],
                     "meta": {
