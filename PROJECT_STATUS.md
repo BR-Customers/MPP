@@ -1,18 +1,23 @@
 # MPP MES — Project Status
 
-**Last updated:** 2026-05-29 (**Quality Spec Config Tool — fully built (Phases A–H); only human smoke (Phase I) remains.** New Spec modal (F) + Item Master "Go to spec →" cross-nav (H) landed. SQL layer (migration 0017, 3 net-new procs `QualitySpecVersion_SaveDraft`/`QualitySpec_Deprecate`/`QualitySpecVersion_DiscardDraft`, readable-audit on all quality procs, **SQL tests 1161/1161**); 14 named queries; extended `BlueRidge.Quality.QualitySpec` entity script (Script-Console-verified); `QualitySpecAttributeRow` sub-view; `/quality-specs` master-detail screen; route + sidebar nav already present. Remaining: **smoke-test `/quality-specs`**, then F (New Spec modal — E has an inline-create stopgap) + H (Item Master "Go to spec →" cross-nav). Earlier today: audit-readability refactor COMPLETE (Slices 1–8 + 2.5); its popup Changes-diff visual smoke also still pending.)
+**Last updated:** 2026-05-29 (**Quality Spec Config Tool — built (Phases A–H) AND smoke-tested + polished; functional end-to-end.** Backend: migration 0017, 3 net-new procs, readable-audit on all quality procs, **SQL tests 1161/1161**; 14 NQs; entity script; `/quality-specs` master-detail screen + `QualitySpecAttributeRow` + `NewSpecModal` + route/nav + Item Master cross-nav. Smoke fixes landed today: spec library + Version History converted table→flex-repeater (legible, no squish/mojibake); `numeric-entry-field` component fix; `Lower≤Target≤Upper` save validation (proc-enforced); left-list refresh after publish/etc.; hide UOM/Target/Lower/Upper on non-Numeric attrs (meta.visible); `+ New Version` clones the *selected* version; date-resolved per-version state **Active/Scheduled/Superseded** (SQL `ListBySpec.State` + `GetActiveForSpec` tiebreaker) surfaced in dropdown + history pills. Also earlier today: audit-readability refactor COMPLETE (Slices 1–8 + 2.5). Two visual smokes still pending: the ConfigChangeDetail color-diff (Slice 2.5) and the new Quality state badges.)
 
 ---
 
-## 🔖 Next Session Pickup — Quality Spec Config Tool: smoke-test `/quality-specs` (Phase I)
+## 🔖 Next Session Pickup — Quality Spec Config Tool is functional; small polish + two visual smokes
 
-**State of play.** ALL build phases done (A–H), committed + pushed. Backend (SQL 1161/1161 + 14 NQs + entity script), `QualitySpecAttributeRow`, `/quality-specs` master-detail screen, New Spec modal, route + sidebar nav, and the Item Master "Go to spec →" cross-nav are all in. **Only Phase I (human smoke) remains** — nothing else is blocking.
+**State of play.** The Quality Spec Config Tool is **built and smoke-tested end-to-end** (Phases A–H + a day of polish fixes — see Last-updated + Recently-closed). All committed locally; push at session start if not already pushed. Nothing blocking.
 
-**Smoke first (Phase I, focused).** Navigate to `/quality-specs` and walk: library list + search/type filter; `+ New Spec` (currently an inline create — names it "New Quality Spec", you rename); `+ New Version` → v1 Draft; attribute grid (`+ Add Attribute`, DataType=Boolean/Text disables UOM/limits, ▲▼ reorder, ✕ remove, dirty dot, tab/row-switch gated by ConfirmUnsaved); `Save Draft` reload persists UomId; `Publish` (prior Published NOT auto-deprecated; future EffectiveFrom = "Scheduled"); `Deprecate Version`/`Discard Draft`; `Deprecate Spec`; `/audit` shows readable `… · Quality Spec "…" v… · …` rows with resolved `Uom` JSON.
+**Two visual smokes still owed** (need a Perspective session — quick eyeball):
+1. **Quality state badges** — `/quality-specs`: with two published versions (one effective-now, one future-effective), confirm the dropdown + Version History show **Active / Scheduled / Superseded** with the right colors.
+2. **ConfigChangeDetail color-diff** (Slice 2.5) — `/audit` → click a row → confirm the Changes block renders with color (green/red/yellow).
 
-**Riskiest bindings to check first** (flagged by the Phase-E build): (1) library `ia.display.table` row-click uses `onSelectionChange` → `qsSpecRowClicked` (the `event.selectedRow` / guard-`<0` gotcha); (2) inline `+ New Spec` `handleNewSpec`; (3) Version History table reads assumed `CreatedBy*` columns from `QualitySpecVersion_ListBySpec` (render blank if absent, not error). Known SQL gap: `QualitySpec_Get` doesn't SELECT `DeprecatedAt`, so the header can't show a deprecated badge (library already hides deprecated specs) — one-line add + scratch-table widen if needed.
+**Small known follow-ups (non-blocking, all in `BlueRidge/Views/Quality/QualitySpecs` + components):**
+- `badge-warn` class doesn't exist in the stylesheet; `SpecListRow` and the main `StateBadge` still use it for the Draft pill (renders unstyled). Standardize on `badge-draft`. (VersionHistoryRow already fixed.)
+- `QualitySpec_Get` doesn't SELECT `DeprecatedAt`, so the header can't show a deprecated badge (library already hides deprecated specs). One-line SQL add + widen any `INSERT-EXEC` scratch table that calls it.
+- Both `/quality-specs` and `QualitySpecAttributeRow` view.json are Designer-expanded; expect format churn on Designer saves (not a bug).
 
-**Then Phases F + H.** F = New Spec modal (`Components/Quality/NewSpecModal`, plan §F1) with Name/Item/Op/Description/EffectiveDate fields; rewire the screen's `+ New Spec` button from the inline `handleNewSpec` to open the modal (`qsSpecCreated` page-msg refreshes + selects). H = Item Master Quality Specs embed "Go to spec →" → `system.perspective.navigate("/quality-specs", {specId})` (or `session.custom.qsIncomingSpecId`); the screen's `initIncoming` already reads it on startup.
+**After that — next major work** (pick per priority): the OI-35 architecture gate still blocks Arc 2 Phase 1 SQL; other Config Tool surfaces (Tools master) remain; or whatever the customer prioritizes.
 
 ---
 
@@ -68,6 +73,17 @@ The Item Master design has been **reworked from bundled-editDraft + bidi-Object-
 ---
 
 ## ✅ Recently closed
+
+### Quality Spec Config Tool — built end-to-end + smoke-polished (2026-05-29)
+
+Brainstormed/designed/planned previously; **built and smoke-tested in one session**. Executed the plan `docs/superpowers/plans/2026-05-28-quality-spec-config-tool.md` Phases A–H, then iterated on live-session smoke feedback. Parallel-subagent-draft → serialize throughout.
+
+- **SQL (Phase A):** migration `0017` (`QualitySpecAttribute.UomId` FK + `QualitySpec.DeprecatedAt`/`DeprecatedByUserId` → `Location.AppUser`); 3 net-new procs `QualitySpecVersion_SaveDraft` / `QualitySpec_Deprecate` / `QualitySpecVersion_DiscardDraft`; readable-audit convention on every quality mutation proc; date-resolved Publish (no auto-deprecate). **SQL tests 1161/1161.**
+- **Ignition (B–H):** 14 named queries; extended `BlueRidge.Quality.QualitySpec` entity script; `/quality-specs` master-detail screen; `QualitySpecAttributeRow`, `SpecListRow`, `VersionHistoryRow` flex-repeaters; `NewSpecModal`; route + sidebar nav (pre-existing); Item Master "Go to spec →" cross-nav.
+- **Smoke fixes:** spec library + Version History converted table→flex-repeater (table column-width squish + em-dash mojibake + blank CreatedBy fixed); `ia.input.numeric-entry-field` (was nonexistent `numeric-entry`); `Lower≤Target≤Upper` validation enforced in `QualitySpecVersion_SaveDraft`; left-rail list refresh after publish/new-version/discard/deprecate; hide UOM/Target/Lower/Upper on non-Numeric attrs via `meta.visible`; `+ New Version` clones the *selected* version.
+- **Date-resolved versioning surfaced:** per-version **Active / Scheduled / Superseded** state computed in SQL (`QualitySpecVersion_ListBySpec.State` via `@ActiveId` = max `EffectiveFrom ≤ now` among published-non-deprecated) + `GetActiveForSpec` `VersionNumber DESC` tiebreaker; shown in the version dropdown + Version History pills.
+- **Key plan corrections caught at build:** plan's `Audit.AppUser` → real table is `Location.AppUser`; plan's A3 code had the `JSON_QUERY` double-encode bug; `QualitySpec_Update` SETs ItemId/OpTemplateId unconditionally (NULL-defaulting params would wipe links → NQ + entity pass them through); new tests written in the `test.Assert_*` framework (plan used raw RAISERROR).
+- **Memory added:** `feedback_ignition_numeric_entry_field_type`. Context-pack `06_component_quirks` corrected (had the wrong numeric component id).
 
 ### Audit-readability refactor Slices 2.5 + 3–8 landed — refactor COMPLETE (2026-05-29)
 
