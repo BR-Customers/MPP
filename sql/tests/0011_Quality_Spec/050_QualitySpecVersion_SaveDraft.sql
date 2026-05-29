@@ -187,6 +187,62 @@ EXEC test.Assert_Contains
     @NeedleStr   = N'Saved';
 GO
 
+-- =============================================
+-- Test 4: Within-bounds validation (Lower <= Target <= Upper, Lower <= Upper)
+-- =============================================
+DECLARE @VerId BIGINT = (SELECT VerId FROM #Ctx);
+DECLARE @User  BIGINT = (SELECT UserId FROM #Ctx);
+
+-- 4a: Target above Upper -> rejected
+DECLARE @JsonHigh NVARCHAR(MAX) = N'[
+  {"Id":null,"AttributeName":"OverTarget","DataType":"Numeric","UomId":null,"TargetValue":99,"LowerLimit":1,"UpperLimit":10,"IsRequired":1}
+]';
+DECLARE @R4a TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @R4a EXEC Quality.QualitySpecVersion_SaveDraft
+    @QualitySpecVersionId = @VerId, @EffectiveFrom = NULL, @AttributesJson = @JsonHigh, @AppUserId = @User;
+DECLARE @S4a NVARCHAR(1) = (SELECT CAST(Status AS NVARCHAR(1)) FROM @R4a);
+EXEC test.Assert_IsEqual
+    @TestName = N'[QSVSaveDraftBounds] Target above Upper rejected (Status 0)',
+    @Expected = N'0', @Actual = @S4a;
+
+-- 4b: Target below Lower -> rejected
+DECLARE @JsonLow NVARCHAR(MAX) = N'[
+  {"Id":null,"AttributeName":"UnderTarget","DataType":"Numeric","UomId":null,"TargetValue":0,"LowerLimit":1,"UpperLimit":10,"IsRequired":1}
+]';
+DECLARE @R4b TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @R4b EXEC Quality.QualitySpecVersion_SaveDraft
+    @QualitySpecVersionId = @VerId, @EffectiveFrom = NULL, @AttributesJson = @JsonLow, @AppUserId = @User;
+DECLARE @S4b NVARCHAR(1) = (SELECT CAST(Status AS NVARCHAR(1)) FROM @R4b);
+EXEC test.Assert_IsEqual
+    @TestName = N'[QSVSaveDraftBounds] Target below Lower rejected (Status 0)',
+    @Expected = N'0', @Actual = @S4b;
+
+-- 4c: Lower > Upper -> rejected
+DECLARE @JsonInv NVARCHAR(MAX) = N'[
+  {"Id":null,"AttributeName":"Inverted","DataType":"Numeric","UomId":null,"TargetValue":5,"LowerLimit":10,"UpperLimit":1,"IsRequired":1}
+]';
+DECLARE @R4c TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @R4c EXEC Quality.QualitySpecVersion_SaveDraft
+    @QualitySpecVersionId = @VerId, @EffectiveFrom = NULL, @AttributesJson = @JsonInv, @AppUserId = @User;
+DECLARE @S4c NVARCHAR(1) = (SELECT CAST(Status AS NVARCHAR(1)) FROM @R4c);
+EXEC test.Assert_IsEqual
+    @TestName = N'[QSVSaveDraftBounds] Lower above Upper rejected (Status 0)',
+    @Expected = N'0', @Actual = @S4c;
+
+-- 4d: boundary-inclusive valid (Target == Lower, Target == Upper) -> accepted
+DECLARE @JsonOk NVARCHAR(MAX) = N'[
+  {"Id":null,"AttributeName":"AtLower","DataType":"Numeric","UomId":null,"TargetValue":5,"LowerLimit":5,"UpperLimit":10,"IsRequired":1},
+  {"Id":null,"AttributeName":"AtUpper","DataType":"Numeric","UomId":null,"TargetValue":10,"LowerLimit":5,"UpperLimit":10,"IsRequired":1}
+]';
+DECLARE @R4d TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @R4d EXEC Quality.QualitySpecVersion_SaveDraft
+    @QualitySpecVersionId = @VerId, @EffectiveFrom = NULL, @AttributesJson = @JsonOk, @AppUserId = @User;
+DECLARE @S4d NVARCHAR(1) = (SELECT CAST(Status AS NVARCHAR(1)) FROM @R4d);
+EXEC test.Assert_IsEqual
+    @TestName = N'[QSVSaveDraftBounds] boundary-inclusive target accepted (Status 1)',
+    @Expected = N'1', @Actual = @S4d;
+GO
+
 IF OBJECT_ID('tempdb..#Ctx') IS NOT NULL DROP TABLE #Ctx;
 GO
 

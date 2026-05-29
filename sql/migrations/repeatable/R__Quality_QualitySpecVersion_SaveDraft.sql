@@ -2,7 +2,7 @@
 -- Procedure:   Quality.QualitySpecVersion_SaveDraft
 -- Author:      Blue Ridge Automation
 -- Created:     2026-05-29
--- Version:     1.0
+-- Version:     1.1
 --
 -- Description:
 --   Bundled attribute reconciliation for a Draft QualitySpecVersion.
@@ -37,6 +37,9 @@
 --
 -- Change Log:
 --   2026-05-29 - 1.0 - Initial (Quality Spec Config Tool, Phase A / A3).
+--   2026-05-29 - 1.1 - Within-bounds validation: reject save when an
+--                       attribute's Lower>Upper or Target is outside
+--                       [Lower,Upper] (mirrors eligibility Min<=Default<=Max).
 -- =============================================
 CREATE OR ALTER PROCEDURE Quality.QualitySpecVersion_SaveDraft
     @QualitySpecVersionId BIGINT,
@@ -133,6 +136,46 @@ BEGIN
             TRY_CAST(JSON_VALUE([value], '$.UpperLimit')    AS DECIMAL(18,6)),
             COALESCE(TRY_CAST(JSON_VALUE([value], '$.IsRequired') AS BIT), 1)
         FROM OPENJSON(ISNULL(@AttributesJson, N'[]'));
+
+        -- ---- Within-bounds validation (Lower <= Target <= Upper, Lower <= Upper) ----
+        -- Enforced on save so a draft can never hold a target outside its own
+        -- limits. Mirrors the eligibility SaveAll Min<=Default<=Max gate. Each
+        -- bound is checked only when both it and the compared value are present,
+        -- so partially-specified numeric attributes stay editable as drafts.
+        DECLARE @ViolationCount INT = (
+            SELECT COUNT(*) FROM @Incoming
+            WHERE (LowerLimit IS NOT NULL AND UpperLimit IS NOT NULL AND LowerLimit > UpperLimit)
+               OR (TargetValue IS NOT NULL AND LowerLimit IS NOT NULL AND TargetValue < LowerLimit)
+               OR (TargetValue IS NOT NULL AND UpperLimit IS NOT NULL AND TargetValue > UpperLimit));
+
+        IF @ViolationCount > 0
+        BEGIN
+            DECLARE @BadAttr NVARCHAR(100), @BadKind NVARCHAR(60);
+            SELECT TOP 1
+                   @BadAttr = ISNULL(AttributeName, N'(unnamed)'),
+                   @BadKind = CASE
+                       WHEN LowerLimit IS NOT NULL AND UpperLimit IS NOT NULL AND LowerLimit > UpperLimit
+                            THEN N'lower limit is above upper limit'
+                       WHEN TargetValue IS NOT NULL AND LowerLimit IS NOT NULL AND TargetValue < LowerLimit
+                            THEN N'target is below lower limit'
+                       ELSE N'target is above upper limit'
+                   END
+            FROM @Incoming
+            WHERE (LowerLimit IS NOT NULL AND UpperLimit IS NOT NULL AND LowerLimit > UpperLimit)
+               OR (TargetValue IS NOT NULL AND LowerLimit IS NOT NULL AND TargetValue < LowerLimit)
+               OR (TargetValue IS NOT NULL AND UpperLimit IS NOT NULL AND TargetValue > UpperLimit)
+            ORDER BY Ord;
+
+            SET @Message = N'Attribute "' + @BadAttr + N'": ' + @BadKind
+                + N'. Target must be within the Lower and Upper limits.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'QualitySpecVersion',
+                @EntityId = @QualitySpecVersionId, @LogEventTypeCode = N'Updated',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+            RETURN;
+        END
 
         BEGIN TRANSACTION;
 
