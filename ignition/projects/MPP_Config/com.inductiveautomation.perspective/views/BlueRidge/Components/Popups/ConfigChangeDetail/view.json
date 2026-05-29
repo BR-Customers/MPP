@@ -76,7 +76,7 @@
           {
             "type": "ia.display.label", "meta": { "name": "EntityLine" }, "position": { "shrink": 0 },
             "propConfig": { "props.text": { "binding": { "type": "expr", "config": {
-              "expression": "\"Entity:  \" + coalesce({view.params.logEntityTypeName}, \"\") + \"  \\u00B7  \" + coalesce({view.params.entityId}, \"(new)\")"
+              "expression": "\"Entity:  \" + coalesce({view.params.logEntityTypeName}, \"\") + \"  \\u00B7  \" + if(isNull({view.params.entityId}), \"(new)\", toStr({view.params.entityId}))"
             }}}},
             "props": { "style": { "fontSize": "12px", "color": "var(--mpp-text-secondary)" } }
           },

@@ -848,7 +848,41 @@ git push
 ### Task 2.10: Slice 2 closeout
 
 - [ ] Update `PROJECT_STATUS.md` Recently Closed with Slice 2 entry referencing the convention being reference-implemented in Eligibility.
-- [ ] Update Next Session Pickup to point at Slice 3 (BOMs).
+- [ ] Update Next Session Pickup to point at Slice 2.5 (popup diff highlighting).
+
+---
+
+## Slice 2.5 — ConfigChangeDetail popup diff highlighting
+
+Polish slice that depends on Slice 2's resolved-name JSON to be useful. Trying to highlight differences across bare-ID JSON gives `LocationId: 4 → 5` (red strikethrough + green) which tells the reader nothing about which Location. After Slice 2 it reads `Location DC-401 → DC-402` (red strikethrough + green) which is genuinely actionable.
+
+### Files
+
+| Path | Action | Responsibility |
+|---|---|---|
+| `ignition/projects/MPP_Config/ignition/script-python/BlueRidge/Common/Util/code.py` | Modify | Add `prettyJsonDiff(oldJson, newJson)` helper alongside existing `prettyJson` + `summarizeJsonDiff`. Returns markdown text with embedded HTML spans coloring added (green) / removed (red) / changed (yellow) keys. |
+| `ignition/projects/MPP_Config/com.inductiveautomation.perspective/views/BlueRidge/Components/Popups/ConfigChangeDetail/view.json` | Modify | Replace the two `ia.display.label` Old/New body blocks with `ia.display.markdown` components. Set `escapeHtml: false` so embedded HTML spans render. Bind `props.markdown` to the helper output via runScript. |
+
+### Tasks
+
+- [ ] **Task 2.5.1: Write `Common.Util.prettyJsonDiff`** (~60 lines Python). Walk-the-tree key-level comparison. For each top-level array element / dict key, emit one markdown line. Color rules:
+  - **Added** (in new, not in old): `<span style="color:#5db38a">+ Key: value</span>` (green)
+  - **Removed** (in old, not in new): `<span style="color:#d97064">- Key: value</span>` (red)
+  - **Changed** (in both, value differs): `<span style="color:#e6c14e">~ Key: oldValue → newValue</span>` (yellow)
+  - **Unchanged**: plain text `Key: value` (or skip entirely if Description carries the narrative)
+- [ ] **Task 2.5.2: Two output modes.** Per-side rendering (left block shows old with removed lines highlighted; right block shows new with added lines highlighted) OR unified diff (single block with both adds and removes interleaved). Recommendation: unified single-block, drops the side-by-side layout. Less wasted space; the diff reads as one narrative.
+- [ ] **Task 2.5.3: Popup view.json swap.** Replace the two label blocks (lines 96-117 of `ConfigChangeDetail/view.json`) with one `ia.display.markdown` block. Bind via `runScript("BlueRidge.Common.Util.prettyJsonDiff", 0, {view.params.oldValue}, {view.params.newValue})`. Set `escapeHtml: false`.
+- [ ] **Task 2.5.4: Diagnostic + smoke.** Click any audit row → diff renders with colored spans. Click a Create event (oldValue is null) → all lines render green. Click a Deprecate event (newValue same as old + DeprecatedAt added) → most lines plain, just `+ DeprecatedAt` green.
+- [ ] **Task 2.5.5: Commit + push.**
+- [ ] **Task 2.5.6: Slice 2.5 closeout.** PROJECT_STATUS update pointing at Slice 3.
+
+### Color palette source
+
+Pull from existing project CSS vars if available (`--mpp-success` / `--mpp-error` / `--mpp-warning`). Otherwise hardcode the hex values listed above which match the project's dark theme.
+
+### Skip if diff helper proves too noisy
+
+The dual-block layout with resolved-name JSON post-Slice-2 may be readable enough on its own without diff highlighting. If the helper output adds visual noise rather than clarity, revert to the dual-block label render and call Slice 2.5 not-worth-it. The summarizeJsonDiff one-line Changes column on the table row already provides at-a-glance per-row scanning; the popup's job is comprehensive detail.
 
 ---
 
