@@ -268,7 +268,7 @@
                       "visible": true,
                       "editable": false,
                       "render": "auto",
-                      "justify": "auto",
+                      "justify": "left",
                       "align": "center",
                       "resizable": false,
                       "sortable": false,
@@ -291,7 +291,7 @@
                     },
                     {
                       "field": "Links",
-                      "visible": true,
+                      "visible": false,
                       "editable": false,
                       "render": "auto",
                       "justify": "auto",
