@@ -2,7 +2,7 @@
 -- Procedure:   Parts.ContainerConfig_Create
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     2.0
+-- Version:     2.3
 --
 -- Description:
 --   Creates a ContainerConfig for an Item. At most one active config is
@@ -41,6 +41,10 @@
 --   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
 --   2026-04-23 - 2.1 - Phase G.3: @MaxParts added (OI-12)
 --   2026-04-27 - 2.2 - OI-12 correction: @MaxParts removed (moved to Parts.Item)
+--   2026-05-29 - 2.3 - Audit-readability convention (Slice 5 Item core):
+--                       <PartNumber> . Container Config . Created; <key params>
+--                       narrative Description + resolved-FK NewValue JSON
+--                       (Item {Id, PartNumber, Description}).
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.ContainerConfig_Create
     @ItemId            BIGINT,
@@ -122,15 +126,57 @@ BEGIN
 
         SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
 
+        -- ===== Audit narrative + resolved JSON =====
+
+        -- Subject: parent Item's PartNumber
+        DECLARE @PartNumber NVARCHAR(50) =
+            (SELECT PartNumber FROM Parts.Item WHERE Id = @ItemId);
+
+        -- Key-params summary: serialization mode, geometry, closure
+        DECLARE @KeyParams NVARCHAR(MAX) = STUFF(CONCAT(
+            N'; TraysPerContainer ' + CAST(@TraysPerContainer AS NVARCHAR(20)),
+            N'; PartsPerTray '      + CAST(@PartsPerTray AS NVARCHAR(20)),
+            N'; IsSerialized '      + CASE WHEN @IsSerialized = 1 THEN N'true' ELSE N'false' END,
+            CASE WHEN @ClosureMethod IS NOT NULL
+                 THEN N'; ClosureMethod ' + @ClosureMethod ELSE N'' END,
+            CASE WHEN @TargetWeight IS NOT NULL
+                 THEN N'; TargetWeight ' + CAST(@TargetWeight AS NVARCHAR(40)) ELSE N'' END
+        ), 1, 2, N'');  -- strip leading "; "
+
+        DECLARE @ActivityRaw NVARCHAR(MAX) =
+            ISNULL(@PartNumber, N'(unknown item)') + N' ' + Audit.ufn_MidDot() +
+            N' Container Config ' + Audit.ufn_MidDot() + N' Created; ' + @KeyParams;
+
+        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
+
+        -- Resolved-FK NewValue snapshot (post-create state)
+        DECLARE @NewValueResolved NVARCHAR(MAX) = (
+            SELECT
+                cc.Id,
+                JSON_QUERY((SELECT i.Id, i.PartNumber, i.Description
+                            FROM Parts.Item i WHERE i.Id = cc.ItemId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))     AS Item,
+                cc.TraysPerContainer,
+                cc.PartsPerTray,
+                cc.IsSerialized,
+                cc.DunnageCode,
+                cc.CustomerCode,
+                cc.ClosureMethod,
+                cc.TargetWeight
+            FROM Parts.ContainerConfig cc
+            WHERE cc.Id = @NewId
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
         EXEC Audit.Audit_LogConfigChange
             @AppUserId         = @AppUserId,
             @LogEntityTypeCode = N'ContainerConfig',
             @EntityId          = @NewId,
             @LogEventTypeCode  = N'Created',
             @LogSeverityCode   = N'Info',
-            @Description       = N'ContainerConfig created.',
+            @Description       = @Activity,
             @OldValue          = NULL,
-            @NewValue          = @Params;
+            @NewValue          = @NewValueResolved;
 
         COMMIT TRANSACTION;
 
