@@ -2,7 +2,7 @@
 -- Procedure:   Quality.QualitySpecVersion_CreateNewVersion
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     2.0
+-- Version:     2.1
 --
 -- Description:
 --   Creates a new Draft version by cloning an existing version.
@@ -27,6 +27,7 @@
 -- Change Log:
 --   2026-04-14 - 1.0 - Initial version
 --   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
+--   2026-05-29 - 2.1 - Quality Spec Config Tool: clone UomId + readable audit
 -- =============================================
 CREATE OR ALTER PROCEDURE Quality.QualitySpecVersion_CreateNewVersion
     @SourceVersionId BIGINT,
@@ -123,16 +124,41 @@ BEGIN
 
         SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
 
-        -- Clone attributes from source version
+        -- Clone attributes from source version (carry both legacy Uom and new UomId)
         INSERT INTO Quality.QualitySpecAttribute
-            (QualitySpecVersionId, AttributeName, DataType, Uom, TargetValue, LowerLimit, UpperLimit, IsRequired, SortOrder)
+            (QualitySpecVersionId, AttributeName, DataType, Uom, UomId,
+             TargetValue, LowerLimit, UpperLimit, IsRequired, SortOrder)
         SELECT
-            @NewId, AttributeName, DataType, Uom, TargetValue, LowerLimit, UpperLimit, IsRequired, SortOrder
+            @NewId, AttributeName, DataType, Uom, UomId,
+            TargetValue, LowerLimit, UpperLimit, IsRequired, SortOrder
         FROM Quality.QualitySpecAttribute
         WHERE QualitySpecVersionId = @SourceVersionId
         ORDER BY SortOrder;
 
         DECLARE @AttrCount INT = @@ROWCOUNT;
+
+        -- ===== Readable audit narrative (convention: SUBJECT · CATEGORY · ACTION) =====
+        -- Subject's PartNumber prefix is present only when the spec is item-scoped.
+        DECLARE @SpecName   NVARCHAR(200);
+        DECLARE @PartNumber NVARCHAR(50);
+
+        SELECT @SpecName   = qs.Name,
+               @PartNumber = i.PartNumber
+        FROM Quality.QualitySpec qs
+        LEFT JOIN Parts.Item i ON i.Id = qs.ItemId
+        WHERE qs.Id = @QualitySpecId;
+
+        DECLARE @AuditDesc NVARCHAR(MAX) =
+            CASE WHEN @PartNumber IS NOT NULL
+                 THEN @PartNumber + N' ' + Audit.ufn_MidDot() + N' '
+                 ELSE N'' END +
+            N'Quality Spec "' + ISNULL(@SpecName, N'') + N'" v' +
+            CAST(@NewVersionNumber AS NVARCHAR(10)) +
+            N' (Draft) ' + Audit.ufn_MidDot() +
+            N' Created (cloned from source; ' +
+            CAST(@AttrCount AS NVARCHAR(10)) + N' attributes)';
+
+        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@AuditDesc);
 
         EXEC Audit.Audit_LogConfigChange
             @AppUserId         = @AppUserId,
@@ -140,7 +166,7 @@ BEGIN
             @EntityId          = @NewId,
             @LogEventTypeCode  = N'Created',
             @LogSeverityCode   = N'Info',
-            @Description       = N'Quality spec version created from clone (Draft).',
+            @Description       = @Activity,
             @OldValue          = NULL,
             @NewValue          = @Params;
 
