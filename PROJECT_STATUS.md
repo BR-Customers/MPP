@@ -1,39 +1,32 @@
 # MPP MES — Project Status
 
-**Last updated:** 2026-05-29 (Audit-readability refactor Slice 2 landed: `Parts.ItemLocation_SaveAllForItem` is the reference impl of the `SUBJECT · CATEGORY · ACTION` convention — narrative Description + resolved-FK `OldValue`/`NewValue` JSON. SQL tests **1058/1058** (1054 + 4 convention-shape assertions). Caught + fixed a defect in the plan's own SQL: aliased `FOR JSON` subqueries double-encode as escaped strings unless wrapped in `JSON_QUERY()` — the fix is baked into the reference impl so Slices 3-8 inherit it. Prior session: Slice 1 (convention + UI + popup). Quality Spec Config Tool spec+plan still queued after the refactor.)
+**Last updated:** 2026-05-29 (**Audit-readability refactor COMPLETE — Slices 1–8 + 2.5 all landed.** The `SUBJECT · CATEGORY · ACTION` convention + resolved-FK `OldValue`/`NewValue` JSON now span all ~31 audit-writing procs (Eligibility, BOMs, Routes, Item core, Plant Hierarchy, LocationTypeEditor, Downtime + Defect codes). Slices 3–8 drafted in parallel by subagents, serialized + verified. Slice 2.5 added `Common.Util.prettyJsonDiff` + a colorized unified-diff `ia.display.markdown` block in the ConfigChangeDetail popup. **SQL tests 1136/1136.** Next: build the Quality Spec Config Tool. ⚠️ One visual smoke pending — confirm the popup Changes-diff renders with color in a session.)
 
 ---
 
-## 🔖 Next Session Pickup — Audit Readability Refactor Slice 2.5 (ConfigChangeDetail popup diff highlighting)
+## 🔖 Next Session Pickup — Build the Quality Spec Config Tool (audit refactor is DONE)
 
-**State of play.** Slices 1 + 2 are fully landed. The `SUBJECT · CATEGORY · ACTION` convention is codified (`sql_best_practices_mes.md` + CLAUDE.md), the two helpers (`Audit.ufn_MidDot`, `Audit.ufn_TruncateActivity`) are deployed, the AuditLog table UI is updated, and the ConfigChangeDetail popup opens correctly. **Slice 2** made `Parts.ItemLocation_SaveAllForItem` the reference proc impl: it now resolves the Item subject (`PartNumber — Description`), classifies the change-set into `@Changes` (`+`/`-`/`~`), composes the Activity narrative with a 3-specifics-per-op cap + overflow counters, and emits `OldValue`/`NewValue` JSON with `Location` expanded to `{Id, Code, Name}` sub-objects. SQL tests **1060/1060**.
+**State of play.** The project-wide audit-readability refactor is **complete across all 8 slices + 2.5**. Every audit-writing proc now emits the `SUBJECT · CATEGORY · ACTION` narrative `Description` + resolved-FK `OldValue`/`NewValue` JSON. **SQL tests 1136/1136.** Slices landed:
 
-> ⚠️ **Inherited fix for Slices 3-8:** the plan's Task 2.4 SQL emits the resolved FK via a bare aliased subquery — `(SELECT ... FOR JSON PATH, WITHOUT_ARRAY_WRAPPER) AS Location`. SQL Server **double-encodes that as an escaped string** (`"Location":"{\"Id\":3,...}"`), not a nested object. The reference impl wraps it in `JSON_QUERY((...))` to embed a real object. **Every Slice 3-8 proc that resolves an FK to a sub-object MUST use the `JSON_QUERY((... FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))` form**, not the plan's bare-subquery form.
+| # | Slice | Procs | Status |
+|---|---|---|---|
+| 1 | Convention + UI + popup fix | — | ✅ 2026-05-28 |
+| 2 | Eligibility (reference impl) | `ItemLocation_SaveAllForItem` | ✅ 2026-05-29 |
+| 2.5 | ConfigChangeDetail diff highlighting | `Common.Util.prettyJsonDiff` + popup | ✅ 2026-05-29 |
+| 3 | BOMs | `Bom_*` (6) | ✅ 2026-05-29 |
+| 4 | Routes | `RouteTemplate_*` (6) | ✅ 2026-05-29 |
+| 5 | Item core (Identity + ContainerConfig) | `Item_*`, `ContainerConfig_*` (5) | ✅ 2026-05-29 |
+| 6 | Plant Hierarchy | `Location_*`, `LocationAttribute_Set` (6) | ✅ 2026-05-29 |
+| 7 | LocationTypeEditor | `LocationTypeDefinition_*` (2) | ✅ 2026-05-29 |
+| 8 | Downtime + Defect codes | `DowntimeReasonCode_*`, `DefectCode_*` (6) | ✅ 2026-05-29 |
 
-> ⚠️ **Trailing-strip off-by-one (Slices 3-8):** the reference impl strips the trailing `"; "` separator from the composed `@ActionParts`. Do this with `LEFT(x, DATALENGTH(x)/2 - 2)`, **never `LEFT(x, LEN(x) - 2)`** — T-SQL `LEN()` ignores trailing spaces, so `LEN`-based stripping eats one real character off the last specific (rendered `5→nul` / `Area` instead of `5→null` / `Area)`). The plan's reference SQL had the `LEN` form; it is fixed in v1.3 and guarded by Test 13.
+**⚠️ One visual smoke still pending (Slice 2.5).** The ConfigChangeDetail popup's new **Changes** block uses `ia.display.markdown` (`props.markdown.escapeHtml=false`) bound to `Common.Util.prettyJsonDiff`, which emits HTML `<div>` lines colored green/red/yellow. Open `/audit` → click any row → confirm the diff renders **with color**. If 8.3's markdown sanitizes inline `style` attributes, the +/−/~ symbols still convey the diff (graceful degradation) and it's a one-line revert to the dual-block-only render. Helper + popup are scanned/live; the dual Old/New JSON blocks were kept below the diff for the full unabridged snapshot.
 
-> ✅ **Boolean rendering convention:** boolean field-diffs in the Activity narrative render as words — `IsConsumptionPoint true→false`, not `1→0`. Carry this to any Slice 3-8 proc that diffs a `BIT` column.
+**Convention reference for new procs.** Use `Audit.ufn_MidDot()` for the separator and `Audit.ufn_TruncateActivity()` for the 500-char cap. Resolve every FK to a `{Id, Code, Name}`-style sub-object via `JSON_QUERY((... FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))` — a **bare** aliased `FOR JSON` subquery double-encodes as an escaped string. Strip trailing separators with `LEFT(x, DATALENGTH(x)/2 - 2)`, never `LEN()`-based. Render `BIT` diffs as `true`/`false` words. Keep test fixtures' free-text names off tokens other tests grep for (e.g. avoid `'SaveAll'` in a Description — it cross-contaminates `02_audit_readers/050_ConfigLog_List.sql`'s `@DescriptionLike` filter).
 
-> ⚠️ **Test-fixture naming caution:** the audit narrative now embeds the subject's free-text name (e.g. the Item Description) verbatim. A test fixture named with a token another test greps for (`@DescriptionLike`) will cross-contaminate. Slice 2 hit this — the Eligibility test item was renamed off "SaveAll" to avoid colliding with `02_audit_readers/050_ConfigLog_List.sql`. Keep fixture names neutral.
+**On resume — build the Quality Spec Config Tool.** Spec `docs/superpowers/specs/2026-05-28-quality-spec-config-tool-design.md`, plan `docs/superpowers/plans/2026-05-28-quality-spec-config-tool.md` (9 phases / ~18 tasks, SQL-first). The Quality SQL layer is already built (migration `0008` + ~20 procs); this is mostly Ignition front-end + a contained SQL delta (migration `0017` adds `QualitySpecAttribute.UomId` FK). Audit rows are designed to the readability convention from day one. Front-end mirrors the BOMs versioned-editor impl in a standalone `/quality-specs` master-detail shell.
 
-**Manual smoke (Task 2.8) — DONE 2026-05-29:** `/items` → Eligibility add/edit/remove → Save → `/audit` verified the Activity narrative + ConfigChangeDetail resolved `Location: {Id, Code, Name}`. ConfigChangeDetail EntityLine label binding was also fixed (expression-language string literals reject `\u`; replaced `·` with the literal middle-dot — see `feedback_ignition_expr_no_unicode_escape` memory).
-
-**On resume — execute Slice 2.5** (`docs/superpowers/plans/2026-05-28-audit-readability-refactor.md`, Tasks 2.5.1-2.5.6): add `Common.Util.prettyJsonDiff` and swap the popup's two Old/New label blocks for an `ia.display.markdown` unified diff with colored add/remove/change spans. This was deferred until Slice 2 landed resolved-name JSON, because highlighting bare-ID diffs `LocationId 4 → 5` is useless whereas `Location DC-401 → DC-402` is actionable. **Skip-if-noisy clause applies** — the dual-block resolved JSON may already be readable enough.
-
-**Slice queue after Slice 2.5:**
-
-| # | Slice | Effort |
-|---|---|---|
-| 3 | BOMs procs (6) | 1 session |
-| 4 | Routes procs (6) | 1 session |
-| 5 | Item core — Identity + ContainerConfig (5 procs) | 1 session |
-| 6 | Plant Hierarchy (~5 procs) | 1 session |
-| 7 | LocationTypeEditor (2 procs) | 1 session |
-| 8 | Downtime + Defect Codes (6 procs) | 1 session |
-
-**After the audit refactor: build the Quality Spec Config Tool.** Spec + plan committed this session (see below). It is the next major feature build once the refactor slices land. Quality-spec audit rows are designed to the readability convention from day one (so quality never needs its own backport slice), and render best once Slice 1's AuditLog UI + ConfigChangeDetail popup are in place — which they now are.
-
-> **Build heads-up for the quality-spec plan:** Slice 1 deployed `Audit.ufn_MidDot` + `Audit.ufn_TruncateActivity`. The quality-spec plan (written before Slice 1 landed) inlines `NCHAR(183)` in its audit-prose blocks — when executing Phase A, use the deployed helper functions instead for consistency with the rest of the refactored procs.
+> **Build heads-up for the quality-spec plan:** the plan (written before Slice 1 landed) inlines `NCHAR(183)` in its audit-prose blocks — use the deployed `Audit.ufn_MidDot` + `Audit.ufn_TruncateActivity` helpers instead for consistency with the refactored procs.
 
 **Other open Ignition items not blocking the above:**
 - Phase 7 QualitySpecs cross-nav — **now folded into the Quality Spec Config Tool plan** (Phase H: "Go to spec →" navigates to the new standalone `/quality-specs` screen). No longer a standalone task; the cross-nav needs the standalone screen as its target.
@@ -63,6 +56,23 @@ The Item Master design has been **reworked from bundled-editDraft + bidi-Object-
 ---
 
 ## ✅ Recently closed
+
+### Audit-readability refactor Slices 2.5 + 3–8 landed — refactor COMPLETE (2026-05-29)
+
+Closed out the entire project-wide audit-readability refactor in one session. Slices 3–8 (the six backport slices, ~31 procs) were **drafted in parallel by six subagents** — one per slice, each given the Slice-2 reference impl + the three inherited fixes (`JSON_QUERY` wrap, `DATALENGTH` strip, boolean-words) — then serialized through a single deploy + full-test pass, triaged, and committed slice-by-slice. **SQL tests 1136/1136** (was 1060 after Slice 2; +76 convention-shape assertions).
+
+- **Slice 2.5** — `Common.Util.prettyJsonDiff` (unified colorized diff: green add / red remove / yellow change; resolved-FK sub-objects collapse to `Code — Name`; degrades to +/−/~ symbols if HTML isn't rendered). ConfigChangeDetail popup gains an `ia.display.markdown` Changes block (`props.markdown.escapeHtml=false`, schema confirmed from a user-supplied markdown example) above the kept Old/New JSON blocks. **Visual smoke pending** (see Next Session Pickup). Commit `feat(audit): Slice 2.5 …`.
+- **Slice 3 BOMs** — 6 `Bom_*` procs; lines resolve `ChildItem` + `Uom`, header resolves `ParentItem`.
+- **Slice 4 Routes** — 6 `RouteTemplate_*` procs; steps resolve `OperationTemplate`, header resolves `Item`. Publish says "supersedes v<N-1>" (Routes don't auto-deprecate). 
+- **Slice 5 Item core** — `Item_*` + `ContainerConfig_*` (5); Update procs capture pre-state for field-diffs.
+- **Slice 6 Plant Hierarchy** — `Location_*` + `LocationAttribute_Set` (6); resolves Parent + LocationTypeDefinition.
+- **Slice 7 LocationTypeEditor** — `LocationTypeDefinition_SaveAll`/`Deprecate` (2); attribute +/-/~ reconciliation + cascade count.
+- **Slice 8 Downtime + Defect codes** — 6 atomic Create/Update/Deprecate procs; resolve Area + DowntimeReasonType.
+
+**Triage fixes during serialization (3 failure clusters → all resolved):**
+1. **Routes `Header` double-encoding** — subagents wrapped the inner `Item`/`OperationTemplate` in `JSON_QUERY` but left the outer `Header` subquery bare, so it double-encoded to an escaped string. Wrapped `Header` in `JSON_QUERY()` across all 5 route procs (7 spots).
+2. **`ConfigLog_List` cross-contamination** — `030_RouteTemplate_SaveAll.sql` fixtures named `'SaveAll test item N'` surfaced in the new `Item_Create` narratives and matched the `@DescriptionLike='SaveAll'` filter (8 rows vs 1). Renamed to `'Route bundle item N'`.
+3. **BOM Deprecate audit test** — v1 was auto-deprecated by the v2 publish (no standalone audit row) and the explicit v1 deprecate is an idempotent no-op; retargeted the assertion to deprecate the active v2.
 
 ### Quality Spec Config Tool — design + implementation plan committed (2026-05-28)
 
