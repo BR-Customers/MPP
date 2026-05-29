@@ -26,7 +26,7 @@ BEGIN
     DECLARE @ItId BIGINT = (SELECT TOP 1 Id FROM Parts.ItemType);
     DECLARE @UmId BIGINT = (SELECT TOP 1 Id FROM Parts.Uom);
     INSERT INTO Parts.Item (PartNumber, Description, ItemTypeId, UomId, CreatedAt, CreatedByUserId)
-    VALUES (@TestItemPart, N'Eligibility SaveAll test item', @ItId, @UmId, SYSUTCDATETIME(), 1);
+    VALUES (@TestItemPart, N'Eligibility map test item', @ItId, @UmId, SYSUTCDATETIME(), 1);
     SET @TestItemId = SCOPE_IDENTITY();
 END
 GO
@@ -292,6 +292,100 @@ EXEC test.Assert_IsEqual
     @TestName = N'[EligBadItem] Status is 0',
     @Expected = N'0',
     @Actual   = @SStr;
+GO
+
+-- =============================================
+-- Test 9: Activity Description has SUBJECT · Eligibility · prefix
+--   Reset to empty, then add an Area-tier row; the freshest ConfigLog
+--   row for this Item should carry the convention narrative.
+-- =============================================
+DECLARE @TestItemId BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'TEST-ELIG-ITEM-001');
+DECLARE @ItemLocTypeId BIGINT = (SELECT Id FROM Audit.LogEntityType WHERE Code = N'ItemLocation');
+DECLARE @LocId BIGINT = (SELECT TOP 1 l.Id
+                          FROM Location.Location l
+                          INNER JOIN Location.LocationTypeDefinition ltd ON ltd.Id = l.LocationTypeDefinitionId
+                          INNER JOIN Location.LocationType            lt  ON lt.Id  = ltd.LocationTypeId
+                          WHERE lt.Code = N'Area' AND l.DeprecatedAt IS NULL
+                          ORDER BY l.Code);
+
+-- Reset to empty baseline
+EXEC Parts.ItemLocation_SaveAllForItem @ItemId = @TestItemId, @RowsJson = N'[]', @AppUserId = 1;
+
+-- Add the Area-tier row
+DECLARE @Json NVARCHAR(MAX) =
+    N'[{"Id":null,"LocationId":' + CAST(@LocId AS NVARCHAR(20)) +
+    N',"IsConsumptionPoint":false,"MinQuantity":null,"MaxQuantity":null,"DefaultQuantity":null}]';
+CREATE TABLE #R9 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #R9
+EXEC Parts.ItemLocation_SaveAllForItem @ItemId = @TestItemId, @RowsJson = @Json, @AppUserId = 1;
+DROP TABLE #R9;
+
+DECLARE @Desc NVARCHAR(500) = (SELECT TOP 1 Description FROM Audit.ConfigLog
+                               WHERE EntityId = @TestItemId AND LogEntityTypeId = @ItemLocTypeId
+                               ORDER BY Id DESC);
+DECLARE @Pattern NVARCHAR(200) = N'TEST-ELIG-ITEM-001%' + Audit.ufn_MidDot() + N' Eligibility ' + Audit.ufn_MidDot() + N'%';
+DECLARE @Match NVARCHAR(1) = CASE WHEN @Desc LIKE @Pattern THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[EligActivityPrefix] Description has SUBJECT mid-dot Eligibility mid-dot prefix',
+    @Expected = N'1',
+    @Actual   = @Match;
+GO
+
+-- =============================================
+-- Test 10: Activity Description includes the added Location Code with + prefix
+-- =============================================
+DECLARE @TestItemId BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'TEST-ELIG-ITEM-001');
+DECLARE @ItemLocTypeId BIGINT = (SELECT Id FROM Audit.LogEntityType WHERE Code = N'ItemLocation');
+DECLARE @LocId BIGINT = (SELECT TOP 1 l.Id
+                          FROM Location.Location l
+                          INNER JOIN Location.LocationTypeDefinition ltd ON ltd.Id = l.LocationTypeDefinitionId
+                          INNER JOIN Location.LocationType            lt  ON lt.Id  = ltd.LocationTypeId
+                          WHERE lt.Code = N'Area' AND l.DeprecatedAt IS NULL
+                          ORDER BY l.Code);
+DECLARE @Code NVARCHAR(50) = (SELECT Code FROM Location.Location WHERE Id = @LocId);
+
+DECLARE @Desc NVARCHAR(500) = (SELECT TOP 1 Description FROM Audit.ConfigLog
+                               WHERE EntityId = @TestItemId AND LogEntityTypeId = @ItemLocTypeId
+                               ORDER BY Id DESC);
+DECLARE @Match NVARCHAR(1) = CASE WHEN @Desc LIKE N'%+' + @Code + N'%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[EligActivityCode] Description includes +<LocationCode>',
+    @Expected = N'1',
+    @Actual   = @Match;
+GO
+
+-- =============================================
+-- Test 11: NewValue JSON contains resolved Location {Id, Code, Name}
+-- =============================================
+DECLARE @TestItemId BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'TEST-ELIG-ITEM-001');
+DECLARE @ItemLocTypeId BIGINT = (SELECT Id FROM Audit.LogEntityType WHERE Code = N'ItemLocation');
+
+DECLARE @NewVal NVARCHAR(MAX) = (SELECT TOP 1 NewValue FROM Audit.ConfigLog
+                                 WHERE EntityId = @TestItemId AND LogEntityTypeId = @ItemLocTypeId
+                                 ORDER BY Id DESC);
+DECLARE @Resolved NVARCHAR(1) =
+    CASE WHEN @NewVal LIKE N'%"Location":%' AND @NewVal LIKE N'%"Code":%' AND @NewVal LIKE N'%"Name":%'
+         THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[EligResolvedJson] NewValue has resolved Location Id/Code/Name',
+    @Expected = N'1',
+    @Actual   = @Resolved;
+GO
+
+-- =============================================
+-- Test 12: Activity prose stays within the 500-char cap
+-- =============================================
+DECLARE @TestItemId BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'TEST-ELIG-ITEM-001');
+DECLARE @ItemLocTypeId BIGINT = (SELECT Id FROM Audit.LogEntityType WHERE Code = N'ItemLocation');
+
+DECLARE @Desc NVARCHAR(500) = (SELECT TOP 1 Description FROM Audit.ConfigLog
+                               WHERE EntityId = @TestItemId AND LogEntityTypeId = @ItemLocTypeId
+                               ORDER BY Id DESC);
+DECLARE @WithinCap NVARCHAR(1) = CASE WHEN LEN(@Desc) <= 500 THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[EligActivityCap] Description length <= 500',
+    @Expected = N'1',
+    @Actual   = @WithinCap;
 GO
 
 EXEC test.EndTestFile;

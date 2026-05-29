@@ -1,36 +1,25 @@
 # MPP MES — Project Status
 
-**Last updated:** 2026-05-28 (Audit-readability refactor Slice 1 landed: convention codified + UI changes + ConfigChangeDetail popup fixed. Earlier same session: Phase 8 Eligibility end-to-end green. SQL tests **1054/1054**. Also this session: **Quality Spec Config Tool spec + implementation plan committed** — `docs/superpowers/specs/2026-05-28-quality-spec-config-tool-design.md` (`4d4b07b`) + `docs/superpowers/plans/2026-05-28-quality-spec-config-tool.md` (`35859a1`); queued as the next major build after the audit refactor finishes.)
+**Last updated:** 2026-05-29 (Audit-readability refactor Slice 2 landed: `Parts.ItemLocation_SaveAllForItem` is the reference impl of the `SUBJECT · CATEGORY · ACTION` convention — narrative Description + resolved-FK `OldValue`/`NewValue` JSON. SQL tests **1058/1058** (1054 + 4 convention-shape assertions). Caught + fixed a defect in the plan's own SQL: aliased `FOR JSON` subqueries double-encode as escaped strings unless wrapped in `JSON_QUERY()` — the fix is baked into the reference impl so Slices 3-8 inherit it. Prior session: Slice 1 (convention + UI + popup). Quality Spec Config Tool spec+plan still queued after the refactor.)
 
 ---
 
-## 🔖 Next Session Pickup — Audit Readability Refactor Slice 2 (Eligibility proc reference impl)
+## 🔖 Next Session Pickup — Audit Readability Refactor Slice 2.5 (ConfigChangeDetail popup diff highlighting)
 
-**State of play.** Audit-readability refactor Slice 1 is fully landed. The `SUBJECT · CATEGORY · ACTION` convention is codified in `sql_best_practices_mes.md` + CLAUDE.md; two helper functions (`Audit.ufn_MidDot`, `Audit.ufn_TruncateActivity`) deployed and tested; the AuditLog table got the EntityId-drop + ChangesSummary column add + Description→Activity rename; and the broken ConfigChangeDetail popup was diagnosed and fixed (three layered bugs: wrong event name `onRowClick` vs `onSelectionChange`, attribute-vs-dict read pattern on the event payload, and a `coalesce(BIGINT, String)` type mismatch in EntityLine).
+**State of play.** Slices 1 + 2 are fully landed. The `SUBJECT · CATEGORY · ACTION` convention is codified (`sql_best_practices_mes.md` + CLAUDE.md), the two helpers (`Audit.ufn_MidDot`, `Audit.ufn_TruncateActivity`) are deployed, the AuditLog table UI is updated, and the ConfigChangeDetail popup opens correctly. **Slice 2** made `Parts.ItemLocation_SaveAllForItem` the reference proc impl: it now resolves the Item subject (`PartNumber — Description`), classifies the change-set into `@Changes` (`+`/`-`/`~`), composes the Activity narrative with a 3-specifics-per-op cap + overflow counters, and emits `OldValue`/`NewValue` JSON with `Location` expanded to `{Id, Code, Name}` sub-objects. SQL tests **1058/1058**.
 
-Now Eligibility's `Parts.ItemLocation_SaveAllForItem` becomes the reference proc impl of the convention, after which Slices 3-8 mirror it across the rest of the audit-writing procs.
+> ⚠️ **Inherited fix for Slices 3-8:** the plan's Task 2.4 SQL emits the resolved FK via a bare aliased subquery — `(SELECT ... FOR JSON PATH, WITHOUT_ARRAY_WRAPPER) AS Location`. SQL Server **double-encodes that as an escaped string** (`"Location":"{\"Id\":3,...}"`), not a nested object. The reference impl wraps it in `JSON_QUERY((...))` to embed a real object. **Every Slice 3-8 proc that resolves an FK to a sub-object MUST use the `JSON_QUERY((... FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))` form**, not the plan's bare-subquery form.
 
-**First three steps on resume:**
+> ⚠️ **Test-fixture naming caution:** the audit narrative now embeds the subject's free-text name (e.g. the Item Description) verbatim. A test fixture named with a token another test greps for (`@DescriptionLike`) will cross-contaminate. Slice 2 hit this — the Eligibility test item was renamed off "SaveAll" to avoid colliding with `02_audit_readers/050_ConfigLog_List.sql`. Keep fixture names neutral.
 
-1. **Sync up + verify clean tree.**
-   ```
-   git fetch origin && git pull --ff-only origin main
-   git status   # should be clean except untracked plant-layout PDF + tools/plant-layout-mapper/
-   ```
+**Manual smoke still owed (Task 2.8 — could not run headless):** open `/items` → pick an item → Eligibility tab → add/edit/remove a Location → Save → open `/audit`, confirm the Activity column reads the narrative and the ConfigChangeDetail popup shows resolved `Location: {Id, Code, Name}`.
 
-2. **Read Slice 2 in the implementation plan** at `docs/superpowers/plans/2026-05-28-audit-readability-refactor.md` — Tasks 2.1 through 2.10. The plan has exact SQL code blocks for the `@Changes` change-set classification temp table, the Activity prose composer (with 3-specifics cap + overflow counters), and the FK-resolved `OldValue` / `NewValue` JSON via `FOR JSON PATH` with Location subqueries.
+**On resume — execute Slice 2.5** (`docs/superpowers/plans/2026-05-28-audit-readability-refactor.md`, Tasks 2.5.1-2.5.6): add `Common.Util.prettyJsonDiff` and swap the popup's two Old/New label blocks for an `ia.display.markdown` unified diff with colored add/remove/change spans. This was deferred until Slice 2 landed resolved-name JSON, because highlighting bare-ID diffs `LocationId 4 → 5` is useless whereas `Location DC-401 → DC-402` is actionable. **Skip-if-noisy clause applies** — the dual-block resolved JSON may already be readable enough.
 
-3. **Execute Slice 2.** Refactor `Parts.ItemLocation_SaveAllForItem`, update tests with 4 new convention-shape assertions, deploy, smoke through `/items → Eligibility → Save → /audit`. Expected Activity prose shape after Slice 2:
-
-   `5G0 — Front Cover Assembly · Eligibility · +DIECAST (Production Area); -DC-401; ~DC-501 IsConsumptionPoint false→true; 4 rows`
-
-   Expected `NewValue` JSON: `Location: {Id, Code, Name}` resolved sub-objects in place of bare `LocationId: 4`.
-
-**Slice queue after Slice 2:**
+**Slice queue after Slice 2.5:**
 
 | # | Slice | Effort |
 |---|---|---|
-| 2.5 | ConfigChangeDetail popup diff highlighting via `ia.display.markdown` + new `Common.Util.prettyJsonDiff` helper (depends on Slice 2's resolved-name JSON to be useful) | 1 session |
 | 3 | BOMs procs (6) | 1 session |
 | 4 | Routes procs (6) | 1 session |
 | 5 | Item core — Identity + ContainerConfig (5 procs) | 1 session |
@@ -85,6 +74,20 @@ Brainstormed → designed → planned. No code yet; queued behind the audit refa
   - Add `QualitySpec_Deprecate` header soft-delete proc (+ `QualitySpec.DeprecatedAt`); add bundled `QualitySpecVersion_SaveDraft` (per the editDraft/explicit-Save convention; the per-action `_Add/_Update/_MoveUp/...` procs stay but aren't called per-click).
   - **Audit-readability convention applied to every quality-spec mutation proc from day one** (per the audit refactor spec §3/§4 + a richer quality catalog in the design §7) — so quality specs never need a backport slice.
 - **Front-end reference:** mirrors the BOMs versioned-editor impl (`BlueRidge.Parts.Bom` + `Components/Parts/ItemMaster/Boms` + `BomLineRow`) — atomic state writes, binding-based dirty, input-only embeds via page-scoped messages — but in a standalone `LocationTypeEditor`-style shell.
+
+### Audit-readability refactor Slice 2 landed (2026-05-29)
+
+`Parts.ItemLocation_SaveAllForItem` is now the **reference implementation** of the `SUBJECT · CATEGORY · ACTION` convention; Slices 3-8 mirror this proc.
+
+- **Subject resolution**: `PartNumber — Description` resolved once at proc start via `Audit.ufn_MidDot()` separator.
+- **Change-set classification**: a `@Changes` table variable buckets the reconciliation into `+` (add, incl. reactivation-as-add), `~` (update with field-level diff), `-` (remove), each joined to `Location.Location` + `Location.LocationTypeDefinition` for resolved names — all computed from **pre-mutation** state before `BEGIN TRANSACTION`.
+- **Activity narrative**: `STRING_AGG ... WITHIN GROUP` composes per-op specifics with a 3-per-op cap + `+N more` overflow counters; capped at 500 via `Audit.ufn_TruncateActivity()`. Live example produced in tests: `TEST-ELIG-ITEM-001 — Eligibility map test item · Eligibility · +DIECAST (Production Area); 1 rows`.
+- **Resolved-FK JSON**: `OldValue`/`NewValue` expand `LocationId` to `Location: {Id, Code, Name}` sub-objects (one JOIN per row at write time, zero at read time).
+- **Defect caught in the plan's SQL**: the plan's Task 2.4 emitted the resolved sub-object via a bare aliased `FOR JSON` subquery, which SQL Server double-encodes as an escaped *string* rather than a nested object. Fixed by wrapping in `JSON_QUERY((...))`. Slices 3-8 must use the `JSON_QUERY` form (flagged in Next Session Pickup).
+- **Tests**: 4 new convention-shape assertions (Tests 9-12: SUBJECT·Eligibility· prefix, `+<Code>` presence, resolved `Location` Id/Code/Name in NewValue, length ≤ 500). The Eligibility test item was renamed off "SaveAll" to stop its audit narrative cross-matching `ConfigLog_List`'s `@DescriptionLike='SaveAll'` filter. **1058/1058 SQL tests.**
+- **Designer smoke (Task 2.8) still owed** — headless run could not exercise the `/items → Eligibility → Save → /audit` UI path.
+
+Proc bumped to v1.1. Files: `sql/migrations/repeatable/R__Parts_ItemLocation_SaveAllForItem.sql`, `sql/tests/0009_Parts_Process/040_ItemLocation_SaveAllForItem.sql`.
 
 ### Audit-readability refactor Slice 1 landed (2026-05-28)
 
