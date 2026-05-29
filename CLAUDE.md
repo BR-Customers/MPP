@@ -97,6 +97,10 @@ Follow `sql_best_practices_mes.md` and `sql_version_control_guide.md`:
 
 `sql/scripts/_TEMPLATE_stored_procedure.sql`. Three-tier error hierarchy. `RAISERROR` (not `THROW`) in CATCH blocks with nested TRY/CATCH for failure logging. Schema-qualify all DB references. `EXEC` parameters must be literals or `@variables` — never inline `CAST` / arithmetic / `CASE`.
 
+### Audit log Description convention
+
+Every audit-writing proc emits `Audit.ConfigLog.Description` in the shape `<SUBJECT> · <CATEGORY?> · <ACTION>` (middle-dot via `Audit.ufn_MidDot()`), with `OldValue` / `NewValue` JSON containing **resolved-name** FK sub-objects (`LocationId: {Id, Code, Name}` not bare `LocationId: 3`). Apply `Audit.ufn_TruncateActivity(@text)` to enforce the 500-char cap with `…` overflow. Use `+` / `-` / `~` symbols inline for multi-change Action prose; use verb-form (`Created` / `Deprecated` / `Published` / `Reordered` / `Moved`) for single-state transitions. Full convention + per-category catalog: `sql_best_practices_mes.md` § Audit Log Description Convention and `docs/superpowers/specs/2026-05-28-audit-readability-refactor-design.md`.
+
 ### Ignition JDBC compatibility (FDS-11-011)
 
 Stored procedures **SHALL NOT** use `OUTPUT` parameters — the Ignition JDBC driver reads them as the first result set and ignores subsequent SELECTs.
