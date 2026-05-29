@@ -150,7 +150,7 @@
                 "onActionPerformed": {
                   "type": "script",
                   "scope": "G",
-                  "config": { "script": "\tself.view.rootContainer.handleNewSpec()" }
+                  "config": { "script": "\tsystem.perspective.openPopup(id=\"mpp-new-quality-spec\", view=\"BlueRidge/Components/Quality/NewSpecModal\", params={\"popupId\": \"mpp-new-quality-spec\"}, modal=True, showCloseIcon=True)" }
                 }
               }
             }
@@ -1190,6 +1190,13 @@
           "sessionScope": false,
           "viewScope": false,
           "script": "\tif not payload:\n\t\treturn\n\tnewId = payload.get(\"specId\")\n\tif newId == self.view.custom.selectedSpecId:\n\t\treturn\n\tif self.view.custom.isDirty:\n\t\tself.view.custom.pendingSwitch = newId\n\t\tself.openUnsavedConfirm()\n\telse:\n\t\tself.view.custom.selectedSpecId = newId"
+        },
+        {
+          "messageType": "qsSpecCreated",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tself.view.custom.specs = BlueRidge.Quality.QualitySpec.getAllForList(self.view.custom.filter)\n\tself.view.custom.selectedSpecId = payload.get(\"specId\")"
         },
         {
           "messageType": "confirmUnsavedResult",
