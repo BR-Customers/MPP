@@ -2,52 +2,87 @@
   "custom": {
     "filter": {
       "searchText": "",
-      "type": "All Types"
+      "type": "All"
     },
     "typeOptions": [
-      { "label": "All Types",        "value": "All Types" },
-      { "label": "Item-Linked",      "value": "Item-Linked" },
-      { "label": "Operation-Linked", "value": "Operation-Linked" },
-      { "label": "Unlinked",         "value": "Unlinked" }
+      { "label": "All Types",      "value": "All" },
+      { "label": "Item-Linked",    "value": "Item-Linked" },
+      { "label": "Operation-Linked", "value": "Op-Linked" },
+      { "label": "Unlinked",       "value": "Unlinked" }
     ],
-    "specs": [
-      { "name": "5G0 Dimensional Spec",   "versionLabel": "Active v2",  "versionBadge": "badge badge-published",  "subtext": "Item: 5G0 · Op: CNC-5G0",     "selected": true,  "deprecated": false },
-      { "name": "5G0 Visual Inspection",  "versionLabel": "Active v1",  "versionBadge": "badge badge-published",  "subtext": "Item: 5G0 · Op: DC-5G0",      "selected": false, "deprecated": false },
-      { "name": "RPY Assembly Check",     "versionLabel": "Pending v1", "versionBadge": "badge badge-warning",    "subtext": "Item: RPY · Op: ASSY-REAR",   "selected": false, "deprecated": false },
-      { "name": "5G0 First-Piece Check",  "versionLabel": "Deprecated", "versionBadge": "badge badge-deprecated", "subtext": "Item: 5G0",                   "selected": false, "deprecated": true  }
-    ],
-    "selected": {
-      "name": "5G0 Dimensional Spec",
-      "linkedItem": "5G0",
-      "linkedOpTemplate": "CNC-5G0 v1",
-      "description": "Dimensional inspection for 5G0 Front Cover after CNC machining",
-      "stateLabel": "Active",
-      "stateBadge": "badge badge-published",
-      "effectiveFrom": "Effective 2026-03-01"
+    "specs": [],
+    "selectedSpecId": null,
+    "incomingSpecId": null,
+    "pendingSwitch": null,
+    "specHeader": {
+      "selected": {
+        "id": null, "name": "", "description": "",
+        "itemId": null, "itemCode": "", "itemDesc": "",
+        "operationTemplateId": null, "opCode": "", "deprecatedAt": null
+      },
+      "editDraft": {
+        "id": null, "name": "", "description": "",
+        "itemId": null, "itemCode": "", "itemDesc": "",
+        "operationTemplateId": null, "opCode": "", "deprecatedAt": null
+      }
     },
-    "versionOptions": [
-      { "label": "v2 — Effective 2026-03-01",              "value": "v2" },
-      { "label": "v1 — Effective 2025-06-01 (Deprecated)", "value": "v1" }
-    ],
-    "selectedVersion": "v2",
-    "activeTab": "attributes",
-    "attributes": [
-      { "attributeName": "Surface Flatness", "dataType": "Numeric", "uom": "in", "target": "0.002", "lower": "0.001", "upper": "0.003", "required": true },
-      { "attributeName": "Bore Diameter",    "dataType": "Numeric", "uom": "mm", "target": "25.40", "lower": "25.38", "upper": "25.42", "required": true },
-      { "attributeName": "Porosity Visual",  "dataType": "Boolean", "uom": "—",  "target": "—",     "lower": "—",     "upper": "—",     "required": true },
-      { "attributeName": "Operator Notes",   "dataType": "Text",    "uom": "—",  "target": "—",     "lower": "—",     "upper": "—",     "required": false }
-    ],
-    "versions": [
-      { "version": "v2", "effectiveFrom": "2026-03-01", "deprecatedAt": "—",          "state": "Active",     "stateBadge": "badge badge-published",  "createdBy": "J. Potgieter", "createdAt": "2026-02-28 09:14", "selected": true,  "deprecated": false },
-      { "version": "v1", "effectiveFrom": "2025-06-01", "deprecatedAt": "2026-03-01", "state": "Deprecated", "stateBadge": "badge badge-deprecated", "createdBy": "J. Potgieter", "createdAt": "2025-05-15 11:22", "selected": false, "deprecated": true  }
+    "state": {
+      "selected": {
+        "id": null, "specId": null, "versionNumber": null,
+        "effectiveFrom": null, "effectiveFromDisplay": "",
+        "publishedAt": null, "deprecatedAt": null, "status": null,
+        "attributes": []
+      },
+      "editDraft": {
+        "id": null, "specId": null, "versionNumber": null,
+        "effectiveFrom": null, "effectiveFromDisplay": "",
+        "publishedAt": null, "deprecatedAt": null, "status": null,
+        "attributes": []
+      }
+    },
+    "isDirty": false,
+    "activeVersionId": null,
+    "versions": [],
+    "uoms": [],
+    "dataTypes": [
+      { "label": "Numeric", "value": "Numeric" },
+      { "label": "Boolean", "value": "Boolean" },
+      { "label": "Text",    "value": "Text" }
     ]
   },
-  "params": {},
+  "params": {
+    "specId": null
+  },
   "propConfig": {
-    "custom.filter.searchText": { "persistent": true },
-    "custom.filter.type":       { "persistent": true },
-    "custom.activeTab":         { "persistent": true },
-    "custom.selectedVersion":   { "persistent": true }
+    "params.specId": { "paramDirection": "input" },
+    "custom.specs": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Quality.QualitySpec.getAllForList\", 0, {view.custom.filter})"
+        }
+      }
+    },
+    "custom.selectedSpecId": {
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.rootContainer.loadSpec()"
+      }
+    },
+    "custom.activeVersionId": {
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.rootContainer.loadActiveVersion()"
+      }
+    },
+    "custom.isDirty": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.editDraft.attributes}) != runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.selected.attributes}) || {view.custom.state.editDraft.effectiveFromDisplay} != {view.custom.state.selected.effectiveFromDisplay} || {view.custom.specHeader.editDraft.name} != {view.custom.specHeader.selected.name} || {view.custom.specHeader.editDraft.description} != {view.custom.specHeader.selected.description}"
+        }
+      }
+    }
   },
   "props": {
     "defaultSize": { "width": 1280, "height": 720 }
@@ -58,6 +93,15 @@
     "props": {
       "direction": "column",
       "style": { "classes": "screen-active" }
+    },
+    "events": {
+      "component": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": { "script": "\tself.rootContainer.initIncoming()" }
+        }
+      }
     },
     "children": [
       {
@@ -100,7 +144,16 @@
             "type": "ia.input.button",
             "meta": { "name": "NewSpecButton" },
             "position": { "basis": "auto" },
-            "props": { "text": "+ New Spec", "style": { "classes": "btn btn-primary", "marginRight": "12px" } }
+            "props": { "text": "+ New Spec", "style": { "classes": "btn btn-primary", "marginRight": "12px" } },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": { "script": "\tself.view.rootContainer.handleNewSpec()" }
+                }
+              }
+            }
           }
         ]
       },
@@ -116,10 +169,10 @@
           {
             "type": "ia.container.flex",
             "meta": { "name": "SpecListPanel" },
-            "position": { "basis": "260px", "shrink": 0 },
+            "position": { "basis": "300px", "shrink": 0 },
             "props": {
               "direction": "column",
-              "style": { "classes": "tree-panel", "width": "260px", "minWidth": "260px" }
+              "style": { "classes": "tree-panel", "width": "300px", "minWidth": "300px" }
             },
             "children": [
               {
@@ -157,18 +210,149 @@
                 ]
               },
               {
-                "type": "ia.display.flex-repeater",
+                "type": "ia.display.table",
                 "meta": { "name": "SpecList" },
                 "position": { "grow": 1 },
                 "propConfig": {
-                  "props.instances": { "binding": { "type": "property", "config": { "path": "view.custom.specs" } } }
+                  "props.data": {
+                    "binding": {
+                      "type": "property",
+                      "config": { "path": "view.custom.specs" },
+                      "transforms": [
+                        {
+                          "type": "script",
+                          "code": "\tspecs = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\tout = []\n\tfor s in specs:\n\t\ts = s or {}\n\t\titemCode = s.get('itemCode') or ''\n\t\topCode = s.get('opCode') or ''\n\t\tparts = []\n\t\tif itemCode:\n\t\t\tparts.append('Item: ' + itemCode)\n\t\tif opCode:\n\t\t\tparts.append('Op: ' + opCode)\n\t\tsub = ' · '.join(parts) if parts else 'Unlinked'\n\t\tactive = s.get('activeVersionCount') or 0\n\t\tvc = s.get('versionCount') or 0\n\t\tif active > 0:\n\t\t\tstate = 'Active'\n\t\telif vc > 0:\n\t\t\tstate = 'Draft'\n\t\telse:\n\t\t\tstate = 'New'\n\t\tout.append({'id': s.get('id'), 'Spec': s.get('name') or '', 'Links': sub, 'State': state})\n\treturn out"
+                        }
+                      ]
+                    }
+                  }
                 },
                 "props": {
-                  "path": "BlueRidge/Components/SpecListItem",
-                  "direction": "column",
-                  "useDefaultViewWidth": false,
-                  "useDefaultViewHeight": false,
-                  "elementPosition": { "grow": 0, "shrink": 0, "basis": "50px" }
+                  "selection": { "mode": "single", "data": [] },
+                  "rowHeight": 46,
+                  "showHeader": false,
+                  "filtering": { "enabled": false, "showInToolbar": false },
+                  "pager": { "enabled": false },
+                  "toolbar": { "include": false },
+                  "footer": { "enable": false },
+                  "style": { "backgroundColor": "transparent" },
+                  "columns": [
+                    {
+                      "field": "id",
+                      "visible": false,
+                      "editable": false,
+                      "render": "auto",
+                      "justify": "auto",
+                      "align": "center",
+                      "resizable": false,
+                      "sortable": false,
+                      "sort": "none",
+                      "filter": { "enabled": false, "visible": true, "string": { "condition": "contains", "value": "" }, "number": { "condition": "=", "value": null }, "boolean": "both" },
+                      "viewPath": "",
+                      "viewParams": {},
+                      "boolean": "checkbox",
+                      "number": "value",
+                      "progressBar": { "max": 100, "min": 0, "bar": { "color": "" }, "track": { "color": "" }, "value": { "enabled": true, "format": "0", "justify": "center", "style": {} } },
+                      "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+                      "nullFormat": { "nullValue": "", "strict": false },
+                      "numberFormat": "0,0.##",
+                      "dateFormat": "MM/DD/YYYY",
+                      "width": 0,
+                      "strictWidth": false,
+                      "style": { "classes": "" },
+                      "header": { "title": "", "justify": "left", "align": "center", "style": { "classes": "" } },
+                      "footer": { "title": "", "justify": "left", "align": "center", "style": { "classes": "" } }
+                    },
+                    {
+                      "field": "Spec",
+                      "visible": true,
+                      "editable": false,
+                      "render": "auto",
+                      "justify": "auto",
+                      "align": "center",
+                      "resizable": false,
+                      "sortable": false,
+                      "sort": "none",
+                      "filter": { "enabled": false, "visible": true, "string": { "condition": "contains", "value": "" }, "number": { "condition": "=", "value": null }, "boolean": "both" },
+                      "viewPath": "",
+                      "viewParams": {},
+                      "boolean": "checkbox",
+                      "number": "value",
+                      "progressBar": { "max": 100, "min": 0, "bar": { "color": "" }, "track": { "color": "" }, "value": { "enabled": true, "format": "0", "justify": "center", "style": {} } },
+                      "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+                      "nullFormat": { "nullValue": "", "strict": false },
+                      "numberFormat": "0,0.##",
+                      "dateFormat": "MM/DD/YYYY",
+                      "width": 0,
+                      "strictWidth": false,
+                      "style": { "classes": "", "fontWeight": "600", "fontSize": "12px" },
+                      "header": { "title": "Spec", "justify": "left", "align": "center", "style": { "classes": "" } },
+                      "footer": { "title": "", "justify": "left", "align": "center", "style": { "classes": "" } }
+                    },
+                    {
+                      "field": "Links",
+                      "visible": true,
+                      "editable": false,
+                      "render": "auto",
+                      "justify": "auto",
+                      "align": "center",
+                      "resizable": false,
+                      "sortable": false,
+                      "sort": "none",
+                      "filter": { "enabled": false, "visible": true, "string": { "condition": "contains", "value": "" }, "number": { "condition": "=", "value": null }, "boolean": "both" },
+                      "viewPath": "",
+                      "viewParams": {},
+                      "boolean": "checkbox",
+                      "number": "value",
+                      "progressBar": { "max": 100, "min": 0, "bar": { "color": "" }, "track": { "color": "" }, "value": { "enabled": true, "format": "0", "justify": "center", "style": {} } },
+                      "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+                      "nullFormat": { "nullValue": "", "strict": false },
+                      "numberFormat": "0,0.##",
+                      "dateFormat": "MM/DD/YYYY",
+                      "width": 0,
+                      "strictWidth": false,
+                      "style": { "classes": "", "fontSize": "11px", "color": "var(--mpp-text-tertiary)" },
+                      "header": { "title": "Links", "justify": "left", "align": "center", "style": { "classes": "" } },
+                      "footer": { "title": "", "justify": "left", "align": "center", "style": { "classes": "" } }
+                    },
+                    {
+                      "field": "State",
+                      "visible": true,
+                      "editable": false,
+                      "render": "auto",
+                      "justify": "auto",
+                      "align": "center",
+                      "resizable": false,
+                      "sortable": false,
+                      "sort": "none",
+                      "filter": { "enabled": false, "visible": true, "string": { "condition": "contains", "value": "" }, "number": { "condition": "=", "value": null }, "boolean": "both" },
+                      "viewPath": "",
+                      "viewParams": {},
+                      "boolean": "checkbox",
+                      "number": "value",
+                      "progressBar": { "max": 100, "min": 0, "bar": { "color": "" }, "track": { "color": "" }, "value": { "enabled": true, "format": "0", "justify": "center", "style": {} } },
+                      "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+                      "nullFormat": { "nullValue": "", "strict": false },
+                      "numberFormat": "0,0.##",
+                      "dateFormat": "MM/DD/YYYY",
+                      "width": 70,
+                      "strictWidth": false,
+                      "style": { "classes": "", "fontSize": "10px" },
+                      "header": { "title": "State", "justify": "left", "align": "center", "style": { "classes": "" } },
+                      "footer": { "title": "", "justify": "left", "align": "center", "style": { "classes": "" } }
+                    }
+                  ]
+                },
+                "events": {
+                  "component": {
+                    "onSelectionChange": {
+                      "type": "script",
+                      "scope": "G",
+                      "config": {
+                        "script": "\tsel = event.selectedRow\n\tif sel is None or sel < 0:\n\t\treturn\n\trows = self.props.data\n\tif sel >= len(rows):\n\t\treturn\n\tspecId = rows[sel]['id']\n\tsystem.perspective.sendMessage(\"qsSpecRowClicked\", payload={\"specId\": specId}, scope=\"page\")"
+                      }
+                    }
+                  }
                 }
               }
             ]
@@ -177,6 +361,11 @@
             "type": "ia.container.flex",
             "meta": { "name": "DetailArea" },
             "position": { "grow": 1 },
+            "propConfig": {
+              "meta.visible": {
+                "binding": { "type": "expr", "config": { "expression": "{view.custom.selectedSpecId} != null" } }
+              }
+            },
             "props": {
               "direction": "column",
               "style": { "overflow": "hidden", "background": "var(--mpp-surface-raised)" }
@@ -198,7 +387,7 @@
                 "children": [
                   {
                     "type": "ia.container.flex",
-                    "meta": { "name": "TitleRow" },
+                    "meta": { "name": "HeaderTitleRow" },
                     "position": { "basis": "auto" },
                     "props": { "direction": "row", "alignItems": "center", "style": { "gap": "8px" } },
                     "children": [
@@ -207,7 +396,7 @@
                         "meta": { "name": "SpecName" },
                         "position": { "basis": "auto" },
                         "propConfig": {
-                          "props.text": { "binding": { "type": "property", "config": { "path": "view.custom.selected.name" } } }
+                          "props.text": { "binding": { "type": "property", "config": { "path": "view.custom.specHeader.selected.name" } } }
                         },
                         "props": { "style": { "fontSize": "13px", "fontWeight": "600" } }
                       },
@@ -216,14 +405,58 @@
                         "meta": { "name": "StateBadge" },
                         "position": { "basis": "auto" },
                         "propConfig": {
-                          "props.text":          { "binding": { "type": "property", "config": { "path": "view.custom.selected.stateLabel" } } },
-                          "props.style.classes": { "binding": { "type": "property", "config": { "path": "view.custom.selected.stateBadge" } } }
+                          "props.text": { "binding": { "type": "property", "config": { "path": "view.custom.state.selected.status" } } },
+                          "props.style.classes": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "if({view.custom.state.selected.status} = \"Published\", \"badge badge-published\", if({view.custom.state.selected.status} = \"Draft\", \"badge badge-warn\", if({view.custom.state.selected.status} = \"Deprecated\", \"badge badge-muted\", \"\")))"
+                              }
+                            }
+                          }
                         },
-                        "props": {}
+                        "props": { "style": { "classes": "badge" } }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": { "name": "DirtyBadge" },
+                        "position": { "basis": "auto" },
+                        "propConfig": {
+                          "position.display": { "binding": { "type": "property", "config": { "path": "view.custom.isDirty" } } }
+                        },
+                        "props": { "text": "Unsaved", "style": { "classes": "badge badge-warn" } }
                       },
                       { "type": "ia.display.label", "meta": { "name": "Spacer" }, "position": { "grow": 1 }, "props": { "text": "" } },
-                      { "type": "ia.input.button", "meta": { "name": "SaveButton" },      "position": { "basis": "auto" }, "props": { "text": "Save",      "style": { "classes": "btn btn-primary btn-sm" } } },
-                      { "type": "ia.input.button", "meta": { "name": "DeprecateButton" }, "position": { "basis": "auto" }, "props": { "text": "Deprecate", "style": { "classes": "btn btn-danger btn-sm" } } }
+                      {
+                        "type": "ia.input.button",
+                        "meta": { "name": "SaveHeaderButton" },
+                        "position": { "basis": "auto" },
+                        "props": { "text": "Save Spec", "style": { "classes": "btn btn-primary btn-sm" } },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "type": "script",
+                              "scope": "G",
+                              "config": { "script": "\tself.view.rootContainer.handleSaveHeader()" }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.button",
+                        "meta": { "name": "DeprecateSpecButton" },
+                        "position": { "basis": "auto" },
+                        "props": { "text": "Deprecate Spec", "style": { "classes": "btn btn-danger btn-sm" } },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "type": "script",
+                              "scope": "G",
+                              "config": { "script": "\tself.view.rootContainer.openDeprecateSpecConfirm()" }
+                            }
+                          }
+                        }
+                      }
                     ]
                   },
                   {
@@ -244,7 +477,7 @@
                             "meta": { "name": "Input" },
                             "position": { "basis": "auto" },
                             "propConfig": {
-                              "props.text": { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.selected.name" } } }
+                              "props.text": { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.specHeader.editDraft.name" } } }
                             },
                             "props": { "style": { "classes": "search-input", "width": "100%", "boxSizing": "border-box" } }
                           }
@@ -262,7 +495,12 @@
                             "meta": { "name": "Value" },
                             "position": { "basis": "auto" },
                             "propConfig": {
-                              "props.text": { "binding": { "type": "property", "config": { "path": "view.custom.selected.linkedItem" } } }
+                              "props.text": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": { "expression": "if(isNull({view.custom.specHeader.selected.itemCode}) || {view.custom.specHeader.selected.itemCode} = \"\", \"—\", {view.custom.specHeader.selected.itemCode})" }
+                                }
+                              }
                             },
                             "props": {
                               "style": {
@@ -291,7 +529,12 @@
                             "meta": { "name": "Value" },
                             "position": { "basis": "auto" },
                             "propConfig": {
-                              "props.text": { "binding": { "type": "property", "config": { "path": "view.custom.selected.linkedOpTemplate" } } }
+                              "props.text": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": { "expression": "if(isNull({view.custom.specHeader.selected.opCode}) || {view.custom.specHeader.selected.opCode} = \"\", \"—\", {view.custom.specHeader.selected.opCode})" }
+                                }
+                              }
                             },
                             "props": {
                               "style": {
@@ -328,7 +571,7 @@
                             "meta": { "name": "Input" },
                             "position": { "basis": "auto" },
                             "propConfig": {
-                              "props.text": { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.selected.description" } } }
+                              "props.text": { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.specHeader.editDraft.description" } } }
                             },
                             "props": { "style": { "classes": "search-input", "width": "100%", "boxSizing": "border-box" } }
                           }
@@ -345,234 +588,708 @@
                       {
                         "type": "ia.input.dropdown",
                         "meta": { "name": "VersionSelect" },
-                        "position": { "basis": "260px", "shrink": 0 },
+                        "position": { "basis": "300px", "shrink": 0 },
                         "propConfig": {
-                          "props.options": { "binding": { "type": "property", "config": { "path": "view.custom.versionOptions" } } },
-                          "props.value":   { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.selectedVersion" } } }
+                          "props.options": {
+                            "binding": {
+                              "type": "property",
+                              "config": { "path": "view.custom.versions" },
+                              "transforms": [
+                                {
+                                  "type": "script",
+                                  "code": "\tout = []\n\tfor v in (value or []):\n\t\tv = v or {}\n\t\tvnum = v.get('VersionNumber', 0)\n\t\tpub = v.get('PublishedAt')\n\t\tdep = v.get('DeprecatedAt')\n\t\tif dep is not None:\n\t\t\tstatus = 'Deprecated'\n\t\telif pub is None:\n\t\t\tstatus = 'Draft'\n\t\telse:\n\t\t\tstatus = 'Published'\n\t\teffDisp = v.get('effectiveFromDisplay') or ''\n\t\tlabel = 'v' + str(vnum) + ' — ' + status\n\t\tif effDisp:\n\t\t\tlabel = label + ' (Eff ' + effDisp + ')'\n\t\tout.append({'label': label, 'value': v.get('Id')})\n\treturn out"
+                                }
+                              ]
+                            }
+                          },
+                          "props.value": {
+                            "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.activeVersionId" } }
+                          }
                         },
-                        "props": { "style": { "classes": "select" } }
-                      },
-                      {
-                        "type": "ia.display.label",
-                        "meta": { "name": "VersionStateBadge" },
-                        "position": { "basis": "auto" },
-                        "propConfig": {
-                          "props.text":          { "binding": { "type": "property", "config": { "path": "view.custom.selected.stateLabel" } } },
-                          "props.style.classes": { "binding": { "type": "property", "config": { "path": "view.custom.selected.stateBadge" } } }
-                        },
-                        "props": {}
+                        "props": {
+                          "noSelectionText": "(no versions)",
+                          "style": { "classes": "select", "minWidth": "300px" }
+                        }
                       },
                       {
                         "type": "ia.display.label",
                         "meta": { "name": "EffectiveFromText" },
                         "position": { "basis": "auto" },
                         "propConfig": {
-                          "props.text": { "binding": { "type": "property", "config": { "path": "view.custom.selected.effectiveFrom" } } }
+                          "position.display": {
+                            "binding": { "type": "expr", "config": { "expression": "{view.custom.state.editDraft.status} != \"Draft\"" } }
+                          },
+                          "props.text": {
+                            "binding": {
+                              "type": "expr",
+                              "config": { "expression": "if(isNull({view.custom.state.selected.effectiveFromDisplay}) || {view.custom.state.selected.effectiveFromDisplay} = \"\", \"\", \"Effective \" + {view.custom.state.selected.effectiveFromDisplay})" }
+                            }
+                          }
                         },
                         "props": { "style": { "fontSize": "11px", "color": "var(--mpp-text-tertiary)" } }
                       },
-                      { "type": "ia.display.label", "meta": { "name": "Spacer" }, "position": { "grow": 1 }, "props": { "text": "" } },
-                      { "type": "ia.input.button", "meta": { "name": "NewVersionButton" }, "position": { "basis": "auto" }, "props": { "text": "New Version", "style": { "classes": "btn btn-sm" } } }
+                      {
+                        "type": "ia.display.label",
+                        "meta": { "name": "LabelEffectiveFrom" },
+                        "position": { "shrink": 0 },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": { "type": "expr", "config": { "expression": "{view.custom.state.editDraft.status} = \"Draft\"" } }
+                          }
+                        },
+                        "props": { "text": "Effective From:", "style": { "classes": "field-label" } }
+                      },
+                      {
+                        "type": "ia.input.text-field",
+                        "meta": { "name": "InputEffectiveFrom" },
+                        "position": { "basis": "140px", "shrink": 0 },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": { "type": "expr", "config": { "expression": "{view.custom.state.editDraft.status} = \"Draft\"" } }
+                          },
+                          "props.text": {
+                            "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.state.editDraft.effectiveFromDisplay" } }
+                          }
+                        },
+                        "props": { "placeholder": "YYYY-MM-DD", "style": { "classes": "search-input" } }
+                      },
+                      { "type": "ia.display.label", "meta": { "name": "VSpacer" }, "position": { "grow": 1 }, "props": { "text": "" } },
+                      {
+                        "type": "ia.input.button",
+                        "meta": { "name": "NewVersionButton" },
+                        "position": { "basis": "auto" },
+                        "propConfig": {
+                          "props.enabled": {
+                            "binding": { "type": "expr", "config": { "expression": "!{view.custom.isDirty}" } }
+                          }
+                        },
+                        "props": { "text": "+ New Version", "style": { "classes": "btn btn-sm" } },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "type": "script",
+                              "scope": "G",
+                              "config": { "script": "\tself.view.rootContainer.handleNewVersion()" }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.button",
+                        "meta": { "name": "SaveDraftButton" },
+                        "position": { "basis": "auto" },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": { "type": "expr", "config": { "expression": "{view.custom.state.editDraft.status} = \"Draft\"" } }
+                          },
+                          "props.enabled": {
+                            "binding": { "type": "property", "config": { "path": "view.custom.isDirty" } }
+                          }
+                        },
+                        "props": { "text": "Save Draft", "style": { "classes": "btn btn-sm" } },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "type": "script",
+                              "scope": "G",
+                              "config": { "script": "\tself.view.rootContainer.handleSaveDraft()" }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.button",
+                        "meta": { "name": "PublishButton" },
+                        "position": { "basis": "auto" },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": { "type": "expr", "config": { "expression": "{view.custom.state.editDraft.status} = \"Draft\"" } }
+                          }
+                        },
+                        "props": { "text": "Publish", "style": { "classes": "btn btn-primary btn-sm" } },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "type": "script",
+                              "scope": "G",
+                              "config": { "script": "\tself.view.rootContainer.handlePublish()" }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.button",
+                        "meta": { "name": "DiscardDraftButton" },
+                        "position": { "basis": "auto" },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": { "type": "expr", "config": { "expression": "{view.custom.state.editDraft.status} = \"Draft\"" } }
+                          }
+                        },
+                        "props": { "text": "Discard Draft", "style": { "classes": "btn btn-danger btn-sm" } },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "type": "script",
+                              "scope": "G",
+                              "config": { "script": "\tself.view.rootContainer.openDiscardDraftConfirm()" }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.button",
+                        "meta": { "name": "DeprecateVersionButton" },
+                        "position": { "basis": "auto" },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": { "type": "expr", "config": { "expression": "{view.custom.state.editDraft.status} = \"Published\"" } }
+                          }
+                        },
+                        "props": { "text": "Deprecate Version", "style": { "classes": "btn btn-danger btn-sm" } },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "type": "script",
+                              "scope": "G",
+                              "config": { "script": "\tself.view.rootContainer.openDeprecateVersionConfirm()" }
+                            }
+                          }
+                        }
+                      }
                     ]
                   }
                 ]
               },
               {
-                "type": "ia.container.flex",
-                "meta": { "name": "TabStrip" },
-                "position": { "basis": "auto", "shrink": 0 },
+                "type": "ia.container.tab",
+                "meta": { "name": "DetailTabs" },
+                "position": { "grow": 1 },
                 "props": {
-                  "direction": "row",
-                  "style": { "classes": "tab-strip" }
+                  "menuType": "modern",
+                  "tabs": [
+                    { "text": "Attributes",      "runWhileHidden": true, "disabled": false },
+                    { "text": "Version History", "runWhileHidden": true, "disabled": false }
+                  ],
+                  "menuStyle": { "classes": "tab-strip" },
+                  "contentStyle": { "classes": "tab-content-fill" },
+                  "style": { "classes": "tab-host" },
+                  "tabStyle": {
+                    "active":   { "classes": "tab-item tab-item-active" },
+                    "inactive": { "classes": "tab-item" },
+                    "disabled": { "classes": "tab-item" }
+                  }
                 },
                 "children": [
                   {
                     "type": "ia.container.flex",
                     "meta": { "name": "AttributesTab" },
-                    "position": { "basis": "auto" },
-                    "events": {
-                      "dom": {
-                        "onClick": {
-                          "config": { "script": "\tself.view.custom.activeTab = 'attributes'" },
-                          "scope": "G",
-                          "type": "script"
-                        }
-                      }
-                    },
-                    "propConfig": {
-                      "props.style.classes": {
-                        "binding": {
-                          "type": "expr",
-                          "config": { "expression": "if({view.custom.activeTab} = 'attributes', 'tab-item tab-item-active', 'tab-item')" }
-                        }
-                      }
-                    },
-                    "props": { "direction": "row", "alignItems": "center" },
+                    "position": { "tabIndex": 0 },
+                    "props": { "direction": "column", "style": { "overflowY": "auto", "height": "100%" } },
                     "children": [
-                      { "type": "ia.display.label", "meta": { "name": "Text" }, "position": { "basis": "auto" }, "props": { "text": "Attributes" } }
+                      {
+                        "type": "ia.container.flex",
+                        "meta": { "name": "TableHeader" },
+                        "position": { "basis": "auto" },
+                        "props": {
+                          "direction": "row",
+                          "alignItems": "center",
+                          "style": {
+                            "background": "var(--mpp-surface-card)",
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "11px",
+                            "fontWeight": "600",
+                            "textTransform": "uppercase",
+                            "letterSpacing": "0.05em",
+                            "borderBottom": "1px solid var(--mpp-border-subtle)",
+                            "padding": "8px 10px",
+                            "gap": "6px"
+                          }
+                        },
+                        "children": [
+                          { "type": "ia.display.label", "meta": { "name": "ColIdx" },    "position": { "basis": "36px", "shrink": 0 }, "props": { "text": "#", "style": { "textAlign": "right" } } },
+                          { "type": "ia.container.flex", "meta": { "name": "ColArrows" }, "position": { "basis": "72px", "shrink": 0 }, "propConfig": { "position.display": { "binding": { "type": "expr", "config": { "expression": "{view.custom.state.editDraft.status} = \"Draft\"" } } } } },
+                          { "type": "ia.display.label", "meta": { "name": "ColAttrName" }, "position": { "grow": 1, "basis": "0" },     "props": { "text": "Attribute Name" } },
+                          { "type": "ia.display.label", "meta": { "name": "ColDataType" }, "position": { "basis": "150px", "shrink": 0 }, "props": { "text": "Data Type" } },
+                          { "type": "ia.display.label", "meta": { "name": "ColUom" },      "position": { "basis": "90px", "shrink": 0 }, "props": { "text": "UOM" } },
+                          { "type": "ia.display.label", "meta": { "name": "ColTarget" },   "position": { "basis": "90px", "shrink": 0 }, "props": { "text": "Target", "style": { "textAlign": "right" } } },
+                          { "type": "ia.display.label", "meta": { "name": "ColLower" },    "position": { "basis": "90px", "shrink": 0 }, "props": { "text": "Lower", "style": { "textAlign": "right" } } },
+                          { "type": "ia.display.label", "meta": { "name": "ColUpper" },    "position": { "basis": "90px", "shrink": 0 }, "props": { "text": "Upper", "style": { "textAlign": "right" } } },
+                          { "type": "ia.display.label", "meta": { "name": "ColRequired" }, "position": { "basis": "60px", "shrink": 0 }, "props": { "text": "Req", "style": { "textAlign": "center" } } },
+                          { "type": "ia.container.flex", "meta": { "name": "ColRm" },      "position": { "basis": "40px", "shrink": 0 }, "propConfig": { "position.display": { "binding": { "type": "expr", "config": { "expression": "{view.custom.state.editDraft.status} = \"Draft\"" } } } } }
+                        ]
+                      },
+                      {
+                        "type": "ia.display.flex-repeater",
+                        "meta": { "name": "AttributeRows" },
+                        "position": { "grow": 1, "basis": "0" },
+                        "propConfig": {
+                          "props.instances": {
+                            "binding": {
+                              "type": "property",
+                              "config": { "path": "view.custom.state.editDraft.attributes" },
+                              "transforms": [
+                                {
+                                  "type": "script",
+                                  "code": "\tattrs = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\tstate = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state) or {}\n\teditDraft = state.get('editDraft') or {}\n\tstatus = editDraft.get('status') or ''\n\tif status == 'Draft':\n\t\tmode = 'draft'\n\telif status == 'Deprecated':\n\t\tmode = 'deprecated'\n\telse:\n\t\tmode = 'published'\n\tuoms = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.uoms) or []\n\tdataTypes = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.dataTypes) or []\n\ttotal = len(attrs)\n\tout = []\n\tfor i, a in enumerate(attrs):\n\t\ta = a or {}\n\t\tout.append({'attribute': a, 'rowIndex': i, 'attrCount': total, 'mode': mode, 'uoms': uoms, 'dataTypes': dataTypes})\n\treturn out"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "props": {
+                          "direction": "column",
+                          "elementPosition": { "basis": "auto" },
+                          "elementStyle": { "maxHeight": "44px" },
+                          "path": "BlueRidge/Components/Quality/QualitySpecAttributeRow",
+                          "style": { "overflowY": "auto" },
+                          "useDefaultViewHeight": false,
+                          "useDefaultViewWidth": false
+                        }
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": { "name": "DraftFooter" },
+                        "position": { "basis": "auto" },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": { "type": "expr", "config": { "expression": "{view.custom.state.editDraft.status} = \"Draft\"" } }
+                          }
+                        },
+                        "props": {
+                          "direction": "row",
+                          "alignItems": "center",
+                          "style": { "padding": "6px 10px", "borderTop": "1px solid var(--mpp-border-subtle)" }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.input.button",
+                            "meta": { "name": "AddAttributeButton" },
+                            "position": { "shrink": 0 },
+                            "props": { "text": "+ Add Attribute", "style": { "classes": "btn btn-sm" } },
+                            "events": {
+                              "component": {
+                                "onActionPerformed": {
+                                  "type": "script",
+                                  "scope": "G",
+                                  "config": { "script": "\tself.view.rootContainer.handleAddAttribute()" }
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": { "name": "ReadOnlyHint" },
+                        "position": { "basis": "auto" },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": { "type": "expr", "config": { "expression": "{view.custom.state.editDraft.status} != \"Draft\" && {view.custom.state.selected.id} != null" } }
+                          }
+                        },
+                        "props": {
+                          "text": "This version is read-only. Click + New Version to create an editable draft copy with a new effective date.",
+                          "style": {
+                            "padding": "8px 12px",
+                            "borderTop": "1px solid var(--mpp-border-subtle)",
+                            "fontSize": "11px",
+                            "color": "var(--mpp-text-tertiary)",
+                            "fontStyle": "italic"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": { "name": "NoVersionHint" },
+                        "position": { "basis": "auto" },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": { "type": "expr", "config": { "expression": "{view.custom.state.selected.id} = null" } }
+                          }
+                        },
+                        "props": {
+                          "text": "No versions yet for this spec. Click + New Version to create the first draft.",
+                          "style": {
+                            "padding": "16px",
+                            "fontSize": "12px",
+                            "color": "var(--mpp-text-muted)",
+                            "fontStyle": "italic"
+                          }
+                        }
+                      }
                     ]
                   },
                   {
                     "type": "ia.container.flex",
                     "meta": { "name": "VersionHistoryTab" },
-                    "position": { "basis": "auto" },
-                    "events": {
-                      "dom": {
-                        "onClick": {
-                          "config": { "script": "\tself.view.custom.activeTab = 'history'" },
-                          "scope": "G",
-                          "type": "script"
+                    "position": { "tabIndex": 1 },
+                    "props": { "direction": "column", "style": { "overflow": "hidden", "height": "100%" } },
+                    "children": [
+                      {
+                        "type": "ia.display.table",
+                        "meta": { "name": "VersionHistoryTable" },
+                        "position": { "grow": 1 },
+                        "propConfig": {
+                          "props.data": {
+                            "binding": {
+                              "type": "property",
+                              "config": { "path": "view.custom.versions" },
+                              "transforms": [
+                                {
+                                  "type": "script",
+                                  "code": "\trows = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\tout = []\n\tfor v in rows:\n\t\tv = v or {}\n\t\tpub = v.get('PublishedAt')\n\t\tdep = v.get('DeprecatedAt')\n\t\tif dep is not None:\n\t\t\tstate = 'Deprecated'\n\t\telif pub is None:\n\t\t\tstate = 'Draft'\n\t\telse:\n\t\t\tstate = 'Published'\n\t\tout.append({\n\t\t\t'Version': 'v' + str(v.get('VersionNumber') or ''),\n\t\t\t'EffectiveFrom': v.get('effectiveFromDisplay') or '',\n\t\t\t'DeprecatedAt': str(dep)[:10] if dep is not None else '—',\n\t\t\t'State': state,\n\t\t\t'CreatedBy': v.get('CreatedByName') or v.get('CreatedBy') or '',\n\t\t\t'CreatedAt': str(v.get('CreatedAt'))[:16] if v.get('CreatedAt') is not None else ''\n\t\t})\n\treturn out"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "props": {
+                          "selection": { "mode": "none", "data": [] },
+                          "rowHeight": 36,
+                          "showHeader": true,
+                          "filtering": { "enabled": false, "showInToolbar": false },
+                          "pager": { "enabled": false },
+                          "toolbar": { "include": false },
+                          "footer": { "enable": false },
+                          "columns": [
+                            {
+                              "field": "Version",
+                              "visible": true, "editable": false, "render": "auto", "justify": "auto", "align": "center",
+                              "resizable": false, "sortable": false, "sort": "none",
+                              "filter": { "enabled": false, "visible": true, "string": { "condition": "contains", "value": "" }, "number": { "condition": "=", "value": null }, "boolean": "both" },
+                              "viewPath": "", "viewParams": {}, "boolean": "checkbox", "number": "value",
+                              "progressBar": { "max": 100, "min": 0, "bar": { "color": "" }, "track": { "color": "" }, "value": { "enabled": true, "format": "0", "justify": "center", "style": {} } },
+                              "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+                              "nullFormat": { "nullValue": "", "strict": false }, "numberFormat": "0,0.##", "dateFormat": "MM/DD/YYYY",
+                              "width": 80, "strictWidth": false, "style": { "classes": "" },
+                              "header": { "title": "Version", "justify": "left", "align": "center", "style": { "classes": "" } },
+                              "footer": { "title": "", "justify": "left", "align": "center", "style": { "classes": "" } }
+                            },
+                            {
+                              "field": "EffectiveFrom",
+                              "visible": true, "editable": false, "render": "auto", "justify": "auto", "align": "center",
+                              "resizable": false, "sortable": false, "sort": "none",
+                              "filter": { "enabled": false, "visible": true, "string": { "condition": "contains", "value": "" }, "number": { "condition": "=", "value": null }, "boolean": "both" },
+                              "viewPath": "", "viewParams": {}, "boolean": "checkbox", "number": "value",
+                              "progressBar": { "max": 100, "min": 0, "bar": { "color": "" }, "track": { "color": "" }, "value": { "enabled": true, "format": "0", "justify": "center", "style": {} } },
+                              "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+                              "nullFormat": { "nullValue": "", "strict": false }, "numberFormat": "0,0.##", "dateFormat": "MM/DD/YYYY",
+                              "width": 0, "strictWidth": false, "style": { "classes": "" },
+                              "header": { "title": "Effective From", "justify": "left", "align": "center", "style": { "classes": "" } },
+                              "footer": { "title": "", "justify": "left", "align": "center", "style": { "classes": "" } }
+                            },
+                            {
+                              "field": "DeprecatedAt",
+                              "visible": true, "editable": false, "render": "auto", "justify": "auto", "align": "center",
+                              "resizable": false, "sortable": false, "sort": "none",
+                              "filter": { "enabled": false, "visible": true, "string": { "condition": "contains", "value": "" }, "number": { "condition": "=", "value": null }, "boolean": "both" },
+                              "viewPath": "", "viewParams": {}, "boolean": "checkbox", "number": "value",
+                              "progressBar": { "max": 100, "min": 0, "bar": { "color": "" }, "track": { "color": "" }, "value": { "enabled": true, "format": "0", "justify": "center", "style": {} } },
+                              "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+                              "nullFormat": { "nullValue": "", "strict": false }, "numberFormat": "0,0.##", "dateFormat": "MM/DD/YYYY",
+                              "width": 0, "strictWidth": false, "style": { "classes": "" },
+                              "header": { "title": "Deprecated At", "justify": "left", "align": "center", "style": { "classes": "" } },
+                              "footer": { "title": "", "justify": "left", "align": "center", "style": { "classes": "" } }
+                            },
+                            {
+                              "field": "State",
+                              "visible": true, "editable": false, "render": "auto", "justify": "auto", "align": "center",
+                              "resizable": false, "sortable": false, "sort": "none",
+                              "filter": { "enabled": false, "visible": true, "string": { "condition": "contains", "value": "" }, "number": { "condition": "=", "value": null }, "boolean": "both" },
+                              "viewPath": "", "viewParams": {}, "boolean": "checkbox", "number": "value",
+                              "progressBar": { "max": 100, "min": 0, "bar": { "color": "" }, "track": { "color": "" }, "value": { "enabled": true, "format": "0", "justify": "center", "style": {} } },
+                              "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+                              "nullFormat": { "nullValue": "", "strict": false }, "numberFormat": "0,0.##", "dateFormat": "MM/DD/YYYY",
+                              "width": 120, "strictWidth": false, "style": { "classes": "" },
+                              "header": { "title": "State", "justify": "left", "align": "center", "style": { "classes": "" } },
+                              "footer": { "title": "", "justify": "left", "align": "center", "style": { "classes": "" } }
+                            },
+                            {
+                              "field": "CreatedBy",
+                              "visible": true, "editable": false, "render": "auto", "justify": "auto", "align": "center",
+                              "resizable": false, "sortable": false, "sort": "none",
+                              "filter": { "enabled": false, "visible": true, "string": { "condition": "contains", "value": "" }, "number": { "condition": "=", "value": null }, "boolean": "both" },
+                              "viewPath": "", "viewParams": {}, "boolean": "checkbox", "number": "value",
+                              "progressBar": { "max": 100, "min": 0, "bar": { "color": "" }, "track": { "color": "" }, "value": { "enabled": true, "format": "0", "justify": "center", "style": {} } },
+                              "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+                              "nullFormat": { "nullValue": "", "strict": false }, "numberFormat": "0,0.##", "dateFormat": "MM/DD/YYYY",
+                              "width": 0, "strictWidth": false, "style": { "classes": "" },
+                              "header": { "title": "Created By", "justify": "left", "align": "center", "style": { "classes": "" } },
+                              "footer": { "title": "", "justify": "left", "align": "center", "style": { "classes": "" } }
+                            },
+                            {
+                              "field": "CreatedAt",
+                              "visible": true, "editable": false, "render": "auto", "justify": "auto", "align": "center",
+                              "resizable": false, "sortable": false, "sort": "none",
+                              "filter": { "enabled": false, "visible": true, "string": { "condition": "contains", "value": "" }, "number": { "condition": "=", "value": null }, "boolean": "both" },
+                              "viewPath": "", "viewParams": {}, "boolean": "checkbox", "number": "value",
+                              "progressBar": { "max": 100, "min": 0, "bar": { "color": "" }, "track": { "color": "" }, "value": { "enabled": true, "format": "0", "justify": "center", "style": {} } },
+                              "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+                              "nullFormat": { "nullValue": "", "strict": false }, "numberFormat": "0,0.##", "dateFormat": "MM/DD/YYYY",
+                              "width": 0, "strictWidth": false, "style": { "classes": "" },
+                              "header": { "title": "Created At", "justify": "left", "align": "center", "style": { "classes": "" } },
+                              "footer": { "title": "", "justify": "left", "align": "center", "style": { "classes": "" } }
+                            }
+                          ]
                         }
                       }
-                    },
-                    "propConfig": {
-                      "props.style.classes": {
-                        "binding": {
-                          "type": "expr",
-                          "config": { "expression": "if({view.custom.activeTab} = 'history', 'tab-item tab-item-active', 'tab-item')" }
-                        }
-                      }
-                    },
-                    "props": { "direction": "row", "alignItems": "center" },
-                    "children": [
-                      { "type": "ia.display.label", "meta": { "name": "Text" }, "position": { "basis": "auto" }, "props": { "text": "Version History" } }
                     ]
                   }
                 ]
-              },
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "EmptyDetail" },
+            "position": { "grow": 1 },
+            "propConfig": {
+              "meta.visible": {
+                "binding": { "type": "expr", "config": { "expression": "{view.custom.selectedSpecId} = null" } }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "center",
+              "justify": "center",
+              "style": { "background": "var(--mpp-surface-raised)" }
+            },
+            "children": [
               {
-                "type": "ia.container.flex",
-                "meta": { "name": "AttributesTabContent" },
-                "position": { "grow": 1 },
-                "propConfig": {
-                  "position.display": {
-                    "binding": { "type": "expr",
-                      "config": { "expression": "{view.custom.activeTab} = 'attributes'" } }
-                  }
-                },
-                "props": { "direction": "column", "style": { "overflowY": "auto" } },
-                "children": [
-                  {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "TableHeader" },
-                    "position": { "basis": "auto" },
-                    "props": {
-                      "direction": "row",
-                      "alignItems": "center",
-                      "style": {
-                        "background": "var(--mpp-surface-card)",
-                        "color": "var(--mpp-text-secondary)",
-                        "fontSize": "11px",
-                        "fontWeight": "600",
-                        "textTransform": "uppercase",
-                        "letterSpacing": "0.05em",
-                        "borderBottom": "1px solid var(--mpp-border-subtle)",
-                        "padding": "8px 12px"
-                      }
-                    },
-                    "children": [
-                      { "type": "ia.display.label", "meta": { "name": "ColArrows" },   "position": { "basis": "46px", "shrink": 0 }, "props": { "text": "" } },
-                      { "type": "ia.display.label", "meta": { "name": "ColAttrName" }, "position": { "grow": 1, "basis": "0" },     "props": { "text": "Attribute Name" } },
-                      { "type": "ia.display.label", "meta": { "name": "ColDataType" }, "position": { "basis": "90px", "shrink": 0 }, "props": { "text": "Data Type" } },
-                      { "type": "ia.display.label", "meta": { "name": "ColUom" },      "position": { "basis": "70px", "shrink": 0 }, "props": { "text": "UOM" } },
-                      { "type": "ia.display.label", "meta": { "name": "ColTarget" },   "position": { "basis": "80px", "shrink": 0 }, "props": { "text": "Target" } },
-                      { "type": "ia.display.label", "meta": { "name": "ColLower" },    "position": { "basis": "80px", "shrink": 0 }, "props": { "text": "Lower" } },
-                      { "type": "ia.display.label", "meta": { "name": "ColUpper" },    "position": { "basis": "80px", "shrink": 0 }, "props": { "text": "Upper" } },
-                      { "type": "ia.display.label", "meta": { "name": "ColRequired" }, "position": { "basis": "70px", "shrink": 0 }, "props": { "text": "Required", "style": { "textAlign": "center" } } }
-                    ]
-                  },
-                  {
-                    "type": "ia.display.flex-repeater",
-                    "meta": { "name": "AttributeRows" },
-                    "position": { "basis": "auto" },
-                    "propConfig": {
-                      "props.instances": { "binding": { "type": "property", "config": { "path": "view.custom.attributes" } } }
-                    },
-                    "props": {
-                      "path": "BlueRidge/Components/SpecAttributeRow",
-                      "direction": "column",
-                      "useDefaultViewWidth": false,
-                      "useDefaultViewHeight": false,
-                      "elementPosition": { "basis": "44px", "shrink": 0 }
-                    }
-                  },
-                  {
-                    "type": "ia.display.label",
-                    "meta": { "name": "ReadOnlyHint" },
-                    "position": { "basis": "auto" },
-                    "props": {
-                      "text": "Active version — read-only. Click New Version to create an editable copy with a new effective date.",
-                      "style": {
-                        "padding": "8px 12px",
-                        "borderTop": "1px solid var(--mpp-border-subtle)",
-                        "fontSize": "11px",
-                        "color": "var(--mpp-text-tertiary)",
-                        "fontStyle": "italic"
-                      }
-                    }
-                  }
-                ]
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": { "name": "VersionHistoryTabContent" },
-                "position": { "grow": 1 },
-                "propConfig": {
-                  "position.display": {
-                    "binding": { "type": "expr",
-                      "config": { "expression": "{view.custom.activeTab} = 'history'" } }
-                  }
-                },
-                "props": { "direction": "column", "style": { "overflowY": "auto" } },
-                "children": [
-                  {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "TableHeader" },
-                    "position": { "basis": "auto" },
-                    "props": {
-                      "direction": "row",
-                      "alignItems": "center",
-                      "style": {
-                        "background": "var(--mpp-surface-card)",
-                        "color": "var(--mpp-text-secondary)",
-                        "fontSize": "11px",
-                        "fontWeight": "600",
-                        "textTransform": "uppercase",
-                        "letterSpacing": "0.05em",
-                        "borderBottom": "1px solid var(--mpp-border-subtle)",
-                        "padding": "8px 12px"
-                      }
-                    },
-                    "children": [
-                      { "type": "ia.display.label", "meta": { "name": "ColVersion" },       "position": { "basis": "60px", "shrink": 0 },  "props": { "text": "Version" } },
-                      { "type": "ia.display.label", "meta": { "name": "ColEffectiveFrom" }, "position": { "grow": 1, "basis": "0" },      "props": { "text": "Effective From" } },
-                      { "type": "ia.display.label", "meta": { "name": "ColDeprecatedAt" },  "position": { "grow": 1, "basis": "0" },      "props": { "text": "Deprecated At" } },
-                      { "type": "ia.display.label", "meta": { "name": "ColState" },         "position": { "basis": "110px", "shrink": 0 }, "props": { "text": "State" } },
-                      { "type": "ia.display.label", "meta": { "name": "ColCreatedBy" },     "position": { "grow": 1, "basis": "0" },      "props": { "text": "Created By" } },
-                      { "type": "ia.display.label", "meta": { "name": "ColCreatedAt" },     "position": { "grow": 1, "basis": "0" },      "props": { "text": "Created At" } }
-                    ]
-                  },
-                  {
-                    "type": "ia.display.flex-repeater",
-                    "meta": { "name": "VersionRows" },
-                    "position": { "basis": "auto" },
-                    "propConfig": {
-                      "props.instances": { "binding": { "type": "property", "config": { "path": "view.custom.versions" } } }
-                    },
-                    "props": {
-                      "path": "BlueRidge/Components/SpecVersionRow",
-                      "direction": "column",
-                      "useDefaultViewWidth": false,
-                      "useDefaultViewHeight": false,
-                      "elementPosition": { "basis": "40px", "shrink": 0 }
-                    }
-                  }
-                ]
+                "type": "ia.display.label",
+                "meta": { "name": "EmptyHint" },
+                "position": { "basis": "auto" },
+                "props": {
+                  "text": "Select a quality spec from the list, or click + New Spec.",
+                  "style": { "color": "var(--mpp-text-muted)", "fontStyle": "italic", "fontSize": "13px" }
+                }
               }
             ]
           }
         ]
       }
-    ]
+    ],
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "initIncoming",
+          "params": [],
+          "script": "\tincoming = self.view.params.specId\n\tif not incoming:\n\t\ttry:\n\t\t\tincoming = self.session.custom.qsIncomingSpecId\n\t\texcept Exception:\n\t\t\tincoming = None\n\tif incoming:\n\t\tself.view.custom.incomingSpecId = incoming\n\t\tself.view.custom.selectedSpecId = incoming"
+        },
+        {
+          "name": "_emptyHeader",
+          "params": [],
+          "script": "\treturn {\n\t\t\"id\": None, \"name\": \"\", \"description\": \"\",\n\t\t\"itemId\": None, \"itemCode\": \"\", \"itemDesc\": \"\",\n\t\t\"operationTemplateId\": None, \"opCode\": \"\", \"deprecatedAt\": None,\n\t}"
+        },
+        {
+          "name": "_emptyVersion",
+          "params": [],
+          "script": "\treturn {\n\t\t\"id\": None, \"specId\": None, \"versionNumber\": None,\n\t\t\"effectiveFrom\": None, \"effectiveFromDisplay\": \"\",\n\t\t\"publishedAt\": None, \"deprecatedAt\": None,\n\t\t\"status\": None, \"attributes\": [],\n\t}"
+        },
+        {
+          "name": "_clone",
+          "params": ["obj"],
+          "script": "\treturn system.util.jsonDecode(system.util.jsonEncode(obj))"
+        },
+        {
+          "name": "loadSpec",
+          "params": [],
+          "script": "\tspecId = self.view.custom.selectedSpecId\n\tself.view.custom.activeVersionId = None\n\tif not specId:\n\t\tself.view.custom.specHeader = {\"selected\": self._emptyHeader(), \"editDraft\": self._emptyHeader()}\n\t\tself.view.custom.state = {\"selected\": self._emptyVersion(), \"editDraft\": self._emptyVersion()}\n\t\tself.view.custom.versions = []\n\t\treturn\n\theader = BlueRidge.Quality.QualitySpec.getSpecHeader(specId)\n\tself.view.custom.specHeader = {\"selected\": dict(header), \"editDraft\": dict(header)}\n\tself.view.custom.uoms = BlueRidge.Quality.QualitySpec.listUoms()\n\tversions = BlueRidge.Quality.QualitySpec.listVersions(specId, True)\n\tself.view.custom.versions = versions\n\tif versions:\n\t\tself.view.custom.activeVersionId = versions[0].get(\"Id\")\n\telse:\n\t\tself.view.custom.state = {\"selected\": self._emptyVersion(), \"editDraft\": self._emptyVersion()}"
+        },
+        {
+          "name": "loadActiveVersion",
+          "params": [],
+          "script": "\tvid = self.view.custom.activeVersionId\n\tif not vid:\n\t\tself.view.custom.state = {\"selected\": self._emptyVersion(), \"editDraft\": self._emptyVersion()}\n\t\treturn\n\tbundle = BlueRidge.Quality.QualitySpec.getVersionFull(vid)\n\tself.view.custom.state = {\"selected\": bundle, \"editDraft\": self._clone(bundle)}"
+        },
+        {
+          "name": "refreshVersions",
+          "params": [],
+          "script": "\tspecId = self.view.custom.selectedSpecId\n\tif not specId:\n\t\tself.view.custom.versions = []\n\t\treturn\n\tself.view.custom.versions = BlueRidge.Quality.QualitySpec.listVersions(specId, True)"
+        },
+        {
+          "name": "refreshSpecs",
+          "params": [],
+          "script": "\tself.view.custom.specs = BlueRidge.Quality.QualitySpec.getAllForList(self.view.custom.filter)"
+        },
+        {
+          "name": "handleNewSpec",
+          "params": [],
+          "script": "\tres = BlueRidge.Quality.QualitySpec.createSpec({\"name\": \"New Quality Spec\", \"itemId\": None, \"operationTemplateId\": None, \"description\": \"\"})\n\tBlueRidge.Common.Ui.notifyResult(res, \"Quality spec created\")\n\tif res and res.get(\"Status\"):\n\t\tself.refreshSpecs()\n\t\tnewId = res.get(\"NewId\")\n\t\tif newId:\n\t\t\tself.view.custom.selectedSpecId = newId"
+        },
+        {
+          "name": "handleSaveHeader",
+          "params": [],
+          "script": "\tdraft = self.view.custom.specHeader.editDraft or {}\n\tname = (draft.get(\"name\") or \"\").strip()\n\tif not name:\n\t\tBlueRidge.Common.Notify.toast(\"Name required\", \"Enter a spec name before saving.\", \"warning\")\n\t\treturn\n\tres = BlueRidge.Quality.QualitySpec.updateSpecHeader(draft)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Spec saved\")\n\tif res and res.get(\"Status\"):\n\t\tsaved = dict(draft)\n\t\tself.view.custom.specHeader = {\"selected\": dict(saved), \"editDraft\": dict(saved)}\n\t\tself.refreshSpecs()"
+        },
+        {
+          "name": "handleNewVersion",
+          "params": [],
+          "script": "\tspecId = self.view.custom.selectedSpecId\n\tif not specId:\n\t\treturn\n\tres = BlueRidge.Quality.QualitySpec.createNewVersion(specId)\n\tBlueRidge.Common.Ui.notifyResult(res, \"New draft version created\")\n\tif not (res and res.get(\"Status\")):\n\t\treturn\n\tnewId = res.get(\"NewId\")\n\tself.refreshVersions()\n\tif newId:\n\t\tself.view.custom.activeVersionId = newId"
+        },
+        {
+          "name": "handleSaveDraft",
+          "params": [],
+          "script": "\tdraft = self.view.custom.state.editDraft or {}\n\tvid = draft.get(\"id\")\n\tif not vid:\n\t\tBlueRidge.Common.Notify.toast(\"No draft selected\", \"No draft version is active.\", \"warning\")\n\t\treturn\n\teff = draft.get(\"effectiveFromDisplay\") or \"\"\n\teff = eff.strip() if isinstance(eff, basestring) else eff\n\tif not eff:\n\t\tBlueRidge.Common.Notify.toast(\"Effective From required\", \"Enter an effective date before saving.\", \"warning\")\n\t\treturn\n\tattrs = draft.get(\"attributes\") or []\n\tres = BlueRidge.Quality.QualitySpec.saveDraft(vid, eff, attrs)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Draft saved\")\n\tif res and res.get(\"Status\"):\n\t\tself.refreshVersions()\n\t\tself.loadActiveVersion()"
+        },
+        {
+          "name": "handlePublish",
+          "params": [],
+          "script": "\tdraft = self.view.custom.state.editDraft or {}\n\tvid = draft.get(\"id\")\n\tif not vid:\n\t\tBlueRidge.Common.Notify.toast(\"No draft selected\", \"No draft version is active.\", \"warning\")\n\t\treturn\n\teff = draft.get(\"effectiveFromDisplay\") or \"\"\n\teff = eff.strip() if isinstance(eff, basestring) else eff\n\tif not eff:\n\t\tBlueRidge.Common.Notify.toast(\"Effective From required\", \"Enter an effective date before publishing.\", \"warning\")\n\t\treturn\n\tattrs = draft.get(\"attributes\") or []\n\tif not attrs:\n\t\tBlueRidge.Common.Notify.toast(\"At least one attribute required\", \"Add at least one attribute before publishing.\", \"warning\")\n\t\treturn\n\tres = BlueRidge.Quality.QualitySpec.publish(vid, eff, attrs)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Version published\")\n\tif res and res.get(\"Status\"):\n\t\tself.refreshVersions()\n\t\tself.loadActiveVersion()"
+        },
+        {
+          "name": "openDeprecateSpecConfirm",
+          "params": [],
+          "script": "\tsel = self.view.custom.specHeader.selected or {}\n\tif not sel.get(\"id\"):\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid=\"mpp-confirm-destructive\",\n\t\tview=\"BlueRidge/Components/Popups/ConfirmDestructive\",\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t\"title\": \"Deprecate Quality Spec\",\n\t\t\t\"message\": \"Deprecate this entire spec and all its versions? It will no longer be selectable for inspections.\",\n\t\t\t\"confirmLabel\": \"Deprecate\",\n\t\t\t\"cancelLabel\": \"Cancel\",\n\t\t\t\"confirmClass\": \"btn btn-danger btn-sm\",\n\t\t\t\"replyMessage\": \"qsConfirmDeprecateSpecResult\",\n\t\t},\n\t)"
+        },
+        {
+          "name": "openDiscardDraftConfirm",
+          "params": [],
+          "script": "\tdraft = self.view.custom.state.editDraft or {}\n\tif not draft.get(\"id\"):\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid=\"mpp-confirm-destructive\",\n\t\tview=\"BlueRidge/Components/Popups/ConfirmDestructive\",\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t\"title\": \"Discard Draft\",\n\t\t\t\"message\": \"Discard this draft version and all unsaved edits? This cannot be undone.\",\n\t\t\t\"confirmLabel\": \"Discard\",\n\t\t\t\"cancelLabel\": \"Cancel\",\n\t\t\t\"confirmClass\": \"btn btn-danger btn-sm\",\n\t\t\t\"replyMessage\": \"qsConfirmDiscardResult\",\n\t\t},\n\t)"
+        },
+        {
+          "name": "openDeprecateVersionConfirm",
+          "params": [],
+          "script": "\tsel = self.view.custom.state.selected or {}\n\tif not sel.get(\"id\"):\n\t\treturn\n\tver = sel.get(\"versionNumber\")\n\tsystem.perspective.openPopup(\n\t\tid=\"mpp-confirm-destructive\",\n\t\tview=\"BlueRidge/Components/Popups/ConfirmDestructive\",\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t\"title\": \"Deprecate Version\",\n\t\t\t\"message\": \"Deprecate v\" + str(ver) + \"? This retires the version from production use.\",\n\t\t\t\"confirmLabel\": \"Deprecate\",\n\t\t\t\"cancelLabel\": \"Cancel\",\n\t\t\t\"confirmClass\": \"btn btn-danger btn-sm\",\n\t\t\t\"replyMessage\": \"qsConfirmDeprecateVersionResult\",\n\t\t},\n\t)"
+        },
+        {
+          "name": "openUnsavedConfirm",
+          "params": [],
+          "script": "\tsystem.perspective.openPopup(\n\t\tid=\"mpp-confirm-unsaved\",\n\t\tview=\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t\"title\": \"Unsaved Changes\",\n\t\t\t\"message\": \"You have unsaved changes to this quality spec. Save before switching?\",\n\t\t},\n\t)"
+        },
+        {
+          "name": "_addAttribute",
+          "params": [],
+          "script": "\tdraft = dict(self.view.custom.state.editDraft or {})\n\tattrs = list(draft.get(\"attributes\") or [])\n\tattrs.append(BlueRidge.Quality.QualitySpec.emptyAttribute())\n\tdraft[\"attributes\"] = attrs\n\tself.view.custom.state.editDraft = draft"
+        },
+        {
+          "name": "_swapAttrs",
+          "params": ["idxA", "idxB"],
+          "script": "\tdraft = dict(self.view.custom.state.editDraft or {})\n\tattrs = list(draft.get(\"attributes\") or [])\n\tif idxA < 0 or idxB < 0 or idxA >= len(attrs) or idxB >= len(attrs):\n\t\treturn\n\tattrs[idxA], attrs[idxB] = attrs[idxB], attrs[idxA]\n\tdraft[\"attributes\"] = attrs\n\tself.view.custom.state.editDraft = draft"
+        },
+        {
+          "name": "_removeAttr",
+          "params": ["idx"],
+          "script": "\tdraft = dict(self.view.custom.state.editDraft or {})\n\tattrs = list(draft.get(\"attributes\") or [])\n\tif idx < 0 or idx >= len(attrs):\n\t\treturn\n\tdel attrs[idx]\n\tdraft[\"attributes\"] = attrs\n\tself.view.custom.state.editDraft = draft"
+        },
+        {
+          "name": "_applyAttrField",
+          "params": ["idx", "field", "value"],
+          "script": "\tdraft = dict(self.view.custom.state.editDraft or {})\n\tattrs = list(draft.get(\"attributes\") or [])\n\tif idx < 0 or idx >= len(attrs):\n\t\treturn\n\trow = dict(attrs[idx])\n\trow[field] = value\n\tif field == \"uomId\":\n\t\tuoms = self.view.custom.uoms or []\n\t\tcode = \"\"\n\t\tfor u in uoms:\n\t\t\tif u.get(\"Id\") == value:\n\t\t\t\tcode = u.get(\"Code\") or \"\"\n\t\t\t\tbreak\n\t\trow[\"uomCode\"] = code\n\tattrs[idx] = row\n\tdraft[\"attributes\"] = attrs\n\tself.view.custom.state.editDraft = draft"
+        },
+        {
+          "name": "handleAddAttribute",
+          "params": [],
+          "script": "\tself._addAttribute()"
+        }
+      ],
+      "messageHandlers": [
+        {
+          "messageType": "qsSpecRowClicked",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tnewId = payload.get(\"specId\")\n\tif newId == self.view.custom.selectedSpecId:\n\t\treturn\n\tif self.view.custom.isDirty:\n\t\tself.view.custom.pendingSwitch = newId\n\t\tself.openUnsavedConfirm()\n\telse:\n\t\tself.view.custom.selectedSpecId = newId"
+        },
+        {
+          "messageType": "confirmUnsavedResult",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\taction = payload.get(\"action\")\n\tpending = self.view.custom.pendingSwitch\n\tif action == \"cancel\":\n\t\tself.view.custom.pendingSwitch = None\n\t\treturn\n\tif action == \"save\":\n\t\tdraftStatus = (self.view.custom.state.editDraft or {}).get(\"status\")\n\t\tif draftStatus == \"Draft\":\n\t\t\tself.handleSaveDraft()\n\t\tself.handleSaveHeader()\n\telif action == \"discard\":\n\t\tself.view.custom.specHeader = {\"selected\": dict(self.view.custom.specHeader.selected), \"editDraft\": dict(self.view.custom.specHeader.selected)}\n\t\tself.view.custom.state = {\"selected\": self._clone(self.view.custom.state.selected), \"editDraft\": self._clone(self.view.custom.state.selected)}\n\tif pending is not None:\n\t\tself.view.custom.pendingSwitch = None\n\t\tself.view.custom.selectedSpecId = pending"
+        },
+        {
+          "messageType": "qsConfirmDeprecateSpecResult",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload or payload.get(\"action\") != \"confirm\":\n\t\treturn\n\tspecId = self.view.custom.selectedSpecId\n\tif not specId:\n\t\treturn\n\tres = BlueRidge.Quality.QualitySpec.deprecateSpec(specId)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Spec deprecated\")\n\tif res and res.get(\"Status\"):\n\t\tself.view.custom.selectedSpecId = None\n\t\tself.refreshSpecs()"
+        },
+        {
+          "messageType": "qsConfirmDiscardResult",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload or payload.get(\"action\") != \"confirm\":\n\t\treturn\n\tdraft = self.view.custom.state.editDraft or {}\n\tvid = draft.get(\"id\")\n\tif not vid:\n\t\treturn\n\tres = BlueRidge.Quality.QualitySpec.discardDraft(vid)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Draft discarded\")\n\tif res and res.get(\"Status\"):\n\t\tself.view.custom.activeVersionId = None\n\t\tself.refreshVersions()\n\t\tvers = self.view.custom.versions or []\n\t\tif vers:\n\t\t\tself.view.custom.activeVersionId = vers[0].get(\"Id\")"
+        },
+        {
+          "messageType": "qsConfirmDeprecateVersionResult",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload or payload.get(\"action\") != \"confirm\":\n\t\treturn\n\tsel = self.view.custom.state.selected or {}\n\tvid = sel.get(\"id\")\n\tif not vid:\n\t\treturn\n\tres = BlueRidge.Quality.QualitySpec.deprecateVersion(vid)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Version deprecated\")\n\tif res and res.get(\"Status\"):\n\t\tself.refreshVersions()\n\t\tself.loadActiveVersion()"
+        },
+        {
+          "messageType": "qsAttrMoveUp",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tself._swapAttrs(idx, idx - 1)"
+        },
+        {
+          "messageType": "qsAttrMoveDown",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tself._swapAttrs(idx, idx + 1)"
+        },
+        {
+          "messageType": "qsAttrRemove",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tself._removeAttr(idx)"
+        },
+        {
+          "messageType": "qsAttrNameChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tself._applyAttrField(idx, \"attributeName\", payload.get(\"value\"))"
+        },
+        {
+          "messageType": "qsAttrDataTypeChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tself._applyAttrField(idx, \"dataType\", payload.get(\"value\"))"
+        },
+        {
+          "messageType": "qsAttrUomChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tself._applyAttrField(idx, \"uomId\", payload.get(\"value\"))"
+        },
+        {
+          "messageType": "qsAttrTargetChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tself._applyAttrField(idx, \"targetValue\", payload.get(\"value\"))"
+        },
+        {
+          "messageType": "qsAttrLowerChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tself._applyAttrField(idx, \"lowerLimit\", payload.get(\"value\"))"
+        },
+        {
+          "messageType": "qsAttrUpperChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tself._applyAttrField(idx, \"upperLimit\", payload.get(\"value\"))"
+        },
+        {
+          "messageType": "qsAttrRequiredChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tself._applyAttrField(idx, \"isRequired\", bool(payload.get(\"value\")))"
+        }
+      ]
+    }
   }
 }
