@@ -115,20 +115,28 @@
         ]
       },
       {
-        "type": "ia.display.label",
+        "type": "ia.input.button",
         "meta": {
-          "name": "GoToSpecHint"
+          "name": "GoToSpecButton"
         },
         "position": {
           "basis": "auto"
         },
         "props": {
-          "text": "Phase 7 will add a 'Go to spec' navigation button per row.",
+          "text": "Go to spec →",
           "style": {
-            "padding": "8px 0",
-            "fontSize": "11px",
-            "color": "var(--mpp-text-muted)",
-            "fontStyle": "italic"
+            "alignSelf": "flex-end"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsel = self.getSibling(\"SpecsTable\").props.selection.selectedRow\n\tif sel is None or sel < 0:\n\t\tBlueRidge.Common.Notify.toast(\"Select a spec\", \"Pick a row in the table first.\", \"info\")\n\t\treturn\n\trows = self.getSibling(\"SpecsTable\").props.data\n\tif sel >= len(rows):\n\t\treturn\n\tspecId = rows[sel][\"id\"]\n\tsystem.perspective.setSessionProps({\"custom.qsIncomingSpecId\": specId})\n\tsystem.perspective.navigate(page=\"/quality-specs\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
           }
         }
       }
