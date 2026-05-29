@@ -1,20 +1,22 @@
 -- =============================================
--- Procedure:   Quality.QualitySpecVersion_Publish
+-- Procedure:   Quality.QualitySpecVersion_DiscardDraft
 -- Author:      Blue Ridge Automation
--- Created:     2026-04-14
--- Version:     2.1
+-- Created:     2026-05-29
+-- Version:     1.0
 --
 -- Description:
---   Flips a Draft version to Published by setting PublishedAt =
---   SYSUTCDATETIME(). One-way transition. Once published, the
---   version and its attributes become immutable — attribute
---   mutations are rejected. To change a published version, use
---   _CreateNewVersion to clone a Draft.
+--   Physically deletes a Draft QualitySpecVersion and all of its
+--   QualitySpecAttribute children. Target must be Draft
+--   (PublishedAt IS NULL AND DeprecatedAt IS NULL). Captures full
+--   pre-delete state as OldValue in Audit.ConfigLog (attributes carry
+--   resolved Uom {Id, Code, Name}) so the draft is forensically
+--   reconstructable if needed.
 --
---   Rejects if the version is already published or deprecated.
+--   Rejects published or deprecated versions (those are immutable; use
+--   QualitySpecVersion_Deprecate for published ones).
 --
 -- Parameters (input):
---   @Id BIGINT        - Required.
+--   @Id        BIGINT - Required. QualitySpecVersion Id.
 --   @AppUserId BIGINT - Required for audit.
 --
 -- Result set:
@@ -22,22 +24,18 @@
 --   Status=1 on success, 0 on failure.
 --
 -- Dependencies:
---   Tables: Quality.QualitySpecVersion
+--   Tables: Quality.QualitySpecVersion, Quality.QualitySpecAttribute,
+--           Quality.QualitySpec, Parts.Item, Parts.Uom
 --   Procs:  Audit.Audit_LogConfigChange, Audit.Audit_LogFailure
 --
 -- Change Log:
---   2026-04-14 - 1.0 - Initial version
---   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
---   2026-05-29 - 2.1 - Audit-readability convention: SUBJECT . CATEGORY
---                       . ACTION narrative Description
---                       (<PN> . Quality Spec "<Name>" v<N> . Published;
---                       <K> attributes; effective <YYYY-MM-DD>). NO
---                       "(deprecated vN)" suffix — date-resolved lifecycle
---                       does NOT auto-deprecate prior Published versions
---                       (proc only flips PublishedAt). Resolved-FK
---                       NewValue JSON (attributes w/ resolved Uom).
+--   2026-05-29 - 1.0 - Initial. Audit-readability convention from day one:
+--                       SUBJECT . CATEGORY . ACTION narrative Description
+--                       (<PN> . Quality Spec "<Name>" v<N> (Draft) . Discarded)
+--                       + resolved-FK OldValue (full pre-delete snapshot,
+--                       attributes w/ resolved Uom); NewValue NULL.
 -- =============================================
-CREATE OR ALTER PROCEDURE Quality.QualitySpecVersion_Publish
+CREATE OR ALTER PROCEDURE Quality.QualitySpecVersion_DiscardDraft
     @Id        BIGINT,
     @AppUserId BIGINT
 AS
@@ -48,9 +46,16 @@ BEGIN
     DECLARE @Status  BIT           = 0;
     DECLARE @Message NVARCHAR(500) = N'Unknown error';
 
-    DECLARE @ProcName NVARCHAR(200) = N'Quality.QualitySpecVersion_Publish';
+    DECLARE @ProcName NVARCHAR(200) = N'Quality.QualitySpecVersion_DiscardDraft';
     DECLARE @Params   NVARCHAR(MAX) =
         (SELECT @Id AS Id FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+
+    DECLARE @VersionNumber        INT          = NULL;
+    DECLARE @QualitySpecId        BIGINT       = NULL;
+    DECLARE @EffFrom              DATETIME2(3) = NULL;
+    DECLARE @ExistingPublishedAt  DATETIME2(3) = NULL;
+    DECLARE @ExistingDeprecatedAt DATETIME2(3) = NULL;
+    DECLARE @OldValue             NVARCHAR(MAX);
 
     BEGIN TRY
         -- ====================
@@ -61,7 +66,7 @@ BEGIN
             SET @Message = N'Required parameter missing.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'QualitySpecVersion',
-                @EntityId = @Id, @LogEventTypeCode = N'Updated',
+                @EntityId = @Id, @LogEventTypeCode = N'Deleted',
                 @FailureReason = @Message, @ProcedureName = @ProcName,
                 @AttemptedParameters = @Params;
             SELECT @Status AS Status, @Message AS Message;
@@ -71,51 +76,31 @@ BEGIN
         -- ====================
         -- Get version state
         -- ====================
-        DECLARE @ExistingPublishedAt  DATETIME2(3);
-        DECLARE @ExistingDeprecatedAt DATETIME2(3);
-        DECLARE @VersionNumber        INT;
-        DECLARE @QualitySpecId        BIGINT;
-        DECLARE @EffFrom              DATETIME2(3);
-        DECLARE @RowExists            BIT = 0;
-
-        SELECT @ExistingPublishedAt  = PublishedAt,
-               @ExistingDeprecatedAt = DeprecatedAt,
-               @VersionNumber        = VersionNumber,
+        SELECT @VersionNumber        = VersionNumber,
                @QualitySpecId        = QualitySpecId,
                @EffFrom              = EffectiveFrom,
-               @RowExists            = 1
+               @ExistingPublishedAt  = PublishedAt,
+               @ExistingDeprecatedAt = DeprecatedAt
         FROM Quality.QualitySpecVersion WHERE Id = @Id;
 
-        IF @RowExists = 0
+        IF @VersionNumber IS NULL
         BEGIN
             SET @Message = N'Version not found.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'QualitySpecVersion',
-                @EntityId = @Id, @LogEventTypeCode = N'Updated',
+                @EntityId = @Id, @LogEventTypeCode = N'Deleted',
                 @FailureReason = @Message, @ProcedureName = @ProcName,
                 @AttemptedParameters = @Params;
             SELECT @Status AS Status, @Message AS Message;
             RETURN;
         END
 
-        IF @ExistingDeprecatedAt IS NOT NULL
+        IF @ExistingPublishedAt IS NOT NULL OR @ExistingDeprecatedAt IS NOT NULL
         BEGIN
-            SET @Message = N'Cannot publish a deprecated version.';
+            SET @Message = N'Cannot discard a published or deprecated version.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'QualitySpecVersion',
-                @EntityId = @Id, @LogEventTypeCode = N'Updated',
-                @FailureReason = @Message, @ProcedureName = @ProcName,
-                @AttemptedParameters = @Params;
-            SELECT @Status AS Status, @Message AS Message;
-            RETURN;
-        END
-
-        IF @ExistingPublishedAt IS NOT NULL
-        BEGIN
-            SET @Message = N'Version is already published.';
-            EXEC Audit.Audit_LogFailure
-                @AppUserId = @AppUserId, @LogEntityTypeCode = N'QualitySpecVersion',
-                @EntityId = @Id, @LogEventTypeCode = N'Updated',
+                @EntityId = @Id, @LogEventTypeCode = N'Deleted',
                 @FailureReason = @Message, @ProcedureName = @ProcName,
                 @AttemptedParameters = @Params;
             SELECT @Status AS Status, @Message AS Message;
@@ -144,23 +129,18 @@ BEGIN
                       + N' ' + Audit.ufn_MidDot() + N' '
                  ELSE N'' END;
 
-        DECLARE @AttrCount INT =
-            (SELECT COUNT(*) FROM Quality.QualitySpecAttribute WHERE QualitySpecVersionId = @Id);
-        DECLARE @EffDate NVARCHAR(10) = CONVERT(NVARCHAR(10), @EffFrom, 23);  -- YYYY-MM-DD
-
-        -- ACTION: . Published; <K> attributes; effective <date>
-        -- NO "(deprecated vN)" suffix — date-resolved lifecycle, no auto-deprecate.
         DECLARE @ActivityRaw NVARCHAR(MAX) =
             @Subject + N'Quality Spec "' + @SpecName + N'" v' +
-            CAST(@VersionNumber AS NVARCHAR(10)) + N' ' + Audit.ufn_MidDot() +
-            N' Published; ' + CAST(@AttrCount AS NVARCHAR(10)) + N' attributes; effective ' + @EffDate;
+            CAST(@VersionNumber AS NVARCHAR(10)) + N' (Draft) ' +
+            Audit.ufn_MidDot() + N' Discarded';
         DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
 
-        -- Resolved-FK NewValue: published version header + attribute set
-        -- (each attribute row carries resolved Uom {Id, Code, Name}).
-        DECLARE @NewValueResolved NVARCHAR(MAX) = (
+        -- Capture full pre-delete state (version header + attribute set with
+        -- resolved Uom {Id, Code, Name}).
+        SET @OldValue = (
             SELECT
                 @Id AS Id,
+                @QualitySpecId AS QualitySpecId,
                 @VersionNumber AS VersionNumber,
                 @EffFrom AS EffectiveFrom,
                 JSON_QUERY((
@@ -184,26 +164,25 @@ BEGIN
         -- ====================
         BEGIN TRANSACTION;
 
-        UPDATE Quality.QualitySpecVersion SET
-            PublishedAt = SYSUTCDATETIME()
-        WHERE Id = @Id;
+        DELETE FROM Quality.QualitySpecAttribute WHERE QualitySpecVersionId = @Id;
+        DELETE FROM Quality.QualitySpecVersion WHERE Id = @Id;
 
         EXEC Audit.Audit_LogConfigChange
             @AppUserId         = @AppUserId,
             @LogEntityTypeCode = N'QualitySpecVersion',
             @EntityId          = @Id,
-            @LogEventTypeCode  = N'Updated',
+            @LogEventTypeCode  = N'Deleted',
             @LogSeverityCode   = N'Info',
             @Description       = @Activity,
-            @OldValue          = N'{"PublishedAt":null}',
-            @NewValue          = @NewValueResolved;
+            @OldValue          = @OldValue,
+            @NewValue          = NULL;
 
         COMMIT TRANSACTION;
 
         SET @Status  = 1;
-        SET @Message = N'Quality spec version ' + CAST(@VersionNumber AS NVARCHAR(10)) +
-                       N' published successfully. Attributes are now immutable.';
-    SELECT @Status AS Status, @Message AS Message;
+        SET @Message = N'Draft version ' + CAST(@VersionNumber AS NVARCHAR(10)) +
+                       N' discarded.';
+        SELECT @Status AS Status, @Message AS Message;
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0
@@ -221,7 +200,7 @@ BEGIN
                 @AppUserId           = @AppUserId,
                 @LogEntityTypeCode   = N'QualitySpecVersion',
                 @EntityId            = @Id,
-                @LogEventTypeCode    = N'Updated',
+                @LogEventTypeCode    = N'Deleted',
                 @FailureReason       = @Message,
                 @ProcedureName       = @ProcName,
                 @AttemptedParameters = @Params;
