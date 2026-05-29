@@ -2,7 +2,7 @@
 -- Procedure:   Parts.RouteTemplate_Publish
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     3.0
+-- Version:     3.1
 --
 -- Description:
 --   Flips a Draft RouteTemplate to Published by setting PublishedAt =
@@ -34,6 +34,10 @@
 --   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
 --   2026-05-20 - 3.0 - Added optional @EffectiveFrom + @Name overrides
 --                      and a zero-steps guard.
+--   2026-05-29 - 3.1 - Audit-readability convention (Slice 4 Routes):
+--                       SUBJECT . CATEGORY . ACTION Description +
+--                       resolved-FK OldValue (pre-publish) / NewValue
+--                       (published) snapshots.
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.RouteTemplate_Publish
     @Id            BIGINT,
@@ -126,6 +130,73 @@ BEGIN
             RETURN;
         END
 
+        -- ===== Audit narrative + resolved JSON (built from PRE-mutation state) =====
+
+        -- Subject + version resolution (convention SUBJECT = parent Item PartNumber)
+        DECLARE @PartNumber NVARCHAR(50);
+        DECLARE @ItemId     BIGINT;
+        DECLARE @VersionStr NVARCHAR(10);
+        SELECT @ItemId = rt.ItemId,
+               @PartNumber = i.PartNumber,
+               @VersionStr = CAST(rt.VersionNumber AS NVARCHAR(10))
+        FROM Parts.RouteTemplate rt
+        INNER JOIN Parts.Item i ON i.Id = rt.ItemId
+        WHERE rt.Id = @Id;
+
+        -- Prior active-published version for this Item (display "supersedes"
+        -- clause). This proc does NOT deprecate the prior version -- the clause
+        -- is informational only.
+        DECLARE @PriorPubVersionStr NVARCHAR(10) = NULL;
+        SELECT TOP 1 @PriorPubVersionStr = CAST(rt.VersionNumber AS NVARCHAR(10))
+        FROM Parts.RouteTemplate rt
+        WHERE rt.ItemId = @ItemId
+          AND rt.Id <> @Id
+          AND rt.PublishedAt IS NOT NULL
+          AND rt.DeprecatedAt IS NULL
+        ORDER BY rt.VersionNumber DESC;
+
+        DECLARE @StepCount INT =
+            (SELECT COUNT(*) FROM Parts.RouteStep WHERE RouteTemplateId = @Id);
+
+        -- Effective date that WILL apply after the override is resolved
+        DECLARE @EffApplied DATETIME2(3);
+        SELECT @EffApplied = ISNULL(@EffectiveFrom, EffectiveFrom)
+        FROM Parts.RouteTemplate WHERE Id = @Id;
+
+        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(
+            @PartNumber + N' ' + Audit.ufn_MidDot() +
+            N' Route v' + @VersionStr + N' ' + Audit.ufn_MidDot() +
+            N' Published' +
+            CASE WHEN @PriorPubVersionStr IS NOT NULL
+                 THEN N' (supersedes v' + @PriorPubVersionStr + N')' ELSE N'' END +
+            N'; ' + CAST(@StepCount AS NVARCHAR(10)) + N' steps' +
+            CASE WHEN @EffApplied IS NOT NULL
+                 THEN N'; effective ' + CONVERT(NVARCHAR(10), @EffApplied, 23) ELSE N'' END);
+
+        -- OldValue: pre-publish header + resolved-FK steps
+        DECLARE @OldValue NVARCHAR(MAX) = (
+            SELECT
+                JSON_QUERY((SELECT rt.Id, rt.ItemId, rt.VersionNumber, rt.Name, rt.EffectiveFrom,
+                        rt.PublishedAt, rt.DeprecatedAt,
+                        JSON_QUERY((SELECT i.Id, i.PartNumber, i.Description
+                                    FROM Parts.Item i WHERE i.Id = rt.ItemId
+                                    FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))  AS Item
+                 FROM Parts.RouteTemplate rt WHERE rt.Id = @Id
+                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))                      AS Header,
+                JSON_QUERY(ISNULL((
+                    SELECT rs.Id, rs.SequenceNumber, rs.IsRequired, rs.Description,
+                           JSON_QUERY((SELECT ot.Id, ot.Code, ot.Name
+                                       FROM Parts.OperationTemplate ot
+                                       WHERE ot.Id = rs.OperationTemplateId
+                                       FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS OperationTemplate
+                    FROM Parts.RouteStep rs
+                    WHERE rs.RouteTemplateId = @Id
+                    ORDER BY rs.SequenceNumber
+                    FOR JSON PATH
+                ), N'[]'))                                                   AS Steps
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
         BEGIN TRANSACTION;
 
         -- Apply optional overrides in the same UPDATE that flips PublishedAt.
@@ -136,15 +207,39 @@ BEGIN
             Name          = ISNULL(@Name, Name)
         WHERE Id = @Id;
 
+        -- NewValue: published header + resolved-FK steps
+        DECLARE @NewValue NVARCHAR(MAX) = (
+            SELECT
+                JSON_QUERY((SELECT rt.Id, rt.ItemId, rt.VersionNumber, rt.Name, rt.EffectiveFrom,
+                        rt.PublishedAt, rt.DeprecatedAt,
+                        JSON_QUERY((SELECT i.Id, i.PartNumber, i.Description
+                                    FROM Parts.Item i WHERE i.Id = rt.ItemId
+                                    FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))  AS Item
+                 FROM Parts.RouteTemplate rt WHERE rt.Id = @Id
+                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))                      AS Header,
+                JSON_QUERY(ISNULL((
+                    SELECT rs.Id, rs.SequenceNumber, rs.IsRequired, rs.Description,
+                           JSON_QUERY((SELECT ot.Id, ot.Code, ot.Name
+                                       FROM Parts.OperationTemplate ot
+                                       WHERE ot.Id = rs.OperationTemplateId
+                                       FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS OperationTemplate
+                    FROM Parts.RouteStep rs
+                    WHERE rs.RouteTemplateId = @Id
+                    ORDER BY rs.SequenceNumber
+                    FOR JSON PATH
+                ), N'[]'))                                                   AS Steps
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
         EXEC Audit.Audit_LogConfigChange
             @AppUserId         = @AppUserId,
             @LogEntityTypeCode = N'Route',
             @EntityId          = @Id,
             @LogEventTypeCode  = N'Updated',
             @LogSeverityCode   = N'Info',
-            @Description       = N'RouteTemplate published.',
-            @OldValue          = NULL,
-            @NewValue          = @Params;
+            @Description       = @Activity,
+            @OldValue          = @OldValue,
+            @NewValue          = @NewValue;
 
         COMMIT TRANSACTION;
 

@@ -24,31 +24,31 @@ DECLARE @S BIT, @M NVARCHAR(500);
 CREATE TABLE #Itm (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #Itm EXEC Parts.Item_Create
     @ItemTypeId = 4, @PartNumber = N'TEST-SA-ITEM-001',
-    @Description = N'SaveAll test item 1', @UomId = 1, @AppUserId = 1;
+    @Description = N'Route bundle item1', @UomId = 1, @AppUserId = 1;
 DELETE FROM #Itm;
 INSERT INTO #Itm EXEC Parts.Item_Create
     @ItemTypeId = 4, @PartNumber = N'TEST-SA-ITEM-002',
-    @Description = N'SaveAll test item 2', @UomId = 1, @AppUserId = 1;
+    @Description = N'Route bundle item2', @UomId = 1, @AppUserId = 1;
 DELETE FROM #Itm;
 INSERT INTO #Itm EXEC Parts.Item_Create
     @ItemTypeId = 4, @PartNumber = N'TEST-SA-ITEM-003',
-    @Description = N'SaveAll test item 3', @UomId = 1, @AppUserId = 1;
+    @Description = N'Route bundle item3', @UomId = 1, @AppUserId = 1;
 DELETE FROM #Itm;
 INSERT INTO #Itm EXEC Parts.Item_Create
     @ItemTypeId = 4, @PartNumber = N'TEST-SA-ITEM-004',
-    @Description = N'SaveAll test item 4', @UomId = 1, @AppUserId = 1;
+    @Description = N'Route bundle item4', @UomId = 1, @AppUserId = 1;
 DELETE FROM #Itm;
 INSERT INTO #Itm EXEC Parts.Item_Create
     @ItemTypeId = 4, @PartNumber = N'TEST-SA-ITEM-005',
-    @Description = N'SaveAll test item 5', @UomId = 1, @AppUserId = 1;
+    @Description = N'Route bundle item5', @UomId = 1, @AppUserId = 1;
 DELETE FROM #Itm;
 INSERT INTO #Itm EXEC Parts.Item_Create
     @ItemTypeId = 4, @PartNumber = N'TEST-SA-ITEM-006',
-    @Description = N'SaveAll test item 6', @UomId = 1, @AppUserId = 1;
+    @Description = N'Route bundle item6', @UomId = 1, @AppUserId = 1;
 DELETE FROM #Itm;
 INSERT INTO #Itm EXEC Parts.Item_Create
     @ItemTypeId = 4, @PartNumber = N'TEST-SA-ITEM-007',
-    @Description = N'SaveAll test item 7', @UomId = 1, @AppUserId = 1;
+    @Description = N'Route bundle item7', @UomId = 1, @AppUserId = 1;
 DROP TABLE #Itm;
 
 -- OperationTemplates: 3 active + 1 to-be-deprecated
@@ -131,6 +131,29 @@ EXEC test.Assert_IsEqual
     @TestName = N'[SAFresh] Header Name updated',
     @Expected = N'TEST-SA-RT-001-Renamed',
     @Actual   = @HdrName;
+
+-- Audit-readability: Description follows SUBJECT . Route v1 (Draft) . +Step ...; K steps
+DECLARE @SaDesc NVARCHAR(2000), @SaNew NVARCHAR(MAX);
+SELECT TOP 1 @SaDesc = cl.Description, @SaNew = cl.NewValue
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType nt ON nt.Id = cl.LogEntityTypeId
+INNER JOIN Audit.LogEventType et  ON et.Id = cl.LogEventTypeId
+WHERE cl.EntityId = @RtId AND nt.Code = N'Route' AND et.Code = N'Updated'
+ORDER BY cl.Id DESC;
+
+DECLARE @SaDescOk NVARCHAR(1) = CASE
+    WHEN @SaDesc LIKE N'TEST-SA-ITEM-001%Route v1 (Draft)%+Step%#1%3 steps%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[SAFresh] Description matches convention shape (+Step tokens)',
+    @Expected = N'1',
+    @Actual   = @SaDescOk;
+
+DECLARE @SaFkOk NVARCHAR(1) = CASE
+    WHEN @SaNew LIKE N'%"OperationTemplate"%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[SAFresh] NewValue step list carries resolved OperationTemplate FK',
+    @Expected = N'1',
+    @Actual   = @SaFkOk;
 GO
 
 -- =============================================
@@ -193,6 +216,23 @@ EXEC test.Assert_IsEqual
 EXEC test.Assert_IsEqual
     @TestName = N'[SAReorder] Former step-1 now SequenceNumber=3',
     @Expected = N'3', @Actual = @StepASeqStr;
+
+-- Audit-readability: pure reorder (same Ids, same OperationTemplates) emits
+-- the Reordered token with no +/~/-Step specifics.
+DECLARE @RoDesc NVARCHAR(2000);
+SELECT TOP 1 @RoDesc = cl.Description
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType nt ON nt.Id = cl.LogEntityTypeId
+INNER JOIN Audit.LogEventType et  ON et.Id = cl.LogEventTypeId
+WHERE cl.EntityId = @RtId AND nt.Code = N'Route' AND et.Code = N'Updated'
+ORDER BY cl.Id DESC;
+
+DECLARE @RoDescOk NVARCHAR(1) = CASE
+    WHEN @RoDesc LIKE N'TEST-SA-ITEM-001%Route v1 (Draft)%Reordered%3 steps%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[SAReorder] Description carries Reordered token',
+    @Expected = N'1',
+    @Actual   = @RoDescOk;
 GO
 
 -- =============================================

@@ -123,6 +123,28 @@ EXEC test.Assert_IsEqual
     @TestName = N'[RtCreateHappy] VersionNumber is 1',
     @Expected = N'1',
     @Actual   = @RtVerStr;
+
+-- Audit-readability: Description follows SUBJECT . Route v1 (Draft) . Created
+DECLARE @CrDesc NVARCHAR(2000), @CrNew NVARCHAR(MAX);
+SELECT TOP 1 @CrDesc = cl.Description, @CrNew = cl.NewValue
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType nt ON nt.Id = cl.LogEntityTypeId
+WHERE cl.EntityId = @RtId AND nt.Code = N'Route'
+ORDER BY cl.Id DESC;
+
+DECLARE @CrDescOk NVARCHAR(1) = CASE
+    WHEN @CrDesc LIKE N'TEST-RT-ITEM-001%Route v1 (Draft)%Created%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtCreateHappy] Description matches convention shape',
+    @Expected = N'1',
+    @Actual   = @CrDescOk;
+
+DECLARE @CrFkOk NVARCHAR(1) = CASE
+    WHEN @CrNew LIKE N'%"Item"%"PartNumber":"TEST-RT-ITEM-001"%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtCreateHappy] NewValue carries resolved Item FK sub-object',
+    @Expected = N'1',
+    @Actual   = @CrFkOk;
 GO
 
 -- =============================================
@@ -706,6 +728,28 @@ EXEC test.Assert_RowCount
     @TestName      = N'[RtNewVer] Step count matches parent',
     @ExpectedCount = @V1Steps,
     @ActualCount   = @V2Steps;
+
+-- Audit-readability: Description follows SUBJECT . Route v2 (Draft) . Created from v1; K steps
+DECLARE @NvDesc NVARCHAR(2000), @NvNew NVARCHAR(MAX);
+SELECT TOP 1 @NvDesc = cl.Description, @NvNew = cl.NewValue
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType nt ON nt.Id = cl.LogEntityTypeId
+WHERE cl.EntityId = @V2Id AND nt.Code = N'Route'
+ORDER BY cl.Id DESC;
+
+DECLARE @NvDescOk NVARCHAR(1) = CASE
+    WHEN @NvDesc LIKE N'TEST-RT-ITEM-001%Route v2 (Draft)%Created from v1%steps%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtNewVer] Description matches convention shape',
+    @Expected = N'1',
+    @Actual   = @NvDescOk;
+
+DECLARE @NvFkOk NVARCHAR(1) = CASE
+    WHEN @NvNew LIKE N'%"Item"%"PartNumber":"TEST-RT-ITEM-001"%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtNewVer] NewValue carries resolved Item FK sub-object',
+    @Expected = N'1',
+    @Actual   = @NvFkOk;
 GO
 
 -- =============================================
@@ -856,6 +900,29 @@ EXEC test.Assert_IsEqual
     @TestName = N'[RtDep1] DeprecatedAt set',
     @Expected = N'1',
     @Actual   = @V1DepStr;
+
+-- Audit-readability: Description follows SUBJECT . Route v1 . Deprecated
+DECLARE @DepDesc NVARCHAR(2000), @DepOld NVARCHAR(MAX);
+SELECT TOP 1 @DepDesc = cl.Description, @DepOld = cl.OldValue
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType nt ON nt.Id = cl.LogEntityTypeId
+INNER JOIN Audit.LogEventType et  ON et.Id = cl.LogEventTypeId
+WHERE cl.EntityId = @V1Id AND nt.Code = N'Route' AND et.Code = N'Deprecated'
+ORDER BY cl.Id DESC;
+
+DECLARE @DepDescOk NVARCHAR(1) = CASE
+    WHEN @DepDesc LIKE N'TEST-RT-ITEM-001%Route v1%Deprecated%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtDep1] Description matches convention shape',
+    @Expected = N'1',
+    @Actual   = @DepDescOk;
+
+DECLARE @DepFkOk NVARCHAR(1) = CASE
+    WHEN @DepOld LIKE N'%"OperationTemplate"%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtDep1] OldValue step list carries resolved OperationTemplate FK',
+    @Expected = N'1',
+    @Actual   = @DepFkOk;
 GO
 
 -- =============================================
@@ -1029,6 +1096,29 @@ EXEC test.Assert_IsEqual
     @TestName = N'[RtPublish] Status is 1 after publishing v3',
     @Expected = N'1',
     @Actual   = @SStr;
+
+-- Audit-readability: Description follows SUBJECT . Route v3 . Published ...
+DECLARE @PubDesc NVARCHAR(2000), @PubNew NVARCHAR(MAX);
+SELECT TOP 1 @PubDesc = cl.Description, @PubNew = cl.NewValue
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType nt ON nt.Id = cl.LogEntityTypeId
+INNER JOIN Audit.LogEventType et  ON et.Id = cl.LogEventTypeId
+WHERE cl.EntityId = @V3Id AND nt.Code = N'Route' AND et.Code = N'Updated'
+ORDER BY cl.Id DESC;
+
+DECLARE @PubDescOk NVARCHAR(1) = CASE
+    WHEN @PubDesc LIKE N'TEST-RT-ITEM-001%Route v3%Published%steps%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtPublish] Description matches convention shape',
+    @Expected = N'1',
+    @Actual   = @PubDescOk;
+
+DECLARE @PubFkOk NVARCHAR(1) = CASE
+    WHEN @PubNew LIKE N'%"Item"%"PartNumber":"TEST-RT-ITEM-001"%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtPublish] NewValue carries resolved Item FK sub-object',
+    @Expected = N'1',
+    @Actual   = @PubFkOk;
 
 -- =============================================
 -- Test 25 (retrofit): RtPublishTwice - publishing v3 again is rejected

@@ -2,7 +2,7 @@
 -- Procedure:   Parts.RouteTemplate_CreateNewVersion
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     3.0
+-- Version:     3.1
 --
 -- Description:
 --   Clone-to-modify: creates a new RouteTemplate row for the same Item as
@@ -35,6 +35,9 @@
 --   2026-05-20 - 3.0 - Single-Draft-per-Item guard. Rejects when an
 --                      active Draft (PublishedAt NULL, DeprecatedAt NULL)
 --                      already exists for the parent's ItemId.
+--   2026-05-29 - 3.1 - Audit-readability convention (Slice 4 Routes):
+--                       SUBJECT . CATEGORY . ACTION Description +
+--                       resolved-FK NewValue JSON (draft snapshot).
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.RouteTemplate_CreateNewVersion
     @ParentRouteTemplateId BIGINT,
@@ -139,15 +142,55 @@ BEGIN
 
         DECLARE @StepCount INT = @@ROWCOUNT;
 
+        -- ===== Audit narrative + resolved JSON =====
+
+        -- Subject resolution (convention SUBJECT = parent Item PartNumber)
+        DECLARE @PartNumber NVARCHAR(50);
+        SELECT @PartNumber = PartNumber FROM Parts.Item WHERE Id = @ParentItemId;
+
+        DECLARE @StepCountStr NVARCHAR(10) = CAST(@StepCount AS NVARCHAR(10));
+        DECLARE @PriorVersionStr NVARCHAR(10) = CAST(@NextVersion - 1 AS NVARCHAR(10));
+        DECLARE @VersionStr NVARCHAR(10) = CAST(@NextVersion AS NVARCHAR(10));
+
+        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(
+            @PartNumber + N' ' + Audit.ufn_MidDot() +
+            N' Route v' + @VersionStr + N' (Draft) ' + Audit.ufn_MidDot() +
+            N' Created from v' + @PriorVersionStr +
+            N'; ' + @StepCountStr + N' steps');
+
+        -- NewValue: draft snapshot (header + resolved-FK steps)
+        DECLARE @NewValueResolved NVARCHAR(MAX) = (
+            SELECT
+                JSON_QUERY((SELECT rt.Id, rt.VersionNumber, rt.Name, rt.EffectiveFrom,
+                        rt.PublishedAt, rt.DeprecatedAt,
+                        JSON_QUERY((SELECT i.Id, i.PartNumber, i.Description
+                                    FROM Parts.Item i WHERE i.Id = rt.ItemId
+                                    FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))  AS Item
+                 FROM Parts.RouteTemplate rt WHERE rt.Id = @NewId
+                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))                      AS Header,
+                JSON_QUERY(ISNULL((
+                    SELECT rs.Id, rs.SequenceNumber, rs.IsRequired, rs.Description,
+                           JSON_QUERY((SELECT ot.Id, ot.Code, ot.Name
+                                       FROM Parts.OperationTemplate ot
+                                       WHERE ot.Id = rs.OperationTemplateId
+                                       FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS OperationTemplate
+                    FROM Parts.RouteStep rs
+                    WHERE rs.RouteTemplateId = @NewId
+                    ORDER BY rs.SequenceNumber
+                    FOR JSON PATH
+                ), N'[]'))                                                   AS Steps
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
         EXEC Audit.Audit_LogConfigChange
             @AppUserId         = @AppUserId,
             @LogEntityTypeCode = N'Route',
             @EntityId          = @NewId,
             @LogEventTypeCode  = N'Created',
             @LogSeverityCode   = N'Info',
-            @Description       = N'RouteTemplate cloned from parent as new version.',
+            @Description       = @Activity,
             @OldValue          = NULL,
-            @NewValue          = @Params;
+            @NewValue          = @NewValueResolved;
 
         COMMIT TRANSACTION;
 

@@ -2,7 +2,7 @@
 -- Procedure:   Parts.RouteTemplate_Create
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     2.0
+-- Version:     2.1
 --
 -- Description:
 --   Creates the first version (VersionNumber = 1) of a RouteTemplate for
@@ -24,6 +24,9 @@
 -- Change Log:
 --   2026-04-14 - 1.0 - Initial version (OUTPUT params)
 --   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
+--   2026-05-29 - 2.1 - Audit-readability convention (Slice 4 Routes):
+--                       SUBJECT . CATEGORY . ACTION Description +
+--                       resolved-FK OldValue/NewValue JSON.
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.RouteTemplate_Create
     @ItemId        BIGINT,
@@ -84,6 +87,18 @@ BEGIN
 
         DECLARE @EffFrom DATETIME2(3) = ISNULL(@EffectiveFrom, SYSUTCDATETIME());
 
+        -- ===== Audit narrative + resolved JSON (built from PRE-mutation state) =====
+
+        -- Subject resolution (convention SUBJECT = parent Item PartNumber)
+        DECLARE @PartNumber NVARCHAR(50);
+        DECLARE @ItemDesc   NVARCHAR(500);
+        SELECT @PartNumber = PartNumber, @ItemDesc = Description
+        FROM Parts.Item WHERE Id = @ItemId;
+
+        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(
+            @PartNumber + N' ' + Audit.ufn_MidDot() +
+            N' Route v1 (Draft) ' + Audit.ufn_MidDot() + N' Created');
+
         BEGIN TRANSACTION;
 
         INSERT INTO Parts.RouteTemplate
@@ -93,15 +108,28 @@ BEGIN
 
         SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
 
+        -- NewValue: draft snapshot with resolved parent-Item sub-object
+        DECLARE @NewValueResolved NVARCHAR(MAX) = (
+            SELECT
+                rt.Id, rt.VersionNumber, rt.Name, rt.EffectiveFrom,
+                rt.PublishedAt, rt.DeprecatedAt,
+                JSON_QUERY((SELECT i.Id, i.PartNumber, i.Description
+                            FROM Parts.Item i WHERE i.Id = rt.ItemId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))  AS Item
+            FROM Parts.RouteTemplate rt
+            WHERE rt.Id = @NewId
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
         EXEC Audit.Audit_LogConfigChange
             @AppUserId         = @AppUserId,
             @LogEntityTypeCode = N'Route',
             @EntityId          = @NewId,
             @LogEventTypeCode  = N'Created',
             @LogSeverityCode   = N'Info',
-            @Description       = N'RouteTemplate created (v1).',
+            @Description       = @Activity,
             @OldValue          = NULL,
-            @NewValue          = @Params;
+            @NewValue          = @NewValueResolved;
 
         COMMIT TRANSACTION;
 

@@ -188,6 +188,30 @@ EXEC test.Assert_RowCount
     @TestName      = N'[DiscardWithSteps] ConfigLog row written with EventCode=Deleted',
     @ExpectedCount = 1,
     @ActualCount   = @LogCount;
+
+-- Audit-readability: Description follows SUBJECT . Route v1 (Draft) . Discarded; K steps discarded
+DECLARE @DdDesc NVARCHAR(2000), @DdOld NVARCHAR(MAX);
+SELECT TOP 1 @DdDesc = cl.Description, @DdOld = cl.OldValue
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType nt ON nt.Id = cl.LogEntityTypeId
+INNER JOIN Audit.LogEventType et  ON et.Id = cl.LogEventTypeId
+WHERE cl.EntityId = @V2 AND nt.Code = N'Route' AND et.Code = N'Deleted'
+ORDER BY cl.Id DESC;
+
+DECLARE @DdDescOk NVARCHAR(1) = CASE
+    WHEN @DdDesc LIKE N'TEST-DD-ITEM-002%Route v1 (Draft)%Discarded; 2 steps discarded%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[DiscardWithSteps] Description matches convention shape',
+    @Expected = N'1',
+    @Actual   = @DdDescOk;
+
+DECLARE @DdFkOk NVARCHAR(1) = CASE
+    WHEN @DdOld LIKE N'%"OperationTemplate"%' AND @DdOld LIKE N'%"Item"%"PartNumber":"TEST-DD-ITEM-002"%'
+    THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[DiscardWithSteps] OldValue carries resolved Item + OperationTemplate FKs',
+    @Expected = N'1',
+    @Actual   = @DdFkOk;
 GO
 
 -- =============================================
