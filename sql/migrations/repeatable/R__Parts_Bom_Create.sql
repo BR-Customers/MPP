@@ -2,7 +2,7 @@
 -- Procedure:   Parts.Bom_Create
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     2.0
+-- Version:     2.1
 --
 -- Description:
 --   Creates the first version (VersionNumber = 1) of a BOM for a given
@@ -24,6 +24,10 @@
 -- Change Log:
 --   2026-04-14 - 1.0 - Initial version (OUTPUT params)
 --   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
+--   2026-05-29 - 2.1 - Audit-readability convention (Slice 3 BOMs):
+--                       SUBJECT . CATEGORY . ACTION narrative Description
+--                       (<PartNumber> . BOM v1 (Draft) . Created) + resolved-FK
+--                       NewValue JSON (parent Item {Id, PartNumber, Description}).
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.Bom_Create
     @ParentItemId  BIGINT,
@@ -83,6 +87,24 @@ BEGIN
 
         DECLARE @EffFrom DATETIME2(3) = ISNULL(@EffectiveFrom, SYSUTCDATETIME());
 
+        -- ===== Audit narrative + resolved JSON (built from PRE-mutation state) =====
+
+        -- Subject resolution (convention SUBJECT): parent Item PartNumber [- Description]
+        DECLARE @PartNumber NVARCHAR(50);
+        DECLARE @ItemDesc   NVARCHAR(500);
+
+        SELECT @PartNumber = PartNumber, @ItemDesc = Description
+        FROM Parts.Item
+        WHERE Id = @ParentItemId;
+
+        DECLARE @Subject NVARCHAR(600) =
+            @PartNumber + CASE WHEN @ItemDesc IS NOT NULL THEN N' ' + NCHAR(8212) + N' ' + @ItemDesc ELSE N'' END;
+
+        -- Activity: <PartNumber> . BOM v1 (Draft) . Created
+        DECLARE @ActivityRaw NVARCHAR(MAX) =
+            @Subject + N' ' + Audit.ufn_MidDot() + N' BOM v1 (Draft) ' + Audit.ufn_MidDot() + N' Created';
+        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
+
         BEGIN TRANSACTION;
 
         INSERT INTO Parts.Bom
@@ -92,15 +114,27 @@ BEGIN
 
         SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
 
+        -- NewValue: new draft snapshot with resolved parent Item; OldValue NULL (first version)
+        DECLARE @NewValueResolved NVARCHAR(MAX) = (
+            SELECT
+                b.Id, b.VersionNumber, b.EffectiveFrom, b.PublishedAt, b.DeprecatedAt,
+                JSON_QUERY((SELECT i.Id, i.PartNumber, i.Description
+                 FROM Parts.Item i WHERE i.Id = b.ParentItemId
+                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS ParentItem
+            FROM Parts.Bom b
+            WHERE b.Id = @NewId
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
         EXEC Audit.Audit_LogConfigChange
             @AppUserId         = @AppUserId,
             @LogEntityTypeCode = N'Bom',
             @EntityId          = @NewId,
             @LogEventTypeCode  = N'Created',
             @LogSeverityCode   = N'Info',
-            @Description       = N'BOM created (v1, Draft).',
+            @Description       = @Activity,
             @OldValue          = NULL,
-            @NewValue          = @Params;
+            @NewValue          = @NewValueResolved;
 
         COMMIT TRANSACTION;
 

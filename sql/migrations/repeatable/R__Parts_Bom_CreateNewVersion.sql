@@ -2,7 +2,7 @@
 -- Procedure:   Parts.Bom_CreateNewVersion
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     2.0
+-- Version:     2.1
 --
 -- Description:
 --   Creates a new BOM version by cloning the parent row and all its
@@ -27,6 +27,11 @@
 -- Change Log:
 --   2026-04-14 - 1.0 - Initial version (OUTPUT params)
 --   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
+--   2026-05-29 - 2.1 - Audit-readability convention (Slice 3 BOMs):
+--                       SUBJECT . CATEGORY . ACTION narrative Description
+--                       (<PartNumber> . BOM v<N> (Draft) . Created from v<N-1>;
+--                       <K> lines) + resolved-FK OldValue (prior version snapshot)
+--                       / NewValue (new draft snapshot) JSON.
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.Bom_CreateNewVersion
     @ParentBomId   BIGINT,
@@ -60,7 +65,9 @@ BEGIN
         END
 
         DECLARE @ParentItemId BIGINT = NULL;
-        SELECT @ParentItemId = ParentItemId FROM Parts.Bom WHERE Id = @ParentBomId;
+        DECLARE @SourceVersion INT  = NULL;
+        SELECT @ParentItemId = ParentItemId, @SourceVersion = VersionNumber
+        FROM Parts.Bom WHERE Id = @ParentBomId;
 
         IF @ParentItemId IS NULL
         BEGIN
@@ -96,6 +103,45 @@ BEGIN
 
         DECLARE @EffFrom DATETIME2(3) = ISNULL(@EffectiveFrom, SYSUTCDATETIME());
 
+        -- ===== Audit narrative + resolved JSON (built from PRE-mutation state) =====
+
+        -- Subject resolution (convention SUBJECT): parent Item PartNumber [- Description]
+        DECLARE @PartNumber NVARCHAR(50);
+        DECLARE @ItemDesc   NVARCHAR(500);
+
+        SELECT @PartNumber = PartNumber, @ItemDesc = Description
+        FROM Parts.Item
+        WHERE Id = @ParentItemId;
+
+        DECLARE @Subject NVARCHAR(600) =
+            @PartNumber + CASE WHEN @ItemDesc IS NOT NULL THEN N' ' + NCHAR(8212) + N' ' + @ItemDesc ELSE N'' END;
+
+        -- OldValue: prior (source) version snapshot with resolved parent Item + its lines
+        DECLARE @OldValueResolved NVARCHAR(MAX) = (
+            SELECT
+                b.Id, b.VersionNumber, b.EffectiveFrom, b.PublishedAt, b.DeprecatedAt,
+                JSON_QUERY((SELECT i.Id, i.PartNumber, i.Description
+                 FROM Parts.Item i WHERE i.Id = b.ParentItemId
+                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS ParentItem,
+                JSON_QUERY((
+                    SELECT
+                        bl.Id, bl.QtyPer, bl.SortOrder,
+                        JSON_QUERY((SELECT ci.Id, ci.PartNumber, ci.Description
+                         FROM Parts.Item ci WHERE ci.Id = bl.ChildItemId
+                         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS ChildItem,
+                        JSON_QUERY((SELECT u.Id, u.Code, u.Name
+                         FROM Parts.Uom u WHERE u.Id = bl.UomId
+                         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Uom
+                    FROM Parts.BomLine bl
+                    WHERE bl.BomId = @ParentBomId
+                    ORDER BY bl.SortOrder
+                    FOR JSON PATH
+                )) AS Lines
+            FROM Parts.Bom b
+            WHERE b.Id = @ParentBomId
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
         BEGIN TRANSACTION;
 
         DECLARE @NextVersion INT;
@@ -118,15 +164,48 @@ BEGIN
 
         DECLARE @LineCount INT = @@ROWCOUNT;
 
+        -- Activity: <PartNumber> . BOM v<N> (Draft) . Created from v<N-1>; <K> lines
+        DECLARE @ActivityRaw NVARCHAR(MAX) =
+            @Subject + N' ' + Audit.ufn_MidDot() + N' BOM v' + CAST(@NextVersion AS NVARCHAR(10)) +
+            N' (Draft) ' + Audit.ufn_MidDot() + N' Created from v' + CAST(@SourceVersion AS NVARCHAR(10)) +
+            N'; ' + CAST(@LineCount AS NVARCHAR(10)) + N' lines';
+        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
+
+        -- NewValue: new draft snapshot with resolved parent Item + cloned lines
+        DECLARE @NewValueResolved NVARCHAR(MAX) = (
+            SELECT
+                b.Id, b.VersionNumber, b.EffectiveFrom, b.PublishedAt, b.DeprecatedAt,
+                JSON_QUERY((SELECT i.Id, i.PartNumber, i.Description
+                 FROM Parts.Item i WHERE i.Id = b.ParentItemId
+                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS ParentItem,
+                JSON_QUERY((
+                    SELECT
+                        bl.Id, bl.QtyPer, bl.SortOrder,
+                        JSON_QUERY((SELECT ci.Id, ci.PartNumber, ci.Description
+                         FROM Parts.Item ci WHERE ci.Id = bl.ChildItemId
+                         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS ChildItem,
+                        JSON_QUERY((SELECT u.Id, u.Code, u.Name
+                         FROM Parts.Uom u WHERE u.Id = bl.UomId
+                         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Uom
+                    FROM Parts.BomLine bl
+                    WHERE bl.BomId = @NewId
+                    ORDER BY bl.SortOrder
+                    FOR JSON PATH
+                )) AS Lines
+            FROM Parts.Bom b
+            WHERE b.Id = @NewId
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
         EXEC Audit.Audit_LogConfigChange
             @AppUserId         = @AppUserId,
             @LogEntityTypeCode = N'Bom',
             @EntityId          = @NewId,
             @LogEventTypeCode  = N'Created',
             @LogSeverityCode   = N'Info',
-            @Description       = N'BOM cloned from parent as new version (Draft).',
-            @OldValue          = NULL,
-            @NewValue          = @Params;
+            @Description       = @Activity,
+            @OldValue          = @OldValueResolved,
+            @NewValue          = @NewValueResolved;
 
         COMMIT TRANSACTION;
 

@@ -181,6 +181,70 @@ BEGIN
 END
 GO
 
+-- =============================================
+-- Test 5: Audit-readability convention (Slice 3 BOMs) for Publish + Deprecate.
+--   v1 of TEST-BP-PARENT-001 was save-and-published in Test 2 (1 line, no
+--   prior published version -> no "(deprecated ...)" clause) then deprecated
+--   in Test 3.
+-- =============================================
+DECLARE @PId BIGINT, @V1Id BIGINT, @MD NCHAR(1) = Audit.ufn_MidDot();
+DECLARE @PubDesc NVARCHAR(500), @PubNew NVARCHAR(MAX), @DepDesc NVARCHAR(500), @DepOld NVARCHAR(MAX);
+
+SELECT @PId  = Id FROM Parts.Item WHERE PartNumber = N'TEST-BP-PARENT-001';
+SELECT @V1Id = Id FROM Parts.Bom WHERE ParentItemId = @PId AND VersionNumber = 1;
+
+-- ---- Publish narrative: "<PN> . BOM v1 . Published; K lines; effective YYYY-MM-DD"
+SELECT TOP 1 @PubDesc = cl.Description, @PubNew = cl.NewValue
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType let ON let.Id = cl.LogEntityTypeId
+WHERE let.Code = N'Bom' AND cl.EntityId = @V1Id AND cl.LogEventTypeId =
+      (SELECT Id FROM Audit.LogEventType WHERE Code = N'Updated')
+  AND cl.Description LIKE N'%Published%'
+ORDER BY cl.Id ASC;
+
+DECLARE @PubShape NVARCHAR(1) = CASE WHEN
+    @PubDesc LIKE N'TEST-BP-PARENT-001%' + @MD + N' BOM v1 ' + @MD + N' Published; %lines; effective 2026-10-01'
+    THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[PubAuditShape] Publish narrative (no deprecated clause, effective date present)',
+    @Expected = N'1', @Actual = @PubShape;
+
+-- No "(deprecated ...)" clause since there was no prior published version
+DECLARE @PubNoDepOk NVARCHAR(1) = CASE WHEN @PubDesc LIKE N'%deprecated%' THEN N'0' ELSE N'1' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[PubAuditNoDep] Publish narrative omits "(deprecated ...)" clause',
+    @Expected = N'1', @Actual = @PubNoDepOk;
+
+DECLARE @PubJsonOk NVARCHAR(1) = CASE WHEN
+    JSON_VALUE(@PubNew, '$.Lines[0].ChildItem.PartNumber') IS NOT NULL
+    THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[PubAuditJson] Publish NewValue Lines[0] resolves ChildItem.PartNumber',
+    @Expected = N'1', @Actual = @PubJsonOk;
+
+-- ---- Deprecate narrative: "<PN> . BOM v1 . Deprecated", OldValue resolved
+SELECT TOP 1 @DepDesc = cl.Description, @DepOld = cl.OldValue
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType let ON let.Id = cl.LogEntityTypeId
+WHERE let.Code = N'Bom' AND cl.EntityId = @V1Id AND cl.LogEventTypeId =
+      (SELECT Id FROM Audit.LogEventType WHERE Code = N'Deprecated')
+ORDER BY cl.Id DESC;
+
+DECLARE @DepShape NVARCHAR(1) = CASE WHEN
+    @DepDesc LIKE N'TEST-BP-PARENT-001%' + @MD + N' BOM v1 ' + @MD + N' Deprecated'
+    THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[PubAuditDeprecate] Deprecate narrative matches "<PN> . BOM v1 . Deprecated"',
+    @Expected = N'1', @Actual = @DepShape;
+
+DECLARE @DepJsonOk NVARCHAR(1) = CASE WHEN
+    JSON_VALUE(@DepOld, '$.Bom.ParentItem.PartNumber') = N'TEST-BP-PARENT-001'
+    THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[PubAuditDeprecate] Deprecate OldValue resolves Bom.ParentItem.PartNumber',
+    @Expected = N'1', @Actual = @DepJsonOk;
+GO
+
 -- Cleanup
 DELETE bl FROM Parts.BomLine bl
 INNER JOIN Parts.Bom b  ON b.Id = bl.BomId

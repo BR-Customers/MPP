@@ -322,6 +322,62 @@ EXEC test.Assert_IsEqual
 GO
 
 -- =============================================
+-- Test 8: Audit-readability convention (Slice 3 BOMs) for SaveDraft.
+--   Most recent Updated ConfigLog row on v1 corresponds to Test 2's
+--   add+edit save: must carry +Line / ~Line specifics, the v1 (Draft)
+--   category, total line count, and resolved-FK Lines JSON.
+-- =============================================
+DECLARE @PId BIGINT, @BomId BIGINT, @MD NCHAR(1) = Audit.ufn_MidDot();
+DECLARE @SdDesc NVARCHAR(500), @SdNew NVARCHAR(MAX), @SdOld NVARCHAR(MAX);
+
+SELECT @PId   = Id FROM Parts.Item WHERE PartNumber = N'TEST-SD-PARENT-001';
+SELECT @BomId = Id FROM Parts.Bom WHERE ParentItemId = @PId AND VersionNumber = 1;
+
+-- Pin Test 2's save: it is the only SaveDraft on v1 that produced BOTH a
+-- +Line (new C3) and a ~Line (C1 qty 1.0->42.5). Filter on ~Line so the
+-- later remove-only save (Test 3) and publish (Test 4) are excluded.
+SELECT TOP 1 @SdDesc = cl.Description, @SdNew = cl.NewValue, @SdOld = cl.OldValue
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType let ON let.Id = cl.LogEntityTypeId
+WHERE let.Code = N'Bom' AND cl.EntityId = @BomId AND cl.LogEventTypeId =
+      (SELECT Id FROM Audit.LogEventType WHERE Code = N'Updated')
+  AND cl.Description LIKE N'%' + @MD + N' BOM v1 (Draft) ' + @MD + N'%'
+  AND cl.Description LIKE N'%~Line %'
+ORDER BY cl.Id DESC;
+
+DECLARE @SdSubjectOk NVARCHAR(1) = CASE WHEN
+    @SdDesc LIKE N'TEST-SD-PARENT-001%' + @MD + N' BOM v1 (Draft) ' + @MD + N'%lines'
+    THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[SaveDraftAuditSubject] Description matches "<PN> . BOM v1 (Draft) . ...; K lines"',
+    @Expected = N'1', @Actual = @SdSubjectOk;
+
+DECLARE @SdAddOk NVARCHAR(1) = CASE WHEN @SdDesc LIKE N'%+Line %qty %' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[SaveDraftAuditAdd] Description contains a +Line ... qty specific',
+    @Expected = N'1', @Actual = @SdAddOk;
+
+DECLARE @SdUpdOk NVARCHAR(1) = CASE WHEN @SdDesc LIKE N'%~Line %qty %' + NCHAR(8594) + N'%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[SaveDraftAuditUpdate] Description contains a ~Line qty old->new specific',
+    @Expected = N'1', @Actual = @SdUpdOk;
+
+DECLARE @SdNewJsonOk NVARCHAR(1) = CASE WHEN
+    JSON_VALUE(@SdNew, '$.Lines[0].ChildItem.PartNumber') IS NOT NULL
+    THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[SaveDraftAuditJson] NewValue Lines[0] resolves ChildItem.PartNumber',
+    @Expected = N'1', @Actual = @SdNewJsonOk;
+
+DECLARE @SdUomJsonOk NVARCHAR(1) = CASE WHEN
+    JSON_VALUE(@SdNew, '$.Lines[0].Uom.Code') IS NOT NULL
+    THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[SaveDraftAuditJson] NewValue Lines[0] resolves Uom.Code',
+    @Expected = N'1', @Actual = @SdUomJsonOk;
+GO
+
+-- =============================================
 -- Cleanup
 -- =============================================
 DELETE bl FROM Parts.BomLine bl

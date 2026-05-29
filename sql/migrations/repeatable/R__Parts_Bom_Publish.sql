@@ -2,7 +2,7 @@
 -- Procedure:   Parts.Bom_Publish
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     4.0
+-- Version:     4.1
 --
 -- Description:
 --   Flips a Draft BOM to Published by setting PublishedAt =
@@ -45,6 +45,12 @@
 --                      (same ParentItemId, DeprecatedAt IS NULL) when this
 --                      version flips to Published. Enforces single-Published
 --                      invariant per the versioned-entity workflow convention.
+--   2026-05-29 - 4.1 - Audit-readability convention (Slice 3 BOMs):
+--                       SUBJECT . CATEGORY . ACTION narrative Description
+--                       (<PartNumber> . BOM v<N> . Published (deprecated v<N-1>);
+--                       <K> lines; effective <date>) + resolved-FK OldValue
+--                       (pre-publish version state) / NewValue (published state)
+--                       JSON with ChildItem + Uom sub-objects.
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.Bom_Publish
     @Id            BIGINT,
@@ -281,6 +287,46 @@ BEGIN
             RETURN;
         END
 
+        -- ===== Audit narrative + resolved JSON (built from PRE-mutation state) =====
+
+        -- Subject resolution (convention SUBJECT): parent Item PartNumber [- Description]
+        DECLARE @PartNumber NVARCHAR(50);
+        DECLARE @ItemDesc   NVARCHAR(500);
+
+        SELECT @PartNumber = PartNumber, @ItemDesc = Description
+        FROM Parts.Item
+        WHERE Id = @ParentItemId;
+
+        DECLARE @Subject NVARCHAR(600) =
+            @PartNumber + CASE WHEN @ItemDesc IS NOT NULL THEN N' ' + NCHAR(8212) + N' ' + @ItemDesc ELSE N'' END;
+
+        -- OldValue: pre-publish version state (Draft header + current lines) with
+        -- resolved parent Item + ChildItem + Uom. Captured before mutation.
+        DECLARE @OldValueResolved NVARCHAR(MAX) = (
+            SELECT
+                JSON_QUERY((SELECT b.Id, b.VersionNumber, b.EffectiveFrom, b.PublishedAt, b.DeprecatedAt,
+                    JSON_QUERY((SELECT pi.Id, pi.PartNumber, pi.Description
+                     FROM Parts.Item pi WHERE pi.Id = b.ParentItemId
+                     FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS ParentItem
+                 FROM Parts.Bom b WHERE b.Id = @Id
+                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Bom,
+                JSON_QUERY((
+                    SELECT
+                        bl.Id, bl.QtyPer, bl.SortOrder,
+                        JSON_QUERY((SELECT ci.Id, ci.PartNumber, ci.Description
+                         FROM Parts.Item ci WHERE ci.Id = bl.ChildItemId
+                         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS ChildItem,
+                        JSON_QUERY((SELECT u.Id, u.Code, u.Name
+                         FROM Parts.Uom u WHERE u.Id = bl.UomId
+                         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Uom
+                    FROM Parts.BomLine bl
+                    WHERE bl.BomId = @Id
+                    ORDER BY bl.SortOrder
+                    FOR JSON PATH
+                )) AS Lines
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
         -- ----- Mutation (atomic) -----
         BEGIN TRANSACTION;
 
@@ -327,15 +373,70 @@ BEGIN
             EffectiveFrom = @TargetEffFrom
         WHERE Id = @Id;
 
+        -- ----- Compose Activity + resolved NewValue (post-mutation, in-txn) -----
+
+        -- "(deprecated v<N-1>[, v<N-2>...])" clause — omitted when no prior
+        -- Published version existed. @DeprecatedVersions populated by the
+        -- auto-deprecate UPDATE above.
+        DECLARE @DepClause NVARCHAR(200) = N'';
+        IF EXISTS (SELECT 1 FROM @DeprecatedVersions)
+        BEGIN
+            SELECT @DepClause = N' (deprecated ' +
+                STRING_AGG(N'v' + CAST(VersionNumber AS NVARCHAR(10)), N', ')
+                    WITHIN GROUP (ORDER BY VersionNumber) + N')'
+            FROM @DeprecatedVersions;
+        END
+
+        DECLARE @FinalLineCount INT = (SELECT COUNT(*) FROM Parts.BomLine WHERE BomId = @Id);
+
+        -- "effective <date>" clause — omit when no EffectiveFrom (defensive;
+        -- @TargetEffFrom is guarded non-NULL above, so this always renders).
+        DECLARE @EffClause NVARCHAR(60) =
+            CASE WHEN @TargetEffFrom IS NOT NULL
+                 THEN N'; effective ' + CONVERT(NVARCHAR(10), @TargetEffFrom, 23)
+                 ELSE N'' END;
+
+        DECLARE @ActivityRaw NVARCHAR(MAX) =
+            @Subject + N' ' + Audit.ufn_MidDot() + N' BOM v' + CAST(@VersionNumber AS NVARCHAR(10)) +
+            N' ' + Audit.ufn_MidDot() + N' Published' + @DepClause +
+            N'; ' + CAST(@FinalLineCount AS NVARCHAR(10)) + N' lines' + @EffClause;
+        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
+
+        -- NewValue: published state (header + final lines) with resolved sub-objects
+        DECLARE @NewValueResolved NVARCHAR(MAX) = (
+            SELECT
+                JSON_QUERY((SELECT b.Id, b.VersionNumber, b.EffectiveFrom, b.PublishedAt, b.DeprecatedAt,
+                    JSON_QUERY((SELECT pi.Id, pi.PartNumber, pi.Description
+                     FROM Parts.Item pi WHERE pi.Id = b.ParentItemId
+                     FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS ParentItem
+                 FROM Parts.Bom b WHERE b.Id = @Id
+                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Bom,
+                JSON_QUERY((
+                    SELECT
+                        bl.Id, bl.QtyPer, bl.SortOrder,
+                        JSON_QUERY((SELECT ci.Id, ci.PartNumber, ci.Description
+                         FROM Parts.Item ci WHERE ci.Id = bl.ChildItemId
+                         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS ChildItem,
+                        JSON_QUERY((SELECT u.Id, u.Code, u.Name
+                         FROM Parts.Uom u WHERE u.Id = bl.UomId
+                         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Uom
+                    FROM Parts.BomLine bl
+                    WHERE bl.BomId = @Id
+                    ORDER BY bl.SortOrder
+                    FOR JSON PATH
+                )) AS Lines
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
         EXEC Audit.Audit_LogConfigChange
             @AppUserId         = @AppUserId,
             @LogEntityTypeCode = N'Bom',
             @EntityId          = @Id,
             @LogEventTypeCode  = N'Updated',
             @LogSeverityCode   = N'Info',
-            @Description       = N'BOM published.',
-            @OldValue          = NULL,
-            @NewValue          = @Params;
+            @Description       = @Activity,
+            @OldValue          = @OldValueResolved,
+            @NewValue          = @NewValueResolved;
 
         COMMIT TRANSACTION;
 

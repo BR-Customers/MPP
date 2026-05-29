@@ -79,6 +79,41 @@ DECLARE @LinesGone INT = (SELECT COUNT(*) FROM Parts.BomLine WHERE BomId = @BomI
 EXEC test.Assert_RowCount
     @TestName = N'[DiscardHappy] BomLine rows physically deleted',
     @ExpectedCount = 0, @ActualCount = @LinesGone;
+
+-- ---- Audit-readability convention (Slice 3 BOMs) for DiscardDraft.
+-- The Bom row is now physically deleted, so look up the ConfigLog by the
+-- captured @BomId (EntityId). Narrative: "<PN> . BOM v1 (Draft) . Discarded;
+-- K lines discarded"; OldValue is the full resolved pre-delete snapshot.
+DECLARE @MD NCHAR(1) = Audit.ufn_MidDot();
+DECLARE @DdDesc NVARCHAR(500), @DdOld NVARCHAR(MAX);
+
+SELECT TOP 1 @DdDesc = cl.Description, @DdOld = cl.OldValue
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType let ON let.Id = cl.LogEntityTypeId
+WHERE let.Code = N'Bom' AND cl.EntityId = @BomId AND cl.LogEventTypeId =
+      (SELECT Id FROM Audit.LogEventType WHERE Code = N'Deleted')
+ORDER BY cl.Id DESC;
+
+DECLARE @DdShape NVARCHAR(1) = CASE WHEN
+    @DdDesc LIKE N'TEST-DD-PARENT-001%' + @MD + N' BOM v1 (Draft) ' + @MD + N' Discarded; %lines discarded'
+    THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[DiscardAuditShape] Description matches "<PN> . BOM v1 (Draft) . Discarded; K lines discarded"',
+    @Expected = N'1', @Actual = @DdShape;
+
+DECLARE @DdParentJsonOk NVARCHAR(1) = CASE WHEN
+    JSON_VALUE(@DdOld, '$.Bom.ParentItem.PartNumber') = N'TEST-DD-PARENT-001'
+    THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[DiscardAuditJson] OldValue resolves Bom.ParentItem.PartNumber',
+    @Expected = N'1', @Actual = @DdParentJsonOk;
+
+DECLARE @DdLineJsonOk NVARCHAR(1) = CASE WHEN
+    JSON_VALUE(@DdOld, '$.Lines[0].ChildItem.PartNumber') IS NOT NULL
+    THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[DiscardAuditJson] OldValue Lines[0] resolves ChildItem.PartNumber',
+    @Expected = N'1', @Actual = @DdLineJsonOk;
 GO
 
 -- =============================================

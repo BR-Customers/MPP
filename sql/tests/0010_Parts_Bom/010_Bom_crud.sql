@@ -928,6 +928,120 @@ EXEC test.Assert_IsEqual
 GO
 
 -- =============================================
+-- Test 24: Audit-readability convention (Slice 3 BOMs)
+--   Asserts narrative Description shape + resolved-FK JSON for
+--   Create, CreateNewVersion, Publish, Deprecate. PartNumber subject is
+--   TEST-BOM-PARENT-001; middle-dot via Audit.ufn_MidDot().
+-- =============================================
+DECLARE @PId BIGINT, @V1Id BIGINT, @V2Id BIGINT, @MD NCHAR(1) = Audit.ufn_MidDot();
+
+SELECT @PId  = Id FROM Parts.Item WHERE PartNumber = N'TEST-BOM-PARENT-001';
+SELECT @V1Id = Id FROM Parts.Bom WHERE ParentItemId = @PId AND VersionNumber = 1;
+SELECT @V2Id = Id FROM Parts.Bom WHERE ParentItemId = @PId AND VersionNumber = 2;
+
+-- ---- Create (v1) narrative: "<PN> . BOM v1 (Draft) . Created"
+DECLARE @CreateDesc NVARCHAR(500), @CreateNew NVARCHAR(MAX);
+SELECT TOP 1 @CreateDesc = cl.Description, @CreateNew = cl.NewValue
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType let ON let.Id = cl.LogEntityTypeId
+WHERE let.Code = N'Bom' AND cl.EntityId = @V1Id AND cl.LogEventTypeId =
+      (SELECT Id FROM Audit.LogEventType WHERE Code = N'Created')
+ORDER BY cl.Id ASC;
+
+DECLARE @CreateShape NVARCHAR(1) = CASE WHEN
+    @CreateDesc LIKE N'TEST-BOM-PARENT-001%' + @MD + N' BOM v1 (Draft) ' + @MD + N' Created%'
+    THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[BomAuditCreate] Description matches "<PN> . BOM v1 (Draft) . Created"',
+    @Expected = N'1', @Actual = @CreateShape;
+
+DECLARE @CreateJsonOk NVARCHAR(1) = CASE WHEN
+    JSON_VALUE(@CreateNew, '$.ParentItem.PartNumber') = N'TEST-BOM-PARENT-001'
+    THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[BomAuditCreate] NewValue resolves ParentItem.PartNumber',
+    @Expected = N'1', @Actual = @CreateJsonOk;
+
+-- ---- CreateNewVersion (v2) narrative: "<PN> . BOM v2 (Draft) . Created from v1; <K> lines"
+DECLARE @NvDesc NVARCHAR(500), @NvNew NVARCHAR(MAX);
+SELECT TOP 1 @NvDesc = cl.Description, @NvNew = cl.NewValue
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType let ON let.Id = cl.LogEntityTypeId
+WHERE let.Code = N'Bom' AND cl.EntityId = @V2Id AND cl.LogEventTypeId =
+      (SELECT Id FROM Audit.LogEventType WHERE Code = N'Created')
+ORDER BY cl.Id ASC;
+
+DECLARE @NvShape NVARCHAR(1) = CASE WHEN
+    @NvDesc LIKE N'TEST-BOM-PARENT-001%' + @MD + N' BOM v2 (Draft) ' + @MD + N' Created from v1; %lines'
+    THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[BomAuditNewVer] Description matches "Created from v1; K lines"',
+    @Expected = N'1', @Actual = @NvShape;
+
+DECLARE @NvJsonOk NVARCHAR(1) = CASE WHEN
+    JSON_VALUE(@NvNew, '$.Lines[0].ChildItem.PartNumber') IS NOT NULL
+    THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[BomAuditNewVer] NewValue Lines[0] resolves ChildItem.PartNumber',
+    @Expected = N'1', @Actual = @NvJsonOk;
+
+-- ---- Publish (v2) narrative: "<PN> . BOM v2 . Published...; K lines; effective <date>"
+DECLARE @PubDesc NVARCHAR(500), @PubNew NVARCHAR(MAX);
+SELECT TOP 1 @PubDesc = cl.Description, @PubNew = cl.NewValue
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType let ON let.Id = cl.LogEntityTypeId
+WHERE let.Code = N'Bom' AND cl.EntityId = @V2Id AND cl.LogEventTypeId =
+      (SELECT Id FROM Audit.LogEventType WHERE Code = N'Updated')
+  AND cl.Description LIKE N'%Published%'
+ORDER BY cl.Id DESC;
+
+DECLARE @PubShape NVARCHAR(1) = CASE WHEN
+    @PubDesc LIKE N'TEST-BOM-PARENT-001%' + @MD + N' BOM v2 ' + @MD + N' Published%; %lines; effective %'
+    THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[BomAuditPublish] Description matches Publish narrative shape',
+    @Expected = N'1', @Actual = @PubShape;
+
+DECLARE @PubJsonOk NVARCHAR(1) = CASE WHEN
+    JSON_VALUE(@PubNew, '$.Bom.ParentItem.PartNumber') = N'TEST-BOM-PARENT-001'
+    THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[BomAuditPublish] NewValue resolves Bom.ParentItem.PartNumber',
+    @Expected = N'1', @Actual = @PubJsonOk;
+
+-- ---- Deprecate narrative: "<PN> . BOM v2 . Deprecated", OldValue resolved.
+-- v1 was already auto-deprecated by the v2 publish (no standalone Deprecated
+-- audit row is written for an auto-deprecate, and the explicit deprecate of an
+-- already-deprecated row is an idempotent no-op). Deprecate the active v2 here
+-- to exercise a genuine Deprecate audit row.
+CREATE TABLE #BomDepAudit (Status BIT, Message NVARCHAR(500));
+INSERT INTO #BomDepAudit EXEC Parts.Bom_Deprecate @Id = @V2Id, @AppUserId = 1;
+DROP TABLE #BomDepAudit;
+
+DECLARE @DepDesc NVARCHAR(500), @DepOld NVARCHAR(MAX);
+SELECT TOP 1 @DepDesc = cl.Description, @DepOld = cl.OldValue
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType let ON let.Id = cl.LogEntityTypeId
+WHERE let.Code = N'Bom' AND cl.EntityId = @V2Id AND cl.LogEventTypeId =
+      (SELECT Id FROM Audit.LogEventType WHERE Code = N'Deprecated')
+ORDER BY cl.Id DESC;
+
+DECLARE @DepShape NVARCHAR(1) = CASE WHEN
+    @DepDesc LIKE N'TEST-BOM-PARENT-001%' + @MD + N' BOM v2 ' + @MD + N' Deprecated'
+    THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[BomAuditDeprecate] Description matches "<PN> . BOM v2 . Deprecated"',
+    @Expected = N'1', @Actual = @DepShape;
+
+DECLARE @DepJsonOk NVARCHAR(1) = CASE WHEN
+    JSON_VALUE(@DepOld, '$.Bom.ParentItem.PartNumber') = N'TEST-BOM-PARENT-001'
+    THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[BomAuditDeprecate] OldValue resolves Bom.ParentItem.PartNumber',
+    @Expected = N'1', @Actual = @DepJsonOk;
+GO
+
+-- =============================================
 -- Cleanup (dependency-safe order)
 -- =============================================
 DELETE bl

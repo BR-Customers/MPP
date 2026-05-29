@@ -2,7 +2,7 @@
 -- Procedure:   Parts.Bom_SaveDraft
 -- Author:      Blue Ridge Automation
 -- Created:     2026-05-26
--- Version:     1.0
+-- Version:     1.1
 --
 -- Description:
 --   Bundled save for a Draft Bom: updates EffectiveFrom and reconciles
@@ -40,6 +40,12 @@
 --
 -- Change Log:
 --   2026-05-26 - 1.0 - Initial.
+--   2026-05-29 - 1.1 - Audit-readability convention (Slice 3 BOMs):
+--                       SUBJECT . CATEGORY . ACTION narrative Description with
+--                       +Line/-Line/~Line specifics (child PartNumber + qty,
+--                       3-per-op cap + overflow counters) + resolved-FK
+--                       OldValue (pre-edit draft lines) / NewValue (post-edit
+--                       draft lines) JSON (ChildItem + Uom sub-objects).
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.Bom_SaveDraft
     @Id            BIGINT,
@@ -241,17 +247,170 @@ BEGIN
             RETURN;
         END
 
-        -- Capture pre-mutation state for audit
+        -- ===== Audit narrative + resolved JSON (built from PRE-mutation state) =====
+
+        -- Subject resolution (convention SUBJECT): parent Item PartNumber [- Description]
+        DECLARE @PartNumber    NVARCHAR(50);
+        DECLARE @ItemDesc      NVARCHAR(500);
+        DECLARE @VersionNumber INT;
+
+        SELECT @PartNumber = i.PartNumber, @ItemDesc = i.Description, @VersionNumber = b.VersionNumber
+        FROM Parts.Bom b
+        INNER JOIN Parts.Item i ON i.Id = b.ParentItemId
+        WHERE b.Id = @Id;
+
+        DECLARE @Subject NVARCHAR(600) =
+            @PartNumber + CASE WHEN @ItemDesc IS NOT NULL THEN N' ' + NCHAR(8212) + N' ' + @ItemDesc ELSE N'' END;
+
+        -- Change-set classification (drives Activity prose). Compare pre-mutation
+        -- BomLine state against @Incoming:
+        --   ADD    : incoming Id IS NULL (brand-new line)
+        --   REMOVE : existing line whose Id is not in incoming
+        --   UPDATE : Id-matched line whose ChildItemId / QtyPer / UomId differs
+        DECLARE @Changes TABLE (
+            ChangeKind   NCHAR(1) NOT NULL,  -- '+' / '-' / '~'
+            SortKey      INT NOT NULL,
+            ChildPart    NVARCHAR(50) NULL,
+            OldQty       DECIMAL(10,4) NULL,
+            NewQty       DECIMAL(10,4) NULL
+        );
+
+        -- ADDS: incoming rows with NULL Id (resolve ChildItemId -> PartNumber)
+        INSERT INTO @Changes (ChangeKind, SortKey, ChildPart, NewQty)
+        SELECT N'+',
+               ROW_NUMBER() OVER (ORDER BY i.RowIndex),
+               ci.PartNumber, i.QtyPer
+        FROM @Incoming i
+        INNER JOIN Parts.Item ci ON ci.Id = i.ChildItemId
+        WHERE i.Id IS NULL;
+
+        -- REMOVES: existing lines whose Id is not present in incoming
+        INSERT INTO @Changes (ChangeKind, SortKey, ChildPart, OldQty)
+        SELECT N'-',
+               ROW_NUMBER() OVER (ORDER BY bl.SortOrder),
+               ci.PartNumber, bl.QtyPer
+        FROM Parts.BomLine bl
+        INNER JOIN Parts.Item ci ON ci.Id = bl.ChildItemId
+        WHERE bl.BomId = @Id
+          AND NOT EXISTS (SELECT 1 FROM @Incoming i WHERE i.Id = bl.Id);
+
+        -- UPDATES: Id-matched lines where ChildItemId / QtyPer / UomId differs.
+        -- Child PartNumber rendered is the NEW ChildItemId (post-edit identity).
+        INSERT INTO @Changes (ChangeKind, SortKey, ChildPart, OldQty, NewQty)
+        SELECT N'~',
+               ROW_NUMBER() OVER (ORDER BY bl.SortOrder),
+               ci.PartNumber, bl.QtyPer, i.QtyPer
+        FROM Parts.BomLine bl
+        INNER JOIN @Incoming i   ON i.Id = bl.Id
+        INNER JOIN Parts.Item ci ON ci.Id = i.ChildItemId
+        WHERE bl.BomId = @Id
+          AND (bl.ChildItemId <> i.ChildItemId
+               OR bl.QtyPer <> i.QtyPer
+               OR bl.UomId <> i.UomId);
+
+        -- ----- Compose the Activity prose (cap 3 per op + overflow counters) -----
+        DECLARE @AddSpecifics    NVARCHAR(MAX) = N'';
+        DECLARE @AddOverflow     INT = 0;
+        DECLARE @RemoveSpecifics NVARCHAR(MAX) = N'';
+        DECLARE @RemoveOverflow  INT = 0;
+        DECLARE @UpdateSpecifics NVARCHAR(MAX) = N'';
+        DECLARE @UpdateOverflow  INT = 0;
+
+        -- Adds: "+Line <PartNumber> qty <NewQty>"
+        ;WITH ranked AS (
+            SELECT *, ROW_NUMBER() OVER (ORDER BY SortKey) AS rn
+            FROM @Changes WHERE ChangeKind = N'+'
+        )
+        SELECT @AddSpecifics = STRING_AGG(
+            N'+Line ' + ChildPart + N' qty ' + CAST(CAST(NewQty AS DECIMAL(10,4)) AS NVARCHAR(20)),
+            N', '
+        ) WITHIN GROUP (ORDER BY rn)
+        FROM ranked WHERE rn <= 3;
+        SELECT @AddOverflow = COUNT(*) - 3 FROM @Changes WHERE ChangeKind = N'+';
+        IF @AddOverflow < 0 SET @AddOverflow = 0;
+
+        -- Removes: "-Line <PartNumber>"
+        ;WITH ranked AS (
+            SELECT *, ROW_NUMBER() OVER (ORDER BY SortKey) AS rn
+            FROM @Changes WHERE ChangeKind = N'-'
+        )
+        SELECT @RemoveSpecifics = STRING_AGG(N'-Line ' + ChildPart, N', ')
+                                  WITHIN GROUP (ORDER BY rn)
+        FROM ranked WHERE rn <= 3;
+        SELECT @RemoveOverflow = COUNT(*) - 3 FROM @Changes WHERE ChangeKind = N'-';
+        IF @RemoveOverflow < 0 SET @RemoveOverflow = 0;
+
+        -- Updates: "~Line <PartNumber> qty <OldQty>→<NewQty>"
+        ;WITH ranked AS (
+            SELECT *, ROW_NUMBER() OVER (ORDER BY SortKey) AS rn
+            FROM @Changes WHERE ChangeKind = N'~'
+        )
+        SELECT @UpdateSpecifics = STRING_AGG(
+            N'~Line ' + ChildPart + N' qty ' +
+            CAST(CAST(OldQty AS DECIMAL(10,4)) AS NVARCHAR(20)) + NCHAR(8594) +
+            CAST(CAST(NewQty AS DECIMAL(10,4)) AS NVARCHAR(20)),
+            N', '
+        ) WITHIN GROUP (ORDER BY rn)
+        FROM ranked WHERE rn <= 3;
+        SELECT @UpdateOverflow = COUNT(*) - 3 FROM @Changes WHERE ChangeKind = N'~';
+        IF @UpdateOverflow < 0 SET @UpdateOverflow = 0;
+
+        -- Assemble: adds; removes; updates  (each group separated by "; ")
+        DECLARE @ActionParts NVARCHAR(MAX) = N'';
+
+        IF NULLIF(@AddSpecifics, N'') IS NOT NULL
+            SET @ActionParts = @ActionParts + @AddSpecifics +
+                               CASE WHEN @AddOverflow > 0 THEN N', +' + CAST(@AddOverflow AS NVARCHAR) + N' more' ELSE N'' END +
+                               N'; ';
+
+        IF NULLIF(@RemoveSpecifics, N'') IS NOT NULL
+            SET @ActionParts = @ActionParts + @RemoveSpecifics +
+                               CASE WHEN @RemoveOverflow > 0 THEN N', -' + CAST(@RemoveOverflow AS NVARCHAR) + N' more' ELSE N'' END +
+                               N'; ';
+
+        IF NULLIF(@UpdateSpecifics, N'') IS NOT NULL
+            SET @ActionParts = @ActionParts + @UpdateSpecifics +
+                               CASE WHEN @UpdateOverflow > 0 THEN N', ~' + CAST(@UpdateOverflow AS NVARCHAR) + N' more' ELSE N'' END +
+                               N'; ';
+
+        -- Strip trailing "; " (DATALENGTH: LEN() ignores trailing spaces and
+        -- would eat one real char off the last specific)
+        IF DATALENGTH(@ActionParts) >= 4
+            SET @ActionParts = LEFT(@ActionParts, DATALENGTH(@ActionParts) / 2 - 2);
+
+        IF @ActionParts = N''
+            SET @ActionParts = N'No line changes';
+
+        -- Total active draft line count = the post-mutation count (incoming rows)
+        DECLARE @TotalLines INT = (SELECT COUNT(*) FROM @Incoming);
+
+        DECLARE @ActivityRaw NVARCHAR(MAX) =
+            @Subject + N' ' + Audit.ufn_MidDot() + N' BOM v' + CAST(@VersionNumber AS NVARCHAR(10)) +
+            N' (Draft) ' + Audit.ufn_MidDot() + N' ' + @ActionParts +
+            N'; ' + CAST(@TotalLines AS NVARCHAR(10)) + N' lines';
+        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
+
+        -- OldValue: pre-edit draft lines with resolved ChildItem + Uom
         SET @OldValue = (
             SELECT
-                (SELECT Id, ParentItemId, VersionNumber, EffectiveFrom, PublishedAt, DeprecatedAt
-                 FROM Parts.Bom WHERE Id = @Id
-                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER) AS Bom,
+                JSON_QUERY((SELECT b.Id, b.VersionNumber, b.EffectiveFrom, b.PublishedAt, b.DeprecatedAt,
+                    JSON_QUERY((SELECT pi.Id, pi.PartNumber, pi.Description
+                     FROM Parts.Item pi WHERE pi.Id = b.ParentItemId
+                     FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS ParentItem
+                 FROM Parts.Bom b WHERE b.Id = @Id
+                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Bom,
                 JSON_QUERY((
-                    SELECT Id, ChildItemId, QtyPer, UomId, SortOrder
-                    FROM Parts.BomLine
-                    WHERE BomId = @Id
-                    ORDER BY SortOrder
+                    SELECT
+                        bl.Id, bl.QtyPer, bl.SortOrder,
+                        JSON_QUERY((SELECT ci.Id, ci.PartNumber, ci.Description
+                         FROM Parts.Item ci WHERE ci.Id = bl.ChildItemId
+                         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS ChildItem,
+                        JSON_QUERY((SELECT u.Id, u.Code, u.Name
+                         FROM Parts.Uom u WHERE u.Id = bl.UomId
+                         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Uom
+                    FROM Parts.BomLine bl
+                    WHERE bl.BomId = @Id
+                    ORDER BY bl.SortOrder
                     FOR JSON PATH
                 )) AS Lines
             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
@@ -289,17 +448,27 @@ BEGIN
         FROM @Incoming i
         WHERE i.Id IS NULL;
 
-        -- Capture post-mutation state
+        -- Capture post-mutation state: post-edit draft lines with resolved ChildItem + Uom
         SET @NewValue = (
             SELECT
-                (SELECT Id, ParentItemId, VersionNumber, EffectiveFrom, PublishedAt, DeprecatedAt
-                 FROM Parts.Bom WHERE Id = @Id
-                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER) AS Bom,
+                JSON_QUERY((SELECT b.Id, b.VersionNumber, b.EffectiveFrom, b.PublishedAt, b.DeprecatedAt,
+                    JSON_QUERY((SELECT pi.Id, pi.PartNumber, pi.Description
+                     FROM Parts.Item pi WHERE pi.Id = b.ParentItemId
+                     FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS ParentItem
+                 FROM Parts.Bom b WHERE b.Id = @Id
+                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Bom,
                 JSON_QUERY((
-                    SELECT Id, ChildItemId, QtyPer, UomId, SortOrder
-                    FROM Parts.BomLine
-                    WHERE BomId = @Id
-                    ORDER BY SortOrder
+                    SELECT
+                        bl.Id, bl.QtyPer, bl.SortOrder,
+                        JSON_QUERY((SELECT ci.Id, ci.PartNumber, ci.Description
+                         FROM Parts.Item ci WHERE ci.Id = bl.ChildItemId
+                         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS ChildItem,
+                        JSON_QUERY((SELECT u.Id, u.Code, u.Name
+                         FROM Parts.Uom u WHERE u.Id = bl.UomId
+                         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Uom
+                    FROM Parts.BomLine bl
+                    WHERE bl.BomId = @Id
+                    ORDER BY bl.SortOrder
                     FOR JSON PATH
                 )) AS Lines
             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
@@ -311,7 +480,7 @@ BEGIN
             @EntityId          = @Id,
             @LogEventTypeCode  = N'Updated',
             @LogSeverityCode   = N'Info',
-            @Description       = N'BOM draft saved (bundled line reconciliation).',
+            @Description       = @Activity,
             @OldValue          = @OldValue,
             @NewValue          = @NewValue;
 
