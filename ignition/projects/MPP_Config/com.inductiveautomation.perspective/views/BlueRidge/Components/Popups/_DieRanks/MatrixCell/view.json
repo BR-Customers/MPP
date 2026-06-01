@@ -1,0 +1,59 @@
+{
+  "custom": {},
+  "params": {
+    "cell": {}
+  },
+  "propConfig": {
+    "params.cell": { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "width": 90, "height": 30 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "events": {
+      "dom": {
+        "onClick": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tcell = self.view.params.cell or {}\n\tif cell.get('mirror'):\n\t\treturn\n\tsystem.perspective.sendMessage(\n\t\t'matrixCellToggle',\n\t\tpayload={'fromCode': cell.get('fromCode'), 'toCode': cell.get('toCode')},\n\t\tscope='page')"
+          }
+        }
+      }
+    },
+    "propConfig": {
+      "props.style.background": {
+        "binding": {
+          "type": "expr",
+          "config": {
+            "expression": "if({view.params.cell.mirror}, 'var(--mpp-surface-card)', if({view.params.cell.compatible}, 'var(--mpp-state-good-bg)', 'var(--mpp-state-bad-bg)'))"
+          }
+        }
+      },
+      "props.style.border": {
+        "binding": {
+          "type": "expr",
+          "config": {
+            "expression": "if({view.params.cell.mirror}, '1px solid var(--mpp-border-subtle)', if({view.params.cell.compatible}, '1px solid var(--mpp-state-good-border)', '1px solid var(--mpp-state-bad-border)'))"
+          }
+        }
+      },
+      "props.style.cursor": {
+        "binding": {
+          "type": "expr",
+          "config": {
+            "expression": "if({view.params.cell.mirror}, 'default', 'pointer')"
+          }
+        }
+      }
+    },
+    "props": {
+      "style": {
+        "borderRadius": "3px",
+        "height": "30px"
+      }
+    }
+  }
+}

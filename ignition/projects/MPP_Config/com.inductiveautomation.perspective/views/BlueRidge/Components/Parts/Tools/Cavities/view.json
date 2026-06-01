@@ -1,0 +1,128 @@
+{
+  "custom": {
+    "rows": []
+  },
+  "params": {
+    "value": 0
+  },
+  "propConfig": {
+    "params.value": { "paramDirection": "input" },
+    "custom.rows": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Tool.getCavityInstancesForTool\", 0, {view.params.value})"
+        }
+      }
+    }
+  },
+  "props": {
+    "defaultSize": { "height": 360, "width": 800 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "column",
+      "style": {
+        "gap": "10px",
+        "height": "100%"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "ActionRow" },
+        "position": { "basis": "auto", "shrink": 0 },
+        "props": {
+          "direction": "row",
+          "justify": "flex-end",
+          "alignItems": "center"
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "BtnAddCavity" },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "C",
+                  "config": {
+                    "script": "\tBlueRidge.Common.Notify.toast('Not wired yet', 'Add cavity popup lands in populate pass.', 'info', 4)"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "+ Add Cavity",
+              "style": { "classes": "btn btn-primary btn-sm" }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "DataPanel" },
+        "position": { "grow": 1 },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "detail-panel",
+            "overflow": "hidden",
+            "padding": "0"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "TableHeader" },
+            "position": { "basis": "auto", "shrink": 0 },
+            "props": {
+              "direction": "row",
+              "alignItems": "center",
+              "style": {
+                "background": "var(--mpp-surface-card)",
+                "borderBottom": "1px solid var(--mpp-border-subtle)",
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "11px",
+                "fontWeight": "600",
+                "textTransform": "uppercase",
+                "letterSpacing": "0.05em",
+                "padding": "8px 12px",
+                "gap": "8px"
+              }
+            },
+            "children": [
+              { "type": "ia.display.label", "meta": { "name": "ColNumber" },      "position": { "basis": "70px",  "shrink": 0 }, "props": { "text": "Number", "style": { "textAlign": "center" } } },
+              { "type": "ia.display.label", "meta": { "name": "ColStatus" },      "position": { "basis": "110px", "shrink": 0 }, "props": { "text": "Status" } },
+              { "type": "ia.display.label", "meta": { "name": "ColDescription" }, "position": { "basis": "0",     "grow": 1 },   "props": { "text": "Description" } },
+              { "type": "ia.display.label", "meta": { "name": "ColActions" },     "position": { "basis": "180px", "shrink": 0 }, "props": { "text": "" } }
+            ]
+          },
+          {
+            "type": "ia.display.flex-repeater",
+            "meta": { "name": "Rows" },
+            "position": { "basis": "0", "grow": 1 },
+            "propConfig": {
+              "props.instances": {
+                "binding": {
+                  "type": "property",
+                  "config": { "path": "view.custom.rows" }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "elementPosition": { "basis": "44px", "shrink": 0 },
+              "path": "BlueRidge/Components/Parts/Tools/_Tools/CavityRow",
+              "style": { "overflowY": "auto" },
+              "useDefaultViewHeight": false,
+              "useDefaultViewWidth": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

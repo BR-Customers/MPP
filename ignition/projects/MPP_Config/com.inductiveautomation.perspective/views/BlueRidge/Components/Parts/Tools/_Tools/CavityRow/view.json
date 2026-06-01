@@ -1,0 +1,183 @@
+{
+  "custom": {},
+  "params": {
+    "cavity": {}
+  },
+  "propConfig": {
+    "params.cavity": { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "width": 800, "height": 44 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "propConfig": {
+      "props.style.opacity": {
+        "binding": {
+          "type": "expr",
+          "config": {
+            "expression": "if({view.params.cavity.StatusCode} = 'Active', 1, 0.7)"
+          }
+        }
+      }
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "padding": "8px 12px",
+        "gap": "8px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Number" },
+        "position": { "basis": "70px", "shrink": 0 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": { "path": "view.params.cavity.Number" }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": { "fontWeight": "600", "textAlign": "center" }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Status" },
+        "position": { "basis": "110px", "shrink": 0 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": { "path": "view.params.cavity.StatusCode" }
+            }
+          },
+          "props.style.classes": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.cavity.StatusCode} = 'Active', 'badge badge-published', if({view.params.cavity.StatusCode} = 'Scrapped', 'badge badge-danger', 'badge badge-deprecated'))"
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {}
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Description" },
+        "position": { "basis": "0", "grow": 1 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": { "path": "view.params.cavity.Description" }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "background": "var(--mpp-surface-card)",
+            "border": "1px solid var(--mpp-border-subtle)",
+            "borderRadius": "3px",
+            "color": "var(--mpp-text-muted)",
+            "fontSize": "12px",
+            "fontStyle": "italic",
+            "padding": "4px 8px"
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "Actions" },
+        "position": { "basis": "180px", "shrink": 0 },
+        "props": {
+          "direction": "row",
+          "justify": "flex-end",
+          "alignItems": "center",
+          "style": { "gap": "4px" }
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "BtnCloseOrReactivate" },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "C",
+                  "config": {
+                    "script": "\tisActive = self.view.params.cavity.get('StatusCode') == 'Active'\n\tlabel = 'closed' if isActive else 'reactivated'\n\tBlueRidge.Common.Notify.toast('Not wired yet', 'Cavity ' + str(self.view.params.cavity.get('Number')) + ' ' + label + ' (stub).', 'info', 4)"
+                  }
+                }
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if({view.params.cavity.StatusCode} = 'Active', 'Close', 'Reactivate')"
+                  }
+                }
+              },
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.cavity.StatusCode} != 'Scrapped'"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Close",
+              "style": { "classes": "btn btn-sm" }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "BtnScrap" },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "C",
+                  "config": {
+                    "script": "\tBlueRidge.Common.Notify.toast('Not wired yet', 'Cavity ' + str(self.view.params.cavity.get('Number')) + ' scrapped (stub).', 'info', 4)"
+                  }
+                }
+              }
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.cavity.StatusCode} != 'Scrapped'"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Scrap",
+              "style": { "classes": "btn btn-sm btn-danger" }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,147 @@
+{
+  "custom": {},
+  "params": {
+    "assignment": {}
+  },
+  "propConfig": {
+    "params.assignment": { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "width": 800, "height": 36 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "propConfig": {
+      "props.style.color": {
+        "binding": {
+          "type": "expr",
+          "config": {
+            "expression": "if({view.params.assignment.IsActive}, 'var(--mpp-text-primary)', 'var(--mpp-text-muted)')"
+          }
+        }
+      }
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "padding": "8px 12px",
+        "gap": "8px",
+        "fontSize": "12px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Cell" },
+        "position": { "basis": "0", "grow": 1 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": { "path": "view.params.assignment.CellName" }
+            }
+          },
+          "props.style.fontWeight": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.assignment.IsActive}, '600', '400')"
+              }
+            }
+          }
+        },
+        "props": { "text": "" }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "AssignedAt" },
+        "position": { "basis": "140px", "shrink": 0 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": { "path": "view.params.assignment.AssignedAt" }
+            }
+          }
+        },
+        "props": { "text": "" }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "ReleasedAt" },
+        "position": { "basis": "140px", "shrink": 0 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.assignment.IsActive}, 'Active', {view.params.assignment.ReleasedAt})"
+              }
+            }
+          },
+          "props.style.classes": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.assignment.IsActive}, 'badge badge-published', '')"
+              }
+            }
+          }
+        },
+        "props": { "text": "" }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "AssignedBy" },
+        "position": { "basis": "90px", "shrink": 0 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": { "path": "view.params.assignment.AssignedByInitials" }
+            }
+          }
+        },
+        "props": { "text": "" }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "ReleasedBy" },
+        "position": { "basis": "90px", "shrink": 0 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "coalesce({view.params.assignment.ReleasedByInitials}, '-')"
+              }
+            }
+          }
+        },
+        "props": { "text": "" }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Notes" },
+        "position": { "basis": "160px", "shrink": 0 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "coalesce({view.params.assignment.Notes}, '-')"
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": { "fontStyle": "italic", "color": "var(--mpp-text-muted)" }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "custom": {},
+  "params": {
+    "attr": {}
+  },
+  "propConfig": {
+    "params.attr": { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "width": 800, "height": 44 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "padding": "8px 12px",
+        "gap": "8px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "AttrName" },
+        "position": { "basis": "0", "grow": 1 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": { "path": "view.params.attr.AttrName" }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": { "fontSize": "12px" }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Value" },
+        "position": { "basis": "220px", "shrink": 0 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": { "path": "view.params.attr.Value" }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "background": "var(--mpp-surface-card)",
+            "border": "1px solid var(--mpp-border-subtle)",
+            "borderRadius": "3px",
+            "color": "var(--mpp-text-primary)",
+            "fontFamily": "var(--mpp-font-mono)",
+            "fontSize": "12px",
+            "padding": "4px 8px"
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": { "name": "RemoveButton" },
+        "position": { "basis": "36px", "shrink": 0 },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "C",
+              "config": {
+                "script": "\tBlueRidge.Common.Notify.toast('Not wired yet', 'Remove attribute lands in populate pass.', 'info', 4)"
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "✕",
+          "style": { "classes": "btn btn-sm btn-danger" }
+        }
+      }
+    ]
+  }
+}

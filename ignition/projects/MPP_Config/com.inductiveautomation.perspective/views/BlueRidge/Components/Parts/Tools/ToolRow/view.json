@@ -1,0 +1,163 @@
+{
+  "custom": {},
+  "params": {
+    "tool": {},
+    "selectedId": 0
+  },
+  "propConfig": {
+    "params.tool": {
+      "paramDirection": "input"
+    },
+    "params.selectedId": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 36,
+      "width": 240
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "events": {
+      "dom": {
+        "onClick": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tsystem.perspective.sendMessage('toolRowClicked', payload={'id': self.view.params.tool.get('id')}, scope='page')"
+          }
+        }
+      }
+    },
+    "propConfig": {
+      "props.style.classes": {
+        "binding": {
+          "type": "expr",
+          "config": {
+            "expression": "if({view.params.tool.id} = {view.params.selectedId}, 'tree-item tree-item-selected', 'tree-item')"
+          }
+        }
+      },
+      "props.style.opacity": {
+        "binding": {
+          "type": "expr",
+          "config": {
+            "expression": "if({view.params.tool.deprecated}, 0.55, 1)"
+          }
+        }
+      }
+    },
+    "props": {
+      "alignItems": "center",
+      "justify": "space-between",
+      "style": {
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "cursor": "pointer",
+        "padding": "6px 10px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "RowText"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "1px",
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "LabelCode"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.tool.code"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontSize": "12px",
+                "fontWeight": "600"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "LabelName"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.tool.name"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-muted)",
+                "fontSize": "11px",
+                "overflow": "hidden",
+                "textOverflow": "ellipsis",
+                "whiteSpace": "nowrap"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "BadgeRank"
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.tool.rank"
+              }
+            }
+          },
+          "props.style.classes": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.tool.rank} = 'A', 'badge badge-purple', 'badge badge-muted')"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontSize": "10px",
+            "padding": "1px 5px"
+          }
+        }
+      }
+    ]
+  }
+}

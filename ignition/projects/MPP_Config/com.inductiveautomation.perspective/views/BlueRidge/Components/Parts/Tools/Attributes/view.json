@@ -1,0 +1,152 @@
+{
+  "custom": {
+    "rows": []
+  },
+  "params": {
+    "value": 0
+  },
+  "propConfig": {
+    "params.value": { "paramDirection": "input" },
+    "custom.rows": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Tool.getAttributeInstancesForTool\", 0, {view.params.value})"
+        }
+      }
+    }
+  },
+  "props": {
+    "defaultSize": { "height": 360, "width": 800 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "column",
+      "style": {
+        "gap": "10px",
+        "height": "100%"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "ActionRow" },
+        "position": { "basis": "auto", "shrink": 0 },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": { "gap": "8px" }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "HintText" },
+            "position": { "grow": 1 },
+            "props": {
+              "text": "Shot counts are derived at runtime from production events - not stored on the tool record.",
+              "style": {
+                "fontSize": "11px",
+                "color": "var(--mpp-text-muted)"
+              }
+            }
+          },
+          {
+            "type": "ia.input.dropdown",
+            "meta": { "name": "DropdownAddAttribute" },
+            "props": {
+              "options": [
+                { "label": "- add attribute -",        "value": "" },
+                { "label": "Cycle Time (sec)",         "value": "cycle_time" },
+                { "label": "Injection Pressure (bar)", "value": "injection_pressure" },
+                { "label": "Temperature Setpoint (C)", "value": "temp_setpoint" }
+              ],
+              "style": { "classes": "select", "width": "220px" }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "BtnAddAttribute" },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "C",
+                  "config": {
+                    "script": "\tBlueRidge.Common.Notify.toast('Not wired yet', 'Add attribute lands in populate pass.', 'info', 4)"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "+ Add",
+              "style": { "classes": "btn btn-primary btn-sm" }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "DataPanel" },
+        "position": { "grow": 1 },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "detail-panel",
+            "overflow": "hidden",
+            "padding": "0"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "TableHeader" },
+            "position": { "basis": "auto", "shrink": 0 },
+            "props": {
+              "direction": "row",
+              "alignItems": "center",
+              "style": {
+                "background": "var(--mpp-surface-card)",
+                "borderBottom": "1px solid var(--mpp-border-subtle)",
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "11px",
+                "fontWeight": "600",
+                "textTransform": "uppercase",
+                "letterSpacing": "0.05em",
+                "padding": "8px 12px",
+                "gap": "8px"
+              }
+            },
+            "children": [
+              { "type": "ia.display.label", "meta": { "name": "ColAttr" },   "position": { "basis": "0", "grow": 1 },        "props": { "text": "Attribute" } },
+              { "type": "ia.display.label", "meta": { "name": "ColValue" },  "position": { "basis": "220px", "shrink": 0 }, "props": { "text": "Value" } },
+              { "type": "ia.display.label", "meta": { "name": "ColRemove" }, "position": { "basis": "36px", "shrink": 0 },  "props": { "text": "" } }
+            ]
+          },
+          {
+            "type": "ia.display.flex-repeater",
+            "meta": { "name": "Rows" },
+            "position": { "basis": "0", "grow": 1 },
+            "propConfig": {
+              "props.instances": {
+                "binding": {
+                  "type": "property",
+                  "config": { "path": "view.custom.rows" }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "elementPosition": { "basis": "44px", "shrink": 0 },
+              "path": "BlueRidge/Components/Parts/Tools/_Tools/AttributeRow",
+              "style": { "overflowY": "auto" },
+              "useDefaultViewHeight": false,
+              "useDefaultViewWidth": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "custom": {},
+  "params": {
+    "header": {}
+  },
+  "propConfig": {
+    "params.header": { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "width": 90, "height": 24 }
+  },
+  "root": {
+    "type": "ia.display.label",
+    "meta": { "name": "root" },
+    "propConfig": {
+      "props.text": {
+        "binding": {
+          "type": "property",
+          "config": { "path": "view.params.header.label" }
+        }
+      }
+    },
+    "props": {
+      "text": "",
+      "style": {
+        "color": "var(--mpp-text-muted)",
+        "fontSize": "12px",
+        "fontWeight": "600",
+        "padding": "4px",
+        "textAlign": "center"
+      }
+    }
+  }
+}

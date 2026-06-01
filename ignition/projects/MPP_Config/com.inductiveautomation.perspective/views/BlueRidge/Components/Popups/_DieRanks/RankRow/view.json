@@ -1,0 +1,73 @@
+{
+  "custom": {},
+  "params": {
+    "rank": {}
+  },
+  "propConfig": {
+    "params.rank": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 200,
+      "height": 40
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "justify": "space-between",
+      "style": {
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "padding": "6px 12px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "RankLabel" },
+        "position": { "basis": "0", "grow": 1 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.params.rank.Code} + ' — ' + {view.params.rank.Name}"
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "fontSize": "12px"
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": { "name": "EditButton" },
+        "position": { "shrink": 0 },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.openPopup(\n\t\tid='mpp-edit-rank',\n\t\tview='BlueRidge/Components/Popups/EditRank',\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={'mode': 'update', 'dieRankId': self.view.params.rank.get('Id')})"
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "Edit",
+          "style": { "classes": "btn btn-sm" }
+        }
+      }
+    ]
+  }
+}

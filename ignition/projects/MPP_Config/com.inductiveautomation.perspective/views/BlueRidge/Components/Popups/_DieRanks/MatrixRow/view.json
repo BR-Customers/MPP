@@ -1,0 +1,67 @@
+{
+  "custom": {},
+  "params": {
+    "row": {}
+  },
+  "propConfig": {
+    "params.row": { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "width": 400, "height": 30 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": { "gap": "5px" }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "RowLabel" },
+        "position": { "basis": "100px", "shrink": 0 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": { "path": "view.params.row.label" }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "color": "var(--mpp-text-muted)",
+            "fontSize": "12px",
+            "fontWeight": "600",
+            "paddingRight": "10px",
+            "textAlign": "right"
+          }
+        }
+      },
+      {
+        "type": "ia.display.flex-repeater",
+        "meta": { "name": "CellRepeater" },
+        "position": { "grow": 1 },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "type": "property",
+              "config": { "path": "view.params.row.cells" }
+            }
+          }
+        },
+        "props": {
+          "direction": "row",
+          "elementPosition": { "basis": "90px", "shrink": 0 },
+          "path": "BlueRidge/Components/Popups/_DieRanks/MatrixCell",
+          "style": { "gap": "5px" },
+          "useDefaultViewHeight": false,
+          "useDefaultViewWidth": false
+        }
+      }
+    ]
+  }
+}
