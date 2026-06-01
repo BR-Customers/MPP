@@ -7,7 +7,7 @@
     "params.cavity": { "paramDirection": "input" }
   },
   "props": {
-    "defaultSize": { "width": 800, "height": 44 }
+    "defaultSize": { "width": 800, "height": 32 }
   },
   "root": {
     "type": "ia.container.flex",
@@ -27,7 +27,7 @@
       "alignItems": "center",
       "style": {
         "borderBottom": "1px solid var(--mpp-border-subtle)",
-        "padding": "8px 12px",
+        "padding": "4px 12px",
         "gap": "8px"
       }
     },

@@ -241,10 +241,10 @@
             },
             "props": {
               "direction": "column",
-              "elementPosition": { "basis": "40px", "shrink": 0 },
+              "elementPosition": { "basis": "28px", "shrink": 0 },
               "path": "BlueRidge/Components/Parts/Tools/_Tools/AssignmentRow",
               "style": { "overflowY": "auto" },
-              "useDefaultViewHeight": false,
+              "useDefaultViewHeight": true,
               "useDefaultViewWidth": false
             }
           }

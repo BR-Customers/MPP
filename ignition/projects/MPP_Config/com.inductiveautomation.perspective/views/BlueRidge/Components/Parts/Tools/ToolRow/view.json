@@ -14,7 +14,7 @@
   },
   "props": {
     "defaultSize": {
-      "height": 36,
+      "height": 44,
       "width": 240
     }
   },
@@ -58,7 +58,7 @@
       "style": {
         "borderBottom": "1px solid var(--mpp-border-subtle)",
         "cursor": "pointer",
-        "padding": "6px 10px"
+        "padding": "4px 10px"
       }
     },
     "children": [

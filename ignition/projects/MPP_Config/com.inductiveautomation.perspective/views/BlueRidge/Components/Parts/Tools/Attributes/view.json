@@ -138,10 +138,10 @@
             },
             "props": {
               "direction": "column",
-              "elementPosition": { "basis": "44px", "shrink": 0 },
+              "elementPosition": { "basis": "32px", "shrink": 0 },
               "path": "BlueRidge/Components/Parts/Tools/_Tools/AttributeRow",
               "style": { "overflowY": "auto" },
-              "useDefaultViewHeight": false,
+              "useDefaultViewHeight": true,
               "useDefaultViewWidth": false
             }
           }
