@@ -2,7 +2,7 @@
 -- Procedure:   Parts.Item_Update
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     1.0
+-- Version:     2.3
 --
 -- Description:
 --   Updates mutable fields of an active Item. PartNumber and ItemTypeId
@@ -44,6 +44,11 @@
 --   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
 --   2026-04-23 - 2.1 - Phase G.3: @CountryOfOrigin added (OI-19)
 --   2026-04-27 - 2.2 - OI-12 correction: @MaxParts added (moved from ContainerConfig)
+--   2026-05-29 - 2.3 - Audit-readability convention (Slice 5 Item core):
+--                       SUBJECT . Identity . Updated <field old->new ...>
+--                       narrative Description (changed fields only) +
+--                       resolved-FK Old/NewValue JSON (ItemType, Uom,
+--                       WeightUom). Old values captured BEFORE the UPDATE.
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.Item_Update
     @Id               BIGINT,
@@ -156,12 +161,99 @@ BEGIN
             RETURN;
         END
 
-        -- Capture OldValue for audit BEFORE the UPDATE
-        DECLARE @OldValue NVARCHAR(MAX) =
-            (SELECT Description, MacolaPartNumber, DefaultSubLotQty, MaxLotSize,
-                    UomId, UnitWeight, WeightUomId, CountryOfOrigin, MaxParts
-             FROM Parts.Item WHERE Id = @Id
-             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+        -- ===== Capture OLD scalar values BEFORE the UPDATE (for field-diff) =====
+        DECLARE @OldPartNumber       NVARCHAR(50);
+        DECLARE @OldDescription      NVARCHAR(500);
+        DECLARE @OldMacolaPartNumber NVARCHAR(50);
+        DECLARE @OldDefaultSubLotQty INT;
+        DECLARE @OldMaxLotSize       INT;
+        DECLARE @OldUomId            BIGINT;
+        DECLARE @OldUnitWeight       DECIMAL(10,4);
+        DECLARE @OldWeightUomId      BIGINT;
+        DECLARE @OldCountryOfOrigin  NVARCHAR(2);
+        DECLARE @OldMaxParts         INT;
+
+        SELECT @OldPartNumber       = PartNumber,
+               @OldDescription      = Description,
+               @OldMacolaPartNumber = MacolaPartNumber,
+               @OldDefaultSubLotQty = DefaultSubLotQty,
+               @OldMaxLotSize       = MaxLotSize,
+               @OldUomId            = UomId,
+               @OldUnitWeight       = UnitWeight,
+               @OldWeightUomId      = WeightUomId,
+               @OldCountryOfOrigin  = CountryOfOrigin,
+               @OldMaxParts         = MaxParts
+        FROM Parts.Item WHERE Id = @Id;
+
+        -- Resolved-FK OldValue snapshot (pre-update state)
+        DECLARE @OldValue NVARCHAR(MAX) = (
+            SELECT
+                i.Description,
+                i.MacolaPartNumber,
+                i.DefaultSubLotQty,
+                i.MaxLotSize,
+                JSON_QUERY((SELECT u.Id, u.Code, u.Name
+                            FROM Parts.Uom u WHERE u.Id = i.UomId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))     AS Uom,
+                i.UnitWeight,
+                JSON_QUERY((SELECT wu.Id, wu.Code, wu.Name
+                            FROM Parts.Uom wu WHERE wu.Id = i.WeightUomId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))     AS WeightUom,
+                i.CountryOfOrigin,
+                i.MaxParts
+            FROM Parts.Item i
+            WHERE i.Id = @Id
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
+        -- Build the field-diff Action prose: "Field old->new" tuples, changed
+        -- fields only. Strings quoted; NULL rendered as literal null. UOM FKs
+        -- diffed by code so the prose stays human-readable.
+        DECLARE @NewUomCode       NVARCHAR(20) = (SELECT Code FROM Parts.Uom WHERE Id = @UomId);
+        DECLARE @OldUomCode       NVARCHAR(20) = (SELECT Code FROM Parts.Uom WHERE Id = @OldUomId);
+        DECLARE @NewWeightUomCode NVARCHAR(20) = (SELECT Code FROM Parts.Uom WHERE Id = @WeightUomId);
+        DECLARE @OldWeightUomCode NVARCHAR(20) = (SELECT Code FROM Parts.Uom WHERE Id = @OldWeightUomId);
+
+        DECLARE @Arrow NVARCHAR(3) = NCHAR(8594);
+
+        DECLARE @Diff NVARCHAR(MAX) = STUFF(CONCAT(
+            CASE WHEN ISNULL(@OldDescription, N'') <> ISNULL(@Description, N'')
+                 THEN N', Description ' + ISNULL(N'"' + @OldDescription + N'"', N'null') + @Arrow + ISNULL(N'"' + @Description + N'"', N'null')
+                 ELSE N'' END,
+            CASE WHEN ISNULL(@OldMacolaPartNumber, N'') <> ISNULL(@MacolaPartNumber, N'')
+                 THEN N', MacolaPartNumber ' + ISNULL(N'"' + @OldMacolaPartNumber + N'"', N'null') + @Arrow + ISNULL(N'"' + @MacolaPartNumber + N'"', N'null')
+                 ELSE N'' END,
+            CASE WHEN ISNULL(@OldDefaultSubLotQty, -2147483648) <> ISNULL(@DefaultSubLotQty, -2147483648)
+                 THEN N', DefaultSubLotQty ' + ISNULL(CAST(@OldDefaultSubLotQty AS NVARCHAR(20)), N'null') + @Arrow + ISNULL(CAST(@DefaultSubLotQty AS NVARCHAR(20)), N'null')
+                 ELSE N'' END,
+            CASE WHEN ISNULL(@OldMaxLotSize, -2147483648) <> ISNULL(@MaxLotSize, -2147483648)
+                 THEN N', MaxLotSize ' + ISNULL(CAST(@OldMaxLotSize AS NVARCHAR(20)), N'null') + @Arrow + ISNULL(CAST(@MaxLotSize AS NVARCHAR(20)), N'null')
+                 ELSE N'' END,
+            CASE WHEN ISNULL(@OldUomId, -1) <> ISNULL(@UomId, -1)
+                 THEN N', Uom ' + ISNULL(@OldUomCode, N'null') + @Arrow + ISNULL(@NewUomCode, N'null')
+                 ELSE N'' END,
+            CASE WHEN ISNULL(@OldUnitWeight, -999999) <> ISNULL(@UnitWeight, -999999)
+                 THEN N', UnitWeight ' + ISNULL(CAST(@OldUnitWeight AS NVARCHAR(40)), N'null') + @Arrow + ISNULL(CAST(@UnitWeight AS NVARCHAR(40)), N'null')
+                 ELSE N'' END,
+            CASE WHEN ISNULL(@OldWeightUomId, -1) <> ISNULL(@WeightUomId, -1)
+                 THEN N', WeightUom ' + ISNULL(@OldWeightUomCode, N'null') + @Arrow + ISNULL(@NewWeightUomCode, N'null')
+                 ELSE N'' END,
+            CASE WHEN ISNULL(@OldCountryOfOrigin, N'') <> ISNULL(@CountryOfOrigin, N'')
+                 THEN N', CountryOfOrigin ' + ISNULL(N'"' + @OldCountryOfOrigin + N'"', N'null') + @Arrow + ISNULL(N'"' + @CountryOfOrigin + N'"', N'null')
+                 ELSE N'' END,
+            CASE WHEN ISNULL(@OldMaxParts, -2147483648) <> ISNULL(@MaxParts, -2147483648)
+                 THEN N', MaxParts ' + ISNULL(CAST(@OldMaxParts AS NVARCHAR(20)), N'null') + @Arrow + ISNULL(CAST(@MaxParts AS NVARCHAR(20)), N'null')
+                 ELSE N'' END
+        ), 1, 2, N'');  -- strip leading ", "
+
+        IF @Diff IS NULL OR @Diff = N''
+            SET @Diff = N'no field changes';
+
+        DECLARE @ActivityRaw NVARCHAR(MAX) =
+            @OldPartNumber + N' ' + Audit.ufn_MidDot() + N' Identity ' + Audit.ufn_MidDot() +
+            N' Updated ' + @Diff;
+
+        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
 
         BEGIN TRANSACTION;
 
@@ -179,15 +271,36 @@ BEGIN
             UpdatedByUserId  = @AppUserId
         WHERE Id = @Id;
 
+        -- Resolved-FK NewValue snapshot (post-update state)
+        DECLARE @NewValueResolved NVARCHAR(MAX) = (
+            SELECT
+                i.Description,
+                i.MacolaPartNumber,
+                i.DefaultSubLotQty,
+                i.MaxLotSize,
+                JSON_QUERY((SELECT u.Id, u.Code, u.Name
+                            FROM Parts.Uom u WHERE u.Id = i.UomId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))     AS Uom,
+                i.UnitWeight,
+                JSON_QUERY((SELECT wu.Id, wu.Code, wu.Name
+                            FROM Parts.Uom wu WHERE wu.Id = i.WeightUomId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))     AS WeightUom,
+                i.CountryOfOrigin,
+                i.MaxParts
+            FROM Parts.Item i
+            WHERE i.Id = @Id
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
         EXEC Audit.Audit_LogConfigChange
             @AppUserId         = @AppUserId,
             @LogEntityTypeCode = N'Item',
             @EntityId          = @Id,
             @LogEventTypeCode  = N'Updated',
             @LogSeverityCode   = N'Info',
-            @Description       = N'Item updated.',
+            @Description       = @Activity,
             @OldValue          = @OldValue,
-            @NewValue          = @Params;
+            @NewValue          = @NewValueResolved;
 
         COMMIT TRANSACTION;
 

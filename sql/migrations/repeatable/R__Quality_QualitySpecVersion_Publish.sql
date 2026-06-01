@@ -2,7 +2,7 @@
 -- Procedure:   Quality.QualitySpecVersion_Publish
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     2.0
+-- Version:     2.1
 --
 -- Description:
 --   Flips a Draft version to Published by setting PublishedAt =
@@ -28,6 +28,14 @@
 -- Change Log:
 --   2026-04-14 - 1.0 - Initial version
 --   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
+--   2026-05-29 - 2.1 - Audit-readability convention: SUBJECT . CATEGORY
+--                       . ACTION narrative Description
+--                       (<PN> . Quality Spec "<Name>" v<N> . Published;
+--                       <K> attributes; effective <YYYY-MM-DD>). NO
+--                       "(deprecated vN)" suffix — date-resolved lifecycle
+--                       does NOT auto-deprecate prior Published versions
+--                       (proc only flips PublishedAt). Resolved-FK
+--                       NewValue JSON (attributes w/ resolved Uom).
 -- =============================================
 CREATE OR ALTER PROCEDURE Quality.QualitySpecVersion_Publish
     @Id        BIGINT,
@@ -66,11 +74,15 @@ BEGIN
         DECLARE @ExistingPublishedAt  DATETIME2(3);
         DECLARE @ExistingDeprecatedAt DATETIME2(3);
         DECLARE @VersionNumber        INT;
+        DECLARE @QualitySpecId        BIGINT;
+        DECLARE @EffFrom              DATETIME2(3);
         DECLARE @RowExists            BIT = 0;
 
         SELECT @ExistingPublishedAt  = PublishedAt,
                @ExistingDeprecatedAt = DeprecatedAt,
                @VersionNumber        = VersionNumber,
+               @QualitySpecId        = QualitySpecId,
+               @EffFrom              = EffectiveFrom,
                @RowExists            = 1
         FROM Quality.QualitySpecVersion WHERE Id = @Id;
 
@@ -110,6 +122,63 @@ BEGIN
             RETURN;
         END
 
+        -- ===== Audit narrative + resolved JSON (built from PRE-mutation state) =====
+
+        -- Subject resolution: spec name via QualitySpecId; PartNumber via spec
+        -- ItemId (PN prefix present only when ItemId resolves).
+        DECLARE @SpecName   NVARCHAR(200);
+        DECLARE @PartNumber NVARCHAR(50);
+        DECLARE @ItemDesc   NVARCHAR(500);
+
+        SELECT @SpecName   = qs.Name,
+               @PartNumber = i.PartNumber,
+               @ItemDesc   = i.Description
+        FROM Quality.QualitySpec qs
+        LEFT JOIN Parts.Item i ON i.Id = qs.ItemId
+        WHERE qs.Id = @QualitySpecId;
+
+        DECLARE @Subject NVARCHAR(600) =
+            CASE WHEN @PartNumber IS NOT NULL
+                 THEN @PartNumber
+                      + CASE WHEN @ItemDesc IS NOT NULL THEN N' ' + NCHAR(8212) + N' ' + @ItemDesc ELSE N'' END
+                      + N' ' + Audit.ufn_MidDot() + N' '
+                 ELSE N'' END;
+
+        DECLARE @AttrCount INT =
+            (SELECT COUNT(*) FROM Quality.QualitySpecAttribute WHERE QualitySpecVersionId = @Id);
+        DECLARE @EffDate NVARCHAR(10) = CONVERT(NVARCHAR(10), @EffFrom, 23);  -- YYYY-MM-DD
+
+        -- ACTION: . Published; <K> attributes; effective <date>
+        -- NO "(deprecated vN)" suffix — date-resolved lifecycle, no auto-deprecate.
+        DECLARE @ActivityRaw NVARCHAR(MAX) =
+            @Subject + N'Quality Spec "' + @SpecName + N'" v' +
+            CAST(@VersionNumber AS NVARCHAR(10)) + N' ' + Audit.ufn_MidDot() +
+            N' Published; ' + CAST(@AttrCount AS NVARCHAR(10)) + N' attributes; effective ' + @EffDate;
+        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
+
+        -- Resolved-FK NewValue: published version header + attribute set
+        -- (each attribute row carries resolved Uom {Id, Code, Name}).
+        DECLARE @NewValueResolved NVARCHAR(MAX) = (
+            SELECT
+                @Id AS Id,
+                @VersionNumber AS VersionNumber,
+                @EffFrom AS EffectiveFrom,
+                JSON_QUERY((
+                    SELECT
+                        a.Id, a.AttributeName, a.DataType,
+                        JSON_QUERY((SELECT u.Id, u.Code, u.Name
+                         FROM Parts.Uom u WHERE u.Id = a.UomId
+                         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Uom,
+                        a.TargetValue, a.LowerLimit, a.UpperLimit,
+                        a.IsRequired, a.SortOrder
+                    FROM Quality.QualitySpecAttribute a
+                    WHERE a.QualitySpecVersionId = @Id
+                    ORDER BY a.SortOrder
+                    FOR JSON PATH
+                )) AS Attributes
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
         -- ====================
         -- Mutation (atomic)
         -- ====================
@@ -125,9 +194,9 @@ BEGIN
             @EntityId          = @Id,
             @LogEventTypeCode  = N'Updated',
             @LogSeverityCode   = N'Info',
-            @Description       = N'Quality spec version published.',
+            @Description       = @Activity,
             @OldValue          = N'{"PublishedAt":null}',
-            @NewValue          = @Params;
+            @NewValue          = @NewValueResolved;
 
         COMMIT TRANSACTION;
 

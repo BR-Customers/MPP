@@ -2,7 +2,7 @@
 -- Procedure:   Parts.Item_Create
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     1.0
+-- Version:     2.3
 --
 -- Description:
 --   Creates a new Item row. Validates ItemTypeId, UomId, and
@@ -43,6 +43,10 @@
 --   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
 --   2026-04-23 - 2.1 - Phase G.3: @CountryOfOrigin added (OI-19)
 --   2026-04-27 - 2.2 - OI-12 correction: @MaxParts added (moved from ContainerConfig)
+--   2026-05-29 - 2.3 - Audit-readability convention (Slice 5 Item core):
+--                       SUBJECT . CATEGORY . ACTION narrative Description +
+--                       resolved-FK NewValue JSON (ItemType {Id, Name},
+--                       Uom {Id, Code, Name}).
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.Item_Create
     @PartNumber       NVARCHAR(50),
@@ -188,15 +192,57 @@ BEGIN
 
         SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
 
+        -- ===== Audit narrative + resolved JSON =====
+
+        -- Subject: <PartNumber> — <Description> (<ItemTypeName>)
+        DECLARE @ItemTypeName NVARCHAR(200) =
+            (SELECT Name FROM Parts.ItemType WHERE Id = @ItemTypeId);
+
+        DECLARE @ActivityRaw NVARCHAR(MAX) =
+            @PartNumber
+            + CASE WHEN @Description IS NOT NULL
+                   THEN N' ' + NCHAR(8212) + N' ' + @Description ELSE N'' END
+            + CASE WHEN @ItemTypeName IS NOT NULL
+                   THEN N' (' + @ItemTypeName + N')' ELSE N'' END
+            + N' ' + Audit.ufn_MidDot() + N' Created';
+
+        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
+
+        -- Resolved-FK NewValue snapshot (post-create state)
+        DECLARE @NewValueResolved NVARCHAR(MAX) = (
+            SELECT
+                i.Id,
+                i.PartNumber,
+                i.Description,
+                JSON_QUERY((SELECT it.Id, it.Name
+                            FROM Parts.ItemType it WHERE it.Id = i.ItemTypeId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))     AS ItemType,
+                i.MacolaPartNumber,
+                i.DefaultSubLotQty,
+                i.MaxLotSize,
+                JSON_QUERY((SELECT u.Id, u.Code, u.Name
+                            FROM Parts.Uom u WHERE u.Id = i.UomId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))     AS Uom,
+                i.UnitWeight,
+                JSON_QUERY((SELECT wu.Id, wu.Code, wu.Name
+                            FROM Parts.Uom wu WHERE wu.Id = i.WeightUomId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))     AS WeightUom,
+                i.CountryOfOrigin,
+                i.MaxParts
+            FROM Parts.Item i
+            WHERE i.Id = @NewId
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
         EXEC Audit.Audit_LogConfigChange
             @AppUserId         = @AppUserId,
             @LogEntityTypeCode = N'Item',
             @EntityId          = @NewId,
             @LogEventTypeCode  = N'Created',
             @LogSeverityCode   = N'Info',
-            @Description       = N'Item created.',
+            @Description       = @Activity,
             @OldValue          = NULL,
-            @NewValue          = @Params;
+            @NewValue          = @NewValueResolved;
 
         COMMIT TRANSACTION;
 

@@ -279,6 +279,26 @@ EXEC test.Assert_IsEqual
     @TestName = N'[QSVersionClone] v2 is Draft',
     @Expected = N'1',
     @Actual   = @V2Draft;
+
+-- Verify the readable audit Description follows the convention
+-- (SUBJECT . Quality Spec "..." vN (Draft) . Created (...)).
+DECLARE @AuditDesc NVARCHAR(MAX) = (
+    SELECT TOP 1 cl.Description
+    FROM Audit.ConfigLog cl
+    INNER JOIN Audit.LogEntityType et ON et.Id = cl.LogEntityTypeId
+    WHERE et.Code = N'QualitySpecVersion' AND cl.EntityId = @V2Id
+    ORDER BY cl.Id DESC
+);
+
+EXEC test.Assert_Contains
+    @TestName    = N'[QSVersionClone] Audit Description contains "Quality Spec"',
+    @HaystackStr = @AuditDesc,
+    @NeedleStr   = N'Quality Spec';
+
+EXEC test.Assert_Contains
+    @TestName    = N'[QSVersionClone] Audit Description contains "Created"',
+    @HaystackStr = @AuditDesc,
+    @NeedleStr   = N'Created';
 GO
 
 -- =============================================

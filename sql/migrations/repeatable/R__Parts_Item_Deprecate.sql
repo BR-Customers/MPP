@@ -2,7 +2,7 @@
 -- Procedure:   Parts.Item_Deprecate
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     1.0
+-- Version:     2.1
 --
 -- Description:
 --   Soft-deletes an active Item by setting DeprecatedAt. Rejects if
@@ -32,6 +32,9 @@
 -- Change Log:
 --   2026-04-14 - 1.0 - Initial version (OUTPUT params)
 --   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
+--   2026-05-29 - 2.1 - Audit-readability convention (Slice 5 Item core):
+--                       SUBJECT . Deprecated narrative Description +
+--                       resolved-FK OldValue JSON (ItemType, Uom), NewValue NULL.
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.Item_Deprecate
     @Id        BIGINT,
@@ -183,6 +186,46 @@ BEGIN
             END
         END
 
+        -- ===== Audit narrative + resolved JSON (built from PRE-mutation state) =====
+
+        -- Subject: <PartNumber> — <Description>
+        DECLARE @PartNumber NVARCHAR(50);
+        DECLARE @ItemDesc   NVARCHAR(500);
+
+        SELECT @PartNumber = PartNumber, @ItemDesc = Description
+        FROM Parts.Item WHERE Id = @Id;
+
+        DECLARE @ActivityRaw NVARCHAR(MAX) =
+            @PartNumber
+            + CASE WHEN @ItemDesc IS NOT NULL
+                   THEN N' ' + NCHAR(8212) + N' ' + @ItemDesc ELSE N'' END
+            + N' ' + Audit.ufn_MidDot() + N' Deprecated';
+
+        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
+
+        -- Resolved-FK OldValue snapshot (pre-deprecate state)
+        DECLARE @OldValueResolved NVARCHAR(MAX) = (
+            SELECT
+                i.Id,
+                i.PartNumber,
+                i.Description,
+                JSON_QUERY((SELECT it.Id, it.Name
+                            FROM Parts.ItemType it WHERE it.Id = i.ItemTypeId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))     AS ItemType,
+                i.MacolaPartNumber,
+                i.DefaultSubLotQty,
+                i.MaxLotSize,
+                JSON_QUERY((SELECT u.Id, u.Code, u.Name
+                            FROM Parts.Uom u WHERE u.Id = i.UomId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))     AS Uom,
+                i.UnitWeight,
+                i.CountryOfOrigin,
+                i.MaxParts
+            FROM Parts.Item i
+            WHERE i.Id = @Id
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
         BEGIN TRANSACTION;
 
         UPDATE Parts.Item
@@ -197,9 +240,9 @@ BEGIN
             @EntityId          = @Id,
             @LogEventTypeCode  = N'Deprecated',
             @LogSeverityCode   = N'Info',
-            @Description       = N'Item deprecated.',
-            @OldValue          = NULL,
-            @NewValue          = @Params;
+            @Description       = @Activity,
+            @OldValue          = @OldValueResolved,
+            @NewValue          = NULL;
 
         COMMIT TRANSACTION;
 

@@ -2,7 +2,7 @@
 -- Procedure:   Quality.QualitySpecVersion_ListBySpec
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     1.0
+-- Version:     1.1
 --
 -- Description:
 --   Returns all versions for a given QualitySpec, ordered by
@@ -19,12 +19,24 @@
 --
 -- Change Log:
 --   2026-04-14 - 1.0 - Initial version
+--   2026-05-29 - 1.1 - Date-resolved per-version State: Active / Scheduled /
+--                       Superseded in addition to Draft / Deprecated. The
+--                       single live published version (max EffectiveFrom <= now,
+--                       non-deprecated) is Active; future-effective published
+--                       versions are Scheduled; other published versions are
+--                       Superseded.
 -- =============================================
 CREATE OR ALTER PROCEDURE Quality.QualitySpecVersion_ListBySpec
     @QualitySpecId BIGINT
 AS
 BEGIN
     SET NOCOUNT ON;
+
+    DECLARE @ActiveId BIGINT = (
+        SELECT TOP 1 Id FROM Quality.QualitySpecVersion
+        WHERE QualitySpecId = @QualitySpecId AND PublishedAt IS NOT NULL
+          AND DeprecatedAt IS NULL AND EffectiveFrom <= SYSUTCDATETIME()
+        ORDER BY EffectiveFrom DESC, VersionNumber DESC);
 
     SELECT
         qsv.Id,
@@ -35,8 +47,10 @@ BEGIN
         qsv.DeprecatedAt,
         CASE
             WHEN qsv.DeprecatedAt IS NOT NULL THEN N'Deprecated'
-            WHEN qsv.PublishedAt IS NOT NULL THEN N'Published'
-            ELSE N'Draft'
+            WHEN qsv.PublishedAt IS NULL THEN N'Draft'
+            WHEN qsv.Id = @ActiveId THEN N'Active'
+            WHEN qsv.EffectiveFrom > SYSUTCDATETIME() THEN N'Scheduled'
+            ELSE N'Superseded'
         END                   AS State,
         qsv.CreatedByUserId,
         au.DisplayName        AS CreatedByDisplayName,

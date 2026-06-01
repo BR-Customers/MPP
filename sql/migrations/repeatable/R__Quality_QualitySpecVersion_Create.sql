@@ -2,7 +2,7 @@
 -- Procedure:   Quality.QualitySpecVersion_Create
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     2.0
+-- Version:     2.1
 --
 -- Description:
 --   Creates the first version (VersionNumber = 1) for a given
@@ -28,6 +28,9 @@
 -- Change Log:
 --   2026-04-14 - 1.0 - Initial version
 --   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
+--   2026-05-29 - 2.1 - Audit-readability convention: SUBJECT . CATEGORY
+--                       . ACTION narrative Description
+--                       (<PN> . Quality Spec "<Name>" v1 (Draft) . Created).
 -- =============================================
 CREATE OR ALTER PROCEDURE Quality.QualitySpecVersion_Create
     @QualitySpecId BIGINT,
@@ -107,15 +110,51 @@ BEGIN
 
         SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
 
+        -- ===== Audit narrative + resolved JSON =====
+
+        -- Subject resolution (convention SUBJECT): resolve spec via QualitySpecId,
+        -- PartNumber via spec ItemId (PN prefix present only when ItemId resolves).
+        DECLARE @SpecName   NVARCHAR(200);
+        DECLARE @PartNumber NVARCHAR(50);
+        DECLARE @ItemDesc   NVARCHAR(500);
+
+        SELECT @SpecName   = qs.Name,
+               @PartNumber = i.PartNumber,
+               @ItemDesc   = i.Description
+        FROM Quality.QualitySpec qs
+        LEFT JOIN Parts.Item i ON i.Id = qs.ItemId
+        WHERE qs.Id = @QualitySpecId;
+
+        DECLARE @Subject NVARCHAR(600) =
+            CASE WHEN @PartNumber IS NOT NULL
+                 THEN @PartNumber
+                      + CASE WHEN @ItemDesc IS NOT NULL THEN N' ' + NCHAR(8212) + N' ' + @ItemDesc ELSE N'' END
+                      + N' ' + Audit.ufn_MidDot() + N' '
+                 ELSE N'' END;
+
+        DECLARE @ActivityRaw NVARCHAR(MAX) =
+            @Subject + N'Quality Spec "' + @SpecName + N'" v1 (Draft) ' +
+            Audit.ufn_MidDot() + N' Created';
+        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
+
+        DECLARE @NewValueResolved NVARCHAR(MAX) = (
+            SELECT
+                @NewId AS Id,
+                @QualitySpecId AS QualitySpecId,
+                1 AS VersionNumber,
+                @EffFrom AS EffectiveFrom
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
         EXEC Audit.Audit_LogConfigChange
             @AppUserId         = @AppUserId,
             @LogEntityTypeCode = N'QualitySpecVersion',
             @EntityId          = @NewId,
             @LogEventTypeCode  = N'Created',
             @LogSeverityCode   = N'Info',
-            @Description       = N'Quality spec version created (v1, Draft).',
+            @Description       = @Activity,
             @OldValue          = NULL,
-            @NewValue          = @Params;
+            @NewValue          = @NewValueResolved;
 
         COMMIT TRANSACTION;
 

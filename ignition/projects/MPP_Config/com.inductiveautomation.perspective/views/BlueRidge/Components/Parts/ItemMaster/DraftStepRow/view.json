@@ -1,0 +1,405 @@
+{
+  "custom": {},
+  "params": {
+    "areas": [],
+    "isFirst": false,
+    "isLast": false,
+    "opTemplatesByArea": {},
+    "rowIndex": 0,
+    "step": {
+      "DataCollectionSummary": "",
+      "Description": null,
+      "Id": null,
+      "IsRequired": true,
+      "OperationAreaLocationId": null,
+      "OperationAreaName": "",
+      "OperationCode": "",
+      "OperationName": "",
+      "OperationTemplateId": null,
+      "OperationVersionNumber": null,
+      "SequenceNumber": 0
+    }
+  },
+  "propConfig": {
+    "custom.areaOptions": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.params.areas})"
+        },
+        "transforms": [
+          {
+            "code": "\timport json\n\ttry:\n\t\tareas \u003d json.loads(value) if isinstance(value, basestring) else (value or [])\n\texcept Exception:\n\t\tareas \u003d value or []\n\treturn [{\u0027label\u0027: a.get(\u0027Name\u0027), \u0027value\u0027: a.get(\u0027Id\u0027)} for a in (areas or [])]",
+            "type": "script"
+          }
+        ],
+        "type": "expr"
+      }
+    },
+    "custom.opTemplateOptions": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.RouteTemplate.getOperationTemplatesByArea\", 0, {view.custom.selectedAreaId})"
+        },
+        "transforms": [
+          {
+            "code": "\tout \u003d []\n\tfor ot in (value or []):\n\t\tcode \u003d ot.get(\u0027Code\u0027) or \u0027\u0027\n\t\tvnum \u003d ot.get(\u0027VersionNumber\u0027, 0)\n\t\tname \u003d ot.get(\u0027Name\u0027) or \u0027\u0027\n\t\tlabel \u003d \u0027%s v%s — %s\u0027 % (code, vnum, name)\n\t\tout.append({\u0027label\u0027: label, \u0027value\u0027: ot.get(\u0027Id\u0027)})\n\treturn out",
+            "type": "script"
+          }
+        ],
+        "type": "expr"
+      }
+    },
+    "custom.selectedAreaId": {
+      "binding": {
+        "config": {
+          "expression": "{view.params.step.OperationAreaLocationId}"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.selectedOpTemplateId": {
+      "binding": {
+        "config": {
+          "expression": "{view.params.step.OperationTemplateId}"
+        },
+        "type": "expr"
+      }
+    },
+    "params.areas": {
+      "paramDirection": "input"
+    },
+    "params.isFirst": {
+      "paramDirection": "input"
+    },
+    "params.isLast": {
+      "paramDirection": "input"
+    },
+    "params.opTemplatesByArea": {
+      "paramDirection": "input"
+    },
+    "params.rowIndex": {
+      "paramDirection": "input"
+    },
+    "params.step": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 36,
+      "width": 1100
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "SeqLabel"
+        },
+        "position": {
+          "basis": "40px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "expression": "toStr({view.params.rowIndex} + 1)"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-muted)",
+            "fontSize": "12px",
+            "textAlign": "center"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tnewArea \u003d self.props.value\n\tself.view.rootContainer.broadcastStep(newArea, None)"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "AreaDropdown"
+        },
+        "position": {
+          "basis": "160px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.options": {
+            "binding": {
+              "config": {
+                "path": "view.custom.areaOptions"
+              },
+              "type": "property"
+            }
+          },
+          "props.value": {
+            "binding": {
+              "config": {
+                "bidirectional": true,
+                "path": "view.custom.selectedAreaId"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "select"
+          }
+        },
+        "type": "ia.input.dropdown"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tareaId \u003d self.view.custom.selectedAreaId\n\topId \u003d self.props.value\n\tself.view.rootContainer.broadcastStep(areaId, opId)"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "OpTemplateDropdown"
+        },
+        "position": {
+          "basis": "260px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.options": {
+            "binding": {
+              "config": {
+                "path": "view.custom.opTemplateOptions"
+              },
+              "type": "property"
+            }
+          },
+          "props.value": {
+            "binding": {
+              "config": {
+                "bidirectional": true,
+                "path": "view.custom.selectedOpTemplateId"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "select"
+          }
+        },
+        "type": "ia.input.dropdown"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tstep \u003d dict(self.view.params.step or {})\n\tstep[\u0027IsRequired\u0027] \u003d bool(self.props.selected)\n\tsystem.perspective.sendMessage(\u0027routeStepChanged\u0027, payload\u003d{\u0027rowIndex\u0027: self.view.params.rowIndex, \u0027step\u0027: step}, scope\u003d\u0027page\u0027)"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "IsRequiredCheckbox"
+        },
+        "position": {
+          "basis": "70px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.selected": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.step.IsRequired}"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontSize": "11px"
+          },
+          "text": "Req"
+        },
+        "type": "ia.input.checkbox"
+      },
+      {
+        "meta": {
+          "name": "DataCollectionLabel"
+        },
+        "position": {
+          "grow": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.step.DataCollectionSummary}"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-muted)",
+            "fontSize": "11px",
+            "overflow": "hidden",
+            "textOverflow": "ellipsis",
+            "whiteSpace": "nowrap"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\u0027routeStepMoveUp\u0027, payload\u003d{\u0027rowIndex\u0027: self.view.params.rowIndex}, scope\u003d\u0027page\u0027)"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "BtnUp"
+        },
+        "position": {
+          "basis": "32px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.enabled": {
+            "binding": {
+              "config": {
+                "expression": "!{view.params.isFirst}"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "btn btn-sm"
+          },
+          "text": "↑"
+        },
+        "type": "ia.input.button"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\u0027routeStepMoveDown\u0027, payload\u003d{\u0027rowIndex\u0027: self.view.params.rowIndex}, scope\u003d\u0027page\u0027)"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "BtnDown"
+        },
+        "position": {
+          "basis": "32px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.enabled": {
+            "binding": {
+              "config": {
+                "expression": "!{view.params.isLast}"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "btn btn-sm"
+          },
+          "text": "↓"
+        },
+        "type": "ia.input.button"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\u0027routeStepRemove\u0027, payload\u003d{\u0027rowIndex\u0027: self.view.params.rowIndex}, scope\u003d\u0027page\u0027)"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "BtnRemove"
+        },
+        "position": {
+          "basis": "32px",
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "classes": "btn btn-danger btn-sm"
+          },
+          "text": "✕"
+        },
+        "type": "ia.input.button"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "gap": "6px",
+        "padding": "4px 8px"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "broadcastStep",
+          "params": [
+            "areaId",
+            "opTemplateId"
+          ],
+          "script": "\tareas \u003d self.view.params.areas or []\n\topCache \u003d self.view.params.opTemplatesByArea or {}\n\tstep \u003d dict(self.view.params.step or {})\n\tstep[\u0027OperationAreaLocationId\u0027] \u003d areaId\n\tstep[\u0027OperationTemplateId\u0027] \u003d opTemplateId\n\tareaName \u003d \u0027\u0027\n\tfor a in areas:\n\t\tif a.get(\u0027Id\u0027) \u003d\u003d areaId:\n\t\t\tareaName \u003d a.get(\u0027Name\u0027) or \u0027\u0027\n\t\t\tbreak\n\tstep[\u0027OperationAreaName\u0027] \u003d areaName\n\topRows \u003d []\n\tif areaId:\n\t\ttry:\n\t\t\topRows \u003d BlueRidge.Parts.RouteTemplate.getOperationTemplatesByArea(areaId)\n\t\texcept Exception:\n\t\t\topRows \u003d []\n\tfor ot in (opRows or []):\n\t\tif ot.get(\u0027Id\u0027) \u003d\u003d opTemplateId:\n\t\t\tstep[\u0027OperationCode\u0027] \u003d ot.get(\u0027Code\u0027) or \u0027\u0027\n\t\t\tstep[\u0027OperationName\u0027] \u003d ot.get(\u0027Name\u0027) or \u0027\u0027\n\t\t\tstep[\u0027OperationVersionNumber\u0027] \u003d ot.get(\u0027VersionNumber\u0027)\n\t\t\tbreak\n\tsystem.perspective.sendMessage(\u0027routeStepChanged\u0027, payload\u003d{\u0027rowIndex\u0027: self.view.params.rowIndex, \u0027step\u0027: step}, scope\u003d\u0027page\u0027)"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": null
+    },
+    "type": "ia.container.flex"
+  }
+}

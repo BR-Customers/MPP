@@ -2,7 +2,7 @@
 -- Procedure:   Location.Location_MoveUp
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-13
--- Version:     2.0
+-- Version:     2.1
 --
 -- Description:
 --   Moves a Location up in the sort order by swapping SortOrder with
@@ -29,6 +29,9 @@
 -- Change Log:
 --   2026-04-13 - 1.0 - Initial version
 --   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
+--   2026-05-29 - 2.1 - Audit-readability convention (Slice 6 Plant Hierarchy):
+--                       "Reordered from #old to #new" Description narrative +
+--                       resolved-FK OldValue/NewValue JSON (differ in SortOrder).
 -- =============================================
 CREATE OR ALTER PROCEDURE Location.Location_MoveUp
     @Id        BIGINT,
@@ -117,18 +120,56 @@ BEGIN
         END
 
         -- ====================
+        -- Audit narrative + resolved JSON (captured BEFORE the swap)
+        -- ====================
+        DECLARE @LocCode NVARCHAR(50);
+        SELECT @LocCode = Code FROM Location.Location WHERE Id = @Id;
+
+        DECLARE @ParentCode NVARCHAR(50);
+        IF @ParentId IS NOT NULL
+            SELECT @ParentCode = Code FROM Location.Location WHERE Id = @ParentId;
+
+        DECLARE @ActivityRaw NVARCHAR(MAX) =
+            N'Location ' + @LocCode +
+            N' ' + Audit.ufn_MidDot() +
+            N' Reordered from #' + CAST(@CurrentSort AS NVARCHAR(10)) +
+            N' to #' + CAST(@SwapSort AS NVARCHAR(10)) +
+            CASE WHEN @ParentId IS NOT NULL THEN N' within ' + @ParentCode ELSE N'' END;
+
+        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
+
+        -- Resolved-FK snapshots differ only in SortOrder
+        DECLARE @OldValue NVARCHAR(MAX) = (
+            SELECT
+                l.Id, l.Code, l.Name,
+                @CurrentSort AS SortOrder,
+                JSON_QUERY((SELECT p.Id, p.Code, p.Name
+                            FROM Location.Location p WHERE p.Id = l.ParentLocationId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))                  AS Parent,
+                JSON_QUERY((SELECT ltd.Id, ltd.Name
+                            FROM Location.LocationTypeDefinition ltd WHERE ltd.Id = l.LocationTypeDefinitionId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))                  AS LocationTypeDefinition
+            FROM Location.Location l WHERE l.Id = @Id
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
+        DECLARE @NewValue NVARCHAR(MAX) = (
+            SELECT
+                l.Id, l.Code, l.Name,
+                @SwapSort AS SortOrder,
+                JSON_QUERY((SELECT p.Id, p.Code, p.Name
+                            FROM Location.Location p WHERE p.Id = l.ParentLocationId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))                  AS Parent,
+                JSON_QUERY((SELECT ltd.Id, ltd.Name
+                            FROM Location.LocationTypeDefinition ltd WHERE ltd.Id = l.LocationTypeDefinitionId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))                  AS LocationTypeDefinition
+            FROM Location.Location l WHERE l.Id = @Id
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
+        -- ====================
         -- Mutation (atomic)
         -- ====================
-        DECLARE @OldValue NVARCHAR(MAX) =
-            (SELECT @Id AS Id, @CurrentSort AS OldSortOrder,
-                    @SwapId AS SwapId, @SwapSort AS SwapOldSortOrder
-             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
-
-        DECLARE @NewValue NVARCHAR(MAX) =
-            (SELECT @Id AS Id, @SwapSort AS NewSortOrder,
-                    @SwapId AS SwapId, @CurrentSort AS SwapNewSortOrder
-             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
-
         BEGIN TRANSACTION;
 
         UPDATE Location.Location SET SortOrder = @SwapSort WHERE Id = @Id;
@@ -141,7 +182,7 @@ BEGIN
             @EntityId          = @Id,
             @LogEventTypeCode  = N'Updated',
             @LogSeverityCode   = N'Info',
-            @Description       = N'Location moved up.',
+            @Description       = @Activity,
             @OldValue          = @OldValue,
             @NewValue          = @NewValue;
 

@@ -123,6 +123,28 @@ EXEC test.Assert_IsEqual
     @TestName = N'[RtCreateHappy] VersionNumber is 1',
     @Expected = N'1',
     @Actual   = @RtVerStr;
+
+-- Audit-readability: Description follows SUBJECT . Route v1 (Draft) . Created
+DECLARE @CrDesc NVARCHAR(2000), @CrNew NVARCHAR(MAX);
+SELECT TOP 1 @CrDesc = cl.Description, @CrNew = cl.NewValue
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType nt ON nt.Id = cl.LogEntityTypeId
+WHERE cl.EntityId = @RtId AND nt.Code = N'Route'
+ORDER BY cl.Id DESC;
+
+DECLARE @CrDescOk NVARCHAR(1) = CASE
+    WHEN @CrDesc LIKE N'TEST-RT-ITEM-001%Route v1 (Draft)%Created%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtCreateHappy] Description matches convention shape',
+    @Expected = N'1',
+    @Actual   = @CrDescOk;
+
+DECLARE @CrFkOk NVARCHAR(1) = CASE
+    WHEN @CrNew LIKE N'%"Item"%"PartNumber":"TEST-RT-ITEM-001"%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtCreateHappy] NewValue carries resolved Item FK sub-object',
+    @Expected = N'1',
+    @Actual   = @CrFkOk;
 GO
 
 -- =============================================
@@ -369,7 +391,10 @@ SELECT @RtId = Id FROM Parts.RouteTemplate WHERE Name = N'TEST-RT-001';
 CREATE TABLE #StepList (
     Id BIGINT, RouteTemplateId BIGINT, SequenceNumber INT,
     OperationTemplateId BIGINT, OperationCode NVARCHAR(50),
-    OperationName NVARCHAR(200), IsRequired BIT, Description NVARCHAR(500)
+    OperationName NVARCHAR(200), OperationVersionNumber INT,
+    OperationAreaLocationId BIGINT, OperationAreaName NVARCHAR(200),
+    DataCollectionSummary NVARCHAR(MAX),
+    IsRequired BIT, Description NVARCHAR(500)
 );
 INSERT INTO #StepList EXEC Parts.RouteStep_ListByRoute @RouteTemplateId = @RtId;
 DECLARE @StepCount INT = (SELECT COUNT(*) FROM #StepList);
@@ -655,6 +680,16 @@ SELECT @V1Id   = Id FROM Parts.RouteTemplate WHERE Name = N'TEST-RT-001';
 
 SELECT @V1Steps = COUNT(*) FROM Parts.RouteStep WHERE RouteTemplateId = @V1Id;
 
+-- Publish v1 first. _CreateNewVersion now enforces a single-Draft-per-Item
+-- guard: it rejects when an active Draft already exists for the same Item.
+-- v1 has been a Draft up through Test 14; publish it here so the v2 clone
+-- below is allowed. (Test 17 publishes again — that call returns Status=0,
+-- which the test does not assert on, then directly backdates the row.)
+CREATE TABLE #RtPubV1 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #RtPubV1
+EXEC Parts.RouteTemplate_Publish @Id = @V1Id, @AppUserId = 1;
+DROP TABLE #RtPubV1;
+
 CREATE TABLE #Rc9 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #Rc9
 EXEC Parts.RouteTemplate_CreateNewVersion
@@ -693,6 +728,28 @@ EXEC test.Assert_RowCount
     @TestName      = N'[RtNewVer] Step count matches parent',
     @ExpectedCount = @V1Steps,
     @ActualCount   = @V2Steps;
+
+-- Audit-readability: Description follows SUBJECT . Route v2 (Draft) . Created from v1; K steps
+DECLARE @NvDesc NVARCHAR(2000), @NvNew NVARCHAR(MAX);
+SELECT TOP 1 @NvDesc = cl.Description, @NvNew = cl.NewValue
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType nt ON nt.Id = cl.LogEntityTypeId
+WHERE cl.EntityId = @V2Id AND nt.Code = N'Route'
+ORDER BY cl.Id DESC;
+
+DECLARE @NvDescOk NVARCHAR(1) = CASE
+    WHEN @NvDesc LIKE N'TEST-RT-ITEM-001%Route v2 (Draft)%Created from v1%steps%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtNewVer] Description matches convention shape',
+    @Expected = N'1',
+    @Actual   = @NvDescOk;
+
+DECLARE @NvFkOk NVARCHAR(1) = CASE
+    WHEN @NvNew LIKE N'%"Item"%"PartNumber":"TEST-RT-ITEM-001"%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtNewVer] NewValue carries resolved Item FK sub-object',
+    @Expected = N'1',
+    @Actual   = @NvFkOk;
 GO
 
 -- =============================================
@@ -843,6 +900,29 @@ EXEC test.Assert_IsEqual
     @TestName = N'[RtDep1] DeprecatedAt set',
     @Expected = N'1',
     @Actual   = @V1DepStr;
+
+-- Audit-readability: Description follows SUBJECT . Route v1 . Deprecated
+DECLARE @DepDesc NVARCHAR(2000), @DepOld NVARCHAR(MAX);
+SELECT TOP 1 @DepDesc = cl.Description, @DepOld = cl.OldValue
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType nt ON nt.Id = cl.LogEntityTypeId
+INNER JOIN Audit.LogEventType et  ON et.Id = cl.LogEventTypeId
+WHERE cl.EntityId = @V1Id AND nt.Code = N'Route' AND et.Code = N'Deprecated'
+ORDER BY cl.Id DESC;
+
+DECLARE @DepDescOk NVARCHAR(1) = CASE
+    WHEN @DepDesc LIKE N'TEST-RT-ITEM-001%Route v1%Deprecated%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtDep1] Description matches convention shape',
+    @Expected = N'1',
+    @Actual   = @DepDescOk;
+
+DECLARE @DepFkOk NVARCHAR(1) = CASE
+    WHEN @DepOld LIKE N'%"OperationTemplate"%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtDep1] OldValue step list carries resolved OperationTemplate FK',
+    @Expected = N'1',
+    @Actual   = @DepFkOk;
 GO
 
 -- =============================================
@@ -1017,6 +1097,29 @@ EXEC test.Assert_IsEqual
     @Expected = N'1',
     @Actual   = @SStr;
 
+-- Audit-readability: Description follows SUBJECT . Route v3 . Published ...
+DECLARE @PubDesc NVARCHAR(2000), @PubNew NVARCHAR(MAX);
+SELECT TOP 1 @PubDesc = cl.Description, @PubNew = cl.NewValue
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType nt ON nt.Id = cl.LogEntityTypeId
+INNER JOIN Audit.LogEventType et  ON et.Id = cl.LogEventTypeId
+WHERE cl.EntityId = @V3Id AND nt.Code = N'Route' AND et.Code = N'Updated'
+ORDER BY cl.Id DESC;
+
+DECLARE @PubDescOk NVARCHAR(1) = CASE
+    WHEN @PubDesc LIKE N'TEST-RT-ITEM-001%Route v3%Published%steps%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtPublish] Description matches convention shape',
+    @Expected = N'1',
+    @Actual   = @PubDescOk;
+
+DECLARE @PubFkOk NVARCHAR(1) = CASE
+    WHEN @PubNew LIKE N'%"Item"%"PartNumber":"TEST-RT-ITEM-001"%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtPublish] NewValue carries resolved Item FK sub-object',
+    @Expected = N'1',
+    @Actual   = @PubFkOk;
+
 -- =============================================
 -- Test 25 (retrofit): RtPublishTwice - publishing v3 again is rejected
 -- =============================================
@@ -1041,6 +1144,258 @@ EXEC test.Assert_IsEqual
     @TestName = N'[RtPublishTwice] Message indicates already published',
     @Expected = N'1',
     @Actual   = @TwiceMsg;
+GO
+
+-- =============================================
+-- Test 26 (Phase 5): Single-Draft-per-Item guard on _CreateNewVersion
+--   At this point v1 Deprecated, v2 Published, v3 Published, no Drafts.
+--   First _CreateNewVersion → v4 Draft → Status=1.
+--   Second _CreateNewVersion → rejected (v4 is the active Draft).
+-- =============================================
+DECLARE @S       BIT,
+        @M       NVARCHAR(500),
+        @SStr    NVARCHAR(1),
+        @ItemId  BIGINT,
+        @V3Id    BIGINT,
+        @V4Id    BIGINT;
+
+SELECT @ItemId = Id FROM Parts.Item WHERE PartNumber = N'TEST-RT-ITEM-001';
+SELECT @V3Id = Id FROM Parts.RouteTemplate WHERE ItemId = @ItemId AND VersionNumber = 3;
+
+-- First CreateNewVersion → v4 Draft, expected to succeed
+CREATE TABLE #Rc12 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #Rc12
+EXEC Parts.RouteTemplate_CreateNewVersion
+    @ParentRouteTemplateId = @V3Id,
+    @AppUserId             = 1;
+SELECT @S = Status, @M = Message, @V4Id = NewId FROM #Rc12;
+DROP TABLE #Rc12;
+
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtDraftGuard] First CreateNewVersion succeeds (v4 Draft)',
+    @Expected = N'1',
+    @Actual   = @SStr;
+
+-- Second CreateNewVersion on same Item → rejected by single-Draft guard
+CREATE TABLE #Rc13 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #Rc13
+EXEC Parts.RouteTemplate_CreateNewVersion
+    @ParentRouteTemplateId = @V3Id,
+    @AppUserId             = 1;
+SELECT @S = Status, @M = Message FROM #Rc13;
+DROP TABLE #Rc13;
+
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtDraftGuard] Second CreateNewVersion rejected (Status=0)',
+    @Expected = N'0',
+    @Actual   = @SStr;
+
+DECLARE @DraftMsg NVARCHAR(1) = CASE
+    WHEN @M LIKE N'%Draft for this Item already exists%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtDraftGuard] Message names the single-Draft guard',
+    @Expected = N'1',
+    @Actual   = @DraftMsg;
+GO
+
+-- =============================================
+-- Test 27 (Phase 5): Publish rejects a Draft with zero steps
+--   Fresh Item TEST-RT-ITEM-002 with a Draft RouteTemplate but no steps.
+-- =============================================
+DECLARE @S       BIT,
+        @M       NVARCHAR(500),
+        @SStr    NVARCHAR(1),
+        @Item2Id BIGINT,
+        @Rt2Id   BIGINT;
+
+CREATE TABLE #Rci2 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #Rci2
+EXEC Parts.Item_Create
+    @ItemTypeId  = 4,
+    @PartNumber  = N'TEST-RT-ITEM-002',
+    @Description = N'Zero-step publish test',
+    @UomId       = 1,
+    @AppUserId   = 1;
+SELECT @Item2Id = NewId FROM #Rci2;
+DROP TABLE #Rci2;
+
+CREATE TABLE #Rcr2 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #Rcr2
+EXEC Parts.RouteTemplate_Create
+    @ItemId    = @Item2Id,
+    @Name      = N'TEST-RT-NOSTEPS',
+    @AppUserId = 1;
+SELECT @Rt2Id = NewId FROM #Rcr2;
+DROP TABLE #Rcr2;
+
+CREATE TABLE #RuP1 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #RuP1
+EXEC Parts.RouteTemplate_Publish @Id = @Rt2Id, @AppUserId = 1;
+SELECT @S = Status, @M = Message FROM #RuP1;
+DROP TABLE #RuP1;
+
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtPubNoSteps] Status is 0 (zero-steps guard)',
+    @Expected = N'0',
+    @Actual   = @SStr;
+
+DECLARE @NoStepsMsg NVARCHAR(1) = CASE
+    WHEN @M LIKE N'%no steps%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtPubNoSteps] Message names the no-steps guard',
+    @Expected = N'1',
+    @Actual   = @NoStepsMsg;
+GO
+
+-- =============================================
+-- Test 28 (Phase 5): Publish v4 with no overrides preserves Name + EffectiveFrom
+--   After Test 26 v4 was cloned from v3, so it has steps and a Name
+--   identical to v3's. Publishing without overrides should leave Name
+--   and EffectiveFrom untouched.
+-- =============================================
+DECLARE @S            BIT,
+        @M            NVARCHAR(500),
+        @SStr         NVARCHAR(1),
+        @ItemId       BIGINT,
+        @V4Id         BIGINT,
+        @BeforeName   NVARCHAR(200),
+        @BeforeEffFr  DATETIME2(3),
+        @AfterName    NVARCHAR(200),
+        @AfterEffFr   DATETIME2(3);
+
+SELECT @ItemId = Id FROM Parts.Item WHERE PartNumber = N'TEST-RT-ITEM-001';
+SELECT @V4Id = Id FROM Parts.RouteTemplate WHERE ItemId = @ItemId AND VersionNumber = 4;
+
+SELECT @BeforeName  = Name,
+       @BeforeEffFr = EffectiveFrom
+FROM Parts.RouteTemplate WHERE Id = @V4Id;
+
+CREATE TABLE #RuP2 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #RuP2
+EXEC Parts.RouteTemplate_Publish @Id = @V4Id, @AppUserId = 1;
+SELECT @S = Status, @M = Message FROM #RuP2;
+DROP TABLE #RuP2;
+
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtPubV4] Status is 1 (publish v4 with no overrides)',
+    @Expected = N'1',
+    @Actual   = @SStr;
+
+SELECT @AfterName  = Name,
+       @AfterEffFr = EffectiveFrom
+FROM Parts.RouteTemplate WHERE Id = @V4Id;
+
+DECLARE @NameUnchanged NVARCHAR(1) = CASE
+    WHEN @AfterName = @BeforeName THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtPubV4] Name unchanged when override is NULL',
+    @Expected = N'1',
+    @Actual   = @NameUnchanged;
+
+DECLARE @EffFrUnchanged NVARCHAR(1) = CASE
+    WHEN @AfterEffFr = @BeforeEffFr THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtPubV4] EffectiveFrom unchanged when override is NULL',
+    @Expected = N'1',
+    @Actual   = @EffFrUnchanged;
+GO
+
+-- =============================================
+-- Test 29 (Phase 5): Publish with @EffectiveFrom override applies the override
+--   Create v5 (cloned from v4), then Publish with EffectiveFrom = 2027-01-01.
+-- =============================================
+DECLARE @S       BIT,
+        @M       NVARCHAR(500),
+        @SStr    NVARCHAR(1),
+        @ItemId  BIGINT,
+        @V4Id    BIGINT,
+        @V5Id    BIGINT;
+
+SELECT @ItemId = Id FROM Parts.Item WHERE PartNumber = N'TEST-RT-ITEM-001';
+SELECT @V4Id = Id FROM Parts.RouteTemplate WHERE ItemId = @ItemId AND VersionNumber = 4;
+
+CREATE TABLE #RcV5 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #RcV5
+EXEC Parts.RouteTemplate_CreateNewVersion
+    @ParentRouteTemplateId = @V4Id,
+    @AppUserId             = 1;
+SELECT @V5Id = NewId FROM #RcV5;
+DROP TABLE #RcV5;
+
+DECLARE @OverrideEff DATETIME2(3) = N'2027-01-01T00:00:00';
+
+CREATE TABLE #RuP3 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #RuP3
+EXEC Parts.RouteTemplate_Publish
+    @Id            = @V5Id,
+    @AppUserId     = 1,
+    @EffectiveFrom = @OverrideEff;
+SELECT @S = Status, @M = Message FROM #RuP3;
+DROP TABLE #RuP3;
+
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtPubV5EffOverride] Status is 1',
+    @Expected = N'1',
+    @Actual   = @SStr;
+
+DECLARE @StoredEff DATETIME2(3);
+SELECT @StoredEff = EffectiveFrom FROM Parts.RouteTemplate WHERE Id = @V5Id;
+DECLARE @EffApplied NVARCHAR(1) = CASE
+    WHEN @StoredEff = @OverrideEff THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtPubV5EffOverride] EffectiveFrom = 2027-01-01',
+    @Expected = N'1',
+    @Actual   = @EffApplied;
+GO
+
+-- =============================================
+-- Test 30 (Phase 5): Publish with @Name override applies the rename
+--   Create v6 (cloned from v5), then Publish with @Name = 'Renamed at publish'.
+-- =============================================
+DECLARE @S       BIT,
+        @M       NVARCHAR(500),
+        @SStr    NVARCHAR(1),
+        @ItemId  BIGINT,
+        @V5Id    BIGINT,
+        @V6Id    BIGINT;
+
+SELECT @ItemId = Id FROM Parts.Item WHERE PartNumber = N'TEST-RT-ITEM-001';
+SELECT @V5Id = Id FROM Parts.RouteTemplate WHERE ItemId = @ItemId AND VersionNumber = 5;
+
+CREATE TABLE #RcV6 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #RcV6
+EXEC Parts.RouteTemplate_CreateNewVersion
+    @ParentRouteTemplateId = @V5Id,
+    @AppUserId             = 1;
+SELECT @V6Id = NewId FROM #RcV6;
+DROP TABLE #RcV6;
+
+CREATE TABLE #RuP4 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #RuP4
+EXEC Parts.RouteTemplate_Publish
+    @Id        = @V6Id,
+    @AppUserId = 1,
+    @Name      = N'Renamed at publish';
+SELECT @S = Status, @M = Message FROM #RuP4;
+DROP TABLE #RuP4;
+
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtPubV6NameOverride] Status is 1',
+    @Expected = N'1',
+    @Actual   = @SStr;
+
+DECLARE @StoredName NVARCHAR(200);
+SELECT @StoredName = Name FROM Parts.RouteTemplate WHERE Id = @V6Id;
+EXEC test.Assert_IsEqual
+    @TestName = N'[RtPubV6NameOverride] Name = ''Renamed at publish''',
+    @Expected = N'Renamed at publish',
+    @Actual   = @StoredName;
 GO
 
 -- =============================================

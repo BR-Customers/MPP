@@ -2,7 +2,7 @@
 -- Procedure:   Location.Location_Create
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-13
--- Version:     2.0
+-- Version:     2.1
 --
 -- Description:
 --   Creates a new Location row under the specified parent. Validates
@@ -34,6 +34,10 @@
 -- Change Log:
 --   2026-04-13 - 1.0 - Initial version
 --   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
+--   2026-05-29 - 2.1 - Audit-readability convention (Slice 6 Plant Hierarchy):
+--                       human-readable Description narrative + resolved-FK
+--                       OldValue/NewValue JSON (Parent {Id,Code,Name},
+--                       LocationTypeDefinition {Id,Name}).
 -- =============================================
 CREATE OR ALTER PROCEDURE Location.Location_Create
     @LocationTypeDefinitionId  BIGINT,
@@ -161,6 +165,50 @@ BEGIN
 
         SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
 
+        -- ===== Audit narrative + resolved JSON =====
+
+        -- Resolve subject names (tier-def + optional parent) for the narrative
+        DECLARE @TierDefName NVARCHAR(100);
+        SELECT @TierDefName = Name
+        FROM Location.LocationTypeDefinition
+        WHERE Id = @LocationTypeDefinitionId;
+
+        DECLARE @ParentCode NVARCHAR(50), @ParentName NVARCHAR(200);
+        IF @ParentLocationId IS NOT NULL
+            SELECT @ParentCode = Code, @ParentName = Name
+            FROM Location.Location
+            WHERE Id = @ParentLocationId;
+
+        DECLARE @ActivityRaw NVARCHAR(MAX) =
+            N'Location ' + @Code +
+            N' ' + NCHAR(8212) + N' ' + @Name +
+            N' (' + ISNULL(@TierDefName, N'?') + N')' +
+            N' ' + Audit.ufn_MidDot() + N' Created' +
+            CASE WHEN @ParentLocationId IS NOT NULL
+                 THEN N' under ' + @ParentCode + N' ' + NCHAR(8212) + N' ' + @ParentName
+                 ELSE N'' END;
+
+        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
+
+        -- Resolved-FK NewValue snapshot (Parent + LocationTypeDefinition sub-objects)
+        DECLARE @NewValueResolved NVARCHAR(MAX) = (
+            SELECT
+                l.Id,
+                l.Code,
+                l.Name,
+                l.Description,
+                l.SortOrder,
+                JSON_QUERY((SELECT p.Id, p.Code, p.Name
+                            FROM Location.Location p WHERE p.Id = l.ParentLocationId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))                  AS Parent,
+                JSON_QUERY((SELECT ltd.Id, ltd.Name
+                            FROM Location.LocationTypeDefinition ltd WHERE ltd.Id = l.LocationTypeDefinitionId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))                  AS LocationTypeDefinition
+            FROM Location.Location l
+            WHERE l.Id = @NewId
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
         -- Success audit INSIDE the transaction — rolls back atomically with the data
         EXEC Audit.Audit_LogConfigChange
             @AppUserId         = @AppUserId,
@@ -168,9 +216,9 @@ BEGIN
             @EntityId          = @NewId,
             @LogEventTypeCode  = N'Created',
             @LogSeverityCode   = N'Info',
-            @Description       = N'Location created.',
+            @Description       = @Activity,
             @OldValue          = NULL,
-            @NewValue          = @Params;
+            @NewValue          = @NewValueResolved;
 
         COMMIT TRANSACTION;
 

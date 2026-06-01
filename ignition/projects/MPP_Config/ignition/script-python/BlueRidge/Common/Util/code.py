@@ -61,6 +61,20 @@
 #   2026-05-19 - 1.2 - Add prettyJson. Formats JSON strings with 2-space
 #                      indentation for the FailureDetail audit popup;
 #                      gracefully handles None + malformed input.
+#   2026-05-28 - 1.3 - Add summarizeJsonDiff (+ _formatDiffValue helper)
+#                      for the AuditLog "Changes" column. Compact one-line
+#                      diff summary computed from Audit.ConfigLog
+#                      OldValue / NewValue JSON snapshots. Identity-style
+#                      keys (Id, RowVersion, AppUserId, UserId) are
+#                      excluded so they don't crowd the meaningful fields.
+#   2026-05-29 - 1.4 - Add prettyJsonDiff (+ _diffLines / _diffLeaf /
+#                      _diffElemKey / _diffEmit / _decodeJsonOrNone helpers)
+#                      for the ConfigChangeDetail popup. Unified colorized
+#                      OldValue/NewValue diff as HTML <div> lines (green
+#                      add / red remove / yellow change), rendered by an
+#                      ia.display.markdown component with escapeHtml=false.
+#                      Resolved-FK sub-objects collapse to 'Code — Name'.
+#                      Slice 2.5 of the audit-readability refactor.
 # =============================================================================
 
 import re
@@ -367,17 +381,357 @@ def prettyJson(jsonString):
         return jsonString
 
 
-def convertWrapperObjectToJson(obj):
+# Identity / audit columns that show up in audit JSON payloads but aren't
+# conceptually "changes" — skip them so the diff summary shows real edits.
+_DIFF_SKIP_KEYS = ("Id", "RowVersion", "AppUserId", "UserId")
+
+
+def _formatDiffValue(value, maxLen=30):
+    """Render one JSON value for the inline ChangesSummary diff string.
+
+    None becomes the empty-set glyph (visually distinct from the literal
+    string 'None'); strings are quoted so spaces read clearly; everything
+    else is str()-ified. Values longer than maxLen are truncated with an
+    ellipsis so a single huge field can't blow the table column out.
     """
-    Convert a Jython PyDictionary / PyList wrapper object into a Gson-safe
-    JSON value before passing as a named-query parameter. Required when a
-    view hands a self.custom.* dict to a script that forwards it to an NQ
-    that expects NVARCHAR(MAX) JSON.
+    if value is None:
+        return u"∅"
+    if isinstance(value, basestring):
+        s = value
+        if len(s) > maxLen:
+            s = s[:maxLen - 1] + u"…"
+        return u'"' + s + u'"'
+    s = unicode(value)
+    if len(s) > maxLen:
+        s = s[:maxLen - 1] + u"…"
+    return s
+
+
+def summarizeJsonDiff(oldJson, newJson, maxFields=3):
+    """Compact one-line diff summary for the AuditLog "Changes" column.
+
+    Compares the OldValue / NewValue JSON snapshots an Audit.ConfigLog row
+    carries and returns a single short string suitable for inline display
+    next to the templated Description. The full pretty-printed payload
+    still lives in the ConfigChangeDetail popup -- this helper is the
+    scannable summary, not the source of truth.
+
+    Output shapes:
+        Create (old NULL):       "+ Code, Name, Description"
+        Deprecate (new NULL):    "- Code, Name, Description"
+        Field added:             "+DeprecatedAt: \"2026-05-28...\""
+        Field removed:           "-LegacyFlag"
+        Field changed:           "CountryOfOrigin: \"US\" -> \"MX\""
+        No meaningful diff:      ""
+        Overflow:                "..., +N more"  (cap = maxFields)
+
+    Identity-style keys (_DIFF_SKIP_KEYS) are filtered before counting so
+    a row whose only "change" is an Id echo renders as "" (truthful).
 
     Args:
-        obj: Any PyDictionary, PyList, or nested combination.
+        oldJson (str | None): Audit.ConfigLog.OldValue JSON string.
+        newJson (str | None): Audit.ConfigLog.NewValue JSON string.
+        maxFields (int):      Inline-display cap; overflow becomes "+N more".
 
     Returns:
-        The Gson-safe equivalent ready to be jsonEncoded.
+        str: Compact diff. Empty string when both sides are null,
+             unparseable, or structurally identical after skip-key filtering.
     """
-    return TypeUtilities.pyToGson(obj)
+    def _decode(s):
+        if s is None:
+            return None
+        try:
+            return system.util.jsonDecode(s)
+        except Exception:
+            return None
+
+    oldObj = _decode(oldJson)
+    newObj = _decode(newJson)
+
+    if oldObj is None and newObj is None:
+        return ""
+
+    def _meaningfulKeys(obj):
+        if not isinstance(obj, dict):
+            return []
+        return [k for k in obj.keys() if k not in _DIFF_SKIP_KEYS]
+
+    if oldObj is None:
+        keys = _meaningfulKeys(newObj)
+        if not keys:
+            return ""
+        shown = keys[:maxFields]
+        suffix = u" +%d more" % (len(keys) - maxFields) if len(keys) > maxFields else u""
+        return u"+ " + u", ".join(shown) + suffix
+
+    if newObj is None:
+        keys = _meaningfulKeys(oldObj)
+        if not keys:
+            return ""
+        shown = keys[:maxFields]
+        suffix = u" +%d more" % (len(keys) - maxFields) if len(keys) > maxFields else u""
+        return u"- " + u", ".join(shown) + suffix
+
+    if not isinstance(oldObj, dict) or not isinstance(newObj, dict):
+        return ""
+
+    # Preserve a stable display order: old keys first, then new-only keys.
+    seen = set()
+    allKeys = []
+    for k in list(oldObj.keys()) + list(newObj.keys()):
+        if k in _DIFF_SKIP_KEYS or k in seen:
+            continue
+        seen.add(k)
+        allKeys.append(k)
+
+    diffs = []
+    for k in allKeys:
+        if k in oldObj and k in newObj:
+            if oldObj[k] != newObj[k]:
+                diffs.append(("change", k, oldObj[k], newObj[k]))
+        elif k in newObj:
+            diffs.append(("add", k, None, newObj[k]))
+        else:
+            diffs.append(("remove", k, oldObj[k], None))
+
+    if not diffs:
+        return ""
+
+    shown = diffs[:maxFields]
+    parts = []
+    for kind, key, oldVal, newVal in shown:
+        if kind == "add":
+            parts.append(u"+%s: %s" % (key, _formatDiffValue(newVal)))
+        elif kind == "remove":
+            parts.append(u"-%s" % key)
+        else:
+            parts.append(u"%s: %s → %s" % (
+                key,
+                _formatDiffValue(oldVal),
+                _formatDiffValue(newVal),
+            ))
+    suffix = u" +%d more" % (len(diffs) - maxFields) if len(diffs) > maxFields else u""
+    return u", ".join(parts) + suffix
+
+
+# -----------------------------------------------------------------------------
+# prettyJsonDiff — unified, colorized OldValue/NewValue diff for the
+# ConfigChangeDetail popup. Depends on the resolved-name JSON the audit-
+# readability refactor writes (FK sub-objects {Id, Code, Name} /
+# {Id, PartNumber, Description}); collapses those to a short "Code — Name"
+# label so the diff reads as a narrative, not raw nested JSON.
+# Emits HTML <div> lines (one per field / row), colored by change kind:
+#   +  add     -> green  (--mpp-state-good-fg)
+#   -  remove  -> red    (--mpp-state-bad-fg)
+#   ~  change  -> yellow (--mpp-state-warn-fg)
+# Rendered by an ia.display.markdown component with escapeHtml=false. If
+# HTML rendering is unavailable the leading +/-/~ symbols still convey the
+# diff, so it degrades gracefully.
+# -----------------------------------------------------------------------------
+
+_DIFF_COLOR_ADD    = u"#4ADE80"   # --mpp-state-good-fg
+_DIFF_COLOR_REMOVE = u"#F87171"   # --mpp-state-bad-fg
+_DIFF_COLOR_CHANGE = u"#FACC15"   # --mpp-state-warn-fg
+_DIFF_LINE_BASE    = (u"font-family:ui-monospace,Menlo,Consolas,monospace;"
+                      u"font-size:11px;line-height:1.5;white-space:pre-wrap;")
+
+
+def _decodeJsonOrNone(s):
+    """jsonDecode that returns None for null/empty/unparseable input."""
+    if s is None or s == "":
+        return None
+    try:
+        return system.util.jsonDecode(s)
+    except Exception:
+        return None
+
+
+def _diffLeaf(value):
+    """Compact single-value render for the unified diff. Resolved-FK
+    sub-objects ({Id, Code, Name} / {Id, PartNumber, Description}) collapse
+    to a short 'Code — Name' label rather than dumping the whole object."""
+    if value is None:
+        return u"null"
+    if isinstance(value, bool):
+        return u"true" if value else u"false"
+    if isinstance(value, dict):
+        code = value.get("Code") or value.get("PartNumber")
+        name = value.get("Name") or value.get("Description") or value.get("Initials")
+        if code and name:
+            return u"%s — %s" % (unicode(code), unicode(name))
+        if code:
+            return unicode(code)
+        if name:
+            return unicode(name)
+        try:
+            return system.util.jsonEncode(value)
+        except Exception:
+            return unicode(value)
+    if isinstance(value, basestring):
+        return u'"%s"' % value
+    return unicode(value)
+
+
+def _diffEmit(lines, indent, kind, text):
+    """Append one colored HTML <div> diff line. kind in {add, remove,
+    change, None}; None renders as plain unchanged context."""
+    color = {
+        "add":    _DIFF_COLOR_ADD,
+        "remove": _DIFF_COLOR_REMOVE,
+        "change": _DIFF_COLOR_CHANGE,
+    }.get(kind)
+    colorStyle = (u"color:%s;" % color) if color else u"color:var(--mpp-text-secondary);"
+    padStyle = u"padding-left:%dpx;" % (indent * 14)
+    safe = text.replace(u"&", u"&amp;").replace(u"<", u"&lt;").replace(u">", u"&gt;")
+    lines.append(u'<div style="%s%s%s">%s</div>' % (
+        _DIFF_LINE_BASE, padStyle, colorStyle, safe))
+
+
+def _diffElemKey(elem):
+    """Stable identity for a list element so two arrays can be matched by
+    business key (the resolved FK's Code/PartNumber) rather than by index.
+    Returns None when no stable unique key is derivable (caller falls back
+    to index pairing)."""
+    if not isinstance(elem, dict):
+        return None
+    for v in elem.values():
+        if isinstance(v, dict):
+            kk = v.get("PartNumber") or v.get("Code")
+            if kk:
+                return unicode(kk)
+    kk = elem.get("Code") or elem.get("PartNumber") or elem.get("Name")
+    return unicode(kk) if kk else None
+
+
+def _diffLines(old, new, lines, indent):
+    """Recursively walk two decoded JSON structures, appending colored diff
+    lines. Handles dict-vs-dict (per key), list-vs-list (matched by business
+    key, else by index), and scalar leaves."""
+    # --- dict vs dict (one side may be None -> treated as empty) ---
+    if isinstance(old, dict) or isinstance(new, dict):
+        oldD = old if isinstance(old, dict) else {}
+        newD = new if isinstance(new, dict) else {}
+        seen = set()
+        keys = []
+        for k in list(oldD.keys()) + list(newD.keys()):
+            if k in _DIFF_SKIP_KEYS or k in seen:
+                continue
+            seen.add(k)
+            keys.append(k)
+        for k in keys:
+            inOld = k in oldD
+            inNew = k in newD
+            if inOld and inNew:
+                if oldD[k] == newD[k]:
+                    _diffEmit(lines, indent, None, u"%s: %s" % (k, _diffLeaf(newD[k])))
+                else:
+                    _diffEmit(lines, indent, "change",
+                              u"~ %s: %s → %s" % (k, _diffLeaf(oldD[k]), _diffLeaf(newD[k])))
+            elif inNew:
+                _diffEmit(lines, indent, "add", u"+ %s: %s" % (k, _diffLeaf(newD[k])))
+            else:
+                _diffEmit(lines, indent, "remove", u"- %s: %s" % (k, _diffLeaf(oldD[k])))
+        return
+
+    # --- list vs list ---
+    if isinstance(old, list) or isinstance(new, list):
+        oldL = old if isinstance(old, list) else []
+        newL = new if isinstance(new, list) else []
+        oldKeys = [_diffElemKey(e) for e in oldL]
+        newKeys = [_diffElemKey(e) for e in newL]
+        canMatch = (
+            oldL and newL
+            and all(k is not None for k in oldKeys) and len(set(oldKeys)) == len(oldKeys)
+            and all(k is not None for k in newKeys) and len(set(newKeys)) == len(newKeys)
+        )
+        if canMatch:
+            oldMap = dict(zip(oldKeys, oldL))
+            newMap = dict(zip(newKeys, newL))
+            for k in newKeys:
+                if k in oldMap:
+                    if oldMap[k] != newMap[k]:
+                        _diffEmit(lines, indent, None, u"%s:" % k)
+                        _diffLines(oldMap[k], newMap[k], lines, indent + 1)
+                else:
+                    _diffEmit(lines, indent, "add", u"+ %s:" % k)
+                    _diffLines(None, newMap[k], lines, indent + 1)
+            for k in oldKeys:
+                if k not in newMap:
+                    _diffEmit(lines, indent, "remove", u"- %s:" % k)
+                    _diffLines(oldMap[k], None, lines, indent + 1)
+        else:
+            n = max(len(oldL), len(newL))
+            for i in range(n):
+                o = oldL[i] if i < len(oldL) else None
+                nv = newL[i] if i < len(newL) else None
+                if o != nv:
+                    _diffEmit(lines, indent, None, u"[%d]:" % i)
+                    _diffLines(o, nv, lines, indent + 1)
+        return
+
+    # --- scalar leaf ---
+    if old == new:
+        return
+    if old is None:
+        _diffEmit(lines, indent, "add", u"+ %s" % _diffLeaf(new))
+    elif new is None:
+        _diffEmit(lines, indent, "remove", u"- %s" % _diffLeaf(old))
+    else:
+        _diffEmit(lines, indent, "change",
+                  u"~ %s → %s" % (_diffLeaf(old), _diffLeaf(new)))
+
+
+def prettyJsonDiff(oldJson, newJson):
+    """Unified, colorized diff of an Audit.ConfigLog row's OldValue / NewValue
+    JSON snapshots, for the ConfigChangeDetail popup. Returns an HTML string
+    (a stack of <div> lines) rendered by an ia.display.markdown component with
+    escapeHtml=false.
+
+    Reads best against the resolved-name JSON the audit-readability refactor
+    writes -- FK sub-objects collapse to 'Code — Name', so a diff line reads
+    'Location: DC-401 — Die Cast 401' rather than 'LocationId: 4 → 5'.
+
+    Args:
+        oldJson (str | None): Audit.ConfigLog.OldValue JSON string.
+        newJson (str | None): Audit.ConfigLog.NewValue JSON string.
+
+    Returns:
+        str: HTML diff. Empty string when both sides are null / unparseable;
+             a "(no field-level differences)" line when both parse but are
+             structurally identical after skip-key filtering.
+    """
+    oldObj = _decodeJsonOrNone(oldJson)
+    newObj = _decodeJsonOrNone(newJson)
+    if oldObj is None and newObj is None:
+        return u""
+    lines = []
+    _diffLines(oldObj, newObj, lines, 0)
+    if not lines:
+        return (u'<div style="%scolor:var(--mpp-text-secondary);">'
+                u'(no field-level differences)</div>') % _DIFF_LINE_BASE
+    return u"\n".join(lines)
+
+
+def convertWrapperObjectToJson(obj):
+    """
+    Deep-unwrap a wrapped container (java.util.HashMap of BasicQualifiedValue,
+    QualifiedValue, JavaCollection, nested combinations) into a Python-native
+    structure, then JSON-encode it. Returns the JSON string.
+
+    Used by the dirty-state binding expressions on the per-section ownership
+    embeds (Identity / ContainerConfig / Routes / BOMs) where editDraft and
+    selected come into the runScript wrapped as BasicQualifiedValue leaves
+    inside a HashMap. Comparing those raw dicts via != is unstable (the QV
+    timestamp/quality differs across reads even when the underlying value is
+    identical). Routing both sides through this helper -- which strips the
+    QV wrappers via extractQualifiedValues, then jsonEncodes -- yields
+    type-stable, ordering-stable strings that compare correctly.
+
+    Args:
+        obj: Any wrapped container, plain Python dict/list, or primitive.
+
+    Returns:
+        str: JSON-encoded string. Compare two of these for type-stable
+             dirty detection. Returns "null" for None.
+    """
+    return system.util.jsonEncode(extractQualifiedValues(obj))

@@ -1,0 +1,893 @@
+{
+  "custom": {},
+  "params": {
+    "attrCount": 0,
+    "attribute": {
+      "attributeName": "",
+      "dataType": "",
+      "id": null,
+      "isRequired": false,
+      "lowerLimit": null,
+      "sortOrder": 0,
+      "targetValue": null,
+      "uomCode": "",
+      "uomId": null,
+      "upperLimit": null
+    },
+    "dataTypes": [],
+    "mode": "published",
+    "rowIndex": 0,
+    "uoms": []
+  },
+  "propConfig": {
+    "params.attrCount": {
+      "paramDirection": "input"
+    },
+    "params.attribute": {
+      "paramDirection": "input"
+    },
+    "params.dataTypes": {
+      "paramDirection": "input"
+    },
+    "params.mode": {
+      "paramDirection": "input"
+    },
+    "params.rowIndex": {
+      "paramDirection": "input"
+    },
+    "params.uoms": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 36,
+      "width": 1200
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "ColIndex"
+        },
+        "position": {
+          "basis": "36px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "expression": "toStr({view.params.rowIndex} + 1)"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "12px",
+            "textAlign": "right"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(\"qsAttrMoveUp\", payload={\"rowIndex\": self.view.params.rowIndex}, scope=\"page\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "UpArrow"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.params.rowIndex} > 0"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-sm",
+                "height": "30px",
+                "padding": "2px 6px"
+              },
+              "text": "▲"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(\"qsAttrMoveDown\", payload={\"rowIndex\": self.view.params.rowIndex}, scope=\"page\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "DownArrow"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.params.rowIndex} < {view.params.attrCount} - 1"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-sm",
+                "height": "30px",
+                "padding": "2px 6px"
+              },
+              "text": "▼"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "ColArrows"
+        },
+        "position": {
+          "basis": "72px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.mode} = \"draft\""
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "gap": "2px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "events": {
+          "dom": {
+            "onBlur": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"qsAttrNameChanged\", payload={\"rowIndex\": self.view.params.rowIndex, \"value\": self.props.text}, scope=\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "AttributeNameEdit"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.mode} = \"draft\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.attribute.attributeName"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "search-input",
+            "height": "30px"
+          }
+        },
+        "type": "ia.input.text-field"
+      },
+      {
+        "meta": {
+          "name": "AttributeNameDisplay"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.mode} != \"draft\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.attribute.attributeName"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontSize": "12px"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"qsAttrDataTypeChanged\", payload={\"rowIndex\": self.view.params.rowIndex, \"value\": self.props.value}, scope=\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "DataTypeEdit"
+        },
+        "position": {
+          "basis": "150px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.mode} = \"draft\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.options": {
+            "binding": {
+              "config": {
+                "path": "view.params.dataTypes"
+              },
+              "type": "property"
+            }
+          },
+          "props.value": {
+            "binding": {
+              "config": {
+                "path": "view.params.attribute.dataType"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "noSelectionText": "Type...",
+          "style": {
+            "classes": "select",
+            "height": "30px"
+          }
+        },
+        "type": "ia.input.dropdown"
+      },
+      {
+        "meta": {
+          "name": "DataTypeDisplay"
+        },
+        "position": {
+          "basis": "150px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.mode} != \"draft\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.attribute.dataType"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontSize": "12px"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"qsAttrUomChanged\", payload={\"rowIndex\": self.view.params.rowIndex, \"value\": self.props.value}, scope=\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "UomEdit"
+        },
+        "position": {
+          "basis": "90px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.mode} = \"draft\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.enabled": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.attribute.dataType} = \"Numeric\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.options": {
+            "binding": {
+              "config": {
+                "path": "view.params.uoms"
+              },
+              "transforms": [
+                {
+                  "code": "\tout = []\n\tfor it in (value or []):\n\t\tit = it or {}\n\t\tcode = it.get('Code') or ''\n\t\tout.append({'label': code, 'value': it.get('Id')})\n\treturn out",
+                  "type": "script"
+                }
+              ],
+              "type": "property"
+            }
+          },
+          "props.value": {
+            "binding": {
+              "config": {
+                "path": "view.params.attribute.uomId"
+              },
+              "type": "property"
+            }
+          },
+          "meta.visible": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.attribute.dataType} = \"Numeric\""
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "noSelectionText": "UOM...",
+          "style": {
+            "classes": "select",
+            "height": "30px"
+          }
+        },
+        "type": "ia.input.dropdown"
+      },
+      {
+        "meta": {
+          "name": "UomDisplay"
+        },
+        "position": {
+          "basis": "90px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.mode} != \"draft\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.attribute.uomCode"
+              },
+              "type": "property"
+            }
+          },
+          "meta.visible": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.attribute.dataType} = \"Numeric\""
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "events": {
+          "dom": {
+            "onBlur": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"qsAttrTargetChanged\", payload={\"rowIndex\": self.view.params.rowIndex, \"value\": self.props.value}, scope=\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "TargetEdit"
+        },
+        "position": {
+          "basis": "90px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.mode} = \"draft\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.enabled": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.attribute.dataType} = \"Numeric\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.value": {
+            "binding": {
+              "config": {
+                "path": "view.params.attribute.targetValue"
+              },
+              "type": "property"
+            }
+          },
+          "meta.visible": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.attribute.dataType} = \"Numeric\""
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "search-input",
+            "height": "30px",
+            "textAlign": "right"
+          }
+        },
+        "type": "ia.input.numeric-entry-field"
+      },
+      {
+        "meta": {
+          "name": "TargetDisplay"
+        },
+        "position": {
+          "basis": "90px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.mode} != \"draft\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.attribute.targetValue"
+              },
+              "type": "property"
+            }
+          },
+          "meta.visible": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.attribute.dataType} = \"Numeric\""
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "textAlign": "right"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "events": {
+          "dom": {
+            "onBlur": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"qsAttrLowerChanged\", payload={\"rowIndex\": self.view.params.rowIndex, \"value\": self.props.value}, scope=\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "LowerEdit"
+        },
+        "position": {
+          "basis": "90px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.mode} = \"draft\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.enabled": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.attribute.dataType} = \"Numeric\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.value": {
+            "binding": {
+              "config": {
+                "path": "view.params.attribute.lowerLimit"
+              },
+              "type": "property"
+            }
+          },
+          "meta.visible": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.attribute.dataType} = \"Numeric\""
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "search-input",
+            "height": "30px",
+            "textAlign": "right"
+          }
+        },
+        "type": "ia.input.numeric-entry-field"
+      },
+      {
+        "meta": {
+          "name": "LowerDisplay"
+        },
+        "position": {
+          "basis": "90px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.mode} != \"draft\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.attribute.lowerLimit"
+              },
+              "type": "property"
+            }
+          },
+          "meta.visible": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.attribute.dataType} = \"Numeric\""
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "textAlign": "right"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "events": {
+          "dom": {
+            "onBlur": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"qsAttrUpperChanged\", payload={\"rowIndex\": self.view.params.rowIndex, \"value\": self.props.value}, scope=\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "UpperEdit"
+        },
+        "position": {
+          "basis": "90px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.mode} = \"draft\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.enabled": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.attribute.dataType} = \"Numeric\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.value": {
+            "binding": {
+              "config": {
+                "path": "view.params.attribute.upperLimit"
+              },
+              "type": "property"
+            }
+          },
+          "meta.visible": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.attribute.dataType} = \"Numeric\""
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "search-input",
+            "height": "30px",
+            "textAlign": "right"
+          }
+        },
+        "type": "ia.input.numeric-entry-field"
+      },
+      {
+        "meta": {
+          "name": "UpperDisplay"
+        },
+        "position": {
+          "basis": "90px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.mode} != \"draft\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.attribute.upperLimit"
+              },
+              "type": "property"
+            }
+          },
+          "meta.visible": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.attribute.dataType} = \"Numeric\""
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "textAlign": "right"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"qsAttrRequiredChanged\", payload={\"rowIndex\": self.view.params.rowIndex, \"value\": self.props.selected}, scope=\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "RequiredEdit"
+        },
+        "position": {
+          "basis": "60px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.mode} = \"draft\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.selected": {
+            "binding": {
+              "config": {
+                "path": "view.params.attribute.isRequired"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "type": "ia.input.checkbox"
+      },
+      {
+        "meta": {
+          "name": "RequiredDisplay"
+        },
+        "position": {
+          "basis": "60px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.mode} != \"draft\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "expression": "if({view.params.attribute.isRequired}, \"Yes\", \"No\")"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "textAlign": "center"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"qsAttrRemove\", payload={\"rowIndex\": self.view.params.rowIndex}, scope=\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "RemoveBtn"
+        },
+        "position": {
+          "basis": "40px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.mode} = \"draft\""
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "btn btn-sm",
+            "height": "30px",
+            "padding": "2px 6px"
+          },
+          "text": "×"
+        },
+        "type": "ia.input.button"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "gap": "6px",
+        "height": "100%",
+        "padding": "2px 10px"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

@@ -2,7 +2,7 @@
 -- Procedure:   Quality.QualitySpec_Create
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     2.0
+-- Version:     2.1
 --
 -- Description:
 --   Creates a new QualitySpec header. This is a lightweight parent
@@ -30,6 +30,11 @@
 -- Change Log:
 --   2026-04-14 - 1.0 - Initial version
 --   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
+--   2026-05-29 - 2.1 - Audit-readability convention: SUBJECT . CATEGORY
+--                       . ACTION narrative Description
+--                       (<PN — Desc> . Quality Spec "<Name>" . Created) +
+--                       resolved-FK NewValue JSON (Item / OperationTemplate
+--                       {Id, Code/PartNumber, Name/Description}).
 -- =============================================
 CREATE OR ALTER PROCEDURE Quality.QualitySpec_Create
     @Name                NVARCHAR(200),
@@ -109,15 +114,53 @@ BEGIN
 
         SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
 
+        -- ===== Audit narrative + resolved JSON =====
+
+        -- Subject resolution (convention SUBJECT): Item PartNumber [- Description]
+        -- PN prefix present only when ItemId resolves.
+        DECLARE @PartNumber NVARCHAR(50);
+        DECLARE @ItemDesc   NVARCHAR(500);
+
+        IF @ItemId IS NOT NULL
+            SELECT @PartNumber = PartNumber, @ItemDesc = Description
+            FROM Parts.Item WHERE Id = @ItemId;
+
+        DECLARE @Subject NVARCHAR(600) =
+            CASE WHEN @PartNumber IS NOT NULL
+                 THEN @PartNumber
+                      + CASE WHEN @ItemDesc IS NOT NULL THEN N' ' + NCHAR(8212) + N' ' + @ItemDesc ELSE N'' END
+                      + N' ' + Audit.ufn_MidDot() + N' '
+                 ELSE N'' END;
+
+        DECLARE @ActivityRaw NVARCHAR(MAX) =
+            @Subject + N'Quality Spec "' + LTRIM(RTRIM(@Name)) + N'" ' +
+            Audit.ufn_MidDot() + N' Created';
+        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
+
+        -- Resolved-FK NewValue JSON
+        DECLARE @NewValueResolved NVARCHAR(MAX) = (
+            SELECT
+                @NewId AS Id,
+                LTRIM(RTRIM(@Name)) AS Name,
+                @Description AS Description,
+                JSON_QUERY((SELECT i.Id, i.PartNumber, i.Description
+                 FROM Parts.Item i WHERE i.Id = @ItemId
+                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))            AS Item,
+                JSON_QUERY((SELECT ot.Id, ot.Code, ot.Name
+                 FROM Parts.OperationTemplate ot WHERE ot.Id = @OperationTemplateId
+                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))            AS OperationTemplate
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
         EXEC Audit.Audit_LogConfigChange
             @AppUserId         = @AppUserId,
             @LogEntityTypeCode = N'QualitySpec',
             @EntityId          = @NewId,
             @LogEventTypeCode  = N'Created',
             @LogSeverityCode   = N'Info',
-            @Description       = N'Quality specification created.',
+            @Description       = @Activity,
             @OldValue          = NULL,
-            @NewValue          = @Params;
+            @NewValue          = @NewValueResolved;
 
         COMMIT TRANSACTION;
 

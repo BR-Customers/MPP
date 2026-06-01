@@ -1,37 +1,7 @@
 {
   "custom": {
     "activeTab": "containerConfig",
-    "editDraft": {
-      "meta": {
-        "CountryOfOrigin": "US",
-        "CreatedAt": {
-          "$": [
-            "ts",
-            192,
-            1779309668179
-          ],
-          "$ts": 1779321304125
-        },
-        "CreatedByUserId": 2,
-        "DefaultSubLotQty": 24,
-        "DeprecatedAt": null,
-        "Description": "5G0 Front Cover Assembly",
-        "Id": 1,
-        "ItemTypeId": 4,
-        "ItemTypeName": "Finished Good",
-        "MacolaPartNumber": "5G0-FC-001",
-        "MaxLotSize": null,
-        "MaxParts": 500,
-        "PartNumber": "5G0",
-        "UnitWeight": 3.25,
-        "UomCode": "EA",
-        "UomId": 1,
-        "UpdatedAt": null,
-        "UpdatedByUserId": null,
-        "WeightUomCode": "LB",
-        "WeightUomId": 2
-      }
-    },
+    "activeTabIndex": 0,
     "itemTypes": [
       "Raw Material",
       "Component",
@@ -39,39 +9,17 @@
       "Finished Good",
       "Pass-Through"
     ],
-    "mode": "update",
+    "pendingSwitch": null,
     "search": "",
-    "selected": {
-      "meta": {
-        "CountryOfOrigin": "US",
-        "CreatedAt": {
-          "$": [
-            "ts",
-            192,
-            1779309668178
-          ],
-          "$ts": 1779321304125
-        },
-        "CreatedByUserId": 2,
-        "DefaultSubLotQty": 24,
-        "DeprecatedAt": null,
-        "Description": "5G0 Front Cover Assembly",
-        "Id": 1,
-        "ItemTypeId": 4,
-        "ItemTypeName": "Finished Good",
-        "MacolaPartNumber": "5G0-FC-001",
-        "MaxLotSize": null,
-        "MaxParts": 500,
-        "PartNumber": "5G0",
-        "UnitWeight": 3.25,
-        "UomCode": "EA",
-        "UomId": 1,
-        "UpdatedAt": null,
-        "UpdatedByUserId": null,
-        "WeightUomCode": "LB",
-        "WeightUomId": 2
-      }
+    "sectionDirty": {
+      "boms": false,
+      "containerConfig": false,
+      "eligibility": false,
+      "identity": false,
+      "qualitySpecs": false,
+      "routes": false
     },
+    "selectedItemId": 2,
     "typeFilter": "All Types",
     "uoms": [
       "EA",
@@ -81,6 +29,12 @@
   },
   "params": {},
   "propConfig": {
+    "custom.activeTabIndex": {
+      "onChange": {
+        "enabled": true,
+        "script": "\tcurr \u003d currentValue.value if currentValue is not None else None\n\tsectionKeys \u003d [\"containerConfig\", \"routes\", \"boms\", \"qualitySpecs\", \"eligibility\"]\n\tif curr is not None and 0 \u003c\u003d curr \u003c len(sectionKeys):\n\t\tself.custom.activeTab \u003d sectionKeys[curr]"
+      }
+    },
     "custom.items": {
       "binding": {
         "config": {
@@ -92,8 +46,8 @@
   },
   "props": {
     "defaultSize": {
-      "height": 720,
-      "width": 1280
+      "height": 1080,
+      "width": 1920
     }
   },
   "root": {
@@ -121,7 +75,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "if({view.custom.editDraft} != {view.custom.selected}, '\u25cf Unsaved changes', '')"
+                    "expression": "if({view.custom.sectionDirty.identity} || {view.custom.sectionDirty.containerConfig} || {view.custom.sectionDirty.routes} || {view.custom.sectionDirty.boms} || {view.custom.sectionDirty.qualitySpecs} || {view.custom.sectionDirty.eligibility}, \u0027● Unsaved changes\u0027, \u0027\u0027)"
                   },
                   "type": "expr"
                 }
@@ -214,7 +168,7 @@
                       }
                     },
                     "props": {
-                      "placeholder": "\ud83d\udd0d Search items\u2026",
+                      "placeholder": "🔍 Search items…",
                       "style": {
                         "classes": "search-input"
                       }
@@ -298,7 +252,7 @@
                   "props.instances": {
                     "binding": {
                       "config": {
-                        "expression": "runScript(\"BlueRidge.Parts.Item.getInstancesForFlexRepeater\", 0, {view.custom.search}, {view.custom.typeFilter}, {view.custom.selected.meta.Id})"
+                        "expression": "runScript(\"BlueRidge.Parts.Item.attachSelectedId\", 0, {view.custom.items}, {view.custom.selectedItemId})"
                       },
                       "type": "expr"
                     }
@@ -308,6 +262,9 @@
                   "direction": "column",
                   "elementPosition": {
                     "basis": "auto"
+                  },
+                  "elementStyle": {
+                    "maxHeight": "60px"
                   },
                   "path": "BlueRidge/Components/Parts/ItemMaster/ItemRow",
                   "style": {
@@ -339,666 +296,26 @@
           {
             "children": [
               {
-                "children": [
-                  {
-                    "children": [
-                      {
-                        "meta": {
-                          "name": "SummaryText"
-                        },
-                        "propConfig": {
-                          "props.text": {
-                            "binding": {
-                              "config": {
-                                "expression": "{view.custom.editDraft.meta.PartNumber} + ' \u2014 ' + {view.custom.editDraft.meta.Description}"
-                              },
-                              "type": "expr"
-                            }
-                          }
-                        },
-                        "props": {
-                          "style": {
-                            "fontSize": "13px",
-                            "fontWeight": "600"
-                          }
-                        },
-                        "type": "ia.display.label"
-                      },
-                      {
-                        "meta": {
-                          "name": "SummaryBadge"
-                        },
-                        "propConfig": {
-                          "props.text": {
-                            "binding": {
-                              "config": {
-                                "path": "view.custom.editDraft.meta.ItemTypeName"
-                              },
-                              "type": "property"
-                            }
-                          }
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "badge badge-published"
-                          }
-                        },
-                        "type": "ia.display.label"
-                      },
-                      {
-                        "meta": {
-                          "name": "SummarySpacer"
-                        },
-                        "position": {
-                          "grow": 1
-                        },
-                        "type": "ia.container.flex"
-                      },
-                      {
-                        "events": {
-                          "component": {
-                            "onActionPerformed": {
-                              "config": {
-                                "script": "\tBlueRidge.Common.Notify.toast('Not wired yet', 'Item save lands in Phase 3.', 'info', 5)"
-                              },
-                              "scope": "C",
-                              "type": "script"
-                            }
-                          }
-                        },
-                        "meta": {
-                          "name": "BtnSave"
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "btn btn-primary btn-sm"
-                          },
-                          "text": "Save"
-                        },
-                        "type": "ia.input.button"
-                      },
-                      {
-                        "events": {
-                          "component": {
-                            "onActionPerformed": {
-                              "config": {
-                                "script": "\tBlueRidge.Common.Notify.toast('Not wired yet', 'Item deprecate lands in Phase 3.', 'info', 5)"
-                              },
-                              "scope": "C",
-                              "type": "script"
-                            }
-                          }
-                        },
-                        "meta": {
-                          "name": "BtnDeprecate"
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "btn btn-danger btn-sm"
-                          },
-                          "text": "Deprecate"
-                        },
-                        "type": "ia.input.button"
-                      }
-                    ],
-                    "meta": {
-                      "name": "SummaryRow"
-                    },
-                    "props": {
-                      "alignItems": "center",
-                      "style": {
-                        "gap": "8px"
-                      }
-                    },
-                    "type": "ia.container.flex"
-                  },
-                  {
-                    "children": [
-                      {
-                        "children": [
-                          {
-                            "meta": {
-                              "name": "LabelPartNumber"
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "field-label"
-                              },
-                              "text": "Part Number"
-                            },
-                            "type": "ia.display.label"
-                          },
-                          {
-                            "meta": {
-                              "name": "InputPartNumber"
-                            },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "config": {
-                                    "bidirectional": true,
-                                    "path": "view.custom.editDraft.meta.PartNumber"
-                                  },
-                                  "type": "property"
-                                }
-                              }
-                            },
-                            "props": {
-                              "enabled": false,
-                              "style": {
-                                "background": "var(--mpp-surface-card)",
-                                "classes": "search-input",
-                                "color": "var(--mpp-text-muted)"
-                              }
-                            },
-                            "type": "ia.input.text-field"
-                          }
-                        ],
-                        "meta": {
-                          "name": "FieldPartNumber"
-                        },
-                        "props": {
-                          "direction": "column",
-                          "style": {
-                            "classes": "field",
-                            "gap": "2px"
-                          }
-                        },
-                        "type": "ia.container.flex"
-                      },
-                      {
-                        "children": [
-                          {
-                            "meta": {
-                              "name": "LabelItemType"
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "field-label"
-                              },
-                              "text": "Item Type"
-                            },
-                            "type": "ia.display.label"
-                          },
-                          {
-                            "meta": {
-                              "name": "InputItemType"
-                            },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "config": {
-                                    "bidirectional": true,
-                                    "path": "view.custom.editDraft.meta.ItemTypeName"
-                                  },
-                                  "type": "property"
-                                }
-                              }
-                            },
-                            "props": {
-                              "enabled": false,
-                              "style": {
-                                "background": "var(--mpp-surface-card)",
-                                "classes": "search-input",
-                                "color": "var(--mpp-text-muted)"
-                              }
-                            },
-                            "type": "ia.input.text-field"
-                          }
-                        ],
-                        "meta": {
-                          "name": "FieldItemType"
-                        },
-                        "props": {
-                          "direction": "column",
-                          "style": {
-                            "classes": "field",
-                            "gap": "2px"
-                          }
-                        },
-                        "type": "ia.container.flex"
-                      },
-                      {
-                        "children": [
-                          {
-                            "meta": {
-                              "name": "LabelUom"
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "field-label"
-                              },
-                              "text": "UOM"
-                            },
-                            "type": "ia.display.label"
-                          },
-                          {
-                            "meta": {
-                              "name": "DropdownUom"
-                            },
-                            "propConfig": {
-                              "props.value": {
-                                "binding": {
-                                  "config": {
-                                    "bidirectional": true,
-                                    "path": "view.custom.editDraft.meta.UomCode"
-                                  },
-                                  "type": "property"
-                                }
-                              }
-                            },
-                            "props": {
-                              "options": [
-                                {
-                                  "label": "EA",
-                                  "value": "EA"
-                                },
-                                {
-                                  "label": "LB",
-                                  "value": "LB"
-                                },
-                                {
-                                  "label": "KG",
-                                  "value": "KG"
-                                }
-                              ],
-                              "style": {
-                                "classes": "select"
-                              }
-                            },
-                            "type": "ia.input.dropdown"
-                          }
-                        ],
-                        "meta": {
-                          "name": "FieldUom"
-                        },
-                        "props": {
-                          "direction": "column",
-                          "style": {
-                            "classes": "field",
-                            "gap": "2px"
-                          }
-                        },
-                        "type": "ia.container.flex"
-                      }
-                    ],
-                    "meta": {
-                      "name": "FieldRowIdentity"
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "field-row",
-                        "gap": "12px"
-                      }
-                    },
-                    "type": "ia.container.flex"
-                  },
-                  {
-                    "children": [
-                      {
-                        "children": [
-                          {
-                            "meta": {
-                              "name": "LabelDescription"
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "field-label"
-                              },
-                              "text": "Description"
-                            },
-                            "type": "ia.display.label"
-                          },
-                          {
-                            "meta": {
-                              "name": "InputDescription"
-                            },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "config": {
-                                    "bidirectional": true,
-                                    "path": "view.custom.editDraft.meta.Description"
-                                  },
-                                  "type": "property"
-                                }
-                              }
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "search-input",
-                                "width": "100%"
-                              }
-                            },
-                            "type": "ia.input.text-field"
-                          }
-                        ],
-                        "meta": {
-                          "name": "FieldDescription"
-                        },
-                        "position": {
-                          "basis": "200px",
-                          "grow": 2
-                        },
-                        "props": {
-                          "direction": "column",
-                          "style": {
-                            "classes": "field",
-                            "gap": "2px"
-                          }
-                        },
-                        "type": "ia.container.flex"
-                      },
-                      {
-                        "children": [
-                          {
-                            "meta": {
-                              "name": "LabelMacola"
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "field-label"
-                              },
-                              "text": "Macola Part #"
-                            },
-                            "type": "ia.display.label"
-                          },
-                          {
-                            "meta": {
-                              "name": "InputMacola"
-                            },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "config": {
-                                    "bidirectional": true,
-                                    "path": "view.custom.editDraft.meta.MacolaPartNumber"
-                                  },
-                                  "type": "property"
-                                }
-                              }
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "search-input",
-                                "width": "100%"
-                              }
-                            },
-                            "type": "ia.input.text-field"
-                          }
-                        ],
-                        "meta": {
-                          "name": "FieldMacola"
-                        },
-                        "position": {
-                          "basis": "100px",
-                          "grow": 1
-                        },
-                        "props": {
-                          "direction": "column",
-                          "style": {
-                            "classes": "field",
-                            "gap": "2px"
-                          }
-                        },
-                        "type": "ia.container.flex"
-                      }
-                    ],
-                    "meta": {
-                      "name": "FieldRowDescription"
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "field-row",
-                        "gap": "12px"
-                      }
-                    },
-                    "type": "ia.container.flex"
-                  },
-                  {
-                    "children": [
-                      {
-                        "children": [
-                          {
-                            "meta": {
-                              "name": "LabelUnitWeight"
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "field-label"
-                              },
-                              "text": "Unit Weight"
-                            },
-                            "type": "ia.display.label"
-                          },
-                          {
-                            "meta": {
-                              "name": "InputUnitWeight"
-                            },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "config": {
-                                    "bidirectional": true,
-                                    "path": "view.custom.editDraft.meta.UnitWeight"
-                                  },
-                                  "type": "property"
-                                }
-                              }
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "search-input",
-                                "width": "80px"
-                              }
-                            },
-                            "type": "ia.input.text-field"
-                          }
-                        ],
-                        "meta": {
-                          "name": "FieldUnitWeight"
-                        },
-                        "props": {
-                          "direction": "column",
-                          "style": {
-                            "classes": "field",
-                            "gap": "2px"
-                          }
-                        },
-                        "type": "ia.container.flex"
-                      },
-                      {
-                        "children": [
-                          {
-                            "meta": {
-                              "name": "LabelWeightUom"
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "field-label"
-                              },
-                              "text": "Weight UOM"
-                            },
-                            "type": "ia.display.label"
-                          },
-                          {
-                            "meta": {
-                              "name": "DropdownWeightUom"
-                            },
-                            "propConfig": {
-                              "props.value": {
-                                "binding": {
-                                  "config": {
-                                    "bidirectional": true,
-                                    "path": "view.custom.editDraft.meta.WeightUomCode"
-                                  },
-                                  "type": "property"
-                                }
-                              }
-                            },
-                            "props": {
-                              "options": [
-                                {
-                                  "label": "EA",
-                                  "value": "EA"
-                                },
-                                {
-                                  "label": "LB",
-                                  "value": "LB"
-                                },
-                                {
-                                  "label": "KG",
-                                  "value": "KG"
-                                }
-                              ],
-                              "style": {
-                                "classes": "select"
-                              }
-                            },
-                            "type": "ia.input.dropdown"
-                          }
-                        ],
-                        "meta": {
-                          "name": "FieldWeightUom"
-                        },
-                        "props": {
-                          "direction": "column",
-                          "style": {
-                            "classes": "field",
-                            "gap": "2px"
-                          }
-                        },
-                        "type": "ia.container.flex"
-                      },
-                      {
-                        "children": [
-                          {
-                            "meta": {
-                              "name": "LabelDefaultSubLotQty"
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "field-label"
-                              },
-                              "text": "Default Sub-Lot Qty"
-                            },
-                            "type": "ia.display.label"
-                          },
-                          {
-                            "meta": {
-                              "name": "InputDefaultSubLotQty"
-                            },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "config": {
-                                    "bidirectional": true,
-                                    "path": "view.custom.editDraft.meta.DefaultSubLotQty"
-                                  },
-                                  "type": "property"
-                                }
-                              }
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "search-input",
-                                "width": "80px"
-                              }
-                            },
-                            "type": "ia.input.text-field"
-                          }
-                        ],
-                        "meta": {
-                          "name": "FieldDefaultSubLotQty"
-                        },
-                        "props": {
-                          "direction": "column",
-                          "style": {
-                            "classes": "field",
-                            "gap": "2px"
-                          }
-                        },
-                        "type": "ia.container.flex"
-                      },
-                      {
-                        "children": [
-                          {
-                            "meta": {
-                              "name": "LabelPartsPerBasket"
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "field-label"
-                              },
-                              "text": "Parts Per Basket"
-                            },
-                            "type": "ia.display.label"
-                          },
-                          {
-                            "meta": {
-                              "name": "InputPartsPerBasket"
-                            },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "config": {
-                                    "bidirectional": true,
-                                    "path": "view.custom.editDraft.meta.PartsPerBasket"
-                                  },
-                                  "type": "property"
-                                }
-                              }
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "search-input",
-                                "width": "80px"
-                              }
-                            },
-                            "type": "ia.input.text-field"
-                          }
-                        ],
-                        "meta": {
-                          "name": "FieldPartsPerBasket"
-                        },
-                        "props": {
-                          "direction": "column",
-                          "style": {
-                            "classes": "field",
-                            "gap": "2px"
-                          }
-                        },
-                        "type": "ia.container.flex"
-                      }
-                    ],
-                    "meta": {
-                      "name": "FieldRowMeasures"
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "field-row",
-                        "gap": "12px"
-                      }
-                    },
-                    "type": "ia.container.flex"
-                  }
-                ],
                 "meta": {
-                  "name": "DetailsHeader"
+                  "name": "Identity"
                 },
                 "position": {
                   "shrink": 0
                 },
-                "props": {
-                  "direction": "column",
-                  "style": {
-                    "background": "var(--mpp-surface-card)",
-                    "borderBottom": "1px solid var(--mpp-border-subtle)",
-                    "gap": "8px",
-                    "padding": "10px 14px"
+                "propConfig": {
+                  "props.params.value": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.selectedItemId"
+                      },
+                      "type": "property"
+                    }
                   }
                 },
-                "type": "ia.container.flex"
+                "props": {
+                  "path": "BlueRidge/Components/Parts/ItemMaster/Identity"
+                },
+                "type": "ia.display.view"
               },
               {
                 "children": [
@@ -1010,19 +327,14 @@
                       "props.params.value": {
                         "binding": {
                           "config": {
-                            "path": "view.custom.editDraft.meta.Id"
+                            "path": "view.custom.selectedItemId"
                           },
                           "type": "property"
                         }
                       }
                     },
                     "props": {
-                      "path": "BlueRidge/Components/Parts/ItemMaster/ContainerConfig",
-                      "useDefaultViewWidth": false,
-                      "useDefaultViewHeight": false,
-                      "params": {
-                        "value": 0
-                      }
+                      "path": "BlueRidge/Components/Parts/ItemMaster/ContainerConfig"
                     },
                     "type": "ia.display.view"
                   },
@@ -1037,19 +349,14 @@
                       "props.params.value": {
                         "binding": {
                           "config": {
-                            "path": "view.custom.editDraft.meta.Id"
+                            "path": "view.custom.selectedItemId"
                           },
                           "type": "property"
                         }
                       }
                     },
                     "props": {
-                      "path": "BlueRidge/Components/Parts/ItemMaster/Routes",
-                      "useDefaultViewWidth": false,
-                      "useDefaultViewHeight": false,
-                      "params": {
-                        "value": 0
-                      }
+                      "path": "BlueRidge/Components/Parts/ItemMaster/Routes"
                     },
                     "type": "ia.display.view"
                   },
@@ -1064,19 +371,14 @@
                       "props.params.value": {
                         "binding": {
                           "config": {
-                            "path": "view.custom.editDraft.meta.Id"
+                            "path": "view.custom.selectedItemId"
                           },
                           "type": "property"
                         }
                       }
                     },
                     "props": {
-                      "path": "BlueRidge/Components/Parts/ItemMaster/Boms",
-                      "useDefaultViewWidth": false,
-                      "useDefaultViewHeight": false,
-                      "params": {
-                        "value": 0
-                      }
+                      "path": "BlueRidge/Components/Parts/ItemMaster/Boms"
                     },
                     "type": "ia.display.view"
                   },
@@ -1091,19 +393,14 @@
                       "props.params.value": {
                         "binding": {
                           "config": {
-                            "path": "view.custom.editDraft.meta.Id"
+                            "path": "view.custom.selectedItemId"
                           },
                           "type": "property"
                         }
                       }
                     },
                     "props": {
-                      "path": "BlueRidge/Components/Parts/ItemMaster/QualitySpecs",
-                      "useDefaultViewWidth": false,
-                      "useDefaultViewHeight": false,
-                      "params": {
-                        "value": 0
-                      }
+                      "path": "BlueRidge/Components/Parts/ItemMaster/QualitySpecs"
                     },
                     "type": "ia.display.view"
                   },
@@ -1118,19 +415,14 @@
                       "props.params.value": {
                         "binding": {
                           "config": {
-                            "path": "view.custom.editDraft.meta.Id"
+                            "path": "view.custom.selectedItemId"
                           },
                           "type": "property"
                         }
                       }
                     },
                     "props": {
-                      "path": "BlueRidge/Components/Parts/ItemMaster/Eligibility",
-                      "useDefaultViewWidth": false,
-                      "useDefaultViewHeight": false,
-                      "params": {
-                        "value": 0
-                      }
+                      "path": "BlueRidge/Components/Parts/ItemMaster/Eligibility"
                     },
                     "type": "ia.display.view"
                   }
@@ -1141,20 +433,38 @@
                 "position": {
                   "grow": 1
                 },
+                "propConfig": {
+                  "props.currentTabIndex": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.activeTabIndex"
+                      },
+                      "type": "property"
+                    }
+                  },
+                  "props.tabs": {
+                    "binding": {
+                      "config": {
+                        "expression": "runScript(\"BlueRidge.Parts.Item.itemMasterTabObjects\", 0, {view.custom.sectionDirty}, {view.custom.activeTab})"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
                 "props": {
-                  "currentTabIndex": 2,
+                  "contentStyle": {
+                    "classes": "tab-content-fill"
+                  },
+                  "menuStyle": {
+                    "classes": "tab-strip"
+                  },
                   "menuType": "modern",
                   "style": {
                     "classes": "tab-host"
                   },
                   "tabSize": {
                     "width": 120
-                  },
-                  "menuStyle": {
-                    "classes": "tab-strip"
-                  },
-                  "contentStyle": {
-                    "classes": "tab-content-fill"
                   },
                   "tabStyle": {
                     "active": {
@@ -1166,14 +476,7 @@
                     "inactive": {
                       "classes": "tab-item"
                     }
-                  },
-                  "tabs": [
-                    "Container Config",
-                    "Routes",
-                    "Boms",
-                    "Quality Specs",
-                    "Eligibility"
-                  ]
+                  }
                 },
                 "type": "ia.container.tab"
               }
@@ -1189,7 +492,7 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "{view.custom.mode} != \"view\""
+                    "expression": "{view.custom.selectedItemId} !\u003d null"
                   },
                   "type": "expr"
                 }
@@ -1229,7 +532,7 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "{view.custom.mode} = \"view\""
+                    "expression": "{view.custom.selectedItemId} \u003d null"
                   },
                   "type": "expr"
                 }
@@ -1274,13 +577,59 @@
       }
     },
     "scripts": {
-      "customMethods": [],
+      "customMethods": [
+        {
+          "name": "openConfirmUnsaved",
+          "params": [
+            "sectionKey"
+          ],
+          "script": "\ttitles \u003d {\n\t\t\"identity\":        \"Identity\",\n\t\t\"containerConfig\": \"Container Configuration\",\n\t\t\"routes\":          \"Routes\",\n\t\t\"boms\":            \"BOMs\",\n\t\t\"qualitySpecs\":    \"Quality Specs\",\n\t\t\"eligibility\":     \"Eligibility\",\n\t}\n\ttitle \u003d titles.get(sectionKey, sectionKey or \"\")\n\tsystem.perspective.openPopup(\n\t\tid\u003d\"mpp-confirm-unsaved\",\n\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\tmodal\u003dTrue,\n\t\tshowCloseIcon\u003dFalse,\n\t\tparams\u003d{\n\t\t\t\"title\":   \"Unsaved Changes\",\n\t\t\t\"message\": \"You have unsaved changes to \" + title + \". Save before switching?\",\n\t\t},\n\t)"
+        },
+        {
+          "name": "completeSwitch",
+          "params": [],
+          "script": "\tpending \u003d self.view.custom.pendingSwitch or {}\n\tkind    \u003d pending.get(\"kind\")\n\ttarget  \u003d pending.get(\"to\")\n\tsectionKeys \u003d [\"containerConfig\", \"routes\", \"boms\", \"qualitySpecs\", \"eligibility\"]\n\tif kind \u003d\u003d \"tab\":\n\t\tself.view.custom.activeTabIndex \u003d target\n\t\tif target is not None and 0 \u003c\u003d target \u003c len(sectionKeys):\n\t\t\tself.view.custom.activeTab \u003d sectionKeys[target]\n\telif kind \u003d\u003d \"item\":\n\t\tself.view.custom.selectedItemId \u003d target\n\tself.view.custom.pendingSwitch \u003d None"
+        },
+        {
+          "name": "cancelSwitch",
+          "params": [],
+          "script": "\tself.view.custom.pendingSwitch \u003d None"
+        }
+      ],
       "extensionFunctions": null,
       "messageHandlers": [
         {
           "messageType": "itemRowClicked",
           "pageScope": true,
-          "script": "\tclickedId = payload.get('id') if payload else None\n\tif clickedId is None:\n\t\treturn\n\titemMeta = BlueRidge.Parts.Item.getOne(clickedId)\n\tif itemMeta is None:\n\t\tBlueRidge.Common.Notify.toast('Item not found', 'Item id ' + str(clickedId) + ' no longer exists.', 'warning')\n\t\treturn\n\tself.view.custom.selected  = {'meta': dict(itemMeta)}\n\tself.view.custom.editDraft = {'meta': dict(itemMeta)}\n\tself.view.custom.mode = 'update'",
+          "script": "\ttargetId \u003d payload.get(\"id\") if payload else None\n\tif targetId is None or targetId \u003d\u003d self.view.custom.selectedItemId:\n\t\treturn\n\tdirtyMap \u003d self.view.custom.sectionDirty or {}\n\tdirtyKeys \u003d [k for k, v in dirtyMap.items() if v]\n\tif dirtyKeys:\n\t\tself.view.custom.pendingSwitch \u003d {\"kind\": \"item\", \"to\": targetId}\n\t\tself.openConfirmUnsaved(dirtyKeys[0])\n\telse:\n\t\tself.view.custom.selectedItemId \u003d targetId",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "sectionDirtyChanged",
+          "pageScope": true,
+          "script": "\tsection \u003d payload.get(\"section\") if payload else None\n\tisDirty \u003d bool(payload.get(\"isDirty\")) if payload else False\n\tif not section:\n\t\treturn\n\tnextMap \u003d dict(self.view.custom.sectionDirty or {})\n\tnextMap[section] \u003d isDirty\n\tself.view.custom.sectionDirty \u003d nextMap\n\tpending \u003d self.view.custom.pendingSwitch\n\tif pending and not any(nextMap.values()):\n\t\tself.completeSwitch()",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "confirmUnsavedResult",
+          "pageScope": true,
+          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tpending \u003d self.view.custom.pendingSwitch\n\tif not pending:\n\t\treturn\n\tif action \u003d\u003d \"cancel\":\n\t\tself.cancelSwitch()\n\t\treturn\n\tdirtyMap \u003d self.view.custom.sectionDirty or {}\n\tdirtyKeys \u003d [k for k, v in dirtyMap.items() if v]\n\tif not dirtyKeys:\n\t\tself.completeSwitch()\n\t\treturn\n\tdirtySection \u003d dirtyKeys[0]\n\tif action \u003d\u003d \"save\":\n\t\tsystem.perspective.sendMessage(\"sectionSaveRequested\", payload\u003d{\"section\": dirtySection}, scope\u003d\"page\")\n\telif action \u003d\u003d \"discard\":\n\t\tsystem.perspective.sendMessage(\"sectionDiscardRequested\", payload\u003d{\"section\": dirtySection}, scope\u003d\"page\")",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "itemsRefresh",
+          "pageScope": true,
+          "script": "\tsearch \u003d self.view.custom.search or \"\"\n\ttypeFilter \u003d self.view.custom.typeFilter or \"All Types\"\n\tself.view.custom.items \u003d BlueRidge.Parts.Item.getAllForList(search, typeFilter)",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "itemDeprecated",
+          "pageScope": true,
+          "script": "\tdeprecatedId \u003d payload.get(\"id\") if payload else None\n\tif deprecatedId is not None and deprecatedId \u003d\u003d self.view.custom.selectedItemId:\n\t\tself.view.custom.selectedItemId \u003d None",
           "sessionScope": false,
           "viewScope": false
         }

@@ -1,6 +1,57 @@
 # MPP MES — Project Status
 
-**Last updated:** 2026-05-20 (Defect Codes Task 8 landed + Item Master per-section ownership convention codified; Phase 4 docs rewritten, Phase 5/6 docs reconciled. Phase 2 read paths landed in `worktree-Agent-B-item-master-phase2`. R1 bidi-embed risk is OBSOLETE under the new convention.)
+**Last updated:** 2026-05-29 (**Quality Spec Config Tool — built (Phases A–H) AND smoke-tested + polished; functional end-to-end.** Backend: migration 0017, 3 net-new procs, readable-audit on all quality procs, **SQL tests 1161/1161**; 14 NQs; entity script; `/quality-specs` master-detail screen + `QualitySpecAttributeRow` + `NewSpecModal` + route/nav + Item Master cross-nav. Smoke fixes landed today: spec library + Version History converted table→flex-repeater (legible, no squish/mojibake); `numeric-entry-field` component fix; `Lower≤Target≤Upper` save validation (proc-enforced); left-list refresh after publish/etc.; hide UOM/Target/Lower/Upper on non-Numeric attrs (meta.visible); `+ New Version` clones the *selected* version; date-resolved per-version state **Active/Scheduled/Superseded** (SQL `ListBySpec.State` + `GetActiveForSpec` tiebreaker) surfaced in dropdown + history pills. Also earlier today: audit-readability refactor COMPLETE (Slices 1–8 + 2.5). Two visual smokes still pending: the ConfigChangeDetail color-diff (Slice 2.5) and the new Quality state badges.)
+
+---
+
+## 🔖 Next Session Pickup — Quality Spec Config Tool is functional; small polish + two visual smokes
+
+**State of play.** The Quality Spec Config Tool is **built and smoke-tested end-to-end** (Phases A–H + a day of polish fixes — see Last-updated + Recently-closed). All committed locally; push at session start if not already pushed. Nothing blocking.
+
+**Two visual smokes still owed** (need a Perspective session — quick eyeball):
+1. **Quality state badges** — `/quality-specs`: with two published versions (one effective-now, one future-effective), confirm the dropdown + Version History show **Active / Scheduled / Superseded** with the right colors.
+2. **ConfigChangeDetail color-diff** (Slice 2.5) — `/audit` → click a row → confirm the Changes block renders with color (green/red/yellow).
+
+**Small known follow-ups (non-blocking, all in `BlueRidge/Views/Quality/QualitySpecs` + components):**
+- `badge-warn` class doesn't exist in the stylesheet; `SpecListRow` and the main `StateBadge` still use it for the Draft pill (renders unstyled). Standardize on `badge-draft`. (VersionHistoryRow already fixed.)
+- `QualitySpec_Get` doesn't SELECT `DeprecatedAt`, so the header can't show a deprecated badge (library already hides deprecated specs). One-line SQL add + widen any `INSERT-EXEC` scratch table that calls it.
+- Both `/quality-specs` and `QualitySpecAttributeRow` view.json are Designer-expanded; expect format churn on Designer saves (not a bug).
+
+**After that — next major work** (pick per priority): the OI-35 architecture gate still blocks Arc 2 Phase 1 SQL; other Config Tool surfaces (Tools master) remain; or whatever the customer prioritizes.
+
+---
+
+### (superseded) Build the Quality Spec Config Tool (audit refactor is DONE)
+
+**State of play.** The project-wide audit-readability refactor is **complete across all 8 slices + 2.5**. Every audit-writing proc now emits the `SUBJECT · CATEGORY · ACTION` narrative `Description` + resolved-FK `OldValue`/`NewValue` JSON. **SQL tests 1136/1136.** Slices landed:
+
+| # | Slice | Procs | Status |
+|---|---|---|---|
+| 1 | Convention + UI + popup fix | — | ✅ 2026-05-28 |
+| 2 | Eligibility (reference impl) | `ItemLocation_SaveAllForItem` | ✅ 2026-05-29 |
+| 2.5 | ConfigChangeDetail diff highlighting | `Common.Util.prettyJsonDiff` + popup | ✅ 2026-05-29 |
+| 3 | BOMs | `Bom_*` (6) | ✅ 2026-05-29 |
+| 4 | Routes | `RouteTemplate_*` (6) | ✅ 2026-05-29 |
+| 5 | Item core (Identity + ContainerConfig) | `Item_*`, `ContainerConfig_*` (5) | ✅ 2026-05-29 |
+| 6 | Plant Hierarchy | `Location_*`, `LocationAttribute_Set` (6) | ✅ 2026-05-29 |
+| 7 | LocationTypeEditor | `LocationTypeDefinition_*` (2) | ✅ 2026-05-29 |
+| 8 | Downtime + Defect codes | `DowntimeReasonCode_*`, `DefectCode_*` (6) | ✅ 2026-05-29 |
+
+**⚠️ One visual smoke still pending (Slice 2.5).** The ConfigChangeDetail popup's new **Changes** block uses `ia.display.markdown` (`props.markdown.escapeHtml=false`) bound to `Common.Util.prettyJsonDiff`, which emits HTML `<div>` lines colored green/red/yellow. Open `/audit` → click any row → confirm the diff renders **with color**. If 8.3's markdown sanitizes inline `style` attributes, the +/−/~ symbols still convey the diff (graceful degradation) and it's a one-line revert to the dual-block-only render. Helper + popup are scanned/live; the dual Old/New JSON blocks were kept below the diff for the full unabridged snapshot.
+
+**Convention reference for new procs.** Use `Audit.ufn_MidDot()` for the separator and `Audit.ufn_TruncateActivity()` for the 500-char cap. Resolve every FK to a `{Id, Code, Name}`-style sub-object via `JSON_QUERY((... FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))` — a **bare** aliased `FOR JSON` subquery double-encodes as an escaped string. Strip trailing separators with `LEFT(x, DATALENGTH(x)/2 - 2)`, never `LEN()`-based. Render `BIT` diffs as `true`/`false` words. Keep test fixtures' free-text names off tokens other tests grep for (e.g. avoid `'SaveAll'` in a Description — it cross-contaminates `02_audit_readers/050_ConfigLog_List.sql`'s `@DescriptionLike` filter).
+
+**On resume — build the Quality Spec Config Tool.** Spec `docs/superpowers/specs/2026-05-28-quality-spec-config-tool-design.md`, plan `docs/superpowers/plans/2026-05-28-quality-spec-config-tool.md` (9 phases / ~18 tasks, SQL-first). The Quality SQL layer is already built (migration `0008` + ~20 procs); this is mostly Ignition front-end + a contained SQL delta (migration `0017` adds `QualitySpecAttribute.UomId` FK). Audit rows are designed to the readability convention from day one. Front-end mirrors the BOMs versioned-editor impl in a standalone `/quality-specs` master-detail shell.
+
+> **Build heads-up for the quality-spec plan:** the plan (written before Slice 1 landed) inlines `NCHAR(183)` in its audit-prose blocks — use the deployed `Audit.ufn_MidDot` + `Audit.ufn_TruncateActivity` helpers instead for consistency with the refactored procs.
+
+**Other open Ignition items not blocking the above:**
+- Phase 7 QualitySpecs cross-nav — **now folded into the Quality Spec Config Tool plan** (Phase H: "Go to spec →" navigates to the new standalone `/quality-specs` screen). No longer a standalone task; the cross-nav needs the standalone screen as its target.
+- DieCastMachine Cell read-only mounted-Tool status panel — deferred until Tools master Config Tool surface exists.
+- Orphan Draft BOM rows in dev DB from pre-fix `+ New Version` clicks may still need a manual cleanup pass.
+- OI-35 Architecture Decision Gate still gating Arc 2 Phase 1 SQL build (independent of any Ignition work).
+
+---
 
 ---
 
@@ -22,6 +73,208 @@ The Item Master design has been **reworked from bundled-editDraft + bidi-Object-
 ---
 
 ## ✅ Recently closed
+
+### Quality Spec Config Tool — built end-to-end + smoke-polished (2026-05-29)
+
+Brainstormed/designed/planned previously; **built and smoke-tested in one session**. Executed the plan `docs/superpowers/plans/2026-05-28-quality-spec-config-tool.md` Phases A–H, then iterated on live-session smoke feedback. Parallel-subagent-draft → serialize throughout.
+
+- **SQL (Phase A):** migration `0017` (`QualitySpecAttribute.UomId` FK + `QualitySpec.DeprecatedAt`/`DeprecatedByUserId` → `Location.AppUser`); 3 net-new procs `QualitySpecVersion_SaveDraft` / `QualitySpec_Deprecate` / `QualitySpecVersion_DiscardDraft`; readable-audit convention on every quality mutation proc; date-resolved Publish (no auto-deprecate). **SQL tests 1161/1161.**
+- **Ignition (B–H):** 14 named queries; extended `BlueRidge.Quality.QualitySpec` entity script; `/quality-specs` master-detail screen; `QualitySpecAttributeRow`, `SpecListRow`, `VersionHistoryRow` flex-repeaters; `NewSpecModal`; route + sidebar nav (pre-existing); Item Master "Go to spec →" cross-nav.
+- **Smoke fixes:** spec library + Version History converted table→flex-repeater (table column-width squish + em-dash mojibake + blank CreatedBy fixed); `ia.input.numeric-entry-field` (was nonexistent `numeric-entry`); `Lower≤Target≤Upper` validation enforced in `QualitySpecVersion_SaveDraft`; left-rail list refresh after publish/new-version/discard/deprecate; hide UOM/Target/Lower/Upper on non-Numeric attrs via `meta.visible`; `+ New Version` clones the *selected* version.
+- **Date-resolved versioning surfaced:** per-version **Active / Scheduled / Superseded** state computed in SQL (`QualitySpecVersion_ListBySpec.State` via `@ActiveId` = max `EffectiveFrom ≤ now` among published-non-deprecated) + `GetActiveForSpec` `VersionNumber DESC` tiebreaker; shown in the version dropdown + Version History pills.
+- **Key plan corrections caught at build:** plan's `Audit.AppUser` → real table is `Location.AppUser`; plan's A3 code had the `JSON_QUERY` double-encode bug; `QualitySpec_Update` SETs ItemId/OpTemplateId unconditionally (NULL-defaulting params would wipe links → NQ + entity pass them through); new tests written in the `test.Assert_*` framework (plan used raw RAISERROR).
+- **Memory added:** `feedback_ignition_numeric_entry_field_type`. Context-pack `06_component_quirks` corrected (had the wrong numeric component id).
+
+### Audit-readability refactor Slices 2.5 + 3–8 landed — refactor COMPLETE (2026-05-29)
+
+Closed out the entire project-wide audit-readability refactor in one session. Slices 3–8 (the six backport slices, ~31 procs) were **drafted in parallel by six subagents** — one per slice, each given the Slice-2 reference impl + the three inherited fixes (`JSON_QUERY` wrap, `DATALENGTH` strip, boolean-words) — then serialized through a single deploy + full-test pass, triaged, and committed slice-by-slice. **SQL tests 1136/1136** (was 1060 after Slice 2; +76 convention-shape assertions).
+
+- **Slice 2.5** — `Common.Util.prettyJsonDiff` (unified colorized diff: green add / red remove / yellow change; resolved-FK sub-objects collapse to `Code — Name`; degrades to +/−/~ symbols if HTML isn't rendered). ConfigChangeDetail popup gains an `ia.display.markdown` Changes block (`props.markdown.escapeHtml=false`, schema confirmed from a user-supplied markdown example) above the kept Old/New JSON blocks. **Visual smoke pending** (see Next Session Pickup). Commit `feat(audit): Slice 2.5 …`.
+- **Slice 3 BOMs** — 6 `Bom_*` procs; lines resolve `ChildItem` + `Uom`, header resolves `ParentItem`.
+- **Slice 4 Routes** — 6 `RouteTemplate_*` procs; steps resolve `OperationTemplate`, header resolves `Item`. Publish says "supersedes v<N-1>" (Routes don't auto-deprecate). 
+- **Slice 5 Item core** — `Item_*` + `ContainerConfig_*` (5); Update procs capture pre-state for field-diffs.
+- **Slice 6 Plant Hierarchy** — `Location_*` + `LocationAttribute_Set` (6); resolves Parent + LocationTypeDefinition.
+- **Slice 7 LocationTypeEditor** — `LocationTypeDefinition_SaveAll`/`Deprecate` (2); attribute +/-/~ reconciliation + cascade count.
+- **Slice 8 Downtime + Defect codes** — 6 atomic Create/Update/Deprecate procs; resolve Area + DowntimeReasonType.
+
+**Triage fixes during serialization (3 failure clusters → all resolved):**
+1. **Routes `Header` double-encoding** — subagents wrapped the inner `Item`/`OperationTemplate` in `JSON_QUERY` but left the outer `Header` subquery bare, so it double-encoded to an escaped string. Wrapped `Header` in `JSON_QUERY()` across all 5 route procs (7 spots).
+2. **`ConfigLog_List` cross-contamination** — `030_RouteTemplate_SaveAll.sql` fixtures named `'SaveAll test item N'` surfaced in the new `Item_Create` narratives and matched the `@DescriptionLike='SaveAll'` filter (8 rows vs 1). Renamed to `'Route bundle item N'`.
+3. **BOM Deprecate audit test** — v1 was auto-deprecated by the v2 publish (no standalone audit row) and the explicit v1 deprecate is an idempotent no-op; retargeted the assertion to deprecate the active v2.
+
+### Quality Spec Config Tool — design + implementation plan committed (2026-05-28)
+
+Brainstormed → designed → planned. No code yet; queued behind the audit refactor.
+
+- **Spec:** `docs/superpowers/specs/2026-05-28-quality-spec-config-tool-design.md` (`4d4b07b`).
+- **Plan:** `docs/superpowers/plans/2026-05-28-quality-spec-config-tool.md` (`35859a1`). 9 phases / ~18 tasks, SQL-first, complete code for net-new SQL + entity script, mirror-with-deltas for the large views.
+- **Key finding:** the Quality SQL layer was **already built** (migration `0008` + ~20 procs + `sql/tests/0011_Quality_Spec/`). This build is mostly Ignition front-end plus a contained SQL delta.
+- **Design decisions captured this session:**
+  - Standalone `/quality-specs` master-detail screen (NOT an Item Master tab — the mockup designs it standalone; Item Master tab stays link-only) + Phase 7 "Go to spec →" cross-nav folded in.
+  - Lifecycle: Draft/Published/Deprecated (BOMs vocabulary on the built procs), but **date-resolved active versions — Publish does NOT auto-deprecate the prior Published version** (`_GetActiveForSpec @AsOfDate` resolves the active one; future-effective Published = "Scheduled" badge). This reconciles the mockup's Active/Pending model with the built Draft/Published procs.
+  - `QualitySpecAttribute.UomId` FK dropdown (not free text) → SQL delta: migration `0017` adds the FK.
+  - Add `QualitySpec_Deprecate` header soft-delete proc (+ `QualitySpec.DeprecatedAt`); add bundled `QualitySpecVersion_SaveDraft` (per the editDraft/explicit-Save convention; the per-action `_Add/_Update/_MoveUp/...` procs stay but aren't called per-click).
+  - **Audit-readability convention applied to every quality-spec mutation proc from day one** (per the audit refactor spec §3/§4 + a richer quality catalog in the design §7) — so quality specs never need a backport slice.
+- **Front-end reference:** mirrors the BOMs versioned-editor impl (`BlueRidge.Parts.Bom` + `Components/Parts/ItemMaster/Boms` + `BomLineRow`) — atomic state writes, binding-based dirty, input-only embeds via page-scoped messages — but in a standalone `LocationTypeEditor`-style shell.
+
+### Audit-readability refactor Slice 2 landed (2026-05-29)
+
+`Parts.ItemLocation_SaveAllForItem` is now the **reference implementation** of the `SUBJECT · CATEGORY · ACTION` convention; Slices 3-8 mirror this proc.
+
+- **Subject resolution**: `PartNumber — Description` resolved once at proc start via `Audit.ufn_MidDot()` separator.
+- **Change-set classification**: a `@Changes` table variable buckets the reconciliation into `+` (add, incl. reactivation-as-add), `~` (update with field-level diff), `-` (remove), each joined to `Location.Location` + `Location.LocationTypeDefinition` for resolved names — all computed from **pre-mutation** state before `BEGIN TRANSACTION`.
+- **Activity narrative**: `STRING_AGG ... WITHIN GROUP` composes per-op specifics with a 3-per-op cap + `+N more` overflow counters; capped at 500 via `Audit.ufn_TruncateActivity()`. Live example produced in tests: `TEST-ELIG-ITEM-001 — Eligibility map test item · Eligibility · +DIECAST (Production Area); 1 rows`.
+- **Resolved-FK JSON**: `OldValue`/`NewValue` expand `LocationId` to `Location: {Id, Code, Name}` sub-objects (one JOIN per row at write time, zero at read time).
+- **Two defects caught in the plan's SQL** (both fixed in the reference impl, both flagged for Slices 3-8 in Next Session Pickup):
+  1. Resolved sub-object emitted via a bare aliased `FOR JSON` subquery — SQL Server double-encodes that as an escaped *string*, not a nested object. Fixed by wrapping in `JSON_QUERY((...))`.
+  2. Trailing-`"; "` strip used `LEFT(x, LEN(x) - 2)`; `LEN()` ignores trailing spaces so it ate one real char off the last specific (`5→nul`, `Area`). Fixed to `LEFT(x, DATALENGTH(x)/2 - 2)`.
+- **Boolean rendering**: field-diffs on `BIT` columns render as words (`IsConsumptionPoint true→false`), not `1→0` — readability convention for all slices.
+- **Tests**: 6 new convention-shape assertions (Tests 9-13: SUBJECT·Eligibility· prefix, `+<Code>` presence, resolved `Location` Id/Code/Name in NewValue, length ≤ 500, plus Test 13's `~`-update path asserting `true→false` words + the last specific surviving intact). The Eligibility test item was renamed off "SaveAll" to stop its audit narrative cross-matching `ConfigLog_List`'s `@DescriptionLike='SaveAll'` filter. **1060/1060 SQL tests.** Proc at v1.3.
+- **Designer smoke (Task 2.8) DONE 2026-05-29** — `/items → Eligibility → Save → /audit` verified narrative + resolved-name popup; ConfigChangeDetail EntityLine `\u` binding error fixed (literal middle-dot).
+
+Proc bumped to v1.1. Files: `sql/migrations/repeatable/R__Parts_ItemLocation_SaveAllForItem.sql`, `sql/tests/0009_Parts_Process/040_ItemLocation_SaveAllForItem.sql`.
+
+### Audit-readability refactor Slice 1 landed (2026-05-28)
+
+First slice of the project-wide audit-log readability refactor spec'd at `docs/superpowers/specs/2026-05-28-audit-readability-refactor-design.md`. Five tasks landed across 6 commits:
+
+- **Helpers**: `Audit.ufn_MidDot()` returns `NCHAR(183)` middle-dot separator; `Audit.ufn_TruncateActivity(@text)` applies the 500-char cap with `NCHAR(8230)` ellipsis suffix on overflow + NULL passthrough. 6 truncate tests pass. **1054/1054 SQL tests total.**
+- **Convention codified**: `sql_best_practices_mes.md` gained a full "Audit Log Description Convention" section covering the `SUBJECT · CATEGORY · ACTION` shape, verb/symbol vocabulary, field-diff notation, truncation rules, and FK-resolution rule. CLAUDE.md gained a brief pointer subsection. New procs inherit the convention; existing procs migrate as touched in Slices 2-8.
+- **AuditLog UI**: dropped meaningless numeric `EntityId` column; added `ChangesSummary` column between Event and Severity (powered by yesterday's `BlueRidge.Common.Util.summarizeJsonDiff` helper); renamed `Description` column header to `Activity`. Scoped monospace+ellipsis CSS for the Changes column under `.psc-audit-log-table`. Absorbed yesterday's `HANDOFF_AUDIT_LOG_2026-05-28.md` (handoff deleted).
+- **Popup fixed**: `BlueRidge/Components/Popups/ConfigChangeDetail` opens correctly on row click. Three bugs found via a one-shot diagnostic log of `event.keys()` + `str(event)`:
+  1. Event name was `onRowClick` which `ia.display.table` doesn't dispatch in 8.3 — silent no-op, nothing in logs. Standard event is `onSelectionChange`. Switched.
+  2. Event payload is a PyDictionary not an object. `hasattr(event, "selection")` returned False because `selection` would be a KEY not attr. Plus event uses `selectedRow` (int index) not `selection` (array). Plus `if not sel:` would silently return on `selectedRow=0`. Switched to dict `.get()` + explicit `if sel is None` check.
+  3. EntityLine binding used `coalesce(BIGINT entityId, '(new)')` which fails Quality due to type mismatch. Rendered as 'null' + red error indicator. Switched to `if(isNull(...), '(new)', toStr(...))` to force string type.
+
+Commit chain on main: `159bc73` (ufn_MidDot) → `66a7ab5` (ufn_TruncateActivity + tests) → `2d0b16b` (convention codified) → `129aaa9` (AuditLog UI + handoff absorption) → `91fa14d` (popup fixes + Slice 2.5 plan add).
+
+Slice 2.5 added to the implementation plan: diff highlighting on the popup via `ia.display.markdown` + new `Common.Util.prettyJsonDiff` helper. Deferred until after Slice 2 lands resolved-name JSON, because highlighting bare-ID diffs `LocationId 4 → 5` is useless whereas `Location DC-401 → DC-402` is actionable.
+
+**Lessons captured (no new memories this slice, but noted for future):**
+- `ia.display.table` standard event for row clicks in 8.3 is `onSelectionChange`, NOT `onRowClick`. Silent no-op if event name is wrong — no error logged anywhere. Diagnostic was to add `log("event attrs=" + str(dir(event)))` at script entry; if log doesn't appear, event isn't dispatched.
+- `event` payload for `onSelectionChange` is a PyDictionary with keys `selectedRow` (int), `selectedColumn` (str), `data` (the visible-column subset of the row, NOT the full row data). For full row use `self.props.data[idx]`.
+- `event.get("selectedRow")` returns 0 for the first row — using truthy `if not sel: return` silently breaks on that row. Use explicit `if sel is None: return`.
+
+### Item Master Phase 8 Eligibility editor — end-to-end smoke green (2026-05-28)
+
+Closed out Phase 8 — the last big tab in the Item Master refactor. Full vertical stack landed in 16 commits (`31f66cb`..`0a83224`), all 14 spec §9 smoke steps pass:
+
+- **SQL** — `Parts.ItemLocation_SaveAllForItem` (bundled reconcile: add / update / deprecate / reactivate-deprecated all atomically), `Location.Location_ListForEligibilityPicker` (tier-grouped picker read with `NCHAR(8212)` em-dash to avoid `sqlcmd` codepage trap), `Parts.ItemLocation_ListByItem` bumped to v3.0 (added `TierOrdinal`, re-sorted `(tierOrdinal, code)`). 11 SaveAll tests + 3 picker tests pass. Existing 64 ItemLocation CRUD tests still pass after widening `#IlByItem1`/`#IlByItem2` scratch tables for the new column. **1048/1048 SQL tests passing.**
+- **Ignition** — 3 NQ wrappers (SaveAll + picker + **previously-missing** `ItemLocation_ListByItem` read NQ — `6527d24` was the root cause of all the post-save dirty-stuck symptoms, see below), `BlueRidge.Parts.Eligibility` entity script, new `EligibilityRow` sub-view (page-scoped message propagation per `feedback_ignition_embed_params_input_only`), and full rewrite of `Eligibility/view.json` per per-section ownership pattern matching BOMs.
+- **Pattern adherence** — `isDirty` binding uses the canonical BOMs-equivalent `runScript("BlueRidge.Common.Util.convertWrapperObjectToJson", 0, {view.custom.state.editDraft.rows}) != ...{state.selected.rows}` expression. No divergence from the per-section ownership convention.
+
+**Process lesson (captured as memory `feedback_check_nq_files_first`)**: I spent four rounds patching the `isDirty` binding (property+transform variants, type comparison tweaks, deep-path watching theories) chasing a "save success toast but dirty stays true" symptom. The actual root cause was a missing NQ file (`parts/ItemLocation_ListByItem`) which the plan had assumed already existed. `load()` was failing silently with `java.lang.Exception: Named query not found` every call, so `state.selected` never reset post-save. **Lesson:** when a new editor following an established pattern misbehaves in surprising ways, FIRST check the gateway log for `Named query not found` traces — don't immediately blame the binding or comparison logic. 30-second diagnostic vs hours of binding archaeology.
+
+**Plan deviations (all documented in commits):**
+- Tier filter in tests uses `lt.Code = N'Area'` / `N'Cell'`, not `ltd.Name = N'Area'` — dev seeds carry definition names like `'Production Area'` / `'CNC Machine'`.
+- Test Item insert uses `CreatedByUserId` (Parts.Item has no `IsActive` column).
+- Picker proc uses `NCHAR(8212)` (em-dash codepoint) instead of literal em-dash in source — sqlcmd was loading the UTF-8 source file with the Win-1252 codepage and storing the wrong 3-byte sequence in the proc body. Same fix applied to the test's LIKE pattern via `@Sep NVARCHAR(5) = NCHAR(8212)`.
+- Row qty fields (`Min`/`Max`/`Default`) use `meta.visible` not `position.display` so the 240px slot stays reserved when `IsConsumptionPoint` is off (uniform row geometry per user feedback).
+- Save (`props.enabled`) + Discard (`meta.visible`) wrap `view.custom.isDirty` in `if(isNull(...), false, ...)` defensive guard so a transient Quality-Bad doesn't cascade to Component Error.
+
+Audit-log "Changes" column work from 2026-05-27 evening is still uncommitted in working tree alongside the Phase 8 commits — see "Next Session Pickup" above. The two workstreams touched disjoint files; no interference.
+
+### Item Master Phase 3 dirty-drift blocker resolved + Phase 6 BOMs smoke green (2026-05-27 → 2026-05-28)
+
+Closed out the per-section dirty-drift blocker that had been gating Phase 3 closeout for a week. Two compounding bugs in `BlueRidge.Common.Util.convertWrapperObjectToJson` + `load()` racing:
+
+1. **Shallow unwrap.** `convertWrapperObjectToJson` was `return dict(obj)` — handed back a Python dict containing raw `BasicQualifiedValue` leaves. The dirty-binding expression then either compared two dicts whose Java-wrapper identities drifted between reads (false-positive dirty), or — once `system.util.jsonEncode(dict(obj))` was tried — choked because jsonEncode can't serialize raw QV objects (binding evaluated to null, "Error_Configuration"). Fix: `return system.util.jsonEncode(extractQualifiedValues(obj))`. The existing `extractQualifiedValues` already handles `JavaMap` + `QualifiedValue` recursively — which is exactly the shape that arrives at runScript (`HashMap` of `BasicQualifiedValue`). Confirmed via diagnostic logging that captured both sides' types + reprs.
+
+2. **Load-race architecture.** Even with deep unwrap, the dirty-binding still fired spuriously on cross-item nav because `load()` was writing `self.view.custom.selected = X; self.view.custom.editDraft = X` as two SEQUENTIAL property assignments. Between the writes the binding evaluated with `selected = new item, editDraft = old item` → dirty=true → `sectionDirtyChanged{isDirty:true}` propagated → parent latched `sectionDirty.<section> = true`. The subsequent dirty=false transition either coalesced or arrived after the parent already gated navigation. **Fix:** wrap both in a single `view.custom.state` parent property and write atomically: `self.view.custom.state = {"selected": dict(loaded), "editDraft": dict(loaded)}`. Applied to Identity, ContainerConfig, BOMs (per-section ownership), and Routes (the only one that uses explicit `broadcastDirty()` instead of binding-driven dirty).
+
+**Phase 3 smoke (steps 1–16, including the previously-blocked cross-item nav steps 10–16) all PASS.**
+
+**Phase 6 BOMs end-to-end smoke (B1–B13) also all PASS** in the same multi-day session. Numerous fixes layered on top of the per-section state refactor:
+
+- **Six BOM mutation NQs** (`Bom_Create`, `Bom_CreateNewVersion`, `Bom_Publish`, `Bom_SaveDraft`, `Bom_Deprecate`, `Bom_DiscardDraft`) were mistyped as `UpdateQuery`. JDBC's executeUpdate path throws on the status-row SELECT every project mutation proc returns — "A result set was generated for update." The procs succeeded server-side, but client got an exception, no toast fired, no UI updated. Flipped all six to `type: "Query"`. New memory: `feedback_ignition_nq_type_for_status_row_procs`.
+- **`forEach` in Ignition expressions doesn't exist.** Four BOMs/BomLineRow bindings (`VersionDropdown.options`, `LinesRepeater.instances`, `ItemPicker.options`, `UomEdit.options`) had been authored as `forEach({list}, {label: ..., value: ...})` expressions and silently failed with "Nested paths not allowed" / "TagPathFormatException". Converted all four to property binding + script transform, mirroring Routes' working pattern. New memory: `feedback_ignition_no_foreach_in_expressions`.
+- **`BomLineRow` was nested under `Boms/`.** Same "Ignition can't load views nested under other views" trap that hit `DraftStepRow` yesterday. Moved to `ItemMaster/BomLineRow/` as a sibling of the other section embeds.
+- **Embed sub-view params are input-only.** `BomLineRow.QtyEdit` + `UomEdit` were bidi-bound to `view.params.line.X` — writes silently dropped, never reaching the parent. Save Draft stayed disabled after qty edits; UOM "reverted to EA" on every pick. Added page-scoped `bomLineQtyChanged` + `bomLineUomChanged` messages with `_applyQtyChange` + `_applyUomChange` customMethods on the parent. New memory: `feedback_ignition_embed_params_input_only`.
+- **`handleNewVersion` didn't load state inline.** Was relying on `activeVersionId.onChange` → `loadActiveVersion()` chain to populate the new draft's content. The chain didn't reliably fire. Now `handleNewVersion` explicitly fetches the bundle and writes `view.custom.state = {selected, editDraft}` synchronously, same pattern Routes' `BtnNewVersion` uses.
+- **Single-Published invariant + pre-publish confirmation UX.** Catching that v1 + v2 could both have `DeprecatedAt IS NULL` for the same `ParentItemId`: `Bom_Publish` now auto-deprecates any prior Published version in the same transaction, with an `OUTPUT inserted.VersionNumber INTO @DeprecatedVersions` so the success message reads "Published v2. Deprecated v1." Publish button now routes through a new `requestPublish` customMethod that inspects `view.custom.versions` for a prior Published row — if found, opens the existing `ConfirmDestructive` popup ("Publish v2? This will deprecate v1 currently active in production."); first publish goes direct. Commit `f6df905`.
+- **Layout polish.** ColMove/ColRm header placeholders converted from empty `ia.display.label` to empty `ia.container.flex` so they reserve slot width when invisible (labels collapse on `meta.visible: false`). Draft/Published alternate columns switched from `meta.visible` to `position.display` (alternates that share a column should collapse, not both reserve space). All BomLineRow controls get uniform `height: 30px` so bottom edges align. ColArrows widened 52px → 72px so arrows fit side-by-side.
+- **Component filter.** `Parts.ItemLocation_ListAvailableForBom` excludes `ItemType.Name = N'Finished Good'` per business rule (BOM components are never Finished Goods).
+
+Commit chain on main (this session): `bd00c5e` (per-section atomic state writes + extractQualifiedValues chain) → `5b13cc1` (yesterday's DraftStepRow polish) → `44ec8b7` (script-console demo) → `1049ea3` (BOMs end-to-end smoke fixes bundle) → `c27c36d` (Routes elementStyle parity) → `f6df905` (BOMs Publish invariant + UX).
+
+**Memory updates (durable lessons captured):**
+- `project_mpp_item_master_pattern` — added "Atomic state writes" addendum documenting the `view.custom.state = {selected, editDraft}` single-write rule + the `convertWrapperObjectToJson` co-fix.
+- `feedback_ignition_nq_type_for_status_row_procs` — NEW. Mutation procs returning status-row SELECT must have NQ `type: "Query"`, not `UpdateQuery`.
+- `feedback_ignition_no_foreach_in_expressions` — NEW. Ignition expression language has no iteration primitive; use property + script transform.
+- `feedback_ignition_embed_params_input_only` — NEW. Sub-view params are input-only; bidi writes to nested paths under `view.params.X` get silently dropped; use page-scoped messages.
+- `feedback_no_business_logic_in_python` — NEW. Jacques rule: business rules (compatibility matrices, validation thresholds, etc.) live in SQL, never in Python entity scripts.
+- `CLAUDE.md` § Compound editors with per-section ownership — strengthened with the atomic-state-write paragraph + embed-to-parent propagation paragraph.
+
+### Item Master Phase 8 Eligibility — spec + implementation plan committed (2026-05-27)
+
+Brainstormed + designed + planned. Code not yet landed.
+
+- Spec: `docs/superpowers/specs/2026-05-27-item-master-eligibility-design.md` (commits `03c50e0` + `8fc736d` self-review).
+- Plan: `docs/superpowers/plans/2026-05-27-item-master-eligibility.md` (commit `84a2a0b`). 10 tasks, SQL-first, every task has exact file paths + complete code blocks + expected sqlcmd output.
+- Pattern: per-section ownership with atomic state writes (same pattern locked in Phase 3 fix).
+- Editor model: tiered list (one row per `Parts.ItemLocation` row), single typeahead Location dropdown grouped by tier, bundled SaveAll proc with reactivate-deprecated semantics, no client-side business-rule enforcement.
+- Schema already supports the design — `Parts.ItemLocation` already has the consumption-metadata columns from migration 0010. No new migration needed.
+
+### Item Master Phase 6 — BOMs versioning workflow landed via rebase + ff-merge (2026-05-26)
+
+Second versioned per-section embed to ship (after Phase 5 Routes). The BOMs tab on `/items` now supports the full Draft → Published → Deprecated lifecycle: create new version (clone last Published into Draft), add/edit/remove component-item lines (Item dropdown + UoM auto-populate + Qty + IsScrapTracked), Save Draft (bundled JSON-line reconciliation via `Bom_SaveDraft` — physical DELETE/UPDATE/INSERT since `BomLine` has no `DeprecatedAt`), Publish (atomic save-then-publish with optional `EffectiveFrom` + min-1-line guard moved BEFORE `BEGIN TRANSACTION` to avoid Msg 3915 in INSERT-EXEC tests), Discard Draft (hard delete + cascade), Deprecate Published (idempotent). Filtered UNIQUE index `UX_Bom_ActiveDraft` enforces one Draft per ParentItemId. New migration: `0016_parts_bom_unique_draft.sql`.
+
+Built in worktree `.claude/worktrees/Agent-B-item-master-boms`, then **rebased onto main** after main absorbed Phase 5 Routes + Phase 3 Item CRUD which collided on three surfaces:
+
+- **Migration slot collision** — `0015_parts_bom_unique_draft.sql` renamed to `0016_*` (0015 taken by main's `audit_add_event_type_deleted`).
+- **`Uom_List` NQ add/add** — kept main's `EXEC Parts.Uom_List @IncludeDeprecated = :includeDeprecated` signature; deleted BOMs' duplicate; updated `BlueRidge.Parts.Bom.listUoms()` to pass `{"includeDeprecated": False}`.
+- **Generic 2-button confirm popup duplication** — swapped BOMs' new `ConfirmAction` for main's `ConfirmDestructive`; updated 2 callers in `Boms/view.json` (`openDeprecateConfirm`, `openDiscardDraftConfirm`); deleted `ConfirmAction` view dir. Orphan `f30be77 feat(popups): reusable ConfirmAction popup` commit still in history → `682905b` deletes its files (net effect correct; squash if cleaner log desired).
+
+**Pattern backports from main's Routes versioning work (post-fork commits):**
+
+- **`85986c3` isDirty deep-compare** — backported as `43c20bd`. BOMs' `view.custom.isDirty` was comparing `editDraft.lines != selected.lines` (list reference equality); now routes both sides through `Common.Util.convertWrapperObjectToJson` for primitive-level equality. **This is the candidate fix-pattern for the open dirty-drift blocker on Identity/ContainerConfig.**
+- **`e7f2f3e` / `404b51b` ImmutableMap unwrap in versions.onChange** — NOT APPLICABLE; BOMs has no versions.onChange handler (uses runScript-bound dropdown + Python entity returning plain `list[dict]`); uses `flex-repeater` not `ia.display.table`.
+- **`e29c670` selectedItem default shape restore** — NOT APPLICABLE; BOMs `view.custom.selected` + `editDraft` already declare full nested empty shape.
+- **`a391f07` Routes onChange bracket-access on ImmutableMap (not broken json.loads roundtrip)** — landed AFTER the rebase agent did its main pass; BOMs absorbed via a second silent rebase before ff-merge. BOMs has no analogous onChange callsite.
+
+**Pre-existing test bug recovered:** `010_Bom_crud.sql` had a `#BomListScratch` temp-table that wasn't widened when `R__Parts_Bom_ListByParentItem.sql` went to v3 (added `LineCount` + `Status` columns). INSERT-EXEC was throwing Msg 213 silently aborting the whole file via `sqlcmd -b`, skipping ~13 trailing assertions including `[BomCreateHappy]`. Fixed in `705986e` as part of the rebase pass.
+
+**Final 11-commit set on main:** `971c2f4` SQL backend → `c61db35` 10 NQs → `ae481b5` entity script → `f30be77` ConfirmAction (orphaned later) → `d357a95` BomLineRow → `38639a1` BOMs embed wire → `217c540` migration renumber → `c2962c1` Uom_List signature → `682905b` ConfirmAction→ConfirmDestructive swap → `43c20bd` isDirty deep-compare → `705986e` `#BomListScratch` widen. Merged ff-only.
+
+**SQL tests:** 1034/1034 passing (was 972 on BOMs branch pre-rebase; +62 from main's Phase 5 Routes additions + recovered `010_Bom_crud.sql` assertions).
+
+**Pickup tomorrow:**
+
+1. **Smoke-test BOMs end-to-end in Designer** — open `/items`, pick 5G0, click BOMs tab. Verify: versions list with line-count + status badges; `+ New Version` → clones last Published into Draft + EffectiveFrom prefill + success toast; edit qty → `●` dirty + tab disable; `+ Add Component` Item dropdown auto-populates UoM; reorder arrows; row `×` remove; `Save Draft` → reload persists; `Publish` (zero-line + missing EffectiveFrom blocked; valid → status flip); `Deprecate` → `ConfirmDestructive` → status flip; `Discard Draft` → `ConfirmDestructive` → version vanishes; tab-switch with dirty Draft triggers ConfirmDestructive gate (parent's Phase 4 infrastructure carries this); `Audit.ConfigLog` rows for every mutation.
+2. **Reset dev DB** — `.\Reset-DevDatabase.ps1` to land migration 0016 cleanly (if `0015_parts_bom_unique_draft` row exists in `SchemaVersion` from pre-rebase, the reset rebuilds from scratch).
+3. **`.\scan.ps1`** before Designer testing to pick up new NQs + 2 new views + restructured `Boms/view.json`.
+4. **Try `43c20bd` deep-compare pattern on Identity + ContainerConfig isDirty** — first diagnostic step for the open editDraft-drift blocker (both currently do reference-equality on dict-typed editDraft vs selected, the exact bug the BOMs backport addressed).
+5. **Working tree on main has uncommitted edits** to `ItemMaster/{resource.json, view.json}` from prior Identity bug investigation — survived the merge intact; decide whether to commit / discard / continue iterating before re-opening Designer.
+6. Optional cleanup: interactive-rebase squash `f30be77` (orphan ConfirmAction add) into `682905b` (its delete) for tidier log.
+7. Optional: remove worktree `git worktree remove .claude/worktrees/Agent-B-item-master-boms` (Agent-A + Agent-C worktrees still in use for parallel work).
+
+### Item Master Phase 4 — ContainerConfig save + parent gate infrastructure (2026-05-26)
+
+First section to ship under the per-section ownership convention. ContainerConfig embed now owns its own `view.custom.selected` + `view.custom.editDraft` locally, receives a plain BIGINT `params.value: itemId` (input-only, no bidi Object-param), fetches its own data via `BlueRidge.Parts.ContainerConfig.getByItem` on `params.value` onChange, has its own Save / Discard buttons in a HeaderRow, broadcasts `sectionDirtyChanged` page-scoped on every dirty transition, and listens for `sectionSaveRequested` / `sectionDiscardRequested` from the parent. New `TargetWeight` field with `position.display` gated on `ClosureMethod == 'ByWeight'`. `handleSave` coerces string text-field input → numeric (text-field bidi writes strings into editDraft, so the plan's `trays <= 0` would silently misvalidate in Jython 2).
+
+Parent ItemMaster view demolished the old bundled `editDraft` / `selected` / `mode` props (never properly populated anyway) and added the per-section gate infrastructure:
+
+- `view.custom.selectedItemId` (BIGINT, set on item-row click); all 5 tab embeds receive `params.value: selectedItemId` input-only.
+- `view.custom.activeTabIndex` (int, bidi-bound to TabContainer.currentTabIndex). View-level onChange interceptor stages `pendingSwitch` and opens ConfirmUnsaved when leaving a dirty section, then auto-reverts.
+- `view.custom.sectionDirty` flag map populated by listening to `sectionDirtyChanged` from sections.
+- `view.custom.pendingSwitch` staging area for the intercepted nav event.
+- `root.scripts.customMethods`: `openConfirmUnsaved(sectionKey)`, `completeSwitch()`, `cancelSwitch()`.
+- `root.scripts.messageHandlers`: rewritten `itemRowClicked` (gated by any-section-dirty), new `sectionDirtyChanged`, new `confirmUnsavedResult` (save → page-msg `sectionSaveRequested`; discard → page-msg `sectionDiscardRequested`; cancel → drop pendingSwitch).
+- TabContainer `props.tabs` bound via `runScript(BlueRidge.Parts.Item.itemMasterTabLabels, 0, {view.custom.sectionDirty})` — returns a plain Python list[str] with `●` prefix on dirty sections. Initial `[if(...), ...]` expression-array-literal binding caused a red error at the top of the tab strip; runScript binding is cleaner.
+
+Identity panel (DetailsHeader) restored as **read-only display** binding to a new `view.custom.selectedItem` prop populated via `runScript(BlueRidge.Parts.Item.getOneOrEmpty, 0, {view.custom.selectedItemId})`. `getOneOrEmpty` returns the full Item key-shape with null values when itemId is null/missing, so cold-open bindings render clean rather than Quality-Bad. All Identity inputs are `enabled: false`; Save / Deprecate buttons toast Phase-3 placeholders. Phase 3 will carve Identity into its own embed and wire bidi editing.
+
+Plan deviations (all called out in commit messages):
+
+- **sqlType corrections**: plan said `INT → 4`, `DECIMAL → 8`; correct values from the empirical Designer-canonical enum (per `ignition-context-pack/04_named_queries.md`) are `INT → 2` (Int4) and DECIMAL has no native code so `→ 5` (Float8 — JDBC coerces).
+- **`self.X()` not `self.rootContainer.X()`** inside `root.scripts.messageHandlers` and `root.scripts.customMethods`: per the verified `ignition-view-customMethods-scope` memory, `self` IS the root component at that scope. The plan-text had the wrong addressing.
+- **`{X} != null` not `isnull(X, 0) != 0`** for nullable-BIGINT visibility gates: `isnull(value, default)` is SQL; Ignition expressions use `isNull(value)` or direct null comparison. The wrong syntax silently fail-evaluated to Quality-Bad and propagated to the view-level ERROR banner.
+
+Commit range: `4e2f47d` (NQ Create) → `8c72bea` (NQ Update) → `bcb4575` (entity script) → `981b816` (ContainerConfig embed) → `7731120` (parent gate) → `61a9eaa` (DetailsHeader excise + tab init fix) → `08256e0` (expr/runScript fixes) → `be207a5` (Identity read-only restore).
+
+**Status**: full smoke (spec §7 steps 1–11) passed 2026-05-26.
+
+**Late-stage smoke fix (`2817cdd`)**: spec §7 step 4 originally wanted a ConfirmUnsaved popup on tab clicks with revert-to-current-tab semantics. `ia.container.tab` in Ignition 8.3 doesn't expose `instantiation` / `keepAlive` / pre-change events, so the popup-intercept-with-state-preservation pattern is infeasible against that component. Pivoted to the **tab-objects pattern** — `props.tabs` accepts a list of dicts per tab with `text` / `runWhileHidden` / `disabled` fields. New `BlueRidge.Parts.Item.itemMasterTabObjects(sectionDirty, activeTab)` returns objects with `runWhileHidden: true` (keeps inactive embeds mounted, preserves their local editDraft across tab visibility changes) and `disabled: true` on every non-active tab when any section is dirty (locks navigation visually instead of via script intercept). The active tab still shows the `●` dirty-dot prefix as the cue. Item-row click popup intercept stays as-is (separate code path). Spec §7 step 4 should be retro-edited to describe this UX. Reference: [Ignition tab container docs](https://www.docs.inductiveautomation.com/docs/8.3/appendix/components/perspective-components/perspective-container-palette/perspective-tab-container#adding-components-to-tabs).
 
 ### Defect Codes — Task 8 complete (2026-05-20)
 
@@ -138,15 +391,16 @@ Per-schema tabs are the source of truth and remain canonical until next regen.
 
 Initial v1 build at `docs_portal/`. See "Recent Change Narrative" entry below for details.
 
-### LocationTypeEditor modal — 🟡 IN-PROGRESS (convention rectification landed 2026-05-14, Designer smoke-test pending)
+### LocationTypeEditor modal — ✅ closed 2026-05-15
 
-Full vertical stack scaffolded 2026-05-13. Convention-rectification pass landed 2026-05-14 — entity scripts retrofitted through `Common.Db`/`Common.Util`/`Common.Ui`, view restructured to `editDraft`/`selected` pattern with dirty indicator + Cancel button, NQs normalized to camelCase + Designer-canonical sqlType enum. **Pending verification next session:** Designer-side modal rendering with the new pattern (tier dropdown → definitions list → details panel → Save with dirty indicator → Cancel revert → Deprecate FK guard). 907/907 SQL tests still passing.
+Full vertical stack landed 2026-05-13, convention-rectification pass 2026-05-14, all 8 smoke flows pass 2026-05-15 (commits `f469061` + `7ab9cd3`). Audit verified via `Audit.ConfigLog` rows. Marker removed from this section; historical detail in the "Recent Change Narrative" entries below.
 
 ### Non-blocking polish
 
 - Memory file revision-history-format trim: applied to FDS only; not yet to Data Model + OIR.
 - FDS-06-028 wording sharpen — WO Auto-Finish (§6.10) prose still mentions "camera-count mode" pre-tray-reframe. Low priority.
 - ~~**Latent NQ v1 schema bug:** at least `location/Get/resource.json` is `version: 1`~~ — resolved 2026-05-14 (bumped to v2 with corrected sqlType enum). See `feedback_ignition_nq_resource_schema.md` memory for the empirically-verified Designer sqlType table.
+- **Audit Log UI revisit** (Jacques, 2026-05-27) — current FailureLog + AuditLog browser pages work for Phase 3 verification but the UI itself wants another design pass at some point. Not blocking anything; revisit when there's a natural opening between feature work.
 
 ### Deferred follow-ups tied to future Config Tool surfaces
 
@@ -199,8 +453,8 @@ Items genuinely gating downstream work, by owner:
 
 ## Build Status
 
-- **Configuration Tool (Arc 1):** Phases 1–8 + G.1–G.5 + 0013 corrections + 0014 LocationTypeDefinition CRUD support complete. Audit page procs (FailureLog_List, ConfigLog_List, FailureLog_DistinctProcedures) landed 2026-05-19. **937/937 tests passing** across 22+ test suites.
-- **SQL artifacts:** `/sql/` folder, **14 versioned migrations + 220 repeatable procs.** PowerShell reset script `Reset-DevDatabase.ps1` auto-discovers and runs all scripts via `sqlcmd.exe`. Tested on SQL Server 2025.
+- **Configuration Tool (Arc 1):** Phases 1–8 + G.1–G.5 + 0013 corrections + 0014 LocationTypeDefinition CRUD support complete. Audit page procs (FailureLog_List, ConfigLog_List, FailureLog_DistinctProcedures) landed 2026-05-19. Phase 5 Routes versioning + Phase 6 BOMs versioning landed 2026-05-26. **1034/1034 tests passing** across 24+ test suites.
+- **SQL artifacts:** `/sql/` folder, **16 versioned migrations** (latest: `0015_audit_add_event_type_deleted` + `0016_parts_bom_unique_draft`) **+ 230+ repeatable procs.** PowerShell reset script `Reset-DevDatabase.ps1` auto-discovers and runs all scripts via `sqlcmd.exe`. Tested on SQL Server 2025.
 - **Plant Floor (Arc 2):** Mockup landed at `mockup/plantFloor.html` (12 terminal/lot routes + Home Page). SQL not yet started — gated on Phase 0.
 - **Ignition project (live build, Arc 1):** Phase 1 Location pipeline + toasts + scan helper landed 2026-05-12. LocationTypeEditor full stack 2026-05-13. **Convention rectification 2026-05-14** — `Common.Db`/`Common.Util`/`Common.Ui` layer built, `Common.Action` deleted, 5 entity scripts retrofitted through Common helpers, LocationTypeEditor view restructured to `editDraft`/`selected` pattern + dirty indicator + Cancel, all NQs normalized (camelCase identifiers, Designer-canonical sqlType enum, v2 schema). Designer smoke-test pending. Audit pages (FailureLog + AuditLog) landed 2026-05-19 with the customMethods addressing bug fixed same day. **Downtime Codes Ops view wired 2026-05-19** — first Config Tool admin surface to combine live-data List + popup editor + page-scoped refresh pulse (separate pattern from the audit-browser read-only pattern).
 - **Seed data loading:** CSVs ready in `reference/seed_data/` (876 rows total). `machines.csv` not yet loaded; MPP parts list not yet provided; `defect_codes.csv` not yet loaded; `downtime_reason_codes.csv` has bulk-load proc but not yet invoked.

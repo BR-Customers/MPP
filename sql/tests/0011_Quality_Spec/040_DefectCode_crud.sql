@@ -460,7 +460,126 @@ EXEC test.Assert_Contains
     @NeedleStr   = N'already';
 GO
 
+-- =============================================
+-- Slice 8 (audit-readability): Create Description carries
+--   "Defect Code <Code> — <Name> (<AreaName>) · Created" and
+--   NewValue JSON carries a resolved Area sub-object.
+-- =============================================
+DECLARE @S BIT, @M NVARCHAR(500), @NewId BIGINT, @AreaId BIGINT;
+SELECT @AreaId = AreaId FROM #TestContext;
+
+CREATE TABLE #QS8a (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #QS8a EXEC Quality.DefectCode_Create
+    @Code           = N'TST-DF-S8',
+    @Description    = N'Blowhole',
+    @AreaLocationId = @AreaId,
+    @IsExcused      = 0,
+    @AppUserId      = 1;
+SELECT @S = Status, @M = Message, @NewId = NewId FROM #QS8a;
+DROP TABLE #QS8a;
+
+DECLARE @EntTypeId BIGINT = (SELECT Id FROM Audit.LogEntityType WHERE Code = N'DefectCode');
+
+DECLARE @Desc NVARCHAR(500) = (SELECT TOP 1 Description FROM Audit.ConfigLog
+                               WHERE EntityId = @NewId AND LogEntityTypeId = @EntTypeId
+                               ORDER BY Id DESC);
+DECLARE @CreatePattern NVARCHAR(300) =
+    N'Defect Code TST-DF-S8 ' + NCHAR(8212) + N' Blowhole (%) '
+    + Audit.ufn_MidDot() + N' Created';
+DECLARE @CreateMatch NVARCHAR(1) = CASE WHEN @Desc LIKE @CreatePattern THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[DefectS8Create] Description matches SUBJECT mid-dot Created',
+    @Expected = N'1',
+    @Actual   = @CreateMatch;
+
+DECLARE @NewVal NVARCHAR(MAX) = (SELECT TOP 1 NewValue FROM Audit.ConfigLog
+                                 WHERE EntityId = @NewId AND LogEntityTypeId = @EntTypeId
+                                 ORDER BY Id DESC);
+DECLARE @CreateJson NVARCHAR(1) =
+    CASE WHEN JSON_VALUE(@NewVal, '$.Area.Name') IS NOT NULL THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[DefectS8Create] NewValue has resolved Area.Name',
+    @Expected = N'1',
+    @Actual   = @CreateJson;
+GO
+
+-- =============================================
+-- Slice 8: Update Description carries the Description field-diff
+--   with both values quoted.
+-- =============================================
+DECLARE @S BIT, @M NVARCHAR(500), @DefectId BIGINT, @AreaId BIGINT;
+SELECT @DefectId = Id FROM Quality.DefectCode WHERE Code = N'TST-DF-S8';
+SELECT @AreaId = AreaId FROM #TestContext;
+
+CREATE TABLE #QS8b (Status BIT, Message NVARCHAR(500));
+INSERT INTO #QS8b EXEC Quality.DefectCode_Update
+    @Id             = @DefectId,
+    @Description    = N'Surface blowhole',
+    @AreaLocationId = @AreaId,
+    @IsExcused      = 0,
+    @AppUserId      = 1;
+DROP TABLE #QS8b;
+
+DECLARE @EntTypeId BIGINT = (SELECT Id FROM Audit.LogEntityType WHERE Code = N'DefectCode');
+DECLARE @Desc NVARCHAR(500) = (SELECT TOP 1 Description FROM Audit.ConfigLog
+                               WHERE EntityId = @DefectId AND LogEntityTypeId = @EntTypeId
+                               ORDER BY Id DESC);
+DECLARE @UpdPattern NVARCHAR(400) =
+    N'Defect Code TST-DF-S8 ' + Audit.ufn_MidDot()
+    + N' Updated Description "Blowhole" ' + NCHAR(8594) + N' "Surface blowhole"';
+DECLARE @UpdMatch NVARCHAR(1) = CASE WHEN @Desc LIKE @UpdPattern THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[DefectS8Update] Description has quoted Description diff',
+    @Expected = N'1',
+    @Actual   = @UpdMatch;
+
+DECLARE @OldVal NVARCHAR(MAX) = (SELECT TOP 1 OldValue FROM Audit.ConfigLog
+                                 WHERE EntityId = @DefectId AND LogEntityTypeId = @EntTypeId
+                                 ORDER BY Id DESC);
+DECLARE @UpdJson NVARCHAR(1) =
+    CASE WHEN JSON_VALUE(@OldVal, '$.Area.Name') IS NOT NULL THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[DefectS8Update] OldValue has resolved Area.Name',
+    @Expected = N'1',
+    @Actual   = @UpdJson;
+GO
+
+-- =============================================
+-- Slice 8: Deprecate Description is verb-form; OldValue resolved.
+-- =============================================
+DECLARE @S BIT, @M NVARCHAR(500), @DefectId BIGINT;
+SELECT @DefectId = Id FROM Quality.DefectCode WHERE Code = N'TST-DF-S8';
+
+CREATE TABLE #QS8c (Status BIT, Message NVARCHAR(500));
+INSERT INTO #QS8c EXEC Quality.DefectCode_Deprecate
+    @Id = @DefectId, @AppUserId = 1;
+DROP TABLE #QS8c;
+
+DECLARE @EntTypeId BIGINT = (SELECT Id FROM Audit.LogEntityType WHERE Code = N'DefectCode');
+DECLARE @Desc NVARCHAR(500) = (SELECT TOP 1 Description FROM Audit.ConfigLog
+                               WHERE EntityId = @DefectId AND LogEntityTypeId = @EntTypeId
+                               ORDER BY Id DESC);
+DECLARE @DepPattern NVARCHAR(200) =
+    N'Defect Code TST-DF-S8 ' + Audit.ufn_MidDot() + N' Deprecated';
+DECLARE @DepMatch NVARCHAR(1) = CASE WHEN @Desc LIKE @DepPattern THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[DefectS8Deprecate] Description is "<Code> mid-dot Deprecated"',
+    @Expected = N'1',
+    @Actual   = @DepMatch;
+
+DECLARE @OldVal NVARCHAR(MAX) = (SELECT TOP 1 OldValue FROM Audit.ConfigLog
+                                 WHERE EntityId = @DefectId AND LogEntityTypeId = @EntTypeId
+                                 ORDER BY Id DESC);
+DECLARE @DepJson NVARCHAR(1) =
+    CASE WHEN JSON_VALUE(@OldVal, '$.Area.Name') IS NOT NULL THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[DefectS8Deprecate] OldValue has resolved Area.Name',
+    @Expected = N'1',
+    @Actual   = @DepJson;
+GO
+
 -- Cleanup
+DELETE FROM Quality.DefectCode WHERE Code = N'TST-DF-S8';
 DROP TABLE #TestContext;
 GO
 

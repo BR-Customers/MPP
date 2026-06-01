@@ -1,141 +1,526 @@
 {
   "custom": {},
   "params": {
-    "id":                null,
-    "loggedAt":          null,
-    "userDisplayName":   "",
+    "description": "",
+    "entityId": null,
+    "id": null,
     "logEntityTypeName": "",
-    "entityId":          null,
-    "logEventTypeCode":  "",
-    "logSeverityCode":   "",
-    "description":       "",
-    "oldValue":          "",
-    "newValue":          "",
-    "popupId":           "mpp-config-change-detail"
+    "logEventTypeCode": "",
+    "logSeverityCode": "",
+    "loggedAt": null,
+    "newValue": "",
+    "oldValue": "",
+    "popupId": "mpp-config-change-detail",
+    "userDisplayName": ""
   },
   "propConfig": {
-    "params.id":                { "paramDirection": "input" },
-    "params.loggedAt":          { "paramDirection": "input" },
-    "params.userDisplayName":   { "paramDirection": "input" },
-    "params.logEntityTypeName": { "paramDirection": "input" },
-    "params.entityId":          { "paramDirection": "input" },
-    "params.logEventTypeCode":  { "paramDirection": "input" },
-    "params.logSeverityCode":   { "paramDirection": "input" },
-    "params.description":       { "paramDirection": "input" },
-    "params.oldValue":          { "paramDirection": "input" },
-    "params.newValue":          { "paramDirection": "input" },
-    "params.popupId":           { "paramDirection": "input" }
+    "params.description": {
+      "paramDirection": "input"
+    },
+    "params.entityId": {
+      "paramDirection": "input"
+    },
+    "params.id": {
+      "paramDirection": "input"
+    },
+    "params.logEntityTypeName": {
+      "paramDirection": "input"
+    },
+    "params.logEventTypeCode": {
+      "paramDirection": "input"
+    },
+    "params.logSeverityCode": {
+      "paramDirection": "input"
+    },
+    "params.loggedAt": {
+      "paramDirection": "input"
+    },
+    "params.newValue": {
+      "paramDirection": "input"
+    },
+    "params.oldValue": {
+      "paramDirection": "input"
+    },
+    "params.popupId": {
+      "paramDirection": "input"
+    },
+    "params.userDisplayName": {
+      "paramDirection": "input"
+    }
   },
   "props": {
-    "defaultSize": { "width": 880, "height": 620 }
+    "defaultSize": {
+      "height": 620,
+      "width": 880
+    }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": { "name": "root" },
-    "props": {
-      "direction": "column",
-      "style": { "background": "var(--mpp-surface-canvas)", "borderRadius": "var(--mpp-radius-md, 8px)", "height": "100%", "overflow": "hidden", "width": "100%" }
-    },
     "children": [
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "Header" },
-        "position": { "basis": "48px", "shrink": 0 },
+        "children": [
+          {
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "style": {
+                "classes": "modal-title",
+                "color": "var(--mpp-text-primary)",
+                "fontSize": "14px",
+                "fontWeight": "600"
+              },
+              "text": "Configuration Change Detail"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseIcon"
+            },
+            "position": {
+              "basis": "24px",
+              "shrink": 0
+            },
+            "props": {
+              "color": "var(--mpp-text-secondary)",
+              "path": "material/close",
+              "style": {
+                "cursor": "pointer",
+                "height": "20px",
+                "width": "20px"
+              }
+            },
+            "type": "ia.display.icon"
+          }
+        ],
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "basis": "48px",
+          "shrink": 0
+        },
         "props": {
           "alignItems": "center",
-          "style": { "background": "var(--mpp-surface-raised)", "borderBottom": "1px solid var(--mpp-border-subtle)", "padding": "0 16px" }
-        },
-        "children": [
-          {
-            "type": "ia.display.label", "meta": { "name": "Title" }, "position": { "grow": 1 },
-            "props": { "style": { "classes": "modal-title", "color": "var(--mpp-text-primary)", "fontSize": "14px", "fontWeight": "600" }, "text": "Configuration Change Detail" }
-          },
-          {
-            "type": "ia.display.icon", "meta": { "name": "CloseIcon" }, "position": { "basis": "24px", "shrink": 0 },
-            "props": { "path": "material/close", "color": "var(--mpp-text-secondary)", "style": { "cursor": "pointer", "height": "20px", "width": "20px" } },
-            "events": { "dom": { "onClick": {
-              "type": "script", "scope": "G",
-              "config": { "script": "\tsystem.perspective.closePopup(id=self.view.params.popupId)" }
-            }}}
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "padding": "0 16px"
           }
-        ]
+        },
+        "type": "ia.container.flex"
       },
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "Body" },
-        "position": { "basis": "0", "grow": 1 },
-        "props": { "direction": "column", "style": { "gap": "10px", "padding": "16px", "overflow": "auto" } },
         "children": [
           {
-            "type": "ia.display.label", "meta": { "name": "MetaLine" }, "position": { "shrink": 0 },
-            "propConfig": { "props.text": { "binding": { "type": "expr", "config": {
-              "expression": "\"Logged at:  \" + dateFormat({view.params.loggedAt}, \"yyyy-MM-dd HH:mm:ss\") + \"   |   User:  \" + coalesce({view.params.userDisplayName}, \"(unknown)\") + \"   |   Severity:  \" + coalesce({view.params.logSeverityCode}, \"\") + \"   |   Event:  \" + coalesce({view.params.logEventTypeCode}, \"\")"
-            }}}},
-            "props": { "style": { "fontSize": "12px", "color": "var(--mpp-text-secondary)" } }
+            "meta": {
+              "name": "MetaLine"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "\"Logged at:  \" + dateFormat({view.params.loggedAt}, \"yyyy-MM-dd HH:mm:ss\") + \"   |   User:  \" + coalesce({view.params.userDisplayName}, \"(unknown)\") + \"   |   Severity:  \" + coalesce({view.params.logSeverityCode}, \"\") + \"   |   Event:  \" + coalesce({view.params.logEventTypeCode}, \"\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "12px"
+              }
+            },
+            "type": "ia.display.label"
           },
           {
-            "type": "ia.display.label", "meta": { "name": "EntityLine" }, "position": { "shrink": 0 },
-            "propConfig": { "props.text": { "binding": { "type": "expr", "config": {
-              "expression": "\"Entity:  \" + coalesce({view.params.logEntityTypeName}, \"\") + \"  \\u00B7  \" + coalesce({view.params.entityId}, \"(new)\")"
-            }}}},
-            "props": { "style": { "fontSize": "12px", "color": "var(--mpp-text-secondary)" } }
+            "meta": {
+              "name": "EntityLine"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "\"Entity:  \" + coalesce({view.params.logEntityTypeName}, \"\") + \"  ·  \" + if(isNull({view.params.entityId}), \"(new)\", toStr({view.params.entityId}))"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "--mpp-text-secondary",
+                "fontSize": "12px"
+              }
+            },
+            "type": "ia.display.label"
           },
           {
-            "type": "ia.display.label", "meta": { "name": "DescHeader" }, "position": { "shrink": 0 },
-            "props": { "text": "Description", "style": { "fontSize": "11px", "fontWeight": "600", "color": "var(--mpp-text-secondary)", "letterSpacing": "0.05em", "textTransform": "uppercase", "marginTop": "8px" } }
+            "meta": {
+              "name": "DescHeader"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "11px",
+                "fontWeight": "600",
+                "letterSpacing": "0.05em",
+                "marginTop": "8px",
+                "textTransform": "uppercase"
+              },
+              "text": "Description"
+            },
+            "type": "ia.display.label"
           },
           {
-            "type": "ia.display.label", "meta": { "name": "DescText" }, "position": { "shrink": 0 },
-            "propConfig": { "props.text": { "binding": { "type": "property", "config": { "path": "view.params.description" } } } },
-            "props": { "style": { "fontSize": "13px", "color": "var(--mpp-text-primary)", "lineHeight": "1.4" } }
+            "meta": {
+              "name": "DescText"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.description"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-primary)",
+                "fontSize": "13px",
+                "lineHeight": "1.4"
+              }
+            },
+            "type": "ia.display.label"
           },
           {
-            "type": "ia.container.flex", "meta": { "name": "DiffRow" }, "position": { "basis": "0", "grow": 1, "shrink": 0 },
-            "props": { "direction": "row", "style": { "gap": "10px" } },
+            "meta": {
+              "name": "ChangesHeader"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "11px",
+                "fontWeight": "600",
+                "letterSpacing": "0.05em",
+                "marginTop": "8px",
+                "textTransform": "uppercase"
+              },
+              "text": "Changes"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "ChangesDiff"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.source": {
+                "binding": {
+                  "config": {
+                    "expression": "runScript(\"BlueRidge.Common.Util.prettyJsonDiff\", 0, {view.params.oldValue}, {view.params.newValue})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "markdown": {
+                "escapeHtml": false
+              },
+              "source": "",
+              "style": {
+                "background": "var(--mpp-surface-card)",
+                "border": "1px solid var(--mpp-border-subtle)",
+                "borderRadius": "6px",
+                "maxHeight": "220px",
+                "overflow": "auto",
+                "padding": "10px 12px"
+              }
+            },
+            "type": "ia.display.markdown"
+          },
+          {
             "children": [
               {
-                "type": "ia.container.flex", "meta": { "name": "OldBlock" }, "position": { "basis": "0", "grow": 1 },
-                "props": { "direction": "column", "style": { "gap": "4px" } },
                 "children": [
-                  { "type": "ia.display.label", "meta": { "name": "OldHeader" }, "position": { "shrink": 0 },
-                    "props": { "text": "Old Value", "style": { "fontSize": "11px", "fontWeight": "600", "color": "var(--mpp-text-secondary)", "letterSpacing": "0.05em", "textTransform": "uppercase" } } },
-                  { "type": "ia.display.label", "meta": { "name": "OldBody" }, "position": { "basis": "0", "grow": 1 },
-                    "propConfig": { "props.text": { "binding": { "type": "expr", "config": { "expression": "runScript(\"BlueRidge.Common.Util.prettyJson\", 0, {view.params.oldValue})" } } } },
-                    "props": { "style": { "background": "var(--mpp-surface-card)", "border": "1px solid var(--mpp-border-subtle)", "borderRadius": "6px", "color": "var(--mpp-text-primary)", "fontFamily": "ui-monospace, Menlo, Consolas, monospace", "fontSize": "11px", "lineHeight": "1.4", "overflow": "auto", "padding": "12px", "whiteSpace": "pre" } } }
-                ]
+                  {
+                    "meta": {
+                      "name": "OldHeader"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "color": "var(--mpp-text-secondary)",
+                        "fontSize": "11px",
+                        "fontWeight": "600",
+                        "letterSpacing": "0.05em",
+                        "textTransform": "uppercase"
+                      },
+                      "text": "Old Value"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "OldBody"
+                    },
+                    "position": {
+                      "basis": "0",
+                      "grow": 1
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "runScript(\"BlueRidge.Common.Util.prettyJson\", 0, {view.params.oldValue})"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "background": "var(--mpp-surface-card)",
+                        "border": "1px solid var(--mpp-border-subtle)",
+                        "borderRadius": "6px",
+                        "color": "var(--mpp-text-primary)",
+                        "fontFamily": "ui-monospace, Menlo, Consolas, monospace",
+                        "fontSize": "11px",
+                        "lineHeight": "1.4",
+                        "overflow": "auto",
+                        "padding": "12px",
+                        "whiteSpace": "pre"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "OldBlock"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "gap": "4px"
+                  }
+                },
+                "type": "ia.container.flex"
               },
               {
-                "type": "ia.container.flex", "meta": { "name": "NewBlock" }, "position": { "basis": "0", "grow": 1 },
-                "props": { "direction": "column", "style": { "gap": "4px" } },
                 "children": [
-                  { "type": "ia.display.label", "meta": { "name": "NewHeader" }, "position": { "shrink": 0 },
-                    "props": { "text": "New Value", "style": { "fontSize": "11px", "fontWeight": "600", "color": "var(--mpp-text-secondary)", "letterSpacing": "0.05em", "textTransform": "uppercase" } } },
-                  { "type": "ia.display.label", "meta": { "name": "NewBody" }, "position": { "basis": "0", "grow": 1 },
-                    "propConfig": { "props.text": { "binding": { "type": "expr", "config": { "expression": "runScript(\"BlueRidge.Common.Util.prettyJson\", 0, {view.params.newValue})" } } } },
-                    "props": { "style": { "background": "var(--mpp-surface-card)", "border": "1px solid var(--mpp-border-subtle)", "borderRadius": "6px", "color": "var(--mpp-text-primary)", "fontFamily": "ui-monospace, Menlo, Consolas, monospace", "fontSize": "11px", "lineHeight": "1.4", "overflow": "auto", "padding": "12px", "whiteSpace": "pre" } } }
-                ]
+                  {
+                    "meta": {
+                      "name": "NewHeader"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "color": "var(--mpp-text-secondary)",
+                        "fontSize": "11px",
+                        "fontWeight": "600",
+                        "letterSpacing": "0.05em",
+                        "textTransform": "uppercase"
+                      },
+                      "text": "New Value"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "NewBody"
+                    },
+                    "position": {
+                      "basis": "0",
+                      "grow": 1
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "runScript(\"BlueRidge.Common.Util.prettyJson\", 0, {view.params.newValue})"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "background": "var(--mpp-surface-card)",
+                        "border": "1px solid var(--mpp-border-subtle)",
+                        "borderRadius": "6px",
+                        "color": "var(--mpp-text-primary)",
+                        "fontFamily": "ui-monospace, Menlo, Consolas, monospace",
+                        "fontSize": "11px",
+                        "lineHeight": "1.4",
+                        "overflow": "auto",
+                        "padding": "12px",
+                        "whiteSpace": "pre"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "NewBlock"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "gap": "4px"
+                  }
+                },
+                "type": "ia.container.flex"
               }
-            ]
+            ],
+            "meta": {
+              "name": "DiffRow"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1,
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "gap": "10px"
+              }
+            },
+            "type": "ia.container.flex"
           }
-        ]
+        ],
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "10px",
+            "padding": "16px"
+          }
+        },
+        "type": "ia.container.flex"
       },
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "Footer" },
-        "position": { "basis": "60px", "shrink": 0 },
-        "props": { "alignItems": "center", "style": { "background": "var(--mpp-surface-raised)", "borderTop": "1px solid var(--mpp-border-subtle)", "padding": "12px 16px" } },
         "children": [
-          { "type": "ia.container.flex", "meta": { "name": "Spacer" }, "position": { "grow": 1 } },
           {
-            "type": "ia.input.button", "meta": { "name": "CloseButton" }, "position": { "shrink": 0 },
-            "props": { "text": "Close", "style": { "classes": "btn btn-sm" } },
-            "events": { "component": { "onActionPerformed": {
-              "type": "script", "scope": "G",
-              "config": { "script": "\tsystem.perspective.closePopup(id=self.view.params.popupId)" }
-            }}}
+            "meta": {
+              "name": "Spacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-sm"
+              },
+              "text": "Close"
+            },
+            "type": "ia.input.button"
           }
-        ]
+        ],
+        "meta": {
+          "name": "Footer"
+        },
+        "position": {
+          "basis": "60px",
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderTop": "1px solid var(--mpp-border-subtle)",
+            "padding": "12px 16px"
+          }
+        },
+        "type": "ia.container.flex"
       }
-    ]
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "background": "var(--mpp-surface-canvas)",
+        "borderRadius": "var(--mpp-radius-md, 8px)",
+        "height": "100%",
+        "overflow": "hidden",
+        "width": "100%"
+      }
+    },
+    "type": "ia.container.flex"
   }
 }

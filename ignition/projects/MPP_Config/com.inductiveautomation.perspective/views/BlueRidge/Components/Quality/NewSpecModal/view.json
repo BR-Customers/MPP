@@ -1,0 +1,318 @@
+{
+  "custom": {
+    "draft": {
+      "name": "",
+      "itemId": null,
+      "operationTemplateId": null,
+      "description": "",
+      "effectiveFrom": null
+    },
+    "itemRows": []
+  },
+  "params": {
+    "popupId": "mpp-new-quality-spec"
+  },
+  "propConfig": {
+    "params.popupId": { "paramDirection": "input", "persistent": true },
+    "custom.itemRows": {
+      "binding": {
+        "type": "expr",
+        "config": { "expression": "runScript(\"BlueRidge.Parts.Item.getAllForList\", 0)" }
+      }
+    }
+  },
+  "props": {
+    "defaultSize": { "width": 520, "height": 460 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "column",
+      "style": {
+        "background": "var(--mpp-surface-canvas)",
+        "borderRadius": "var(--mpp-radius-md, 8px)",
+        "height": "100%",
+        "overflow": "hidden",
+        "width": "100%"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "HeaderBar" },
+        "position": { "basis": "50px", "shrink": 0 },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "gap": "12px",
+            "padding": "0 16px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "TitleLabel" },
+            "props": {
+              "text": "New Quality Spec",
+              "style": {
+                "classes": "modal-title",
+                "fontSize": "14px",
+                "fontWeight": "600"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "FormBody" },
+        "position": { "grow": 1 },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "12px",
+            "overflowY": "auto",
+            "padding": "16px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "NameField" },
+            "props": {
+              "direction": "column",
+              "style": { "gap": "4px" }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "Label" },
+                "props": {
+                  "style": { "classes": "field-label" },
+                  "text": "Name (required)"
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": { "name": "Input" },
+                "props": {
+                  "placeholder": "e.g. Final Dimensional Inspection",
+                  "style": {
+                    "boxSizing": "border-box",
+                    "classes": "search-input",
+                    "width": "100%"
+                  }
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": { "bidirectional": true, "path": "view.custom.draft.name" }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "ItemField" },
+            "props": {
+              "direction": "column",
+              "style": { "gap": "4px" }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "Label" },
+                "props": {
+                  "style": { "classes": "field-label" },
+                  "text": "Linked Item (optional)"
+                }
+              },
+              {
+                "type": "ia.input.dropdown",
+                "meta": { "name": "Input" },
+                "props": {
+                  "style": {
+                    "boxSizing": "border-box",
+                    "classes": "search-input",
+                    "width": "100%"
+                  }
+                },
+                "propConfig": {
+                  "props.options": {
+                    "binding": {
+                      "type": "property",
+                      "config": { "path": "view.custom.itemRows" },
+                      "transforms": [
+                        {
+                          "type": "script",
+                          "code": "\tout = [{\"label\": u\"\\u2014 none \\u2014\", \"value\": None}]\n\tfor r in (value or []):\n\t\tpn = r.get(\"partNumber\") or \"\"\n\t\tdesc = r.get(\"description\") or \"\"\n\t\tlabel = pn if not desc else (pn + \" - \" + desc)\n\t\tout.append({\"label\": label, \"value\": r.get(\"id\")})\n\treturn out"
+                        }
+                      ]
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "type": "property",
+                      "config": { "bidirectional": true, "path": "view.custom.draft.itemId" }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "DescriptionField" },
+            "props": {
+              "direction": "column",
+              "style": { "gap": "4px" }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "Label" },
+                "props": {
+                  "style": { "classes": "field-label" },
+                  "text": "Description (optional)"
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": { "name": "Input" },
+                "props": {
+                  "placeholder": "Brief description of this quality spec",
+                  "style": {
+                    "boxSizing": "border-box",
+                    "classes": "search-input",
+                    "width": "100%"
+                  }
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": { "bidirectional": true, "path": "view.custom.draft.description" }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "EffectiveFromField" },
+            "props": {
+              "direction": "column",
+              "style": { "gap": "4px" }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "Label" },
+                "props": {
+                  "style": { "classes": "field-label" },
+                  "text": "Initial Effective Date (optional)"
+                }
+              },
+              {
+                "type": "ia.input.date-time-input",
+                "meta": { "name": "Input" },
+                "props": {
+                  "format": "YYYY-MM-DD",
+                  "style": {
+                    "boxSizing": "border-box",
+                    "classes": "search-input",
+                    "width": "100%"
+                  }
+                },
+                "propConfig": {
+                  "props.value": {
+                    "binding": {
+                      "type": "property",
+                      "config": { "bidirectional": true, "path": "view.custom.draft.effectiveFrom" }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "FooterBar" },
+        "position": { "basis": "50px", "shrink": 0 },
+        "props": {
+          "alignItems": "center",
+          "justify": "flex-end",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderTop": "1px solid var(--mpp-border-subtle)",
+            "gap": "8px",
+            "padding": "12px 16px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "CancelButton" },
+            "position": { "shrink": 0 },
+            "props": {
+              "style": { "classes": "btn btn-sm" },
+              "text": "Cancel"
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "CreateButton" },
+            "position": { "shrink": 0 },
+            "props": {
+              "style": { "classes": "btn btn-primary btn-sm" },
+              "text": "Create"
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleCreate()"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "handleCreate",
+          "params": [],
+          "script": "\tdraft = self.view.custom.draft or {}\n\tname = (draft.get(\"name\") or \"\").strip()\n\tif not name:\n\t\tBlueRidge.Common.Notify.toast(\"Name required\", \"Enter a spec name before creating.\", \"warning\")\n\t\treturn\n\tres = BlueRidge.Quality.QualitySpec.createSpec(self.view.custom.draft)\n\tBlueRidge.Common.Ui.notifyResult(res, successTitle=\"Spec created\")\n\tif res.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"qsSpecCreated\", {\"specId\": res.get(\"NewId\")}, scope=\"page\")\n\t\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": []
+    },
+    "type": "ia.container.flex"
+  }
+}

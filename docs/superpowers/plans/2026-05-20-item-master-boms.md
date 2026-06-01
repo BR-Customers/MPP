@@ -43,8 +43,7 @@
 
 ```
 sql/migrations/versioned/
-  00XX_parts_bom_unique_draft.sql                                  [NEW]
-    (XX = next free number at execution time; spec uses 0015 as placeholder)
+  0016_parts_bom_unique_draft.sql                                  [NEW]
 
 sql/migrations/repeatable/
   R__Parts_Bom_ListByParentItem.sql                                [NEW]
@@ -207,14 +206,14 @@ Phase 6.H  Designer smoke test (driven by Jacques; agent provides checklist)
 ### Task 1: Migration `00XX_parts_bom_unique_draft.sql`
 
 **Files:**
-- Create: `sql/migrations/versioned/00XX_parts_bom_unique_draft.sql`
+- Create: `sql/migrations/versioned/0016_parts_bom_unique_draft.sql`
 
-- [ ] **Step 1:** Determine next free migration number. Check `sql/migrations/versioned/` directory; pick `0015` unless Arc 2 Phase 1's `0015_arc2_phase1_shop_floor_foundation.sql` has landed first — in which case use the next available.
+- [ ] **Step 1:** Landed as `0016` (0015 taken by Routes Phase 5 `0015_audit_add_event_type_deleted.sql`).
 - [ ] **Step 2:** Write migration file:
 
 ```sql
 -- =============================================
--- Migration: 00XX_parts_bom_unique_draft.sql
+-- Migration: 0016_parts_bom_unique_draft.sql
 -- Author:    Blue Ridge Automation
 -- Created:   2026-05-20
 -- Purpose:   Enforce one active Draft Bom per ParentItemId.
@@ -863,7 +862,7 @@ Per spec §7.3, 6 new page-scoped handlers attach to `root.scripts.messageHandle
 
 If a critical issue is found mid-execution and a revert is needed:
 
-- **SQL:** Drop the `0015_...` migration's index, drop all `R__Parts_Bom_*.sql` repeatable procs (they'll re-apply from disk if re-pulled). Tests in `sql/tests/00YY_Bom/` can be deleted.
+- **SQL:** Drop the `0016_...` migration's index, drop all `R__Parts_Bom_*.sql` repeatable procs (they'll re-apply from disk if re-pulled). Tests in `sql/tests/00YY_Bom/` can be deleted.
 - **NQs / scripts:** `git rm -r` the new folders and `.\scan.ps1`. Designer's project tree refreshes.
 - **View edits:** `git revert` the commits touching `Boms/view.json` and parent `ItemMaster/view.json`. Re-pull in Designer.
 

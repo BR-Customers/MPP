@@ -572,6 +572,41 @@ EXEC test.Assert_IsEqual
 GO
 
 -- =============================================
+-- Test 13: Audit-readability — Set attribute narrative + resolved-FK JSON
+--   Tonnage on ATTR-DCM-001 was set to 350 (insert) then 500 (update,
+--   was 350). Assert against the upsert-update entry which carries the
+--   "(was ...)" clause and a resolved OldValue.
+-- =============================================
+DECLARE @SetDesc NVARCHAR(500), @SetOld NVARCHAR(MAX), @SetNew NVARCHAR(MAX);
+SELECT TOP 1 @SetDesc = cl.Description, @SetOld = cl.OldValue, @SetNew = cl.NewValue
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType let ON let.Id = cl.LogEntityTypeId
+WHERE let.Code = N'LocationAttrDef'
+  AND cl.Description LIKE N'Location ATTR-DCM-001 % Set attribute Tonnage = "500"%'
+ORDER BY cl.Id DESC;
+
+EXEC test.Assert_Contains
+    @TestName    = N'Set audit: Description matches "Set attribute <Name> = ..." convention',
+    @HaystackStr = @SetDesc,
+    @NeedleStr   = N'Set attribute Tonnage = "500"';
+
+EXEC test.Assert_Contains
+    @TestName    = N'Set audit: Description carries the (was "350") prior-value clause',
+    @HaystackStr = @SetDesc,
+    @NeedleStr   = N'(was "350")';
+
+EXEC test.Assert_Contains
+    @TestName    = N'Set audit: NewValue JSON carries Attribute FK sub-object',
+    @HaystackStr = @SetNew,
+    @NeedleStr   = N'"Attribute":{';
+
+EXEC test.Assert_Contains
+    @TestName    = N'Set audit: OldValue JSON carries Attribute FK sub-object',
+    @HaystackStr = @SetOld,
+    @NeedleStr   = N'"Attribute":{';
+GO
+
+-- =============================================
 -- Cleanup: remove test data to restore clean state
 -- =============================================
 

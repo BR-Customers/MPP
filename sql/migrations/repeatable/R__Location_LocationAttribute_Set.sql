@@ -2,7 +2,7 @@
 -- Procedure:   Location.LocationAttribute_Set
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-13
--- Version:     2.0
+-- Version:     2.1
 --
 -- Description:
 --   Upsert for LocationAttribute values. Sets the attribute value for
@@ -40,6 +40,10 @@
 -- Change Log:
 --   2026-04-13 - 1.0 - Initial version
 --   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
+--   2026-05-29 - 2.1 - Audit-readability convention (Slice 6 Plant Hierarchy):
+--                       "Set attribute <Name> = "v" (was "old")" Description
+--                       narrative + resolved-FK OldValue/NewValue JSON
+--                       (Attribute {Id,Name} sub-object).
 -- =============================================
 CREATE OR ALTER PROCEDURE Location.LocationAttribute_Set
     @LocationId                     BIGINT,
@@ -153,6 +157,49 @@ BEGIN
           AND LocationAttributeDefinitionId = @LocationAttributeDefinitionId;
 
         -- ====================
+        -- Subject + attribute resolution for the audit narrative
+        -- ====================
+        DECLARE @LocCode  NVARCHAR(50);
+        DECLARE @AttrName NVARCHAR(100);
+        SELECT @LocCode  = Code FROM Location.Location WHERE Id = @LocationId;
+        SELECT @AttrName = AttributeName FROM Location.LocationAttributeDefinition
+            WHERE Id = @LocationAttributeDefinitionId;
+
+        DECLARE @ActivityRaw NVARCHAR(MAX) =
+            N'Location ' + @LocCode +
+            N' ' + Audit.ufn_MidDot() +
+            N' Set attribute ' + @AttrName +
+            N' = "' + @AttributeValue + N'"' +
+            CASE WHEN @ExistingId IS NOT NULL AND @OldVal IS NOT NULL
+                 THEN N' (was "' + @OldVal + N'")'
+                 ELSE N'' END;
+
+        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
+
+        -- Resolved-FK audit values: Attribute {Id, Name} sub-object + Value.
+        -- NewValue always set; OldValue only when a prior row/value existed.
+        DECLARE @NewValueResolved NVARCHAR(MAX) = (
+            SELECT
+                JSON_QUERY((SELECT lad.Id, lad.AttributeName AS Name
+                            FROM Location.LocationAttributeDefinition lad
+                            WHERE lad.Id = @LocationAttributeDefinitionId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))                  AS Attribute,
+                @AttributeValue AS AttributeValue
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
+        DECLARE @OldValueResolved NVARCHAR(MAX) =
+            CASE WHEN @ExistingId IS NOT NULL THEN (
+                SELECT
+                    JSON_QUERY((SELECT lad.Id, lad.AttributeName AS Name
+                                FROM Location.LocationAttributeDefinition lad
+                                WHERE lad.Id = @LocationAttributeDefinitionId
+                                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))              AS Attribute,
+                    @OldVal AS AttributeValue
+                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+            ) ELSE NULL END;
+
+        -- ====================
         -- Mutation (atomic)
         -- ====================
         BEGIN TRANSACTION;
@@ -166,18 +213,15 @@ BEGIN
                 UpdatedByUserId = @AppUserId
             WHERE Id = @ExistingId;
 
-            DECLARE @OldValue NVARCHAR(MAX) = (SELECT @OldVal AS AttributeValue FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
-            DECLARE @NewValue NVARCHAR(MAX) = (SELECT @AttributeValue AS AttributeValue FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
-
             EXEC Audit.Audit_LogConfigChange
                 @AppUserId         = @AppUserId,
                 @LogEntityTypeCode = N'LocationAttrDef',
                 @EntityId          = @ExistingId,
                 @LogEventTypeCode  = N'Updated',
                 @LogSeverityCode   = N'Info',
-                @Description       = N'LocationAttribute value updated.',
-                @OldValue          = @OldValue,
-                @NewValue          = @NewValue;
+                @Description       = @Activity,
+                @OldValue          = @OldValueResolved,
+                @NewValue          = @NewValueResolved;
 
             SET @Status  = 1;
             SET @Message = N'Attribute value updated successfully.';
@@ -191,7 +235,6 @@ BEGIN
                 (@LocationId, @LocationAttributeDefinitionId, @AttributeValue, SYSUTCDATETIME());
 
             DECLARE @NewId BIGINT = CAST(SCOPE_IDENTITY() AS BIGINT);
-            DECLARE @InsertValue NVARCHAR(MAX) = @Params;
 
             EXEC Audit.Audit_LogConfigChange
                 @AppUserId         = @AppUserId,
@@ -199,9 +242,9 @@ BEGIN
                 @EntityId          = @NewId,
                 @LogEventTypeCode  = N'Created',
                 @LogSeverityCode   = N'Info',
-                @Description       = N'LocationAttribute value created.',
+                @Description       = @Activity,
                 @OldValue          = NULL,
-                @NewValue          = @InsertValue;
+                @NewValue          = @NewValueResolved;
 
             SET @Status  = 1;
             SET @Message = N'Attribute value set successfully.';

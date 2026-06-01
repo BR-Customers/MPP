@@ -1,0 +1,15 @@
+{
+  "scope": "A",
+  "version": 1,
+  "files": [
+    "code.py"
+  ],
+  "attributes": {
+    "hintScope": 2,
+    "lastModificationSignature": "",
+    "lastModification": {
+      "actor": "claude",
+      "timestamp": "2026-05-28T00:00:00Z"
+    }
+  }
+}

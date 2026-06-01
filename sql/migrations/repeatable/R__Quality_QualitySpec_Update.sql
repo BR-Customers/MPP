@@ -2,7 +2,7 @@
 -- Procedure:   Quality.QualitySpec_Update
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     2.0
+-- Version:     2.1
 --
 -- Description:
 --   Updates the header fields of an existing QualitySpec.
@@ -28,6 +28,11 @@
 -- Change Log:
 --   2026-04-14 - 1.0 - Initial version
 --   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
+--   2026-05-29 - 2.1 - Audit-readability convention: SUBJECT . CATEGORY
+--                       . ACTION narrative Description with field-diffs
+--                       (<PN> . Quality Spec "<Name>" . Updated
+--                       Name "old"->"new"; Description "old"->"new") +
+--                       resolved-FK OldValue/NewValue JSON.
 -- =============================================
 CREATE OR ALTER PROCEDURE Quality.QualitySpec_Update
     @Id                  BIGINT,
@@ -124,12 +129,74 @@ BEGIN
         END
 
         -- ====================
-        -- Build old/new JSON
+        -- Audit narrative + resolved JSON (built from PRE-mutation state)
         -- ====================
-        DECLARE @OldValue NVARCHAR(MAX) =
-            (SELECT @OldName AS Name, @OldItemId AS ItemId,
-                    @OldOpTemplId AS OperationTemplateId, @OldDesc AS Description
-             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+        DECLARE @NewName NVARCHAR(200) = LTRIM(RTRIM(@Name));
+
+        -- Subject: Item PartNumber [- Description] when item-linked; else spec name.
+        -- PN prefix present only when ItemId (NEW) resolves.
+        DECLARE @PartNumber NVARCHAR(50);
+        DECLARE @ItemDesc   NVARCHAR(500);
+
+        IF @ItemId IS NOT NULL
+            SELECT @PartNumber = PartNumber, @ItemDesc = Description
+            FROM Parts.Item WHERE Id = @ItemId;
+
+        DECLARE @Subject NVARCHAR(600) =
+            CASE WHEN @PartNumber IS NOT NULL
+                 THEN @PartNumber
+                      + CASE WHEN @ItemDesc IS NOT NULL THEN N' ' + NCHAR(8212) + N' ' + @ItemDesc ELSE N'' END
+                      + N' ' + Audit.ufn_MidDot() + N' '
+                 ELSE N'' END;
+
+        -- Field diffs: Field "old"->"new" (only changed fields)
+        DECLARE @Diffs NVARCHAR(MAX) = STUFF(
+            CONCAT(
+                CASE WHEN ISNULL(@OldName, N'') <> ISNULL(@NewName, N'')
+                     THEN N', Name "' + ISNULL(@OldName, N'') + N'"' + NCHAR(8594) + N'"' + ISNULL(@NewName, N'') + N'"'
+                     ELSE N'' END,
+                CASE WHEN ISNULL(@OldDesc, N'') <> ISNULL(@Description, N'')
+                     THEN N', Description "' + ISNULL(@OldDesc, N'') + N'"' + NCHAR(8594) + N'"' + ISNULL(@Description, N'') + N'"'
+                     ELSE N'' END
+            ),
+            1, 2, N''  -- strip leading ", "
+        );
+
+        IF @Diffs IS NULL OR @Diffs = N''
+            SET @Diffs = N'no header field changes';
+
+        DECLARE @ActivityRaw NVARCHAR(MAX) =
+            @Subject + N'Quality Spec "' + @NewName + N'" ' +
+            Audit.ufn_MidDot() + N' Updated ' + @Diffs;
+        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
+
+        -- Resolved-FK OldValue (pre-mutation state)
+        DECLARE @OldValue NVARCHAR(MAX) = (
+            SELECT
+                @OldName AS Name,
+                @OldDesc AS Description,
+                JSON_QUERY((SELECT i.Id, i.PartNumber, i.Description
+                 FROM Parts.Item i WHERE i.Id = @OldItemId
+                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))            AS Item,
+                JSON_QUERY((SELECT ot.Id, ot.Code, ot.Name
+                 FROM Parts.OperationTemplate ot WHERE ot.Id = @OldOpTemplId
+                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))            AS OperationTemplate
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
+        -- Resolved-FK NewValue (post-mutation intent)
+        DECLARE @NewValue NVARCHAR(MAX) = (
+            SELECT
+                @NewName AS Name,
+                @Description AS Description,
+                JSON_QUERY((SELECT i.Id, i.PartNumber, i.Description
+                 FROM Parts.Item i WHERE i.Id = @ItemId
+                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))            AS Item,
+                JSON_QUERY((SELECT ot.Id, ot.Code, ot.Name
+                 FROM Parts.OperationTemplate ot WHERE ot.Id = @OperationTemplateId
+                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))            AS OperationTemplate
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
 
         -- ====================
         -- Mutation (atomic)
@@ -137,7 +204,7 @@ BEGIN
         BEGIN TRANSACTION;
 
         UPDATE Quality.QualitySpec SET
-            Name                = LTRIM(RTRIM(@Name)),
+            Name                = @NewName,
             ItemId              = @ItemId,
             OperationTemplateId = @OperationTemplateId,
             Description         = @Description
@@ -149,9 +216,9 @@ BEGIN
             @EntityId          = @Id,
             @LogEventTypeCode  = N'Updated',
             @LogSeverityCode   = N'Info',
-            @Description       = N'Quality specification updated.',
+            @Description       = @Activity,
             @OldValue          = @OldValue,
-            @NewValue          = @Params;
+            @NewValue          = @NewValue;
 
         COMMIT TRANSACTION;
 

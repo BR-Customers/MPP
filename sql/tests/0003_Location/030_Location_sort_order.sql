@@ -354,13 +354,15 @@ GO
 
 -- =============================================
 -- Test 8: Audit trail — verify ConfigLog entries for move operations
+--   Description now follows the audit-readability convention:
+--     Location <Code> · Reordered from #<old> to #<new> [within <ParentCode>]
 -- =============================================
 DECLARE @MoveAuditCount INT;
 SELECT @MoveAuditCount = COUNT(*)
 FROM Audit.ConfigLog cl
 INNER JOIN Audit.LogEntityType let ON let.Id = cl.LogEntityTypeId
 WHERE let.Code = N'Location'
-  AND (cl.Description = N'Location moved up.' OR cl.Description = N'Location moved down.');
+  AND cl.Description LIKE N'Location % Reordered from #% to #%';
 
 -- We performed 2 successful moves: MoveDown A (Test 2) and MoveUp C (Test 3)
 DECLARE @HasMoveAudit NVARCHAR(1) = CASE WHEN @MoveAuditCount >= 2 THEN N'1' ELSE N'0' END;
@@ -368,6 +370,37 @@ EXEC test.Assert_IsEqual
     @TestName = N'Audit trail: at least 2 ConfigLog entries for move operations',
     @Expected = N'1',
     @Actual   = @HasMoveAudit;
+GO
+
+-- =============================================
+-- Test 9: Audit-readability — most-recent move Description matches the
+--   Reordered convention shape, and resolved JSON carries FK sub-objects.
+-- =============================================
+DECLARE @LastMoveDesc NVARCHAR(500), @LastMoveOld NVARCHAR(MAX), @LastMoveNew NVARCHAR(MAX);
+SELECT TOP 1
+       @LastMoveDesc = cl.Description,
+       @LastMoveOld  = cl.OldValue,
+       @LastMoveNew  = cl.NewValue
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType let ON let.Id = cl.LogEntityTypeId
+WHERE let.Code = N'Location'
+  AND cl.Description LIKE N'Location % Reordered from #% to #%'
+ORDER BY cl.Id DESC;
+
+EXEC test.Assert_Contains
+    @TestName    = N'Move audit: Description matches Reordered convention',
+    @HaystackStr = @LastMoveDesc,
+    @NeedleStr   = N'Reordered from #';
+
+EXEC test.Assert_Contains
+    @TestName    = N'Move audit: NewValue JSON carries LocationTypeDefinition FK sub-object',
+    @HaystackStr = @LastMoveNew,
+    @NeedleStr   = N'"LocationTypeDefinition":{';
+
+EXEC test.Assert_Contains
+    @TestName    = N'Move audit: NewValue JSON carries Parent FK sub-object',
+    @HaystackStr = @LastMoveNew,
+    @NeedleStr   = N'"Parent":{';
 GO
 
 -- =============================================

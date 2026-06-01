@@ -2746,3 +2746,21 @@ button {
     overflow: auto;
     color: var(--mpp-text-primary);
 }
+
+/* AuditLog: "Changes" column carries a compact monospace diff
+   (e.g. CountryOfOrigin: "US" -> "MX") computed by
+   BlueRidge.Common.Util.summarizeJsonDiff. Monospace so the arrow
+   glyph aligns across rows; smaller font so the column doesn't
+   dominate the row; ellipsis truncation so a long value doesn't
+   wrap and break row heights. Class is applied to the AuditTable
+   component (in addition to the shared "data-table" class), so
+   targeting stays scoped to AuditLog and won't bleed into other
+   tables that share .psc-data-table. */
+.psc-audit-log-table .ia_table__cell:nth-child(6) {
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: var(--mpp-text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

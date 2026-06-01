@@ -1025,6 +1025,139 @@ EXEC test.Assert_IsEqual
 GO
 
 -- =============================================
+-- Test 24: Audit-readability narrative — Item_Create Description + resolved FK
+--   Slice 5 convention. Description shape:
+--     <PartNumber> — <Description> (<ItemTypeName>) · Created
+--   NewValue JSON carries a resolved "ItemType" sub-object.
+-- =============================================
+DECLARE @S    BIT,
+        @M    NVARCHAR(500),
+        @SStr NVARCHAR(1),
+        @NewId BIGINT;
+
+CREATE TABLE #RcAud1 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #RcAud1
+EXEC Parts.Item_Create
+    @ItemTypeId  = 4,                 -- FinishedGood
+    @PartNumber  = N'TEST-ITEM-S5-001',
+    @Description = N'Front Cover',
+    @UomId       = 1,                 -- EA
+    @AppUserId   = 1;
+SELECT @S = Status, @M = Message, @NewId = NewId FROM #RcAud1;
+DROP TABLE #RcAud1;
+
+-- (a) Description follows the convention shape
+DECLARE @CreateDesc NVARCHAR(500), @CreateNew NVARCHAR(MAX);
+SELECT TOP 1 @CreateDesc = cl.Description, @CreateNew = cl.NewValue
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType let ON let.Id = cl.LogEntityTypeId
+WHERE let.Code = N'Item' AND cl.EntityId = @NewId
+ORDER BY cl.Id DESC;
+
+DECLARE @CreateDescMatch NVARCHAR(1) =
+    CASE WHEN @CreateDesc LIKE N'TEST-ITEM-S5-001%Front Cover%Created' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[AuditItemCreate] Description matches "<Part> — <Desc> (<Type>) · Created"',
+    @Expected = N'1',
+    @Actual   = @CreateDescMatch;
+
+-- (b) NewValue JSON contains a resolved ItemType sub-object (Name resolved)
+DECLARE @CreateFkMatch NVARCHAR(1) =
+    CASE WHEN JSON_VALUE(@CreateNew, '$.ItemType.Name') IS NOT NULL THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[AuditItemCreate] NewValue has resolved ItemType.Name',
+    @Expected = N'1',
+    @Actual   = @CreateFkMatch;
+GO
+
+-- =============================================
+-- Test 25: Audit-readability narrative — Item_Update Description (field-diff)
+--   Description shape:
+--     <PartNumber> · Identity · Updated Description "old" → "new"; ...
+--   OldValue JSON carries a resolved "Uom" sub-object.
+-- =============================================
+DECLARE @S    BIT,
+        @M    NVARCHAR(500),
+        @ItemId BIGINT;
+
+SELECT @ItemId = Id FROM Parts.Item WHERE PartNumber = N'TEST-ITEM-S5-001';
+
+CREATE TABLE #RuAud1 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #RuAud1
+EXEC Parts.Item_Update
+    @Id          = @ItemId,
+    @Description = N'Front Cover Assembly',
+    @UomId       = 1,
+    @AppUserId   = 1;
+SELECT @S = Status, @M = Message FROM #RuAud1;
+DROP TABLE #RuAud1;
+
+DECLARE @UpdDesc NVARCHAR(500), @UpdOld NVARCHAR(MAX);
+SELECT TOP 1 @UpdDesc = cl.Description, @UpdOld = cl.OldValue
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType let ON let.Id = cl.LogEntityTypeId
+WHERE let.Code = N'Item' AND cl.EntityId = @ItemId AND cl.Description LIKE N'%Identity%'
+ORDER BY cl.Id DESC;
+
+DECLARE @UpdDescMatch NVARCHAR(1) =
+    CASE WHEN @UpdDesc LIKE N'TEST-ITEM-S5-001%Identity%Updated Description%Front Cover%Front Cover Assembly%'
+         THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[AuditItemUpdate] Description shows changed field old→new',
+    @Expected = N'1',
+    @Actual   = @UpdDescMatch;
+
+DECLARE @UpdFkMatch NVARCHAR(1) =
+    CASE WHEN JSON_VALUE(@UpdOld, '$.Uom.Code') IS NOT NULL THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[AuditItemUpdate] OldValue has resolved Uom.Code',
+    @Expected = N'1',
+    @Actual   = @UpdFkMatch;
+GO
+
+-- =============================================
+-- Test 26: Audit-readability narrative — Item_Deprecate Description + resolved FK
+--   Description shape:
+--     <PartNumber> — <Description> · Deprecated
+--   OldValue JSON carries a resolved "ItemType" sub-object.
+-- =============================================
+DECLARE @S    BIT,
+        @M    NVARCHAR(500),
+        @ItemId BIGINT;
+
+SELECT @ItemId = Id FROM Parts.Item WHERE PartNumber = N'TEST-ITEM-S5-001';
+
+CREATE TABLE #RdAud1 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #RdAud1
+EXEC Parts.Item_Deprecate
+    @Id        = @ItemId,
+    @AppUserId = 1;
+SELECT @S = Status, @M = Message FROM #RdAud1;
+DROP TABLE #RdAud1;
+
+DECLARE @DepDesc NVARCHAR(500), @DepOld NVARCHAR(MAX);
+SELECT TOP 1 @DepDesc = cl.Description, @DepOld = cl.OldValue
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType let ON let.Id = cl.LogEntityTypeId
+WHERE let.Code = N'Item' AND cl.EntityId = @ItemId AND cl.Description LIKE N'%Deprecated'
+ORDER BY cl.Id DESC;
+
+DECLARE @DepDescMatch NVARCHAR(1) =
+    CASE WHEN @DepDesc LIKE N'TEST-ITEM-S5-001%Front Cover Assembly%Deprecated' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[AuditItemDeprecate] Description matches "<Part> — <Desc> · Deprecated"',
+    @Expected = N'1',
+    @Actual   = @DepDescMatch;
+
+DECLARE @DepFkMatch NVARCHAR(1) =
+    CASE WHEN JSON_VALUE(@DepOld, '$.ItemType.Name') IS NOT NULL THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[AuditItemDeprecate] OldValue has resolved ItemType.Name',
+    @Expected = N'1',
+    @Actual   = @DepFkMatch;
+GO
+
+-- =============================================
 -- Cleanup: delete all test rows (test prefixes TEST- and DUP-)
 -- =============================================
 DELETE FROM Parts.Item WHERE PartNumber LIKE N'TEST-%';

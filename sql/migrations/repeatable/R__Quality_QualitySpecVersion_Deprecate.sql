@@ -2,7 +2,7 @@
 -- Procedure:   Quality.QualitySpecVersion_Deprecate
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     2.0
+-- Version:     2.1
 --
 -- Description:
 --   Marks a published version as deprecated by setting DeprecatedAt =
@@ -26,6 +26,9 @@
 -- Change Log:
 --   2026-04-14 - 1.0 - Initial version
 --   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
+--   2026-05-29 - 2.1 - Audit-readability convention: SUBJECT . CATEGORY
+--                       . ACTION narrative Description
+--                       (<PN> . Quality Spec "<Name>" v<N> . Deprecated).
 -- =============================================
 CREATE OR ALTER PROCEDURE Quality.QualitySpecVersion_Deprecate
     @Id        BIGINT,
@@ -64,11 +67,13 @@ BEGIN
         DECLARE @ExistingPublishedAt  DATETIME2(3);
         DECLARE @ExistingDeprecatedAt DATETIME2(3);
         DECLARE @VersionNumber        INT;
+        DECLARE @QualitySpecId        BIGINT;
         DECLARE @RowExists            BIT = 0;
 
         SELECT @ExistingPublishedAt  = PublishedAt,
                @ExistingDeprecatedAt = DeprecatedAt,
                @VersionNumber        = VersionNumber,
+               @QualitySpecId        = QualitySpecId,
                @RowExists            = 1
         FROM Quality.QualitySpecVersion WHERE Id = @Id;
 
@@ -108,6 +113,33 @@ BEGIN
             RETURN;
         END
 
+        -- ===== Audit narrative (built from PRE-mutation state) =====
+
+        -- Subject resolution: spec name via QualitySpecId; PartNumber via spec
+        -- ItemId (PN prefix present only when ItemId resolves).
+        DECLARE @SpecName   NVARCHAR(200);
+        DECLARE @PartNumber NVARCHAR(50);
+        DECLARE @ItemDesc   NVARCHAR(500);
+
+        SELECT @SpecName   = qs.Name,
+               @PartNumber = i.PartNumber,
+               @ItemDesc   = i.Description
+        FROM Quality.QualitySpec qs
+        LEFT JOIN Parts.Item i ON i.Id = qs.ItemId
+        WHERE qs.Id = @QualitySpecId;
+
+        DECLARE @Subject NVARCHAR(600) =
+            CASE WHEN @PartNumber IS NOT NULL
+                 THEN @PartNumber
+                      + CASE WHEN @ItemDesc IS NOT NULL THEN N' ' + NCHAR(8212) + N' ' + @ItemDesc ELSE N'' END
+                      + N' ' + Audit.ufn_MidDot() + N' '
+                 ELSE N'' END;
+
+        DECLARE @ActivityRaw NVARCHAR(MAX) =
+            @Subject + N'Quality Spec "' + @SpecName + N'" v' +
+            CAST(@VersionNumber AS NVARCHAR(10)) + N' ' + Audit.ufn_MidDot() + N' Deprecated';
+        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
+
         -- ====================
         -- Mutation (atomic)
         -- ====================
@@ -123,7 +155,7 @@ BEGIN
             @EntityId          = @Id,
             @LogEventTypeCode  = N'Deprecated',
             @LogSeverityCode   = N'Warning',
-            @Description       = N'Quality spec version deprecated.',
+            @Description       = @Activity,
             @OldValue          = N'{"DeprecatedAt":null}',
             @NewValue          = @Params;
 

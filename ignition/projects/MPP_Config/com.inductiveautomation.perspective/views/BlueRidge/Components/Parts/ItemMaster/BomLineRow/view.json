@@ -1,0 +1,377 @@
+{
+  "custom": {},
+  "params": {
+    "rowIndex": 0,
+    "lineCount": 0,
+    "mode": "published",
+    "line": {
+      "id": null,
+      "childItemId": null,
+      "partNumber": "",
+      "componentName": "",
+      "qtyPer": 0,
+      "uomId": null,
+      "uomCode": ""
+    },
+    "availableItems": [],
+    "uoms": []
+  },
+  "propConfig": {
+    "params.rowIndex":       { "paramDirection": "input" },
+    "params.lineCount":      { "paramDirection": "input" },
+    "params.mode":           { "paramDirection": "input" },
+    "params.line":           { "paramDirection": "input" },
+    "params.availableItems": { "paramDirection": "input" },
+    "params.uoms":           { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "height": 36, "width": 1200 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "gap": "6px",
+        "padding": "2px 10px",
+        "height": "100%"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "ColIndex" },
+        "position": { "basis": "36px", "shrink": 0 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.params.rowIndex} + 1)"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "12px",
+            "textAlign": "right"
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "ColArrows" },
+        "position": { "basis": "72px", "shrink": 0 },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.params.mode} = \"draft\""
+              }
+            }
+          }
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": { "gap": "2px" }
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "UpArrow" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "{view.params.rowIndex} > 0" }
+                }
+              }
+            },
+            "props": {
+              "text": "▲",
+              "style": { "classes": "btn btn-sm", "padding": "2px 6px", "height": "30px" }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(\"bomLineMoveUp\", payload={\"rowIndex\": self.view.params.rowIndex}, scope=\"page\")"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "DownArrow" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "{view.params.rowIndex} < {view.params.lineCount} - 1" }
+                }
+              }
+            },
+            "props": {
+              "text": "▼",
+              "style": { "classes": "btn btn-sm", "padding": "2px 6px", "height": "30px" }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(\"bomLineMoveDown\", payload={\"rowIndex\": self.view.params.rowIndex}, scope=\"page\")"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.input.dropdown",
+        "meta": { "name": "ItemPicker" },
+        "position": { "grow": 1, "basis": "0" },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "{view.params.mode} = \"draft\"" }
+            }
+          },
+          "props.options": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.availableItems"
+              },
+              "transforms": [
+                {
+                  "type": "script",
+                  "code": "\tout = []\n\tfor it in (value or []):\n\t\tit = it or {}\n\t\tpart = it.get('PartNumber') or ''\n\t\tdesc = it.get('Description') or ''\n\t\tout.append({'label': part + ' — ' + desc, 'value': it.get('Id')})\n\treturn out"
+                }
+              ]
+            }
+          },
+          "props.value": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.line.childItemId"
+              }
+            }
+          }
+        },
+        "props": {
+          "filterable": true,
+          "noSelectionText": "Pick component...",
+          "style": { "classes": "select", "height": "30px" }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"bomLineItemChanged\", payload={\"rowIndex\": self.view.params.rowIndex, \"newItemId\": self.props.value}, scope=\"page\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "ItemDisplay" },
+        "position": { "grow": 1, "basis": "0" },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "{view.params.mode} != \"draft\"" }
+            }
+          },
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.params.line.partNumber} + \" — \" + {view.params.line.componentName}"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": { "fontSize": "12px" }
+        }
+      },
+      {
+        "type": "ia.input.text-field",
+        "meta": { "name": "QtyEdit" },
+        "position": { "basis": "80px", "shrink": 0 },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "{view.params.mode} = \"draft\"" }
+            }
+          },
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "bidirectional": true,
+                "path": "view.params.line.qtyPer"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": { "classes": "search-input", "textAlign": "right", "height": "30px" }
+        },
+        "events": {
+          "dom": {
+            "onBlur": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"bomLineQtyChanged\", payload={\"rowIndex\": self.view.params.rowIndex, \"newQty\": self.props.text}, scope=\"page\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "QtyDisplay" },
+        "position": { "basis": "80px", "shrink": 0 },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "{view.params.mode} != \"draft\"" }
+            }
+          },
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": { "path": "view.params.line.qtyPer" }
+            }
+          }
+        },
+        "props": {
+          "style": { "textAlign": "right" }
+        }
+      },
+      {
+        "type": "ia.input.dropdown",
+        "meta": { "name": "UomEdit" },
+        "position": { "basis": "90px", "shrink": 0 },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "{view.params.mode} = \"draft\"" }
+            }
+          },
+          "props.options": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.uoms"
+              },
+              "transforms": [
+                {
+                  "type": "script",
+                  "code": "\tout = []\n\tfor it in (value or []):\n\t\tit = it or {}\n\t\tcode = it.get('Code') or ''\n\t\tout.append({'label': code, 'value': it.get('Id')})\n\treturn out"
+                }
+              ]
+            }
+          },
+          "props.value": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "bidirectional": true,
+                "path": "view.params.line.uomId"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": { "classes": "select", "height": "30px" }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"bomLineUomChanged\", payload={\"rowIndex\": self.view.params.rowIndex, \"newUomId\": self.props.value}, scope=\"page\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "UomDisplay" },
+        "position": { "basis": "90px", "shrink": 0 },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "{view.params.mode} != \"draft\"" }
+            }
+          },
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": { "path": "view.params.line.uomCode" }
+            }
+          }
+        },
+        "props": {}
+      },
+      {
+        "type": "ia.input.button",
+        "meta": { "name": "RemoveBtn" },
+        "position": { "basis": "40px", "shrink": 0 },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "{view.params.mode} = \"draft\"" }
+            }
+          }
+        },
+        "props": {
+          "text": "×",
+          "style": { "classes": "btn btn-sm", "padding": "2px 6px", "height": "30px" }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"bomLineRemove\", payload={\"rowIndex\": self.view.params.rowIndex}, scope=\"page\")"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

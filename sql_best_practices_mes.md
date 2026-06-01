@@ -91,6 +91,111 @@
 
 ---
 
+## Audit Log Description Convention
+
+Every audit-writing proc — every `EXEC Audit.Audit_LogConfigChange` call site — emits a human-readable narrative `Description` and resolved-name `OldValue` / `NewValue` JSON. Convention is project-wide; new procs inherit it; existing procs migrate as touched.
+
+Full design + per-category catalog: `docs/superpowers/specs/2026-05-28-audit-readability-refactor-design.md`.
+
+### Description shape
+
+```
+<SUBJECT> · <CATEGORY?> · <ACTION>
+```
+
+- **Subject** — the human-readable thing being changed (PartNumber + Description, Code + Name, Location Code + Name, etc.) resolved at write time from the row's FK references.
+- **Category** — sub-area being changed. Only present for compound editors (Item Master sub-sections: Identity / Container Config / Routes / BOMs / Quality Specs / Eligibility). Atomic entities (Downtime Code, Defect Code, Location) omit it — their Subject already conveys the category.
+- **Action** — what specifically happened. Multi-change actions concatenated with `; `.
+
+Separator is the middle dot `·` (U+00B7). **Use `Audit.ufn_MidDot()` rather than `NCHAR(183)` literal** — keeps separator consistent across procs and dodges sqlcmd-codepage round-trip mangling.
+
+### Verb / symbol vocabulary
+
+| Form | Symbol | When to use |
+|---|---|---|
+| Added | `+` | Inline within multi-change Action prose: `+DIECAST; -DC-401` |
+| Removed | `-` | Inline within multi-change Action prose |
+| Updated | `~` | Inline within multi-change Action prose |
+| Created | (verb) | Single-state transition (new entity itself): `5G0 — Front Cover (Component) · Created` |
+| Deprecated | (verb) | Single-state transition (entity soft-deleted) |
+| Published | (verb) | Versioned-entity Draft → Published transition |
+| Reordered | (verb) | `SortOrder` change |
+| Moved | (verb) | `ParentLocationId` / parent change |
+
+### Field-diff notation
+
+Inline field changes use `Field old→new`:
+
+```
+~DC-501 IsConsumptionPoint false→true
+~5G0 Description "Old desc" → "New desc"
+~CASTING qty 1 → 2
+```
+
+- Bare scalars unquoted (`false→true`, `1 → 2`).
+- Strings quoted with `"..."`.
+- `NULL` rendered as literal `null` (unquoted).
+- Multi-field diffs comma-separated: `IsConsumptionPoint false→true, MinQuantity null→0`.
+
+### Truncation + readability rules
+
+Large change sets degrade gracefully:
+
+| Rule | Threshold | Behavior |
+|---|---|---|
+| Per-operation specifics cap | 3 specifics | Show 3, then `+N more` (or `-N more` / `~N more` per op) |
+| Operation order | always | Adds first, then Updates, then Removes |
+| Total Description cap | 500 chars | `Audit.ufn_TruncateActivity(@text)` applies the cap with `…` (U+2026) suffix |
+| Bundled-save trailer | always | Append `; <N> rows` or `; <N> lines` so the reader sees the total even when ops are summarized |
+
+The truncation only affects the at-a-glance `Description` cell on the AuditLog table. The full diff lives in `OldValue` / `NewValue` JSON, never truncated, surfaced via the `ConfigChangeDetail` popup on row click.
+
+### `OldValue` / `NewValue` JSON: resolved-name FKs
+
+Every FK in the JSON expands from bare-ID to a named tuple:
+
+| Column | Old shape | New shape |
+|---|---|---|
+| `LocationId: 3` | `3` | `{Id: 3, Code: "DIECAST", Name: "Die Cast"}` |
+| `ItemId: 1` | `1` | `{Id: 1, PartNumber: "5G0", Description: "Front Cover Assembly"}` |
+| `UomId: 1` | `1` | `{Id: 1, Code: "EA", Name: "Each"}` |
+| `AppUserId: 5` | `5` | `{Id: 5, Initials: "JPGS", DisplayName: "Jacques Potgieter"}` |
+
+Scalar columns (BIT, INT, NVARCHAR, DATETIME2) stay scalars — only FKs expand.
+
+Implementation pattern: subquery-as-property-value via `FOR JSON PATH`:
+
+```sql
+SET @NewValue = (
+    SELECT
+        il.Id,
+        (SELECT l.Id, l.Code, l.Name FROM Location.Location l WHERE l.Id = il.LocationId
+         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)   AS Location,
+        il.IsConsumptionPoint,
+        il.MinQuantity, il.MaxQuantity, il.DefaultQuantity
+    FROM @Incoming il
+    -- ...
+    FOR JSON PATH
+);
+```
+
+Cost is paid once per write, not once per read. Audit rows stay stable across later renames / deprecations — the names are frozen at write time.
+
+### Why this matters
+
+- **No DB JOINs at read time.** The AuditLog UI and the `ConfigChangeDetail` popup never JOIN to `Parts.Item` / `Location.Location` / etc. to render a row.
+- **Stable across deprecation.** If a Location is later renamed or deprecated, the audit row still shows the name as it was when the change happened.
+- **One-line readable narratives.** `5G0 — Front Cover Assembly · Eligibility · +DIECAST; -DC-401; 4 rows` reads as a sentence; bare-ID JSON does not.
+
+### Reference
+
+- Per-category Description catalog with worked examples for every existing audit surface: spec §5
+- Auditor user flow (scan → click → popup): spec §6.3
+- Backport plan + effort per slice: spec §8
+- Implementation plan: `docs/superpowers/plans/2026-05-28-audit-readability-refactor.md`
+
+---
+
 ## ISA-95 / MES Schema Considerations
 
 - **Model equipment hierarchy separately from production order hierarchy** — they evolve independently. A line reconfiguration should not require restructuring your work order history.

@@ -3,28 +3,42 @@
 #
 # Author:           Blue Ridge Automation
 # Created:          2026-05-20
-# Version:          1.0
+# Version:          1.2
 #
 # Description:
-#   Read surface for the Item Master Configuration Tool screen
-#   (Phase 2). Mutations (add/update/deprecate) land in Phase 3.
-#   Routes every DB call through BlueRidge.Common.Db.* helpers.
+#   Read + mutation surface for the Item Master Configuration Tool
+#   screen. Routes every DB call through BlueRidge.Common.Db.* helpers.
 #
 # Public surface:
 #   getAll(searchText=None, itemTypeId=None, includeDeprecated=False)
-#     -> list[dict]
-#   getOne(itemId) -> dict | None
+#                          -> list[dict]
+#   getOne(itemId)         -> dict | None
+#   getOneOrEmpty(itemId)  -> dict (full key-shape, null values when no row)
 #   mapItemRowsForList(rows, typeFilter='All Types') -> list[dict]
 #   typeBadgeFor(itemTypeName) -> str
 #   getAllForList(searchText='', typeFilter='All Types') -> list[dict]
+#   getInstancesForFlexRepeater(...) -> list[dict]
+#   itemMasterTabLabels(sectionDirty) -> list[str]
+#   itemMasterTabObjects(sectionDirty, activeTab) -> list[dict]
+#   add(meta)              -> {Status, Message, NewId}
+#   update(meta)           -> {Status, Message}
+#   deprecate(itemId)      -> {Status, Message}
+#   emptyMeta()            -> dict (blank shape for AddItem popup)
 #
 # Layer:
 #   View -> BlueRidge.Parts.Item (this module)
-#        -> BlueRidge.Common.Db.execList / execOne
+#        -> BlueRidge.Common.Db.execList / execOne / execMutation
 #   Views never call system.db.* directly.
 #
 # Change Log:
 #   2026-05-20 - 1.0 - Initial version (read paths only).
+#   2026-05-26 - 1.1 - Phase 4: getOneOrEmpty + itemMasterTabLabels +
+#                      itemMasterTabObjects helpers.
+#   2026-05-26 - 1.2 - Phase 3: add() + update() + deprecate() +
+#                      emptyMeta() mutation surface. Key-tolerant
+#                      (camelCase OR PascalCase) so the AddItem popup
+#                      (camelCase draft) and the Identity embed
+#                      (PascalCase editDraft from Item_Get) both work.
 # =============================================================================
 
 
@@ -90,6 +104,32 @@ def getOne(itemId):
         return None
 
 
+_ITEM_SHAPE_KEYS = (
+    "Id", "PartNumber", "Description",
+    "ItemTypeId", "ItemTypeName",
+    "UomId", "UomCode",
+    "WeightUomId", "WeightUomCode",
+    "MacolaPartNumber", "CountryOfOrigin",
+    "UnitWeight", "DefaultSubLotQty", "PartsPerBasket",
+    "MaxLotSize", "MaxParts",
+    "CreatedAt", "CreatedByUserId",
+    "UpdatedAt", "UpdatedByUserId",
+    "DeprecatedAt",
+)
+
+
+def getOneOrEmpty(itemId):
+    """Like getOne but returns the full Item key-shape with null values
+    instead of None when itemId is null/missing. Designed for use as a
+    runScript binding source for view.custom.selectedItem where bindings
+    traverse the dict on every render — None breaks Quality, empty-shape
+    {Id: None, PartNumber: None, ...} renders cleanly."""
+    row = getOne(itemId)
+    if row:
+        return row
+    return dict((k, None) for k in _ITEM_SHAPE_KEYS)
+
+
 def mapItemRowsForList(rows, typeFilter="All Types"):
     """Flex-repeater instances transform.
 
@@ -139,10 +179,195 @@ def getAllForList(searchText="", typeFilter="All Types"):
 
 
 def getInstancesForFlexRepeater(searchText="", typeFilter="All Types", selectedId=0):
-    """Composes the flex-repeater instances payload for the items list.
-    Each instance is {'item': <row>, 'selectedId': <int>}. Replaces the
-    forEach(...) expression Ignition's scanner rejected for nested
-    reference paths inside the row-template dict literal."""
+    """LEGACY -- composes the flex-repeater instances payload by calling
+    getAllForList and wrapping. Kept for any binding that still uses it,
+    but the convention is now: view.custom.items binds to getAllForList,
+    and components bind to view.custom.items via attachSelectedId
+    (pure transform, no DB call from a component-level binding)."""
     selectedId = _u(selectedId) or 0
     rows = getAllForList(searchText, typeFilter)
     return [{"item": r, "selectedId": selectedId} for r in rows]
+
+
+def attachSelectedId(items, selectedId):
+    """Pure transform: takes the items list (already loaded from DB into
+    view.custom.items via getAllForList) and the currently-selected
+    item id, returns the flex-repeater instances payload:
+    [{'item': <row>, 'selectedId': <int>}, ...]
+
+    No DB call -- this is purely a shape transform safe to call from a
+    component binding. View layer:
+      view.custom.items binds to runScript(getAllForList, search, typeFilter)
+      ItemList.props.instances binds to runScript(attachSelectedId,
+                                                  view.custom.items,
+                                                  view.custom.selectedItemId)
+    """
+    items = _u(items) or []
+    selectedId = _u(selectedId) or 0
+    return [{"item": r, "selectedId": selectedId} for r in items]
+
+
+_TAB_LABELS = [
+    ("containerConfig", "Container Config"),
+    ("routes",          "Routes"),
+    ("boms",            "Boms"),
+    ("qualitySpecs",    "Quality Specs"),
+    ("eligibility",     "Eligibility"),
+]
+
+
+def itemMasterTabLabels(sectionDirty):
+    """Returns the 5 tab labels for the ItemMaster TabContainer with a
+    leading dot prefix on any tab whose section is currently dirty.
+
+    sectionDirty: dict { section_key: bool }, comes from
+    view.custom.sectionDirty. Defensive against null / Java Map wrappers
+    via Common.Util.extractQualifiedValues."""
+    d = _u(sectionDirty) or {}
+    out = []
+    for key, label in _TAB_LABELS:
+        if d.get(key, False):
+            out.append(u"● " + label)
+        else:
+            out.append(label)
+    return out
+
+
+def itemMasterTabObjects(sectionDirty, activeTab):
+    """Returns the 5 tab objects for ia.container.tab. Each tab is a
+    dict with text / runWhileHidden / disabled per the 8.3 tab-object
+    schema.
+
+    - text: label with leading ● when its section is dirty
+    - runWhileHidden: True (keep embed state across tab switches —
+      avoids the unmount-remount cycle that loses local editDraft)
+    - disabled: True when any section is dirty AND this isn't the
+      active tab (locks navigation until user saves or discards;
+      replaces the bidi-onChange popup intercept which doesn't work
+      cleanly with ia.container.tab)
+
+    sectionDirty: dict { section_key: bool } from view.custom.sectionDirty
+    activeTab:    string section-key from view.custom.activeTab
+    """
+    d = _u(sectionDirty) or {}
+    activeTab = _u(activeTab)
+    anyDirty = any(d.get(k, False) for k, _ in _TAB_LABELS)
+    out = []
+    for key, label in _TAB_LABELS:
+        out.append({
+            "text":           (u"● " + label) if d.get(key, False) else label,
+            "runWhileHidden": True,
+            "disabled":       bool(anyDirty and key != activeTab),
+        })
+    return out
+
+
+def add(meta):
+    """Create a new Item. meta keys (camelCase OR PascalCase tolerated):
+        partNumber, itemTypeId, description, macolaPartNumber,
+        defaultSubLotQty, maxLotSize, uomId, unitWeight, weightUomId,
+        countryOfOrigin, maxParts
+
+    PartNumber, ItemTypeId, and UomId are required (proc rejects nulls).
+    Returns {Status, Message, NewId}.
+
+    The proc enforces:
+      - PartNumber uniqueness
+      - ItemTypeId / UomId / WeightUomId FK + not-deprecated
+      - WeightUomId required when UnitWeight supplied
+      - MaxParts > 0 when supplied
+      - CountryOfOrigin <= 2 chars
+    """
+    m = _u(meta) or {}
+    BlueRidge.Common.Util.log("meta=%s" % m)
+    def _pick(camel, pascal):
+        v = m.get(camel)
+        if v is None:
+            v = m.get(pascal)
+        return v
+    return BlueRidge.Common.Db.execMutation(
+        "parts/Item_Create",
+        {
+            "partNumber":       _pick("partNumber",       "PartNumber"),
+            "itemTypeId":       _pick("itemTypeId",       "ItemTypeId"),
+            "description":      _pick("description",      "Description"),
+            "macolaPartNumber": _pick("macolaPartNumber", "MacolaPartNumber"),
+            "defaultSubLotQty": _pick("defaultSubLotQty", "DefaultSubLotQty"),
+            "maxLotSize":       _pick("maxLotSize",       "MaxLotSize"),
+            "uomId":            _pick("uomId",            "UomId"),
+            "unitWeight":       _pick("unitWeight",       "UnitWeight"),
+            "weightUomId":      _pick("weightUomId",      "WeightUomId"),
+            "countryOfOrigin":  _pick("countryOfOrigin",  "CountryOfOrigin"),
+            "maxParts":         _pick("maxParts",         "MaxParts"),
+            "appUserId":        BlueRidge.Common.Util._currentAppUserId(),
+        },
+    )
+
+
+def update(meta):
+    """Update an existing Item in place. PartNumber + ItemTypeId are
+    immutable per the proc; do not pass them. meta keys (camelCase OR
+    PascalCase tolerated):
+        Id, description, macolaPartNumber, defaultSubLotQty,
+        maxLotSize, uomId, unitWeight, weightUomId,
+        countryOfOrigin, maxParts
+
+    Returns {Status, Message}.
+    """
+    m = _u(meta) or {}
+    BlueRidge.Common.Util.log("meta=%s" % m)
+    def _pick(camel, pascal):
+        v = m.get(camel)
+        if v is None:
+            v = m.get(pascal)
+        return v
+    return BlueRidge.Common.Db.execMutation(
+        "parts/Item_Update",
+        {
+            "id":               _pick("id",               "Id"),
+            "description":      _pick("description",      "Description"),
+            "macolaPartNumber": _pick("macolaPartNumber", "MacolaPartNumber"),
+            "defaultSubLotQty": _pick("defaultSubLotQty", "DefaultSubLotQty"),
+            "maxLotSize":       _pick("maxLotSize",       "MaxLotSize"),
+            "uomId":            _pick("uomId",            "UomId"),
+            "unitWeight":       _pick("unitWeight",       "UnitWeight"),
+            "weightUomId":      _pick("weightUomId",      "WeightUomId"),
+            "countryOfOrigin":  _pick("countryOfOrigin",  "CountryOfOrigin"),
+            "maxParts":         _pick("maxParts",         "MaxParts"),
+            "appUserId":        BlueRidge.Common.Util._currentAppUserId(),
+        },
+    )
+
+
+def deprecate(itemId):
+    """Soft-delete the Item by Id. Returns {Status, Message}. The proc's
+    FK-guards reject deprecation when active Bom / BomLine /
+    RouteTemplate / ItemLocation / ContainerConfig dependents exist;
+    the Message field surfaces the specific dependency."""
+    itemId = _u(itemId)
+    BlueRidge.Common.Util.log("itemId=%s" % itemId)
+    return BlueRidge.Common.Db.execMutation(
+        "parts/Item_Deprecate",
+        {
+            "id":        itemId,
+            "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+        },
+    )
+
+
+def emptyMeta():
+    """Blank meta dict for the AddItem popup's initial state. Keys match
+    what the popup's form fields bidi-bind to (camelCase)."""
+    return {
+        "partNumber":       "",
+        "itemTypeId":       None,
+        "description":      "",
+        "macolaPartNumber": "",
+        "defaultSubLotQty": None,
+        "maxLotSize":       None,
+        "uomId":            None,
+        "unitWeight":       None,
+        "weightUomId":      None,
+        "countryOfOrigin":  "",
+        "maxParts":         None,
+    }

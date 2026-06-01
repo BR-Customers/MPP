@@ -454,6 +454,114 @@ EXEC test.Assert_IsTrue
 GO
 
 -- =============================================
+-- Test 12: Audit-readability narrative — ContainerConfig_Create Description + FK
+--   Slice 5 convention. Description shape:
+--     <PartNumber> · Container Config · Created; <key params>
+--   NewValue JSON carries a resolved "Item" sub-object (PartNumber).
+-- =============================================
+DECLARE @S    BIT,
+        @M    NVARCHAR(500),
+        @SStr NVARCHAR(1),
+        @ItemId BIGINT,
+        @NewId BIGINT;
+
+-- Fresh host item (TEST-CC- prefix is covered by cleanup below)
+CREATE TABLE #RcS5Item (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #RcS5Item
+EXEC Parts.Item_Create
+    @ItemTypeId  = 4,
+    @PartNumber  = N'TEST-CC-S5-001',
+    @Description = N'Container Audit Host',
+    @UomId       = 1,
+    @AppUserId   = 1;
+SELECT @ItemId = NewId FROM #RcS5Item;
+DROP TABLE #RcS5Item;
+
+CREATE TABLE #RccAud1 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #RccAud1 EXEC Parts.ContainerConfig_Create
+    @ItemId            = @ItemId,
+    @TraysPerContainer = 4,
+    @PartsPerTray      = 25,
+    @IsSerialized      = 0,
+    @ClosureMethod     = N'ByCount',
+    @AppUserId         = 1;
+SELECT @NewId = NewId FROM #RccAud1;
+DROP TABLE #RccAud1;
+
+DECLARE @CcCreateDesc NVARCHAR(500), @CcCreateNew NVARCHAR(MAX);
+SELECT TOP 1 @CcCreateDesc = cl.Description, @CcCreateNew = cl.NewValue
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType let ON let.Id = cl.LogEntityTypeId
+WHERE let.Code = N'ContainerConfig' AND cl.EntityId = @NewId
+ORDER BY cl.Id DESC;
+
+DECLARE @CcCreateDescMatch NVARCHAR(1) =
+    CASE WHEN @CcCreateDesc LIKE N'TEST-CC-S5-001%Container Config%Created%ClosureMethod ByCount%'
+         THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[AuditCcCreate] Description matches "<Part> · Container Config · Created; ..."',
+    @Expected = N'1',
+    @Actual   = @CcCreateDescMatch;
+
+DECLARE @CcCreateFkMatch NVARCHAR(1) =
+    CASE WHEN JSON_VALUE(@CcCreateNew, '$.Item.PartNumber') IS NOT NULL THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[AuditCcCreate] NewValue has resolved Item.PartNumber',
+    @Expected = N'1',
+    @Actual   = @CcCreateFkMatch;
+GO
+
+-- =============================================
+-- Test 13: Audit-readability narrative — ContainerConfig_Update Description (diff)
+--   Description shape:
+--     <PartNumber> · Container Config · Updated ClosureMethod ByCount → ByWeight; ...
+--   OldValue JSON carries a resolved "Item" sub-object.
+-- =============================================
+DECLARE @S    BIT,
+        @M    NVARCHAR(500),
+        @ItemId BIGINT,
+        @CcId BIGINT;
+
+SELECT @ItemId = Id FROM Parts.Item WHERE PartNumber = N'TEST-CC-S5-001';
+SELECT @CcId = Id FROM Parts.ContainerConfig
+    WHERE ItemId = @ItemId AND DeprecatedAt IS NULL;
+
+CREATE TABLE #RccAud2 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #RccAud2 EXEC Parts.ContainerConfig_Update
+    @Id                = @CcId,
+    @TraysPerContainer = 4,
+    @PartsPerTray      = 25,
+    @IsSerialized      = 0,
+    @ClosureMethod     = N'ByWeight',
+    @TargetWeight      = 1500.0000,
+    @AppUserId         = 1;
+SELECT @S = Status, @M = Message FROM #RccAud2;
+DROP TABLE #RccAud2;
+
+DECLARE @CcUpdDesc NVARCHAR(500), @CcUpdOld NVARCHAR(MAX);
+SELECT TOP 1 @CcUpdDesc = cl.Description, @CcUpdOld = cl.OldValue
+FROM Audit.ConfigLog cl
+INNER JOIN Audit.LogEntityType let ON let.Id = cl.LogEntityTypeId
+WHERE let.Code = N'ContainerConfig' AND cl.EntityId = @CcId AND cl.Description LIKE N'%Updated%'
+ORDER BY cl.Id DESC;
+
+DECLARE @CcUpdDescMatch NVARCHAR(1) =
+    CASE WHEN @CcUpdDesc LIKE N'TEST-CC-S5-001%Container Config%Updated%ClosureMethod ByCount%ByWeight%'
+         THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[AuditCcUpdate] Description shows changed field old→new',
+    @Expected = N'1',
+    @Actual   = @CcUpdDescMatch;
+
+DECLARE @CcUpdFkMatch NVARCHAR(1) =
+    CASE WHEN JSON_VALUE(@CcUpdOld, '$.Item.PartNumber') IS NOT NULL THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual
+    @TestName = N'[AuditCcUpdate] OldValue has resolved Item.PartNumber',
+    @Expected = N'1',
+    @Actual   = @CcUpdFkMatch;
+GO
+
+-- =============================================
 -- Cleanup: delete test ContainerConfig rows and the host Item
 -- =============================================
 DELETE cc

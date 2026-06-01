@@ -1,0 +1,80 @@
+{
+  "scope": "DG",
+  "version": 2,
+  "restricted": false,
+  "overridable": true,
+  "files": [
+    "query.sql"
+  ],
+  "attributes": {
+    "useMaxReturnSize": false,
+    "autoBatchEnabled": false,
+    "fallbackValue": "",
+    "maxReturnSize": 100,
+    "cacheUnit": "SEC",
+    "type": "Query",
+    "enabled": true,
+    "cacheAmount": 1,
+    "cacheEnabled": false,
+    "database": "MPP",
+    "fallbackEnabled": false,
+    "lastModificationSignature": "",
+    "permissions": [
+      {
+        "zone": "",
+        "role": ""
+      }
+    ],
+    "lastModification": {
+      "actor": "claude",
+      "timestamp": "2026-05-26T00:00:00Z"
+    },
+    "parameters": [
+      {
+        "type": "Parameter",
+        "identifier": "id",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "traysPerContainer",
+        "sqlType": 2
+      },
+      {
+        "type": "Parameter",
+        "identifier": "partsPerTray",
+        "sqlType": 2
+      },
+      {
+        "type": "Parameter",
+        "identifier": "isSerialized",
+        "sqlType": 6
+      },
+      {
+        "type": "Parameter",
+        "identifier": "dunnageCode",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "customerCode",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "closureMethod",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "targetWeight",
+        "sqlType": 5
+      },
+      {
+        "type": "Parameter",
+        "identifier": "appUserId",
+        "sqlType": 3
+      }
+    ]
+  }
+}

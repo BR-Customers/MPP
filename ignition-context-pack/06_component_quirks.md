@@ -9,7 +9,7 @@ There is no single naming convention. Verified via DevTools on a running 8.3 gat
 | Component | DOM class | Naming style |
 |---|---|---|
 | `ia.input.text-field` | `.ia_textField` | camelCase suffix |
-| `ia.input.numeric-entry` | `.ia_numericEntryField` | camelCase suffix |
+| `ia.input.numeric-entry-field` | `.ia_numericEntryField` | camelCase suffix (component type is `numeric-entry-field`, NOT `numeric-entry` — the latter renders "component not found") |
 | `ia.input.dropdown` | `.ia_dropdown` | single word |
 | `ia.input.text-area` | `.ia_textArea` | camelCase suffix |
 | `ia.input.date-time-input` | `.ia_datetime_input` | **snake_case all lowercase** |

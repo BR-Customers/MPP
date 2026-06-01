@@ -2,7 +2,7 @@
 -- Procedure:   Location.Location_Update
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-13
--- Version:     2.0
+-- Version:     2.1
 --
 -- Description:
 --   Updates mutable fields on an existing Location: Name, Code, Description.
@@ -48,6 +48,9 @@
 -- Change Log:
 --   2026-04-13 - 1.0 - Initial version
 --   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
+--   2026-05-29 - 2.1 - Audit-readability convention (Slice 6 Plant Hierarchy):
+--                       per-field diff Description narrative (only changed
+--                       fields) + resolved-FK OldValue/NewValue JSON.
 -- =============================================
 CREATE OR ALTER PROCEDURE Location.Location_Update
     @Id          BIGINT,
@@ -130,22 +133,75 @@ BEGIN
         END
 
         -- ====================
-        -- Capture old values for audit diff
+        -- Capture old values for audit diff (BEFORE the UPDATE)
         -- ====================
-        DECLARE @OldValue NVARCHAR(MAX);
-        SELECT @OldValue =
-            (SELECT Name,
-                    Code,
-                    Description
-             FROM Location.Location
-             WHERE Id = @Id
-             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+        DECLARE @OldName NVARCHAR(200), @OldCode NVARCHAR(50), @OldDescription NVARCHAR(500);
+        DECLARE @SortOrder INT, @ParentLocationId BIGINT, @LocationTypeDefinitionId BIGINT;
+        SELECT @OldName                 = Name,
+               @OldCode                 = Code,
+               @OldDescription          = Description,
+               @SortOrder               = SortOrder,
+               @ParentLocationId        = ParentLocationId,
+               @LocationTypeDefinitionId = LocationTypeDefinitionId
+        FROM Location.Location
+        WHERE Id = @Id;
 
-        DECLARE @NewValue NVARCHAR(MAX) =
-            (SELECT @Name        AS Name,
-                    @Code        AS Code,
-                    @Description AS Description
-             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+        -- Resolved-FK OldValue snapshot
+        DECLARE @OldValue NVARCHAR(MAX) = (
+            SELECT
+                @OldName        AS Name,
+                @OldCode        AS Code,
+                @OldDescription AS Description,
+                @SortOrder      AS SortOrder,
+                JSON_QUERY((SELECT p.Id, p.Code, p.Name
+                            FROM Location.Location p WHERE p.Id = @ParentLocationId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))                  AS Parent,
+                JSON_QUERY((SELECT ltd.Id, ltd.Name
+                            FROM Location.LocationTypeDefinition ltd WHERE ltd.Id = @LocationTypeDefinitionId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))                  AS LocationTypeDefinition
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
+        -- Resolved-FK NewValue snapshot (post-state intent)
+        DECLARE @NewValue NVARCHAR(MAX) = (
+            SELECT
+                @Name        AS Name,
+                @Code        AS Code,
+                @Description AS Description,
+                @SortOrder   AS SortOrder,
+                JSON_QUERY((SELECT p.Id, p.Code, p.Name
+                            FROM Location.Location p WHERE p.Id = @ParentLocationId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))                  AS Parent,
+                JSON_QUERY((SELECT ltd.Id, ltd.Name
+                            FROM Location.LocationTypeDefinition ltd WHERE ltd.Id = @LocationTypeDefinitionId
+                            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))                  AS LocationTypeDefinition
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
+        -- ----- Compose the changed-field Activity prose -----
+        DECLARE @Diff NVARCHAR(MAX) = N'';
+
+        IF ISNULL(@OldCode, N'') <> ISNULL(@Code, N'')
+            SET @Diff = @Diff + N'; Code "' + ISNULL(@OldCode, N'') + N'" ' + NCHAR(8594) + N' "' + ISNULL(@Code, N'') + N'"';
+
+        IF ISNULL(@OldName, N'') <> ISNULL(@Name, N'')
+            SET @Diff = @Diff + N'; Name "' + ISNULL(@OldName, N'') + N'" ' + NCHAR(8594) + N' "' + ISNULL(@Name, N'') + N'"';
+
+        IF ISNULL(@OldDescription, N'') <> ISNULL(@Description, N'')
+            SET @Diff = @Diff + N'; Description "' + ISNULL(@OldDescription, N'') + N'" ' + NCHAR(8594) + N' "' + ISNULL(@Description, N'') + N'"';
+
+        -- Strip leading "; " (DATALENGTH-based per convention)
+        IF DATALENGTH(@Diff) >= 4
+            SET @Diff = SUBSTRING(@Diff, 3, LEN(@Diff));
+
+        IF @Diff = N''
+            SET @Diff = N'No field changes';
+
+        DECLARE @ActivityRaw NVARCHAR(MAX) =
+            N'Location ' + ISNULL(@OldCode, @Code) +
+            N' ' + Audit.ufn_MidDot() + N' Updated ' + @Diff;
+
+        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
 
         -- ====================
         -- Mutation (atomic)
@@ -165,7 +221,7 @@ BEGIN
             @EntityId          = @Id,
             @LogEventTypeCode  = N'Updated',
             @LogSeverityCode   = N'Info',
-            @Description       = N'Location updated.',
+            @Description       = @Activity,
             @OldValue          = @OldValue,
             @NewValue          = @NewValue;
 
