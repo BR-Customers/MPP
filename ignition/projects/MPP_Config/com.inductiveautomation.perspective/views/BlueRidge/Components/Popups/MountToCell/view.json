@@ -1,0 +1,221 @@
+{
+  "custom": {
+    "editDraft": {
+      "CellLocationId": null,
+      "Notes": ""
+    },
+    "cellOptions": []
+  },
+  "params": {
+    "toolId": 0
+  },
+  "propConfig": {
+    "params.toolId": { "paramDirection": "input" },
+    "custom.cellOptions": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Tool.getCellsForDropdown\", 0)"
+        }
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 480,
+      "height": 300
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "column",
+      "style": {
+        "background": "var(--mpp-surface-canvas)",
+        "borderRadius": "var(--mpp-radius-md, 8px)",
+        "height": "100%",
+        "overflow": "hidden",
+        "width": "100%"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "HeaderBar" },
+        "position": { "basis": "50px", "shrink": 0 },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "gap": "12px",
+            "padding": "0 16px", "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "TitleLabel" },
+            "props": {
+              "text": "Mount to Cell",
+              "style": { "classes": "modal-title", "fontSize": "14px", "fontWeight": "600" }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "Spacer" },
+            "position": { "grow": 1 }
+          },
+          {
+            "type": "ia.display.icon",
+            "meta": { "name": "CloseIcon", "tooltip": { "text": "Close" } },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": { "script": "\tsystem.perspective.closePopup(id='mpp-mount-to-cell')" }
+                }
+              }
+            },
+            "props": {
+              "path": "mpp/cancel",
+              "style": { "classes": "modal-close", "cursor": "pointer", "height": "18px", "width": "18px" }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "FormBody" },
+        "position": { "grow": 1 },
+        "props": {
+          "direction": "column",
+          "style": { "gap": "12px", "overflowY": "auto", "padding": "16px" }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "CellField" },
+            "props": { "direction": "column", "style": { "gap": "4px" } },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "Label" },
+                "props": { "text": "Cell", "style": { "classes": "field-label" } }
+              },
+              {
+                "type": "ia.input.dropdown",
+                "meta": { "name": "Input" },
+                "propConfig": {
+                  "props.options": {
+                    "binding": {
+                      "type": "property",
+                      "config": { "path": "view.custom.cellOptions" }
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "type": "property",
+                      "config": { "bidirectional": true, "path": "view.custom.editDraft.CellLocationId" }
+                    }
+                  }
+                },
+                "props": {
+                  "style": { "boxSizing": "border-box", "classes": "select", "width": "100%" }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "NotesField" },
+            "props": { "direction": "column", "style": { "gap": "4px" } },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "Label" },
+                "props": { "text": "Notes", "style": { "classes": "field-label" } }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": { "name": "Input" },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": { "bidirectional": true, "path": "view.custom.editDraft.Notes" }
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "Optional",
+                  "style": { "boxSizing": "border-box", "classes": "search-input", "width": "100%" }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "FooterBar" },
+        "position": { "basis": "50px", "shrink": 0 },
+        "props": {
+          "alignItems": "center",
+          "justify": "flex-end",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderTop": "1px solid var(--mpp-border-subtle)",
+            "gap": "8px",
+            "padding": "12px 16px", "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "CancelButton" },
+            "position": { "shrink": 0 },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": { "script": "\tsystem.perspective.closePopup(id='mpp-mount-to-cell')" }
+                }
+              }
+            },
+            "props": { "text": "Cancel", "style": { "classes": "btn btn-sm" } }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "CreateButton" },
+            "position": { "shrink": 0 },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": { "script": "\tself.view.rootContainer.handleAssign()" }
+                }
+              }
+            },
+            "props": { "text": "Mount", "style": { "classes": "btn btn-primary btn-sm" } }
+          }
+        ]
+      }
+    ],
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "handleAssign",
+          "params": [],
+          "script": "\ttoolId = self.view.params.toolId\n\tif not toolId:\n\t\tBlueRidge.Common.Notify.toast('No tool selected', 'Pick a tool first.', 'warning')\n\t\treturn\n\tdraft = self.view.custom.editDraft or {}\n\tcellId = draft.get('CellLocationId')\n\tif cellId is None:\n\t\tBlueRidge.Common.Notify.toast('Cell required', 'Pick a cell to mount on.', 'warning')\n\t\treturn\n\tresult = BlueRidge.Parts.Tool.assignToCell(toolId, cellId, draft.get('Notes'))\n\tBlueRidge.Common.Ui.notifyResult(result, 'Tool mounted')\n\tif result and result.get('Status'):\n\t\tsystem.perspective.sendMessage('toolDataChanged', payload={'section': 'assignments'}, scope='page')\n\t\tsystem.perspective.closePopup(id='mpp-mount-to-cell')"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": []
+    }
+  }
+}

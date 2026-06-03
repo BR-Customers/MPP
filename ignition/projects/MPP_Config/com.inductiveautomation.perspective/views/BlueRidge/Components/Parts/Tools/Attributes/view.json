@@ -1,12 +1,15 @@
 {
   "custom": {
-    "rows": []
+    "rows": [],
+    "pendingRemoveDefId": null
   },
   "params": {
-    "value": 0
+    "value": 0,
+    "toolTypeId": 0
   },
   "propConfig": {
-    "params.value": { "paramDirection": "input" },
+    "params.value":      { "paramDirection": "input" },
+    "params.toolTypeId": { "paramDirection": "input" },
     "custom.rows": {
       "binding": {
         "type": "expr",
@@ -22,6 +25,39 @@
   "root": {
     "type": "ia.container.flex",
     "meta": { "name": "root" },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "refresh",
+          "params": [],
+          "script": "\tself.view.custom.rows = BlueRidge.Parts.Tool.getAttributeInstancesForTool(self.view.params.value)"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "toolDataChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tsection = (payload or {}).get('section')\n\tif section and section != 'attributes':\n\t\treturn\n\tself.view.rootContainer.refresh()"
+        },
+        {
+          "messageType": "attributeRemoveRequest",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tdata = payload or {}\n\tdefId = data.get('defId')\n\tname  = data.get('name') or 'this attribute'\n\tif defId is None:\n\t\treturn\n\tself.view.custom.pendingRemoveDefId = defId\n\tsystem.perspective.openPopup(\n\t\tid='mpp-confirm-destructive',\n\t\tview='BlueRidge/Components/Popups/ConfirmDestructive',\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t'title':        'Remove Attribute',\n\t\t\t'message':      'Remove ' + name + ' from this tool?',\n\t\t\t'confirmLabel': 'Remove',\n\t\t\t'replyMessage': 'attributeRemoveConfirmed'\n\t\t}\n\t)"
+        },
+        {
+          "messageType": "attributeRemoveConfirmed",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\taction = (payload or {}).get('action')\n\tdefId = self.view.custom.pendingRemoveDefId\n\tself.view.custom.pendingRemoveDefId = None\n\tif action != 'confirm' or defId is None:\n\t\treturn\n\tresult = BlueRidge.Parts.Tool.removeAttribute(self.view.params.value, defId)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Attribute removed')\n\tif result and result.get('Status'):\n\t\tself.view.rootContainer.refresh()"
+        }
+      ]
+    },
     "props": {
       "direction": "column",
       "style": {
@@ -53,34 +89,21 @@
             }
           },
           {
-            "type": "ia.input.dropdown",
-            "meta": { "name": "DropdownAddAttribute" },
-            "props": {
-              "options": [
-                { "label": "- add attribute -",        "value": "" },
-                { "label": "Cycle Time (sec)",         "value": "cycle_time" },
-                { "label": "Injection Pressure (bar)", "value": "injection_pressure" },
-                { "label": "Temperature Setpoint (C)", "value": "temp_setpoint" }
-              ],
-              "style": { "classes": "select", "width": "220px" }
-            }
-          },
-          {
             "type": "ia.input.button",
             "meta": { "name": "BtnAddAttribute" },
             "events": {
               "component": {
                 "onActionPerformed": {
                   "type": "script",
-                  "scope": "C",
+                  "scope": "G",
                   "config": {
-                    "script": "\tBlueRidge.Common.Notify.toast('Not wired yet', 'Add attribute lands in populate pass.', 'info', 4)"
+                    "script": "\ttoolId = self.view.params.value\n\ttoolTypeId = self.view.params.toolTypeId\n\tif not toolId:\n\t\tBlueRidge.Common.Notify.toast('No tool selected', 'Pick a tool first.', 'warning')\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid='mpp-add-attribute',\n\t\tview='BlueRidge/Components/Popups/AddAttribute',\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={'toolId': toolId, 'toolTypeId': toolTypeId}\n\t)"
                   }
                 }
               }
             },
             "props": {
-              "text": "+ Add",
+              "text": "+ Add Attribute",
               "style": { "classes": "btn btn-primary btn-sm" }
             }
           }
@@ -138,7 +161,7 @@
             },
             "props": {
               "direction": "column",
-              "elementPosition": { "basis": "32px", "shrink": 0 },
+              "elementPosition": { "basis": "48px", "shrink": 0 },
               "path": "BlueRidge/Components/Parts/Tools/_Tools/AttributeRow",
               "style": { "overflowY": "auto" },
               "useDefaultViewHeight": true,

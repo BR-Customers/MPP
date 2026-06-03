@@ -31,6 +31,32 @@
   "root": {
     "type": "ia.container.flex",
     "meta": { "name": "root" },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "refresh",
+          "params": [],
+          "script": "\ttoolId = self.view.params.value\n\tself.view.custom.rows   = BlueRidge.Parts.Tool.getAssignmentInstancesForTool(toolId)\n\tself.view.custom.active = BlueRidge.Parts.Tool.getActiveAssignmentForTool(toolId)"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "toolDataChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tsection = (payload or {}).get('section')\n\tif section and section != 'assignments':\n\t\treturn\n\tself.view.rootContainer.refresh()"
+        },
+        {
+          "messageType": "assignmentReleaseConfirmed",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\taction = (payload or {}).get('action')\n\tif action != 'confirm':\n\t\treturn\n\ttoolId = self.view.params.value\n\tif not toolId:\n\t\treturn\n\tresult = BlueRidge.Parts.Tool.releaseAssignment(toolId)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Tool released')\n\tif result and result.get('Status'):\n\t\tself.view.rootContainer.refresh()"
+        }
+      ]
+    },
     "props": {
       "direction": "column",
       "style": {
@@ -56,9 +82,9 @@
               "component": {
                 "onActionPerformed": {
                   "type": "script",
-                  "scope": "C",
+                  "scope": "G",
                   "config": {
-                    "script": "\tBlueRidge.Common.Notify.toast('Not wired yet', 'Mount-to-cell popup lands in populate pass.', 'info', 4)"
+                    "script": "\ttoolId = self.view.params.value\n\tif not toolId:\n\t\tBlueRidge.Common.Notify.toast('No tool selected', 'Pick a tool first.', 'warning')\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid='mpp-mount-to-cell',\n\t\tview='BlueRidge/Components/Popups/MountToCell',\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={'toolId': toolId}\n\t)"
                   }
                 }
               }
@@ -172,9 +198,9 @@
               "component": {
                 "onActionPerformed": {
                   "type": "script",
-                  "scope": "C",
+                  "scope": "G",
                   "config": {
-                    "script": "\tBlueRidge.Common.Notify.toast('Not wired yet', 'Release assignment lands in populate pass.', 'info', 4)"
+                    "script": "\tactive = self.view.custom.active or {}\n\tcellName = active.get('CellName') or 'this cell'\n\tsystem.perspective.openPopup(\n\t\tid='mpp-confirm-destructive',\n\t\tview='BlueRidge/Components/Popups/ConfirmDestructive',\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t'title':        'Release Assignment',\n\t\t\t'message':      'Release the tool from ' + cellName + '?',\n\t\t\t'confirmLabel': 'Release',\n\t\t\t'replyMessage': 'assignmentReleaseConfirmed'\n\t\t}\n\t)"
                   }
                 }
               }
@@ -241,7 +267,7 @@
             },
             "props": {
               "direction": "column",
-              "elementPosition": { "basis": "28px", "shrink": 0 },
+              "elementPosition": { "basis": "48px", "shrink": 0 },
               "path": "BlueRidge/Components/Parts/Tools/_Tools/AssignmentRow",
               "style": { "overflowY": "auto" },
               "useDefaultViewHeight": true,

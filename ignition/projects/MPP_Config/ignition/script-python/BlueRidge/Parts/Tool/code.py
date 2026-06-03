@@ -3,268 +3,662 @@
 #
 # Author:           Blue Ridge Automation
 # Created:          2026-05-26
-# Version:          0.3 (scaffold)
+# Version:          1.0
 #
 # Description:
 #   Read + mutation surface for the Tools Configuration Tool screen.
-#   SCAFFOLD ONLY -- getAllForList currently returns hardcoded dummy
-#   rows so the flex-repeater renders visible content while the screen
-#   is being refined. Populate pass will swap to a real
-#   Tools.Tool_List proc call via BlueRidge.Common.Db.execList.
+#   Routes every DB call through BlueRidge.Common.Db.* helpers per the
+#   three-layer rule (View -> Entity script -> Common.Db). Views never
+#   call system.db.* directly.
 #
-# Encoding:
-#   Source is pure ASCII. Em-dashes come from \\u2014 escapes inside
-#   u"" literals, not literal characters, so Jython 2 source decoding
-#   can't mangle them. The JSON pipe to Perspective sees real Unicode
-#   at runtime.
+# Public surface:
+#   getAllForList(searchText, statusCode)        -> list[dict]
+#       Slim ToolRow dicts for the list flex-repeater
+#       (id, code, name, rank, deprecated).
+#   getInstancesForFlexRepeater(searchText,
+#                               statusCode,
+#                               selectedId)      -> list[dict]
+#   getOne(toolId)                               -> dict | None
+#       Full meta record with display keys the DetailHeader binds to.
+#   add(data)                                    -> {Status, Message, NewId}
+#   update(data)                                 -> {Status, Message}
+#   deprecate(toolId)                            -> {Status, Message}
+#   getAttributeInstancesForTool(toolId)         -> list[dict]
+#   getCavityInstancesForTool(toolId)            -> list[dict]
+#   getAssignmentInstancesForTool(toolId)        -> list[dict]
+#   getActiveAssignmentForTool(toolId)           -> dict | None
 #
 # Layer:
 #   View -> BlueRidge.Parts.Tool (this module)
 #        -> BlueRidge.Common.Db.execList / execOne / execMutation
-#   Views never call system.db.* directly.
+#
+# Lookup resolution notes:
+#   - ToolTypeId  - resolved once via parts/ToolType_List, cached per call.
+#                   add() defaults to the 'Die' ToolType.
+#   - DieRankId   - resolved from DieRankCode via parts/DieRank_List.
+#   - StatusCodeId- resolved from StatusCode via parts/ToolStatusCode_List.
+#                   add() defaults to the 'Active' status.
+#   Tool_Update does NOT accept StatusCodeId (status changes go through
+#   Tools.Tool_UpdateStatus, a separate proc). update() therefore only
+#   calls Tool_Update; if a StatusCode change is detected, it follows up
+#   with a Tool_UpdateStatus mutation. The combined return reflects
+#   whichever leg failed (Update leg first).
+#
+# Encoding:
+#   Source is pure ASCII (no em-dashes; Jython 2 source decoding is
+#   strict). Display strings use plain hyphens.
 # =============================================================================
 
 
 def _u(value):
-	"""Deep-unwrap shorthand for QualifiedValue / Java Map containers."""
-	return BlueRidge.Common.Util.extractQualifiedValues(value)
+    """Deep-unwrap shorthand for QualifiedValue / Java Map containers."""
+    return BlueRidge.Common.Util.extractQualifiedValues(value)
 
 
-# Full meta records (one per tool) -- keys mirror what the view's
-# DetailHeader bindings expect: Code, Name, Description, ToolTypeName,
-# DieRankCode, DieRankName, StatusCode, plus Id and deprecated.
-_DUMMY_TOOLS = [
-	{
-		"Id":            1,
-		"Code":          "DC-042",
-		"Name":          "Front Cover Die",
-		"Description":   "2-cavity die for 5G0 Front Cover Assy",
-		"ToolTypeName":  "Die",
-		"DieRankCode":   "A",
-		"DieRankName":   u"A - Premium",
-		"StatusCode":    "Active",
-		"deprecated":    False,
-	},
-	{
-		"Id":            2,
-		"Code":          "DC-018",
-		"Name":          "Oil Pan Die",
-		"Description":   "Single-cavity oil pan die",
-		"ToolTypeName":  "Die",
-		"DieRankCode":   "B",
-		"DieRankName":   u"B - Standard",
-		"StatusCode":    "Active",
-		"deprecated":    False,
-	},
-	{
-		"Id":            3,
-		"Code":          "DC-031",
-		"Name":          "Cam Holder Die",
-		"Description":   u"Cam holder die - currently in repair",
-		"ToolTypeName":  "Die",
-		"DieRankCode":   "B",
-		"DieRankName":   u"B - Standard",
-		"StatusCode":    "UnderRepair",
-		"deprecated":    False,
-	},
-	{
-		"Id":            4,
-		"Code":          "DC-007",
-		"Name":          "Fuel Pump Die",
-		"Description":   u"Retired 2025-11 - porosity issues",
-		"ToolTypeName":  "Die",
-		"DieRankCode":   "C",
-		"DieRankName":   u"C - Marginal",
-		"StatusCode":    "Retired",
-		"deprecated":    True,
-	},
-]
+# -----------------------------------------------------------------------------
+# Code-table lookups (read-mostly; resolved per-call -- the underlying NQs
+# are cheap and ToolStatusCode / ToolType have <10 rows each).
+# -----------------------------------------------------------------------------
 
+def _lookupToolTypeIdByCode(code):
+    """Resolve ToolType.Id from ToolType.Code (e.g. 'Die'). Returns None
+    if not found."""
+    rows = BlueRidge.Common.Db.execList("parts/ToolType_List", None) or []
+    for r in rows:
+        if r.get("Code") == code:
+            return r.get("Id")
+    return None
+
+
+def _lookupStatusCodeIdByCode(code):
+    """Resolve ToolStatusCode.Id from its Code (e.g. 'Active'). Returns
+    None if not found."""
+    rows = BlueRidge.Common.Db.execList("parts/ToolStatusCode_List", None) or []
+    for r in rows:
+        if r.get("Code") == code:
+            return r.get("Id")
+    return None
+
+
+def _lookupDieRankIdByCode(code):
+    """Resolve DieRank.Id from DieRank.Code (e.g. 'A'). Returns None for
+    missing input or unmatched code."""
+    if not code:
+        return None
+    rows = BlueRidge.Common.Db.execList(
+        "parts/DieRank_List",
+        {"includeDeprecated": 0},
+    ) or []
+    for r in rows:
+        if r.get("Code") == code:
+            return r.get("Id")
+    return None
+
+
+# -----------------------------------------------------------------------------
+# Row shape helpers
+# -----------------------------------------------------------------------------
 
 def _toListRow(meta):
-	"""Convert a full meta record to the slimmer dict ToolRow consumes."""
-	return {
-		"id":         meta["Id"],
-		"code":       meta["Code"],
-		"name":       meta["Name"],
-		"rank":       meta["DieRankCode"],
-		"deprecated": meta["deprecated"],
-	}
+    """Slim full Tool meta down to the ToolRow shape consumed by the list
+    flex-repeater (id, code, name, rank, deprecated)."""
+    return {
+        "id":         meta.get("Id"),
+        "code":       meta.get("Code"),
+        "name":       meta.get("Name"),
+        "rank":       meta.get("DieRankCode"),
+        "deprecated": meta.get("DeprecatedAt") is not None,
+    }
 
+
+# -----------------------------------------------------------------------------
+# Tool list / detail reads
+# -----------------------------------------------------------------------------
 
 def getAllForList(searchText="", statusCode="All"):
-	"""Returns ToolRow-shaped rows (id/code/name/rank/deprecated),
-	filtered by status + search text. Stub backed by _DUMMY_TOOLS;
-	populate pass swaps to a Tools.Tool_List proc call."""
-	BlueRidge.Common.Util.log("searchText=%s statusCode=%s" % (searchText, statusCode))
-	needle = (searchText or "").strip().lower()
-	rows = []
-	for t in _DUMMY_TOOLS:
-		if statusCode and statusCode != "All" and t["StatusCode"] != statusCode:
-			continue
-		if needle and needle not in t["Code"].lower() and needle not in t["Name"].lower():
-			continue
-		rows.append(_toListRow(t))
-	return rows
+    """Returns ToolRow-shaped rows (id/code/name/rank/deprecated), filtered
+    server-side by StatusCode and client-side by searchText (Code or Name,
+    case-insensitive substring)."""
+    BlueRidge.Common.Util.log("searchText=%s statusCode=%s"
+                              % (searchText, statusCode))
+    searchText = _u(searchText) or ""
+    statusCode = _u(statusCode) or "All"
+
+    # StatusCode 'All' / None / empty means no server-side filter.
+    statusParam = None
+    if statusCode and statusCode != "All":
+        statusParam = statusCode
+
+    try:
+        rows = BlueRidge.Common.Db.execList(
+            "parts/Tool_List",
+            {
+                "toolTypeId":        None,
+                "statusCode":        statusParam,
+                "includeDeprecated": 1,
+            },
+        )
+    except Exception as e:
+        BlueRidge.Common.Util.log("getAllForList failed: %s" % str(e))
+        BlueRidge.Common.Notify.toast("Could not load tools", str(e), "error")
+        return []
+
+    needle = (searchText or "").strip().lower()
+    out = []
+    for r in rows:
+        code = r.get("Code") or ""
+        name = r.get("Name") or ""
+        if needle and needle not in code.lower() and needle not in name.lower():
+            continue
+        out.append(_toListRow(r))
+    return out
 
 
 def getInstancesForFlexRepeater(searchText="", statusCode="All", selectedId=0):
-	"""Composes the flex-repeater instances payload for the tools list.
-	Each instance is {'tool': <row>, 'selectedId': <int>}. Matches the
-	BlueRidge.Parts.Item.getInstancesForFlexRepeater pattern."""
-	searchText = _u(searchText) or ""
-	statusCode = _u(statusCode) or "All"
-	selectedId = _u(selectedId) or 0
-	rows = getAllForList(searchText, statusCode)
-	return [{"tool": r, "selectedId": selectedId} for r in rows]
+    """Composes the flex-repeater instances payload for the tools list.
+    Each instance is {'tool': <row>, 'selectedId': <int>} -- matches the
+    BlueRidge.Parts.Item.getInstancesForFlexRepeater pattern."""
+    searchText = _u(searchText) or ""
+    statusCode = _u(statusCode) or "All"
+    selectedId = _u(selectedId) or 0
+    rows = getAllForList(searchText, statusCode)
+    return [{"tool": r, "selectedId": selectedId} for r in rows]
 
 
 def getOne(toolId):
-	"""Returns the full meta record for a single tool, or None.
-	Stub backed by _DUMMY_TOOLS."""
-	toolId = _u(toolId)
-	BlueRidge.Common.Util.log("toolId=%s" % toolId)
-	if toolId is None:
-		return None
-	for t in _DUMMY_TOOLS:
-		if t["Id"] == toolId:
-			return dict(t)
-	return None
+    """Returns the full meta record for a single tool, or None.
 
+    Adds a derived 'deprecated' bool alongside the raw DeprecatedAt
+    timestamp the DetailHeader uses for chip styling."""
+    toolId = _u(toolId)
+    BlueRidge.Common.Util.log("toolId=%s" % toolId)
+    if toolId is None:
+        return None
+    row = BlueRidge.Common.Db.execOne("parts/Tool_Get", {"id": toolId})
+    if row is None:
+        return None
+    row["deprecated"] = row.get("DeprecatedAt") is not None
+    return row
+
+
+# -----------------------------------------------------------------------------
+# Tool mutations
+# -----------------------------------------------------------------------------
 
 def add(data):
-	"""Stub. Insert a new tool. Returns {Status, Message, NewId}.
-	Populate pass will replace with a Tools.Tool_Create proc call via
-	BlueRidge.Common.Db.execMutation."""
-	data = _u(data) or {}
-	BlueRidge.Common.Util.log("data=%s" % data)
-	if not data.get("Code"):
-		return {"Status": "ERROR", "Message": "Code is required", "NewId": None}
-	if not data.get("Name"):
-		return {"Status": "ERROR", "Message": "Name is required", "NewId": None}
-	# Append to the in-memory dummy list so the new row shows up in the list.
-	newId = max([t["Id"] for t in _DUMMY_TOOLS] + [0]) + 1
-	_DUMMY_TOOLS.append({
-		"Id":            newId,
-		"Code":          data.get("Code"),
-		"Name":          data.get("Name"),
-		"Description":   data.get("Description") or "",
-		"ToolTypeName":  "Die",
-		"DieRankCode":   data.get("DieRankCode") or "B",
-		"DieRankName":   _rankNameForCode(data.get("DieRankCode") or "B"),
-		"StatusCode":    "Active",
-		"deprecated":    False,
-	})
-	return {"Status": "OK", "Message": "Tool created", "NewId": newId}
+    """Insert a new Tool. data: {Code, Name, Description, DieRankCode, ...}.
+
+    Resolution rules:
+      * ToolTypeId defaults to the 'Die' ToolType -- the Tools screen is
+        currently Die-only (the only ToolType with HasCavities=true and
+        the only one the screen renders forms for).
+      * StatusCodeId defaults to 'Active' for newly added Tools.
+      * DieRankId is resolved from DieRankCode (nullable).
+
+    Returns {Status, Message, NewId}.
+    """
+    data = _u(data) or {}
+    BlueRidge.Common.Util.log("data=%s" % data)
+
+    code = (data.get("Code") or "").strip()
+    name = (data.get("Name") or "").strip()
+    if not code:
+        return {"Status": 0, "Message": "Code is required", "NewId": None}
+    if not name:
+        return {"Status": 0, "Message": "Name is required", "NewId": None}
+
+    toolTypeId = _lookupToolTypeIdByCode("Die")
+    if toolTypeId is None:
+        return {"Status": 0,
+                "Message": "ToolType 'Die' not found in DB",
+                "NewId":   None}
+
+    statusCodeId = _lookupStatusCodeIdByCode("Active")
+    if statusCodeId is None:
+        return {"Status": 0,
+                "Message": "ToolStatusCode 'Active' not found in DB",
+                "NewId":   None}
+
+    dieRankId = _lookupDieRankIdByCode(data.get("DieRankCode"))
+
+    return BlueRidge.Common.Db.execMutation(
+        "parts/Tool_Create",
+        {
+            "toolTypeId":   toolTypeId,
+            "code":         code,
+            "name":         name,
+            "description":  data.get("Description"),
+            "dieRankId":    dieRankId,
+            "statusCodeId": statusCodeId,
+            "appUserId":    BlueRidge.Common.Util._currentAppUserId(),
+        },
+    )
 
 
-def _rankNameForCode(code):
-	"""Local helper -- maps rank code A/B/C to display name (stub).
-	Real impl will look this up via BlueRidge.Parts.DieRank.getOne."""
-	return {
-		"A": u"A - Premium",
-		"B": u"B - Standard",
-		"C": u"C - Marginal",
-	}.get(code, code)
+def update(data):
+    """Update an existing Tool. data: {Id, Name, Description, DieRankCode,
+    StatusCode}. Code is immutable per the underlying proc.
+
+    Tools.Tool_Update covers Name / Description / DieRankId only. Status
+    transitions go through the separate Tools.Tool_UpdateStatus proc, so
+    this function dispatches both in sequence when the caller passes a
+    StatusCode. If the Update leg fails it short-circuits and returns
+    that result; if the Status leg fails its message bubbles up.
+    """
+    data = _u(data) or {}
+    BlueRidge.Common.Util.log("data=%s" % data)
+
+    toolId = data.get("Id")
+    if toolId is None:
+        return {"Status": 0, "Message": "Id is required for update"}
+
+    dieRankId = _lookupDieRankIdByCode(data.get("DieRankCode"))
+    appUserId = BlueRidge.Common.Util._currentAppUserId()
+
+    updateResult = BlueRidge.Common.Db.execMutation(
+        "parts/Tool_Update",
+        {
+            "id":          toolId,
+            "name":        data.get("Name"),
+            "description": data.get("Description"),
+            "dieRankId":   dieRankId,
+            "appUserId":   appUserId,
+        },
+    )
+
+    if not updateResult.get("Status"):
+        return updateResult
+
+    statusCode = data.get("StatusCode")
+    if statusCode:
+        statusResult = BlueRidge.Common.Db.execMutation(
+            "parts/Tool_UpdateStatus",
+            {
+                "id":         toolId,
+                "statusCode": statusCode,
+                "appUserId":  appUserId,
+            },
+        )
+        if not statusResult.get("Status"):
+            return statusResult
+
+    return updateResult
 
 
-# =============================================================================
-# Per-tab dummy data for Attributes / Cavities / Assignments.
-# Keyed by toolId. Tools without an entry get an empty list.
-# =============================================================================
+def deprecate(toolId):
+    """Soft-delete. Returns {Status, Message}."""
+    toolId = _u(toolId)
+    BlueRidge.Common.Util.log("toolId=%s" % toolId)
+    return BlueRidge.Common.Db.execMutation(
+        "parts/Tool_Deprecate",
+        {
+            "id":        toolId,
+            "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+        },
+    )
 
 
-def _toInt(v):
-	try:
-		return int(v)
-	except (TypeError, ValueError):
-		return None
-
-
-_DUMMY_ATTRIBUTES = {
-	1: [
-		{"Id": 101, "AttrName": "Maintenance Interval (shots)", "Value": "25000",      "DataType": "number"},
-		{"Id": 102, "AttrName": "Last Maintained",              "Value": "2026-04-01", "DataType": "date"},
-		{"Id": 103, "AttrName": "Tonnage",                      "Value": "800",        "DataType": "number"},
-	],
-	2: [
-		{"Id": 111, "AttrName": "Maintenance Interval (shots)", "Value": "30000",      "DataType": "number"},
-		{"Id": 112, "AttrName": "Tonnage",                      "Value": "650",        "DataType": "number"},
-	],
-	3: [
-		{"Id": 121, "AttrName": "Maintenance Interval (shots)", "Value": "20000",      "DataType": "number"},
-		{"Id": 122, "AttrName": "Last Maintained",              "Value": "2026-03-15", "DataType": "date"},
-	],
-	4: [
-		{"Id": 131, "AttrName": "Tonnage",                      "Value": "400",        "DataType": "number"},
-	],
-}
-
-_DUMMY_CAVITIES = {
-	1: [
-		{"Id": 201, "Number": 1, "StatusCode": "Active", "Description": ""},
-		{"Id": 202, "Number": 2, "StatusCode": "Active", "Description": ""},
-		{"Id": 203, "Number": 3, "StatusCode": "Closed", "Description": "Shut off 2026-03-14 - porosity defects"},
-	],
-	2: [
-		{"Id": 211, "Number": 1, "StatusCode": "Active", "Description": ""},
-	],
-	3: [
-		{"Id": 221, "Number": 1, "StatusCode": "Active",  "Description": ""},
-		{"Id": 222, "Number": 2, "StatusCode": "Scrapped","Description": "Cracked during heat-treat"},
-	],
-	4: [
-		{"Id": 231, "Number": 1, "StatusCode": "Closed", "Description": "Retired with the die"},
-	],
-}
-
-_DUMMY_ASSIGNMENTS = {
-	1: [
-		{"Id": 301, "CellName": "DC Machine #7", "AssignedAt": "2026-04-29 06:02", "ReleasedAt": None,                 "AssignedByInitials": "CM", "ReleasedByInitials": None, "Notes": "",               "IsActive": True},
-		{"Id": 302, "CellName": "DC Machine #7", "AssignedAt": "2026-04-21 05:58", "ReleasedAt": "2026-04-29 05:55",   "AssignedByInitials": "JR", "ReleasedByInitials": "CM", "Notes": "",               "IsActive": False},
-		{"Id": 303, "CellName": "DC Machine #3", "AssignedAt": "2026-04-10 06:10", "ReleasedAt": "2026-04-21 05:45",   "AssignedByInitials": "CM", "ReleasedByInitials": "JR", "Notes": "Loan from line 7", "IsActive": False},
-		{"Id": 304, "CellName": "DC Machine #7", "AssignedAt": "2026-03-02 06:05", "ReleasedAt": "2026-04-10 06:08",   "AssignedByInitials": "JR", "ReleasedByInitials": "JR", "Notes": "",               "IsActive": False},
-	],
-	2: [
-		{"Id": 311, "CellName": "DC Machine #4", "AssignedAt": "2026-05-12 06:00", "ReleasedAt": None,                 "AssignedByInitials": "CM", "ReleasedByInitials": None, "Notes": "",               "IsActive": True},
-	],
-	3: [],
-	4: [
-		{"Id": 331, "CellName": "DC Machine #2", "AssignedAt": "2025-09-01 06:00", "ReleasedAt": "2025-11-15 17:30",   "AssignedByInitials": "JR", "ReleasedByInitials": "CM", "Notes": "Retired post-run", "IsActive": False},
-	],
-}
-
+# -----------------------------------------------------------------------------
+# Per-tab reads (Attributes / Cavities / Assignments)
+# Each returns the flex-repeater instances shape the corresponding tab binds.
+# -----------------------------------------------------------------------------
 
 def getAttributeInstancesForTool(toolId):
-	"""Flex-repeater instances for the Attributes tab.
-	Each instance is {'attr': <row>}. Returns [] for unknown tool ids."""
-	toolId = _toInt(_u(toolId))
-	rows = _DUMMY_ATTRIBUTES.get(toolId, [])
-	return [{"attr": dict(r)} for r in rows]
+    """Flex-repeater instances for the Attributes tab.
+    Each instance is {'attr': <row>}. Returns [] for missing tool ids
+    or load failures.
+
+    Row shape consumed by AttributeRow:
+        Id, AttrName, Value, DataType, ToolAttributeDefinitionId
+    The proc emits AttributeName / AttributeCode -- AttrName is the
+    repeater-facing alias and is set from AttributeName here."""
+    toolId = _u(toolId)
+    BlueRidge.Common.Util.log("toolId=%s" % toolId)
+    if toolId is None:
+        return []
+    try:
+        rows = BlueRidge.Common.Db.execList(
+            "parts/ToolAttribute_ListByTool",
+            {"toolId": toolId},
+        )
+    except Exception as e:
+        BlueRidge.Common.Util.log("getAttributeInstancesForTool failed: %s" % str(e))
+        return []
+
+    out = []
+    for r in rows:
+        out.append({
+            "attr": {
+                "Id":                        r.get("Id"),
+                "AttrName":                  r.get("AttributeName"),
+                "Value":                     r.get("Value"),
+                "DataType":                  r.get("DataType"),
+                "ToolAttributeDefinitionId": r.get("ToolAttributeDefinitionId"),
+            }
+        })
+    return out
 
 
 def getCavityInstancesForTool(toolId):
-	"""Flex-repeater instances for the Cavities tab.
-	Each instance is {'cavity': <row>}. Returns [] for unknown tool ids."""
-	toolId = _toInt(_u(toolId))
-	rows = _DUMMY_CAVITIES.get(toolId, [])
-	return [{"cavity": dict(r)} for r in rows]
+    """Flex-repeater instances for the Cavities tab.
+    Each instance is {'cavity': <row>}. Returns [] for missing tool ids
+    or load failures.
+
+    Row shape consumed by CavityRow:
+        Id, Number, StatusCode, Description
+    Mapped from the proc's CavityNumber + StatusCode columns."""
+    toolId = _u(toolId)
+    BlueRidge.Common.Util.log("toolId=%s" % toolId)
+    if toolId is None:
+        return []
+    try:
+        rows = BlueRidge.Common.Db.execList(
+            "parts/ToolCavity_ListByTool",
+            {"toolId": toolId, "includeDeprecated": 0},
+        )
+    except Exception as e:
+        BlueRidge.Common.Util.log("getCavityInstancesForTool failed: %s" % str(e))
+        return []
+
+    out = []
+    for r in rows:
+        out.append({
+            "cavity": {
+                "Id":          r.get("Id"),
+                "Number":      r.get("CavityNumber"),
+                "StatusCode":  r.get("StatusCode"),
+                "Description": r.get("Description"),
+            }
+        })
+    return out
 
 
 def getAssignmentInstancesForTool(toolId):
-	"""Flex-repeater instances for the Assignments tab history table.
-	Each instance is {'assignment': <row>}. Returns [] for unknown tool ids."""
-	toolId = _toInt(_u(toolId))
-	rows = _DUMMY_ASSIGNMENTS.get(toolId, [])
-	return [{"assignment": dict(r)} for r in rows]
+    """Flex-repeater instances for the Assignments tab history table.
+    Each instance is {'assignment': <row>}. Returns [] for missing tool
+    ids or load failures.
+
+    Row shape consumed by AssignmentRow:
+        Id, CellName, AssignedAt, ReleasedAt, AssignedByInitials,
+        ReleasedByInitials, Notes, IsActive
+    IsActive is derived (ReleasedAt is None). AssignedByInitials /
+    ReleasedByInitials are not on the proc yet -- left as None until the
+    join is added; the view shows a fallback string."""
+    toolId = _u(toolId)
+    BlueRidge.Common.Util.log("toolId=%s" % toolId)
+    if toolId is None:
+        return []
+    try:
+        rows = BlueRidge.Common.Db.execList(
+            "parts/ToolAssignment_ListByTool",
+            {"toolId": toolId},
+        )
+    except Exception as e:
+        BlueRidge.Common.Util.log("getAssignmentInstancesForTool failed: %s" % str(e))
+        return []
+
+    out = []
+    for r in rows:
+        releasedAt = r.get("ReleasedAt")
+        out.append({
+            "assignment": {
+                "Id":                 r.get("Id"),
+                "CellName":           r.get("CellName"),
+                "AssignedAt":         r.get("AssignedAt"),
+                "ReleasedAt":         releasedAt,
+                "AssignedByInitials": r.get("AssignedByInitials"),
+                "ReleasedByInitials": r.get("ReleasedByInitials"),
+                "Notes":              r.get("Notes"),
+                "IsActive":           releasedAt is None,
+            }
+        })
+    return out
 
 
 def getActiveAssignmentForTool(toolId):
-	"""Returns the currently-active assignment dict for the tool, or None.
-	Used to populate the 'Currently mounted on...' banner."""
-	toolId = _toInt(_u(toolId))
-	rows = _DUMMY_ASSIGNMENTS.get(toolId, [])
-	for r in rows:
-		if r.get("IsActive"):
-			return dict(r)
-	return None
+    """Returns the currently-active assignment dict for the tool, or None.
+    Used to populate the 'Currently mounted on...' banner. Filters the
+    full assignment list for IsActive=True (server-side ORDER BY DESC
+    means the first match is the most recent active row)."""
+    toolId = _u(toolId)
+    BlueRidge.Common.Util.log("toolId=%s" % toolId)
+    instances = getAssignmentInstancesForTool(toolId)
+    for inst in instances:
+        row = inst.get("assignment") or {}
+        if row.get("IsActive"):
+            return dict(row)
+    return None
+
+
+# -----------------------------------------------------------------------------
+# Dropdown lookups (for DetailHeader Status + DieRank dropdowns)
+# -----------------------------------------------------------------------------
+
+def getStatusCodesForDropdown():
+    """Returns [{label, value}, ...] for the Tool Status dropdown.
+    Value is the StatusCode string; label is the StatusName."""
+    try:
+        rows = BlueRidge.Common.Db.execList("parts/ToolStatusCode_List", None)
+    except Exception as e:
+        BlueRidge.Common.Util.log("getStatusCodesForDropdown failed: %s" % str(e))
+        return []
+    return [{"label": r.get("Name") or r.get("Code"), "value": r.get("Code")} for r in rows or []]
+
+
+def getToolTypesForDropdown():
+    """Returns [{label, value}, ...] for a Tool Type dropdown.
+    Value is the ToolType.Code string."""
+    try:
+        rows = BlueRidge.Common.Db.execList("parts/ToolType_List", None)
+    except Exception as e:
+        BlueRidge.Common.Util.log("getToolTypesForDropdown failed: %s" % str(e))
+        return []
+    return [{"label": r.get("Name") or r.get("Code"), "value": r.get("Code")} for r in rows or []]
+
+
+def addAttributeDefinition(toolTypeId, code, name, dataType, isRequired=False):
+    """Insert a new ToolAttributeDefinition row scoped to a ToolType.
+    Returns {Status, Message, NewId}."""
+    toolTypeId = _u(toolTypeId)
+    code       = (_u(code) or "").strip()
+    name       = (_u(name) or "").strip()
+    dataType   = (_u(dataType) or "").strip()
+    isRequired = bool(_u(isRequired))
+    BlueRidge.Common.Util.log("toolTypeId=%s code=%s dataType=%s"
+                              % (toolTypeId, code, dataType))
+    if toolTypeId is None:
+        return {"Status": 0, "Message": "ToolTypeId is required", "NewId": None}
+    if not code:
+        return {"Status": 0, "Message": "Code is required", "NewId": None}
+    if not name:
+        return {"Status": 0, "Message": "Name is required", "NewId": None}
+    if dataType not in ("String", "Integer", "Decimal", "Boolean", "Date"):
+        return {"Status": 0,
+                "Message": "DataType must be String/Integer/Decimal/Boolean/Date",
+                "NewId":   None}
+    return BlueRidge.Common.Db.execMutation(
+        "parts/ToolAttributeDefinition_Create",
+        {
+            "toolTypeId": toolTypeId,
+            "code":       code,
+            "name":       name,
+            "dataType":   dataType,
+            "isRequired": 1 if isRequired else 0,
+            "appUserId":  BlueRidge.Common.Util._currentAppUserId(),
+        },
+    )
+
+
+def getAttributeDefinitionsForToolType(toolTypeId):
+    """Returns [{label, value}, ...] for an Add-Attribute dropdown.
+    Value is the ToolAttributeDefinition.Id (BIGINT); label is the
+    AttributeName. Filters out attributes already deprecated."""
+    toolTypeId = _u(toolTypeId)
+    BlueRidge.Common.Util.log("toolTypeId=%s" % toolTypeId)
+    if toolTypeId is None:
+        return []
+    try:
+        rows = BlueRidge.Common.Db.execList(
+            "parts/ToolAttributeDefinition_ListByType",
+            {"toolTypeId": toolTypeId, "includeDeprecated": 0},
+        )
+    except Exception as e:
+        BlueRidge.Common.Util.log("getAttributeDefinitionsForToolType failed: %s" % str(e))
+        return []
+    return [{"label": r.get("Name") or r.get("Code"), "value": r.get("Id")} for r in rows or []]
+
+
+def getCellsForDropdown():
+    """Returns [{label, value}, ...] for the Mount-to-Cell dropdown.
+    Value is the Cell Location.Id (BIGINT); label is Name (Code).
+    Pulls active Cell-tier Locations via BlueRidge.Location.Location."""
+    try:
+        rows = BlueRidge.Location.Location.listByTier("Cell")
+    except Exception as e:
+        BlueRidge.Common.Util.log("getCellsForDropdown failed: %s" % str(e))
+        return []
+    out = []
+    for r in rows or []:
+        if r.get("DeprecatedAt") is not None:
+            continue
+        name = r.get("Name") or ""
+        code = r.get("Code") or ""
+        label = ("%s (%s)" % (name, code)) if name and code else (name or code)
+        out.append({"label": label, "value": r.get("Id")})
+    return out
+
+
+# -----------------------------------------------------------------------------
+# Per-tab mutations (Cavity / Attribute / Assignment)
+# -----------------------------------------------------------------------------
+
+def createCavity(toolId, cavityNumber, description=None):
+    """Insert a new ToolCavity. Returns {Status, Message, NewId}."""
+    toolId = _u(toolId)
+    cavityNumber = _u(cavityNumber)
+    description = _u(description)
+    BlueRidge.Common.Util.log("toolId=%s cavityNumber=%s" % (toolId, cavityNumber))
+    if toolId is None:
+        return {"Status": 0, "Message": "ToolId is required", "NewId": None}
+    if cavityNumber is None:
+        return {"Status": 0, "Message": "CavityNumber is required", "NewId": None}
+    return BlueRidge.Common.Db.execMutation(
+        "parts/ToolCavity_Create",
+        {
+            "toolId":       toolId,
+            "cavityNumber": int(cavityNumber),
+            "description":  description,
+            "appUserId":    BlueRidge.Common.Util._currentAppUserId(),
+        },
+    )
+
+
+def updateCavityStatus(cavityId, statusCode):
+    """Set the StatusCode on a ToolCavity (Active / Closed / Scrapped).
+    Returns {Status, Message}."""
+    cavityId = _u(cavityId)
+    statusCode = _u(statusCode)
+    BlueRidge.Common.Util.log("cavityId=%s statusCode=%s" % (cavityId, statusCode))
+    if cavityId is None or not statusCode:
+        return {"Status": 0, "Message": "cavityId and statusCode are required"}
+    return BlueRidge.Common.Db.execMutation(
+        "parts/ToolCavity_UpdateStatus",
+        {
+            "id":         cavityId,
+            "statusCode": statusCode,
+            "appUserId":  BlueRidge.Common.Util._currentAppUserId(),
+        },
+    )
+
+
+def deprecateCavity(cavityId):
+    """Soft-delete a ToolCavity. Returns {Status, Message}."""
+    cavityId = _u(cavityId)
+    BlueRidge.Common.Util.log("cavityId=%s" % cavityId)
+    if cavityId is None:
+        return {"Status": 0, "Message": "cavityId is required"}
+    return BlueRidge.Common.Db.execMutation(
+        "parts/ToolCavity_Deprecate",
+        {
+            "id":        cavityId,
+            "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+        },
+    )
+
+
+def upsertAttribute(toolId, defId, value):
+    """Insert or update a ToolAttribute row. Returns {Status, Message}."""
+    toolId = _u(toolId)
+    defId  = _u(defId)
+    value  = _u(value)
+    BlueRidge.Common.Util.log("toolId=%s defId=%s value=%s"
+                              % (toolId, defId, value))
+    if toolId is None or defId is None:
+        return {"Status": 0, "Message": "toolId and defId are required"}
+    return BlueRidge.Common.Db.execMutation(
+        "parts/ToolAttribute_Upsert",
+        {
+            "toolId":    toolId,
+            "defId":     defId,
+            "value":     "" if value is None else unicode(value),
+            "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+        },
+    )
+
+
+def removeAttribute(toolId, defId):
+    """Remove a ToolAttribute row. Returns {Status, Message}."""
+    toolId = _u(toolId)
+    defId  = _u(defId)
+    BlueRidge.Common.Util.log("toolId=%s defId=%s" % (toolId, defId))
+    if toolId is None or defId is None:
+        return {"Status": 0, "Message": "toolId and defId are required"}
+    return BlueRidge.Common.Db.execMutation(
+        "parts/ToolAttribute_Remove",
+        {
+            "toolId":    toolId,
+            "defId":     defId,
+            "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+        },
+    )
+
+
+def assignToCell(toolId, cellLocationId, notes=None):
+    """Open a ToolAssignment to the named cell. Proc enforces single-active
+    invariant. Returns {Status, Message, NewId}."""
+    toolId = _u(toolId)
+    cellLocationId = _u(cellLocationId)
+    notes = _u(notes)
+    BlueRidge.Common.Util.log("toolId=%s cellLocationId=%s"
+                              % (toolId, cellLocationId))
+    if toolId is None or cellLocationId is None:
+        return {"Status": 0,
+                "Message": "toolId and cellLocationId are required",
+                "NewId":   None}
+    return BlueRidge.Common.Db.execMutation(
+        "parts/ToolAssignment_Assign",
+        {
+            "toolId":         toolId,
+            "cellLocationId": cellLocationId,
+            "notes":          notes,
+            "appUserId":      BlueRidge.Common.Util._currentAppUserId(),
+        },
+    )
+
+
+def releaseAssignment(toolId, notes=None):
+    """Close the currently-active ToolAssignment for this tool.
+    Returns {Status, Message}."""
+    toolId = _u(toolId)
+    notes  = _u(notes)
+    BlueRidge.Common.Util.log("toolId=%s" % toolId)
+    if toolId is None:
+        return {"Status": 0, "Message": "toolId is required"}
+    return BlueRidge.Common.Db.execMutation(
+        "parts/ToolAssignment_Release",
+        {
+            "toolId":    toolId,
+            "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+            "notes":     notes,
+        },
+    )

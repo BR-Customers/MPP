@@ -7,7 +7,7 @@
     "params.attr": { "paramDirection": "input" }
   },
   "props": {
-    "defaultSize": { "width": 800, "height": 32 }
+    "defaultSize": { "height": 44 }
   },
   "root": {
     "type": "ia.container.flex",
@@ -17,7 +17,8 @@
       "alignItems": "center",
       "style": {
         "borderBottom": "1px solid var(--mpp-border-subtle)",
-        "padding": "4px 12px",
+        "padding": "8px 12px",
+        "overflow": "hidden",
         "gap": "8px"
       }
     },
@@ -72,9 +73,9 @@
           "component": {
             "onActionPerformed": {
               "type": "script",
-              "scope": "C",
+              "scope": "G",
               "config": {
-                "script": "\tBlueRidge.Common.Notify.toast('Not wired yet', 'Remove attribute lands in populate pass.', 'info', 4)"
+                "script": "\tattr = self.view.params.attr or {}\n\tsystem.perspective.sendMessage('attributeRemoveRequest', payload={'defId': attr.get('ToolAttributeDefinitionId'), 'name': attr.get('AttrName')}, scope='page')"
               }
             }
           }

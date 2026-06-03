@@ -60,6 +60,7 @@
             "background": "var(--mpp-surface-raised)",
             "borderBottom": "1px solid var(--mpp-border-subtle)",
             "gap": "12px",
+            "overflow": "hidden",
             "padding": "0 16px"
           }
         },
@@ -327,6 +328,7 @@
             "background": "var(--mpp-surface-raised)",
             "borderTop": "1px solid var(--mpp-border-subtle)",
             "gap": "8px",
+            "overflow": "hidden",
             "padding": "12px 16px"
           }
         },
@@ -379,7 +381,7 @@
         {
           "name": "handleCreate",
           "params": [],
-          "script": "\tdraft = self.view.custom.editDraft or {}\n\tmeta  = draft.get('meta') or {}\n\tif not (meta.get('Code') or '').strip():\n\t\tBlueRidge.Common.Notify.toast('Code required', 'Enter a code before creating the die.', 'warning')\n\t\treturn\n\tif not (meta.get('Name') or '').strip():\n\t\tBlueRidge.Common.Notify.toast('Name required', 'Enter a name before creating the die.', 'warning')\n\t\treturn\n\tresult = BlueRidge.Parts.Tool.add(meta)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Die created')\n\tif result and result.get('Status') == 'OK':\n\t\tself.view.custom.selected = {'meta': dict(meta)}\n\t\tsystem.perspective.sendMessage('toolRefresh', scope='page')\n\t\tsystem.perspective.closePopup(id='mpp-add-die')"
+          "script": "\tdraft = self.view.custom.editDraft or {}\n\tmeta  = draft.get('meta') or {}\n\tif not (meta.get('Code') or '').strip():\n\t\tBlueRidge.Common.Notify.toast('Code required', 'Enter a code before creating the die.', 'warning')\n\t\treturn\n\tif not (meta.get('Name') or '').strip():\n\t\tBlueRidge.Common.Notify.toast('Name required', 'Enter a name before creating the die.', 'warning')\n\t\treturn\n\tresult = BlueRidge.Parts.Tool.add(meta)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Die created')\n\tif result and result.get('Status'):\n\t\tnewId = result.get('NewId')\n\t\tsystem.perspective.sendMessage('toolRefresh', scope='page')\n\t\tif newId:\n\t\t\tsystem.perspective.sendMessage('toolSelectId', payload={'id': newId}, scope='page')\n\t\tsystem.perspective.closePopup(id='mpp-add-die')"
         },
         {
           "name": "handleClose",

@@ -14,7 +14,9 @@
     "dirtySections": {},
     "tools": [],
     "pendingNav": null,
-    "dirty": false
+    "dirty": false,
+    "rankOptions": [],
+    "statusOptions": []
   },
   "params": {},
   "propConfig": {
@@ -28,7 +30,7 @@
       "binding": {
         "type": "expr",
         "config": {
-          "expression": "{view.custom.editDraft} != {view.custom.selected}"
+          "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.editDraft}) != runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.selected})"
         }
       }
     },
@@ -39,12 +41,28 @@
           "expression": "runScript(\"BlueRidge.Parts.Tool.getInstancesForFlexRepeater\", 0, {view.custom.filter.searchText}, {view.custom.filter.statusCode}, {view.custom.selected.meta.Id})"
         }
       }
+    },
+    "custom.rankOptions": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.DieRank.getForDropdown\", 0)"
+        }
+      }
+    },
+    "custom.statusOptions": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Tool.getStatusCodesForDropdown\", 0)"
+        }
+      }
     }
   },
   "props": {
     "defaultSize": {
-      "height": 720,
-      "width": 1280
+      "height": 1080,
+      "width": 1920
     }
   },
   "root": {
@@ -83,11 +101,25 @@
           "script": "\tself.view.custom.tools = BlueRidge.Parts.Tool.getInstancesForFlexRepeater(self.view.custom.filter.searchText, self.view.custom.filter.statusCode, (self.view.custom.selected.meta or {}).get('Id', 0))"
         },
         {
+          "messageType": "toolSelectId",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\ttoolId = (payload or {}).get('id')\n\tif toolId is None:\n\t\treturn\n\tself._loadTool(toolId)"
+        },
+        {
           "messageType": "confirmUnsavedResult",
           "pageScope": true,
           "sessionScope": false,
           "viewScope": false,
-          "script": "\taction = payload.get('action') if payload else None\n\tpendingId = self.view.custom.pendingNav\n\tself.view.custom.pendingNav = None\n\tif pendingId is None or action == 'cancel':\n\t\treturn\n\tif action == 'save':\n\t\tBlueRidge.Common.Notify.toast('Saved', 'Tool save lands in populate pass.', 'info', 4)\n\tself._loadTool(pendingId)"
+          "script": "\taction = payload.get('action') if payload else None\n\tpendingId = self.view.custom.pendingNav\n\tself.view.custom.pendingNav = None\n\tif pendingId is None or action == 'cancel':\n\t\treturn\n\tif action == 'save':\n\t\tdraft = self.view.custom.editDraft or {}\n\t\tmeta  = draft.get('meta') or {}\n\t\tif meta.get('Id') is not None:\n\t\t\tresult = BlueRidge.Parts.Tool.update(meta)\n\t\t\tBlueRidge.Common.Ui.notifyResult(result, 'Tool saved')\n\tself._loadTool(pendingId)"
+        },
+        {
+          "messageType": "toolRetireConfirmed",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\taction = payload.get('action') if payload else None\n\tif action != 'confirm':\n\t\treturn\n\tmeta = (self.view.custom.selected or {}).get('meta') or {}\n\ttoolId = meta.get('Id')\n\tif toolId is None:\n\t\treturn\n\tresult = BlueRidge.Parts.Tool.deprecate(toolId)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Tool retired')\n\tif result and result.get('Status'):\n\t\tself.view.custom.selected  = {'meta': None}\n\t\tself.view.custom.editDraft = {'meta': None}\n\t\tself.view.custom.mode = 'view'\n\t\tsystem.perspective.sendMessage('toolRefresh', scope='page')"
         }
       ]
     },
@@ -596,9 +628,9 @@
                           "component": {
                             "onActionPerformed": {
                               "type": "script",
-                              "scope": "C",
+                              "scope": "G",
                               "config": {
-                                "script": "\tBlueRidge.Common.Notify.toast('Not wired yet', 'Tool save lands in populate pass.', 'info', 5)"
+                                "script": "\tdraft = self.view.custom.editDraft or {}\n\tmeta  = draft.get('meta') or {}\n\tif meta.get('Id') is None:\n\t\tBlueRidge.Common.Notify.toast('No tool selected', 'Pick a tool from the list first.', 'warning')\n\t\treturn\n\tresult = BlueRidge.Parts.Tool.update(meta)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Tool saved')\n\tif result and result.get('Status'):\n\t\trefreshed = BlueRidge.Parts.Tool.getOne(meta.get('Id'))\n\t\tif refreshed is not None:\n\t\t\tself.view.custom.selected  = {'meta': dict(refreshed)}\n\t\t\tself.view.custom.editDraft = {'meta': dict(refreshed)}\n\t\tsystem.perspective.sendMessage('toolRefresh', scope='page')"
                               }
                             }
                           }
@@ -619,9 +651,9 @@
                           "component": {
                             "onActionPerformed": {
                               "type": "script",
-                              "scope": "C",
+                              "scope": "G",
                               "config": {
-                                "script": "\tBlueRidge.Common.Notify.toast('Not wired yet', 'Tool retire lands in populate pass.', 'info', 5)"
+                                "script": "\tmeta = (self.view.custom.selected or {}).get('meta') or {}\n\ttoolId = meta.get('Id')\n\tif toolId is None:\n\t\treturn\n\tcode = meta.get('Code') or ''\n\tname = meta.get('Name') or ''\n\tlabel = (code + ' - ' + name) if code and name else (code or name or 'this tool')\n\tsystem.perspective.openPopup(\n\t\tid='mpp-confirm-destructive',\n\t\tview='BlueRidge/Components/Popups/ConfirmDestructive',\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t'title':        'Retire Tool',\n\t\t\t'message':      'Retire ' + label + '? This will mark the tool as deprecated.',\n\t\t\t'confirmLabel': 'Retire',\n\t\t\t'replyMessage': 'toolRetireConfirmed'\n\t\t}\n\t)"
                               }
                             }
                           }
@@ -856,14 +888,16 @@
                                     "path": "view.custom.editDraft.meta.DieRankCode"
                                   }
                                 }
+                              },
+                              "props.options": {
+                                "binding": {
+                                  "type": "property",
+                                  "config": { "path": "view.custom.rankOptions" }
+                                }
                               }
                             },
                             "props": {
-                              "options": [
-                                { "label": "A — Premium", "value": "A" },
-                                { "label": "B — Standard", "value": "B" },
-                                { "label": "C — Marginal", "value": "C" }
-                              ],
+                              "options": [],
                               "style": {
                                 "classes": "select"
                               }
@@ -914,15 +948,16 @@
                                     "path": "view.custom.editDraft.meta.StatusCode"
                                   }
                                 }
+                              },
+                              "props.options": {
+                                "binding": {
+                                  "type": "property",
+                                  "config": { "path": "view.custom.statusOptions" }
+                                }
                               }
                             },
                             "props": {
-                              "options": [
-                                { "label": "Active",       "value": "Active" },
-                                { "label": "Under Repair", "value": "UnderRepair" },
-                                { "label": "Scrapped",     "value": "Scrapped" },
-                                { "label": "Retired",      "value": "Retired" }
-                              ],
+                              "options": [],
                               "style": {
                                 "classes": "select"
                               }
@@ -1053,6 +1088,14 @@
                             "path": "view.custom.editDraft.meta.Id"
                           }
                         }
+                      },
+                      "props.params.toolTypeId": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.editDraft.meta.ToolTypeId"
+                          }
+                        }
                       }
                     },
                     "props": {
@@ -1060,7 +1103,8 @@
                       "useDefaultViewWidth": false,
                       "useDefaultViewHeight": false,
                       "params": {
-                        "value": 0
+                        "value": 0,
+                        "toolTypeId": 0
                       }
                     }
                   },

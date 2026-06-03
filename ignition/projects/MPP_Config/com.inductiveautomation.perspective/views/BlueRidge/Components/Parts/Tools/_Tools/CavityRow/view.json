@@ -7,7 +7,7 @@
     "params.cavity": { "paramDirection": "input" }
   },
   "props": {
-    "defaultSize": { "width": 800, "height": 32 }
+    "defaultSize": { "height": 44 }
   },
   "root": {
     "type": "ia.container.flex",
@@ -27,7 +27,8 @@
       "alignItems": "center",
       "style": {
         "borderBottom": "1px solid var(--mpp-border-subtle)",
-        "padding": "4px 12px",
+        "padding": "8px 12px",
+        "overflow": "hidden",
         "gap": "8px"
       }
     },
@@ -117,9 +118,9 @@
               "component": {
                 "onActionPerformed": {
                   "type": "script",
-                  "scope": "C",
+                  "scope": "G",
                   "config": {
-                    "script": "\tisActive = self.view.params.cavity.get('StatusCode') == 'Active'\n\tlabel = 'closed' if isActive else 'reactivated'\n\tBlueRidge.Common.Notify.toast('Not wired yet', 'Cavity ' + str(self.view.params.cavity.get('Number')) + ' ' + label + ' (stub).', 'info', 4)"
+                    "script": "\tcavity = self.view.params.cavity or {}\n\tisActive = cavity.get('StatusCode') == 'Active'\n\taction = 'close' if isActive else 'reactivate'\n\tsystem.perspective.sendMessage('cavityActionRequest', payload={'cavityId': cavity.get('Id'), 'action': action}, scope='page')"
                   }
                 }
               }
@@ -154,9 +155,9 @@
               "component": {
                 "onActionPerformed": {
                   "type": "script",
-                  "scope": "C",
+                  "scope": "G",
                   "config": {
-                    "script": "\tBlueRidge.Common.Notify.toast('Not wired yet', 'Cavity ' + str(self.view.params.cavity.get('Number')) + ' scrapped (stub).', 'info', 4)"
+                    "script": "\tcavity = self.view.params.cavity or {}\n\tsystem.perspective.sendMessage('cavityScrapRequest', payload={'cavityId': cavity.get('Id'), 'number': cavity.get('Number')}, scope='page')"
                   }
                 }
               }

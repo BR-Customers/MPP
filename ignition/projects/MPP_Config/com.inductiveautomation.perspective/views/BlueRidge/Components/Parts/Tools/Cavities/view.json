@@ -1,6 +1,7 @@
 {
   "custom": {
-    "rows": []
+    "rows": [],
+    "pendingScrapId": null
   },
   "params": {
     "value": 0
@@ -22,6 +23,46 @@
   "root": {
     "type": "ia.container.flex",
     "meta": { "name": "root" },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "refresh",
+          "params": [],
+          "script": "\tself.view.custom.rows = BlueRidge.Parts.Tool.getCavityInstancesForTool(self.view.params.value)"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "toolDataChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tsection = (payload or {}).get('section')\n\tif section and section != 'cavities':\n\t\treturn\n\tself.view.rootContainer.refresh()"
+        },
+        {
+          "messageType": "cavityActionRequest",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tdata = payload or {}\n\taction = data.get('action')\n\tcavityId = data.get('cavityId')\n\tif not cavityId or not action:\n\t\treturn\n\tif action == 'close':\n\t\tresult = BlueRidge.Parts.Tool.updateCavityStatus(cavityId, 'Closed')\n\t\tsuccessTitle = 'Cavity closed'\n\telif action == 'reactivate':\n\t\tresult = BlueRidge.Parts.Tool.updateCavityStatus(cavityId, 'Active')\n\t\tsuccessTitle = 'Cavity reactivated'\n\telif action == 'scrap':\n\t\tresult = BlueRidge.Parts.Tool.updateCavityStatus(cavityId, 'Scrapped')\n\t\tsuccessTitle = 'Cavity scrapped'\n\telse:\n\t\treturn\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle)\n\tif result and result.get('Status'):\n\t\tself.view.rootContainer.refresh()"
+        },
+        {
+          "messageType": "cavityScrapRequest",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tdata = payload or {}\n\tcavityId = data.get('cavityId')\n\tnumber = data.get('number')\n\tif not cavityId:\n\t\treturn\n\tself.view.custom.pendingScrapId = cavityId\n\tsystem.perspective.openPopup(\n\t\tid='mpp-confirm-destructive',\n\t\tview='BlueRidge/Components/Popups/ConfirmDestructive',\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t'title':        'Scrap Cavity',\n\t\t\t'message':      'Mark cavity ' + str(number) + ' as scrapped? This cannot be undone.',\n\t\t\t'confirmLabel': 'Scrap',\n\t\t\t'replyMessage': 'cavityScrapConfirmed'\n\t\t}\n\t)"
+        },
+        {
+          "messageType": "cavityScrapConfirmed",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\taction = (payload or {}).get('action')\n\tcavityId = self.view.custom.pendingScrapId\n\tself.view.custom.pendingScrapId = None\n\tif action != 'confirm' or not cavityId:\n\t\treturn\n\tresult = BlueRidge.Parts.Tool.updateCavityStatus(cavityId, 'Scrapped')\n\tBlueRidge.Common.Ui.notifyResult(result, 'Cavity scrapped')\n\tif result and result.get('Status'):\n\t\tself.view.rootContainer.refresh()"
+        }
+      ]
+    },
     "props": {
       "direction": "column",
       "style": {
@@ -47,9 +88,9 @@
               "component": {
                 "onActionPerformed": {
                   "type": "script",
-                  "scope": "C",
+                  "scope": "G",
                   "config": {
-                    "script": "\tBlueRidge.Common.Notify.toast('Not wired yet', 'Add cavity popup lands in populate pass.', 'info', 4)"
+                    "script": "\ttoolId = self.view.params.value\n\tif not toolId:\n\t\tBlueRidge.Common.Notify.toast('No tool selected', 'Pick a tool first.', 'warning')\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid='mpp-add-cavity',\n\t\tview='BlueRidge/Components/Popups/AddCavity',\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={'toolId': toolId}\n\t)"
                   }
                 }
               }
@@ -114,7 +155,7 @@
             },
             "props": {
               "direction": "column",
-              "elementPosition": { "basis": "32px", "shrink": 0 },
+              "elementPosition": { "basis": "48px", "shrink": 0 },
               "path": "BlueRidge/Components/Parts/Tools/_Tools/CavityRow",
               "style": { "overflowY": "auto" },
               "useDefaultViewHeight": true,
