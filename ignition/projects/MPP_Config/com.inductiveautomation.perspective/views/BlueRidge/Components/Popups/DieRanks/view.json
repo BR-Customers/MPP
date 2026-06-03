@@ -87,6 +87,7 @@
             "background": "var(--mpp-surface-raised)",
             "borderBottom": "1px solid var(--mpp-border-subtle)",
             "gap": "12px",
+            "overflow": "hidden",
             "padding": "0 16px"
           }
         },
@@ -419,6 +420,7 @@
             "background": "var(--mpp-surface-raised)",
             "borderTop": "1px solid var(--mpp-border-subtle)",
             "gap": "8px",
+            "overflow": "hidden",
             "padding": "12px 16px"
           }
         },

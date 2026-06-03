@@ -71,6 +71,7 @@
             "background": "var(--mpp-surface-raised)",
             "borderBottom": "1px solid var(--mpp-border-subtle)",
             "gap": "12px",
+            "overflow": "hidden",
             "padding": "0 16px"
           }
         },
@@ -261,6 +262,7 @@
             "background": "var(--mpp-surface-raised)",
             "borderTop": "1px solid var(--mpp-border-subtle)",
             "gap": "8px",
+            "overflow": "hidden",
             "padding": "12px 16px"
           }
         },
@@ -356,12 +358,12 @@
         {
           "name": "handleSave",
           "params": [],
-          "script": "\tmode  = self.view.custom.mode\n\tdraft = self.view.custom.editDraft or {}\n\tmeta  = draft.get('meta') or {}\n\tif mode == 'create':\n\t\tresult = BlueRidge.Parts.DieRank.add(meta)\n\t\tsuccess = 'Die rank created'\n\telse:\n\t\tresult = BlueRidge.Parts.DieRank.update(meta)\n\t\tsuccess = 'Die rank updated'\n\tBlueRidge.Common.Ui.notifyResult(result, success)\n\tif result and result.get('Status') == 'OK':\n\t\tself.view.custom.selected = {'meta': dict(meta)}\n\t\tsystem.perspective.sendMessage('dieRankRefresh', scope='page')\n\t\tsystem.perspective.closePopup(id='mpp-edit-rank')"
+          "script": "\tmode  = self.view.custom.mode\n\tdraft = self.view.custom.editDraft or {}\n\tmeta  = draft.get('meta') or {}\n\tif mode == 'create':\n\t\tresult = BlueRidge.Parts.DieRank.add(meta)\n\t\tsuccess = 'Die rank created'\n\telse:\n\t\tresult = BlueRidge.Parts.DieRank.update(meta)\n\t\tsuccess = 'Die rank updated'\n\tBlueRidge.Common.Ui.notifyResult(result, success)\n\tif result and result.get('Status'):\n\t\tself.view.custom.selected = {'meta': dict(meta)}\n\t\tsystem.perspective.sendMessage('dieRankRefresh', scope='page')\n\t\tsystem.perspective.closePopup(id='mpp-edit-rank')"
         },
         {
           "name": "handleDelete",
           "params": [],
-          "script": "\tdraft = self.view.custom.editDraft or {}\n\tmeta  = draft.get('meta') or {}\n\trankId = meta.get('Id')\n\tif rankId is None:\n\t\treturn\n\tresult = BlueRidge.Parts.DieRank.deprecate(rankId)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Die rank removed')\n\tif result and result.get('Status') == 'OK':\n\t\tsystem.perspective.sendMessage('dieRankRefresh', scope='page')\n\t\tsystem.perspective.closePopup(id='mpp-edit-rank')"
+          "script": "\t# Route through ConfirmDestructive instead of deleting directly --\n\t# the editRankDeleteConfirmed messageHandler does the real work\n\t# once the user clicks Remove on the confirm popup.\n\tdraft = self.view.custom.editDraft or {}\n\tmeta  = draft.get('meta') or {}\n\trankId = meta.get('Id')\n\tif rankId is None:\n\t\treturn\n\tcode = meta.get('Code') or ''\n\tname = meta.get('Name') or ''\n\tlabel = (code + ' - ' + name) if code and name else (code or name or 'this rank')\n\tsystem.perspective.openPopup(\n\t\tid='mpp-confirm-destructive',\n\t\tview='BlueRidge/Components/Popups/ConfirmDestructive',\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t'title':        'Remove Die Rank',\n\t\t\t'message':      'Remove die rank ' + label + '? This cannot be undone.',\n\t\t\t'confirmLabel': 'Remove',\n\t\t\t'replyMessage': 'editRankDeleteConfirmed'\n\t\t}\n\t)"
         },
         {
           "name": "handleClose",
@@ -370,7 +372,15 @@
         }
       ],
       "extensionFunctions": null,
-      "messageHandlers": []
+      "messageHandlers": [
+        {
+          "messageType": "editRankDeleteConfirmed",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\taction = payload.get('action') if payload else None\n\tif action != 'confirm':\n\t\treturn\n\tdraft = self.view.custom.editDraft or {}\n\tmeta  = draft.get('meta') or {}\n\trankId = meta.get('Id')\n\tif rankId is None:\n\t\treturn\n\tresult = BlueRidge.Parts.DieRank.deprecate(rankId)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Die rank removed')\n\tif result and result.get('Status'):\n\t\tsystem.perspective.sendMessage('dieRankRefresh', scope='page')\n\t\tsystem.perspective.closePopup(id='mpp-edit-rank')"
+        }
+      ]
     }
   }
 }
