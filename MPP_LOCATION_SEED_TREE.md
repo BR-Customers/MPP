@@ -28,14 +28,14 @@ Each terminal in the tables below has exactly **one `Printer` child** unless fla
 
 ## Areas + non-M&A Locations
 
-**Die-cast terminals (per MPP, 2026-06):** one Terminal **shared across two machines** (pair terminals), not one per area. `DC<n>-T01` serves M01+M02, `-T02` serves M03+M04, etc.; an odd last machine gets its own. Each pair terminal + one Printer. *(Interpreted as the die-cast terminal model — pair terminals replace the single area terminal. Say if you also want a separate area-wide terminal.)*
+**Naming convention (per MPP, 2026-06-04):** `Name` is the short tree label (the parent gives context); `Code` stays globally unique. Machine → `Machine 01`; terminal → role only (`Machining In`, `Assembly Out 1`); printer → `P - 001` (global running number). **ASCII only** (em-dash/middle-dot break sqlcmd + Ignition). **One terminal per die-cast area** for now (tablets exempt).
 
-| Area | Code | Cells (kind) | Pair terminals (+ Printer each) |
+| Area | Code | Cells (kind) | Terminal (+ Printer) |
 |---|---|---|---|
-| Die Cast 1 | `DC1` | M01…M11 `DC1-M01`…`-M11` [DieCastMachine] ×11 | `DC1-T01`(M01,M02) … `-T05`(M09,M10), `-T06`(M11) — 6 |
-| Die Cast 2 | `DC2` | M01…M03 [DieCastMachine] ×3 | `DC2-T01`(M01,M02), `-T02`(M03) — 2 |
-| Die Cast 3 | `DC3` | M01…M05 [DieCastMachine] ×5 | `DC3-T01`(M01,M02), `-T02`(M03,M04), `-T03`(M05) — 3  (tablets? ⚠5) |
-| Die Cast 4 | `DC4` | M01…M03 [DieCastMachine] ×3 | `DC4-T01`(M01,M02), `-T02`(M03) — 2 |
+| Die Cast 1 | `DC1` | `Machine 01`…`Machine 11` `DC1-M01`…`-M11` ×11 | `Terminal` `DC1-T1` + `P - 001` |
+| Die Cast 2 | `DC2` | ×3 | `Terminal` `DC2-T1` + printer |
+| Die Cast 3 | `DC3` | ×5 | `Terminal` `DC3-T1` + printer  (tablets? ⚠5) |
+| Die Cast 4 | `DC4` | ×3 | `Terminal` `DC4-T1` + printer |
 | Trim Shop 1 | `TRIM1` | — (area-level) | `TRIM1-T1` [Terminal] + `-P1` |
 | Trim Shop 2 | `TRIM2` | — (area-level) | `TRIM2-T1` [Terminal] + `-P1` |
 | Warehouse | `WHSE` | — (⚠7) | — |
