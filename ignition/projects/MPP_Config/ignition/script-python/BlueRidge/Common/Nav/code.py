@@ -18,7 +18,7 @@ def categoryForPath(path):
 	"""
 	if path == '/plant':
 		return 'plant'
-	if path in ('/items', '/operations', '/parts/tools'):
+	if path in ('/items', '/parts/operation-templates', '/parts/tools'):
 		return 'parts'
 	if path in ('/quality-specs', '/defect-codes'):
 		return 'quality'

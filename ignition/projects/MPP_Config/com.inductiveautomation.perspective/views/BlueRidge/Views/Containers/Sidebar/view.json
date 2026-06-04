@@ -554,7 +554,7 @@
                   "dom": {
                     "onClick": {
                       "config": {
-                        "page": "/operations"
+                        "page": "/parts/operation-templates"
                       },
                       "scope": "C",
                       "type": "nav"
@@ -568,7 +568,7 @@
                   "props.style.classes": {
                     "binding": {
                       "config": {
-                        "expression": "if({page.props.path} \u003d \u0027/operations\u0027, \u0027nav-item nav-item-active\u0027, \u0027nav-item\u0027)"
+                        "expression": "if({page.props.path} \u003d \u0027/parts/operation-templates\u0027, \u0027nav-item nav-item-active\u0027, \u0027nav-item\u0027)"
                       },
                       "type": "expr"
                     }
