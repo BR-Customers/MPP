@@ -1,0 +1,208 @@
+{
+  "custom": {
+    "editDraft": {
+      "CavityNumber": null,
+      "Description": ""
+    }
+  },
+  "params": {
+    "toolId": 0
+  },
+  "propConfig": {
+    "params.toolId": { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 440,
+      "height": 280
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "column",
+      "style": {
+        "background": "var(--mpp-surface-canvas)",
+        "borderRadius": "var(--mpp-radius-md, 8px)",
+        "height": "100%",
+        "overflow": "hidden",
+        "width": "100%"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "HeaderBar" },
+        "position": { "basis": "50px", "shrink": 0 },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "gap": "12px",
+            "padding": "0 16px", "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "TitleLabel" },
+            "props": {
+              "text": "Add Cavity",
+              "style": { "classes": "modal-title", "fontSize": "14px", "fontWeight": "600" }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "Spacer" },
+            "position": { "grow": 1 }
+          },
+          {
+            "type": "ia.display.icon",
+            "meta": { "name": "CloseIcon", "tooltip": { "text": "Close" } },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": { "script": "\tsystem.perspective.closePopup(id='mpp-add-cavity')" }
+                }
+              }
+            },
+            "props": {
+              "path": "mpp/cancel",
+              "style": { "classes": "modal-close", "cursor": "pointer", "height": "18px", "width": "18px" }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "FormBody" },
+        "position": { "grow": 1 },
+        "props": {
+          "direction": "column",
+          "style": { "gap": "12px", "overflowY": "auto", "padding": "16px" }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "NumberField" },
+            "props": { "direction": "column", "style": { "gap": "4px" } },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "Label" },
+                "props": { "text": "Cavity Number", "style": { "classes": "field-label" } }
+              },
+              {
+                "type": "ia.input.numeric-entry-field",
+                "meta": { "name": "Input" },
+                "propConfig": {
+                  "props.value": {
+                    "binding": {
+                      "type": "property",
+                      "config": { "bidirectional": true, "path": "view.custom.editDraft.CavityNumber" }
+                    }
+                  }
+                },
+                "props": {
+                  "format": "#",
+                  "placeholder": "e.g. 4",
+                  "style": { "boxSizing": "border-box", "classes": "search-input", "width": "100%" }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "DescriptionField" },
+            "props": { "direction": "column", "style": { "gap": "4px" } },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "Label" },
+                "props": { "text": "Description", "style": { "classes": "field-label" } }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": { "name": "Input" },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": { "bidirectional": true, "path": "view.custom.editDraft.Description" }
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "Optional description",
+                  "style": { "boxSizing": "border-box", "classes": "search-input", "width": "100%" }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "FooterBar" },
+        "position": { "basis": "50px", "shrink": 0 },
+        "props": {
+          "alignItems": "center",
+          "justify": "flex-end",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderTop": "1px solid var(--mpp-border-subtle)",
+            "gap": "8px",
+            "padding": "12px 16px", "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "CancelButton" },
+            "position": { "shrink": 0 },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": { "script": "\tsystem.perspective.closePopup(id='mpp-add-cavity')" }
+                }
+              }
+            },
+            "props": { "text": "Cancel", "style": { "classes": "btn btn-sm" } }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "CreateButton" },
+            "position": { "shrink": 0 },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": { "script": "\tself.view.rootContainer.handleCreate()" }
+                }
+              }
+            },
+            "props": { "text": "Add Cavity", "style": { "classes": "btn btn-primary btn-sm" } }
+          }
+        ]
+      }
+    ],
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "handleCreate",
+          "params": [],
+          "script": "\ttoolId = self.view.params.toolId\n\tif not toolId:\n\t\tBlueRidge.Common.Notify.toast('No tool selected', 'Pick a tool before adding cavities.', 'warning')\n\t\treturn\n\tdraft = self.view.custom.editDraft or {}\n\tnumber = draft.get('CavityNumber')\n\tif number is None:\n\t\tBlueRidge.Common.Notify.toast('Number required', 'Enter a cavity number.', 'warning')\n\t\treturn\n\tresult = BlueRidge.Parts.Tool.createCavity(toolId, number, draft.get('Description'))\n\tBlueRidge.Common.Ui.notifyResult(result, 'Cavity added')\n\tif result and result.get('Status'):\n\t\tsystem.perspective.sendMessage('toolDataChanged', payload={'section': 'cavities'}, scope='page')\n\t\tsystem.perspective.closePopup(id='mpp-add-cavity')"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": []
+    }
+  }
+}

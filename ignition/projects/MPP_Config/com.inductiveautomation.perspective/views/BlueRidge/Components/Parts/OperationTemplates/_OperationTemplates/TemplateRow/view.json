@@ -1,0 +1,158 @@
+{
+  "custom": {},
+  "params": {
+    "sectionHeader": null,
+    "templateRow":   null
+  },
+  "propConfig": {
+    "params.sectionHeader": { "paramDirection": "input" },
+    "params.templateRow":   { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "height": 44, "width": 240 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "column",
+      "style": { "overflow": "hidden" }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "SectionHeader" },
+        "position": { "grow": 1 },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "{view.params.sectionHeader} != null" }
+            }
+          },
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": { "path": "view.params.sectionHeader.label" }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "color": "var(--mpp-text-muted)",
+            "fontSize": "10px",
+            "fontWeight": "700",
+            "letterSpacing": "0.08em",
+            "textTransform": "uppercase",
+            "padding": "8px 10px 2px 10px"
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "RowBody" },
+        "position": { "grow": 1 },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "{view.params.templateRow} != null" }
+            }
+          },
+          "props.style.classes": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.templateRow.id} = coalesce({page.props.selectedTemplateId}, -1), 'tree-item tree-item-selected', 'tree-item')"
+              }
+            }
+          }
+        },
+        "events": {
+          "dom": {
+            "onClick": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\trow = self.view.params.templateRow or {}\n\trowId = row.get('id')\n\tif rowId is None:\n\t\treturn\n\tsystem.perspective.sendMessage('templateRowClicked', payload={'id': rowId}, scope='page')"
+              }
+            }
+          }
+        },
+        "props": {
+          "alignItems": "center",
+          "justify": "space-between",
+          "style": {
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "cursor": "pointer",
+            "padding": "4px 14px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "RowText" },
+            "position": { "basis": "0", "grow": 1 },
+            "props": {
+              "direction": "column",
+              "style": { "gap": "1px", "overflow": "hidden" }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "LabelName" },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": { "path": "view.params.templateRow.name" }
+                    }
+                  }
+                },
+                "props": {
+                  "style": { "fontSize": "13px" }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "LabelCode" },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": { "path": "view.params.templateRow.code" }
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-muted)",
+                    "fontFamily": "var(--mpp-font-mono)",
+                    "fontSize": "10px",
+                    "overflow": "hidden",
+                    "textOverflow": "ellipsis",
+                    "whiteSpace": "nowrap"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "BadgeVersion" },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "'v' + {view.params.templateRow.version}" }
+                }
+              }
+            },
+            "props": { "style": { "classes": "badge badge-type", "fontSize": "10px" } }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,1217 @@
+{
+  "custom": {
+    "selected": {
+      "meta": null
+    },
+    "editDraft": {
+      "meta": null
+    },
+    "mode": "view",
+    "filter": {
+      "searchText": "",
+      "statusCode": "All"
+    },
+    "dirtySections": {},
+    "tools": [],
+    "pendingNav": null,
+    "dirty": false,
+    "rankOptions": [],
+    "statusOptions": []
+  },
+  "params": {},
+  "propConfig": {
+    "custom.filter.searchText": {
+      "persistent": true
+    },
+    "custom.filter.statusCode": {
+      "persistent": true
+    },
+    "custom.dirty": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.editDraft}) != runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.selected})"
+        }
+      }
+    },
+    "custom.tools": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Tool.getInstancesForFlexRepeater\", 0, {view.custom.filter.searchText}, {view.custom.filter.statusCode}, {view.custom.selected.meta.Id})"
+        }
+      }
+    },
+    "custom.rankOptions": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.DieRank.getForDropdown\", 0)"
+        }
+      }
+    },
+    "custom.statusOptions": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Tool.getStatusCodesForDropdown\", 0)"
+        }
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 1080,
+      "width": 1920
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "canvas"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "_loadTool",
+          "params": ["toolId"],
+          "script": "\ttoolMeta = BlueRidge.Parts.Tool.getOne(toolId)\n\tif toolMeta is None:\n\t\tBlueRidge.Common.Notify.toast('Tool not found', 'Tool id ' + str(toolId) + ' no longer exists.', 'warning')\n\t\treturn\n\tself.view.custom.selected  = {'meta': dict(toolMeta)}\n\tself.view.custom.editDraft = {'meta': dict(toolMeta)}\n\tself.view.custom.mode = 'update'"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "toolRowClicked",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tclickedId = payload.get('id') if payload else None\n\tif clickedId is None:\n\t\treturn\n\t# Single source of truth: view.custom.dirty is bound to the same\n\t# expression that drives the title-bar 'Unsaved changes' notice, so\n\t# popup and notice always agree.\n\tif self.view.custom.dirty:\n\t\tself.view.custom.pendingNav = clickedId\n\t\tsystem.perspective.openPopup(\n\t\t\tid='mpp-confirm-unsaved',\n\t\t\tview='BlueRidge/Components/Popups/ConfirmUnsaved',\n\t\t\tmodal=True,\n\t\t\tshowCloseIcon=False,\n\t\t\tparams={\n\t\t\t\t'title':   'Unsaved changes',\n\t\t\t\t'message': 'You have unsaved changes to this tool. Save before switching?'\n\t\t\t}\n\t\t)\n\t\treturn\n\tself._loadTool(clickedId)"
+        },
+        {
+          "messageType": "toolRefresh",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tself.view.custom.tools = BlueRidge.Parts.Tool.getInstancesForFlexRepeater(self.view.custom.filter.searchText, self.view.custom.filter.statusCode, (self.view.custom.selected.meta or {}).get('Id', 0))"
+        },
+        {
+          "messageType": "toolSelectId",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\ttoolId = (payload or {}).get('id')\n\tif toolId is None:\n\t\treturn\n\tself._loadTool(toolId)"
+        },
+        {
+          "messageType": "confirmUnsavedResult",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\taction = payload.get('action') if payload else None\n\tpendingId = self.view.custom.pendingNav\n\tself.view.custom.pendingNav = None\n\tif pendingId is None or action == 'cancel':\n\t\treturn\n\tif action == 'save':\n\t\tdraft = self.view.custom.editDraft or {}\n\t\tmeta  = draft.get('meta') or {}\n\t\tif meta.get('Id') is not None:\n\t\t\tresult = BlueRidge.Parts.Tool.update(meta)\n\t\t\tBlueRidge.Common.Ui.notifyResult(result, 'Tool saved')\n\tself._loadTool(pendingId)"
+        },
+        {
+          "messageType": "toolRetireConfirmed",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\taction = payload.get('action') if payload else None\n\tif action != 'confirm':\n\t\treturn\n\tmeta = (self.view.custom.selected or {}).get('meta') or {}\n\ttoolId = meta.get('Id')\n\tif toolId is None:\n\t\treturn\n\tresult = BlueRidge.Parts.Tool.deprecate(toolId)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Tool retired')\n\tif result and result.get('Status'):\n\t\tself.view.custom.selected  = {'meta': None}\n\t\tself.view.custom.editDraft = {'meta': None}\n\t\tself.view.custom.mode = 'view'\n\t\tsystem.perspective.sendMessage('toolRefresh', scope='page')"
+        }
+      ]
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "TitleBar"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "background": "var(--mpp-surface-card)",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "gap": "12px",
+            "padding": "8px 16px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "TitleColumn"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "2px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "Breadcrumb"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "props": {
+                  "direction": "row",
+                  "alignItems": "center",
+                  "style": {
+                    "classes": "breadcrumb"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "BreadcrumbCategory"
+                    },
+                    "position": {
+                      "basis": "auto"
+                    },
+                    "props": {
+                      "text": "Parts",
+                      "style": {
+                        "classes": "breadcrumb"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "BreadcrumbSep"
+                    },
+                    "position": {
+                      "basis": "auto"
+                    },
+                    "props": {
+                      "text": "›",
+                      "style": {
+                        "classes": "breadcrumb crumb-sep"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "BreadcrumbActive"
+                    },
+                    "position": {
+                      "basis": "auto"
+                    },
+                    "props": {
+                      "text": "Tools",
+                      "style": {
+                        "classes": "crumb-active"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "LabelTitle"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "props": {
+                  "text": "Tools",
+                  "style": {
+                    "classes": "title-row-h1"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "LabelDirty"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if({view.custom.editDraft} != {view.custom.selected}, '● Unsaved changes', '')"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "color": "var(--mpp-state-warn-fg)",
+                "fontSize": "12px",
+                "fontStyle": "italic"
+              }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "TitleSpacer"
+            },
+            "position": {
+              "grow": 1
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "BtnDieRanks"
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "popup",
+                  "scope": "C",
+                  "config": {
+                    "type": "open",
+                    "id": "mpp-die-ranks",
+                    "viewPath": "BlueRidge/Components/Popups/DieRanks",
+                    "modal": true,
+                    "overlayDismiss": false,
+                    "showCloseIcon": false,
+                    "viewportBound": true
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Die Ranks",
+              "style": {
+                "classes": "btn"
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "BtnAddDie"
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "popup",
+                  "scope": "C",
+                  "config": {
+                    "type": "open",
+                    "id": "mpp-add-die",
+                    "viewPath": "BlueRidge/Components/Popups/AddDie",
+                    "modal": true,
+                    "overlayDismiss": false,
+                    "showCloseIcon": false,
+                    "viewportBound": true
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "+ Add Die",
+              "style": {
+                "classes": "btn btn-primary"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Main"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "style": {
+            "borderTop": "1px solid var(--mpp-border-subtle)",
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "LeftPanel"
+            },
+            "position": {
+              "basis": "240px",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "background": "var(--mpp-surface-nav)",
+                "borderRight": "1px solid var(--mpp-border-subtle)"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "FilterBar"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "borderBottom": "1px solid var(--mpp-border-subtle)",
+                    "gap": "6px",
+                    "padding": "8px 10px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.input.text-field",
+                    "meta": {
+                      "name": "InputSearch"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.filter.searchText"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "placeholder": "🔍 Search dies…",
+                      "style": {
+                        "classes": "search-input"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.dropdown",
+                    "meta": {
+                      "name": "DropdownStatus"
+                    },
+                    "propConfig": {
+                      "props.value": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.filter.statusCode"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "options": [
+                        { "label": "All Statuses",   "value": "All" },
+                        { "label": "Active",         "value": "Active" },
+                        { "label": "Under Repair",   "value": "UnderRepair" },
+                        { "label": "Retired",        "value": "Retired" }
+                      ],
+                      "style": {
+                        "classes": "select"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.display.flex-repeater",
+                "meta": {
+                  "name": "ToolList"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "propConfig": {
+                  "props.instances": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.tools"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "elementPosition": {
+                    "basis": "44px",
+                    "shrink": 0
+                  },
+                  "path": "BlueRidge/Components/Parts/Tools/ToolRow",
+                  "style": {
+                    "overflowY": "auto",
+                    "padding": "4px 0"
+                  },
+                  "useDefaultViewHeight": true,
+                  "useDefaultViewWidth": false
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "DetailArea"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.custom.mode} != \"view\""
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "overflow": "hidden"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "DetailsHeader"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "background": "var(--mpp-surface-card)",
+                    "borderBottom": "1px solid var(--mpp-border-subtle)",
+                    "gap": "8px",
+                    "padding": "10px 14px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "SummaryRow"
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "8px"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "SummaryText"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "if(isNull({view.custom.editDraft.meta.Code}), '', {view.custom.editDraft.meta.Code} + ' — ' + {view.custom.editDraft.meta.Name})"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "fontSize": "13px",
+                            "fontWeight": "600"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "SummaryBadgeStatus"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.editDraft.meta.StatusCode"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "badge badge-published"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "SummaryBadgeType"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.editDraft.meta.ToolTypeName"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "badge badge-purple"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "SummaryBadgeRank"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "type": "property",
+                              "config": {
+                                "path": "view.custom.editDraft.meta.DieRankName"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "badge badge-muted"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "SummarySpacer"
+                        },
+                        "position": {
+                          "grow": 1
+                        }
+                      },
+                      {
+                        "type": "ia.input.button",
+                        "meta": {
+                          "name": "BtnSave"
+                        },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "type": "script",
+                              "scope": "G",
+                              "config": {
+                                "script": "\tdraft = self.view.custom.editDraft or {}\n\tmeta  = draft.get('meta') or {}\n\tif meta.get('Id') is None:\n\t\tBlueRidge.Common.Notify.toast('No tool selected', 'Pick a tool from the list first.', 'warning')\n\t\treturn\n\tresult = BlueRidge.Parts.Tool.update(meta)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Tool saved')\n\tif result and result.get('Status'):\n\t\trefreshed = BlueRidge.Parts.Tool.getOne(meta.get('Id'))\n\t\tif refreshed is not None:\n\t\t\tself.view.custom.selected  = {'meta': dict(refreshed)}\n\t\t\tself.view.custom.editDraft = {'meta': dict(refreshed)}\n\t\tsystem.perspective.sendMessage('toolRefresh', scope='page')"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "text": "Save",
+                          "style": {
+                            "classes": "btn btn-primary btn-sm"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.input.button",
+                        "meta": {
+                          "name": "BtnRetire"
+                        },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "type": "script",
+                              "scope": "G",
+                              "config": {
+                                "script": "\tmeta = (self.view.custom.selected or {}).get('meta') or {}\n\ttoolId = meta.get('Id')\n\tif toolId is None:\n\t\treturn\n\tcode = meta.get('Code') or ''\n\tname = meta.get('Name') or ''\n\tlabel = (code + ' - ' + name) if code and name else (code or name or 'this tool')\n\tsystem.perspective.openPopup(\n\t\tid='mpp-confirm-destructive',\n\t\tview='BlueRidge/Components/Popups/ConfirmDestructive',\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t'title':        'Retire Tool',\n\t\t\t'message':      'Retire ' + label + '? This will mark the tool as deprecated.',\n\t\t\t'confirmLabel': 'Retire',\n\t\t\t'replyMessage': 'toolRetireConfirmed'\n\t\t}\n\t)"
+                              }
+                            }
+                          }
+                        },
+                        "props": {
+                          "text": "Retire",
+                          "style": {
+                            "classes": "btn btn-danger btn-sm"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "FieldRowIdentity"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "field-row",
+                        "gap": "12px"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "FieldCode"
+                        },
+                        "position": {
+                          "basis": "100px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "field",
+                            "gap": "2px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "LabelCode"
+                            },
+                            "props": {
+                              "text": "Code",
+                              "style": {
+                                "classes": "field-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.input.text-field",
+                            "meta": {
+                              "name": "InputCode"
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "property",
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.meta.Code"
+                                  }
+                                }
+                              }
+                            },
+                            "props": {
+                              "enabled": false,
+                              "style": {
+                                "background": "var(--mpp-surface-card)",
+                                "classes": "search-input",
+                                "color": "var(--mpp-text-muted)"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "FieldName"
+                        },
+                        "position": {
+                          "basis": "200px",
+                          "grow": 2
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "field",
+                            "gap": "2px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "LabelName"
+                            },
+                            "props": {
+                              "text": "Name",
+                              "style": {
+                                "classes": "field-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.input.text-field",
+                            "meta": {
+                              "name": "InputName"
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "property",
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.meta.Name"
+                                  }
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "search-input",
+                                "width": "100%"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "FieldToolType"
+                        },
+                        "position": {
+                          "basis": "120px",
+                          "grow": 1
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "field",
+                            "gap": "2px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "LabelToolType"
+                            },
+                            "props": {
+                              "text": "Tool Type",
+                              "style": {
+                                "classes": "field-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.input.text-field",
+                            "meta": {
+                              "name": "InputToolType"
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "property",
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.meta.ToolTypeName"
+                                  }
+                                }
+                              }
+                            },
+                            "props": {
+                              "enabled": false,
+                              "style": {
+                                "background": "var(--mpp-surface-card)",
+                                "classes": "search-input",
+                                "color": "var(--mpp-text-muted)"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "FieldDieRank"
+                        },
+                        "position": {
+                          "basis": "140px",
+                          "grow": 1
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "field",
+                            "gap": "2px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "LabelDieRank"
+                            },
+                            "props": {
+                              "text": "Die Rank",
+                              "style": {
+                                "classes": "field-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.input.dropdown",
+                            "meta": {
+                              "name": "DropdownDieRank"
+                            },
+                            "propConfig": {
+                              "props.value": {
+                                "binding": {
+                                  "type": "property",
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.meta.DieRankCode"
+                                  }
+                                }
+                              },
+                              "props.options": {
+                                "binding": {
+                                  "type": "property",
+                                  "config": { "path": "view.custom.rankOptions" }
+                                }
+                              }
+                            },
+                            "props": {
+                              "options": [],
+                              "style": {
+                                "classes": "select"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "FieldStatus"
+                        },
+                        "position": {
+                          "basis": "140px",
+                          "grow": 1
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "field",
+                            "gap": "2px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "LabelStatus"
+                            },
+                            "props": {
+                              "text": "Status",
+                              "style": {
+                                "classes": "field-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.input.dropdown",
+                            "meta": {
+                              "name": "DropdownStatus"
+                            },
+                            "propConfig": {
+                              "props.value": {
+                                "binding": {
+                                  "type": "property",
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.meta.StatusCode"
+                                  }
+                                }
+                              },
+                              "props.options": {
+                                "binding": {
+                                  "type": "property",
+                                  "config": { "path": "view.custom.statusOptions" }
+                                }
+                              }
+                            },
+                            "props": {
+                              "options": [],
+                              "style": {
+                                "classes": "select"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "FieldRowDescription"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "field-row",
+                        "gap": "12px"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "FieldDescription"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "field",
+                            "gap": "2px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "LabelDescription"
+                            },
+                            "props": {
+                              "text": "Description",
+                              "style": {
+                                "classes": "field-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.input.text-field",
+                            "meta": {
+                              "name": "InputDescription"
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "property",
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.meta.Description"
+                                  }
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "search-input",
+                                "width": "100%"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.tab",
+                "meta": {
+                  "name": "TabContainer"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "props": {
+                  "currentTabIndex": 0,
+                  "menuType": "modern",
+                  "style": {
+                    "classes": "tab-host"
+                  },
+                  "tabSize": {
+                    "width": 120
+                  },
+                  "menuStyle": {
+                    "classes": "tab-strip"
+                  },
+                  "contentStyle": {
+                    "classes": "tab-content-fill"
+                  },
+                  "tabStyle": {
+                    "active":   { "classes": "tab-item tab-item-active" },
+                    "disabled": { "classes": "tab-item" },
+                    "inactive": { "classes": "tab-item" }
+                  },
+                  "tabs": [
+                    "Attributes",
+                    "Cavities",
+                    "Assignments"
+                  ]
+                },
+                "children": [
+                  {
+                    "type": "ia.display.view",
+                    "meta": {
+                      "name": "Attributes"
+                    },
+                    "position": {
+                      "tabIndex": 0
+                    },
+                    "propConfig": {
+                      "props.params.value": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.editDraft.meta.Id"
+                          }
+                        }
+                      },
+                      "props.params.toolTypeId": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.editDraft.meta.ToolTypeId"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/Parts/Tools/Attributes",
+                      "useDefaultViewWidth": false,
+                      "useDefaultViewHeight": false,
+                      "params": {
+                        "value": 0,
+                        "toolTypeId": 0
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.view",
+                    "meta": {
+                      "name": "Cavities"
+                    },
+                    "position": {
+                      "tabIndex": 1
+                    },
+                    "propConfig": {
+                      "props.params.value": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.editDraft.meta.Id"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/Parts/Tools/Cavities",
+                      "useDefaultViewWidth": false,
+                      "useDefaultViewHeight": false,
+                      "params": {
+                        "value": 0
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.view",
+                    "meta": {
+                      "name": "Assignments"
+                    },
+                    "position": {
+                      "tabIndex": 2
+                    },
+                    "propConfig": {
+                      "props.params.value": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.editDraft.meta.Id"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/Parts/Tools/Assignments",
+                      "useDefaultViewWidth": false,
+                      "useDefaultViewHeight": false,
+                      "params": {
+                        "value": 0
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "EmptyState"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.custom.mode} = \"view\""
+                  }
+                }
+              }
+            },
+            "props": {
+              "alignItems": "center",
+              "direction": "column",
+              "justify": "center",
+              "style": {
+                "background": "var(--mpp-surface-card)",
+                "color": "var(--mpp-text-muted)",
+                "fontStyle": "italic"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "EmptyStateLabel"
+                },
+                "props": {
+                  "text": "Select a tool from the list to view its details, or click + Add Die to create a new one.",
+                  "style": {
+                    "fontSize": "13px"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

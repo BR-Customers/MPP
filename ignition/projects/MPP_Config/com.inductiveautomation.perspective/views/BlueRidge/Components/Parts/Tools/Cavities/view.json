@@ -1,0 +1,169 @@
+{
+  "custom": {
+    "rows": [],
+    "pendingScrapId": null
+  },
+  "params": {
+    "value": 0
+  },
+  "propConfig": {
+    "params.value": { "paramDirection": "input" },
+    "custom.rows": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Tool.getCavityInstancesForTool\", 0, {view.params.value})"
+        }
+      }
+    }
+  },
+  "props": {
+    "defaultSize": { "height": 360, "width": 800 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "refresh",
+          "params": [],
+          "script": "\tself.view.custom.rows = BlueRidge.Parts.Tool.getCavityInstancesForTool(self.view.params.value)"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "toolDataChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tsection = (payload or {}).get('section')\n\tif section and section != 'cavities':\n\t\treturn\n\tself.view.rootContainer.refresh()"
+        },
+        {
+          "messageType": "cavityActionRequest",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tdata = payload or {}\n\taction = data.get('action')\n\tcavityId = data.get('cavityId')\n\tif not cavityId or not action:\n\t\treturn\n\tif action == 'close':\n\t\tresult = BlueRidge.Parts.Tool.updateCavityStatus(cavityId, 'Closed')\n\t\tsuccessTitle = 'Cavity closed'\n\telif action == 'reactivate':\n\t\tresult = BlueRidge.Parts.Tool.updateCavityStatus(cavityId, 'Active')\n\t\tsuccessTitle = 'Cavity reactivated'\n\telif action == 'scrap':\n\t\tresult = BlueRidge.Parts.Tool.updateCavityStatus(cavityId, 'Scrapped')\n\t\tsuccessTitle = 'Cavity scrapped'\n\telse:\n\t\treturn\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle)\n\tif result and result.get('Status'):\n\t\tself.view.rootContainer.refresh()"
+        },
+        {
+          "messageType": "cavityScrapRequest",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tdata = payload or {}\n\tcavityId = data.get('cavityId')\n\tnumber = data.get('number')\n\tif not cavityId:\n\t\treturn\n\tself.view.custom.pendingScrapId = cavityId\n\tsystem.perspective.openPopup(\n\t\tid='mpp-confirm-destructive',\n\t\tview='BlueRidge/Components/Popups/ConfirmDestructive',\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t'title':        'Scrap Cavity',\n\t\t\t'message':      'Mark cavity ' + str(number) + ' as scrapped? This cannot be undone.',\n\t\t\t'confirmLabel': 'Scrap',\n\t\t\t'replyMessage': 'cavityScrapConfirmed'\n\t\t}\n\t)"
+        },
+        {
+          "messageType": "cavityScrapConfirmed",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\taction = (payload or {}).get('action')\n\tcavityId = self.view.custom.pendingScrapId\n\tself.view.custom.pendingScrapId = None\n\tif action != 'confirm' or not cavityId:\n\t\treturn\n\tresult = BlueRidge.Parts.Tool.updateCavityStatus(cavityId, 'Scrapped')\n\tBlueRidge.Common.Ui.notifyResult(result, 'Cavity scrapped')\n\tif result and result.get('Status'):\n\t\tself.view.rootContainer.refresh()"
+        }
+      ]
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "gap": "10px",
+        "height": "100%"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "ActionRow" },
+        "position": { "basis": "auto", "shrink": 0 },
+        "props": {
+          "direction": "row",
+          "justify": "flex-end",
+          "alignItems": "center"
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "BtnAddCavity" },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\ttoolId = self.view.params.value\n\tif not toolId:\n\t\tBlueRidge.Common.Notify.toast('No tool selected', 'Pick a tool first.', 'warning')\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid='mpp-add-cavity',\n\t\tview='BlueRidge/Components/Popups/AddCavity',\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={'toolId': toolId}\n\t)"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "+ Add Cavity",
+              "style": { "classes": "btn btn-primary btn-sm" }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "DataPanel" },
+        "position": { "grow": 1 },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "detail-panel",
+            "overflow": "hidden",
+            "padding": "0"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "TableHeader" },
+            "position": { "basis": "auto", "shrink": 0 },
+            "props": {
+              "direction": "row",
+              "alignItems": "center",
+              "style": {
+                "background": "var(--mpp-surface-card)",
+                "borderBottom": "1px solid var(--mpp-border-subtle)",
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "11px",
+                "fontWeight": "600",
+                "textTransform": "uppercase",
+                "letterSpacing": "0.05em",
+                "padding": "8px 12px",
+                "gap": "8px"
+              }
+            },
+            "children": [
+              { "type": "ia.display.label", "meta": { "name": "ColNumber" },      "position": { "basis": "70px",  "shrink": 0 }, "props": { "text": "Number", "style": { "textAlign": "center" } } },
+              { "type": "ia.display.label", "meta": { "name": "ColStatus" },      "position": { "basis": "110px", "shrink": 0 }, "props": { "text": "Status" } },
+              { "type": "ia.display.label", "meta": { "name": "ColDescription" }, "position": { "basis": "0",     "grow": 1 },   "props": { "text": "Description" } },
+              { "type": "ia.display.label", "meta": { "name": "ColActions" },     "position": { "basis": "180px", "shrink": 0 }, "props": { "text": "" } }
+            ]
+          },
+          {
+            "type": "ia.display.flex-repeater",
+            "meta": { "name": "Rows" },
+            "position": { "basis": "0", "grow": 1 },
+            "propConfig": {
+              "props.instances": {
+                "binding": {
+                  "type": "property",
+                  "config": { "path": "view.custom.rows" }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "elementPosition": { "basis": "48px", "shrink": 0 },
+              "path": "BlueRidge/Components/Parts/Tools/_Tools/CavityRow",
+              "style": { "overflowY": "auto" },
+              "useDefaultViewHeight": true,
+              "useDefaultViewWidth": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

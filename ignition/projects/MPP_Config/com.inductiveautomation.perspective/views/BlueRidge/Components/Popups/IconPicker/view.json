@@ -113,6 +113,7 @@
             "background": "var(--mpp-surface-raised)",
             "borderBottom": "1px solid var(--mpp-border-subtle)",
             "gap": "8px",
+            "overflow": "hidden",
             "padding": "0 16px"
           }
         },

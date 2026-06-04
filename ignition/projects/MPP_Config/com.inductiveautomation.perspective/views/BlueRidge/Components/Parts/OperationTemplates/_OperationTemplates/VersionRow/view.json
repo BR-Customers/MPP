@@ -1,0 +1,101 @@
+{
+  "custom": {},
+  "params": {
+    "version": {}
+  },
+  "propConfig": {
+    "params.version": { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "height": 40, "width": 800 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "events": {
+      "dom": {
+        "onClick": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tv = self.view.params.version or {}\n\tvid = v.get('Id')\n\tif vid is None:\n\t\treturn\n\tsystem.perspective.sendMessage('templateVersionClicked', payload={'id': vid}, scope='page')"
+          }
+        }
+      }
+    },
+    "propConfig": {
+      "props.style.opacity": {
+        "binding": {
+          "type": "expr",
+          "config": { "expression": "if({view.params.version.Deprecated}, 0.55, 1)" }
+        }
+      }
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "cursor": "pointer",
+        "gap": "10px",
+        "overflow": "hidden",
+        "padding": "8px 14px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "BadgeVersion" },
+        "position": { "basis": "50px", "shrink": 0 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "'v' + {view.params.version.VersionNumber}" }
+            }
+          }
+        },
+        "props": { "style": { "classes": "badge badge-type" } }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "BadgeActive" },
+        "position": { "basis": "70px", "shrink": 0 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "if({view.params.version.Deprecated}, 'Deprecated', if({view.params.version.IsActive}, 'Active', ''))" }
+            }
+          },
+          "props.style.classes": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "if({view.params.version.Deprecated}, 'badge badge-deprecated', if({view.params.version.IsActive}, 'badge badge-published', ''))" }
+            }
+          }
+        },
+        "props": { "style": {} }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "CreatedAt" },
+        "position": { "basis": "0", "grow": 1 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": { "path": "view.params.version.CreatedAt" }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-muted)",
+            "fontSize": "11px"
+          }
+        }
+      }
+    ]
+  }
+}

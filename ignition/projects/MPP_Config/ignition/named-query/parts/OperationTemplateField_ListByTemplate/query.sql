@@ -1,0 +1,1 @@
+EXEC Parts.OperationTemplateField_ListByTemplate @OperationTemplateId = :operationTemplateId

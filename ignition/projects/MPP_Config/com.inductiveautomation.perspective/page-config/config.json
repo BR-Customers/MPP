@@ -24,9 +24,13 @@
       "title": "Item Master",
       "viewPath": "BlueRidge/Views/Parts/ItemMaster"
     },
-    "/operations": {
+    "/parts/operation-templates": {
       "title": "Operation Templates",
       "viewPath": "BlueRidge/Views/Parts/OperationTemplates"
+    },
+    "/parts/tools": {
+      "title": "Tools",
+      "viewPath": "BlueRidge/Views/Parts/Tools"
     },
     "/plant": {
       "title": "Plant Hierarchy",

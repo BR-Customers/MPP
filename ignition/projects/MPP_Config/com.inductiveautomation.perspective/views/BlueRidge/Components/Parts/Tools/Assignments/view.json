@@ -1,0 +1,281 @@
+{
+  "custom": {
+    "rows": [],
+    "active": null
+  },
+  "params": {
+    "value": 0
+  },
+  "propConfig": {
+    "params.value": { "paramDirection": "input" },
+    "custom.rows": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Tool.getAssignmentInstancesForTool\", 0, {view.params.value})"
+        }
+      }
+    },
+    "custom.active": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Tool.getActiveAssignmentForTool\", 0, {view.params.value})"
+        }
+      }
+    }
+  },
+  "props": {
+    "defaultSize": { "height": 360, "width": 800 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "refresh",
+          "params": [],
+          "script": "\ttoolId = self.view.params.value\n\tself.view.custom.rows   = BlueRidge.Parts.Tool.getAssignmentInstancesForTool(toolId)\n\tself.view.custom.active = BlueRidge.Parts.Tool.getActiveAssignmentForTool(toolId)"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "toolDataChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tsection = (payload or {}).get('section')\n\tif section and section != 'assignments':\n\t\treturn\n\tself.view.rootContainer.refresh()"
+        },
+        {
+          "messageType": "assignmentReleaseConfirmed",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\taction = (payload or {}).get('action')\n\tif action != 'confirm':\n\t\treturn\n\ttoolId = self.view.params.value\n\tif not toolId:\n\t\treturn\n\tresult = BlueRidge.Parts.Tool.releaseAssignment(toolId)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Tool released')\n\tif result and result.get('Status'):\n\t\tself.view.rootContainer.refresh()"
+        }
+      ]
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "gap": "10px",
+        "height": "100%"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "ActionRow" },
+        "position": { "basis": "auto", "shrink": 0 },
+        "props": {
+          "direction": "row",
+          "justify": "flex-end",
+          "alignItems": "center"
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "BtnMountToCell" },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\ttoolId = self.view.params.value\n\tif not toolId:\n\t\tBlueRidge.Common.Notify.toast('No tool selected', 'Pick a tool first.', 'warning')\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid='mpp-mount-to-cell',\n\t\tview='BlueRidge/Components/Popups/MountToCell',\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={'toolId': toolId}\n\t)"
+                  }
+                }
+              }
+            },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "isNull({view.custom.active})"
+                  }
+                }
+              },
+              "meta.tooltip.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if(isNull({view.custom.active}), '', 'Release the current assignment before mounting to a new cell.')"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Mount to Cell",
+              "style": { "classes": "btn btn-primary btn-sm" }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "ActiveMountBanner" },
+        "position": { "basis": "auto", "shrink": 0 },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "!isNull({view.custom.active})"
+              }
+            }
+          }
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "gap": "10px",
+            "padding": "10px 12px",
+            "background": "var(--mpp-state-good-bg)",
+            "border": "1px solid var(--mpp-state-good-border)",
+            "borderRadius": "var(--mpp-radius-sm)"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "BannerTextStack" },
+            "position": { "grow": 1 },
+            "props": { "direction": "column" },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "LabelCurrentMount" },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "'Currently mounted on ' + coalesce({view.custom.active.CellName}, '-')"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "text": "",
+                  "style": {
+                    "fontSize": "13px",
+                    "fontWeight": "600",
+                    "color": "var(--mpp-state-good-fg)"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "LabelAssignedAt" },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "'Assigned ' + coalesce({view.custom.active.AssignedAt}, '-') + ' by ' + coalesce({view.custom.active.AssignedByInitials}, '-')"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "text": "",
+                  "style": {
+                    "fontSize": "11px",
+                    "color": "var(--mpp-text-muted)"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "BtnRelease" },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tactive = self.view.custom.active or {}\n\tcellName = active.get('CellName') or 'this cell'\n\tsystem.perspective.openPopup(\n\t\tid='mpp-confirm-destructive',\n\t\tview='BlueRidge/Components/Popups/ConfirmDestructive',\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t'title':        'Release Assignment',\n\t\t\t'message':      'Release the tool from ' + cellName + '?',\n\t\t\t'confirmLabel': 'Release',\n\t\t\t'replyMessage': 'assignmentReleaseConfirmed'\n\t\t}\n\t)"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Release",
+              "style": { "classes": "btn btn-sm btn-danger" }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "DataPanel" },
+        "position": { "grow": 1 },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "detail-panel",
+            "overflow": "hidden",
+            "padding": "0"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "TableHeader" },
+            "position": { "basis": "auto", "shrink": 0 },
+            "props": {
+              "direction": "row",
+              "alignItems": "center",
+              "style": {
+                "background": "var(--mpp-surface-card)",
+                "borderBottom": "1px solid var(--mpp-border-subtle)",
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "11px",
+                "fontWeight": "600",
+                "textTransform": "uppercase",
+                "letterSpacing": "0.05em",
+                "padding": "8px 12px",
+                "gap": "8px"
+              }
+            },
+            "children": [
+              { "type": "ia.display.label", "meta": { "name": "ColCell" },       "position": { "basis": "0", "grow": 1 },        "props": { "text": "Cell" } },
+              { "type": "ia.display.label", "meta": { "name": "ColAssignedAt" }, "position": { "basis": "140px", "shrink": 0 }, "props": { "text": "Assigned At" } },
+              { "type": "ia.display.label", "meta": { "name": "ColReleasedAt" }, "position": { "basis": "140px", "shrink": 0 }, "props": { "text": "Released At" } },
+              { "type": "ia.display.label", "meta": { "name": "ColAssignedBy" }, "position": { "basis": "90px",  "shrink": 0 }, "props": { "text": "Assigned By" } },
+              { "type": "ia.display.label", "meta": { "name": "ColReleasedBy" }, "position": { "basis": "90px",  "shrink": 0 }, "props": { "text": "Released By" } },
+              { "type": "ia.display.label", "meta": { "name": "ColNotes" },      "position": { "basis": "160px", "shrink": 0 }, "props": { "text": "Notes" } }
+            ]
+          },
+          {
+            "type": "ia.display.flex-repeater",
+            "meta": { "name": "Rows" },
+            "position": { "basis": "0", "grow": 1 },
+            "propConfig": {
+              "props.instances": {
+                "binding": {
+                  "type": "property",
+                  "config": { "path": "view.custom.rows" }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "elementPosition": { "basis": "48px", "shrink": 0 },
+              "path": "BlueRidge/Components/Parts/Tools/_Tools/AssignmentRow",
+              "style": { "overflowY": "auto" },
+              "useDefaultViewHeight": true,
+              "useDefaultViewWidth": false
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

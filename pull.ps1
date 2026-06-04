@@ -1,4 +1,4 @@
-# pull.ps1 — sync the deploy machine's working copy to origin/hunter/explore
+# pull.ps1 — sync the deploy machine's working copy to origin/main
 # and trigger an Ignition Gateway project scan only when something actually changed.
 #
 # Behavior:
@@ -14,7 +14,7 @@ $repo       = "C:\MPP"
 $log        = "C:\MPP\pull.log"
 $tokenFile  = "C:\Users\admin\Documents\git-sync-api-key.txt"
 $gatewayUrl = "http://localhost:8088"
-$branch     = "hunter/explore"
+$branch     = "main"
 
 function Write-Log {
     param([string]$msg)
