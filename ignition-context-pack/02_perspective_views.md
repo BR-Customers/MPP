@@ -210,7 +210,7 @@ Every page entry should have a `title` — it's the browser-tab text and is what
 
 Cross-page state (e.g., currently-active category, current user's preferred theme) goes in `session.custom.*`. View-scoped state goes in `view.custom.*`.
 
-Writing to session custom from scripts: `system.perspective.setSessionProps({'custom.activeCategory': 'system'})` is more reliable cross-component than direct `session.custom.activeCategory = 'system'` mutation, especially when called from a project-script frame rather than a component event.
+Writing to session custom from scripts: **assign the prop directly** — `self.session.custom.activeCategory = 'system'` from a component event script, or `system.perspective.getSessionInfo()` to read. There is **no `system.perspective.setSessionProps(...)` function** — that call does not exist in the API and will raise `AttributeError` at runtime (Designer autocomplete under `system.perspective` will confirm it's absent). Set view custom the same way: `self.view.custom.foo = bar`. The only `system.perspective.*` setters that exist operate on pages/popups/docks (`navigate`, `openPopup`, `sendMessage`, etc.), not on session/view props.
 
 ## Auth gate idiom (component-level)
 

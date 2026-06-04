@@ -118,6 +118,120 @@ The table component renders a div-based virtual table — NOT a native `<table>`
 
 The `> *` cascade pattern on the row matters: there's an intermediate wrapper between the row and each cell, and we want both to share the surface background without naming whatever the wrapper class is.
 
+## `ia.display.table` — `props.columns` entries must carry the FULL column schema
+
+Each object in `props.columns` is **not** a free-form `{field, header}` shorthand — it is a fixed-shape record with ~24 keys, and Designer writes every key on every column whether you set it or not. Hand-authoring an abbreviated column (just `field` + `header`, dropping the rest) produces a **table-wide Component Error banner** or a column that silently fails to render. The single most common breaker:
+
+```json
+// WRONG — header as a bare string. Renders Component Error / blank table.
+{ "field": "specName", "header": "Spec Name" }
+
+// WRONG — also missing the other 22 keys.
+{ "field": "specName", "header": "Spec Name", "width": 120 }
+```
+
+`header` (and `footer`) are **objects** (`{title, justify, align, style}`), never strings. The header text is `header.title`. A string where Perspective expects the object is enough on its own to break the table.
+
+### Canonical full column object
+
+Designer serializes column keys **alphabetically**. Use this exact shape as the base for every hand-authored column and change only `field`, `header.title`, `width`, and (when relevant) `render` / `dateFormat` / `numberFormat` / `sortable`:
+
+```json
+{
+  "align": "center",
+  "boolean": "checkbox",
+  "dateFormat": "MM/DD/YYYY",
+  "editable": false,
+  "field": "specName",
+  "filter": {
+    "boolean": { "condition": "" },
+    "date": { "condition": "", "value": "" },
+    "enabled": false,
+    "number": { "condition": "", "value": "" },
+    "string": { "condition": "", "value": "" },
+    "visible": "on-hover"
+  },
+  "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
+  "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Spec Name" },
+  "justify": "auto",
+  "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
+  "number": "value",
+  "numberFormat": "0,0.##",
+  "progressBar": {
+    "bar": { "color": "", "style": { "classes": "" } },
+    "max": 100,
+    "min": 0,
+    "track": { "color": "", "style": { "classes": "" } },
+    "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
+  },
+  "render": "auto",
+  "resizable": true,
+  "sort": "none",
+  "sortable": true,
+  "strictWidth": false,
+  "style": { "classes": "" },
+  "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+  "viewParams": {},
+  "viewPath": "",
+  "visible": true,
+  "width": ""
+}
+```
+
+### Per-key notes
+
+| Key | Type / values | Notes |
+|---|---|---|
+| `field` | string | Matches a key in each `props.data` row dict. |
+| `header` / `footer` | **object** `{title, justify, align, style}` | Text lives in `.title`. Bare string here = Component Error. |
+| `width` | **number** (px) or `""` | Fixed width is a number (`120`); `""` = auto-size. Don't quote the number. |
+| `strictWidth` | bool | `true` forces `width` exactly (no flex-grow). |
+| `render` | `"auto"` \| `"number"` \| `"date"` \| `"boolean"` \| `"progress"` \| `"toggle"` \| `"view"` | Drives which of the type-specific blocks (`numberFormat`, `dateFormat`, `progressBar`, `toggleSwitch`, `viewPath`) applies. |
+| `dateFormat` | Moment.js tokens | e.g. `"MM/DD/YYYY h:mm A"`. Same token rules as `date-time-input` (see above), NOT Java. |
+| `numberFormat` | numeral.js pattern | e.g. `"0,0.##"`. |
+| `viewPath` / `viewParams` | string / object | Only used when `render: "view"` (embed a sub-view per cell). |
+| `filter` | object | Per-column filter config; `filter.enabled` off by default. |
+
+### Why abbreviated columns sometimes *appear* to work
+
+A column with `header` as an object but missing other keys (e.g. only `field` + `header.title` + `sortable` + `visible`) can render — Perspective fills some defaults at runtime. But it's fragile: the next Designer save rewrites the column to the full alphabetical shape, producing a large spurious diff, and any missing key that Perspective *doesn't* default (notably a string `header`) breaks the whole table. Author the full shape up front; it matches what Designer would write and avoids both the error and the diff churn.
+
+## `ia.display.table` — read the selected row from `props.selection.data`, not `props.data[index]`
+
+When a row-action needs the selected row's data (a "go to detail" button, a row-context popup), read it straight off the selection object — it's the already-resolved row dict:
+
+```python
+# CORRECT — selection.data is a LIST of selected-row dicts (one element in
+# single-select mode). Index [0] for the selected row, then the field.
+table    = self.parent.getChild("Panel").getChild("SpecsTable")
+selected = table.props.selection.data       # e.g. [{"id": 42, "specName": "..."}]
+specId   = selected[0]["id"]
+```
+
+Do NOT pull the whole dataset and re-index it by the selected index:
+
+```python
+# WASTEFUL + fragile — copies the ENTIRE dataset into the script frame just to
+# read one row, then re-derives the row the selection already gives you
+rows   = table.props.data
+specId = rows[table.props.selection.selectedRow]["id"]
+```
+
+`props.data` is the full dataset; touching it from a script marshals every row across the boundary. **`props.selection.data` is a LIST of the selected rows' dicts — not a bare dict — even when `selectionMode` is single** (the list just has one element). Index `[0]` for the row, then the field. Use `selection.selectedRow` (the integer index) only when you genuinely need the ordinal — never to look the row back up out of `props.data`.
+
+**Gotcha — `selection.data` only contains fields that have a defined column.** The selection payload is built from the table's `columns`, not from the raw row. A field present in `props.data` but with *no column entry* (a common case: a primary-key `id` you don't want displayed) is **absent** from each selection dict, so `selection.data[0]["id"]` raises `KeyError`. To expose a non-displayed field to row-actions, add a column for it with `"visible": false` (full schema, like any other column) — the column makes the field flow into `selection.data` while keeping it out of the rendered table. This is the right way to carry a row's PK to a "go to detail" handler.
+
+### Reaching the table — `getSibling` only finds TRUE siblings
+
+`self.getSibling("SpecsTable")` resolves **only** when the table shares the button's immediate parent. If the table is nested inside a container — a very common layout (table inside a `Panel`, the button outside it) — `getSibling` returns `None` and the next `.props` access throws. Walk the tree explicitly from a common ancestor:
+
+```python
+# table lives inside the "Panel" container; the button is Panel's sibling under root
+self.parent.getChild("Panel").getChild("SpecsTable")
+```
+
+`self.parent` is the common ancestor (root here), `.getChild("Panel")` steps into the container, `.getChild("SpecsTable")` reaches the table. Name every container along the path (see `07` → component naming) so this addressing survives refactors. `getSibling` is the shortcut for the flat case only; the moment a component is one level deeper, switch to `parent.getChild(...).getChild(...)`.
+
 ## `ia.display.icon` — sizing
 
 Icons render as SVG. **`font-size` does not size them** (it works for icon-fonts but Ignition's icon component renders SVG). Set `width` and `height`:
