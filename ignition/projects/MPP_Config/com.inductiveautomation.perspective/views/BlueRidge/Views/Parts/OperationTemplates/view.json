@@ -1,0 +1,538 @@
+{
+  "custom": {
+    "filter": {
+      "searchText": "",
+      "area": "All Areas"
+    },
+    "areaFilterOptions": [
+      { "label": "All Areas",    "value": "All Areas" },
+      { "label": "Die Cast",     "value": "Die Cast" },
+      { "label": "Trim Shop",    "value": "Trim Shop" },
+      { "label": "Machine Shop", "value": "Machine Shop" },
+      { "label": "Prod Control", "value": "Prod Control" }
+    ],
+    "areaSelectOptions": [
+      { "label": "Die Cast",     "value": "Die Cast" },
+      { "label": "Trim Shop",    "value": "Trim Shop" },
+      { "label": "Machine Shop", "value": "Machine Shop" },
+      { "label": "Prod Control", "value": "Prod Control" }
+    ],
+    "diecastTemplates": [
+      { "name": "Die Cast 5G0 Front Cover", "code": "DC-5G0", "versionBadge": "v1", "selected": true }
+    ],
+    "trimTemplates": [
+      { "name": "Trim 5G0 Front Cover", "code": "TRIM-5G0", "versionBadge": "v1", "selected": false }
+    ],
+    "machineTemplates": [
+      { "name": "CNC Machining 5G0", "code": "CNC-5G0", "versionBadge": "v1", "selected": false }
+    ],
+    "prodControlTemplates": [
+      { "name": "Assembly Front Cover", "code": "ASSY-FRONT", "versionBadge": "v1", "selected": false },
+      { "name": "Assembly Rear Cover",  "code": "ASSY-REAR",  "versionBadge": "v1", "selected": false }
+    ],
+    "selected": {
+      "code": "DC-5G0",
+      "version": "1",
+      "name": "Die Cast 5G0 Front Cover",
+      "area": "Die Cast",
+      "description": "Primary die cast operation — collects die, cavity, weight, good count, and bad count.",
+      "requiresSubLotSplit": false,
+      "stateLabel": "v1"
+    },
+    "addFieldOptions": [
+      { "label": "— Add field —",        "value": "" },
+      { "label": "SerialNumber",         "value": "SerialNumber" },
+      { "label": "MaterialVerification", "value": "MaterialVerification" }
+    ],
+    "addFieldValue": "",
+    "fieldCountText": "5 fields configured",
+    "fields": [
+      { "fieldName": "DieInfo",    "required": true, "isFirst": true,  "isLast": false },
+      { "fieldName": "CavityInfo", "required": true, "isFirst": false, "isLast": false },
+      { "fieldName": "Weight",     "required": true, "isFirst": false, "isLast": false },
+      { "fieldName": "GoodCount",  "required": true, "isFirst": false, "isLast": false },
+      { "fieldName": "BadCount",   "required": true, "isFirst": false, "isLast": true }
+    ]
+  },
+  "params": {},
+  "propConfig": {
+    "custom.filter.searchText": { "persistent": true },
+    "custom.filter.area":       { "persistent": true },
+    "custom.addFieldValue":     { "persistent": true }
+  },
+  "props": {
+    "defaultSize": { "width": 1280, "height": 720 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "column",
+      "style": { "classes": "screen-active" }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "TitleRow" },
+        "position": { "basis": "auto", "shrink": 0 },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "classes": "title-row",
+            "paddingBottom": "8px",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "background": "var(--mpp-surface-raised)"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "TitleColumn" },
+            "position": { "basis": "auto" },
+            "props": { "direction": "column", "style": { "gap": "2px" } },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "Breadcrumb" },
+                "position": { "basis": "auto" },
+                "props": { "direction": "row", "alignItems": "center", "style": { "classes": "breadcrumb" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "BreadcrumbCategory" }, "position": { "basis": "auto" }, "props": { "text": "Parts", "style": { "classes": "breadcrumb" } } },
+                  { "type": "ia.display.label", "meta": { "name": "BreadcrumbSep" },      "position": { "basis": "auto" }, "props": { "text": "›", "style": { "classes": "breadcrumb crumb-sep" } } },
+                  { "type": "ia.display.label", "meta": { "name": "BreadcrumbActive" },   "position": { "basis": "auto" }, "props": { "text": "Operation Templates", "style": { "classes": "crumb-active" } } }
+                ]
+              },
+              { "type": "ia.display.label", "meta": { "name": "Title" }, "position": { "basis": "auto" }, "props": { "text": "Operation Templates", "style": { "classes": "title-row-h1" } } }
+            ]
+          },
+          { "type": "ia.display.label", "meta": { "name": "TitleRowSpacer" }, "position": { "grow": 1 }, "props": { "text": "", "style": { "classes": "title-row-spacer" } } },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "NewTemplateButton" },
+            "position": { "basis": "auto" },
+            "props": { "text": "+ New Template", "style": { "classes": "btn btn-primary", "marginRight": "12px" } }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "MainSplit" },
+        "position": { "grow": 1 },
+        "props": {
+          "direction": "row",
+          "style": { "overflow": "hidden", "borderTop": "1px solid var(--mpp-border-subtle)" }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "ListPanel" },
+            "position": { "basis": "260px", "shrink": 0 },
+            "props": {
+              "direction": "column",
+              "style": { "classes": "tree-panel", "width": "260px", "minWidth": "260px" }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "ListHeader" },
+                "position": { "basis": "auto" },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "padding": "8px 10px",
+                    "borderBottom": "1px solid var(--mpp-border-subtle)",
+                    "gap": "6px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.input.dropdown",
+                    "meta": { "name": "AreaFilter" },
+                    "position": { "basis": "auto" },
+                    "propConfig": {
+                      "props.options": { "binding": { "type": "property", "config": { "path": "view.custom.areaFilterOptions" } } },
+                      "props.value":   { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.filter.area" } } }
+                    },
+                    "props": { "style": { "classes": "select", "width": "100%" } }
+                  },
+                  {
+                    "type": "ia.input.text-field",
+                    "meta": { "name": "SearchInput" },
+                    "position": { "basis": "auto" },
+                    "propConfig": {
+                      "props.text": { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.filter.searchText" } } }
+                    },
+                    "props": { "placeholder": "Search templates…", "style": { "classes": "search-input", "width": "100%" } }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "ListBody" },
+                "position": { "grow": 1 },
+                "props": { "direction": "column", "style": { "overflowY": "auto", "padding": "4px 0" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "DieCastHeader" }, "position": { "basis": "auto" }, "props": { "text": "Die Cast", "style": { "classes": "nav-category-label", "padding": "4px 10px 2px 10px", "fontSize": "10px", "fontWeight": "700", "textTransform": "uppercase", "letterSpacing": "0.8px", "color": "var(--mpp-text-tertiary)" } } },
+                  {
+                    "type": "ia.display.flex-repeater",
+                    "meta": { "name": "DieCastList" },
+                    "position": { "basis": "auto" },
+                    "propConfig": {
+                      "props.instances": { "binding": { "type": "property", "config": { "path": "view.custom.diecastTemplates" } } }
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/OpTemplateListItem",
+                      "direction": "column",
+                      "useDefaultViewWidth": false,
+                      "useDefaultViewHeight": false,
+                      "elementPosition": { "grow": 0, "shrink": 0, "basis": "44px" }
+                    }
+                  },
+                  { "type": "ia.display.label", "meta": { "name": "TrimHeader" }, "position": { "basis": "auto" }, "props": { "text": "Trim Shop", "style": { "classes": "nav-category-label", "padding": "8px 10px 2px 10px", "fontSize": "10px", "fontWeight": "700", "textTransform": "uppercase", "letterSpacing": "0.8px", "color": "var(--mpp-text-tertiary)" } } },
+                  {
+                    "type": "ia.display.flex-repeater",
+                    "meta": { "name": "TrimList" },
+                    "position": { "basis": "auto" },
+                    "propConfig": {
+                      "props.instances": { "binding": { "type": "property", "config": { "path": "view.custom.trimTemplates" } } }
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/OpTemplateListItem",
+                      "direction": "column",
+                      "useDefaultViewWidth": false,
+                      "useDefaultViewHeight": false,
+                      "elementPosition": { "grow": 0, "shrink": 0, "basis": "44px" }
+                    }
+                  },
+                  { "type": "ia.display.label", "meta": { "name": "MachineHeader" }, "position": { "basis": "auto" }, "props": { "text": "Machine Shop", "style": { "classes": "nav-category-label", "padding": "8px 10px 2px 10px", "fontSize": "10px", "fontWeight": "700", "textTransform": "uppercase", "letterSpacing": "0.8px", "color": "var(--mpp-text-tertiary)" } } },
+                  {
+                    "type": "ia.display.flex-repeater",
+                    "meta": { "name": "MachineList" },
+                    "position": { "basis": "auto" },
+                    "propConfig": {
+                      "props.instances": { "binding": { "type": "property", "config": { "path": "view.custom.machineTemplates" } } }
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/OpTemplateListItem",
+                      "direction": "column",
+                      "useDefaultViewWidth": false,
+                      "useDefaultViewHeight": false,
+                      "elementPosition": { "grow": 0, "shrink": 0, "basis": "44px" }
+                    }
+                  },
+                  { "type": "ia.display.label", "meta": { "name": "ProdControlHeader" }, "position": { "basis": "auto" }, "props": { "text": "Prod Control", "style": { "classes": "nav-category-label", "padding": "8px 10px 2px 10px", "fontSize": "10px", "fontWeight": "700", "textTransform": "uppercase", "letterSpacing": "0.8px", "color": "var(--mpp-text-tertiary)" } } },
+                  {
+                    "type": "ia.display.flex-repeater",
+                    "meta": { "name": "ProdControlList" },
+                    "position": { "basis": "auto" },
+                    "propConfig": {
+                      "props.instances": { "binding": { "type": "property", "config": { "path": "view.custom.prodControlTemplates" } } }
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/OpTemplateListItem",
+                      "direction": "column",
+                      "useDefaultViewWidth": false,
+                      "useDefaultViewHeight": false,
+                      "elementPosition": { "grow": 0, "shrink": 0, "basis": "44px" }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "DetailArea" },
+            "position": { "grow": 1 },
+            "props": {
+              "direction": "column",
+              "style": { "classes": "detail-area" }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "TemplateDetailsPanel" },
+                "position": { "basis": "auto", "shrink": 0 },
+                "props": { "direction": "column", "style": { "classes": "detail-panel", "padding": "0" } },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": { "name": "DetailsHeader" },
+                    "position": { "basis": "auto" },
+                    "props": { "direction": "row", "alignItems": "center", "justify": "space-between", "style": { "classes": "detail-header" } },
+                    "children": [
+                      {
+                        "type": "ia.container.flex",
+                        "meta": { "name": "HeaderLeft" },
+                        "position": { "basis": "auto" },
+                        "props": { "direction": "row", "alignItems": "center", "style": { "gap": "8px" } },
+                        "children": [
+                          { "type": "ia.display.label", "meta": { "name": "H2" }, "position": { "basis": "auto" }, "props": { "text": "Template Details", "style": { "classes": "detail-header-h2" } } },
+                          {
+                            "type": "ia.display.label",
+                            "meta": { "name": "VersionBadge" },
+                            "position": { "basis": "auto" },
+                            "propConfig": {
+                              "props.text": { "binding": { "type": "property", "config": { "path": "view.custom.selected.stateLabel" } } }
+                            },
+                            "props": { "style": { "classes": "badge badge-type" } }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": { "name": "HeaderButtons" },
+                        "position": { "basis": "auto" },
+                        "props": { "direction": "row", "alignItems": "center", "style": { "gap": "6px" } },
+                        "children": [
+                          { "type": "ia.input.button", "meta": { "name": "SaveButton" },       "position": { "basis": "auto" }, "props": { "text": "Save",        "style": { "classes": "btn btn-primary btn-sm" } } },
+                          { "type": "ia.input.button", "meta": { "name": "NewVersionButton" }, "position": { "basis": "auto" }, "props": { "text": "New Version", "style": { "classes": "btn btn-sm" } } },
+                          { "type": "ia.input.button", "meta": { "name": "DeprecateButton" },  "position": { "basis": "auto" }, "props": { "text": "Deprecate",   "style": { "classes": "btn btn-danger btn-sm" } } }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": { "name": "DetailsBody" },
+                    "position": { "basis": "auto" },
+                    "props": { "direction": "column", "style": { "classes": "detail-body", "gap": "10px" } },
+                    "children": [
+                      {
+                        "type": "ia.container.flex",
+                        "meta": { "name": "FieldRow1" },
+                        "position": { "basis": "auto" },
+                        "props": { "direction": "row", "style": { "classes": "field-row", "gap": "12px" } },
+                        "children": [
+                          {
+                            "type": "ia.container.flex",
+                            "meta": { "name": "CodeField" },
+                            "position": { "basis": "120px", "shrink": 0 },
+                            "props": { "direction": "column", "style": { "classes": "field", "minWidth": "0" } },
+                            "children": [
+                              { "type": "ia.display.label", "meta": { "name": "Label" }, "position": { "basis": "auto" }, "props": { "text": "Code", "style": { "classes": "field-label" } } },
+                              {
+                                "type": "ia.display.label",
+                                "meta": { "name": "Value" },
+                                "position": { "basis": "auto" },
+                                "propConfig": {
+                                  "props.text": { "binding": { "type": "property", "config": { "path": "view.custom.selected.code" } } }
+                                },
+                                "props": { "style": { "fontFamily": "'SF Mono','Consolas',monospace", "background": "var(--mpp-surface-card)", "border": "1px solid var(--mpp-border-default)", "borderRadius": "var(--mpp-radius-sm)", "padding": "6px 8px", "color": "var(--mpp-text-tertiary)", "fontSize": "var(--mpp-fs-sm)", "width": "100%", "boxSizing": "border-box" } }
+                              }
+                            ]
+                          },
+                          {
+                            "type": "ia.container.flex",
+                            "meta": { "name": "VersionField" },
+                            "position": { "basis": "48px", "shrink": 0 },
+                            "props": { "direction": "column", "style": { "classes": "field", "minWidth": "0" } },
+                            "children": [
+                              { "type": "ia.display.label", "meta": { "name": "Label" }, "position": { "basis": "auto" }, "props": { "text": "Version", "style": { "classes": "field-label" } } },
+                              {
+                                "type": "ia.display.label",
+                                "meta": { "name": "Value" },
+                                "position": { "basis": "auto" },
+                                "propConfig": {
+                                  "props.text": { "binding": { "type": "property", "config": { "path": "view.custom.selected.version" } } }
+                                },
+                                "props": { "style": { "textAlign": "center", "background": "var(--mpp-surface-card)", "border": "1px solid var(--mpp-border-default)", "borderRadius": "var(--mpp-radius-sm)", "padding": "6px 8px", "color": "var(--mpp-text-tertiary)", "fontSize": "var(--mpp-fs-sm)", "width": "100%", "boxSizing": "border-box" } }
+                              }
+                            ]
+                          },
+                          {
+                            "type": "ia.container.flex",
+                            "meta": { "name": "NameField" },
+                            "position": { "grow": 2, "basis": "0" },
+                            "props": { "direction": "column", "style": { "classes": "field", "minWidth": "0" } },
+                            "children": [
+                              { "type": "ia.display.label", "meta": { "name": "Label" }, "position": { "basis": "auto" }, "props": { "text": "Name", "style": { "classes": "field-label" } } },
+                              {
+                                "type": "ia.input.text-field",
+                                "meta": { "name": "Input" },
+                                "position": { "basis": "auto" },
+                                "propConfig": {
+                                  "props.text": { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.selected.name" } } }
+                                },
+                                "props": { "style": { "classes": "search-input", "width": "100%", "boxSizing": "border-box" } }
+                              }
+                            ]
+                          },
+                          {
+                            "type": "ia.container.flex",
+                            "meta": { "name": "AreaField" },
+                            "position": { "grow": 1, "basis": "0" },
+                            "props": { "direction": "column", "style": { "classes": "field", "minWidth": "0" } },
+                            "children": [
+                              { "type": "ia.display.label", "meta": { "name": "Label" }, "position": { "basis": "auto" }, "props": { "text": "Area", "style": { "classes": "field-label" } } },
+                              {
+                                "type": "ia.input.dropdown",
+                                "meta": { "name": "Input" },
+                                "position": { "basis": "auto" },
+                                "propConfig": {
+                                  "props.options": { "binding": { "type": "property", "config": { "path": "view.custom.areaSelectOptions" } } },
+                                  "props.value":   { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.selected.area" } } }
+                                },
+                                "props": { "style": { "classes": "select", "width": "100%" } }
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": { "name": "FieldRow2" },
+                        "position": { "basis": "auto" },
+                        "props": { "direction": "row", "alignItems": "flex-end", "style": { "classes": "field-row", "gap": "12px" } },
+                        "children": [
+                          {
+                            "type": "ia.container.flex",
+                            "meta": { "name": "DescriptionField" },
+                            "position": { "grow": 3, "basis": "0" },
+                            "props": { "direction": "column", "style": { "classes": "field", "minWidth": "0" } },
+                            "children": [
+                              { "type": "ia.display.label", "meta": { "name": "Label" }, "position": { "basis": "auto" }, "props": { "text": "Description", "style": { "classes": "field-label" } } },
+                              {
+                                "type": "ia.input.text-field",
+                                "meta": { "name": "Input" },
+                                "position": { "basis": "auto" },
+                                "propConfig": {
+                                  "props.text": { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.selected.description" } } }
+                                },
+                                "props": { "style": { "classes": "search-input", "width": "100%", "boxSizing": "border-box" } }
+                              }
+                            ]
+                          },
+                          {
+                            "type": "ia.container.flex",
+                            "meta": { "name": "SubLotSplitField" },
+                            "position": { "basis": "180px", "shrink": 0 },
+                            "props": { "direction": "column", "style": { "classes": "field", "minWidth": "0" } },
+                            "children": [
+                              { "type": "ia.display.label", "meta": { "name": "Label" }, "position": { "basis": "auto" }, "props": { "text": "Requires Sub-LOT Split", "style": { "classes": "field-label" } } },
+                              {
+                                "type": "ia.container.flex",
+                                "meta": { "name": "CheckboxRow" },
+                                "position": { "basis": "auto" },
+                                "props": { "direction": "row", "alignItems": "center", "style": { "gap": "8px", "height": "28px" } },
+                                "children": [
+                                  {
+                                    "type": "ia.input.checkbox",
+                                    "meta": { "name": "SubLotSplitCheckbox" },
+                                    "position": { "basis": "auto" },
+                                    "propConfig": {
+                                      "props.selected": { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.selected.requiresSubLotSplit" } } }
+                                    },
+                                    "props": { "text": "Split at completion" }
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "FieldsPanel" },
+                "position": { "grow": 1 },
+                "props": { "direction": "column", "style": { "classes": "detail-panel", "padding": "0", "overflow": "hidden" } },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": { "name": "FieldsHeader" },
+                    "position": { "basis": "auto", "shrink": 0 },
+                    "props": { "direction": "row", "alignItems": "center", "justify": "space-between", "style": { "classes": "detail-header" } },
+                    "children": [
+                      {
+                        "type": "ia.container.flex",
+                        "meta": { "name": "HeaderLeft" },
+                        "position": { "basis": "auto" },
+                        "props": { "direction": "row", "alignItems": "center", "style": { "gap": "10px" } },
+                        "children": [
+                          { "type": "ia.display.label", "meta": { "name": "H2" }, "position": { "basis": "auto" }, "props": { "text": "Data Collection Fields", "style": { "classes": "detail-header-h2" } } },
+                          {
+                            "type": "ia.display.label",
+                            "meta": { "name": "FieldCount" },
+                            "position": { "basis": "auto" },
+                            "propConfig": {
+                              "props.text": { "binding": { "type": "property", "config": { "path": "view.custom.fieldCountText" } } }
+                            },
+                            "props": { "style": { "fontSize": "11px", "color": "var(--mpp-text-tertiary)" } }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": { "name": "HeaderRight" },
+                        "position": { "basis": "auto" },
+                        "props": { "direction": "row", "alignItems": "center", "style": { "gap": "6px" } },
+                        "children": [
+                          {
+                            "type": "ia.input.dropdown",
+                            "meta": { "name": "AddFieldDropdown" },
+                            "position": { "basis": "180px", "shrink": 0 },
+                            "propConfig": {
+                              "props.options": { "binding": { "type": "property", "config": { "path": "view.custom.addFieldOptions" } } },
+                              "props.value":   { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.addFieldValue" } } }
+                            },
+                            "props": { "style": { "classes": "select" } }
+                          },
+                          { "type": "ia.input.button", "meta": { "name": "AddFieldButton" }, "position": { "basis": "auto" }, "props": { "text": "+ Add", "style": { "classes": "btn btn-primary btn-sm" } } }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": { "name": "FieldsTableHeader" },
+                    "position": { "basis": "auto", "shrink": 0 },
+                    "props": {
+                      "direction": "row",
+                      "alignItems": "center",
+                      "style": {
+                        "background": "var(--mpp-surface-card)",
+                        "color": "var(--mpp-text-secondary)",
+                        "fontSize": "11px",
+                        "fontWeight": "600",
+                        "textTransform": "uppercase",
+                        "letterSpacing": "0.05em",
+                        "borderBottom": "1px solid var(--mpp-border-subtle)",
+                        "padding": "8px 12px"
+                      }
+                    },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "ColArrows" },   "position": { "basis": "46px", "shrink": 0 }, "props": { "text": "" } },
+                      { "type": "ia.display.label", "meta": { "name": "ColField" },    "position": { "grow": 1, "basis": "0" },     "props": { "text": "Field" } },
+                      { "type": "ia.display.label", "meta": { "name": "ColRequired" }, "position": { "basis": "90px", "shrink": 0 }, "props": { "text": "Required" } },
+                      { "type": "ia.display.label", "meta": { "name": "ColRemove" },   "position": { "basis": "36px", "shrink": 0 }, "props": { "text": "" } }
+                    ]
+                  },
+                  {
+                    "type": "ia.display.flex-repeater",
+                    "meta": { "name": "FieldRows" },
+                    "position": { "grow": 1 },
+                    "propConfig": {
+                      "props.instances": { "binding": { "type": "property", "config": { "path": "view.custom.fields" } } }
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/OpTemplateFieldRow",
+                      "direction": "column",
+                      "useDefaultViewWidth": false,
+                      "useDefaultViewHeight": false,
+                      "elementPosition": { "grow": 0, "shrink": 0, "basis": "44px" }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
