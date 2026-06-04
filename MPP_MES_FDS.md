@@ -32,6 +32,7 @@ Comments may be returned as annotations on the Word document, an annotated PDF, 
 
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
+| 1.3 | 2026-06-03 | Blue Ridge Automation | **Sub-LOT split relocated from Trim OUT to Machining OUT** (per MPP, confirmed 2026-06 — supersedes the prior Trim-OUT split design; not an open item, the question is settled with the customer). Trim is now a **1:1 whole-LOT move tracked at Area resolution** (check-in → process → check-out, no line/cell tracking, no split). The Trim → Machining rename still fires at Machining IN (FDS-05-033) on the whole LOT; the split into N machined sub-LOTs now fires at **Machining OUT** on lines that sublot — physical signature is a dedicated Machining OUT terminal. Edits: FDS-05-009 (retitled "Machining OUT Sub-LOT Split Workflow"), FDS-06-006 (Trim OUT → whole-LOT move), FDS-06-004 (Trim tracked at Area), FDS-06-007 (Machining IN FIFO holds whole LOTs), FDS-06-008 (Machining OUT branches: split on sublotting lines, else auto-move to coupled Assembly), §5.4 intro, §6.3 / §6.4 narrative, and the §8 partial-quality-split reference (now points to FDS-05-022). **No schema change** — `Lot.ParentLotId` / `LotGenealogy` already model machining-origin sub-LOTs, so the Arc 2 Phase 1 build (`0014`) is unaffected. |
 | 1.2 | 2026-05-18 | Blue Ridge Automation | **Location-hierarchy immutability made explicit.** Added **FDS-02-002a — `ParentLocationId` is Immutable**: a `Location`'s parent SHALL NOT change after creation, because retroactive hierarchy changes would silently rewrite historical track-and-trace reports (LotMovement, ConsumptionEvent, RejectEvent, DowntimeEvent, HoldEvent, OperationLog) — which join event rows to the live Location row to derive tier path. Physical relocations are handled by Deprecate + Create New (industry-standard MES pattern; preserves event-anchored history verbatim). The rule was previously an implementation-only convention buried in `Location.Location_Update`; promoted to FDS so it is auditable and survives any future code rewrite. |
 | 1.1 | 2026-05-12 | Blue Ridge Automation | **Customer Acceptance signature page added.** Replaces the v1.0 stub Approval table with a formal Customer Acceptance section: numbered acceptance statement (design intent, scope boundary, open-items acknowledgement, Phase 0 workshop carve-out, change control, reference-document handling), separate Prepared-By (Blue Ridge) and Accepted-By (MPP) signature blocks, and a Conditions or Exceptions register. No design-content changes elsewhere in the document. |
 | 1.0 | 2026-05-04 | Blue Ridge Automation | **First release for customer review.** Consolidates all pre-release working-session edits (v0.1 through v0.11p) into a single customer-facing release. Covers all 16 sections — System Architecture, Plant Model & Location Hierarchy, Master Data, User Identity / Authentication / Elevation, LOT Lifecycle & Genealogy, Production Execution, Container Management & Shipping, Quality & Hold, Downtime Tracking, PLC/OPC Integration, Audit & Logging, Reporting, External System Interfaces, Data Migration, Deployment & Commissioning, Identifier Sequences — plus appendices (machine list, downtime codes, defect codes, OPC tag map, MIP touchpoints, FRS crosswalk, scope matrix crosswalk, paper-sheet mapping). The embedded Open Items Register at the end of this document carries the **6 items still requiring resolution** (OI-32, OI-33, OI-34, OI-35, UJ-05, UJ-19) — these gate either Arc 2 SQL build or specific design sections and need MPP customer validation or Blue Ridge architecture review before commencement. |
@@ -991,7 +992,7 @@ All four procs follow the FDS-11-011 single-result-set convention. Mutations wri
 The MES distinguishes two LOT-multiplication patterns. Only the second is a true sublot pattern; the first is peer creation.
 
 - **Cavity-parallel LOTs at Die Cast are peers, NOT sublots.** A die with N active cavities produces **N parallel independent LOTs**. Each LOT has `ToolId` + `ToolCavityId` set at creation (FDS-05-034), fills at its own rate, and closes independently. There is no parent/child FK between cavity peers. One LTT barcode per LOT. Genealogy is flat at Die Cast. See §5.2 FDS-05-004 for creation flow.
-- **Machining sub-LOT split IS a sublot pattern.** The workflow below (FDS-05-022, -024, -009..011) is authoritative for Machining OUT — parent FK, split genealogy, sublot labels.
+- **Machining sub-LOT split IS a sublot pattern, and it happens at Machining OUT.** A cast/trim LOT moves whole (1:1) from Trim to its Machining line and is renamed to the machined Item at Machining IN (FDS-05-033); the split into N machined sub-LOTs then happens at **Machining OUT** on lines that sublot. The workflow below (FDS-05-022, -024, -009..011) is authoritative — parent FK, split genealogy, sublot labels. Trim OUT does **not** split (FDS-06-006).
 - **Basket-level sublots** are absorbed by the two patterns above: at Die Cast, one basket = one cavity-parallel LOT = one label; at Machining, basket-level splitting is the Machining sub-LOT pattern.
 
 #### FDS-05-022 — Sublot Pattern (Machining)
@@ -1002,23 +1003,23 @@ Sublots created under FDS-05-022 inherit the parent's `ToolId` / `ToolCavityId` 
 #### FDS-05-024 — Sublot Labels
 Every sublot LTT label SHALL display both the sublot's own `LotNumber` and the `ParentLotNumber`. The `Lots.LotLabel` row SHALL carry a `ParentLotId` reference column (nullable — non-sublot labels have no parent) for label-regeneration and audit purposes. The operator-visible genealogy view SHALL let a user enter either number and see the other. Label reprint workflows (FDS-05-020) for a sublot SHALL preserve the parent reference.
 
-#### FDS-05-009 — Trim → Machining Sub-LOT Split Workflow
+#### FDS-05-009 — Machining OUT Sub-LOT Split Workflow
 
 > 🔶 **PENDING INTERNAL REVIEW — UJ-03:** Even-split default vs. alternative defaults still needs review with Ben.
 
-The sub-LOT split that distributes a trimmed cast LOT across multiple Machining Cells SHALL happen at **Trim OUT** (not Machining IN). The mechanics:
+The sub-LOT split that distributes a machined LOT across downstream destinations SHALL happen at **Machining OUT** (per MPP — confirmed 2026-06; supersedes the prior Trim-OUT design). Only lines that sublot perform this split; their physical signature is a dedicated **Machining OUT terminal** (lines without one feed the coupled Assembly Cell whole, per FDS-06-008). By Machining OUT the **Trim → Machining rename has already fired** at Machining IN (FDS-05-033), so the parent being split is the **machined** LOT and the children are machined sub-LOTs (machining-origin — `ToolId` / `ToolCavityId` NULL per FDS-05-022). The mechanics:
 
-1. When the operator completes Trim work on a parent LOT and triggers Trim OUT (FDS-06-006), the system SHALL present a sub-LOT split confirmation dialog.
+1. When the operator completes the Machining operation on a parent (machined) LOT and triggers Machining OUT (FDS-06-008), the system SHALL present a sub-LOT split confirmation dialog.
 2. Calculate an even N-way split of the parent LOT's piece count (default N=2; e.g., 50 → 25/25; 51 → 26/25). The operator MAY adjust the number of sublots and per-sublot quantities; the total SHALL equal the parent's piece count.
-3. For each sub-LOT, the operator SHALL select the destination Machining Cell (scan or dropdown per FDS-02-009) — this writes the sub-LOT into that Cell's FIFO queue.
-4. On confirmation, create N child LOT records per FDS-05-022 (sublot pattern). Each sub-LOT inherits the parent's `ItemId` (the cast/trim Item — the **Trim → Machining rename does not happen yet**; that fires at Machining IN per FDS-05-033). Each child requires a fresh LTT barcode scan.
+3. For each sub-LOT, the operator SHALL select the destination (scan or dropdown per FDS-02-009). Routing MAY drive the destination set where the line's Operation Template defines it.
+4. On confirmation, create N child LOT records per FDS-05-022 (sublot pattern). Each sub-LOT inherits the parent's **machined** `ItemId` (the Trim → Machining rename already happened at Machining IN per FDS-05-033). Each child requires a fresh LTT barcode scan.
 5. Decrement the parent LOT's piece count by the total pieces split off; close the parent if all pieces moved (`LotStatusCode = Closed`).
 6. Write `LotGenealogy` records with `RelationshipType = Split` for each parent→child link.
-7. Write a `LotMovement` for each sub-LOT moving from the Trim Cell to the destination Machining Cell.
-8. Print LTT labels for each child sublot — labels follow the FDS-05-024 parent-reference rule.
+7. Write a `LotMovement` for each sub-LOT moving from the Machining Cell to its destination.
+8. Print LTT labels for each child sublot — labels follow the FDS-05-024 parent-reference rule (MPP's `SL`-id sublot numbering convention — exact pre/post format confirmed at lot-number-generation build time).
 9. Log all operations to `Audit.OperationLog`.
 
-The operator MAY cancel the split and process the LOT as a single sub-LOT routed to one Machining Cell. (FRS 2.1.4, 2.2.5, 3.9.12)
+A line that does **not** sublot skips this workflow entirely — the whole machined LOT auto-moves to the coupled Assembly Cell (FDS-06-008). The operator MAY also cancel a split on a sublotting line and move the whole LOT to a single destination. (FRS 2.1.4, 2.2.5, 3.9.12)
 
 #### FDS-05-010 — Uneven Split Handling
 If the parent LOT's piece count is odd, the system SHALL propose the closest even split (e.g., 51 → 26/25). The operator MAY adjust these sizes before confirming. The total of all child quantities SHALL equal the parent's piece count.
@@ -1211,10 +1212,10 @@ Warm-up shots are tracked as a downtime sub-category rather than on the producti
 
 ### 6.3 Trim Shop Workflow
 
-The Trim Shop deburrs and sprues cast pieces. The LOT keeps its original cast `ItemId` throughout Trim — sprue removal is yield loss recorded as `RejectEvent` rows on the same LOT (per FDS-06-019), not a part-identity change. The Trim → Machining rename happens at Machining IN per FDS-05-033, not at Trim OUT. What does happen at Trim OUT is a sub-LOT split that distributes the trimmed pieces across multiple Machining Cells.
+The Trim Shop deburrs and sprues cast pieces. The LOT keeps its original cast `ItemId` throughout Trim — sprue removal is yield loss recorded as `RejectEvent` rows on the same LOT (per FDS-06-019), not a part-identity change. The Trim → Machining rename happens at Machining IN per FDS-05-033, not at Trim OUT. Trim OUT is a **1:1 whole-LOT move** to the LOT's destination Machining line — no split happens at Trim (sub-LOT splitting moved to Machining OUT per FDS-05-009). Trim itself is tracked at **Area** resolution: a LOT is checked into the Trim Shop, processed, and checked out, with no line- or cell-level tracking in between.
 
 #### FDS-06-004 — Trim IN
-When a LOT arrives at the Trim Shop, the operator SHALL scan the LTT barcode (or pick from FIFO if the operator workflow surfaces a queue). The system SHALL record a `LotMovement` to the Trim Cell. (FRS 2.2.3)
+When a LOT arrives at the Trim Shop, the operator SHALL scan the LTT barcode (or pick from FIFO if the operator workflow surfaces a queue). The system SHALL record a `LotMovement` to the **Trim Shop Area** — Trim is tracked at Area resolution (check-in → process → check-out), not at line or cell level. (FRS 2.2.3)
 
 #### FDS-06-005 — Weight-Based Piece Count Estimation
 The Trim Shop screen SHALL support weight-based piece count estimation:
@@ -1225,42 +1226,49 @@ The Trim Shop screen SHALL support weight-based piece count estimation:
 4. The system SHALL NOT block production if the count changes — it logs the adjustment (FRS 2.2.3: "MES takes no specific action if the LOT quantity has changed")
 5. Any count adjustment SHALL be recorded in `LotAttributeChange`
 
-#### FDS-06-006 — Trim OUT (ProductionEvent + Sub-LOT Split to Machining FIFO)
+#### FDS-06-006 — Trim OUT (ProductionEvent + Whole-LOT Move to Machining)
 
-When Trim work completes, the operator SHALL trigger Trim OUT for the LOT. The system SHALL, in one transaction:
+When Trim work completes, the operator SHALL trigger Trim OUT for the LOT. Trim OUT does **not** split — sub-LOT splitting moved to Machining OUT (FDS-05-009). The system SHALL, in one transaction:
 
 1. Write a `Workorder.ProductionEvent` checkpoint row recording cumulative `ShotCount` / `ScrapCount` for the Trim operation. Per-piece scrap (sprue removal yield loss) is captured in the cumulative `ScrapCount` delta; defective trim outputs use `RejectEvent` per FDS-06-019.
-2. Invoke the sub-LOT split workflow per FDS-05-009 — N child sub-LOTs are created, each inheriting the parent's cast/trim `ItemId`, each routed to a Machining Cell selected by the operator (scan or dropdown per FDS-02-009).
-3. The split operation deposits each sub-LOT into the destination Machining Cell's FIFO queue (visible at FDS-06-007). The parent LOT closes when all pieces are split off (`LotStatusCode = Closed`); a partial parent may persist if the operator splits off only some pieces and resumes later.
+2. Move the **whole LOT** (1:1) to its destination Machining line, selected by the operator (scan or dropdown per FDS-02-009) or by routing where the Operation Template defines it. The LOT retains its cast/trim `ItemId` until the rename at Machining IN (FDS-05-033).
+3. Write a `LotMovement` from the Trim Shop Area to the destination Machining line, depositing the LOT into that line's FIFO queue (visible at FDS-06-007). The LOT remains open — there is no Trim-side close, because nothing is split off.
 
-A LOT with only one Machining destination MAY skip the multi-way split — the operator selects a single destination Cell and the LOT moves there as a single (degenerate) sub-LOT, retaining its cast/trim `ItemId` until Machining IN.
+A LOT therefore leaves Trim as a single intact LOT; any division into sub-LOTs happens later, at Machining OUT, and only on lines that sublot (FDS-05-009).
 
 ### 6.4 Machining Workflow
 
-Machining receives sub-LOTs from Trim OUT (FDS-06-006), processes them, and feeds the machined output directly to a coupled Assembly Cell. The Machining → Assembly hand-off is automatic — operators do not scan or move LOTs out of Machining.
+Machining receives **whole** cast/trim LOTs from Trim OUT (FDS-06-006), renames each to its machined Item at Machining IN (FDS-05-033), and processes it. At Machining OUT a line either **splits** the machined LOT into sub-LOTs (FDS-05-009 — lines with a dedicated Machining OUT terminal) or, on non-sublotting lines, feeds the machined output **whole** to the coupled Assembly Cell automatically. On the auto-coupled path operators do not scan or move LOTs out of Machining (FDS-06-008).
 
 #### FDS-06-007 — Machining IN (FIFO Pick + Trim → Machining Rename)
 
-Each Machining Cell SHALL surface a FIFO queue of cast/trim sub-LOTs that have been routed to it via Trim OUT (FDS-06-006). The queue is ordered by arrival time (`LotMovement.MovedAt` of the most recent move into this Cell). Operators MAY override queue order (FRS 2.2.4).
+Each Machining Cell SHALL surface a FIFO queue of cast/trim LOTs that have been moved to it **whole** (1:1) via Trim OUT (FDS-06-006). The queue is ordered by arrival time (`LotMovement.MovedAt` of the most recent move into this Cell). Operators MAY override queue order (FRS 2.2.4).
 
-When the operator picks the next sub-LOT (or the system advances to it automatically when the prior LOT completes), the MES SHALL:
+When the operator picks the next LOT (or the system advances to it automatically when the prior LOT completes), the MES SHALL:
 
-1. Apply the **Trim → Machining rename** per FDS-05-033 — write a `Workorder.ConsumptionEvent` consuming the cast/trim sub-LOT and producing a new machined LOT under the destination Item (the machined-side `Parts.Item` whose 1-line BOM matches the picked sub-LOT's `ItemId`). The operator scans a fresh LTT for the new machined LOT.
+1. Apply the **Trim → Machining rename** per FDS-05-033 — write a `Workorder.ConsumptionEvent` consuming the cast/trim LOT and producing a new machined LOT under the destination Item (the machined-side `Parts.Item` whose 1-line BOM matches the picked LOT's `ItemId`). The operator scans a fresh LTT for the new machined LOT.
 2. Set the new machined LOT's `CurrentLocationId` to this Machining Cell.
-3. Write a `LotGenealogy` row with `RelationshipType = Consumption` linking the cast/trim sub-LOT to the new machined LOT.
+3. Write a `LotGenealogy` row with `RelationshipType = Consumption` linking the cast/trim LOT to the new machined LOT.
 4. Display the LOT's current piece count and Item details for operator confirmation.
 
-No separate "scan LTT to receive at Machining" step exists — the sub-LOT was already placed in this Cell's queue at Trim OUT, and the rename + machined-LOT creation are the receive event.
+No separate "scan LTT to receive at Machining" step exists — the LOT was already placed in this Cell's queue at Trim OUT, and the rename + machined-LOT creation are the receive event.
 
-#### FDS-06-008 — Machining OUT (Auto-Completion + Auto-Move to Coupled Assembly Cell)
+#### FDS-06-008 — Machining OUT (Sub-LOT Split on Sublotting Lines, else Auto-Move to Coupled Assembly Cell)
 
-Machining OUT SHALL be event-driven, not operator-initiated. When the machine signals completion of the Machining operation on a LOT (via PLC integration per §10), the MES SHALL:
+A line's Machining OUT behavior depends on whether it sublots — the physical signature is a dedicated **Machining OUT terminal**:
+
+- **Sublotting lines (Machining OUT terminal present):** Machining OUT is **operator-initiated**. The operator triggers it and the sub-LOT split workflow (FDS-05-009) runs — the machined LOT is split into N machined sub-LOTs, each routed to its destination. This is the only point in the Machining → Assembly flow where sub-LOTs are created.
+- **Non-sublotting lines (auto-coupled):** Machining OUT is **event-driven, not operator-initiated**. When the machine signals completion (via PLC integration per §10), the whole machined LOT auto-moves to the coupled Assembly Cell.
+
+On the **auto-coupled** path, when the machine signals completion of the Machining operation on a LOT, the MES SHALL:
 
 1. Write a `Workorder.ProductionEvent` checkpoint row for the Machining operation — cumulative counters, defect codes via `RejectEvent` if any, operator, timestamp.
 2. Auto-write a `LotMovement` from this Machining Cell to the **coupled downstream Cell** (typically the paired Assembly Cell within the same WorkCenter). No operator scan or confirmation is required.
 3. Update the machined LOT's `CurrentLocationId` to the coupled downstream Cell.
 
-**Coupling configuration.** Each Machining Cell that is coupled to a specific downstream Cell SHALL carry a `CoupledDownstreamCellLocationId` `LocationAttribute` referencing that Cell. When non-NULL, completion fires the auto-move described above. When NULL, completion writes the `ProductionEvent` only — the LOT stays at the Machining Cell awaiting an explicit operator-driven movement (the legacy / uncoupled path).
+(On the **sublotting** path, the `ProductionEvent`, the `LotGenealogy` `Split` edges, the per-sub-LOT `LotMovement`s, and the `CurrentLocationId` updates are written by the FDS-05-009 workflow.)
+
+**Coupling configuration.** Each Machining Cell that is coupled to a specific downstream Cell SHALL carry a `CoupledDownstreamCellLocationId` `LocationAttribute` referencing that Cell. When non-NULL, completion fires the auto-move described above. When NULL, completion writes the `ProductionEvent` only — the LOT stays at the Machining Cell awaiting an explicit operator-driven movement (the legacy / uncoupled path, and the entry point for the sublotting split). A sublotting line is therefore an uncoupled line (`CoupledDownstreamCellLocationId` NULL) whose Machining OUT terminal drives the FDS-05-009 split.
 
 The pairing is configured at deployment via the Configuration Tool's Location admin screens. Typical setup: a paired Machining + Assembly WorkCenter has a Machining Cell whose `CoupledDownstreamCellLocationId` points at the sibling Assembly Cell — see §2.5 example of paired terminals. (FRS 2.2.5)
 
@@ -1755,7 +1763,7 @@ A quality-authorized user SHALL be able to release a hold. The system SHALL reco
 A hold SHALL NOT require an associated non-conformance record. The `NonConformanceId` FK on `HoldEvent` is nullable. Precautionary holds (e.g., customer complaint pending investigation) are placed without formal NCM. (FRS 2.1.8)
 
 #### FDS-08-005 — Partial Disposition via Split
-When investigation reveals only a portion of a held LOT is defective, the user SHALL split the LOT (per FDS-05-009) to isolate suspect parts. The suspect child LOT can be scrapped while the remainder is released. Genealogy permanently records the split. This is the MVP mechanism for partial quality disposition.
+When investigation reveals only a portion of a held LOT is defective, the user SHALL split the LOT (per the FDS-05-022 sublot pattern) to isolate suspect parts. The suspect child LOT can be scrapped while the remainder is released. Genealogy permanently records the split. This is the MVP mechanism for partial quality disposition.
 
 #### FDS-08-006 — Bulk Hold
 The Hold Management screen SHALL support searching for LOTs by criteria (part number, die number, cavity number, date range, location) and placing holds on multiple LOTs in a single action. Each LOT SHALL receive its own `HoldEvent` record. (FRS 3.16.10)
