@@ -286,6 +286,7 @@
                 <a href="#terminal/receiving"     class="pf-btn pf-btn-secondary" style="justify-content: flex-start;">Phase 4 · Receiving Dock</a>
                 <a href="#terminal/trim"          class="pf-btn pf-btn-secondary" style="justify-content: flex-start;">Phase 4 · Trim Station (polymorphic IN/OUT)</a>
                 <a href="#terminal/machining-in"  class="pf-btn pf-btn-secondary" style="justify-content: flex-start;">Phase 5 · Machining IN (FIFO)</a>
+                <a href="#terminal/machining-out" class="pf-btn pf-btn-secondary" style="justify-content: flex-start;">Phase 5 · Machining OUT (Sub-LOT Split)</a>
                 <a href="#terminal/assembly"      class="pf-btn pf-btn-secondary" style="justify-content: flex-start;">Phase 6 · Assembly Serialized</a>
                 <a href="#terminal/assembly-ns"         class="pf-btn pf-btn-secondary" style="justify-content: flex-start;">Phase 6 · Assembly Non-Serialized</a>
                 <a href="#terminal/lineside-inventory"  class="pf-btn pf-btn-secondary" style="justify-content: flex-start;">Phase 6 · Assembly Lineside Inventory</a>
@@ -382,7 +383,7 @@
                   <span class="pf-queue-position">Manufactured</span>
                   <div>
                     <span class="pf-queue-name">MESL1710942</span>
-                    <div class="pf-queue-detail">5G0-TRIM-4102 (parent) · 0 pcs · Closed (split at Trim OUT into 2 children)</div>
+                    <div class="pf-queue-detail">5G0-TRIM-4102 · 0 pcs · Closed (moved whole at Trim OUT → consumed at Machining IN)</div>
                   </div>
                   <span class="pf-pill" style="background: var(--bg-row-alt); color: var(--text-muted);">Closed</span>
                   <span class="pf-kpi-sub">closed 09:42</span>
@@ -460,38 +461,38 @@
                 <div style="margin-left: 18px; padding-left: 18px; border-left: 1px dashed var(--border); display:flex; flex-direction:column; gap:6px;">
                   <span class="pf-kpi-sub" style="font-size: 11px; padding: 2px 6px;">↑ Consumed from</span>
 
-                  <!-- Generation 1: machined LOT -->
+                  <!-- Generation 1: machined sub-LOT (split child, consumed into the serial) -->
                   <a href="#lot/detail" class="pf-queue-row" style="grid-template-columns: auto 1fr auto; text-decoration:none; color:inherit;">
                     <span class="pf-repeater-index">1</span>
                     <div>
-                      <span class="pf-queue-name">MESL1710955 · machined LOT</span>
-                      <div class="pf-queue-detail">5G0-MACHINED-4102 · CNC 12 · 09:52</div>
+                      <span class="pf-queue-name">MESL1710955-A · machined sub-LOT</span>
+                      <div class="pf-queue-detail">5G0-MACHINED-4102 · 24 pcs · split at Machining OUT 09:52 · routed to Assembly 5G0F</div>
                     </div>
-                    <span class="pf-pill pf-pill-good">Good</span>
+                    <span class="pf-pill" style="background: var(--bg-row-alt); color: var(--text-muted);">Closed</span>
                   </a>
 
                   <div style="margin-left: 18px; padding-left: 18px; border-left: 1px dashed var(--border); display:flex; flex-direction:column; gap:6px;">
-                    <span class="pf-kpi-sub" style="font-size: 11px; padding: 2px 6px;">↑ Consumed from (BOM rename Trim → Machining per FDS-05-033)</span>
+                    <span class="pf-kpi-sub" style="font-size: 11px; padding: 2px 6px;">↑ Split from (parent — Machining OUT)</span>
 
-                    <!-- Generation 2: trim sub-LOT -->
+                    <!-- Generation 2: machined parent LOT (the split source) -->
                     <a href="#lot/detail" class="pf-queue-row" style="grid-template-columns: auto 1fr auto; text-decoration:none; color:inherit;">
                       <span class="pf-repeater-index">2</span>
                       <div>
-                        <span class="pf-queue-name">MESL1710942-A · trim sub-LOT</span>
-                        <div class="pf-queue-detail">5G0-TRIM-4102 · 24 pcs · split at Trim OUT 09:42 · routed to CNC 12</div>
+                        <span class="pf-queue-name">MESL1710955 · machined parent LOT</span>
+                        <div class="pf-queue-detail">5G0-MACHINED-4102 · 48 pcs (split into 2 × 24) · CNC 12 · machined 09:50</div>
                       </div>
                       <span class="pf-pill" style="background: var(--bg-row-alt); color: var(--text-muted);">Closed</span>
                     </a>
 
                     <div style="margin-left: 18px; padding-left: 18px; border-left: 1px dashed var(--border); display:flex; flex-direction:column; gap:6px;">
-                      <span class="pf-kpi-sub" style="font-size: 11px; padding: 2px 6px;">↑ Split from (parent — Trim OUT)</span>
+                      <span class="pf-kpi-sub" style="font-size: 11px; padding: 2px 6px;">↑ Consumed from (BOM rename Trim → Machining at Machining IN per FDS-05-033)</span>
 
-                      <!-- Generation 3: parent trim LOT -->
+                      <!-- Generation 3: whole cast/trim LOT (the rename source) -->
                       <a href="#lot/detail" class="pf-queue-row" style="grid-template-columns: auto 1fr auto; text-decoration:none; color:inherit;">
                         <span class="pf-repeater-index">3</span>
                         <div>
-                          <span class="pf-queue-name">MESL1710942 · cast/trim parent LOT</span>
-                          <div class="pf-queue-detail">5G0-TRIM-4102 · 50 pcs (split into 2 × 25) · Trim Cell 3 · created 06:42</div>
+                          <span class="pf-queue-name">MESL1710942 · cast/trim LOT</span>
+                          <div class="pf-queue-detail">5G0-TRIM-4102 · 48 pcs · whole · moved to CNC 12 at Trim OUT 09:42 · consumed at Machining IN</div>
                         </div>
                         <span class="pf-pill" style="background: var(--bg-row-alt); color: var(--text-muted);">Closed</span>
                       </a>
@@ -1042,8 +1043,8 @@
 
       <section class="pf-panel">
         <div class="pf-panel-header">
-          <h3>FIFO Queue · 3 sub-LOTs awaiting</h3>
-          <span class="pf-kpi-sub">No scan-to-receive — pick from queue. BOM-driven rename fires on pick.</span>
+          <h3>FIFO Queue · 3 LOTs awaiting</h3>
+          <span class="pf-kpi-sub">Whole cast/trim LOTs moved here at Trim OUT (1:1). No scan-to-receive — pick from queue; BOM-driven rename fires on pick.</span>
         </div>
 
         <!-- FIFO queue rows -->
@@ -1051,8 +1052,8 @@
           <div class="pf-queue-row selected">
             <div style="display:flex; flex-direction:column; gap:2px;">
               <span class="pf-queue-position">Position 1 · oldest</span>
-              <span class="pf-queue-name">MESL1710942-A</span>
-              <span class="pf-queue-detail">Parent: MESL1710942 · 5G0-TRIM-4102 · 24 pcs · arrived 09:45</span>
+              <span class="pf-queue-name">MESL1710942</span>
+              <span class="pf-queue-detail">5G0-TRIM-4102 · 48 pcs · whole LOT · arrived 09:45</span>
             </div>
             <span class="pf-pill pf-pill-good">Good</span>
             <span class="pf-kpi-sub">From Trim Cell 3</span>
@@ -1062,8 +1063,8 @@
           <div class="pf-queue-row">
             <div style="display:flex; flex-direction:column; gap:2px;">
               <span class="pf-queue-position">Position 2</span>
-              <span class="pf-queue-name">MESL1710948-B</span>
-              <span class="pf-queue-detail">Parent: MESL1710948 · 5G0-TRIM-4102 · 25 pcs · arrived 10:02</span>
+              <span class="pf-queue-name">MESL1710948</span>
+              <span class="pf-queue-detail">5G0-TRIM-4102 · 47 pcs · whole LOT · arrived 10:02</span>
             </div>
             <span class="pf-pill pf-pill-good">Good</span>
             <span class="pf-kpi-sub">From Trim Cell 5</span>
@@ -1073,8 +1074,8 @@
           <div class="pf-queue-row">
             <div style="display:flex; flex-direction:column; gap:2px;">
               <span class="pf-queue-position">Position 3</span>
-              <span class="pf-queue-name">MESL1710953-C</span>
-              <span class="pf-queue-detail">Parent: MESL1710953 · 5G0-TRIM-4102 · 16 pcs · arrived 10:18</span>
+              <span class="pf-queue-name">MESL1710953</span>
+              <span class="pf-queue-detail">5G0-TRIM-4102 · 48 pcs · whole LOT · arrived 10:18</span>
             </div>
             <span class="pf-pill pf-pill-hold">Hold</span>
             <span class="pf-kpi-sub" style="color:var(--pf-status-warn-fg);">Hold blocks pick</span>
@@ -1092,7 +1093,7 @@
         <div class="pf-panel-header"><h3>Active machined LOT (after pick)</h3></div>
         <div class="pf-empty-state">
           <p>No LOT picked yet. Click "Pick" above to fire the BOM-Driven Rename Confirmation Modal.<br>
-             On confirm: a new machined LOT is created from this sub-LOT.</p>
+             On confirm: a new machined LOT is created from this whole LOT.</p>
           <p class="pf-kpi-sub">Press <kbd>R</kbd> to preview the BOM Rename Modal.</p>
         </div>
       </section>
@@ -1101,6 +1102,129 @@
         document.getElementById('machining-pick')?.addEventListener('click', () => {
           document.getElementById('bom-rename-modal').classList.add('shown');
         });
+      </script>
+    </section>
+
+
+    <!-- ─── TERMINAL VIEW: MACHINING OUT (Phase 5) — sublotting line split ─ -->
+    <!--
+      Sublotting lines (RequiresSubLotSplit=1 on the MachiningOut template; physical
+      signature: a dedicated Machining OUT terminal) split the MACHINED LOT here, after
+      the Machining-IN rename. Non-sublotting coupled lines have NO operator OUT screen —
+      they auto-move whole to the paired Assembly Cell on PLC OperationComplete (FDS-06-008).
+    -->
+    <section data-route="terminal/machining-out" class="pf-terminal">
+      <header class="pf-terminal-header">
+        <div class="pf-terminal-title">
+          <h1>Machining OUT · Sub-LOT Split</h1>
+          <span class="pf-terminal-title-meta">CNC 18 · 6MA Cam Holder WC · sublotting line (RequiresSubLotSplit = ON) · dedicated Machining OUT terminal</span>
+        </div>
+        <span class="pf-paused-indicator">
+          <span>⏸</span><span>Paused</span><span class="pf-paused-indicator-count">0</span>
+        </span>
+      </header>
+
+      <div class="pf-terminal-cell-context">
+        <span class="pf-cell-context-label">OperationTemplate</span>
+        <span class="pf-cell-context-value">MachiningOut · 6MA-MACHINED-3201 v2</span>
+        <span style="flex:1"></span>
+        <span class="pf-kpi-sub">Splitting the machined LOT — rename already fired at Machining IN (FDS-05-033). Children are machining-origin sub-LOTs.</span>
+      </div>
+
+      <section class="pf-panel">
+        <div class="pf-panel-header">
+          <h3>Closing ProductionEvent · MachiningOut</h3>
+          <span class="pf-kpi-sub">Cumulative counters captured; operator initials close the operation before the split.</span>
+        </div>
+        <div class="pf-field-row">
+          <div class="pf-field" style="max-width: 240px;">
+            <label class="pf-field-label">Active Machined LOT</label>
+            <input class="pf-field-input pf-field-mono" type="text" value="MESL1710961" disabled />
+          </div>
+          <div class="pf-field" style="max-width: 200px;">
+            <label class="pf-field-label">Operator Initials</label>
+            <input class="pf-field-input pf-field-mono" type="text" placeholder="XX" />
+          </div>
+        </div>
+      </section>
+
+      <!-- Destination selection — Flex Repeater + Embedded View pattern -->
+      <section class="pf-panel" id="machining-split-panel">
+        <div class="pf-panel-header">
+          <h3>Sub-LOT Distribution · 2 destinations</h3>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <span class="pf-kpi-sub" id="machining-total-check">Total: 48 / 48 ✓</span>
+            <button class="pf-btn pf-btn-secondary" type="button" id="machining-add-row">+ Add sub-LOT</button>
+          </div>
+        </div>
+
+        <p class="pf-kpi-sub" style="margin:0;">
+          Default N=2 even split — adjustable, total must equal the parent piece count. The machined LOT splits into N machining-origin sub-LOTs, each routed to its destination; LTT labels print showing child + parent LotName (FDS-05-024).
+        </p>
+
+        <div class="pf-repeater pf-repeater-scroll" id="machining-repeater">
+          <div class="pf-repeater-entity">
+            <span class="pf-repeater-index">1</span>
+            <div class="pf-field">
+              <label class="pf-field-label">Pieces</label>
+              <input class="pf-field-input" type="number" value="24" min="1" />
+            </div>
+            <div class="pf-field">
+              <label class="pf-field-label">Destination</label>
+              <select class="pf-field-select">
+                <option>Assembly Cell 6MA-A · queue: 1</option>
+                <option>Assembly Cell 6MA-B · queue: 0</option>
+                <option>Packaging Line 2 · queue: 0</option>
+              </select>
+            </div>
+            <button class="pf-btn pf-btn-secondary" type="button" title="Remove">×</button>
+          </div>
+
+          <div class="pf-repeater-entity">
+            <span class="pf-repeater-index">2</span>
+            <div class="pf-field">
+              <label class="pf-field-label">Pieces</label>
+              <input class="pf-field-input" type="number" value="24" min="1" />
+            </div>
+            <div class="pf-field">
+              <label class="pf-field-label">Destination</label>
+              <select class="pf-field-select">
+                <option>Assembly Cell 6MA-A · queue: 1</option>
+                <option selected>Assembly Cell 6MA-B · queue: 0</option>
+                <option>Packaging Line 2 · queue: 0</option>
+              </select>
+            </div>
+            <button class="pf-btn pf-btn-secondary" type="button" title="Remove">×</button>
+          </div>
+        </div>
+
+        <div class="pf-actions" style="border:none; margin:0; padding:0;">
+          <button class="pf-btn pf-btn-primary pf-btn-large" type="button">Submit · MachiningOut + Split + Route</button>
+          <button class="pf-btn pf-btn-secondary" type="button">Cancel</button>
+          <span style="flex:1"></span>
+          <span class="pf-kpi-sub">Non-sublotting lines auto-move whole to the coupled Assembly Cell — no screen.</span>
+        </div>
+      </section>
+
+      <script>
+        (function() {
+          const addBtn   = document.getElementById('machining-add-row');
+          const repeater = document.getElementById('machining-repeater');
+          addBtn?.addEventListener('click', () => {
+            const idx = repeater.children.length + 1;
+            const entity = document.createElement('div');
+            entity.className = 'pf-repeater-entity';
+            entity.innerHTML = `
+              <span class="pf-repeater-index">${idx}</span>
+              <div class="pf-field"><label class="pf-field-label">Pieces</label><input class="pf-field-input" type="number" value="0" /></div>
+              <div class="pf-field"><label class="pf-field-label">Destination</label>
+                <select class="pf-field-select"><option>Assembly Cell 6MA-A · queue: 1</option><option>Assembly Cell 6MA-B · queue: 0</option><option>Packaging Line 2 · queue: 0</option></select>
+              </div>
+              <button class="pf-btn pf-btn-secondary" type="button" title="Remove">×</button>
+            `;
+            repeater.appendChild(entity);
+          });
+        })();
       </script>
     </section>
 
@@ -2829,7 +2953,7 @@
       One terminal, three states driven by data-trim-state on the section:
         idle   → scan field + Trim Shop Area-side storage queue picker
         in     → Movement Scan eligibility + IN ProductionEvent
-        out    → Closing ProductionEvent + RequiresSubLotSplit Flex Repeater + reject
+        out    → Closing ProductionEvent + whole-LOT move destination + reject
         error  → friendly error (LOT not at this Cell and not in storage)
 
       Path A (deliberate): pick from queue → IN form → submit → screen flips to OUT for
@@ -3030,10 +3154,7 @@
         <span class="pf-cell-context-label">OperationTemplate</span>
         <span class="pf-cell-context-value">TrimOut · 5G0-TRIM-4102 v3</span>
         <span style="flex:1"></span>
-        <span class="pf-kpi-sub" style="margin-right:8px;">Sub-LOT Split:</span>
-        <button class="pf-btn pf-btn-secondary" type="button" id="trim-split-toggle" data-state="on">
-          <span id="trim-split-state">ON · split + route</span>
-        </button>
+        <span class="pf-kpi-sub">Whole-LOT move — no split at Trim (sub-LOT split moved to Machining OUT · FDS-05-009)</span>
       </div>
 
       <section class="pf-panel" data-trim-show="out">
@@ -3075,58 +3196,32 @@
         </div>
       </section>
 
-      <!-- Destination selection — Flex Repeater + Embedded View pattern -->
-      <section class="pf-panel" data-trim-show="out" id="trim-split-panel">
+      <!-- Destination selection — whole-LOT move (no split at Trim) -->
+      <section class="pf-panel" data-trim-show="out" id="trim-move-panel">
         <div class="pf-panel-header">
-          <h3 id="trim-split-heading">Sub-LOT Distribution · 2 destinations</h3>
-          <div style="display:flex; gap:8px; align-items:center;">
-            <span class="pf-kpi-sub" id="trim-total-check">Total: 48 / 48 ✓</span>
-            <button class="pf-btn pf-btn-secondary" type="button" id="trim-add-row">+ Add sub-LOT</button>
-          </div>
+          <h3>Destination — whole-LOT move</h3>
+          <span class="pf-kpi-sub">Trim OUT moves the LOT whole to one Machining line. Sub-LOT splitting happens later, at Machining OUT.</span>
         </div>
 
-        <p class="pf-kpi-sub" style="margin:0;">
-          One row when the LOT moves whole; multiple rows when splitting.
-        </p>
-
-        <div class="pf-repeater pf-repeater-scroll" id="trim-repeater">
-          <div class="pf-repeater-entity">
-            <span class="pf-repeater-index">1</span>
-            <div class="pf-field">
-              <label class="pf-field-label">Pieces</label>
-              <input class="pf-field-input" type="number" value="24" min="1" />
-            </div>
-            <div class="pf-field">
-              <label class="pf-field-label">Destination Machining Cell</label>
-              <select class="pf-field-select">
-                <option>CNC 12 · 5G0 Machining WC · queue: 2</option>
-                <option>CNC 13 · 5G0 Machining WC · queue: 0</option>
-                <option>CNC 14 · 5G0 Machining WC · queue: 1</option>
-              </select>
-            </div>
-            <button class="pf-btn pf-btn-secondary" type="button" title="Remove">×</button>
+        <div class="pf-field-row">
+          <div class="pf-field" style="max-width: 200px;">
+            <label class="pf-field-label">Pieces</label>
+            <input class="pf-field-input" type="number" value="48" min="48" max="48" disabled />
+            <span class="pf-field-help">Locked at the LOT's piece count — nothing is split off.</span>
           </div>
-
-          <div class="pf-repeater-entity">
-            <span class="pf-repeater-index">2</span>
-            <div class="pf-field">
-              <label class="pf-field-label">Pieces</label>
-              <input class="pf-field-input" type="number" value="24" min="1" />
-            </div>
-            <div class="pf-field">
-              <label class="pf-field-label">Destination Machining Cell</label>
-              <select class="pf-field-select">
-                <option>CNC 12 · 5G0 Machining WC · queue: 2</option>
-                <option selected>CNC 13 · 5G0 Machining WC · queue: 0</option>
-                <option>CNC 14 · 5G0 Machining WC · queue: 1</option>
-              </select>
-            </div>
-            <button class="pf-btn pf-btn-secondary" type="button" title="Remove">×</button>
+          <div class="pf-field">
+            <label class="pf-field-label">Destination Machining Line</label>
+            <select class="pf-field-select">
+              <option>CNC 12 · 5G0 Machining WC · queue: 2</option>
+              <option>CNC 13 · 5G0 Machining WC · queue: 0</option>
+              <option>CNC 14 · 5G0 Machining WC · queue: 1</option>
+            </select>
+            <span class="pf-field-help">Scan or pick (FDS-02-009), or routing supplies it.</span>
           </div>
         </div>
 
         <div class="pf-actions" style="border:none; margin:0; padding:0;">
-          <button class="pf-btn pf-btn-primary pf-btn-large" type="button" data-trim-submit-out>Submit · TrimOut + Split + Route</button>
+          <button class="pf-btn pf-btn-primary pf-btn-large" type="button" data-trim-submit-out>Submit · TrimOut + Move</button>
           <button class="pf-btn pf-btn-secondary" type="button" data-trim-cancel>Cancel</button>
           <span style="flex:1"></span>
           <button class="pf-btn pf-btn-elevated" data-elevated-action="HoldPlace" type="button">Place Hold instead</button>
@@ -3150,7 +3245,7 @@
         </div>
       </section>
 
-      <!-- View-local script: state cycler, scan→state mapping, queue pick, split toggle -->
+      <!-- View-local script: state cycler, scan→state mapping, queue pick -->
       <script>
         (function() {
           const section = document.querySelector('[data-route="terminal/trim"]');
@@ -3224,79 +3319,8 @@
             btn.addEventListener('click', () => setState('idle'));
           });
 
-          // RequiresSubLotSplit toggle (lifted from old terminal/trim-out)
-          const toggle    = document.getElementById('trim-split-toggle');
-          const stateEl   = document.getElementById('trim-split-state');
-          const heading   = document.getElementById('trim-split-heading');
-          const totalChk  = document.getElementById('trim-total-check');
-          const addBtn    = document.getElementById('trim-add-row');
-          const repeater  = document.getElementById('trim-repeater');
-
-          toggle?.addEventListener('click', () => {
-            const isOn = toggle.dataset.state === 'on';
-            toggle.dataset.state = isOn ? 'off' : 'on';
-            if (isOn) {
-              stateEl.textContent  = 'OFF · move whole';
-              heading.textContent  = 'Destination · 1 destination (move whole, no split)';
-              totalChk.textContent = 'Total: 48 / 48 ✓';
-              addBtn.style.display = 'none';
-              repeater.innerHTML = `
-                <div class="pf-repeater-entity">
-                  <span class="pf-repeater-index">1</span>
-                  <div class="pf-field">
-                    <label class="pf-field-label">Pieces</label>
-                    <input class="pf-field-input" type="number" value="48" min="48" max="48" disabled />
-                    <span class="pf-field-help">Locked at parent piece count — no split.</span>
-                  </div>
-                  <div class="pf-field">
-                    <label class="pf-field-label">Destination Cell</label>
-                    <select class="pf-field-select">
-                      <option>CNC 12 · 5G0 Machining WC · queue: 2</option>
-                      <option>CNC 13 · 5G0 Machining WC · queue: 0</option>
-                    </select>
-                  </div>
-                  <span></span>
-                </div>
-              `;
-            } else {
-              stateEl.textContent  = 'ON · split + route';
-              heading.textContent  = 'Sub-LOT Distribution · 2 destinations';
-              addBtn.style.display = '';
-              repeater.innerHTML = `
-                <div class="pf-repeater-entity">
-                  <span class="pf-repeater-index">1</span>
-                  <div class="pf-field"><label class="pf-field-label">Pieces</label><input class="pf-field-input" type="number" value="24" /></div>
-                  <div class="pf-field"><label class="pf-field-label">Destination Machining Cell</label>
-                    <select class="pf-field-select"><option>CNC 12 · 5G0 Machining WC · queue: 2</option><option>CNC 13 · 5G0 Machining WC · queue: 0</option></select>
-                  </div>
-                  <button class="pf-btn pf-btn-secondary" type="button" title="Remove">×</button>
-                </div>
-                <div class="pf-repeater-entity">
-                  <span class="pf-repeater-index">2</span>
-                  <div class="pf-field"><label class="pf-field-label">Pieces</label><input class="pf-field-input" type="number" value="24" /></div>
-                  <div class="pf-field"><label class="pf-field-label">Destination Machining Cell</label>
-                    <select class="pf-field-select"><option>CNC 12 · 5G0 Machining WC · queue: 2</option><option selected>CNC 13 · 5G0 Machining WC · queue: 0</option></select>
-                  </div>
-                  <button class="pf-btn pf-btn-secondary" type="button" title="Remove">×</button>
-                </div>
-              `;
-            }
-          });
-
-          addBtn?.addEventListener('click', () => {
-            const idx = repeater.children.length + 1;
-            const entity = document.createElement('div');
-            entity.className = 'pf-repeater-entity';
-            entity.innerHTML = `
-              <span class="pf-repeater-index">${idx}</span>
-              <div class="pf-field"><label class="pf-field-label">Pieces</label><input class="pf-field-input" type="number" value="0" /></div>
-              <div class="pf-field"><label class="pf-field-label">Destination Machining Cell</label>
-                <select class="pf-field-select"><option>CNC 12 · 5G0 Machining WC · queue: 2</option><option>CNC 13 · 5G0 Machining WC · queue: 0</option></select>
-              </div>
-              <button class="pf-btn pf-btn-secondary" type="button" title="Remove">×</button>
-            `;
-            repeater.appendChild(entity);
-          });
+          // Sub-LOT split moved to Machining OUT (FDS-05-009) — Trim OUT is now a whole-LOT move.
+          // No split toggle / repeater here anymore; the split UX lives in the terminal/machining-out view.
         })();
       </script>
     </section>
@@ -3413,7 +3437,7 @@
             <div class="pf-empty-state">
               <h3>Genealogy walk</h3>
               <p>This LOT is at Generation 0 (Die Cast origin). No parents.<br>
-                 Walking descendants will hit any sub-LOTs split from this LOT at Trim OUT and the machined LOTs that consume them.</p>
+                 Walking descendants will hit the machined LOT that consumes this whole LOT at Machining IN, and the sub-LOTs split from that machined LOT at Machining OUT.</p>
               <p class="pf-kpi-sub">Closure-table-backed if Phase 0 OI-35 elects materialization.</p>
             </div>
           </div>

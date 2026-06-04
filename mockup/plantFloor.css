@@ -193,6 +193,7 @@ html, body {
 .pf-app[data-route="terminal/diecast"]    .pf-main > [data-route="terminal/diecast"]    { display: flex; }
 .pf-app[data-route="terminal/trim"]       .pf-main > [data-route="terminal/trim"]       { display: flex; }
 .pf-app[data-route="terminal/machining-in"] .pf-main > [data-route="terminal/machining-in"] { display: flex; }
+.pf-app[data-route="terminal/machining-out"] .pf-main > [data-route="terminal/machining-out"] { display: flex; }
 .pf-app[data-route="terminal/assembly"]   .pf-main > [data-route="terminal/assembly"]   { display: flex; }
 .pf-app[data-route="terminal/assembly-ns"] .pf-main > [data-route="terminal/assembly-ns"] { display: flex; }
 .pf-app[data-route="terminal/lineside-inventory"] .pf-main > [data-route="terminal/lineside-inventory"] { display: flex; }
