@@ -45,19 +45,19 @@ SET IDENTITY_INSERT Parts.OperationTemplate ON;
 
 IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Id = 1)
     INSERT INTO Parts.OperationTemplate (Id, Code, VersionNumber, Name, AreaLocationId, Description, CreatedAt)
-    VALUES (1, N'DC-5G0', 1, N'Die Cast 5G0 Front Cover', 3, N'Die cast operation for the 5G0 front cover assembly.', @Now);
+    VALUES (1, N'DC-5G0', 1, N'Die Cast 5G0 Front Cover', (SELECT Id FROM Location.Location WHERE Code = N'DC1'), N'Die cast operation for the 5G0 front cover assembly.', @Now);
 
 IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Id = 2)
     INSERT INTO Parts.OperationTemplate (Id, Code, VersionNumber, Name, AreaLocationId, Description, CreatedAt)
-    VALUES (2, N'TRIM-5G0', 1, N'Trim 5G0 Front Cover', 13, N'Trim/deflash operation for the 5G0 front cover.', @Now);
+    VALUES (2, N'TRIM-5G0', 1, N'Trim 5G0 Front Cover', (SELECT Id FROM Location.Location WHERE Code = N'TRIM1'), N'Trim/deflash operation for the 5G0 front cover.', @Now);
 
 IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Id = 3)
     INSERT INTO Parts.OperationTemplate (Id, Code, VersionNumber, Name, AreaLocationId, Description, CreatedAt)
-    VALUES (3, N'CNC-5G0', 1, N'CNC Machining 5G0', 4, N'CNC machining operation for the 5G0 front cover.', @Now);
+    VALUES (3, N'CNC-5G0', 1, N'CNC Machining 5G0', (SELECT Id FROM Location.Location WHERE Code = N'MA1'), N'CNC machining operation for the 5G0 front cover.', @Now);
 
 IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Id = 4)
     INSERT INTO Parts.OperationTemplate (Id, Code, VersionNumber, Name, AreaLocationId, Description, CreatedAt)
-    VALUES (4, N'ASSY-FRONT', 1, N'Assembly Front Cover', 5, N'Final assembly of the 5G0 front cover.', @Now);
+    VALUES (4, N'ASSY-FRONT', 1, N'Assembly Front Cover', (SELECT Id FROM Location.Location WHERE Code = N'MA1'), N'Final assembly of the 5G0 front cover.', @Now);
 
 SET IDENTITY_INSERT Parts.OperationTemplate OFF;
 
