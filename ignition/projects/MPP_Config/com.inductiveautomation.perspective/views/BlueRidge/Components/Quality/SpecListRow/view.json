@@ -112,7 +112,7 @@
           "props.style.classes": {
             "binding": {
               "config": {
-                "expression": "if({view.params.state} = \"Active\", \"badge badge-published\", if({view.params.state} = \"Draft\", \"badge badge-warn\", \"badge badge-purple\"))"
+                "expression": "if({view.params.state} \u003d \"Active\", \"badge badge-published\", if({view.params.state} \u003d \"Draft\", \"badge badge-warn\", \"badge badge-purple\"))"
               },
               "type": "expr"
             }
@@ -139,7 +139,7 @@
       "dom": {
         "onClick": {
           "config": {
-            "script": "\tsystem.perspective.sendMessage(\"qsSpecRowClicked\", payload={\"specId\": self.view.params.specId}, scope=\"page\")"
+            "script": "\tsystem.perspective.sendMessage(\"qsSpecRowClicked\", payload\u003d{\"specId\": self.view.params.specId}, scope\u003d\"page\")"
           },
           "scope": "G",
           "type": "script"
@@ -153,7 +153,7 @@
       "props.style.classes": {
         "binding": {
           "config": {
-            "expression": "if({view.params.specId} = {view.params.selectedSpecId}, 'tree-item tree-item-selected', 'tree-item')"
+            "expression": "if({view.params.specId} \u003d {view.params.selectedSpecId}, \u0027tree-item tree-item-selected\u0027, \u0027tree-item\u0027)"
           },
           "type": "expr"
         }
