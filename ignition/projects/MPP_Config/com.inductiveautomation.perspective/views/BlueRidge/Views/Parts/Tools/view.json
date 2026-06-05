@@ -595,6 +595,14 @@
                           "name": "SummaryBadgeRank"
                         },
                         "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "type": "expr",
+                              "config": {
+                                "expression": "!isNull({view.custom.editDraft.meta.DieRankName})"
+                              }
+                            }
+                          },
                           "props.text": {
                             "binding": {
                               "type": "property",

@@ -134,6 +134,14 @@
           "name": "BadgeRank"
         },
         "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "!isNull({view.params.tool.rank})"
+              }
+            }
+          },
           "props.text": {
             "binding": {
               "type": "property",
