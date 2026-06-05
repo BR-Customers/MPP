@@ -223,5 +223,115 @@ IF NOT EXISTS (SELECT 1 FROM Quality.QualitySpecVersion WHERE Id = 2)
 
 SET IDENTITY_INSERT Quality.QualitySpecVersion OFF;
 
+-- ============================================================
+-- Parts.OperationTemplateField -- data-collection fields per OT
+--   Fully configures the 4 OperationTemplates the 5G0 route uses, so the
+--   Routes tab steps map onto real data-collection field sets.
+--   DataCollectionField: 1=MaterialVerification 2=SerialNumber 3=DieInfo
+--     4=CavityInfo 5=Weight 6=GoodCount 7=BadCount
+-- ============================================================
+
+SET IDENTITY_INSERT Parts.OperationTemplateField ON;
+
+-- OT 1 (DC-5G0, Die Cast): DieInfo, CavityInfo, Weight, GoodCount, BadCount
+IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplateField WHERE Id = 1)
+    INSERT INTO Parts.OperationTemplateField (Id, OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt) VALUES (1, 1, 3, 1, @Now);
+IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplateField WHERE Id = 2)
+    INSERT INTO Parts.OperationTemplateField (Id, OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt) VALUES (2, 1, 4, 1, @Now);
+IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplateField WHERE Id = 3)
+    INSERT INTO Parts.OperationTemplateField (Id, OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt) VALUES (3, 1, 5, 1, @Now);
+IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplateField WHERE Id = 4)
+    INSERT INTO Parts.OperationTemplateField (Id, OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt) VALUES (4, 1, 6, 1, @Now);
+IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplateField WHERE Id = 5)
+    INSERT INTO Parts.OperationTemplateField (Id, OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt) VALUES (5, 1, 7, 1, @Now);
+
+-- OT 2 (TRIM-5G0, Trim): Weight, GoodCount, BadCount
+IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplateField WHERE Id = 6)
+    INSERT INTO Parts.OperationTemplateField (Id, OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt) VALUES (6, 2, 5, 1, @Now);
+IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplateField WHERE Id = 7)
+    INSERT INTO Parts.OperationTemplateField (Id, OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt) VALUES (7, 2, 6, 1, @Now);
+IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplateField WHERE Id = 8)
+    INSERT INTO Parts.OperationTemplateField (Id, OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt) VALUES (8, 2, 7, 1, @Now);
+
+-- OT 3 (CNC-5G0, CNC): GoodCount, BadCount
+IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplateField WHERE Id = 9)
+    INSERT INTO Parts.OperationTemplateField (Id, OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt) VALUES (9, 3, 6, 1, @Now);
+IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplateField WHERE Id = 10)
+    INSERT INTO Parts.OperationTemplateField (Id, OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt) VALUES (10, 3, 7, 1, @Now);
+
+-- OT 4 (ASSY-FRONT, Assembly): SerialNumber, MaterialVerification, GoodCount, BadCount
+IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplateField WHERE Id = 11)
+    INSERT INTO Parts.OperationTemplateField (Id, OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt) VALUES (11, 4, 2, 1, @Now);
+IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplateField WHERE Id = 12)
+    INSERT INTO Parts.OperationTemplateField (Id, OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt) VALUES (12, 4, 1, 1, @Now);
+IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplateField WHERE Id = 13)
+    INSERT INTO Parts.OperationTemplateField (Id, OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt) VALUES (13, 4, 6, 1, @Now);
+IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplateField WHERE Id = 14)
+    INSERT INTO Parts.OperationTemplateField (Id, OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt) VALUES (14, 4, 7, 1, @Now);
+
+SET IDENTITY_INSERT Parts.OperationTemplateField OFF;
+
+-- ============================================================
+-- Quality.QualitySpecAttribute -- measurement attributes for 5G0's specs
+--   Version 1 (Id=1) = Dimensional (Numeric attrs w/ UOM + target/limits)
+--   Version 2 (Id=2) = Visual (Text / Boolean attrs, no numeric limits)
+--   Uom: 3=KG 4=IN 5=MM   DataType: Numeric / Text / Boolean
+-- ============================================================
+
+SET IDENTITY_INSERT Quality.QualitySpecAttribute ON;
+
+-- Spec version 1: Dimensional
+IF NOT EXISTS (SELECT 1 FROM Quality.QualitySpecAttribute WHERE Id = 1)
+    INSERT INTO Quality.QualitySpecAttribute (Id, QualitySpecVersionId, AttributeName, DataType, UomId, TargetValue, LowerLimit, UpperLimit, IsRequired, SortOrder)
+    VALUES (1, 1, N'Overall Length', N'Numeric', 5, 120.0, 119.5, 120.5, 1, 1);
+IF NOT EXISTS (SELECT 1 FROM Quality.QualitySpecAttribute WHERE Id = 2)
+    INSERT INTO Quality.QualitySpecAttribute (Id, QualitySpecVersionId, AttributeName, DataType, UomId, TargetValue, LowerLimit, UpperLimit, IsRequired, SortOrder)
+    VALUES (2, 1, N'Bore Diameter', N'Numeric', 5, 25.0, 24.9, 25.1, 1, 2);
+IF NOT EXISTS (SELECT 1 FROM Quality.QualitySpecAttribute WHERE Id = 3)
+    INSERT INTO Quality.QualitySpecAttribute (Id, QualitySpecVersionId, AttributeName, DataType, UomId, TargetValue, LowerLimit, UpperLimit, IsRequired, SortOrder)
+    VALUES (3, 1, N'Flatness', N'Numeric', 5, 0.0, 0.0, 0.05, 0, 3);
+IF NOT EXISTS (SELECT 1 FROM Quality.QualitySpecAttribute WHERE Id = 4)
+    INSERT INTO Quality.QualitySpecAttribute (Id, QualitySpecVersionId, AttributeName, DataType, UomId, TargetValue, LowerLimit, UpperLimit, IsRequired, SortOrder)
+    VALUES (4, 1, N'Net Weight', N'Numeric', 3, 3.25, 3.10, 3.40, 1, 4);
+
+-- Spec version 2: Visual
+IF NOT EXISTS (SELECT 1 FROM Quality.QualitySpecAttribute WHERE Id = 5)
+    INSERT INTO Quality.QualitySpecAttribute (Id, QualitySpecVersionId, AttributeName, DataType, UomId, TargetValue, LowerLimit, UpperLimit, IsRequired, SortOrder)
+    VALUES (5, 2, N'Surface Finish', N'Text', NULL, NULL, NULL, NULL, 1, 1);
+IF NOT EXISTS (SELECT 1 FROM Quality.QualitySpecAttribute WHERE Id = 6)
+    INSERT INTO Quality.QualitySpecAttribute (Id, QualitySpecVersionId, AttributeName, DataType, UomId, TargetValue, LowerLimit, UpperLimit, IsRequired, SortOrder)
+    VALUES (6, 2, N'Visible Porosity', N'Boolean', NULL, NULL, NULL, NULL, 1, 2);
+IF NOT EXISTS (SELECT 1 FROM Quality.QualitySpecAttribute WHERE Id = 7)
+    INSERT INTO Quality.QualitySpecAttribute (Id, QualitySpecVersionId, AttributeName, DataType, UomId, TargetValue, LowerLimit, UpperLimit, IsRequired, SortOrder)
+    VALUES (7, 2, N'Label Legible', N'Boolean', NULL, NULL, NULL, NULL, 1, 3);
+
+SET IDENTITY_INSERT Quality.QualitySpecAttribute OFF;
+
+-- ============================================================
+-- Parts.ItemLocation -- eligibility for Item 1 (5G0)
+--   Locations resolved by Code from 011_seed_locations_mpp_plant.sql so the
+--   Eligibility tab shows real plant cells. Codes that resolve to no row are
+--   skipped (SELECT yields zero rows). The consumption-point row carries
+--   Min/Max/Default qty metadata; production rows leave it NULL.
+-- ============================================================
+
+SET IDENTITY_INSERT Parts.ItemLocation ON;
+
+IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE Id = 1)
+    INSERT INTO Parts.ItemLocation (Id, ItemId, LocationId, IsConsumptionPoint, MinQuantity, MaxQuantity, DefaultQuantity, CreatedAt)
+    SELECT 1, 1, Id, 0, NULL, NULL, NULL, @Now FROM Location.Location WHERE Code = N'DC1-M05';
+IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE Id = 2)
+    INSERT INTO Parts.ItemLocation (Id, ItemId, LocationId, IsConsumptionPoint, MinQuantity, MaxQuantity, DefaultQuantity, CreatedAt)
+    SELECT 2, 1, Id, 0, NULL, NULL, NULL, @Now FROM Location.Location WHERE Code = N'DC1-M06';
+IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE Id = 3)
+    INSERT INTO Parts.ItemLocation (Id, ItemId, LocationId, IsConsumptionPoint, MinQuantity, MaxQuantity, DefaultQuantity, CreatedAt)
+    SELECT 3, 1, Id, 0, NULL, NULL, NULL, @Now FROM Location.Location WHERE Code = N'DC1-M07';
+IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE Id = 4)
+    INSERT INTO Parts.ItemLocation (Id, ItemId, LocationId, IsConsumptionPoint, MinQuantity, MaxQuantity, DefaultQuantity, CreatedAt)
+    SELECT 4, 1, Id, 1, 10, 500, 100, @Now FROM Location.Location WHERE Code = N'DC1-M08';
+
+SET IDENTITY_INSERT Parts.ItemLocation OFF;
+
 PRINT 'seed_items: 5 items, 5 container configs, 2 routes (5 steps), 1 BOM (2 lines), 2 quality specs loaded.';
+PRINT 'seed_items: Item 1 (5G0) fully configured -- 14 OperationTemplateFields, 7 QualitySpecAttributes, 4 eligibility locations.';
 GO

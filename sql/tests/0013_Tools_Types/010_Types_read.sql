@@ -67,7 +67,7 @@ GO
 CREATE TABLE #TT (
     Id BIGINT, Code NVARCHAR(50), Name NVARCHAR(100),
     Description NVARCHAR(500), Icon NVARCHAR(100),
-    HasCavities BIT, SortOrder INT,
+    HasCavities BIT, CompatibleLocationTypeDefinitionId BIGINT, SortOrder INT,
     CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
 );
 INSERT INTO #TT EXEC Tools.ToolType_List @IncludeDeprecated = 0;
@@ -103,7 +103,7 @@ GO
 CREATE TABLE #TG (
     Id BIGINT, Code NVARCHAR(50), Name NVARCHAR(100),
     Description NVARCHAR(500), Icon NVARCHAR(100),
-    HasCavities BIT, SortOrder INT,
+    HasCavities BIT, CompatibleLocationTypeDefinitionId BIGINT, SortOrder INT,
     CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
 );
 INSERT INTO #TG EXEC Tools.ToolType_Get @Id = 1;
@@ -117,7 +117,7 @@ DROP TABLE #TG;
 CREATE TABLE #TG2 (
     Id BIGINT, Code NVARCHAR(50), Name NVARCHAR(100),
     Description NVARCHAR(500), Icon NVARCHAR(100),
-    HasCavities BIT, SortOrder INT,
+    HasCavities BIT, CompatibleLocationTypeDefinitionId BIGINT, SortOrder INT,
     CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
 );
 INSERT INTO #TG2 EXEC Tools.ToolType_Get @Id = 999999;
