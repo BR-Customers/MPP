@@ -15,7 +15,7 @@
       "binding": {
         "type": "expr",
         "config": {
-          "expression": "runScript(\"BlueRidge.Parts.Tool.getCellsForDropdown\", 0)"
+          "expression": "runScript(\"BlueRidge.Parts.Tool.getCellsForDropdown\", 0, {view.params.toolId})"
         }
       }
     }
