@@ -15,6 +15,8 @@ GO
 
 -- =============================================
 -- Setup: two dies for mount races
+--   Cells are resolved dynamically (DieCastMachine, DefId 8); the Area used
+--   for the non-Cell rejection test is the Site MPP-MAD (still in the seed).
 -- =============================================
 DECLARE @DieTypeId BIGINT = (SELECT Id FROM Tools.ToolType WHERE Code = N'Die');
 DECLARE @ActiveId  BIGINT = (SELECT Id FROM Tools.ToolStatusCode WHERE Code = N'Active');
@@ -36,7 +38,7 @@ GO
 -- Test 1: Assign to Cell (DC-401) — happy
 -- =============================================
 DECLARE @ToolAId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'ASN-DIE-A');
-DECLARE @CellId BIGINT  = (SELECT Id FROM Location.Location WHERE Code = N'DC-401');
+DECLARE @CellId BIGINT  = (SELECT TOP 1 Id FROM Location.Location WHERE LocationTypeDefinitionId = 8 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 
 CREATE TABLE #A1 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #A1 EXEC Tools.ToolAssignment_Assign
@@ -73,7 +75,9 @@ GO
 -- Test 3: Assign Tool A to a second Cell — rejected (already mounted)
 -- =============================================
 DECLARE @ToolAId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'ASN-DIE-A');
-DECLARE @CellBId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'DC-402');
+DECLARE @CellBId BIGINT = (SELECT Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 8 AND DeprecatedAt IS NULL
+    ORDER BY SortOrder, Id OFFSET 1 ROWS FETCH NEXT 1 ROWS ONLY);
 
 CREATE TABLE #A3 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #A3 EXEC Tools.ToolAssignment_Assign
@@ -91,7 +95,7 @@ GO
 -- Test 4: Assign Tool B to already-occupied Cell — rejected
 -- =============================================
 DECLARE @ToolBId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'ASN-DIE-B');
-DECLARE @CellAId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'DC-401');
+DECLARE @CellAId BIGINT = (SELECT TOP 1 Id FROM Location.Location WHERE LocationTypeDefinitionId = 8 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 
 CREATE TABLE #A4 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #A4 EXEC Tools.ToolAssignment_Assign
@@ -108,7 +112,7 @@ GO
 -- =============================================
 -- Test 5: ListActiveByCell returns 1 row for DC-401
 -- =============================================
-DECLARE @CellAId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'DC-401');
+DECLARE @CellAId BIGINT = (SELECT TOP 1 Id FROM Location.Location WHERE LocationTypeDefinitionId = 8 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 
 CREATE TABLE #LA (
     Id BIGINT, ToolId BIGINT, ToolCode NVARCHAR(50),
@@ -146,7 +150,7 @@ EXEC test.Assert_IsEqual
     @Expected = N'1', @Actual = @SStr;
 
 -- After release, Cell is free
-DECLARE @CellAId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'DC-401');
+DECLARE @CellAId BIGINT = (SELECT TOP 1 Id FROM Location.Location WHERE LocationTypeDefinitionId = 8 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 CREATE TABLE #LA (
     Id BIGINT, ToolId BIGINT, ToolCode NVARCHAR(50),
     ToolName NVARCHAR(100), ToolTypeCode NVARCHAR(50),

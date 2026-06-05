@@ -27,7 +27,8 @@
 --   Pre-conditions:
 --     - Migration 0001-0006 applied
 --     - AppUser Id=1 exists
---     - Area-tier Location DIECAST Id=3 present (for OperationTemplates)
+--     - MPP plant seed (011): at least one active ProductionArea (DefId 3),
+--       resolved dynamically for the OperationTemplate fixtures below
 --     - Parts.ItemType and Parts.Uom seeds present
 --     - All RouteTemplate_*, RouteStep_*, OperationTemplate_Create,
 --       and Item_Create procs deployed
@@ -42,6 +43,11 @@ GO
 DECLARE @S     BIT,
         @M     NVARCHAR(500),
         @NewId BIGINT;
+
+-- Resolve a production Area (DefId 3) dynamically rather than hardcoding a
+-- seed Id/Code, so the OperationTemplate fixtures survive seed regeneration.
+DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 
 CREATE TABLE #Rc21 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #Rc21
@@ -59,7 +65,7 @@ INSERT INTO #Rc27
 EXEC Parts.OperationTemplate_Create
     @Code           = N'TEST-RT-OT-1',
     @Name           = N'RT OT 1',
-    @AreaLocationId = 3,
+    @AreaLocationId = @Area,
     @AppUserId      = 1;
 SELECT @S = Status, @M = Message, @NewId = NewId FROM #Rc27;
 DROP TABLE #Rc27;
@@ -69,7 +75,7 @@ INSERT INTO #Rc28
 EXEC Parts.OperationTemplate_Create
     @Code           = N'TEST-RT-OT-2',
     @Name           = N'RT OT 2',
-    @AreaLocationId = 3,
+    @AreaLocationId = @Area,
     @AppUserId      = 1;
 SELECT @S = Status, @M = Message, @NewId = NewId FROM #Rc28;
 DROP TABLE #Rc28;
@@ -79,7 +85,7 @@ INSERT INTO #Rc29
 EXEC Parts.OperationTemplate_Create
     @Code           = N'TEST-RT-OT-3',
     @Name           = N'RT OT 3',
-    @AreaLocationId = 3,
+    @AreaLocationId = @Area,
     @AppUserId      = 1;
 SELECT @S = Status, @M = Message, @NewId = NewId FROM #Rc29;
 DROP TABLE #Rc29;

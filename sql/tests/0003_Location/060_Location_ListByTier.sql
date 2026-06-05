@@ -8,7 +8,8 @@
 --
 --   Pre-conditions:
 --     - Migration 0002 applied (LocationType seed has Tier 1..5 incl Area)
---     - Location.Location has at least one Area-tier row from seed_locations.sql
+--     - Location.Location has at least one Area-tier row from the MPP plant
+--       seed (011_seed_locations_mpp_plant.sql)
 -- =============================================
 
 EXEC test.BeginTestFile @FileName = N'0003_Location/060_Location_ListByTier.sql';

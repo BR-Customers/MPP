@@ -27,8 +27,9 @@
 --   Pre-conditions:
 --     - Migration 0001-0006 applied
 --     - AppUser bootstrap user Id=1 exists
---     - Seed Locations present (Area-tier): DIECAST Id=3, MACHSHOP
---       Id=4, QC Id=5
+--     - MPP plant seed (011): at least two active ProductionArea (DefId 3)
+--       rows. Areas are resolved dynamically per batch (@Area / @Area2)
+--       rather than by hardcoded seed Id/Code.
 --     - Parts.DataCollectionField seeds 1..7 present
 --     - Audit.LogEntityType includes 'OperationTemplate',
 --       'OpTemplateField', and 'Route'
@@ -42,6 +43,8 @@ GO
 -- =============================================
 -- Test 1: OperationTemplate_Create happy path
 -- =============================================
+DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 DECLARE @S     BIT,
         @M     NVARCHAR(500),
         @SStr  NVARCHAR(1),
@@ -52,7 +55,7 @@ INSERT INTO #Rc1
 EXEC Parts.OperationTemplate_Create
     @Code           = N'TEST-OP-001',
     @Name           = N'Test OP 001',
-    @AreaLocationId = 3,              -- DIECAST
+    @AreaLocationId = @Area,         -- first production area (dynamic)
     @Description    = N'First test operation',
     @AppUserId      = 1;
 SELECT @S = Status, @M = Message, @NewId = NewId FROM #Rc1;
@@ -93,15 +96,18 @@ EXEC test.Assert_IsEqual
     @Actual   = @StoredCode;
 
 DECLARE @StoredAreaStr NVARCHAR(20) = CAST(@StoredArea AS NVARCHAR(20));
+DECLARE @AreaStr       NVARCHAR(20) = CAST(@Area       AS NVARCHAR(20));
 EXEC test.Assert_IsEqual
     @TestName = N'[CreateHappy] AreaLocationId stored',
-    @Expected = N'3',
+    @Expected = @AreaStr,
     @Actual   = @StoredAreaStr;
 GO
 
 -- =============================================
 -- Test 2: OperationTemplate_Create NULL required param
 -- =============================================
+DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 DECLARE @S     BIT,
         @M     NVARCHAR(500),
         @SStr  NVARCHAR(1),
@@ -112,7 +118,7 @@ INSERT INTO #Rc2
 EXEC Parts.OperationTemplate_Create
     @Code           = NULL,
     @Name           = N'Missing Code',
-    @AreaLocationId = 3,
+    @AreaLocationId = @Area,
     @AppUserId      = 1;
 SELECT @S = Status, @M = Message, @NewId = NewId FROM #Rc2;
 DROP TABLE #Rc2;
@@ -135,6 +141,8 @@ GO
 --   Second call should fail with "already exists" (Create is the
 --   new-family proc; subsequent versions go through CreateNewVersion).
 -- =============================================
+DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 DECLARE @S     BIT,
         @M     NVARCHAR(500),
         @SStr  NVARCHAR(1),
@@ -146,7 +154,7 @@ INSERT INTO #Rc3
 EXEC Parts.OperationTemplate_Create
     @Code           = N'DUP-OP',
     @Name           = N'Dup Target',
-    @AreaLocationId = 3,
+    @AreaLocationId = @Area,
     @AppUserId      = 1;
 SELECT @S = Status, @M = Message, @Id1 = NewId FROM #Rc3;
 DROP TABLE #Rc3;
@@ -162,7 +170,7 @@ INSERT INTO #Rc4
 EXEC Parts.OperationTemplate_Create
     @Code           = N'DUP-OP',
     @Name           = N'Dup Attempt',
-    @AreaLocationId = 3,
+    @AreaLocationId = @Area,
     @AppUserId      = 1;
 SELECT @S = Status, @M = Message, @Id2 = NewId FROM #Rc4;
 DROP TABLE #Rc4;
@@ -270,9 +278,12 @@ GO
 
 -- =============================================
 -- Test 8: OperationTemplate_List filtered by AreaLocationId
---   Create a row in MACHSHOP (Id=4), then filter — verify no rows
---   with a different AreaLocationId come back.
+--   Create a row in a second production area, then filter -- verify the
+--   area filter returns it.
 -- =============================================
+DECLARE @Area2 BIGINT = (SELECT Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL
+    ORDER BY SortOrder, Id OFFSET 1 ROWS FETCH NEXT 1 ROWS ONLY);
 DECLARE @S     BIT,
         @M     NVARCHAR(500),
         @SStr  NVARCHAR(1),
@@ -283,7 +294,7 @@ INSERT INTO #Rc6
 EXEC Parts.OperationTemplate_Create
     @Code           = N'TEST-OP-MS-1',
     @Name           = N'MachShop OP 1',
-    @AreaLocationId = 4,              -- MACHSHOP
+    @AreaLocationId = @Area2,        -- a second production area (dynamic)
     @AppUserId      = 1;
 SELECT @S = Status, @M = Message, @NewId = NewId FROM #Rc6;
 DROP TABLE #Rc6;
@@ -293,7 +304,7 @@ DROP TABLE #Rc6;
 DECLARE @NonMatchCount INT = (
     SELECT COUNT(*)
     FROM Parts.OperationTemplate
-    WHERE AreaLocationId = 4
+    WHERE AreaLocationId = @Area2
       AND Code LIKE N'TEST-OP-MS-%'
 );
 
@@ -308,8 +319,8 @@ CREATE TABLE #ListByArea (
     AreaLocationId BIGINT, AreaName NVARCHAR(200), Description NVARCHAR(500),
     CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
 );
-INSERT INTO #ListByArea EXEC Parts.OperationTemplate_List @AreaLocationId = 4;
-DECLARE @ProcMatchCount INT = (SELECT COUNT(*) FROM #ListByArea WHERE AreaLocationId = 4);
+INSERT INTO #ListByArea EXEC Parts.OperationTemplate_List @AreaLocationId = @Area2;
+DECLARE @ProcMatchCount INT = (SELECT COUNT(*) FROM #ListByArea WHERE AreaLocationId = @Area2);
 DROP TABLE #ListByArea;
 
 DECLARE @ProcHasMatch BIT = CASE WHEN @ProcMatchCount >= 1 THEN 1 ELSE 0 END;
@@ -324,6 +335,8 @@ GO
 --   Assert the new row has VersionNumber = parent + 1, a distinct Id,
 --   and OTF rows copied over.
 -- =============================================
+DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 DECLARE @S         BIT,
         @M         NVARCHAR(500),
         @SStr      NVARCHAR(1),
@@ -337,7 +350,7 @@ INSERT INTO #Rc7
 EXEC Parts.OperationTemplate_Create
     @Code           = N'TEST-OP-VER',
     @Name           = N'Versioned Base',
-    @AreaLocationId = 3,
+    @AreaLocationId = @Area,
     @AppUserId      = 1;
 SELECT @S = Status, @M = Message, @ParentId = NewId FROM #Rc7;
 DROP TABLE #Rc7;
@@ -486,6 +499,8 @@ GO
 --   Update Name + Description. Code and VersionNumber are immutable
 --   (not parameters on Update).
 -- =============================================
+DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 DECLARE @S    BIT,
         @M    NVARCHAR(500),
         @SStr NVARCHAR(1),
@@ -499,7 +514,7 @@ INSERT INTO #Ru19
 EXEC Parts.OperationTemplate_Update
     @Id             = @OtId,
     @Name           = N'Test OP 001 Updated',
-    @AreaLocationId = 3,
+    @AreaLocationId = @Area,
     @Description    = N'Updated description',
     @AppUserId      = 1;
 SELECT @S = Status, @M = Message FROM #Ru19;
@@ -542,6 +557,8 @@ GO
 -- Test 13: OperationTemplate_Update on deprecated row rejected
 --   Create + deprecate, then update. Status=0.
 -- =============================================
+DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 DECLARE @S     BIT,
         @M     NVARCHAR(500),
         @SStr  NVARCHAR(1),
@@ -552,7 +569,7 @@ INSERT INTO #Rc13
 EXEC Parts.OperationTemplate_Create
     @Code           = N'TEST-OP-UPDDEP',
     @Name           = N'Will Deprecate',
-    @AreaLocationId = 3,
+    @AreaLocationId = @Area,
     @AppUserId      = 1;
 SELECT @S = Status, @M = Message, @OtId = NewId FROM #Rc13;
 DROP TABLE #Rc13;
@@ -570,7 +587,7 @@ INSERT INTO #Ru21
 EXEC Parts.OperationTemplate_Update
     @Id             = @OtId,
     @Name           = N'Should Not Apply',
-    @AreaLocationId = 3,
+    @AreaLocationId = @Area,
     @AppUserId      = 1;
 SELECT @S = Status, @M = Message FROM #Ru21;
 DROP TABLE #Ru21;
@@ -594,6 +611,8 @@ GO
 -- =============================================
 -- Test 14: OperationTemplate_Deprecate happy path (no RouteStep refs)
 -- =============================================
+DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 DECLARE @S     BIT,
         @M     NVARCHAR(500),
         @SStr  NVARCHAR(1),
@@ -604,7 +623,7 @@ INSERT INTO #Rc14
 EXEC Parts.OperationTemplate_Create
     @Code           = N'TEST-OP-DEP1',
     @Name           = N'Deprecate Target',
-    @AreaLocationId = 3,
+    @AreaLocationId = @Area,
     @AppUserId      = 1;
 SELECT @S = Status, @M = Message, @OtId = NewId FROM #Rc14;
 DROP TABLE #Rc14;
@@ -664,6 +683,8 @@ GO
 --   references the OT. Then attempt to deprecate the OT; expect
 --   Status=0 with "active RouteSteps reference" in message.
 -- =============================================
+DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 DECLARE @S       BIT,
         @M       NVARCHAR(500),
         @SStr    NVARCHAR(1),
@@ -678,7 +699,7 @@ INSERT INTO #Rc15
 EXEC Parts.OperationTemplate_Create
     @Code           = N'TEST-OP-REFD',
     @Name           = N'Referenced OP',
-    @AreaLocationId = 3,
+    @AreaLocationId = @Area,
     @AppUserId      = 1;
 SELECT @S = Status, @M = Message, @OtId = NewId FROM #Rc15;
 DROP TABLE #Rc15;

@@ -13,7 +13,8 @@
 --   Pre-conditions:
 --     - Migrations 0001-0009 applied
 --     - AppUser Id=1 exists (bootstrap admin)
---     - Location seed loaded — Die Cast Area at Id=3 (Code='DIECAST')
+--     - MPP plant seed (011): at least one active ProductionArea (DefId 3),
+--       resolved dynamically per batch (@Area) rather than by seed Id/Code
 --
 --   NOTE: Code is immutable on Update by design — there is no @Code
 --         parameter on Oee.DowntimeReasonCode_Update. To change a code
@@ -29,11 +30,13 @@ GO
 DECLARE @S BIT, @M NVARCHAR(500), @NewId BIGINT;
 DECLARE @SStr NVARCHAR(1);
 
+DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 CREATE TABLE #R1 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R1 EXEC Oee.DowntimeReasonCode_Create
     @Code                 = N'TEST-DRC-001',
     @Description          = N'Test downtime reason 001',
-    @AreaLocationId       = 3,         -- Die Cast
+    @AreaLocationId       = @Area,         -- Die Cast
     @DowntimeReasonTypeId = 1,         -- Equipment
     @IsExcused            = 0,
     @AppUserId            = 1;
@@ -64,11 +67,13 @@ GO
 DECLARE @S BIT, @M NVARCHAR(500), @NewId BIGINT;
 DECLARE @SStr NVARCHAR(1);
 
+DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 CREATE TABLE #R2 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R2 EXEC Oee.DowntimeReasonCode_Create
     @Code                 = N'TEST-DRC-002',
     @Description          = N'Test downtime reason with NULL type',
-    @AreaLocationId       = 3,
+    @AreaLocationId       = @Area,
     @DowntimeReasonTypeId = NULL,
     @IsExcused            = 0,
     @AppUserId            = 1;
@@ -88,11 +93,13 @@ GO
 DECLARE @S BIT, @M NVARCHAR(500), @NewId BIGINT;
 DECLARE @SStr NVARCHAR(1);
 
+DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 CREATE TABLE #R3 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R3 EXEC Oee.DowntimeReasonCode_Create
     @Code                 = N'TEST-DRC-001',  -- duplicate of first test
     @Description          = N'Duplicate code attempt',
-    @AreaLocationId       = 3,
+    @AreaLocationId       = @Area,
     @DowntimeReasonTypeId = 1,
     @AppUserId            = 1;
 SELECT @S = Status, @M = Message, @NewId = NewId FROM #R3;
@@ -116,11 +123,13 @@ GO
 DECLARE @S BIT, @M NVARCHAR(500), @NewId BIGINT;
 DECLARE @SStr NVARCHAR(1);
 
+DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 CREATE TABLE #R4 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R4 EXEC Oee.DowntimeReasonCode_Create
     @Code                 = N'TEST-DRC-NULL-DESC',
     @Description          = NULL,
-    @AreaLocationId       = 3,
+    @AreaLocationId       = @Area,
     @AppUserId            = 1;
 SELECT @S = Status, @M = Message, @NewId = NewId FROM #R4;
 DROP TABLE #R4;
@@ -165,11 +174,13 @@ GO
 DECLARE @S BIT, @M NVARCHAR(500), @NewId BIGINT;
 DECLARE @SStr NVARCHAR(1);
 
+DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 CREATE TABLE #R6 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R6 EXEC Oee.DowntimeReasonCode_Create
     @Code                 = N'TEST-DRC-BAD-TYPE',
     @Description          = N'Invalid type test',
-    @AreaLocationId       = 3,
+    @AreaLocationId       = @Area,
     @DowntimeReasonTypeId = 99,
     @AppUserId            = 1;
 SELECT @S = Status, @M = Message, @NewId = NewId FROM #R6;
@@ -208,6 +219,9 @@ DECLARE @GotCode  NVARCHAR(20)  = (SELECT TOP 1 Code FROM #G);
 DECLARE @GotDesc  NVARCHAR(500) = (SELECT TOP 1 Description FROM #G);
 DECLARE @GotArea  BIGINT        = (SELECT TOP 1 AreaLocationId FROM #G);
 DECLARE @GotAreaStr NVARCHAR(20) = CAST(@GotArea AS NVARCHAR(20));
+DECLARE @Area    BIGINT      = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
+DECLARE @AreaStr NVARCHAR(20) = CAST(@Area AS NVARCHAR(20));
 DROP TABLE #G;
 
 EXEC test.Assert_RowCount
@@ -226,8 +240,8 @@ EXEC test.Assert_IsEqual
     @Actual   = @GotDesc;
 
 EXEC test.Assert_IsEqual
-    @TestName = N'DRC_Get[HappyPath]: AreaLocationId is 3',
-    @Expected = N'3',
+    @TestName = N'DRC_Get[HappyPath]: AreaLocationId matches the created area',
+    @Expected = @AreaStr,
     @Actual   = @GotAreaStr;
 GO
 
@@ -258,6 +272,8 @@ GO
 DECLARE @TargetId BIGINT;
 SELECT @TargetId = Id FROM Oee.DowntimeReasonCode WHERE Code = N'TEST-DRC-001';
 
+DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 CREATE TABLE #L (
     Id BIGINT, Code NVARCHAR(20), Description NVARCHAR(500),
     AreaLocationId BIGINT, AreaName NVARCHAR(200),
@@ -266,18 +282,18 @@ CREATE TABLE #L (
     IsExcused BIT, CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
 );
 INSERT INTO #L EXEC Oee.DowntimeReasonCode_List
-    @AreaLocationId    = 3,
+    @AreaLocationId    = @Area,
     @IncludeDeprecated = 0;
 
 DECLARE @TotalCount INT       = (SELECT COUNT(*) FROM #L);
-DECLARE @MatchCount INT       = (SELECT COUNT(*) FROM #L WHERE AreaLocationId = 3);
+DECLARE @MatchCount INT       = (SELECT COUNT(*) FROM #L WHERE AreaLocationId = @Area);
 DECLARE @ContainsTarget INT   = (SELECT COUNT(*) FROM #L WHERE Id = @TargetId);
 DROP TABLE #L;
 
 DECLARE @AllMatch NVARCHAR(1) =
     CASE WHEN @TotalCount > 0 AND @TotalCount = @MatchCount THEN N'1' ELSE N'0' END;
 EXEC test.Assert_IsEqual
-    @TestName = N'DRC_List[FilterByArea]: all returned rows have AreaLocationId=3',
+    @TestName = N'DRC_List[FilterByArea]: all returned rows match the filtered area',
     @Expected = N'1',
     @Actual   = @AllMatch;
 
@@ -324,11 +340,13 @@ DECLARE @TargetId BIGINT;
 
 SELECT @TargetId = Id FROM Oee.DowntimeReasonCode WHERE Code = N'TEST-DRC-001';
 
+DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 CREATE TABLE #R7 (Status BIT, Message NVARCHAR(500));
 INSERT INTO #R7 EXEC Oee.DowntimeReasonCode_Update
     @Id                   = @TargetId,
     @Description          = N'Test downtime reason 001 (updated)',
-    @AreaLocationId       = 3,
+    @AreaLocationId       = @Area,
     @DowntimeReasonTypeId = 2,         -- changed Equipment -> Miscellaneous
     @IsExcused            = 1,
     @AppUserId            = 1;
@@ -374,11 +392,13 @@ GO
 DECLARE @S BIT, @M NVARCHAR(500);
 DECLARE @SStr NVARCHAR(1);
 
+DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 CREATE TABLE #R8 (Status BIT, Message NVARCHAR(500));
 INSERT INTO #R8 EXEC Oee.DowntimeReasonCode_Update
     @Id                   = 999999,
     @Description          = N'Should fail',
-    @AreaLocationId       = 3,
+    @AreaLocationId       = @Area,
     @IsExcused            = 0,
     @AppUserId            = 1;
 SELECT @S = Status, @M = Message FROM #R8;
@@ -457,11 +477,13 @@ GO
 -- =============================================
 DECLARE @S BIT, @M NVARCHAR(500), @NewId BIGINT;
 
+DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 CREATE TABLE #RS8a (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #RS8a EXEC Oee.DowntimeReasonCode_Create
     @Code                 = N'TST-DT-S8',
     @Description          = N'Mechanical',
-    @AreaLocationId       = 3,         -- Die Cast
+    @AreaLocationId       = @Area,         -- Die Cast
     @DowntimeReasonTypeId = 1,
     @IsExcused            = 1,
     @AppUserId            = 1;
@@ -500,11 +522,13 @@ GO
 DECLARE @S BIT, @M NVARCHAR(500);
 DECLARE @TargetId BIGINT = (SELECT Id FROM Oee.DowntimeReasonCode WHERE Code = N'TST-DT-S8');
 
+DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 CREATE TABLE #RS8b (Status BIT, Message NVARCHAR(500));
 INSERT INTO #RS8b EXEC Oee.DowntimeReasonCode_Update
     @Id                   = @TargetId,
     @Description          = N'Mechanical Failure',
-    @AreaLocationId       = 3,
+    @AreaLocationId       = @Area,
     @DowntimeReasonTypeId = 1,
     @IsExcused            = 0,         -- flip true -> false
     @AppUserId            = 1;

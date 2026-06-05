@@ -8,10 +8,9 @@
 --   Pre-conditions:
 --     - Migrations 0001-0009 applied
 --     - AppUser Id=1 exists
---     - Location seed loaded:
---         Die Cast    Id=3  Code='DIECAST'
---         Machine Shop Id=4 Code='MACHSHOP'
---         Trim Shop   Id=13 Code='TRIM'
+--     - MPP plant seed (011): at least three active ProductionArea (DefId 3)
+--       rows. The DC/MS/TS dept areas are resolved dynamically (@DcArea /
+--       @MsArea / @TsArea) rather than by hardcoded seed Id/Code.
 --
 --   Test fixture: 6-row JSON
 --     1. DC, ReasonId=9001, TypeId=6 (Unscheduled)        -> insert as DC-9001
@@ -50,6 +49,10 @@ DECLARE @TestJson NVARCHAR(MAX) = N'[
 
 DECLARE @S BIT, @M NVARCHAR(500);
 DECLARE @SStr NVARCHAR(1);
+-- Three distinct production Areas resolved dynamically for the DC/MS/TS depts.
+DECLARE @DcArea BIGINT = (SELECT Id FROM Location.Location WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY);
+DECLARE @MsArea BIGINT = (SELECT Id FROM Location.Location WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id OFFSET 1 ROWS FETCH NEXT 1 ROWS ONLY);
+DECLARE @TsArea BIGINT = (SELECT Id FROM Location.Location WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id OFFSET 2 ROWS FETCH NEXT 1 ROWS ONLY);
 DECLARE @InsertedCount INT, @SkippedCount INT, @RejectedCount INT;
 DECLARE @RejectedRowsJson NVARCHAR(MAX);
 
@@ -60,9 +63,9 @@ CREATE TABLE #B1 (
 );
 INSERT INTO #B1 EXEC Oee.DowntimeReasonCode_BulkLoadFromSeed
     @RowsJson         = @TestJson,
-    @DcAreaLocationId = 3,
-    @MsAreaLocationId = 4,
-    @TsAreaLocationId = 13,
+    @DcAreaLocationId = @DcArea,
+    @MsAreaLocationId = @MsArea,
+    @TsAreaLocationId = @TsArea,
     @AppUserId        = 1;
 
 SELECT @S = Status, @M = Message,
@@ -167,6 +170,10 @@ DECLARE @TestJson NVARCHAR(MAX) = N'[
 DECLARE @S BIT, @M NVARCHAR(500);
 DECLARE @InsertedCount INT, @SkippedCount INT, @RejectedCount INT;
 DECLARE @RejectedRowsJson NVARCHAR(MAX);
+-- Three distinct production Areas resolved dynamically for the DC/MS/TS depts.
+DECLARE @DcArea BIGINT = (SELECT Id FROM Location.Location WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY);
+DECLARE @MsArea BIGINT = (SELECT Id FROM Location.Location WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id OFFSET 1 ROWS FETCH NEXT 1 ROWS ONLY);
+DECLARE @TsArea BIGINT = (SELECT Id FROM Location.Location WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id OFFSET 2 ROWS FETCH NEXT 1 ROWS ONLY);
 
 CREATE TABLE #B2 (
     Status BIT, Message NVARCHAR(500),
@@ -175,9 +182,9 @@ CREATE TABLE #B2 (
 );
 INSERT INTO #B2 EXEC Oee.DowntimeReasonCode_BulkLoadFromSeed
     @RowsJson         = @TestJson,
-    @DcAreaLocationId = 3,
-    @MsAreaLocationId = 4,
-    @TsAreaLocationId = 13,
+    @DcAreaLocationId = @DcArea,
+    @MsAreaLocationId = @MsArea,
+    @TsAreaLocationId = @TsArea,
     @AppUserId        = 1;
 
 SELECT @S = Status, @M = Message,

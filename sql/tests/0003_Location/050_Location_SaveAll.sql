@@ -18,7 +18,10 @@
 --
 --   Pre-conditions:
 --     - Migrations 0001..0014 applied
---     - Seed locations applied (DIECAST area + DC-401 etc.)
+--     - MPP plant seed (011) applied: at least two active ProductionArea
+--       (DefId 3) rows. The parent Area is resolved dynamically (first
+--       ProductionArea) rather than by a hardcoded Code, so the test is
+--       decoupled from specific seed Codes.
 --     - DefId 8 = DieCastMachine (Cell, attrs all nullable)
 --     - DefId 7 = Terminal (Cell, HasBarcodeScanner required)
 --     - Bootstrap user Id=1
@@ -31,7 +34,7 @@ GO
 -- Test 1: Create-mode happy path -- DieCastMachine under DIECAST area
 -- with 2 attribute values
 -- =============================================
-DECLARE @DiecastAreaId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'DIECAST');
+DECLARE @DiecastAreaId BIGINT = (SELECT TOP 1 Id FROM Location.Location WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 -- Tonnage attribute def for DieCastMachine
 DECLARE @TonnageAttrId BIGINT = (
     SELECT Id FROM Location.LocationAttributeDefinition
@@ -103,7 +106,7 @@ GO
 -- Test 2: Create rejects HierarchyLevel violation
 -- Try to create an Enterprise (def 1) under DIECAST (Area, level 2)
 -- =============================================
-DECLARE @DiecastAreaId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'DIECAST');
+DECLARE @DiecastAreaId BIGINT = (SELECT TOP 1 Id FROM Location.Location WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 
 DECLARE @S BIT, @M NVARCHAR(500), @NewId BIGINT;
 DECLARE @SStr NVARCHAR(1);
@@ -136,7 +139,7 @@ GO
 -- Test 3: Create rejects missing required attribute
 -- Terminal (DefId 7) requires HasBarcodeScanner. Omit it.
 -- =============================================
-DECLARE @DiecastAreaId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'DIECAST');
+DECLARE @DiecastAreaId BIGINT = (SELECT TOP 1 Id FROM Location.Location WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 DECLARE @IpAttrId BIGINT = (
     SELECT Id FROM Location.LocationAttributeDefinition
     WHERE LocationTypeDefinitionId = 7 AND AttributeName = N'IpAddress'
@@ -176,7 +179,7 @@ GO
 -- Test 4: Create rejects attribute belonging to wrong LocationTypeDefinition
 -- Try to set Tonnage (DieCastMachine attr) on a Terminal
 -- =============================================
-DECLARE @DiecastAreaId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'DIECAST');
+DECLARE @DiecastAreaId BIGINT = (SELECT TOP 1 Id FROM Location.Location WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 DECLARE @TonnageAttrId BIGINT = (
     SELECT Id FROM Location.LocationAttributeDefinition
     WHERE LocationTypeDefinitionId = 8 AND AttributeName = N'Tonnage'
@@ -221,7 +224,7 @@ GO
 -- Test 5: Create rejects duplicate Code
 -- Test 1 created TEST-DC-901; try to create another with same code
 -- =============================================
-DECLARE @DiecastAreaId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'DIECAST');
+DECLARE @DiecastAreaId BIGINT = (SELECT TOP 1 Id FROM Location.Location WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 
 DECLARE @S BIT, @M NVARCHAR(500), @NewId BIGINT;
 DECLARE @SStr NVARCHAR(1);
@@ -256,7 +259,7 @@ GO
 -- Target: the Location created in Test 1 (TEST-DC-901)
 -- =============================================
 DECLARE @LocId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TEST-DC-901');
-DECLARE @DiecastAreaId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'DIECAST');
+DECLARE @DiecastAreaId BIGINT = (SELECT TOP 1 Id FROM Location.Location WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 DECLARE @TonnageAttrId BIGINT = (
     SELECT Id FROM Location.LocationAttributeDefinition
     WHERE LocationTypeDefinitionId = 8 AND AttributeName = N'Tonnage'
@@ -347,7 +350,13 @@ GO
 -- Test 7: Update rejects ParentLocationId mismatch (FDS-02-002a immutability)
 -- =============================================
 DECLARE @LocId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TEST-DC-901');
-DECLARE @MachShopId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MACHSHOP');
+-- A production Area distinct from the location's real parent, resolved
+-- dynamically (used to prove ParentLocationId is immutable on update).
+DECLARE @MachShopId BIGINT = (
+    SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL
+      AND Id <> (SELECT ParentLocationId FROM Location.Location WHERE Id = @LocId)
+    ORDER BY SortOrder, Id);
 
 DECLARE @S BIT, @M NVARCHAR(500), @NewId BIGINT;
 DECLARE @SStr NVARCHAR(1);
@@ -380,7 +389,7 @@ GO
 -- Test 8: Update rejects LocationTypeDefinitionId mismatch (FDS-02-002a immutability)
 -- =============================================
 DECLARE @LocId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TEST-DC-901');
-DECLARE @DiecastAreaId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'DIECAST');
+DECLARE @DiecastAreaId BIGINT = (SELECT TOP 1 Id FROM Location.Location WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 
 DECLARE @S BIT, @M NVARCHAR(500), @NewId BIGINT;
 DECLARE @SStr NVARCHAR(1);

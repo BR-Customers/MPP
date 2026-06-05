@@ -9,15 +9,15 @@
 --   check, SortOrder compaction, and audit trail verification.
 --
 --   Pre-conditions:
---     - Migration 0002 applied (LocationType: 5 rows, LocationTypeDefinition: 15 rows)
+--     - Migration 0002 applied (LocationType: 5 rows)
 --     - Migration 0003 applied (Icon column on LocationTypeDefinition)
 --     - All 5 Location CRUD procs deployed
 --     - Bootstrap user Id=1 exists
---     - seed_locations.sql applied: 12 baseline Location rows covering all 5 tiers
---       (MPP-ENT, MPP-MAD, DIECAST, MACHSHOP, QC, DC-LINE-01/02, MS-LINE-01,
---        DC-401, DC-402, DC-501, MS-101). Test assertions account for this
---       baseline. Tests create additional rows with distinct codes (MPP, MPP-MADISON,
---       MPP-DC, MPP-CNC, MPP-LINE-A/B/C) and clean them up at the end.
+--     - MPP plant seed (011) applied. This test is self-contained: it creates
+--       its own root subtree under distinct codes (MPP, MPP-MADISON, MPP-DC,
+--       MPP-CNC, MPP-LINE-A/B/C) and cleans them up at the end. The only
+--       seed-coupled assertion (Test 9, ProductionArea count) is derived
+--       dynamically so it survives seed regeneration.
 -- =============================================
 
 EXEC test.BeginTestFile @FileName = N'0003_Location/010_Location_crud.sql';
@@ -344,7 +344,13 @@ GO
 -- =============================================
 -- Test 9: List with LocationTypeDefinitionId filter — verify filtering works
 -- =============================================
-DECLARE @DefCount INT;
+DECLARE @DefCount INT, @Expected INT;
+-- Derived: all active ProductionArea (DefId 3) rows = seeded plant areas plus
+-- the 2 areas created above (MPP-DC, MPP-CNC). Comparing the proc result to an
+-- independent direct count validates the LocationTypeDefinitionId filter
+-- without hardcoding the seed's area count.
+SELECT @Expected = COUNT(*) FROM Location.Location
+WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL;
 CREATE TABLE #R (
     Id BIGINT, LocationTypeDefinitionId BIGINT, ParentLocationId BIGINT,
     Name NVARCHAR(200), Code NVARCHAR(50), Description NVARCHAR(500),
@@ -356,8 +362,8 @@ SELECT @DefCount = COUNT(*) FROM #R;
 DROP TABLE #R;
 
 EXEC test.Assert_RowCount
-    @TestName      = N'List by DefinitionId 3: 5 ProductionAreas returned by proc (3 seeded: Die Cast, Machine Shop, Trim Shop + 2 test)',
-    @ExpectedCount = 5,
+    @TestName      = N'List by DefinitionId 3: proc returns all active ProductionAreas (seeded + 2 test)',
+    @ExpectedCount = @Expected,
     @ActualCount   = @DefCount;
 GO
 

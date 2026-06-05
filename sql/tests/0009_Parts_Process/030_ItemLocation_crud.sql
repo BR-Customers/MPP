@@ -17,7 +17,9 @@
 --   Pre-conditions:
 --     - Migration 0001-0006 applied
 --     - AppUser Id=1 exists
---     - Seed Cells present: DC-401 Id=9, DC-402 Id=10, DC-501 Id=11
+--     - MPP plant seed (011): at least two active DieCastMachine cells
+--       (DefId 8). Cells are resolved dynamically per batch (@Cell1 / @Cell2)
+--       rather than by hardcoded seed Id/Code.
 --     - ItemLocation procs deployed
 -- =============================================
 
@@ -46,6 +48,8 @@ GO
 -- =============================================
 -- Test 1: ItemLocation_Add happy path
 -- =============================================
+DECLARE @Cell1 BIGINT = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 8 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 DECLARE @S      BIT,
         @M      NVARCHAR(500),
         @SStr   NVARCHAR(1),
@@ -58,7 +62,7 @@ CREATE TABLE #Rc23 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #Rc23
 EXEC Parts.ItemLocation_Add
     @ItemId     = @ItemId,
-    @LocationId = 9,                  -- DC-401
+    @LocationId = @Cell1,                  -- DC-401
     @AppUserId  = 1;
 SELECT @S = Status, @M = Message, @IlId = NewId FROM #Rc23;
 DROP TABLE #Rc23;
@@ -77,7 +81,7 @@ EXEC test.Assert_IsNotNull
 -- Exactly one active row for (Item, DC-401)
 DECLARE @RowCount INT = (
     SELECT COUNT(*) FROM Parts.ItemLocation
-    WHERE ItemId = @ItemId AND LocationId = 9 AND DeprecatedAt IS NULL
+    WHERE ItemId = @ItemId AND LocationId = @Cell1 AND DeprecatedAt IS NULL
 );
 EXEC test.Assert_RowCount
     @TestName      = N'[AddHappy] One active (Item, DC-401) row',
@@ -89,6 +93,8 @@ GO
 -- Test 2: ItemLocation_Add same pair again - idempotent
 --   Should return Status=1 and the SAME NewId as before (already active).
 -- =============================================
+DECLARE @Cell1 BIGINT = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 8 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 DECLARE @S      BIT,
         @M      NVARCHAR(500),
         @SStr   NVARCHAR(1),
@@ -98,13 +104,13 @@ DECLARE @S      BIT,
 
 SELECT @ItemId = Id FROM Parts.Item WHERE PartNumber = N'TEST-IL-ITEM-001';
 SELECT @PriorId = Id FROM Parts.ItemLocation
-WHERE ItemId = @ItemId AND LocationId = 9 AND DeprecatedAt IS NULL;
+WHERE ItemId = @ItemId AND LocationId = @Cell1 AND DeprecatedAt IS NULL;
 
 CREATE TABLE #Rc24 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #Rc24
 EXEC Parts.ItemLocation_Add
     @ItemId     = @ItemId,
-    @LocationId = 9,
+    @LocationId = @Cell1,
     @AppUserId  = 1;
 SELECT @S = Status, @M = Message, @NewId = NewId FROM #Rc24;
 DROP TABLE #Rc24;
@@ -126,7 +132,7 @@ EXEC test.Assert_IsEqual
 -- Still exactly one row total
 DECLARE @TotalRows INT = (
     SELECT COUNT(*) FROM Parts.ItemLocation
-    WHERE ItemId = @ItemId AND LocationId = 9
+    WHERE ItemId = @ItemId AND LocationId = @Cell1
 );
 EXEC test.Assert_RowCount
     @TestName      = N'[AddSamePair] Still exactly 1 (Item, DC-401) row total',
@@ -137,6 +143,8 @@ GO
 -- =============================================
 -- Test 3: ItemLocation_Add invalid ItemId
 -- =============================================
+DECLARE @Cell1 BIGINT = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 8 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 DECLARE @S     BIT,
         @M     NVARCHAR(500),
         @SStr  NVARCHAR(1),
@@ -146,7 +154,7 @@ CREATE TABLE #Rc25 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #Rc25
 EXEC Parts.ItemLocation_Add
     @ItemId     = 999999,
-    @LocationId = 9,
+    @LocationId = @Cell1,
     @AppUserId  = 1;
 SELECT @S = Status, @M = Message, @NewId = NewId FROM #Rc25;
 DROP TABLE #Rc25;
@@ -225,8 +233,11 @@ EXEC test.Assert_IsNotNull
 GO
 
 -- =============================================
--- Test 6: ItemLocation_Add second pair (same Item, DC-402)
+-- Test 6: ItemLocation_Add second pair (same Item, second cell)
 -- =============================================
+DECLARE @Cell2 BIGINT = (SELECT Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 8 AND DeprecatedAt IS NULL
+    ORDER BY SortOrder, Id OFFSET 1 ROWS FETCH NEXT 1 ROWS ONLY);
 DECLARE @S      BIT,
         @M      NVARCHAR(500),
         @SStr   NVARCHAR(1),
@@ -239,7 +250,7 @@ CREATE TABLE #Rc27 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #Rc27
 EXEC Parts.ItemLocation_Add
     @ItemId     = @ItemId,
-    @LocationId = 10,                 -- DC-402
+    @LocationId = @Cell2,             -- second cell (dynamic)
     @AppUserId  = 1;
 SELECT @S = Status, @M = Message, @IlId = NewId FROM #Rc27;
 DROP TABLE #Rc27;
@@ -281,8 +292,10 @@ EXEC test.Assert_RowCount
 GO
 
 -- =============================================
--- Test 8: ItemLocation_ListByLocation for DC-401 returns 1 row
+-- Test 8: ItemLocation_ListByLocation for the first cell returns 1 row
 -- =============================================
+DECLARE @Cell1 BIGINT = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 8 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 DECLARE @S     BIT,
         @M     NVARCHAR(500),
         @SStr  NVARCHAR(1),
@@ -298,7 +311,7 @@ CREATE TABLE #IlByLoc (
     IsConsumptionPoint BIT,
     CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
 );
-INSERT INTO #IlByLoc EXEC Parts.ItemLocation_ListByLocation @LocationId = 9;
+INSERT INTO #IlByLoc EXEC Parts.ItemLocation_ListByLocation @LocationId = @Cell1;
 DECLARE @TestItemAtLoc INT = (
     SELECT COUNT(*) FROM #IlByLoc WHERE PartNumber = N'TEST-IL-ITEM-001'
 );
@@ -311,8 +324,10 @@ EXEC test.Assert_RowCount
 GO
 
 -- =============================================
--- Test 9: ItemLocation_Remove happy path (DC-401 pair)
+-- Test 9: ItemLocation_Remove happy path (first cell pair)
 -- =============================================
+DECLARE @Cell1 BIGINT = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 8 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 DECLARE @S      BIT,
         @M      NVARCHAR(500),
         @SStr   NVARCHAR(1),
@@ -324,7 +339,7 @@ CREATE TABLE #Ru29 (Status BIT, Message NVARCHAR(500));
 INSERT INTO #Ru29
 EXEC Parts.ItemLocation_Remove
     @ItemId     = @ItemId,
-    @LocationId = 9,
+    @LocationId = @Cell1,
     @AppUserId  = 1;
 SELECT @S = Status, @M = Message FROM #Ru29;
 DROP TABLE #Ru29;
@@ -338,7 +353,7 @@ EXEC test.Assert_IsEqual
 -- Row is now deprecated (soft-delete)
 DECLARE @DepCount INT = (
     SELECT COUNT(*) FROM Parts.ItemLocation
-    WHERE ItemId = @ItemId AND LocationId = 9 AND DeprecatedAt IS NOT NULL
+    WHERE ItemId = @ItemId AND LocationId = @Cell1 AND DeprecatedAt IS NOT NULL
 );
 EXEC test.Assert_RowCount
     @TestName      = N'[RemoveHappy] Row deprecated',
@@ -348,7 +363,7 @@ EXEC test.Assert_RowCount
 -- No active row for (Item, DC-401) remains
 DECLARE @ActiveAfter INT = (
     SELECT COUNT(*) FROM Parts.ItemLocation
-    WHERE ItemId = @ItemId AND LocationId = 9 AND DeprecatedAt IS NULL
+    WHERE ItemId = @ItemId AND LocationId = @Cell1 AND DeprecatedAt IS NULL
 );
 EXEC test.Assert_RowCount
     @TestName      = N'[RemoveHappy] No active row remains',
@@ -359,6 +374,8 @@ GO
 -- =============================================
 -- Test 10: ItemLocation_Remove same pair again rejected
 -- =============================================
+DECLARE @Cell1 BIGINT = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 8 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 DECLARE @S      BIT,
         @M      NVARCHAR(500),
         @SStr   NVARCHAR(1),
@@ -370,7 +387,7 @@ CREATE TABLE #Ru30 (Status BIT, Message NVARCHAR(500));
 INSERT INTO #Ru30
 EXEC Parts.ItemLocation_Remove
     @ItemId     = @ItemId,
-    @LocationId = 9,
+    @LocationId = @Cell1,
     @AppUserId  = 1;
 SELECT @S = Status, @M = Message FROM #Ru30;
 DROP TABLE #Ru30;
@@ -387,6 +404,8 @@ GO
 --   Same Id must be returned, and exactly 1 row (ItemId, LocationId)
 --   should exist with DeprecatedAt IS NULL.
 -- =============================================
+DECLARE @Cell1 BIGINT = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 8 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 DECLARE @S       BIT,
         @M       NVARCHAR(500),
         @SStr    NVARCHAR(1),
@@ -398,13 +417,13 @@ SELECT @ItemId = Id FROM Parts.Item WHERE PartNumber = N'TEST-IL-ITEM-001';
 
 -- Capture the deprecated row's Id
 SELECT @PriorId = Id FROM Parts.ItemLocation
-WHERE ItemId = @ItemId AND LocationId = 9;
+WHERE ItemId = @ItemId AND LocationId = @Cell1;
 
 CREATE TABLE #Rc28 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #Rc28
 EXEC Parts.ItemLocation_Add
     @ItemId     = @ItemId,
-    @LocationId = 9,
+    @LocationId = @Cell1,
     @AppUserId  = 1;
 SELECT @S = Status, @M = Message, @NewId = NewId FROM #Rc28;
 DROP TABLE #Rc28;
@@ -426,7 +445,7 @@ EXEC test.Assert_IsEqual
 -- Exactly 1 row for (Item, DC-401) and it's active
 DECLARE @TotalCount INT = (
     SELECT COUNT(*) FROM Parts.ItemLocation
-    WHERE ItemId = @ItemId AND LocationId = 9
+    WHERE ItemId = @ItemId AND LocationId = @Cell1
 );
 EXEC test.Assert_RowCount
     @TestName      = N'[Reactivate] Exactly 1 row for (Item, DC-401)',
@@ -435,7 +454,7 @@ EXEC test.Assert_RowCount
 
 DECLARE @ActiveCount INT = (
     SELECT COUNT(*) FROM Parts.ItemLocation
-    WHERE ItemId = @ItemId AND LocationId = 9 AND DeprecatedAt IS NULL
+    WHERE ItemId = @ItemId AND LocationId = @Cell1 AND DeprecatedAt IS NULL
 );
 EXEC test.Assert_RowCount
     @TestName      = N'[Reactivate] That row is active',

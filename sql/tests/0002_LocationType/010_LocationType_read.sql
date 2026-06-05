@@ -61,9 +61,12 @@ EXEC test.Assert_RowCount
 GO
 
 -- =============================================
--- Test 4: LocationTypeDefinition_List (no filter) — returns 15 rows
+-- Test 4: LocationTypeDefinition_List (no filter) — returns all non-deprecated
+--   Expected count derived dynamically so the test survives new kinds being
+--   seeded (e.g. the Printer kind added by 011_seed_locations_mpp_plant.sql).
 -- =============================================
-DECLARE @Count INT;
+DECLARE @Count INT, @Expected INT;
+SELECT @Expected = COUNT(*) FROM Location.LocationTypeDefinition WHERE DeprecatedAt IS NULL;
 CREATE TABLE #R (
     Id BIGINT,
     LocationTypeId BIGINT,
@@ -79,15 +82,19 @@ INSERT INTO #R EXEC Location.LocationTypeDefinition_List;
 SELECT @Count = COUNT(*) FROM #R;
 DROP TABLE #R;
 EXEC test.Assert_RowCount
-    @TestName      = N'LocationTypeDefinition_List (all): 15 rows returned by proc',
-    @ExpectedCount = 15,
+    @TestName      = N'LocationTypeDefinition_List (all): proc count matches active def count',
+    @ExpectedCount = @Expected,
     @ActualCount   = @Count;
 GO
 
 -- =============================================
--- Test 5: LocationTypeDefinition_List(@LocationTypeId=5) — 9 Cell defs
+-- Test 5: LocationTypeDefinition_List(@LocationTypeId=5) — Cell-tier defs
+--   Expected count derived dynamically (Cell-tier kinds grow over time, e.g.
+--   the seeded Printer kind is LocationTypeId=5).
 -- =============================================
-DECLARE @Count INT;
+DECLARE @Count INT, @Expected INT;
+SELECT @Expected = COUNT(*) FROM Location.LocationTypeDefinition
+WHERE LocationTypeId = 5 AND DeprecatedAt IS NULL;
 CREATE TABLE #R (
     Id BIGINT,
     LocationTypeId BIGINT,
@@ -103,21 +110,25 @@ INSERT INTO #R EXEC Location.LocationTypeDefinition_List @LocationTypeId = 5;
 SELECT @Count = COUNT(*) FROM #R;
 DROP TABLE #R;
 EXEC test.Assert_RowCount
-    @TestName      = N'LocationTypeDefinition_List(Cell): 9 Cell-tier definitions',
-    @ExpectedCount = 9,
+    @TestName      = N'LocationTypeDefinition_List(Cell): proc count matches active Cell-tier def count',
+    @ExpectedCount = @Expected,
     @ActualCount   = @Count;
 GO
 
 -- =============================================
 -- Test 6: LocationTypeDefinition_List(@IncludeDeprecated=0 / 1)
---   Deprecate one row, confirm proc filters, then restore.
+--   Deprecate one stable kind (Scale, by Code), confirm the proc's filter,
+--   then restore. Expected counts derived dynamically against current state.
 -- =============================================
 UPDATE Location.LocationTypeDefinition
 SET DeprecatedAt = SYSUTCDATETIME()
-WHERE Id = 15;
+WHERE Code = N'Scale';
 GO
 
-DECLARE @Count INT;
+DECLARE @Count INT, @Expected INT;
+-- After deprecating Scale, the default (excl-deprecated) proc must return
+-- exactly the active rows.
+SELECT @Expected = COUNT(*) FROM Location.LocationTypeDefinition WHERE DeprecatedAt IS NULL;
 CREATE TABLE #R (
     Id BIGINT,
     LocationTypeId BIGINT,
@@ -133,12 +144,14 @@ INSERT INTO #R EXEC Location.LocationTypeDefinition_List @IncludeDeprecated = 0;
 SELECT @Count = COUNT(*) FROM #R;
 DROP TABLE #R;
 EXEC test.Assert_RowCount
-    @TestName      = N'LocationTypeDefinition_List(excl deprecated): 14 after deprecating Scale',
-    @ExpectedCount = 14,
+    @TestName      = N'LocationTypeDefinition_List(excl deprecated): excludes the deprecated Scale kind',
+    @ExpectedCount = @Expected,
     @ActualCount   = @Count;
 GO
 
-DECLARE @Count INT;
+DECLARE @Count INT, @Expected INT;
+-- IncludeDeprecated=1 must return every row regardless of DeprecatedAt.
+SELECT @Expected = COUNT(*) FROM Location.LocationTypeDefinition;
 CREATE TABLE #R (
     Id BIGINT,
     LocationTypeId BIGINT,
@@ -154,15 +167,15 @@ INSERT INTO #R EXEC Location.LocationTypeDefinition_List @IncludeDeprecated = 1;
 SELECT @Count = COUNT(*) FROM #R;
 DROP TABLE #R;
 EXEC test.Assert_RowCount
-    @TestName      = N'LocationTypeDefinition_List(incl deprecated): 15 with deprecated included',
-    @ExpectedCount = 15,
+    @TestName      = N'LocationTypeDefinition_List(incl deprecated): returns all rows incl deprecated Scale',
+    @ExpectedCount = @Expected,
     @ActualCount   = @Count;
 GO
 
 -- Restore seed state
 UPDATE Location.LocationTypeDefinition
 SET DeprecatedAt = NULL
-WHERE Id = 15;
+WHERE Code = N'Scale';
 GO
 
 -- =============================================

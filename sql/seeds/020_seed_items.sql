@@ -16,8 +16,8 @@
 --                - 2 QualitySpecs linked to 5G0
 --
 --              Dependencies:
---                - seed_locations.sql (Location Ids 3=DIECAST,
---                  4=MACHSHOP, 5=QC, 13=TRIM)
+--                - 011_seed_locations_mpp_plant.sql (areas resolved by
+--                  Code: DC1, TRIM1, MA1)
 -- ============================================================
 
 SET NOCOUNT ON;
@@ -38,7 +38,7 @@ END
 
 -- ============================================================
 -- OperationTemplates (need AreaLocationId)
---   3=DIECAST, 13=TRIM, 4=MACHSHOP, 5=QC
+--   Areas resolved by Code from 011_seed_locations_mpp_plant.sql: DC1, TRIM1, MA1
 -- ============================================================
 
 SET IDENTITY_INSERT Parts.OperationTemplate ON;

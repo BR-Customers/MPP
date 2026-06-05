@@ -77,7 +77,8 @@ GO
 -- Test 5: ItemLocation_Add writes consumption metadata on INSERT
 -- =============================================
 DECLARE @ItemId BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'PH-E-TEST-001');
-DECLARE @LocId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'DC-401');
+DECLARE @LocId BIGINT = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 8 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 
 CREATE TABLE #ILA (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #ILA EXEC Parts.ItemLocation_Add
@@ -118,7 +119,9 @@ GO
 -- Test 6: ItemLocation_Add rejects Min > Max
 -- =============================================
 DECLARE @ItemId BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'PH-E-TEST-001');
-DECLARE @LocId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'DC-402');
+DECLARE @LocId BIGINT = (SELECT Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 8 AND DeprecatedAt IS NULL
+    ORDER BY SortOrder, Id OFFSET 1 ROWS FETCH NEXT 1 ROWS ONLY);
 
 CREATE TABLE #ILBad (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #ILBad EXEC Parts.ItemLocation_Add
@@ -138,7 +141,8 @@ GO
 -- Test 7: SetConsumptionMetadata changes values on existing row
 -- =============================================
 DECLARE @ItemId BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'PH-E-TEST-001');
-DECLARE @LocId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'DC-401');
+DECLARE @LocId BIGINT = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 8 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 DECLARE @IlId BIGINT = (
     SELECT Id FROM Parts.ItemLocation
     WHERE ItemId = @ItemId AND LocationId = @LocId AND DeprecatedAt IS NULL);
@@ -173,7 +177,8 @@ GO
 -- Test 8: SetConsumptionMetadata rejects Min > Max
 -- =============================================
 DECLARE @ItemId BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'PH-E-TEST-001');
-DECLARE @LocId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'DC-401');
+DECLARE @LocId BIGINT = (SELECT TOP 1 Id FROM Location.Location
+    WHERE LocationTypeDefinitionId = 8 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
 DECLARE @IlId BIGINT = (
     SELECT Id FROM Parts.ItemLocation
     WHERE ItemId = @ItemId AND LocationId = @LocId AND DeprecatedAt IS NULL);

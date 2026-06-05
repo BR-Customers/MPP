@@ -11,8 +11,9 @@
 --   Pre-conditions:
 --     - Migrations 0001..0014 applied
 --     - Seed LocationType + LocationTypeDefinition + Location.Location
---     - DieCastMachine (Code='DieCastMachine') has 3 active Location rows
---       in the seed -- used for the FK-guard rejection test
+--     - DieCastMachine (Code='DieCastMachine') has active Location rows
+--       in the MPP plant seed -- used for the FK-guard rejection test
+--       (count derived dynamically in Test 3, not hardcoded)
 --     - Bootstrap user Id=1
 --     - Test framework deployed
 -- =============================================
@@ -131,6 +132,14 @@ SELECT @DieCastDefId = Id FROM Location.LocationTypeDefinition WHERE Code = N'Di
 DECLARE @S BIT, @M NVARCHAR(500);
 DECLARE @SStr NVARCHAR(1);
 
+-- Derive the active-Location count for DieCastMachine from the seed so the
+-- message assertion survives seed regeneration (the MPP plant seed has many
+-- die-cast machines, not a fixed 3).
+DECLARE @DcActiveCount INT;
+SELECT @DcActiveCount = COUNT(*) FROM Location.Location
+WHERE LocationTypeDefinitionId = @DieCastDefId AND DeprecatedAt IS NULL;
+DECLARE @CountNeedle NVARCHAR(60) = CAST(@DcActiveCount AS NVARCHAR(20)) + N' active Location';
+
 CREATE TABLE #R3 (Status BIT, Message NVARCHAR(500));
 INSERT INTO #R3
 EXEC Location.LocationTypeDefinition_Deprecate
@@ -149,9 +158,9 @@ EXEC test.Assert_Contains
     @HaystackStr = @M,
     @NeedleStr   = N'Cannot deprecate';
 EXEC test.Assert_Contains
-    @TestName    = N'FK guard: Message mentions 3 active Locations',
+    @TestName    = N'FK guard: Message reports the seeded active-Location count',
     @HaystackStr = @M,
-    @NeedleStr   = N'3 active Location';
+    @NeedleStr   = @CountNeedle;
 
 -- Verify DieCastMachine is still active (rejection did not mutate)
 DECLARE @StillActive BIT;
