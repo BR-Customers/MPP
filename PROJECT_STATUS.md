@@ -1,6 +1,22 @@
 # MPP MES — Project Status
 
-**Last updated:** 2026-05-29 (**Quality Spec Config Tool — built (Phases A–H) AND smoke-tested + polished; functional end-to-end.** Backend: migration 0017, 3 net-new procs, readable-audit on all quality procs, **SQL tests 1161/1161**; 14 NQs; entity script; `/quality-specs` master-detail screen + `QualitySpecAttributeRow` + `NewSpecModal` + route/nav + Item Master cross-nav. Smoke fixes landed today: spec library + Version History converted table→flex-repeater (legible, no squish/mojibake); `numeric-entry-field` component fix; `Lower≤Target≤Upper` save validation (proc-enforced); left-list refresh after publish/etc.; hide UOM/Target/Lower/Upper on non-Numeric attrs (meta.visible); `+ New Version` clones the *selected* version; date-resolved per-version state **Active/Scheduled/Superseded** (SQL `ListBySpec.State` + `GetActiveForSpec` tiebreaker) surfaced in dropdown + history pills. Also earlier today: audit-readability refactor COMPLETE (Slices 1–8 + 2.5). Two visual smokes still pending: the ConfigChangeDetail color-diff (Slice 2.5) and the new Quality state badges.)
+**Last updated:** 2026-06-05 (**Tools Config Tool — Mount-to-Cell tool-type filter + three bug-fixes (Retire→status, NULL rank pills, "null" description) applied to `MPP_MES_Dev` but ⚠️ UNCOMMITTED in working tree; eligibility-style config-editor redesign brainstormed + spec'd + committed `7f41a2d`, implementation NOT started; Data Model → v1.9o. See today's Next Session Pickup + Recently closed.**) Earlier — 2026-05-29 (**Quality Spec Config Tool — built (Phases A–H) AND smoke-tested + polished; functional end-to-end.** Backend: migration 0017, 3 net-new procs, readable-audit on all quality procs, **SQL tests 1161/1161**; 14 NQs; entity script; `/quality-specs` master-detail screen + `QualitySpecAttributeRow` + `NewSpecModal` + route/nav + Item Master cross-nav. Smoke fixes landed today: spec library + Version History converted table→flex-repeater (legible, no squish/mojibake); `numeric-entry-field` component fix; `Lower≤Target≤Upper` save validation (proc-enforced); left-list refresh after publish/etc.; hide UOM/Target/Lower/Upper on non-Numeric attrs (meta.visible); `+ New Version` clones the *selected* version; date-resolved per-version state **Active/Scheduled/Superseded** (SQL `ListBySpec.State` + `GetActiveForSpec` tiebreaker) surfaced in dropdown + history pills. Also earlier today: audit-readability refactor COMPLETE (Slices 1–8 + 2.5). Two visual smokes still pending: the ConfigChangeDetail color-diff (Slice 2.5) and the new Quality state badges.)
+
+---
+
+## 🔖 Next Session Pickup — commit today's Tools work, then plan the eligibility-style editors (2026-06-05)
+
+**⚠️ FIRST: commit the uncommitted working-tree changes from today.** Two Tools workstreams are applied to `MPP_MES_Dev` and scanned into the gateway but **not committed** (risk: concurrent auto-push sweeping them into a stray commit — see `feedback_git_explicit_staging`). Stage these explicit paths and commit (omit the Claude co-author trailer):
+
+- **Tool-type mount filter:** `sql/migrations/versioned/0018_tooltype_compatible_celldef.sql`, `sql/migrations/repeatable/R__Tools_Tool_ListCompatibleCells.sql`, `R__Tools_ToolType_List.sql`, `R__Tools_ToolType_Get.sql`, `ignition/.../named-query/parts/Tool_ListCompatibleCells/*`, `ignition/.../script-python/BlueRidge/Parts/Tool/code.py`, `ignition/.../views/.../Popups/MountToCell/view.json`, `MPP_MES_DATA_MODEL.md`.
+- **Tools bug-fixes** (same `R__Tools_Tool_Deprecate.sql`, `Parts/Tool/code.py`, plus `ToolRow/view.json` + `Views/Parts/Tools/view.json`).
+- Verify `git diff --stat` on the view.json files is small (no Designer pickle bloat) before staging.
+
+**Then — next major work: build the eligibility-style config editors.** Spec committed today: `docs/superpowers/specs/2026-06-05-eligibility-style-config-editors-design.md` (`7f41a2d`). Port the Item Master eligibility editing model (inline draft + Save/Discard + atomic SaveAll) onto Tools **Attributes / Cavities / Assignments** and Operation-Template **fields**. Decisions locked: full eligibility model; cavity status = inline dropdown (CavitySaveAll insert+update only); assignments = inline-mount no-modal (no draft); no field ordering; **type-aware** attribute values. 3 new SaveAll procs + NQs, parent dirty-gating like Item Master, MountToCell/AddAttribute/AddCavity popups deleted. **Next step is to invoke `writing-plans`** to turn the spec into a phased plan, then execute.
+
+**Migration-number heads-up:** `0018` is now taken by the Arc-1 tooltype-compat migration above. The Data Model header / Arc-2 plan had *planned* a Phase-5 `0018` for the OperationTemplate sub-LOT-split ALTER — that future Arc-2 migration must renumber to `0019+` when it actually builds (Arc 2 is OI-35-gated, unbuilt).
+
+**Carry-forward (still owed from 2026-05-29, non-blocking):** the two Quality visual smokes below (state badges + ConfigChangeDetail color-diff).
 
 ---
 
@@ -73,6 +89,18 @@ The Item Master design has been **reworked from bundled-editDraft + bidi-Object-
 ---
 
 ## ✅ Recently closed
+
+### Tools Config Tool — eligibility-style editor redesign spec'd (2026-06-05)
+
+Brainstormed (with the visual-companion mockup tool) → design spec committed `7f41a2d`: `docs/superpowers/specs/2026-06-05-eligibility-style-config-editors-design.md`. **No implementation yet** — next step is `writing-plans`. Ports the Item Master eligibility editing model onto Tools Attributes/Cavities/Assignments + Operation-Template fields. Decisions: (1) full eligibility model (inline draft + Save/Discard + atomic SaveAll); (2) cavity status as inline dropdown, `ToolCavity_SaveAll` insert+update only (no delete-on-absent — end-of-life via Scrapped); (3) assignments adopt the look + inline mount (kills MountToCell popup) but stay immediate/audited with no draft; (4) no field ordering (no SortOrder); (5) type-aware attribute value inputs (text/numeric/checkbox/date by DataType, proc-validated). New procs planned: `ToolAttribute_SaveAll` (delete-on-absent — no DeprecatedAt column), `ToolCavity_SaveAll`, `OperationTemplateField_SaveAll`. Parent Tools + OperationTemplates views gain dirty-gating like Item Master.
+
+### Tools Config Tool — Mount-to-Cell tool-type filter (2026-06-05) ⚠️ UNCOMMITTED
+
+Mount-to-Cell dropdown now filters Cell-tier Locations to the kinds a tool type can mount on (Die → Die Cast Machine), instead of listing all 146 cells (presses + printers + terminals). Migration `0018_tooltype_compatible_celldef.sql` adds `Tools.ToolType.CompatibleLocationTypeDefinitionId` (FK → `Location.LocationTypeDefinition`, NULL = no restriction) and seeds Die→DieCastMachine by Code. New `Tools.Tool_ListCompatibleCells @ToolId` proc (rule in SQL per `feedback_no_business_logic_in_python`) + NQ; `getCellsForDropdown(toolId)` + the MountToCell binding pass the tool id; `ToolType_List`/`_Get` surface the column. Verified on dev: Die tool → 22 DieCastMachine cells only. **Data Model → v1.9o.** Applied non-destructively to `MPP_MES_Dev`; scanned. **Not committed — see Next Session Pickup.**
+
+### Tools Config Tool — Retire/status + display bug-fixes (2026-06-05) ⚠️ UNCOMMITTED
+
+Three issues from Jacques's review (root-caused via DB evidence, no guessing): (1) **Retire left status "Active"** — `Tool_Deprecate` set `DeprecatedAt` only, never `StatusCode`, and the chip reads `StatusCode`. Per decision, the proc now sets **StatusCode=Retired + DeprecatedAt** together (ISNULL-guarded, audit old→new status); verified via rollback-test; the already-retired `CAV-TEST-DIE` data-corrected to Retired. (2) **Rank pills/chips rendered literal "NULL"** — no tool has a DieRank; pills bound text directly to a null rank. Now hidden via `position.display = !isNull(...)` on `ToolRow.BadgeRank` + header `SummaryBadgeRank`. (3) **Description showed "null"** — `getOne` now coerces null→"" for display; `add`/`update` coerce ""→NULL so the DB keeps NULL. Also: the reported "assignment history vanished" was a **non-bug** — `CAV-TEST-DIE` was never mounted (audit + raw table confirm zero assignment rows; the two real assignments belong to ASN-DIE-A/B). Applied to `MPP_MES_Dev`; scanned. **Not committed — see Next Session Pickup.**
 
 ### Quality Spec Config Tool — built end-to-end + smoke-polished (2026-05-29)
 
@@ -305,7 +333,7 @@ This file holds the **volatile** state of the project — current doc versions, 
 
 | Doc | Version | Rev Date | Status / Notes |
 |---|---|---|---|
-| Data Model | **v1.9m** | 2026-04-29 | Current. `Parts.OperationTemplate.RequiresSubLotSplit` added (FDS-05-009). |
+| Data Model | **v1.9o** | 2026-06-05 | Current. v1.9o: `Tools.ToolType.CompatibleLocationTypeDefinitionId` (migration `0018`) for the Mount-to-Cell tool-type filter (Die→DieCastMachine). v1.9n (2026-06-04): sub-LOT split relocated Trim OUT → Machining OUT. v1.9m: `Parts.OperationTemplate.RequiresSubLotSplit`. |
 | FDS | **v1.0** | 2026-05-04 | **First customer-review release.** Feedback-Welcomed callout added near front matter. In-document Revision History reset to start at v1.0; pre-release granular history (v0.1 through v0.11p) archived in `MPP_MES_FDS_CHANGELOG.docx`. From v1.0 forward, revisions are tracked in the FDS body itself. |
 | Open Issues Register | **v2.17** | 2026-05-01 | Current. **9 items closed** from Jacques's 2026-05-01 markup: OI-07, -24, -25, -27, -28, -29, -30, -31, UJ-03 → all ✅ Resolved. 6 items remain Open. |
 | Outstanding Items extract | **v2.0** | 2026-05-01 | Current. Reduced to 6 Open items per OIR v2.17. |
