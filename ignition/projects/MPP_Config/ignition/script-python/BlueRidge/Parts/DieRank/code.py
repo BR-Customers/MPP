@@ -113,12 +113,15 @@ def getMatrixRowInstances():
     ranks = getAllForList()
     rankCodes = [r.get("Code") for r in ranks]
     matrix = getCompatibilityMatrix()
+    # Precompute code -> ordinal once (was O(N^3) list.index() per cell, and
+    # list.index() raises on a null Code).
+    codeIndex = {code: i for i, code in enumerate(rankCodes)}
     rowInstances = []
     for r in ranks:
         fromCode = r.get("Code")
         cellInstances = []
         for toCode in rankCodes:
-            isMirror = rankCodes.index(fromCode) > rankCodes.index(toCode)
+            isMirror = codeIndex.get(fromCode, -1) > codeIndex.get(toCode, -1)
             compatible = bool(matrix.get(fromCode, {}).get(toCode, False))
             cellInstances.append({
                 "cell": {
@@ -193,6 +196,8 @@ def update(data):
     immutable per the underlying proc."""
     data = _u(data) or {}
     BlueRidge.Common.Util.log("data=%s" % data)
+    if data.get("Id") is None:
+        return {"Status": 0, "Message": "Id is required for update."}
     return BlueRidge.Common.Db.execMutation(
         "parts/DieRank_Update",
         {
@@ -209,6 +214,8 @@ def deprecate(dieRankId):
     active Tool or DieRankCompatibility row references this rank."""
     dieRankId = _u(dieRankId)
     BlueRidge.Common.Util.log("dieRankId=%s" % dieRankId)
+    if dieRankId is None:
+        return {"Status": 0, "Message": "dieRankId is required."}
     return BlueRidge.Common.Db.execMutation(
         "parts/DieRank_Deprecate",
         {

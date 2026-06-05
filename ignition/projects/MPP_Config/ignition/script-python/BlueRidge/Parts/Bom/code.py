@@ -332,7 +332,7 @@ def handleSaveDraft(bomId, effectiveFrom, lines):
             "QtyPer":      ln.get("qtyPer"),
             "UomId":       ln.get("uomId"),
         })
-    linesJson = system.util.jsonEncode(payload)
+    linesJson = BlueRidge.Common.Util.convertWrapperObjectToJson(payload)
     return BlueRidge.Common.Db.execMutation(
         "parts/Bom_SaveDraft",
         {
@@ -362,7 +362,7 @@ def handlePublish(bomId, effectiveFrom=None, lines=None):
                 "QtyPer":      ln.get("qtyPer"),
                 "UomId":       ln.get("uomId"),
             })
-        linesJson = system.util.jsonEncode(payload)
+        linesJson = BlueRidge.Common.Util.convertWrapperObjectToJson(payload)
     return BlueRidge.Common.Db.execMutation(
         "parts/Bom_Publish",
         {

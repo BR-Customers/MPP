@@ -251,7 +251,7 @@ def expandToTarget(items, targetId):
     return walk(items)
 
 
-def injectDraftNode(items, parentLocationId, draftLabel, draftIcon="mpp/add",
+def injectDraftNode(items, parentLocationId, draftLabel, draftIcon="mpp/add_circle",
                     draftData=None):
     """Insert a synthetic draft child node under the parent (resolved by
        parentLocationId). Used by the +Add Location flow so the operator

@@ -200,7 +200,7 @@ def handleSaveAll(meta, attributes, userId=None):
 
     isCreate     = meta.get("Id") is None
     cleanedAttrs = [_cleanAttributeRow(a) for a in (attributes or [])]
-    attrsJson    = system.util.jsonEncode(cleanedAttrs)
+    attrsJson    = BlueRidge.Common.Util.convertWrapperObjectToJson(cleanedAttrs)
     successTitle = "Created definition" if isCreate else "Saved definition"
     successMsg   = meta.get("Name") or ""
 

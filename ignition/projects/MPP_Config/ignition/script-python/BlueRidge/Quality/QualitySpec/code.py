@@ -67,11 +67,13 @@ def _isoDate(d):
 
 
 def _statusFor(activeCount, totalCount):
+    # Single source of truth for the spec-level state label, shared by the
+    # Config Tool list (buildSpecListRows) and the Item Master cross-nav.
     if activeCount and activeCount > 0:
         return "Active"
     if totalCount and totalCount > 0:
         return "Draft"
-    return "None"
+    return "New"
 
 
 def listForItem(itemId):
@@ -160,12 +162,7 @@ def buildSpecListRows(specs, selectedSpecId):
         sub = midDot.join(parts) if parts else "Unlinked"
         active = s.get("activeVersionCount") or 0
         vc = s.get("versionCount") or 0
-        if active > 0:
-            state = "Active"
-        elif vc > 0:
-            state = "Draft"
-        else:
-            state = "New"
+        state = _statusFor(active, vc)
         out.append({
             "specId": s.get("id"),
             "name": s.get("name") or "",
@@ -239,8 +236,12 @@ def listVersions(specId, includeDeprecated=True):
         return []
     rows = BlueRidge.Common.Db.execList("quality/QualitySpecVersion_ListBySpec",
         {"qualitySpecId": specId}) or []
+    # The proc returns every version (no server-side deprecated filter), so
+    # apply the includeDeprecated flag client-side rather than ignoring it.
     out = []
     for r in rows:
+        if not includeDeprecated and r.get("DeprecatedAt") is not None:
+            continue
         d = dict(r)
         d["effectiveFromDisplay"] = _isoDate(r.get("EffectiveFrom"))
         out.append(d)
@@ -350,11 +351,9 @@ def createNewVersion(specId, sourceVersionId=None):
         return BlueRidge.Common.Db.execMutation("quality/QualitySpecVersion_Create",
             {"qualitySpecId": specId, "effectiveFrom": None,
              "appUserId": BlueRidge.Common.Util._currentAppUserId()})
-    for v in vers:
-        if v.get("PublishedAt") is None and v.get("DeprecatedAt") is None:
-            return {"Status": False, "Message":
-                    "A draft already exists for this spec. Open or discard it first.",
-                    "NewId": None}
+    # The single-Draft-per-spec rule is enforced by
+    # QualitySpecVersion_CreateNewVersion (returns Status=0 if a Draft
+    # exists); no duplicate Python pre-check.
     source = None
     if sourceVersionId is not None:
         for v in vers:
@@ -382,7 +381,7 @@ def saveDraft(versionId, effectiveFrom, attributes):
     return BlueRidge.Common.Db.execMutation("quality/QualitySpecVersion_SaveDraft", {
         "qualitySpecVersionId": _u(versionId),
         "effectiveFrom": _u(effectiveFrom),
-        "attributesJson": system.util.jsonEncode(payload),
+        "attributesJson": BlueRidge.Common.Util.convertWrapperObjectToJson(payload),
         "appUserId": BlueRidge.Common.Util._currentAppUserId()})
 
 

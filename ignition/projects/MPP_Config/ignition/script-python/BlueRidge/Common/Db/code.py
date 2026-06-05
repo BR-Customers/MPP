@@ -67,7 +67,7 @@ def execList(nq, params=None):
                     the not-found case.
     """
     BlueRidge.Common.Util.log("nq=%s params=%s" % (nq, params))
-    ds = system.db.runNamedQuery(nq, params) if params else system.db.runNamedQuery(nq)
+    ds = system.db.runNamedQuery(nq, params) if params is not None else system.db.runNamedQuery(nq)
     rows = _rowsToDicts(ds)
     BlueRidge.Common.Util.log("rows=%d" % len(rows))
     return rows
@@ -121,7 +121,7 @@ def execMutation(nq, params=None):
               system.db exceptions.
     """
     BlueRidge.Common.Util.log("nq=%s params=%s" % (nq, params))
-    ds = system.db.runNamedQuery(nq, params) if params else system.db.runNamedQuery(nq)
+    ds = system.db.runNamedQuery(nq, params) if params is not None else system.db.runNamedQuery(nq)
     rows = _rowsToDicts(ds)
     if not rows:
         return {"Status": 0, "Message": "No status returned from proc"}

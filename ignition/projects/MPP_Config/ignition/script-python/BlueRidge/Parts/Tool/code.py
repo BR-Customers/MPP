@@ -178,6 +178,11 @@ def getOne(toolId):
     if row is None:
         return None
     row["deprecated"] = row.get("DeprecatedAt") is not None
+    # Coerce nullable text to "" so the bidi-bound Description text-field
+    # renders empty instead of the literal "null". update() converts the
+    # empty string back to NULL on save, so the DB keeps its NULL semantics.
+    if row.get("Description") is None:
+        row["Description"] = ""
     return row
 
 
@@ -220,6 +225,7 @@ def add(data):
                 "NewId":   None}
 
     dieRankId = _lookupDieRankIdByCode(data.get("DieRankCode"))
+    description = (data.get("Description") or "").strip() or None
 
     return BlueRidge.Common.Db.execMutation(
         "parts/Tool_Create",
@@ -227,7 +233,7 @@ def add(data):
             "toolTypeId":   toolTypeId,
             "code":         code,
             "name":         name,
-            "description":  data.get("Description"),
+            "description":  description,
             "dieRankId":    dieRankId,
             "statusCodeId": statusCodeId,
             "appUserId":    BlueRidge.Common.Util._currentAppUserId(),
@@ -254,13 +260,14 @@ def update(data):
 
     dieRankId = _lookupDieRankIdByCode(data.get("DieRankCode"))
     appUserId = BlueRidge.Common.Util._currentAppUserId()
+    description = (data.get("Description") or "").strip() or None
 
     updateResult = BlueRidge.Common.Db.execMutation(
         "parts/Tool_Update",
         {
             "id":          toolId,
             "name":        data.get("Name"),
-            "description": data.get("Description"),
+            "description": description,
             "dieRankId":   dieRankId,
             "appUserId":   appUserId,
         },
@@ -472,10 +479,9 @@ def addAttributeDefinition(toolTypeId, code, name, dataType, isRequired=False):
         return {"Status": 0, "Message": "Code is required", "NewId": None}
     if not name:
         return {"Status": 0, "Message": "Name is required", "NewId": None}
-    if dataType not in ("String", "Integer", "Decimal", "Boolean", "Date"):
-        return {"Status": 0,
-                "Message": "DataType must be String/Integer/Decimal/Boolean/Date",
-                "NewId":   None}
+    # DataType is validated against the allowed set by
+    # ToolAttributeDefinition_Create (the proc is authoritative); no Python
+    # allowlist here per the "rules live in SQL" convention.
     return BlueRidge.Common.Db.execMutation(
         "parts/ToolAttributeDefinition_Create",
         {
@@ -508,12 +514,26 @@ def getAttributeDefinitionsForToolType(toolTypeId):
     return [{"label": r.get("Name") or r.get("Code"), "value": r.get("Id")} for r in rows or []]
 
 
-def getCellsForDropdown():
+def getCellsForDropdown(toolId=None):
     """Returns [{label, value}, ...] for the Mount-to-Cell dropdown.
     Value is the Cell Location.Id (BIGINT); label is Name (Code).
-    Pulls active Cell-tier Locations via BlueRidge.Location.Location."""
+
+    Filtered to cells the tool's ToolType can mount on, via
+    parts/Tool_ListCompatibleCells (proc Tools.Tool_ListCompatibleCells).
+    The compatibility rule lives in SQL: a tool type with a
+    CompatibleLocationTypeDefinitionId restricts the list to that cell kind
+    (Die -> Die Cast Machine); an unmapped tool type falls back to all
+    Cell-tier Locations. Returns [] when no toolId is supplied (the proc
+    needs the tool to resolve its type)."""
+    toolId = _u(toolId)
+    BlueRidge.Common.Util.log("toolId=%s" % toolId)
+    if toolId is None:
+        return []
     try:
-        rows = BlueRidge.Location.Location.listByTier("Cell")
+        rows = BlueRidge.Common.Db.execList(
+            "parts/Tool_ListCompatibleCells",
+            {"toolId": toolId},
+        )
     except Exception as e:
         BlueRidge.Common.Util.log("getCellsForDropdown failed: %s" % str(e))
         return []

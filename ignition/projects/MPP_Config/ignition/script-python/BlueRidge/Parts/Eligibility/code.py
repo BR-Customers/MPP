@@ -28,6 +28,7 @@ def listByItem(itemId):
     """Return active ItemLocation rows for the Item, sorted by
     (TierOrdinal, LocationCode). Empty list when none."""
     BlueRidge.Common.Util.log("itemId=%s" % itemId)
+    itemId = BlueRidge.Common.Util.extractQualifiedValues(itemId)
     if not itemId:
         return []
     return BlueRidge.Common.Db.execList(
@@ -61,6 +62,7 @@ def handleSaveAll(itemId, rows):
     Returns the proc's status dict {Status, Message, NewId}.
     """
     BlueRidge.Common.Util.log("itemId=%s rows=%d" % (itemId, len(rows or [])))
+    itemId = BlueRidge.Common.Util.extractQualifiedValues(itemId)
     if not itemId:
         return {"Status": 0,
                 "Message": "No item selected.",
@@ -80,7 +82,7 @@ def handleSaveAll(itemId, rows):
         })
     params = {
         "itemId":    itemId,
-        "rowsJson":  system.util.jsonEncode(cleaned),
+        "rowsJson":  BlueRidge.Common.Util.convertWrapperObjectToJson(cleaned),
         "appUserId": BlueRidge.Common.Util._currentAppUserId(),
     }
     return BlueRidge.Common.Db.execMutation(

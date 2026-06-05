@@ -565,7 +565,7 @@ def handleSaveAll(meta, attributes, userId=None,
             "LocationAttributeDefinitionId": defId,
             "Value":                         (a.get("value") if a.get("value") is not None else ""),
         })
-    attrsJson = system.util.jsonEncode(procRows)
+    attrsJson = BlueRidge.Common.Util.convertWrapperObjectToJson(procRows)
 
     isCreate     = meta.get("id") is None
     successTitle = "Created Location" if isCreate else "Saved Location"

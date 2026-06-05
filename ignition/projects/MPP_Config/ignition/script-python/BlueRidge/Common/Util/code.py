@@ -16,9 +16,9 @@
 #       extractQualifiedValues(data)   unwrap QualifiedValue through nested
 #                                      lists / tuples / dicts (binding
 #                                      handoffs sometimes arrive wrapped)
-#       convertWrapperObjectToJson(o)  TypeUtilities.pyToGson — PyDictionary
-#                                      / PyList -> Gson-safe JSON for NQ
-#                                      parameter binding
+#       convertWrapperObjectToJson(o)  extractQualifiedValues + jsonEncode --
+#                                      deep-unwrap then JSON string for NQ
+#                                      params / dirty-state comparison
 #       getIconLibrary(libraryName)    Browse a custom Perspective icon
 #                                      library SVG sprite at runtime and
 #                                      return [{path, name}] for each
@@ -79,7 +79,6 @@
 
 import re
 import inspect
-from com.inductiveautomation.ignition.common import TypeUtilities
 from com.inductiveautomation.ignition.common.model.values import QualifiedValue
 from java.util import Map as JavaMap
 from java.util import Collection as JavaCollection
@@ -161,6 +160,11 @@ def extractQualifiedValues(data):
     """
     if isinstance(data, QualifiedValue):
         return extractQualifiedValues(data.getValue())
+    # NOTE: Perspective's com.inductiveautomation.perspective.common.ImmutableMap
+    # / ImmutableList are NOT java.util.Map / Collection and are NOT unwrapped
+    # here. For those, JSON round-trip via convertWrapperObjectToJson, or use
+    # bracket access v['key'] (v.get('key') AttributeErrors). See
+    # feedback_ignition_immutable_map_unwrap.
     if isinstance(data, JavaMap):
         return {k: extractQualifiedValues(data.get(k)) for k in data.keySet()}
     if isinstance(data, dict):
