@@ -5,7 +5,12 @@
 -- Version:     1.0
 --
 -- Description:
---   Soft-deletes a Tool by setting DeprecatedAt. Rejects if the Tool
+--   Retires a Tool: sets DeprecatedAt (archive / row lifecycle) AND moves
+--   StatusCode to 'Retired' (business state) in one action, so the UI status
+--   chip and dropdown reflect the retirement rather than the stale prior
+--   status. The two columns stay independent everywhere else (other status
+--   transitions go through Tool_UpdateStatus without deprecating); Retire is
+--   the one action that drives both. Rejects if the Tool
 --   has an active ToolAssignment (currently mounted on a Cell) — the
 --   operator must Release it first. Rejects if active ToolAttributes
 --   or ToolCavities exist — Tools with cavities register them once
@@ -33,6 +38,9 @@ BEGIN
 
     DECLARE @Status  BIT           = 0;
     DECLARE @Message NVARCHAR(500) = N'Unknown error';
+
+    DECLARE @RetiredStatusId BIGINT =
+        (SELECT Id FROM Tools.ToolStatusCode WHERE Code = N'Retired');
 
     DECLARE @ProcName NVARCHAR(200) = N'Tools.Tool_Deprecate';
     DECLARE @Params   NVARCHAR(MAX) =
@@ -77,10 +85,26 @@ BEGIN
             RETURN;
         END
 
+        -- Capture prior status for the audit OldValue before we overwrite it.
+        DECLARE @OldStatusCode NVARCHAR(20) =
+            (SELECT sc.Code
+             FROM Tools.Tool t
+             JOIN Tools.ToolStatusCode sc ON sc.Id = t.StatusCodeId
+             WHERE t.Id = @Id);
+
+        DECLARE @OldVal NVARCHAR(MAX) =
+            (SELECT @OldStatusCode AS StatusCode FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+        DECLARE @NewVal NVARCHAR(MAX) =
+            (SELECT @Id AS Id, N'Retired' AS StatusCode FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+
         BEGIN TRANSACTION;
 
+        -- Retire = archive (DeprecatedAt) + business status Retired in one move.
+        -- ISNULL guard: if the 'Retired' code is somehow absent, leave the
+        -- existing (NOT NULL) status rather than nulling it.
         UPDATE Tools.Tool
         SET DeprecatedAt    = SYSUTCDATETIME(),
+            StatusCodeId    = ISNULL(@RetiredStatusId, StatusCodeId),
             UpdatedAt       = SYSUTCDATETIME(),
             UpdatedByUserId = @AppUserId
         WHERE Id = @Id;
@@ -91,14 +115,14 @@ BEGIN
             @EntityId          = @Id,
             @LogEventTypeCode  = N'Deprecated',
             @LogSeverityCode   = N'Info',
-            @Description       = N'Tool deprecated.',
-            @OldValue          = NULL,
-            @NewValue          = @Params;
+            @Description       = N'Tool retired (deprecated; status set to Retired).',
+            @OldValue          = @OldVal,
+            @NewValue          = @NewVal;
 
         COMMIT TRANSACTION;
 
         SET @Status  = 1;
-        SET @Message = N'Tool deprecated successfully.';
+        SET @Message = N'Tool retired successfully.';
         SELECT @Status AS Status, @Message AS Message;
     END TRY
     BEGIN CATCH

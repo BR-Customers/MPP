@@ -13,8 +13,8 @@
 --   @IncludeDeprecated BIT = 0 - When 1, includes deprecated rows.
 --
 -- Result set:
---   Id, Code, Name, Description, Icon, HasCavities, SortOrder,
---   CreatedAt, DeprecatedAt.
+--   Id, Code, Name, Description, Icon, HasCavities,
+--   CompatibleLocationTypeDefinitionId, SortOrder, CreatedAt, DeprecatedAt.
 --
 -- Dependencies:
 --   Tables: Tools.ToolType
@@ -26,6 +26,7 @@ BEGIN
     SET NOCOUNT ON;
 
     SELECT Id, Code, Name, Description, Icon, HasCavities,
+           CompatibleLocationTypeDefinitionId,
            SortOrder, CreatedAt, DeprecatedAt
     FROM Tools.ToolType
     WHERE (@IncludeDeprecated = 1 OR DeprecatedAt IS NULL)

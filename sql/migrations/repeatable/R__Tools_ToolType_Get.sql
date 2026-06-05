@@ -23,6 +23,7 @@ BEGIN
     SET NOCOUNT ON;
 
     SELECT Id, Code, Name, Description, Icon, HasCavities,
+           CompatibleLocationTypeDefinitionId,
            SortOrder, CreatedAt, DeprecatedAt
     FROM Tools.ToolType
     WHERE Id = @Id;
