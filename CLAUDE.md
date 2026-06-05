@@ -92,6 +92,7 @@ Follow `sql_best_practices_mes.md` and `sql_version_control_guide.md`:
 - User attribution via `BIGINT FK → AppUser.Id`
 - Append-only events; `DeprecatedAt` soft deletes
 - Versioned entities (BOM, RouteTemplate, OperationTemplate, QualitySpec) carry `VersionNumber` + `PublishedAt` + `DeprecatedAt`
+- Seed/data string values (and ZPL payloads) are **ASCII-only** — em-dash/middle-dot get stored as mojibake (`â€"`) because `sqlcmd` reads `.sql` files in the Windows codepage; the garbage then shows in Ignition. Verify generated seeds with a byte scan before applying.
 
 ### Stored procedure template
 
@@ -150,6 +151,14 @@ Pattern memory: `project_mpp_item_master_pattern.md` (2026-05-27 rev). Reference
 ### Form-binding initial state
 
 Inputs that bidi-bind to nested paths (`view.custom.editDraft.<section>.<field>`) require the **full empty shape pre-populated** in the custom-block defaults — initializing just `{<section>: null}` causes the first render to show validation-error borders and literal `"null"` text in text-fields until the load handler populates the dict. Always seed `editDraft.<section>` with every key the form binds, even if the value is `null` / `""` / `false`. Reference incident: `b295b53` (DefectCodeEditor fix, 2026-05-20).
+
+### Pre-declare every binding-referenced custom property
+
+Every `view.custom.*` property a binding **reads** SHALL be declared in the view's `custom` block with a fully-shaped default — never rely on a `propConfig` binding (or a script) to bring the property into existence at runtime. Perspective *does* create the property when the binding first evaluates, but until then any binding that **traverses a nested path** (`{view.custom.X.field}`) or **iterates/measures** it (`len({view.custom.X})`) evaluates against a non-existent property and renders the component as a red Component Error / Quality-Bad. A top-level binding that has its own `propConfig` entry (e.g. `custom.selectedHeader` ← `runScript(...getHeader)`) is **not** self-declaring for the purpose of *other* bindings that read it.
+
+Rule: for each bound custom prop, add a `custom`-block default whose shape matches what downstream bindings expect — `[]` for anything read by `len()` / iterated, a dict with every accessed key (`null`/`""`/`0`) for anything traversed with a nested path, a primitive default otherwise.
+
+**The default is only the first-paint guard.** When the prop has a `propConfig` binding, the binding's result *replaces* the default the instant it evaluates — so a default dict alone does NOT fix the error: the binding **source** (the `runScript` fn / entity-script return / query) must *itself* always return the fully-shaped object with every key present, including on the empty / not-found path (return an `_EMPTY_*` shape, never `None` / `{}`). Otherwise the binding overwrites your shaped default with `null` and the nested read errors anyway. Pattern: pair a `None`-returning `getX` (for script callers that branch on `None`) with a binding-only `getXOrEmpty` that returns the shaped empty dict; bind the custom prop to `getXOrEmpty`. This generalizes the `editDraft`-shape rule above and the runScript/bidi default-shape rules. Reference incident: Routes-tab `StateBadge` reading `view.custom.selectedHeader.{PublishedAt,DeprecatedAt,Id}` where the `getHeader` binding returned `None` for an unselected version (2026-06-05) — fixed via `RouteTemplate.getHeaderOrEmpty` → `_EMPTY_HEADER`. See `feedback_ignition_predeclare_bound_custom_props`.
 
 ### UI
 

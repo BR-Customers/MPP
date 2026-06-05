@@ -55,6 +55,20 @@ Any property in `custom`, `params`, `props`, or any nested component can be boun
 
 `persistent: true` means the value survives view-instance state changes.
 
+### Pre-declare every custom property a binding reads
+
+A custom property that exists ONLY as a `propConfig` binding (e.g. `custom.header` ← `runScript(...)`) is created lazily — it does not exist until that binding first evaluates. Any *other* binding that reads it before then fails: a nested-path read (`{view.custom.header.field}`) or an iteration/length read (`len({view.custom.list})`) against a not-yet-existent property renders the component as a red **Component Error / Quality-Bad**, and stays errored until the source binding fires.
+
+Always declare every binding-referenced custom property in the view's top-level `custom` block with a default that matches how it's consumed:
+
+- `[]` for anything iterated or measured with `len()`,
+- a dict carrying every accessed key (`null` / `""` / `0`) for anything traversed by nested path,
+- a primitive default otherwise.
+
+The `propConfig` binding then overrides the default at runtime; the `custom`-block default just guarantees a clean first render. Don't rely on "Perspective creates it at runtime" — it does, but not before the first paint.
+
+**The default is only the first-paint guard.** When the property is bound, the binding's result *replaces* the default the moment it evaluates — so a shaped default alone does NOT fix the error. The binding's **source** (the `runScript` function / entity-script return / query) must itself always return the fully-shaped object with every key present, including on the empty / not-found path — return an `_EMPTY_X` shape, never `None` or `{}`. Otherwise the binding overwrites your shaped default with `null` and a downstream nested read errors anyway. A clean pattern is to keep a `None`-returning `getX` (for script callers that branch on `None`) alongside a binding-only `getXOrEmpty` that returns the shaped empty dict, and bind the custom property to `getXOrEmpty`.
+
 ## `permissions` — per-view auth gate
 
 ```json

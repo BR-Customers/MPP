@@ -1,9 +1,26 @@
 {
   "custom": {
+    "areas": [],
     "draftId": 0,
+    "itemId": 0,
     "mode": "view",
     "opTemplatesByArea": {},
-    "selectedVersionId": 22,
+    "selectedHeader": {
+      "CreatedAt": null,
+      "CreatedByDisplayName": "",
+      "CreatedByUserId": null,
+      "DeprecatedAt": null,
+      "EffectiveFrom": null,
+      "Id": 0,
+      "ItemId": 0,
+      "Name": "",
+      "PartNumber": "",
+      "PublishedAt": null,
+      "VersionNumber": 0
+    },
+    "selectedSteps": [],
+    "selectedStepsView": [],
+    "selectedVersionId": 0,
     "showDeprecated": false,
     "state": {
       "editDraft": {
@@ -18,7 +35,8 @@
         "Name": "",
         "steps": []
       }
-    }
+    },
+    "versions": []
   },
   "params": {
     "value": ""
@@ -47,7 +65,7 @@
     "custom.selectedHeader": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Parts.RouteTemplate.getHeader\", 0, {view.custom.selectedVersionId})"
+          "expression": "runScript(\"BlueRidge.Parts.RouteTemplate.getHeaderOrEmpty\", 0, {view.custom.selectedVersionId})"
         },
         "type": "expr"
       },

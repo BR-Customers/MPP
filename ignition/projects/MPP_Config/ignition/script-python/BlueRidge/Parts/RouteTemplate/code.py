@@ -66,6 +66,23 @@ def _mapSteps(rows):
 
 _EMPTY_ROUTE = {"publishedVersion": 0, "effectiveFrom": "", "steps": []}
 
+# Fully-shaped empty header (matches RouteTemplate_Get's columns). Bindings on
+# view.custom.selectedHeader traverse nested keys (PublishedAt/DeprecatedAt/Id),
+# so the bound value must ALWAYS carry every key even when no version is loaded.
+_EMPTY_HEADER = {
+    "Id":                   0,
+    "ItemId":               0,
+    "PartNumber":           "",
+    "VersionNumber":        0,
+    "Name":                 "",
+    "EffectiveFrom":        None,
+    "PublishedAt":          None,
+    "DeprecatedAt":         None,
+    "CreatedByUserId":      None,
+    "CreatedByDisplayName": "",
+    "CreatedAt":            None,
+}
+
 
 def getActiveForItem(itemId):
     """Returns the active Published RouteTemplate + steps for the given Item.
@@ -137,6 +154,18 @@ def getHeader(id):
         "parts/RouteTemplate_Get",
         {"id": id},
     )
+
+
+def getHeaderOrEmpty(id):
+    """Binding-safe getHeader: ALWAYS returns a fully-shaped header dict --
+    the empty shape (_EMPTY_HEADER) when id is missing or the version is not
+    found. Bind view.custom.selectedHeader to this (not getHeader) so its
+    nested-path consumers (selectedHeader.PublishedAt / .DeprecatedAt / .Id,
+    e.g. the StateBadge) never traverse None and never render a Component
+    Error. getHeader (None on miss) stays for the script callers that branch
+    on None (selectedVersionId.onChange)."""
+    header = getHeader(id)
+    return dict(header) if header else dict(_EMPTY_HEADER)
 
 
 def getSteps(routeTemplateId):
