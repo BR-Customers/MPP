@@ -5,11 +5,10 @@
       "editDraft": { "rows": [] }
     },
     "isDirty": false,
-    "attributeOptions": [],
-    "toolTypeId": 0
+    "attributeOptions": []
   },
   "params": {
-    "value": 0
+    "value": null
   },
   "propConfig": {
     "params.value": {
@@ -37,18 +36,6 @@
         "config": {
           "expression": "runScript(\"BlueRidge.Parts.Tool.getAttributeDefinitionOptions\", 0, {view.params.value})"
         }
-      }
-    },
-    "custom.toolTypeId": {
-      "binding": {
-        "type": "property",
-        "config": { "path": "view.params.value" },
-        "transforms": [
-          {
-            "type": "script",
-            "code": "\tif not value:\n\t\treturn 0\n\trow = BlueRidge.Parts.Tool.getOne(value) or {}\n\treturn row.get(\"ToolTypeId\") or 0"
-          }
-        ]
       }
     }
   },
@@ -105,7 +92,7 @@
                   "type": "script",
                   "scope": "G",
                   "config": {
-                    "script": "\ttoolTypeId = self.view.custom.toolTypeId\n\tif not toolTypeId:\n\t\tBlueRidge.Common.Notify.toast(\"No tool selected\", \"Pick a tool first.\", \"warning\")\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid=\"mpp-add-attr-def\",\n\t\tview=\"BlueRidge/Components/Popups/AddAttributeDefinition\",\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\"toolTypeId\": toolTypeId})"
+                    "script": "\ttid = None\n\tone = BlueRidge.Parts.Tool.getOne(self.view.params.value)\n\tif one:\n\t\ttid = one.get(\"ToolTypeId\")\n\tif not tid:\n\t\tBlueRidge.Common.Notify.toast(\"No tool selected\", \"Pick a tool first.\", \"warning\")\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid=\"mpp-add-attr-def\",\n\t\tview=\"BlueRidge/Components/Popups/AddAttributeDefinition\",\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\"toolTypeId\": tid})"
                   }
                 }
               }

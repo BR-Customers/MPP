@@ -179,12 +179,12 @@
           "style": { "classes": "search-input", "height": "30px" }
         },
         "events": {
-          "component": {
-            "onActionPerformed": {
+          "dom": {
+            "onBlur": {
               "type": "script",
               "scope": "G",
               "config": {
-                "script": "\tv = self.props.value\n\tnewValue = \"\" if v is None else toStr(v)\n\tsystem.perspective.sendMessage(\"attrRowValueChanged\", payload={\"rowIndex\": self.view.params.row.rowIndex, \"newValue\": newValue}, scope=\"page\")"
+                "script": "\tv = self.props.value\n\tnewValue = \"\" if v is None else str(v)\n\tsystem.perspective.sendMessage(\"attrRowValueChanged\", payload={\"rowIndex\": self.view.params.row.rowIndex, \"newValue\": newValue}, scope=\"page\")"
               }
             }
           }
@@ -247,8 +247,8 @@
           "style": { "classes": "search-input", "height": "30px" }
         },
         "events": {
-          "component": {
-            "onActionPerformed": {
+          "dom": {
+            "onBlur": {
               "type": "script",
               "scope": "G",
               "config": {
