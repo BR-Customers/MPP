@@ -1,169 +1,279 @@
 {
   "custom": {
-    "rows": [],
-    "pendingScrapId": null
+    "state": {
+      "selected":  { "rows": [] },
+      "editDraft": { "rows": [] }
+    },
+    "isDirty": false
   },
   "params": {
-    "value": 0
+    "value": null
   },
   "propConfig": {
-    "params.value": { "paramDirection": "input" },
-    "custom.rows": {
+    "params.value": {
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.rootContainer.load()"
+      }
+    },
+    "custom.isDirty": {
       "binding": {
         "type": "expr",
         "config": {
-          "expression": "runScript(\"BlueRidge.Parts.Tool.getCavityInstancesForTool\", 0, {view.params.value})"
+          "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.editDraft.rows}) != runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.selected.rows})"
         }
+      },
+      "onChange": {
+        "enabled": true,
+        "script": "\tsystem.perspective.sendMessage(\"sectionDirtyChanged\", payload={\"section\": \"cavities\", \"isDirty\": bool(currentValue.value)}, scope=\"page\")"
       }
     }
   },
   "props": {
-    "defaultSize": { "height": 360, "width": 800 }
+    "defaultSize": { "height": 360, "width": 1200 }
   },
   "root": {
     "type": "ia.container.flex",
     "meta": { "name": "root" },
-    "scripts": {
-      "customMethods": [
-        {
-          "name": "refresh",
-          "params": [],
-          "script": "\tself.view.custom.rows = BlueRidge.Parts.Tool.getCavityInstancesForTool(self.view.params.value)"
-        }
-      ],
-      "extensionFunctions": null,
-      "messageHandlers": [
-        {
-          "messageType": "toolDataChanged",
-          "pageScope": true,
-          "sessionScope": false,
-          "viewScope": false,
-          "script": "\tsection = (payload or {}).get('section')\n\tif section and section != 'cavities':\n\t\treturn\n\tself.view.rootContainer.refresh()"
-        },
-        {
-          "messageType": "cavityActionRequest",
-          "pageScope": true,
-          "sessionScope": false,
-          "viewScope": false,
-          "script": "\tdata = payload or {}\n\taction = data.get('action')\n\tcavityId = data.get('cavityId')\n\tif not cavityId or not action:\n\t\treturn\n\tif action == 'close':\n\t\tresult = BlueRidge.Parts.Tool.updateCavityStatus(cavityId, 'Closed')\n\t\tsuccessTitle = 'Cavity closed'\n\telif action == 'reactivate':\n\t\tresult = BlueRidge.Parts.Tool.updateCavityStatus(cavityId, 'Active')\n\t\tsuccessTitle = 'Cavity reactivated'\n\telif action == 'scrap':\n\t\tresult = BlueRidge.Parts.Tool.updateCavityStatus(cavityId, 'Scrapped')\n\t\tsuccessTitle = 'Cavity scrapped'\n\telse:\n\t\treturn\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle)\n\tif result and result.get('Status'):\n\t\tself.view.rootContainer.refresh()"
-        },
-        {
-          "messageType": "cavityScrapRequest",
-          "pageScope": true,
-          "sessionScope": false,
-          "viewScope": false,
-          "script": "\tdata = payload or {}\n\tcavityId = data.get('cavityId')\n\tnumber = data.get('number')\n\tif not cavityId:\n\t\treturn\n\tself.view.custom.pendingScrapId = cavityId\n\tsystem.perspective.openPopup(\n\t\tid='mpp-confirm-destructive',\n\t\tview='BlueRidge/Components/Popups/ConfirmDestructive',\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t'title':        'Scrap Cavity',\n\t\t\t'message':      'Mark cavity ' + str(number) + ' as scrapped? This cannot be undone.',\n\t\t\t'confirmLabel': 'Scrap',\n\t\t\t'replyMessage': 'cavityScrapConfirmed'\n\t\t}\n\t)"
-        },
-        {
-          "messageType": "cavityScrapConfirmed",
-          "pageScope": true,
-          "sessionScope": false,
-          "viewScope": false,
-          "script": "\taction = (payload or {}).get('action')\n\tcavityId = self.view.custom.pendingScrapId\n\tself.view.custom.pendingScrapId = None\n\tif action != 'confirm' or not cavityId:\n\t\treturn\n\tresult = BlueRidge.Parts.Tool.updateCavityStatus(cavityId, 'Scrapped')\n\tBlueRidge.Common.Ui.notifyResult(result, 'Cavity scrapped')\n\tif result and result.get('Status'):\n\t\tself.view.rootContainer.refresh()"
-        }
-      ]
-    },
     "props": {
       "direction": "column",
       "style": {
-        "gap": "10px",
-        "height": "100%"
+        "classes": "detail-panel",
+        "gap": "8px",
+        "padding": "10px 14px"
       }
     },
     "children": [
       {
         "type": "ia.container.flex",
-        "meta": { "name": "ActionRow" },
-        "position": { "basis": "auto", "shrink": 0 },
+        "meta": { "name": "HeaderRow" },
+        "position": { "basis": "auto" },
         "props": {
           "direction": "row",
-          "justify": "flex-end",
-          "alignItems": "center"
+          "alignItems": "center",
+          "style": { "gap": "8px" }
         },
         "children": [
           {
+            "type": "ia.display.label",
+            "meta": { "name": "PanelHeader" },
+            "props": {
+              "text": "Cavities",
+              "style": { "fontSize": "13px", "fontWeight": "600" }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "Spacer" },
+            "position": { "grow": 1 },
+            "props": { "text": "" }
+          },
+          {
             "type": "ia.input.button",
-            "meta": { "name": "BtnAddCavity" },
+            "meta": { "name": "BtnDiscard" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "meta.visible": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "if(isNull({view.custom.isDirty}), false, {view.custom.isDirty})" }
+                }
+              }
+            },
+            "props": {
+              "text": "Discard",
+              "style": { "classes": "btn btn-sm" }
+            },
             "events": {
               "component": {
                 "onActionPerformed": {
                   "type": "script",
                   "scope": "G",
-                  "config": {
-                    "script": "\ttoolId = self.view.params.value\n\tif not toolId:\n\t\tBlueRidge.Common.Notify.toast('No tool selected', 'Pick a tool first.', 'warning')\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid='mpp-add-cavity',\n\t\tview='BlueRidge/Components/Popups/AddCavity',\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={'toolId': toolId}\n\t)"
-                  }
+                  "config": { "script": "\tself.view.rootContainer.handleDiscard()" }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "BtnSave" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "if(isNull({view.custom.isDirty}), false, {view.custom.isDirty})" }
                 }
               }
             },
             "props": {
-              "text": "+ Add Cavity",
+              "text": "Save",
               "style": { "classes": "btn btn-primary btn-sm" }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": { "script": "\tself.view.rootContainer.handleSave()" }
+                }
+              }
             }
           }
         ]
       },
       {
         "type": "ia.container.flex",
-        "meta": { "name": "DataPanel" },
-        "position": { "grow": 1 },
+        "meta": { "name": "ColumnHeader" },
+        "position": { "basis": "auto" },
         "props": {
-          "direction": "column",
-          "style": {
-            "classes": "detail-panel",
-            "overflow": "hidden",
-            "padding": "0"
-          }
+          "direction": "row",
+          "alignItems": "center",
+          "style": { "gap": "6px", "padding": "0 10px" }
         },
         "children": [
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "TableHeader" },
-            "position": { "basis": "auto", "shrink": 0 },
-            "props": {
-              "direction": "row",
-              "alignItems": "center",
-              "style": {
-                "background": "var(--mpp-surface-card)",
-                "borderBottom": "1px solid var(--mpp-border-subtle)",
-                "color": "var(--mpp-text-secondary)",
-                "fontSize": "11px",
-                "fontWeight": "600",
-                "textTransform": "uppercase",
-                "letterSpacing": "0.05em",
-                "padding": "8px 12px",
-                "gap": "8px"
-              }
-            },
-            "children": [
-              { "type": "ia.display.label", "meta": { "name": "ColNumber" },      "position": { "basis": "70px",  "shrink": 0 }, "props": { "text": "Number", "style": { "textAlign": "center" } } },
-              { "type": "ia.display.label", "meta": { "name": "ColStatus" },      "position": { "basis": "110px", "shrink": 0 }, "props": { "text": "Status" } },
-              { "type": "ia.display.label", "meta": { "name": "ColDescription" }, "position": { "basis": "0",     "grow": 1 },   "props": { "text": "Description" } },
-              { "type": "ia.display.label", "meta": { "name": "ColActions" },     "position": { "basis": "180px", "shrink": 0 }, "props": { "text": "" } }
-            ]
-          },
-          {
-            "type": "ia.display.flex-repeater",
-            "meta": { "name": "Rows" },
-            "position": { "basis": "0", "grow": 1 },
-            "propConfig": {
-              "props.instances": {
-                "binding": {
-                  "type": "property",
-                  "config": { "path": "view.custom.rows" }
+          { "type": "ia.display.label", "meta": { "name": "ColHash" }, "position": { "basis": "32px", "shrink": 0 }, "props": { "text": "#", "style": { "color": "var(--mpp-text-muted)", "fontSize": "11px", "textAlign": "right" } } },
+          { "type": "ia.display.label", "meta": { "name": "ColNumber" }, "position": { "basis": "120px", "shrink": 0 }, "props": { "text": "Number", "style": { "color": "var(--mpp-text-muted)", "fontSize": "11px" } } },
+          { "type": "ia.display.label", "meta": { "name": "ColDescription" }, "position": { "grow": 1, "basis": "0" }, "props": { "text": "Description", "style": { "color": "var(--mpp-text-muted)", "fontSize": "11px" } } },
+          { "type": "ia.display.label", "meta": { "name": "ColStatus" }, "position": { "basis": "160px", "shrink": 0 }, "props": { "text": "Status", "style": { "color": "var(--mpp-text-muted)", "fontSize": "11px" } } },
+          { "type": "ia.display.label", "meta": { "name": "ColRm" }, "position": { "basis": "40px", "shrink": 0 }, "props": { "text": "" } }
+        ]
+      },
+      {
+        "type": "ia.display.flex-repeater",
+        "meta": { "name": "RowsRepeater" },
+        "position": { "grow": 1, "basis": "0" },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "type": "property",
+              "config": { "path": "view.custom.state.editDraft.rows" },
+              "transforms": [
+                {
+                  "type": "script",
+                  "code": "\trows = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\tout = []\n\tfor i, r in enumerate(rows):\n\t\tr = dict(r or {})\n\t\tr['rowIndex'] = i\n\t\tout.append({'row': r})\n\treturn out"
                 }
-              }
-            },
-            "props": {
-              "direction": "column",
-              "elementPosition": { "basis": "48px", "shrink": 0 },
-              "path": "BlueRidge/Components/Parts/Tools/_Tools/CavityRow",
-              "style": { "overflowY": "auto" },
-              "useDefaultViewHeight": true,
-              "useDefaultViewWidth": false
+              ]
             }
           }
-        ]
+        },
+        "props": {
+          "direction": "column",
+          "elementPosition": { "basis": "auto" },
+          "elementStyle": { "maxHeight": "44px" },
+          "path": "BlueRidge/Components/Parts/Tools/_Tools/CavityRow",
+          "style": { "overflowY": "auto" },
+          "useDefaultViewHeight": false,
+          "useDefaultViewWidth": false
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": { "name": "BtnAddRow" },
+        "position": { "basis": "auto", "shrink": 0 },
+        "props": {
+          "text": "+ Add cavity",
+          "style": { "classes": "btn btn-sm" }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": { "script": "\tself.view.rootContainer.addRow()" }
+            }
+          }
+        }
       }
-    ]
+    ],
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "load",
+          "params": [],
+          "script": "\ttoolId = self.view.params.value\n\tif not toolId:\n\t\tempty = {\"rows\": []}\n\t\tself.view.custom.state = {\"selected\": dict(empty), \"editDraft\": dict(empty)}\n\t\treturn\n\tinstances = BlueRidge.Parts.Tool.getCavityInstancesForTool(toolId) or []\n\tloaded = []\n\tfor inst in instances:\n\t\tcav = (inst or {}).get(\"cavity\") or {}\n\t\tsc = cav.get(\"StatusCode\") or \"Active\"\n\t\tloaded.append({\n\t\t\t\"id\":              cav.get(\"Id\"),\n\t\t\t\"cavityNumber\":    cav.get(\"Number\"),\n\t\t\t\"description\":     cav.get(\"Description\") if cav.get(\"Description\") is not None else \"\",\n\t\t\t\"statusCode\":      sc,\n\t\t\t\"isScrappedSaved\": (sc == \"Scrapped\"),\n\t\t})\n\tself.view.custom.state = {\"selected\": {\"rows\": loaded}, \"editDraft\": {\"rows\": [dict(r) for r in loaded]}}"
+        },
+        {
+          "name": "handleSave",
+          "params": [],
+          "script": "\ttoolId = self.view.params.value\n\tif not toolId:\n\t\tBlueRidge.Common.Notify.toast(\"No tool selected\", \"Pick a tool before saving.\", \"warning\")\n\t\treturn\n\tdraft = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {}\n\trows = draft.get(\"rows\") or []\n\tresult = BlueRidge.Parts.Tool.saveCavitiesAll(toolId, rows)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Cavities saved\")\n\tif result and result.get(\"Status\"):\n\t\tself.load()"
+        },
+        {
+          "name": "handleDiscard",
+          "params": [],
+          "script": "\tselected = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\tself.view.custom.state = {\"selected\": selected, \"editDraft\": {\"rows\": [dict(r) for r in (selected.get(\"rows\") or [])]}}"
+        },
+        {
+          "name": "addRow",
+          "params": [],
+          "script": "\tdraft = dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {\"rows\": []})\n\trows = list(draft.get(\"rows\") or [])\n\trows.append({\n\t\t\"id\":              None,\n\t\t\"cavityNumber\":    None,\n\t\t\"description\":     \"\",\n\t\t\"statusCode\":      \"Active\",\n\t\t\"isScrappedSaved\": False,\n\t})\n\tdraft[\"rows\"] = rows\n\tselected = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\tself.view.custom.state = {\"selected\": selected, \"editDraft\": draft}"
+        },
+        {
+          "name": "_applyNumberChange",
+          "params": ["idx", "newNumber"],
+          "script": "\tdraft = dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {\"rows\": []})\n\trows = list(draft.get(\"rows\") or [])\n\tif idx < 0 or idx >= len(rows):\n\t\treturn\n\trow = dict(rows[idx])\n\trow[\"cavityNumber\"] = None if newNumber is None else int(newNumber)\n\trows[idx] = row\n\tdraft[\"rows\"] = rows\n\tselected = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\tself.view.custom.state = {\"selected\": selected, \"editDraft\": draft}"
+        },
+        {
+          "name": "_applyDescChange",
+          "params": ["idx", "newDesc"],
+          "script": "\tdraft = dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {\"rows\": []})\n\trows = list(draft.get(\"rows\") or [])\n\tif idx < 0 or idx >= len(rows):\n\t\treturn\n\trow = dict(rows[idx])\n\trow[\"description\"] = \"\" if newDesc is None else unicode(newDesc)\n\trows[idx] = row\n\tdraft[\"rows\"] = rows\n\tselected = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\tself.view.custom.state = {\"selected\": selected, \"editDraft\": draft}"
+        },
+        {
+          "name": "_applyStatusChange",
+          "params": ["idx", "newStatus"],
+          "script": "\tdraft = dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {\"rows\": []})\n\trows = list(draft.get(\"rows\") or [])\n\tif idx < 0 or idx >= len(rows):\n\t\treturn\n\trow = dict(rows[idx])\n\trow[\"statusCode\"] = newStatus or \"Active\"\n\trows[idx] = row\n\tdraft[\"rows\"] = rows\n\tselected = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\tself.view.custom.state = {\"selected\": selected, \"editDraft\": draft}"
+        },
+        {
+          "name": "_removeRow",
+          "params": ["idx"],
+          "script": "\tdraft = dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {\"rows\": []})\n\trows = list(draft.get(\"rows\") or [])\n\tif idx < 0 or idx >= len(rows):\n\t\treturn\n\tdel rows[idx]\n\tdraft[\"rows\"] = rows\n\tselected = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\tself.view.custom.state = {\"selected\": selected, \"editDraft\": draft}"
+        }
+      ],
+      "messageHandlers": [
+        {
+          "messageType": "sectionSaveRequested",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif payload and payload.get(\"section\") == \"cavities\":\n\t\tself.handleSave()"
+        },
+        {
+          "messageType": "sectionDiscardRequested",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif payload and payload.get(\"section\") == \"cavities\":\n\t\tself.handleDiscard()"
+        },
+        {
+          "messageType": "cavityRowNumberChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tself._applyNumberChange(idx, payload.get(\"newNumber\"))"
+        },
+        {
+          "messageType": "cavityRowDescChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tself._applyDescChange(idx, payload.get(\"newDesc\"))"
+        },
+        {
+          "messageType": "cavityRowStatusChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tself._applyStatusChange(idx, payload.get(\"newStatus\"))"
+        },
+        {
+          "messageType": "cavityRowRemove",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tself._removeRow(idx)"
+        }
+      ]
+    }
   }
 }
