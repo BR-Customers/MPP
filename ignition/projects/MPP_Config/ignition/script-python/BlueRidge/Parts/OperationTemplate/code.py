@@ -246,7 +246,7 @@ def getFieldsForTemplate(operationTemplateId):
     ids or load failures.
 
     Row shape consumed by FieldRow:
-        Id, Code, Name, IsRequired
+        Id, DataCollectionFieldId, Code, Name, IsRequired
     """
     operationTemplateId = _u(operationTemplateId)
     BlueRidge.Common.Util.log("templateId=%s" % operationTemplateId)
@@ -264,10 +264,11 @@ def getFieldsForTemplate(operationTemplateId):
     for r in rows:
         out.append({
             "field": {
-                "Id":         r.get("Id"),
-                "Code":       r.get("DataCollectionFieldCode"),
-                "Name":       r.get("DataCollectionFieldName"),
-                "IsRequired": bool(r.get("IsRequired")),
+                "Id":                    r.get("Id"),
+                "DataCollectionFieldId": r.get("DataCollectionFieldId"),
+                "Code":                  r.get("DataCollectionFieldCode"),
+                "Name":                  r.get("DataCollectionFieldName"),
+                "IsRequired":            bool(r.get("IsRequired")),
             }
         })
     return out

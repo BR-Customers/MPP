@@ -1,10 +1,19 @@
 {
   "custom": {},
   "params": {
-    "field": {}
+    "row": {
+      "rowIndex": 0,
+      "id": null,
+      "dataCollectionFieldId": null,
+      "code": "",
+      "name": "",
+      "isRequired": true
+    },
+    "fieldOptions": []
   },
   "propConfig": {
-    "params.field": { "paramDirection": "input" }
+    "params.row": { "paramDirection": "input" },
+    "params.fieldOptions": { "paramDirection": "input" }
   },
   "props": {
     "defaultSize": { "height": 44, "width": 800 }
@@ -17,25 +26,94 @@
       "alignItems": "center",
       "style": {
         "borderBottom": "1px solid var(--mpp-border-subtle)",
-        "padding": "8px 14px",
+        "padding": "6px 14px",
         "overflow": "hidden",
-        "gap": "8px"
+        "gap": "8px",
+        "height": "100%"
       }
     },
     "children": [
       {
         "type": "ia.display.label",
-        "meta": { "name": "FieldCode" },
-        "position": { "basis": "160px", "shrink": 0 },
+        "meta": { "name": "IndexLabel" },
+        "position": { "basis": "32px", "shrink": 0 },
         "propConfig": {
           "props.text": {
             "binding": {
-              "type": "property",
-              "config": { "path": "view.params.field.Code" }
+              "type": "expr",
+              "config": { "expression": "toStr({view.params.row.rowIndex} + 1)" }
             }
           }
         },
         "props": {
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "12px",
+            "textAlign": "right"
+          }
+        }
+      },
+      {
+        "type": "ia.input.dropdown",
+        "meta": { "name": "FieldDropdown" },
+        "position": { "basis": "0", "grow": 1 },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "isNull({view.params.row.id})" }
+            }
+          },
+          "props.value": {
+            "binding": {
+              "type": "property",
+              "config": { "bidirectional": true, "path": "view.params.row.dataCollectionFieldId" }
+            }
+          },
+          "props.options": {
+            "binding": {
+              "type": "property",
+              "config": { "path": "view.params.fieldOptions" }
+            }
+          }
+        },
+        "props": {
+          "options": [],
+          "noSelectionText": "Select field",
+          "style": { "classes": "select", "height": "30px" }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"fieldRowFieldChanged\", payload={\"rowIndex\": self.view.params.row.rowIndex, \"newFieldId\": self.props.value}, scope=\"page\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "CodeLabel" },
+        "position": { "basis": "160px", "shrink": 0 },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "!isNull({view.params.row.id})" }
+            }
+          },
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": { "path": "view.params.row.code" }
+            }
+          }
+        },
+        "props": {
+          "text": "",
           "style": {
             "fontFamily": "var(--mpp-font-mono)",
             "fontSize": "12px",
@@ -45,17 +123,24 @@
       },
       {
         "type": "ia.display.label",
-        "meta": { "name": "FieldName" },
+        "meta": { "name": "NameLabel" },
         "position": { "basis": "0", "grow": 1 },
         "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "!isNull({view.params.row.id})" }
+            }
+          },
           "props.text": {
             "binding": {
               "type": "property",
-              "config": { "path": "view.params.field.Name" }
+              "config": { "path": "view.params.row.name" }
             }
           }
         },
         "props": {
+          "text": "",
           "style": {
             "color": "var(--mpp-text-muted)",
             "fontSize": "12px"
@@ -81,7 +166,7 @@
                   "type": "script",
                   "scope": "G",
                   "config": {
-                    "script": "\tfield = self.view.params.field or {}\n\tjunctionId = field.get('Id')\n\tif junctionId is None:\n\t\treturn\n\t# event.value carries the NEW selected state in Perspective onActionPerformed.\n\tnewValue = bool(event.value) if 'value' in dir(event) else (not bool(field.get('IsRequired')))\n\tsystem.perspective.sendMessage('templateFieldRequiredToggled', payload={'junctionId': junctionId, 'isRequired': newValue}, scope='page')"
+                    "script": "\tsystem.perspective.sendMessage(\"fieldRowRequiredChanged\", payload={\"rowIndex\": self.view.params.row.rowIndex, \"isRequired\": self.props.selected}, scope=\"page\")"
                   }
                 }
               }
@@ -90,7 +175,7 @@
               "props.selected": {
                 "binding": {
                   "type": "property",
-                  "config": { "path": "view.params.field.IsRequired" }
+                  "config": { "bidirectional": true, "path": "view.params.row.isRequired" }
                 }
               }
             },
@@ -103,7 +188,7 @@
               "props.text": {
                 "binding": {
                   "type": "expr",
-                  "config": { "expression": "if({view.params.field.IsRequired}, 'Required', 'Optional')" }
+                  "config": { "expression": "if({view.params.row.isRequired}, 'Required', 'Optional')" }
                 }
               }
             },
@@ -118,7 +203,7 @@
       },
       {
         "type": "ia.input.button",
-        "meta": { "name": "BtnRemove" },
+        "meta": { "name": "RemoveBtn" },
         "position": { "basis": "36px", "shrink": 0 },
         "events": {
           "component": {
@@ -126,12 +211,12 @@
               "type": "script",
               "scope": "G",
               "config": {
-                "script": "\tfield = self.view.params.field or {}\n\tsystem.perspective.sendMessage('templateFieldRemoveRequest', payload={'junctionId': field.get('Id'), 'name': field.get('Name')}, scope='page')"
+                "script": "\tsystem.perspective.sendMessage(\"fieldRowRemove\", payload={\"rowIndex\": self.view.params.row.rowIndex}, scope=\"page\")"
               }
             }
           }
         },
-        "props": { "text": "✕", "style": { "classes": "btn btn-sm btn-danger" } }
+        "props": { "text": "×", "style": { "classes": "btn btn-sm btn-danger" } }
       }
     ]
   }

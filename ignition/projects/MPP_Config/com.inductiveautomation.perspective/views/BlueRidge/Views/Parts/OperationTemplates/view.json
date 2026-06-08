@@ -17,6 +17,11 @@
     "areaOptions": [],
     "fieldOptions": [],
     "selectedFieldDcfId": null,
+    "fieldsState": {
+      "selected":  { "rows": [] },
+      "editDraft": { "rows": [] }
+    },
+    "fieldsDirty": false,
     "pendingNav": null,
     "dirty": false
   },
@@ -55,6 +60,22 @@
           "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.getAreasForDropdown\", 0)"
         }
       }
+    },
+    "custom.fieldOptions": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.getAvailableDataCollectionFields\", 0, {view.custom.selectedVersionId})"
+        }
+      }
+    },
+    "custom.fieldsDirty": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.fieldsState.editDraft.rows}) != runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.fieldsState.selected.rows})"
+        }
+      }
     }
   },
   "props": {
@@ -72,12 +93,47 @@
         {
           "name": "_loadTemplate",
           "params": ["templateId"],
-          "script": "\tmeta = BlueRidge.Parts.OperationTemplate.getOne(templateId)\n\tif meta is None:\n\t\tBlueRidge.Common.Notify.toast('Template not found', 'Id ' + str(templateId) + ' no longer exists.', 'warning')\n\t\treturn\n\tself.view.custom.selected   = {'meta': dict(meta)}\n\tself.view.custom.editDraft  = {'meta': dict(meta)}\n\tself.view.custom.mode = 'update'\n\tself.view.custom.selectedTemplateCode = meta.get('Code') or ''\n\tself.view.custom.selectedVersionId    = meta.get('Id') or 0\n\tself.view.custom.fieldRows            = BlueRidge.Parts.OperationTemplate.getFieldsForTemplate(meta.get('Id'))\n\tself.view.custom.fieldOptions         = BlueRidge.Parts.OperationTemplate.getAvailableDataCollectionFields(meta.get('Id'))\n\tself.view.custom.selectedFieldDcfId   = None"
+          "script": "\tmeta = BlueRidge.Parts.OperationTemplate.getOne(templateId)\n\tif meta is None:\n\t\tBlueRidge.Common.Notify.toast('Template not found', 'Id ' + str(templateId) + ' no longer exists.', 'warning')\n\t\treturn\n\tself.view.custom.selected   = {'meta': dict(meta)}\n\tself.view.custom.editDraft  = {'meta': dict(meta)}\n\tself.view.custom.mode = 'update'\n\tself.view.custom.selectedTemplateCode = meta.get('Code') or ''\n\tself.view.custom.selectedVersionId    = meta.get('Id') or 0\n\tself.view.custom.selectedFieldDcfId   = None\n\tself.loadFields()"
         },
         {
           "name": "_refreshDetail",
           "params": [],
-          "script": "\tmeta = (self.view.custom.selected or {}).get('meta') or {}\n\ttemplateId = meta.get('Id')\n\tif templateId is None:\n\t\treturn\n\tself.view.custom.fieldRows    = BlueRidge.Parts.OperationTemplate.getFieldsForTemplate(templateId)\n\tself.view.custom.fieldOptions = BlueRidge.Parts.OperationTemplate.getAvailableDataCollectionFields(templateId)"
+          "script": "\tmeta = (self.view.custom.selected or {}).get('meta') or {}\n\ttemplateId = meta.get('Id')\n\tif templateId is None:\n\t\treturn\n\tself.loadFields()"
+        },
+        {
+          "name": "loadFields",
+          "params": [],
+          "script": "\tmeta = (self.view.custom.selected or {}).get('meta') or {}\n\ttemplateId = meta.get('Id')\n\tif templateId is None:\n\t\tempty = {'rows': []}\n\t\tself.view.custom.fieldsState = {'selected': dict(empty), 'editDraft': dict(empty)}\n\t\treturn\n\tinstances = BlueRidge.Parts.OperationTemplate.getFieldsForTemplate(templateId) or []\n\tloaded = []\n\tfor inst in instances:\n\t\tf = (inst or {}).get('field') or {}\n\t\tloaded.append({\n\t\t\t'id':                    f.get('Id'),\n\t\t\t'dataCollectionFieldId': f.get('DataCollectionFieldId'),\n\t\t\t'code':                  f.get('Code') or '',\n\t\t\t'name':                  f.get('Name') or '',\n\t\t\t'isRequired':            bool(f.get('IsRequired')),\n\t\t})\n\tself.view.custom.fieldsState = {'selected': {'rows': loaded}, 'editDraft': {'rows': [dict(r) for r in loaded]}}"
+        },
+        {
+          "name": "handleSaveFields",
+          "params": [],
+          "script": "\tmeta = (self.view.custom.selected or {}).get('meta') or {}\n\ttemplateId = meta.get('Id')\n\tif templateId is None:\n\t\tBlueRidge.Common.Notify.toast('No template selected', 'Pick a template before saving.', 'warning')\n\t\treturn\n\tdraft = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.editDraft) or {}\n\trows = draft.get('rows') or []\n\tresult = BlueRidge.Parts.OperationTemplate.saveFieldsAll(templateId, rows)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Fields saved')\n\tif result and result.get('Status'):\n\t\tself.loadFields()"
+        },
+        {
+          "name": "handleDiscardFields",
+          "params": [],
+          "script": "\tselected = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.selected) or {'rows': []}\n\tself.view.custom.fieldsState = {'selected': selected, 'editDraft': {'rows': [dict(r) for r in (selected.get('rows') or [])]}}"
+        },
+        {
+          "name": "addFieldRow",
+          "params": [],
+          "script": "\tdraft = dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.editDraft) or {'rows': []})\n\trows = list(draft.get('rows') or [])\n\trows.append({\n\t\t'id':                    None,\n\t\t'dataCollectionFieldId': None,\n\t\t'code':                  '',\n\t\t'name':                  '',\n\t\t'isRequired':            True,\n\t})\n\tdraft['rows'] = rows\n\tselected = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.selected) or {'rows': []}\n\tself.view.custom.fieldsState = {'selected': selected, 'editDraft': draft}"
+        },
+        {
+          "name": "_applyFieldChange",
+          "params": ["idx", "newFieldId"],
+          "script": "\tdraft = dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.editDraft) or {'rows': []})\n\trows = list(draft.get('rows') or [])\n\tif idx < 0 or idx >= len(rows):\n\t\treturn\n\trow = dict(rows[idx])\n\trow['dataCollectionFieldId'] = newFieldId\n\t# Derive code/name from the matching option label ('CODE - Name') when present.\n\topts = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldOptions) or []\n\tlabel = None\n\tfor o in opts:\n\t\tif o.get('value') == newFieldId:\n\t\t\tlabel = o.get('label')\n\t\t\tbreak\n\tif label and ' - ' in label:\n\t\tparts = label.split(' - ', 1)\n\t\trow['code'] = parts[0]\n\t\trow['name'] = parts[1]\n\telse:\n\t\trow['code'] = ''\n\t\trow['name'] = ''\n\trows[idx] = row\n\tdraft['rows'] = rows\n\tselected = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.selected) or {'rows': []}\n\tself.view.custom.fieldsState = {'selected': selected, 'editDraft': draft}"
+        },
+        {
+          "name": "_applyFieldRequiredChange",
+          "params": ["idx", "isRequired"],
+          "script": "\tdraft = dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.editDraft) or {'rows': []})\n\trows = list(draft.get('rows') or [])\n\tif idx < 0 or idx >= len(rows):\n\t\treturn\n\trow = dict(rows[idx])\n\trow['isRequired'] = bool(isRequired)\n\trows[idx] = row\n\tdraft['rows'] = rows\n\tselected = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.selected) or {'rows': []}\n\tself.view.custom.fieldsState = {'selected': selected, 'editDraft': draft}"
+        },
+        {
+          "name": "_removeFieldRow",
+          "params": ["idx"],
+          "script": "\tdraft = dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.editDraft) or {'rows': []})\n\trows = list(draft.get('rows') or [])\n\tif idx < 0 or idx >= len(rows):\n\t\treturn\n\tdel rows[idx]\n\tdraft['rows'] = rows\n\tselected = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.selected) or {'rows': []}\n\tself.view.custom.fieldsState = {'selected': selected, 'editDraft': draft}"
         }
       ],
       "extensionFunctions": null,
@@ -87,7 +143,7 @@
           "pageScope": true,
           "sessionScope": false,
           "viewScope": false,
-          "script": "\tclickedId = (payload or {}).get('id')\n\tif clickedId is None:\n\t\treturn\n\tif self.view.custom.dirty:\n\t\tself.view.custom.pendingNav = clickedId\n\t\tsystem.perspective.openPopup(\n\t\t\tid='mpp-confirm-unsaved',\n\t\t\tview='BlueRidge/Components/Popups/ConfirmUnsaved',\n\t\t\tmodal=True,\n\t\t\tshowCloseIcon=False,\n\t\t\tparams={\n\t\t\t\t'title':   'Unsaved changes',\n\t\t\t\t'message': 'Save changes before switching templates?'\n\t\t\t}\n\t\t)\n\t\treturn\n\tself._loadTemplate(clickedId)"
+          "script": "\tclickedId = (payload or {}).get('id')\n\tif clickedId is None:\n\t\treturn\n\tif self.view.custom.dirty or self.view.custom.fieldsDirty:\n\t\tself.view.custom.pendingNav = clickedId\n\t\tsystem.perspective.openPopup(\n\t\t\tid='mpp-confirm-unsaved',\n\t\t\tview='BlueRidge/Components/Popups/ConfirmUnsaved',\n\t\t\tmodal=True,\n\t\t\tshowCloseIcon=False,\n\t\t\tparams={\n\t\t\t\t'title':   'Unsaved changes',\n\t\t\t\t'message': 'Save changes before switching templates?'\n\t\t\t}\n\t\t)\n\t\treturn\n\tself._loadTemplate(clickedId)"
         },
         {
           "messageType": "templateListRefresh",
@@ -108,7 +164,7 @@
           "pageScope": true,
           "sessionScope": false,
           "viewScope": false,
-          "script": "\taction = (payload or {}).get('action')\n\tpendingId = self.view.custom.pendingNav\n\tself.view.custom.pendingNav = None\n\tif pendingId is None:\n\t\treturn\n\tif action == 'cancel':\n\t\t# Revert the version dropdown to the currently-selected template.\n\t\tcurrentId = ((self.view.custom.selected or {}).get('meta') or {}).get('Id') or 0\n\t\tself.view.custom.selectedVersionId = currentId\n\t\treturn\n\tif action == 'save':\n\t\tdraft = self.view.custom.editDraft or {}\n\t\tmeta  = draft.get('meta') or {}\n\t\tif meta.get('Id') is not None:\n\t\t\tresult = BlueRidge.Parts.OperationTemplate.update(meta)\n\t\t\tBlueRidge.Common.Ui.notifyResult(result, 'Template saved')\n\tself._loadTemplate(pendingId)"
+          "script": "\taction = (payload or {}).get('action')\n\tpendingId = self.view.custom.pendingNav\n\tself.view.custom.pendingNav = None\n\tif pendingId is None:\n\t\treturn\n\tif action == 'cancel':\n\t\t# Revert the version dropdown to the currently-selected template.\n\t\tcurrentId = ((self.view.custom.selected or {}).get('meta') or {}).get('Id') or 0\n\t\tself.view.custom.selectedVersionId = currentId\n\t\treturn\n\tif action == 'save':\n\t\tdraft = self.view.custom.editDraft or {}\n\t\tmeta  = draft.get('meta') or {}\n\t\tif meta.get('Id') is not None:\n\t\t\tresult = BlueRidge.Parts.OperationTemplate.update(meta)\n\t\t\tBlueRidge.Common.Ui.notifyResult(result, 'Template saved')\n\t\tif self.view.custom.fieldsDirty:\n\t\t\tself.handleSaveFields()\n\tself._loadTemplate(pendingId)"
         },
         {
           "messageType": "templateDeprecateConfirmed",
@@ -118,32 +174,32 @@
           "script": "\taction = (payload or {}).get('action')\n\tif action != 'confirm':\n\t\treturn\n\tmeta = (self.view.custom.selected or {}).get('meta') or {}\n\ttemplateId = meta.get('Id')\n\tif templateId is None:\n\t\treturn\n\tresult = BlueRidge.Parts.OperationTemplate.deprecate(templateId)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Template deprecated')\n\tif result and result.get('Status'):\n\t\tself.view.custom.selected  = {'meta': None}\n\t\tself.view.custom.editDraft = {'meta': None}\n\t\tself.view.custom.mode = 'view'\n\t\tself.view.custom.selectedTemplateCode = ''\n\t\tself.view.custom.selectedVersionId    = 0\n\t\tself.view.custom.fieldRows = []\n\t\tsystem.perspective.sendMessage('templateListRefresh', scope='page')"
         },
         {
-          "messageType": "templateFieldRequiredToggled",
-          "pageScope": true,
-          "sessionScope": false,
-          "viewScope": false,
-          "script": "\tdata = payload or {}\n\tjunctionId = data.get('junctionId')\n\tisRequired = bool(data.get('isRequired'))\n\tif junctionId is None:\n\t\treturn\n\tresult = BlueRidge.Parts.OperationTemplate.setFieldRequired(junctionId, isRequired)\n\tif result and not result.get('Status'):\n\t\tBlueRidge.Common.Ui.notifyResult(result, 'Updated')\n\tself.view.rootContainer._refreshDetail()"
-        },
-        {
-          "messageType": "templateFieldRemoveRequest",
-          "pageScope": true,
-          "sessionScope": false,
-          "viewScope": false,
-          "script": "\tdata = payload or {}\n\tjunctionId = data.get('junctionId')\n\tname  = data.get('name') or 'this field'\n\tif junctionId is None:\n\t\treturn\n\tself.view.custom.pendingNav = None\n\tself.view.custom.editDraft  # touch -- no-op\n\tself.view.custom['pendingRemoveFieldId'] = junctionId\n\tsystem.perspective.openPopup(\n\t\tid='mpp-confirm-destructive',\n\t\tview='BlueRidge/Components/Popups/ConfirmDestructive',\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t'title':        'Remove Field',\n\t\t\t'message':      'Remove ' + name + ' from this template?',\n\t\t\t'confirmLabel': 'Remove',\n\t\t\t'replyMessage': 'templateFieldRemoveConfirmed'\n\t\t}\n\t)"
-        },
-        {
-          "messageType": "templateFieldRemoveConfirmed",
-          "pageScope": true,
-          "sessionScope": false,
-          "viewScope": false,
-          "script": "\taction = (payload or {}).get('action')\n\tjunctionId = self.view.custom['pendingRemoveFieldId']\n\tself.view.custom['pendingRemoveFieldId'] = None\n\tif action != 'confirm' or junctionId is None:\n\t\treturn\n\tresult = BlueRidge.Parts.OperationTemplate.removeField(junctionId)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Field removed')\n\tif result and result.get('Status'):\n\t\tself._refreshDetail()"
-        },
-        {
           "messageType": "templateVersionClicked",
           "pageScope": true,
           "sessionScope": false,
           "viewScope": false,
-          "script": "\tclickedId = (payload or {}).get('id')\n\tif clickedId is None:\n\t\treturn\n\tif self.view.custom.dirty:\n\t\tself.view.custom.pendingNav = clickedId\n\t\tsystem.perspective.openPopup(\n\t\t\tid='mpp-confirm-unsaved',\n\t\t\tview='BlueRidge/Components/Popups/ConfirmUnsaved',\n\t\t\tmodal=True,\n\t\t\tshowCloseIcon=False,\n\t\t\tparams={\n\t\t\t\t'title':   'Unsaved changes',\n\t\t\t\t'message': 'Save changes before switching versions?'\n\t\t\t}\n\t\t)\n\t\treturn\n\tself._loadTemplate(clickedId)"
+          "script": "\tclickedId = (payload or {}).get('id')\n\tif clickedId is None:\n\t\treturn\n\tif self.view.custom.dirty or self.view.custom.fieldsDirty:\n\t\tself.view.custom.pendingNav = clickedId\n\t\tsystem.perspective.openPopup(\n\t\t\tid='mpp-confirm-unsaved',\n\t\t\tview='BlueRidge/Components/Popups/ConfirmUnsaved',\n\t\t\tmodal=True,\n\t\t\tshowCloseIcon=False,\n\t\t\tparams={\n\t\t\t\t'title':   'Unsaved changes',\n\t\t\t\t'message': 'Save changes before switching versions?'\n\t\t\t}\n\t\t)\n\t\treturn\n\tself._loadTemplate(clickedId)"
+        },
+        {
+          "messageType": "fieldRowFieldChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get('rowIndex', -1))\n\tself._applyFieldChange(idx, payload.get('newFieldId'))"
+        },
+        {
+          "messageType": "fieldRowRequiredChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get('rowIndex', -1))\n\tself._applyFieldRequiredChange(idx, payload.get('isRequired'))"
+        },
+        {
+          "messageType": "fieldRowRemove",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get('rowIndex', -1))\n\tself._removeFieldRow(idx)"
         }
       ]
     },
@@ -198,7 +254,7 @@
               "props.text": {
                 "binding": {
                   "type": "expr",
-                  "config": { "expression": "if({view.custom.dirty}, '● Unsaved changes', '')" }
+                  "config": { "expression": "if({view.custom.dirty} || {view.custom.fieldsDirty}, '● Unsaved changes', '')" }
                 }
               }
             },
@@ -737,30 +793,6 @@
                       { "type": "ia.display.label", "meta": { "name": "Title" }, "props": { "text": "Data Collection Fields", "style": { "fontSize": "12px", "fontWeight": "600", "textTransform": "uppercase", "letterSpacing": "0.05em", "color": "var(--mpp-text-secondary)" } } },
                       { "type": "ia.container.flex", "meta": { "name": "Spacer" }, "position": { "grow": 1 } },
                       {
-                        "type": "ia.input.dropdown",
-                        "meta": { "name": "DropdownAddField" },
-                        "position": { "basis": "200px", "shrink": 0 },
-                        "propConfig": {
-                          "props.value": {
-                            "binding": {
-                              "type": "property",
-                              "config": { "bidirectional": true, "path": "view.custom.selectedFieldDcfId" }
-                            }
-                          },
-                          "props.options": {
-                            "binding": {
-                              "type": "property",
-                              "config": { "path": "view.custom.fieldOptions" }
-                            }
-                          }
-                        },
-                        "props": {
-                          "options": [],
-                          "noSelectionText": "— Add field —",
-                          "style": { "classes": "select" }
-                        }
-                      },
-                      {
                         "type": "ia.input.button",
                         "meta": { "name": "BtnAddField" },
                         "position": { "shrink": 0 },
@@ -769,13 +801,57 @@
                             "onActionPerformed": {
                               "type": "script",
                               "scope": "G",
-                              "config": {
-                                "script": "\tmeta = (self.view.custom.selected or {}).get('meta') or {}\n\ttemplateId = meta.get('Id')\n\tdcfId = self.view.custom.selectedFieldDcfId\n\tif templateId is None:\n\t\tBlueRidge.Common.Notify.toast('No template selected', 'Pick a template first.', 'warning')\n\t\treturn\n\tif dcfId is None:\n\t\tBlueRidge.Common.Notify.toast('Field required', 'Pick a field from the dropdown.', 'warning')\n\t\treturn\n\tresult = BlueRidge.Parts.OperationTemplate.addField(templateId, dcfId, True)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Field added')\n\tif result and result.get('Status'):\n\t\tself.view.custom.selectedFieldDcfId = None\n\t\tself.view.rootContainer._refreshDetail()"
-                              }
+                              "config": { "script": "\tself.view.rootContainer.addFieldRow()" }
                             }
                           }
                         },
-                        "props": { "text": "+ Add", "style": { "classes": "btn btn-primary btn-sm" } }
+                        "props": { "text": "+ Add field", "style": { "classes": "btn btn-sm" } }
+                      },
+                      {
+                        "type": "ia.input.button",
+                        "meta": { "name": "BtnDiscardFields" },
+                        "position": { "shrink": 0 },
+                        "propConfig": {
+                          "meta.visible": {
+                            "binding": {
+                              "type": "expr",
+                              "config": { "expression": "if(isNull({view.custom.fieldsDirty}), false, {view.custom.fieldsDirty})" }
+                            }
+                          }
+                        },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "type": "script",
+                              "scope": "G",
+                              "config": { "script": "\tself.view.rootContainer.handleDiscardFields()" }
+                            }
+                          }
+                        },
+                        "props": { "text": "Discard fields", "style": { "classes": "btn btn-sm" } }
+                      },
+                      {
+                        "type": "ia.input.button",
+                        "meta": { "name": "BtnSaveFields" },
+                        "position": { "shrink": 0 },
+                        "propConfig": {
+                          "props.enabled": {
+                            "binding": {
+                              "type": "expr",
+                              "config": { "expression": "if(isNull({view.custom.fieldsDirty}), false, {view.custom.fieldsDirty})" }
+                            }
+                          }
+                        },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "type": "script",
+                              "scope": "G",
+                              "config": { "script": "\tself.view.rootContainer.handleSaveFields()" }
+                            }
+                          }
+                        },
+                        "props": { "text": "Save fields", "style": { "classes": "btn btn-primary btn-sm" } }
                       }
                     ]
                   },
@@ -813,7 +889,13 @@
                       "props.instances": {
                         "binding": {
                           "type": "property",
-                          "config": { "path": "view.custom.fieldRows" }
+                          "config": { "path": "view.custom.fieldsState.editDraft.rows" },
+                          "transforms": [
+                            {
+                              "type": "script",
+                              "code": "\trows = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\topts = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldOptions) or []\n\tout = []\n\tfor i, r in enumerate(rows):\n\t\tr = dict(r or {})\n\t\tr['rowIndex'] = i\n\t\tout.append({'row': r, 'fieldOptions': opts})\n\treturn out"
+                            }
+                          ]
                         }
                       }
                     },
