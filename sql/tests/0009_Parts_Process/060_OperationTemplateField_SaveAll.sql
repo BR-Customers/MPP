@@ -86,5 +86,48 @@ SET @SStr = CAST(@S AS NVARCHAR(1));
 EXEC test.Assert_IsEqual @TestName=N'[OtfSaveBadTpl] Status is 0', @Expected=N'0', @Actual=@SStr;
 GO
 
+-- Test 4b: invalid DataCollectionFieldId -> Status=0
+DECLARE @S BIT, @SStr NVARCHAR(1);
+DECLARE @TemplateId BIGINT = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'SA-OTF-TPL');
+CREATE TABLE #R4b (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #R4b EXEC Parts.OperationTemplateField_SaveAll @OperationTemplateId=@TemplateId,
+    @RowsJson=N'[{"Id":null,"DataCollectionFieldId":9999999999,"IsRequired":true}]', @AppUserId=1;
+SELECT @S = Status FROM #R4b; DROP TABLE #R4b;
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual @TestName=N'[OtfSaveBadDcf] Status is 0', @Expected=N'0', @Actual=@SStr;
+GO
+
+-- Test 5: re-adding a DCF that has TWO historical deprecated rows reactivates exactly one (no unique-index violation)
+DECLARE @S BIT, @SStr NVARCHAR(1);
+DECLARE @TemplateId BIGINT = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'SA-OTF-TPL');
+DECLARE @F3 BIGINT = (SELECT Id FROM Parts.DataCollectionField WHERE Code = N'DieInfo');
+-- isolate: deprecate all current active fields for this template, then seed two deprecated DieInfo rows
+UPDATE Parts.OperationTemplateField SET DeprecatedAt = SYSUTCDATETIME()
+  WHERE OperationTemplateId = @TemplateId AND DeprecatedAt IS NULL;
+INSERT INTO Parts.OperationTemplateField (OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt, DeprecatedAt)
+  VALUES (@TemplateId, @F3, 1, SYSUTCDATETIME(), SYSUTCDATETIME());
+INSERT INTO Parts.OperationTemplateField (OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt, DeprecatedAt)
+  VALUES (@TemplateId, @F3, 1, SYSUTCDATETIME(), SYSUTCDATETIME());
+DECLARE @Json NVARCHAR(MAX) = N'[{"Id":null,"DataCollectionFieldId":' + CAST(@F3 AS NVARCHAR(20)) + N',"IsRequired":true}]';
+CREATE TABLE #R5 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #R5 EXEC Parts.OperationTemplateField_SaveAll @OperationTemplateId=@TemplateId, @RowsJson=@Json, @AppUserId=1;
+SELECT @S = Status FROM #R5; DROP TABLE #R5;
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual @TestName=N'[OtfSaveMultiDeprecated] Status is 1', @Expected=N'1', @Actual=@SStr;
+DECLARE @ActiveCnt INT = (SELECT COUNT(*) FROM Parts.OperationTemplateField WHERE OperationTemplateId=@TemplateId AND DataCollectionFieldId=@F3 AND DeprecatedAt IS NULL);
+DECLARE @ActiveStr NVARCHAR(10) = CAST(@ActiveCnt AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName=N'[OtfSaveMultiDeprecated] Exactly one active DieInfo row', @Expected=N'1', @Actual=@ActiveStr;
+GO
+
+-- Test 6: audit Description carries SUBJECT mid-dot Fields mid-dot prefix
+DECLARE @TemplateId BIGINT = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'SA-OTF-TPL');
+DECLARE @TypeId BIGINT = (SELECT Id FROM Audit.LogEntityType WHERE Code = N'OpTemplateField');
+DECLARE @Desc NVARCHAR(500) = (SELECT TOP 1 Description FROM Audit.ConfigLog
+                               WHERE EntityId=@TemplateId AND LogEntityTypeId=@TypeId ORDER BY Id DESC);
+DECLARE @Pat NVARCHAR(200) = N'SA-OTF-TPL%' + Audit.ufn_MidDot() + N' Fields ' + Audit.ufn_MidDot() + N'%';
+DECLARE @Match NVARCHAR(1) = CASE WHEN @Desc LIKE @Pat THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual @TestName=N'[OtfSaveAudit] Description has SUBJECT mid-dot Fields prefix', @Expected=N'1', @Actual=@Match;
+GO
+
 EXEC test.EndTestFile;
 GO
