@@ -1,13 +1,31 @@
 {
   "custom": {
+    "active": {
+      "Id": null,
+      "CellName": "",
+      "AssignedAt": null,
+      "AssignedByInitials": "",
+      "ReleasedByInitials": "",
+      "Notes": "",
+      "ReleasedAt": null,
+      "IsActive": false
+    },
     "rows": [],
-    "active": null
+    "cellOptions": [],
+    "selectedCellId": null,
+    "mountNotes": ""
   },
   "params": {
-    "value": 0
+    "value": null
   },
   "propConfig": {
-    "params.value": { "paramDirection": "input" },
+    "params.value": {
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.rootContainer.refresh()"
+      }
+    },
     "custom.rows": {
       "binding": {
         "type": "expr",
@@ -20,7 +38,15 @@
       "binding": {
         "type": "expr",
         "config": {
-          "expression": "runScript(\"BlueRidge.Parts.Tool.getActiveAssignmentForTool\", 0, {view.params.value})"
+          "expression": "runScript(\"BlueRidge.Parts.Tool.getActiveAssignmentForToolOrEmpty\", 0, {view.params.value})"
+        }
+      }
+    },
+    "custom.cellOptions": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Tool.getCellsForDropdown\", 0, {view.params.value})"
         }
       }
     }
@@ -36,7 +62,17 @@
         {
           "name": "refresh",
           "params": [],
-          "script": "\ttoolId = self.view.params.value\n\tself.view.custom.rows   = BlueRidge.Parts.Tool.getAssignmentInstancesForTool(toolId)\n\tself.view.custom.active = BlueRidge.Parts.Tool.getActiveAssignmentForTool(toolId)"
+          "script": "\ttoolId = self.view.params.value\n\tself.view.custom.rows        = BlueRidge.Parts.Tool.getAssignmentInstancesForTool(toolId)\n\tself.view.custom.active      = BlueRidge.Parts.Tool.getActiveAssignmentForToolOrEmpty(toolId)\n\tself.view.custom.cellOptions = BlueRidge.Parts.Tool.getCellsForDropdown(toolId)"
+        },
+        {
+          "name": "handleMount",
+          "params": [],
+          "script": "\ttoolId = self.view.params.value\n\tif not toolId:\n\t\tBlueRidge.Common.Notify.toast(\"No tool selected\", \"Pick a tool first.\", \"warning\")\n\t\treturn\n\tcellId = self.view.custom.selectedCellId\n\tif cellId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No cell selected\", \"Pick a cell to mount on.\", \"warning\")\n\t\treturn\n\tnotes = self.view.custom.mountNotes\n\tresult = BlueRidge.Parts.Tool.assignToCell(toolId, cellId, notes)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tool mounted\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.selectedCellId = None\n\t\tself.view.custom.mountNotes = \"\"\n\t\tself.refresh()"
+        },
+        {
+          "name": "handleRelease",
+          "params": [],
+          "script": "\ttoolId = self.view.params.value\n\tif not toolId:\n\t\treturn\n\tresult = BlueRidge.Parts.Tool.releaseAssignment(toolId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tool released\")\n\tif result and result.get(\"Status\"):\n\t\tself.refresh()"
         }
       ],
       "extensionFunctions": null,
@@ -46,14 +82,7 @@
           "pageScope": true,
           "sessionScope": false,
           "viewScope": false,
-          "script": "\tsection = (payload or {}).get('section')\n\tif section and section != 'assignments':\n\t\treturn\n\tself.view.rootContainer.refresh()"
-        },
-        {
-          "messageType": "assignmentReleaseConfirmed",
-          "pageScope": true,
-          "sessionScope": false,
-          "viewScope": false,
-          "script": "\taction = (payload or {}).get('action')\n\tif action != 'confirm':\n\t\treturn\n\ttoolId = self.view.params.value\n\tif not toolId:\n\t\treturn\n\tresult = BlueRidge.Parts.Tool.releaseAssignment(toolId)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Tool released')\n\tif result and result.get('Status'):\n\t\tself.view.rootContainer.refresh()"
+          "script": "\tsection = (payload or {}).get('section')\n\tif section and section != 'assignments':\n\t\treturn\n\tself.refresh()"
         }
       ]
     },
@@ -67,55 +96,6 @@
     "children": [
       {
         "type": "ia.container.flex",
-        "meta": { "name": "ActionRow" },
-        "position": { "basis": "auto", "shrink": 0 },
-        "props": {
-          "direction": "row",
-          "justify": "flex-end",
-          "alignItems": "center"
-        },
-        "children": [
-          {
-            "type": "ia.input.button",
-            "meta": { "name": "BtnMountToCell" },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\ttoolId = self.view.params.value\n\tif not toolId:\n\t\tBlueRidge.Common.Notify.toast('No tool selected', 'Pick a tool first.', 'warning')\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid='mpp-mount-to-cell',\n\t\tview='BlueRidge/Components/Popups/MountToCell',\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={'toolId': toolId}\n\t)"
-                  }
-                }
-              }
-            },
-            "propConfig": {
-              "props.enabled": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "isNull({view.custom.active})"
-                  }
-                }
-              },
-              "meta.tooltip.text": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "if(isNull({view.custom.active}), '', 'Release the current assignment before mounting to a new cell.')"
-                  }
-                }
-              }
-            },
-            "props": {
-              "text": "Mount to Cell",
-              "style": { "classes": "btn btn-primary btn-sm" }
-            }
-          }
-        ]
-      },
-      {
-        "type": "ia.container.flex",
         "meta": { "name": "ActiveMountBanner" },
         "position": { "basis": "auto", "shrink": 0 },
         "propConfig": {
@@ -123,7 +103,7 @@
             "binding": {
               "type": "expr",
               "config": {
-                "expression": "!isNull({view.custom.active})"
+                "expression": "!isNull({view.custom.active.Id})"
               }
             }
           }
@@ -154,7 +134,7 @@
                     "binding": {
                       "type": "expr",
                       "config": {
-                        "expression": "'Currently mounted on ' + coalesce({view.custom.active.CellName}, '-')"
+                        "expression": "'Mounted on ' + coalesce({view.custom.active.CellName}, '-')"
                       }
                     }
                   }
@@ -194,13 +174,14 @@
           {
             "type": "ia.input.button",
             "meta": { "name": "BtnRelease" },
+            "position": { "shrink": 0 },
             "events": {
               "component": {
                 "onActionPerformed": {
                   "type": "script",
                   "scope": "G",
                   "config": {
-                    "script": "\tactive = self.view.custom.active or {}\n\tcellName = active.get('CellName') or 'this cell'\n\tsystem.perspective.openPopup(\n\t\tid='mpp-confirm-destructive',\n\t\tview='BlueRidge/Components/Popups/ConfirmDestructive',\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t'title':        'Release Assignment',\n\t\t\t'message':      'Release the tool from ' + cellName + '?',\n\t\t\t'confirmLabel': 'Release',\n\t\t\t'replyMessage': 'assignmentReleaseConfirmed'\n\t\t}\n\t)"
+                    "script": "\tself.view.rootContainer.handleRelease()"
                   }
                 }
               }
@@ -208,6 +189,128 @@
             "props": {
               "text": "Release",
               "style": { "classes": "btn btn-sm btn-danger" }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "MountZone" },
+        "position": { "basis": "auto", "shrink": 0 },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "isNull({view.custom.active.Id})"
+              }
+            }
+          }
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "flex-end",
+          "style": {
+            "gap": "10px",
+            "padding": "10px 12px",
+            "background": "var(--mpp-surface-card)",
+            "border": "1px solid var(--mpp-border-subtle)",
+            "borderRadius": "var(--mpp-radius-sm)"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "CellField" },
+            "position": { "grow": 1, "basis": "0" },
+            "props": { "direction": "column", "style": { "gap": "4px" } },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "Label" },
+                "props": { "text": "Cell", "style": { "classes": "field-label" } }
+              },
+              {
+                "type": "ia.input.dropdown",
+                "meta": { "name": "CellDropdown" },
+                "propConfig": {
+                  "props.options": {
+                    "binding": {
+                      "type": "property",
+                      "config": { "path": "view.custom.cellOptions" }
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "type": "property",
+                      "config": { "bidirectional": true, "path": "view.custom.selectedCellId" }
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "Select a cell",
+                  "style": { "boxSizing": "border-box", "classes": "select", "width": "100%" }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "NotesField" },
+            "position": { "grow": 1, "basis": "0" },
+            "props": { "direction": "column", "style": { "gap": "4px" } },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": { "name": "Label" },
+                "props": { "text": "Notes", "style": { "classes": "field-label" } }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": { "name": "NotesInput" },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": { "bidirectional": true, "path": "view.custom.mountNotes" }
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "Optional",
+                  "style": { "boxSizing": "border-box", "classes": "search-input", "width": "100%" }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "BtnMount" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "!isNull({view.custom.selectedCellId})"
+                  }
+                }
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleMount()"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Mount",
+              "style": { "classes": "btn btn-primary btn-sm" }
             }
           }
         ]
@@ -246,9 +349,9 @@
             },
             "children": [
               { "type": "ia.display.label", "meta": { "name": "ColCell" },       "position": { "basis": "0", "grow": 1 },        "props": { "text": "Cell" } },
-              { "type": "ia.display.label", "meta": { "name": "ColAssignedAt" }, "position": { "basis": "140px", "shrink": 0 }, "props": { "text": "Assigned At" } },
-              { "type": "ia.display.label", "meta": { "name": "ColReleasedAt" }, "position": { "basis": "140px", "shrink": 0 }, "props": { "text": "Released At" } },
-              { "type": "ia.display.label", "meta": { "name": "ColAssignedBy" }, "position": { "basis": "90px",  "shrink": 0 }, "props": { "text": "Assigned By" } },
+              { "type": "ia.display.label", "meta": { "name": "ColAssignedAt" }, "position": { "basis": "140px", "shrink": 0 }, "props": { "text": "Assigned" } },
+              { "type": "ia.display.label", "meta": { "name": "ColReleasedAt" }, "position": { "basis": "140px", "shrink": 0 }, "props": { "text": "Released / Active" } },
+              { "type": "ia.display.label", "meta": { "name": "ColAssignedBy" }, "position": { "basis": "90px",  "shrink": 0 }, "props": { "text": "By" } },
               { "type": "ia.display.label", "meta": { "name": "ColReleasedBy" }, "position": { "basis": "90px",  "shrink": 0 }, "props": { "text": "Released By" } },
               { "type": "ia.display.label", "meta": { "name": "ColNotes" },      "position": { "basis": "160px", "shrink": 0 }, "props": { "text": "Notes" } }
             ]
@@ -261,7 +364,13 @@
               "props.instances": {
                 "binding": {
                   "type": "property",
-                  "config": { "path": "view.custom.rows" }
+                  "config": { "path": "view.custom.rows" },
+                  "transforms": [
+                    {
+                      "type": "script",
+                      "code": "\trows = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\tout = []\n\tfor inst in rows:\n\t\tinst = inst or {}\n\t\tout.append({\"assignment\": inst.get(\"assignment\") or {}})\n\treturn out"
+                    }
+                  ]
                 }
               }
             },

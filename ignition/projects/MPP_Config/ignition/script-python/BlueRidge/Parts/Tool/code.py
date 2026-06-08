@@ -437,6 +437,17 @@ def getActiveAssignmentForTool(toolId):
     return None
 
 
+def getActiveAssignmentForToolOrEmpty(toolId):
+    """Binding-safe variant of getActiveAssignmentForTool: returns a fully
+    shaped dict (never None) so nested-path bindings never Component-Error."""
+    row = getActiveAssignmentForTool(toolId)
+    if row is None:
+        return {"Id": None, "CellName": "", "AssignedAt": None,
+                "AssignedByInitials": "", "ReleasedByInitials": "",
+                "Notes": "", "ReleasedAt": None, "IsActive": False}
+    return row
+
+
 # -----------------------------------------------------------------------------
 # Dropdown lookups (for DetailHeader Status + DieRank dropdowns)
 # -----------------------------------------------------------------------------

@@ -1,7 +1,16 @@
 {
   "custom": {},
   "params": {
-    "assignment": {}
+    "assignment": {
+      "Id": null,
+      "CellName": "",
+      "AssignedAt": null,
+      "ReleasedAt": null,
+      "AssignedByInitials": "",
+      "ReleasedByInitials": "",
+      "Notes": "",
+      "IsActive": false
+    }
   },
   "propConfig": {
     "params.assignment": { "paramDirection": "input" }
