@@ -907,8 +907,12 @@ Under our design:
 | `Lots.LotMovement` / `LotStatusHistory` / `LotAttributeChange` | 100–200M each |
 | `Lots.ContainerSerial` | 50–80M |
 | `Workorder.ProductionEvent` / `ConsumptionEvent` | **150–300M** each |
+| `Workorder.ProductionEventValue` (EAV child of ProductionEvent) | **150–600M** (events × non-promoted data-collection fields) |
+| `Quality.QualityResult` (EAV child of QualitySample) | 20–50M (samples × attrs-per-spec; sampling-rate dependent) |
 | `Audit.OperationLog` | **300M–1B** |
 | `Audit.InterfaceLog` | **300–600M** |
+
+> **EAV children (added 2026-06-08 EAV-at-scale review):** `Workorder.ProductionEventValue` and `Quality.QualityResult` are Entity-Attribute-Value child tables that grow as a *multiple* of their already-high-volume parents. They were absent from the original row-estimate table and the 2026-04-28 indexing-review gap table — they must be treated like the event tables they hang off: monthly range-partitioned + retention-classed + columnstore-aged, partition-aligned with their parent (`ProductionEventValue` co-located with `ProductionEvent`, `QualityResult` with `QualitySample`). Both are structurally sound (each already carries / now carries a `NumericValue DECIMAL` shadow column for indexable numeric queries) — the gap was *planning*, not schema.
 
 The audit + interface tables are structurally larger than the entire traceability dataset. A 20-year blanket retention policy without architectural mitigations is not tractable on a single SQL Server 2022 instance — query plans against unpartitioned 1B-row tables degrade beyond useful thresholds, recursive `LotGenealogy` walks for Honda audits hit timeouts, and OLTP buffer pool gets crowded out by historical data scans.
 
@@ -917,7 +921,7 @@ The audit + interface tables are structurally larger than the entire traceabilit
 **Decision space (the conversation Jacques + Blue Ridge defer to last responsible moment):**
 
 1. **Per-table retention class.** Negotiate which tables genuinely need 20 years vs which can carry 7-year retention. Push-back candidates: `Audit.OperationLog`, `Audit.FailureLog`, `Audit.InterfaceLog`, `Oee.DowntimeEvent`, `Audit.ConfigLog`. Honda traceability data (`Lots.*` events, `ContainerSerial`, `ShippingLabel`, `LotGenealogy`) almost certainly stays at 20 years.
-2. **Partitioning scheme.** Native SQL Server 2022 range partitioning, monthly partitions, sliding-window automation. Applies to ~14 deferred high-volume event tables. Partition column is `CreatedAt` / `EventAt` / `LoggedAt` per table (already non-null on every event table by design — clean partition keys throughout).
+2. **Partitioning scheme.** Native SQL Server 2022 range partitioning, monthly partitions, sliding-window automation. Applies to ~14 deferred high-volume event tables **plus the two runtime-EAV child tables** (`Workorder.ProductionEventValue`, `Quality.QualityResult`) — partition-aligned with their parents so a parent + its children age and roll off together. Partition column is `CreatedAt` / `EventAt` / `LoggedAt` per table (already non-null on every event table by design — clean partition keys throughout; the EAV children carry `CreatedAt`).
 3. **Columnstore on aged partitions.** Convert partitions older than 90 days from rowstore to clustered columnstore. Typical 8–15× compression on event-shape data because `LotId` / `LocationId` / `AppUserId` columns repeat heavily.
 4. **`Lots.LotGenealogy` materialized closure table.** Pre-compute every ancestor-descendant pair at LOT creation time (`AncestorLotId`, `DescendantLotId`, `Depth`). Honda audit query becomes O(1) lookup vs O(depth) recursion against partitioned tables. Cost: extra INSERTs at LOT creation (~4 rows per LOT in MPP's flow). Trade ~20% slower OLTP writes for "Honda audits actually return."
 5. **Materialize `TotalInProcess` / `InventoryAvailable` columns onto `Lots.Lot`.** OI-23 chose the view-based path (`Lots.v_LotDerivedQuantities`); at scale the view aggregates over 200M+ event rows per query. The deferred-decision criteria from OI-23 are now imminent — if we materialize, do it in the same `Lot_Create` / event-write procs that already touch the Lot row. The view stays as a fallback for diagnostics.

@@ -4,8 +4,8 @@
 **Project:** Madison Precision Products MES Replacement
 **Prepared By:** Blue Ridge Automation
 **Client:** Madison Precision Products, Inc. (Madison, IN)
-**Version:** 1.1 — Customer Review Release
-**Date:** 2026-05-12
+**Version:** 1.3 — Customer Review Release
+**Date:** 2026-06-03
 
 ---
 

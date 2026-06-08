@@ -182,7 +182,7 @@
 <header>
     <h1>MPP MES — Entity Relationship Diagrams</h1>
     <p>Madison Precision Products — MES Database Schema (8 schemas, 76 tables)</p>
-    <p style="font-size: 0.85em; opacity: 0.7;"><strong>v1.9m (2026-04-29):</strong> <code>Parts.OperationTemplate.RequiresSubLotSplit BIT NOT NULL DEFAULT 0</code> added (FDS-05-009 / Phased Plan v1.0 Phase 4). Controls Trim OUT outbound branching — `1` selects multi-destination sub-LOT split UX, `0` selects single-destination whole-LOT move. Engineering authors per Item per Cell via Config Tool; versioned with the rest of the row (clone-to-modify). Operations with no outbound-distribution branch ignore the column. <strong>v1.9l (2026-04-29):</strong> FDS v0.11m doc-set reconciliation pass — no schema changes. <strong>v1.9k (2026-04-28):</strong> Two FDS-driven additions. (1) <code>Lots.ShippingLabel.BannerAcknowledgedAt DATETIME2(3) NULL</code> — supports FDS-07-006b broadcast-with-session-filter Acknowledge action; per-terminal print-failure banner can be dismissed by the operator. Independent of <code>PrintFailedAt</code>: row stays in failed state for the safety-sweep alarm even after acknowledgement; this column only suppresses the banner UI. New <strong>Failed-acknowledged</strong> state = both <code>PrintFailedAt</code> and <code>BannerAcknowledgedAt</code> non-NULL. (2) <code>CoupledDownstreamCellLocationId</code> LocationAttributeDefinition seed under <code>CNCMachine</code> definition — supports FDS-06-008 Machining OUT auto-move-to-coupled-Assembly-Cell flow. <code>Integer</code> typed (parsed as <code>Location.Location.Id</code>), <code>IsRequired=0</code>. When non-NULL, PLC-signalled machining completion writes a <code>ProductionEvent</code> + <code>LotMovement</code> to the referenced Cell and updates <code>CurrentLocationId</code>; when NULL (legacy), completion writes the event only and the LOT stays at the Machining Cell awaiting operator-driven movement. <strong>v1.9j (2026-04-28):</strong> <code>Parts.ContainerConfig.ClosureMethod</code> extended with <code>ByVision</code> (joining <code>ByCount</code> and <code>ByWeight</code>). Reframed to <strong>tray-level</strong> closure trigger per FDS-06-014 — camera scans the FULL TRAY as a single image, one validation event per tray. PLC tags: <code>TrayPresent</code>, <code>TrayValidationResult</code>, <code>TrayFullFlag</code>. Same mechanic applies to Sort Cage non-serialized re-pack (same camera). <strong>v1.9i (2026-04-27):</strong> UJ-18 Gateway-script-async print pattern — <code>Lots.ShippingLabel</code> +5 print-state columns (<code>PrintAttempts</code>, <code>LastPrintAttemptAt</code>, <code>LastPrintError</code>, <code>PrintFailedAt</code>, <code>TerminalLocationId</code>). State derivation on the row, no separate queue table. Print dispatch via <code>system.util.sendMessageAsync</code> with 3-attempt × 2s-gap inline retry; per-terminal banner on failure; safety sweep at 5min cadence; stranded-prints alarm at 5. <strong>v1.9h (2026-04-27):</strong> UJ-04 — new <code>Lots.AimShipperIdPool</code> + <code>Lots.AimPoolConfig</code> tables (zero-latency container closure via pre-fetched FIFO pool of AIM Shipper IDs). Background Gateway script tops up the pool toward `TargetBufferDepth` (configurable, default 50); `Container_Complete` claims one row FIFO synchronously inside its own transaction. Empty pool = <strong>hard fail</strong> (line stops). Permanent ID consumption — no reuse on void / re-pack. Two-tier alarm: supervisor wallboard tile at warning depth, supervisor alarm + IT notification at critical. Master tab regenerated 2026-04-27 with v1.9i. <strong>v1.9g (2026-04-27):</strong> OI-21 — new <code>Lots.PauseEvent</code> table (Pausable LOT at Workstation, FDS-05-038). Append-only place + close lifecycle mirroring <code>Quality.HoldEvent</code>; filtered UNIQUE on <code>(LotId, LocationId) WHERE ResumedAt IS NULL</code>; same LOT MAY be paused at multiple Cells simultaneously; no TTL. Pause is orthogonal to <code>WorkOrderStatus</code>, <code>OperationStatus</code>, and <code>LotStatusCode</code> — no enum extensions. Master tab regen included. <br>Last updated: 2026-04-24 — <strong>full v1.9 pass: every schema tab and the Master ERD tab regenerated end-to-end</strong>. (1) Lots tab: <code>Lot.ToolId</code> + <code>Lot.ToolCavityId</code> added (die-cast-origin system of record; NULL elsewhere / after merge); new <code>IdentifierSequence</code> table + diagram (replaces Flexware <code>IdentifierFormat</code>; 2 counters — <code>Lot</code> <code>MESL{0:D7}</code> + <code>SerializedItem</code> <code>MESI{0:D7}</code>). (2) Workorder tab: <code>ProductionEvent</code> reshaped to checkpoint form (cumulative <code>ShotCount</code>/<code>ScrapCount</code>; dropped <code>LocationId</code>, <code>ItemId</code>, <code>DieIdentifier</code>, <code>CavityNumber</code>, per-event <code>GoodCount</code>/<code>NoGoodCount</code>; renamed <code>RecordedAt</code>→<code>EventAt</code>, <code>OperatorId</code>→<code>AppUserId</code>). (3) Tools tab: cross-schema <code>Tool</code>/<code>ToolCavity</code>→<code>Lot</code> relationships + Cross-schema callout. (4) OEE tab: <code>ShiftSchedule</code> fixed (DaysOfWeekBitmask INT + 5 missing columns); <code>Shift</code> fixed (ShiftDate removed + CreatedAt/Remarks added); <code>DowntimeReasonType.Code</code> + <code>DowntimeReasonCode</code> extended with SourceCode/user-attribution/etc. per v1.5. (5) Audit tab: four "bigbigint" typos corrected to "bigint". (6) Master ERD tab: full rebuild — 73 tables in 8 schemas with complete cross-schema FK summary table (44 rows) + comprehensive mermaid diagram covering all intra- and inter-schema relationships including v1.7 Tools, v1.8 ScrapSource / ItemLocation consumption metadata / Item.CountryOfOrigin, and v1.9 Lot.Tool*/ProductionEvent reshape / IdentifierSequence. <strong>v1.9c (2026-04-24):</strong> OI-12 correction — <code>MaxParts</code> relocated from <code>Parts.ContainerConfig</code> to <code>Parts.Item</code> per Jacques's OIR review (MaxParts is a Part attribute, not a container attribute). OI-09 closed — N cavities → N parallel peer LOTs, not sublots. <code>Parts.Item.MaxLotSize</code> repurposed as <code>PartsPerBasket</code> (semantic only).</p>
+    <p style="font-size: 0.85em; opacity: 0.7;"><strong>v1.9r (2026-06-08):</strong> §5 Quality doc-sync — back-filled three migration-<code>0017</code> columns that were live in the DB but missing from the ERD/DM: <code>QualitySpec.DeprecatedAt</code> + <code>DeprecatedByUserId</code> and <code>QualitySpecAttribute.UomId</code> (FK→<code>Parts.Uom</code>, supersedes the legacy free-text <code>Uom</code>). <strong>v1.9q (2026-06-08):</strong> <code>Lots.Lot.CrtActive BIT</code> added (FDS-10-012 Controlled Run Tag) — a CRT-active LOT forces 200% downstream inspection until supervisor-released. Lots tab updated. <strong>v1.9p (2026-06-08):</strong> EAV-at-scale review — <code>Location.CoupledDownstreamCellLocationId</code> promoted from a <code>CNCMachine</code> LocationAttribute (EAV NVARCHAR) to a typed self-FK column on <code>Location.Location</code> (migration <code>0019</code>; it is a Location→Location relationship read on the hot path of every coupled Machining OUT); <code>Quality.QualityResult.NumericValue DECIMAL(18,4)</code> added (numeric shadow for indexable SPC/range queries, mirrors <code>ProductionEventValue.NumericValue</code>). Location, Quality, and Master tabs updated. <strong>v1.9o (2026-06-05):</strong> <code>Tools.ToolType.CompatibleLocationTypeDefinitionId</code> FK → <code>Location.LocationTypeDefinition</code> added (migration <code>0018</code>) — filters the Mount-to-Cell dropdown to the Cell-kind a tool type mounts on (seeded Die→DieCastMachine). Tools + Master tabs updated. <strong>v1.9n (2026-06-04):</strong> sub-LOT split relocated Trim OUT → Machining OUT (no schema change; <code>OperationTemplate.RequiresSubLotSplit</code> now controls the Machining OUT outbound flow). Also corrected stale <code>OperatorId</code>→<code>AppUserId</code> columns on Workorder/OEE event tables (v1.9l rename) across the schema tabs. <strong>v1.9m (2026-04-29):</strong> <code>Parts.OperationTemplate.RequiresSubLotSplit BIT NOT NULL DEFAULT 0</code> added (FDS-05-009 / Phased Plan v1.0 Phase 4). Controls Trim OUT outbound branching — `1` selects multi-destination sub-LOT split UX, `0` selects single-destination whole-LOT move. Engineering authors per Item per Cell via Config Tool; versioned with the rest of the row (clone-to-modify). Operations with no outbound-distribution branch ignore the column. <strong>v1.9l (2026-04-29):</strong> FDS v0.11m doc-set reconciliation pass — no schema changes. <strong>v1.9k (2026-04-28):</strong> Two FDS-driven additions. (1) <code>Lots.ShippingLabel.BannerAcknowledgedAt DATETIME2(3) NULL</code> — supports FDS-07-006b broadcast-with-session-filter Acknowledge action; per-terminal print-failure banner can be dismissed by the operator. Independent of <code>PrintFailedAt</code>: row stays in failed state for the safety-sweep alarm even after acknowledgement; this column only suppresses the banner UI. New <strong>Failed-acknowledged</strong> state = both <code>PrintFailedAt</code> and <code>BannerAcknowledgedAt</code> non-NULL. (2) <code>CoupledDownstreamCellLocationId</code> LocationAttributeDefinition seed under <code>CNCMachine</code> definition — supports FDS-06-008 Machining OUT auto-move-to-coupled-Assembly-Cell flow. <code>Integer</code> typed (parsed as <code>Location.Location.Id</code>), <code>IsRequired=0</code>. When non-NULL, PLC-signalled machining completion writes a <code>ProductionEvent</code> + <code>LotMovement</code> to the referenced Cell and updates <code>CurrentLocationId</code>; when NULL (legacy), completion writes the event only and the LOT stays at the Machining Cell awaiting operator-driven movement. <strong>v1.9j (2026-04-28):</strong> <code>Parts.ContainerConfig.ClosureMethod</code> extended with <code>ByVision</code> (joining <code>ByCount</code> and <code>ByWeight</code>). Reframed to <strong>tray-level</strong> closure trigger per FDS-06-014 — camera scans the FULL TRAY as a single image, one validation event per tray. PLC tags: <code>TrayPresent</code>, <code>TrayValidationResult</code>, <code>TrayFullFlag</code>. Same mechanic applies to Sort Cage non-serialized re-pack (same camera). <strong>v1.9i (2026-04-27):</strong> UJ-18 Gateway-script-async print pattern — <code>Lots.ShippingLabel</code> +5 print-state columns (<code>PrintAttempts</code>, <code>LastPrintAttemptAt</code>, <code>LastPrintError</code>, <code>PrintFailedAt</code>, <code>TerminalLocationId</code>). State derivation on the row, no separate queue table. Print dispatch via <code>system.util.sendMessageAsync</code> with 3-attempt × 2s-gap inline retry; per-terminal banner on failure; safety sweep at 5min cadence; stranded-prints alarm at 5. <strong>v1.9h (2026-04-27):</strong> UJ-04 — new <code>Lots.AimShipperIdPool</code> + <code>Lots.AimPoolConfig</code> tables (zero-latency container closure via pre-fetched FIFO pool of AIM Shipper IDs). Background Gateway script tops up the pool toward `TargetBufferDepth` (configurable, default 50); `Container_Complete` claims one row FIFO synchronously inside its own transaction. Empty pool = <strong>hard fail</strong> (line stops). Permanent ID consumption — no reuse on void / re-pack. Two-tier alarm: supervisor wallboard tile at warning depth, supervisor alarm + IT notification at critical. Master tab regenerated 2026-04-27 with v1.9i. <strong>v1.9g (2026-04-27):</strong> OI-21 — new <code>Lots.PauseEvent</code> table (Pausable LOT at Workstation, FDS-05-038). Append-only place + close lifecycle mirroring <code>Quality.HoldEvent</code>; filtered UNIQUE on <code>(LotId, LocationId) WHERE ResumedAt IS NULL</code>; same LOT MAY be paused at multiple Cells simultaneously; no TTL. Pause is orthogonal to <code>WorkOrderStatus</code>, <code>OperationStatus</code>, and <code>LotStatusCode</code> — no enum extensions. Master tab regen included. <br>Last updated: 2026-04-24 — <strong>full v1.9 pass: every schema tab and the Master ERD tab regenerated end-to-end</strong>. (1) Lots tab: <code>Lot.ToolId</code> + <code>Lot.ToolCavityId</code> added (die-cast-origin system of record; NULL elsewhere / after merge); new <code>IdentifierSequence</code> table + diagram (replaces Flexware <code>IdentifierFormat</code>; 2 counters — <code>Lot</code> <code>MESL{0:D7}</code> + <code>SerializedItem</code> <code>MESI{0:D7}</code>). (2) Workorder tab: <code>ProductionEvent</code> reshaped to checkpoint form (cumulative <code>ShotCount</code>/<code>ScrapCount</code>; dropped <code>LocationId</code>, <code>ItemId</code>, <code>DieIdentifier</code>, <code>CavityNumber</code>, per-event <code>GoodCount</code>/<code>NoGoodCount</code>; renamed <code>RecordedAt</code>→<code>EventAt</code>, <code>OperatorId</code>→<code>AppUserId</code>). (3) Tools tab: cross-schema <code>Tool</code>/<code>ToolCavity</code>→<code>Lot</code> relationships + Cross-schema callout. (4) OEE tab: <code>ShiftSchedule</code> fixed (DaysOfWeekBitmask INT + 5 missing columns); <code>Shift</code> fixed (ShiftDate removed + CreatedAt/Remarks added); <code>DowntimeReasonType.Code</code> + <code>DowntimeReasonCode</code> extended with SourceCode/user-attribution/etc. per v1.5. (5) Audit tab: four "bigbigint" typos corrected to "bigint". (6) Master ERD tab: full rebuild — 73 tables in 8 schemas with complete cross-schema FK summary table (44 rows) + comprehensive mermaid diagram covering all intra- and inter-schema relationships including v1.7 Tools, v1.8 ScrapSource / ItemLocation consumption metadata / Item.CountryOfOrigin, and v1.9 Lot.Tool*/ProductionEvent reshape / IdentifierSequence. <strong>v1.9c (2026-04-24):</strong> OI-12 correction — <code>MaxParts</code> relocated from <code>Parts.ContainerConfig</code> to <code>Parts.Item</code> per Jacques's OIR review (MaxParts is a Part attribute, not a container attribute). OI-09 closed — N cavities → N parallel peer LOTs, not sublots. <code>Parts.Item.MaxLotSize</code> repurposed as <code>PartsPerBasket</code> (semantic only).</p>
     <div class="conventions">
         <span>UpperCamelCase</span>
         <span>singular nouns</span>
@@ -238,7 +238,7 @@
         </div>
         <div class="table-card">
             <h4>LocationAttributeDefinition</h4>
-            <p>Attribute schema per kind. <code>Terminal</code> gets <code>IpAddress</code>, <code>DefaultPrinter</code>, <code>HasBarcodeScanner</code>. <code>DieCastMachine</code> gets <code>Tonnage</code>, <code>NumberOfCavities</code>, <code>RefCycleTimeSec</code>. <code>CNCMachine</code> gets <code>CoupledDownstreamCellLocationId</code> (Integer, optional, <strong>v1.9k</strong>) — <code>Location.Location.Id</code> of the Cell that machined LOTs auto-move to on PLC-signalled Machining OUT per FDS-06-008; NULL = legacy uncoupled path (LOT awaits operator-driven movement). Different kinds, completely disjoint attribute sets. Each attribute specifies name, data type, required flag, default, UOM, and sort order.</p>
+            <p>Attribute schema per kind. <code>Terminal</code> gets <code>IpAddress</code>, <code>DefaultPrinter</code>, <code>HasBarcodeScanner</code>. <code>DieCastMachine</code> gets <code>Tonnage</code>, <code>RefCycleTimeSec</code>, <code>OeeTarget</code>. Different kinds, completely disjoint attribute sets. Each attribute specifies name, data type, required flag, default, UOM, and sort order. <strong>Note (v1.9p):</strong> the <code>CNCMachine</code> machining→assembly pairing is <em>not</em> an EAV attribute — <code>CoupledDownstreamCellLocationId</code> was promoted to a typed self-FK column on <code>Location</code> (it is a <code>Location → Location</code> relationship read on the hot path of every coupled Machining OUT, FDS-06-008).</p>
         </div>
         <div class="table-card">
             <h4>Location</h4>
@@ -306,6 +306,7 @@ erDiagram
         int SortOrder
         datetime2 CreatedAt
         datetime2 DeprecatedAt
+        bigint CoupledDownstreamCellLocationId FK "v1.9p NULL self-FK; coupled Assembly Cell (FDS-06-008)"
     }
 
     LocationAttribute {
@@ -334,6 +335,7 @@ erDiagram
     LocationTypeDefinition ||--o{ LocationAttributeDefinition : "defines attrs"
     LocationTypeDefinition ||--o{ Location : classifies
     Location ||--o{ Location : "parent of"
+    Location ||--o{ Location : "couples downstream"
     Location ||--o{ LocationAttribute : "has values"
     LocationAttributeDefinition ||--o{ LocationAttribute : "typed by"
         </div>
@@ -371,7 +373,7 @@ erDiagram
         </div>
         <div class="table-card">
             <h4>OperationTemplate <span class="scope-badge scope-mvp">MVP v1.9m</span></h4>
-            <p>Defines what data to collect at a given operation type: die info, cavity, weight, counts, material verification, serial numbers. Linked to an area. <strong>v1.9m (FDS-05-009):</strong> <code>RequiresSubLotSplit BIT NOT NULL DEFAULT 0</code> added — when <code>1</code>, the operator-facing screen presents a multi-destination split UX (one sub-LOT per destination Cell, N sub-LOTs total) and the closing proc calls <code>Lot_Split</code> + <code>Lot_MoveTo</code> per child; when <code>0</code> (default), the screen presents a single-destination move UX and the closing proc calls only <code>Lot_MoveTo</code>. Currently used at Trim OUT per FDS-05-009 / Phased Plan v1.0 Phase 4. Operations with no outbound-distribution branch (Die Cast, Receiving, Machining IN, Assembly) ignore the column. Versioned with the rest of the row per the clone-to-modify pattern.</p>
+            <p>Defines what data to collect at a given operation type: die info, cavity, weight, counts, material verification, serial numbers. Linked to an area. <strong>v1.9m (FDS-05-009):</strong> <code>RequiresSubLotSplit BIT NOT NULL DEFAULT 0</code> added — when <code>1</code>, the operator-facing screen presents a multi-destination split UX (one sub-LOT per destination Cell, N sub-LOTs total) and the closing proc calls <code>Lot_Split</code> + <code>Lot_MoveTo</code> per child; when <code>0</code> (default), the screen presents a single-destination move UX and the closing proc calls only <code>Lot_MoveTo</code>. <strong>v1.9n (2026-06-04):</strong> the controlled outbound flow relocated Trim OUT → <strong>Machining OUT</strong> (FDS v1.3 / Phased Plan v1.1) — when <code>1</code>, the line splits the machined LOT into N sub-LOTs at Machining OUT; Trim OUT is now a 1:1 whole-LOT move. Operations with no outbound-distribution branch (Die Cast, Receiving, Machining IN, Trim OUT, Assembly) ignore the column. Versioned with the rest of the row per the clone-to-modify pattern.</p>
         </div>
         <div class="table-card">
             <h4>ItemLocation <span class="scope-badge scope-mvp">MVP v1.9d</span></h4>
@@ -521,6 +523,7 @@ erDiagram
     Item ||--o{ Bom : "parent in"
     Bom ||--o{ BomLine : contains
     Item ||--o{ BomLine : "child in"
+    Uom ||--o{ BomLine : "measured in"
     Item ||--o{ RouteTemplate : "routed by"
     RouteTemplate ||--o{ RouteStep : "consists of"
     OperationTemplate ||--o{ RouteStep : "performed at"
@@ -644,6 +647,7 @@ erDiagram
         datetime2 CreatedAt
         datetime2 UpdatedAt
         bigint UpdatedByUserId FK
+        bit CrtActive "v1.9q FDS-10-012 CRT; forces 200% inspection"
     }
 
     IdentifierSequence {
@@ -834,6 +838,7 @@ erDiagram
     Container ||--o| AimShipperIdPool : "consumed by (v1.9h)"
     IdentifierSequence ||..o{ Lot : "mints LotName (v1.9)"
     IdentifierSequence ||..o{ SerializedPart : "mints SerialNumber (v1.9)"
+    Lot ||--o{ Container : "source LOT"
     ContainerStatusCode ||--o{ Container : "status of"
     Container ||--o{ ContainerTray : contains
     Container ||--o{ ContainerSerial : holds
@@ -944,7 +949,7 @@ erDiagram
         int SequenceNumber
         datetime2 StartedAt
         datetime2 CompletedAt
-        bigint OperatorId FK
+        bigint AppUserId FK "v1.9l (was OperatorId)"
     }
 
     ProductionEvent {
@@ -983,7 +988,7 @@ erDiagram
         bigint ProducedItemId FK
         int PieceCount
         bigint LocationId FK
-        bigint OperatorId FK
+        bigint AppUserId FK "v1.9l (was OperatorId)"
         bigint TerminalLocationId FK
         bigint TrayId FK
         nvarchar ProducedSerialNumber
@@ -998,7 +1003,7 @@ erDiagram
         int Quantity
         nvarchar ChargeToArea
         nvarchar Remarks
-        bigint OperatorId FK
+        bigint AppUserId FK "v1.9l (was OperatorId)"
         datetime2 RecordedAt
     }
 
@@ -1073,6 +1078,8 @@ erDiagram
         bigint OperationTemplateId FK
         nvarchar Description
         datetime2 CreatedAt
+        datetime2 DeprecatedAt "0017 header soft-delete"
+        bigint DeprecatedByUserId FK "0017"
     }
 
     QualitySpecVersion {
@@ -1090,7 +1097,8 @@ erDiagram
         bigint QualitySpecVersionId FK
         nvarchar AttributeName
         nvarchar DataType
-        nvarchar Uom
+        nvarchar Uom "legacy free-text"
+        bigint UomId FK "0017 supersedes free-text Uom"
         decimal TargetValue
         decimal LowerLimit
         decimal UpperLimit
@@ -1140,6 +1148,7 @@ erDiagram
         bigint QualitySampleId FK
         bigint QualitySpecAttributeId FK
         nvarchar MeasuredValue
+        decimal NumericValue "v1.9p NULL numeric shadow for SPC/range"
         nvarchar Uom
         bit IsPass
     }
@@ -1302,7 +1311,7 @@ erDiagram
         datetime2 StartedAt
         datetime2 EndedAt "NULL while open"
         bigint DowntimeSourceCodeId FK
-        bigint OperatorId FK "NULL"
+        bigint AppUserId FK "v1.9l (was OperatorId), NULL"
         int ShotCount "Setup-type only"
         nvarchar Remarks
         datetime2 CreatedAt
@@ -1397,6 +1406,7 @@ erDiagram
         nvarchar Description
         nvarchar Icon
         bit HasCavities
+        bigint CompatibleLocationTypeDefinitionId FK "v1.9o NULL; Cell-kind the tool mounts on (Die->DieCastMachine)"
         int SortOrder
         datetime2 CreatedAt
         datetime2 DeprecatedAt
@@ -1509,6 +1519,8 @@ erDiagram
     Tool ||..o{ Lot : "cast by (v1.9, die-cast origin)"
     ToolCavity ||..o{ Lot : "cast from (v1.9, die-cast origin)"
     Tool ||..o{ WorkOrder : "Maintenance WO target"
+    LocationTypeDefinition ||..o{ ToolType : "compatible cell kind (v1.9o)"
+    Location ||..o{ ToolAssignment : "mounted on Cell"
         </div>
     </div>
 
@@ -1518,6 +1530,8 @@ erDiagram
         <li><strong><code>Tools.ToolCavity.Id</code> ←—— <code>Lots.Lot.ToolCavityId</code></strong> — same rules. Cavity must belong to the tool and be in <code>Active</code> status at <code>Lot_Create</code>.</li>
         <li><strong><code>Workorder.ProductionEvent</code> does NOT carry Tool or Cavity</strong> — v1.9 reshape. Reports derive via <code>ProductionEvent.LotId → Lot.ToolId / Lot.ToolCavityId</code>. Honda-trace queries walk <code>LotGenealogy</code> back to origin Die-Cast LOTs.</li>
         <li><strong><code>Tools.Tool.Id</code> ←—— <code>Workorder.WorkOrder.ToolId</code></strong> — future-Maintenance schema hook per v1.9b OI-07 correction. NULL for all Production WOs (the only active type in MVP). Not enforced or populated in MVP; reserved for a future maintenance-engine project.</li>
+        <li><strong><code>Location.LocationTypeDefinition.Id</code> ←—— <code>Tools.ToolType.CompatibleLocationTypeDefinitionId</code></strong> — <strong>v1.9o (migration <code>0018</code>)</strong>. One-to-one mapping of a tool type to the Cell-<em>kind</em> it mounts on, so the Mount-to-Cell dropdown filters Cell-tier Locations to the relevant kind (a Die lists only Die Cast Machine cells). Seeded <code>Die → DieCastMachine</code>; NULL = unrestricted. Rule enforced by <code>Tools.Tool_ListCompatibleCells</code>.</li>
+        <li><strong><code>Location.Location.Id</code> ←—— <code>Tools.ToolAssignment.CellLocationId</code></strong> — the Cell a tool is checked in / mounted on (append-only assignment history). NOT NULL; filtered-unique on the active assignment per Tool and per Cell.</li>
     </ul>
 </div>
 
@@ -1655,7 +1669,7 @@ erDiagram
 <div id="tab-master" class="tab-content">
     <div class="schema-desc">
         <h2>Master ERD — All Schemas</h2>
-        <p>All 76 tables across 8 schemas with cross-schema foreign-key relationships. Table names are prefixed with schema abbreviations (<code>loc__</code>, <code>parts__</code>, <code>lots__</code>, <code>wo__</code>, <code>qual__</code>, <code>oee__</code>, <code>tools__</code>, <code>audit__</code>). Scroll horizontally to explore. <strong>Regenerated 2026-04-27 for Data Model v1.9i</strong> — incorporates the v1.9g <code>Lots.PauseEvent</code> table (OI-21 Pausable LOT), v1.9h <code>Lots.AimShipperIdPool</code> + <code>Lots.AimPoolConfig</code> tables (UJ-04 AIM Shipper ID local pool), and v1.9i <code>Lots.ShippingLabel</code> +5 print-state columns including a new cross-schema <code>TerminalLocationId</code> FK to <code>Location.Location</code> (UJ-18 Gateway-script-async print pattern).</p>
+        <p>All 76 tables across 8 schemas with cross-schema foreign-key relationships. Table names are prefixed with schema abbreviations (<code>loc__</code>, <code>parts__</code>, <code>lots__</code>, <code>wo__</code>, <code>qual__</code>, <code>oee__</code>, <code>tools__</code>, <code>audit__</code>). Scroll horizontally to explore. <strong>Regenerated 2026-04-27 for Data Model v1.9i</strong> — incorporates the v1.9g <code>Lots.PauseEvent</code> table (OI-21 Pausable LOT), v1.9h <code>Lots.AimShipperIdPool</code> + <code>Lots.AimPoolConfig</code> tables (UJ-04 AIM Shipper ID local pool), and v1.9i <code>Lots.ShippingLabel</code> +5 print-state columns including a new cross-schema <code>TerminalLocationId</code> FK to <code>Location.Location</code> (UJ-18 Gateway-script-async print pattern). <strong>Incrementally updated 2026-06-08 (v1.9o–v1.9q):</strong> added the <code>Tools.ToolType.CompatibleLocationTypeDefinitionId → LocationTypeDefinition</code> FK (v1.9o, migration 0018); the <code>Location.CoupledDownstreamCellLocationId</code> self-FK + <code>Quality.QualityResult.NumericValue</code> (v1.9p); and <code>Lots.Lot.CrtActive</code> (v1.9q).</p>
         <p class="scope-note">Per-schema tabs above carry column-level detail; this tab shows tables as boxes with only their PK, plus the complete cross-schema FK picture. Use per-schema tabs for column lookups, this tab for architecture-level review.</p>
     </div>
 
@@ -1721,6 +1735,7 @@ erDiagram
             <tr><td colspan="5" style="background:#1a1d27; padding:0.5rem; font-weight:bold;">Tools schema cross-references (v1.7, v1.9 back-refs)</td></tr>
             <tr><td>tools</td><td>Tool.CreatedByUserId / UpdatedByUserId</td><td>location</td><td>AppUser.Id</td><td></td></tr>
             <tr><td>tools</td><td>ToolAssignment.CellLocationId</td><td>location</td><td>Location.Id (Cell tier)</td><td></td></tr>
+            <tr><td>tools</td><td><strong>ToolType.CompatibleLocationTypeDefinitionId</strong></td><td>location</td><td>LocationTypeDefinition.Id</td><td><strong>v1.9o (migration 0018)</strong> — tool-type→cell-kind filter for the Mount-to-Cell dropdown; seeded Die→DieCastMachine; NULL = unrestricted</td></tr>
             <tr><td>tools</td><td>ToolAssignment.AssignedByUserId / ReleasedByUserId</td><td>location</td><td>AppUser.Id</td><td>Elevated action per FDS-04-007</td></tr>
             <tr><td>tools</td><td>ToolCavity.CreatedByUserId / UpdatedByUserId</td><td>location</td><td>AppUser.Id</td><td></td></tr>
             <tr><td colspan="5" style="background:#1a1d27; padding:0.5rem; font-weight:bold;">Audit schema cross-references</td></tr>
@@ -1844,6 +1859,7 @@ erDiagram
     loc__LocationTypeDefinition ||--o{ loc__LocationAttributeDefinition : "defines attrs"
     loc__LocationTypeDefinition ||--o{ loc__Location : classifies
     loc__Location ||--o{ loc__Location : "parent of"
+    loc__Location ||--o{ loc__Location : "couples downstream (v1.9p)"
     loc__Location ||--o{ loc__LocationAttribute : values
     loc__LocationAttributeDefinition ||--o{ loc__LocationAttribute : "typed by"
 
@@ -1996,6 +2012,7 @@ erDiagram
     %% ═══ TOOLS intra-schema (v1.7) ═══
     tools__ToolType ||--o{ tools__ToolAttributeDefinition : "defines attrs"
     tools__ToolType ||--o{ tools__Tool : classifies
+    loc__LocationTypeDefinition ||..o{ tools__ToolType : "compatible cell kind (v1.9o)"
     tools__ToolStatusCode ||--o{ tools__Tool : status
     tools__DieRank ||--o{ tools__Tool : "ranks (Die-only)"
     tools__Tool ||--o{ tools__ToolAttribute : "has values"
