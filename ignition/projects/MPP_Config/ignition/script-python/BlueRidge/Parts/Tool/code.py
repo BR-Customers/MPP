@@ -514,6 +514,38 @@ def getAttributeDefinitionsForToolType(toolTypeId):
     return [{"label": r.get("Name") or r.get("Code"), "value": r.get("Id")} for r in rows or []]
 
 
+def getAttributeDefinitionOptions(toolId):
+    """Available + already-present attribute definitions for a tool, each
+    carrying its DataType so the row can pick a type-aware value input.
+
+    Returns list[dict]: {value: <defId>, label: <name>, code, dataType}.
+    The Attributes editor uses this to (a) populate the new-row Definition
+    dropdown (filtering out defs already on the tool happens in the view)
+    and (b) resolve DataType for existing rows."""
+    toolId = _u(toolId)
+    BlueRidge.Common.Util.log("toolId=%s" % toolId)
+    if toolId is None:
+        return []
+    toolTypeId = None
+    row = BlueRidge.Common.Db.execOne("parts/Tool_Get", {"id": toolId})
+    if row is not None:
+        toolTypeId = row.get("ToolTypeId")
+    if toolTypeId is None:
+        return []
+    try:
+        rows = BlueRidge.Common.Db.execList(
+            "parts/ToolAttributeDefinition_ListByType",
+            {"toolTypeId": toolTypeId, "includeDeprecated": 0},
+        )
+    except Exception as e:
+        BlueRidge.Common.Util.log("getAttributeDefinitionOptions failed: %s" % str(e))
+        return []
+    return [{"value": r.get("Id"),
+             "label": r.get("Name") or r.get("Code"),
+             "code":  r.get("Code"),
+             "dataType": r.get("DataType")} for r in rows or []]
+
+
 def getCellsForDropdown(toolId=None):
     """Returns [{label, value}, ...] for the Mount-to-Cell dropdown.
     Value is the Cell Location.Id (BIGINT); label is Name (Code).
@@ -638,6 +670,61 @@ def removeAttribute(toolId, defId):
         {
             "toolId":    toolId,
             "defId":     defId,
+            "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+        },
+    )
+
+
+def saveAttributesAll(toolId, rows):
+    """Bundled SaveAll for the Attributes section. `rows` is the editDraft
+    rows list with keys: id (BIGINT|None), toolAttributeDefinitionId (BIGINT),
+    value (string). Returns {Status, Message, NewId}."""
+    toolId = _u(toolId)
+    BlueRidge.Common.Util.log("toolId=%s rows=%d" % (toolId, len(rows or [])))
+    if toolId is None:
+        return {"Status": 0, "Message": "No tool selected.", "NewId": None}
+    cleaned = []
+    for r in (rows or []):
+        r = _u(r) or {}
+        v = r.get("value")
+        cleaned.append({
+            "Id":                        r.get("id"),
+            "ToolAttributeDefinitionId": r.get("toolAttributeDefinitionId"),
+            "Value":                     u"" if v is None else unicode(v),
+        })
+    return BlueRidge.Common.Db.execMutation(
+        "parts/ToolAttribute_SaveAll",
+        {
+            "toolId":    toolId,
+            "rowsJson":  BlueRidge.Common.Util.convertWrapperObjectToJson(cleaned),
+            "appUserId": BlueRidge.Common.Util._currentAppUserId(),
+        },
+    )
+
+
+def saveCavitiesAll(toolId, rows):
+    """Bundled SaveAll for the Cavities section. `rows` keys: id (BIGINT|None),
+    cavityNumber (int), description (string|None), statusCode (str).
+    Returns {Status, Message, NewId}."""
+    toolId = _u(toolId)
+    BlueRidge.Common.Util.log("toolId=%s rows=%d" % (toolId, len(rows or [])))
+    if toolId is None:
+        return {"Status": 0, "Message": "No tool selected.", "NewId": None}
+    cleaned = []
+    for r in (rows or []):
+        r = _u(r) or {}
+        num = r.get("cavityNumber")
+        cleaned.append({
+            "Id":           r.get("id"),
+            "CavityNumber": None if num is None else int(num),
+            "Description":  r.get("description"),
+            "StatusCode":   r.get("statusCode") or "Active",
+        })
+    return BlueRidge.Common.Db.execMutation(
+        "parts/ToolCavity_SaveAll",
+        {
+            "toolId":    toolId,
+            "rowsJson":  BlueRidge.Common.Util.convertWrapperObjectToJson(cleaned),
             "appUserId": BlueRidge.Common.Util._currentAppUserId(),
         },
     )
