@@ -22,6 +22,8 @@ IF NOT EXISTS (SELECT 1 FROM Tools.ToolAttributeDefinition WHERE ToolTypeId=@Too
     INSERT INTO Tools.ToolAttributeDefinition (ToolTypeId, Code, Name, DataType) VALUES (@ToolTypeId, N'SA_STR', N'SaveAll String', N'String');
 IF NOT EXISTS (SELECT 1 FROM Tools.ToolAttributeDefinition WHERE ToolTypeId=@ToolTypeId AND Code=N'SA_INT' AND DeprecatedAt IS NULL)
     INSERT INTO Tools.ToolAttributeDefinition (ToolTypeId, Code, Name, DataType) VALUES (@ToolTypeId, N'SA_INT', N'SaveAll Integer', N'Integer');
+IF NOT EXISTS (SELECT 1 FROM Tools.ToolAttributeDefinition WHERE ToolTypeId=@ToolTypeId AND Code=N'SA_BOOL' AND DeprecatedAt IS NULL)
+    INSERT INTO Tools.ToolAttributeDefinition (ToolTypeId, Code, Name, DataType) VALUES (@ToolTypeId, N'SA_BOOL', N'SaveAll Boolean', N'Boolean');
 GO
 
 -- Test 1: add a String + Integer attribute (Id=NULL) -> Status=1, 2 rows persist
@@ -101,6 +103,19 @@ DECLARE @Desc NVARCHAR(500) = (SELECT TOP 1 Description FROM Audit.ConfigLog
 DECLARE @Pat NVARCHAR(200) = N'SA-ATTR-TOOL%' + Audit.ufn_MidDot() + N' Attributes ' + Audit.ufn_MidDot() + N'%';
 DECLARE @Match NVARCHAR(1) = CASE WHEN @Desc LIKE @Pat THEN N'1' ELSE N'0' END;
 EXEC test.Assert_IsEqual @TestName=N'[AttrSaveAudit] Description has SUBJECT mid-dot Attributes prefix', @Expected=N'1', @Actual=@Match;
+GO
+
+-- Test 6: NULL value for a Boolean-typed attribute -> Status=0
+DECLARE @S BIT, @SStr NVARCHAR(1);
+DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'SA-ATTR-TOOL');
+DECLARE @BoolDef BIGINT = (SELECT Id FROM Tools.ToolAttributeDefinition WHERE Code=N'SA_BOOL' AND DeprecatedAt IS NULL);
+DECLARE @Json NVARCHAR(MAX) =
+    N'[{"Id":null,"ToolAttributeDefinitionId":' + CAST(@BoolDef AS NVARCHAR(20)) + N',"Value":null}]';
+CREATE TABLE #R6 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #R6 EXEC Tools.ToolAttribute_SaveAll @ToolId=@ToolId, @RowsJson=@Json, @AppUserId=1;
+SELECT @S = Status FROM #R6; DROP TABLE #R6;
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual @TestName=N'[AttrSaveBoolNull] Status is 0', @Expected=N'0', @Actual=@SStr;
 GO
 
 EXEC test.EndTestFile;

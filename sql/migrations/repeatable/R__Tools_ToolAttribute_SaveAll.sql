@@ -134,7 +134,7 @@ BEGIN
         WHERE (d.DataType = N'Integer' AND TRY_CAST(i.Value AS INT)            IS NULL)
            OR (d.DataType = N'Decimal' AND TRY_CAST(i.Value AS DECIMAL(38,10)) IS NULL)
            OR (d.DataType = N'Date'    AND TRY_CAST(i.Value AS DATE)           IS NULL)
-           OR (d.DataType = N'Boolean' AND i.Value NOT IN (N'true', N'false'))
+           OR (d.DataType = N'Boolean' AND (i.Value IS NULL OR i.Value NOT IN (N'true', N'false')))
            OR (d.DataType = N'String'  AND i.Value IS NULL)
         ORDER BY i.RowIndex;
 
@@ -205,17 +205,18 @@ BEGIN
 
         DECLARE @ActionParts NVARCHAR(MAX) = N'';
         IF NULLIF(@AddSpec,N'') IS NOT NULL
-            SET @ActionParts += @AddSpec + CASE WHEN @AddOv>0 THEN N', +' + CAST(@AddOv AS NVARCHAR) + N' more' ELSE N'' END + N'; ';
+            SET @ActionParts += @AddSpec + CASE WHEN @AddOv>0 THEN N', +' + CAST(@AddOv AS NVARCHAR(10)) + N' more' ELSE N'' END + N'; ';
         IF NULLIF(@UpdSpec,N'') IS NOT NULL
-            SET @ActionParts += @UpdSpec + CASE WHEN @UpdOv>0 THEN N'; ~' + CAST(@UpdOv AS NVARCHAR) + N' more' ELSE N'' END + N'; ';
+            SET @ActionParts += @UpdSpec + CASE WHEN @UpdOv>0 THEN N'; ~' + CAST(@UpdOv AS NVARCHAR(10)) + N' more' ELSE N'' END + N'; ';
         IF NULLIF(@RemSpec,N'') IS NOT NULL
-            SET @ActionParts += @RemSpec + CASE WHEN @RemOv>0 THEN N', -' + CAST(@RemOv AS NVARCHAR) + N' more' ELSE N'' END + N'; ';
+            SET @ActionParts += @RemSpec + CASE WHEN @RemOv>0 THEN N', -' + CAST(@RemOv AS NVARCHAR(10)) + N' more' ELSE N'' END + N'; ';
         IF DATALENGTH(@ActionParts) >= 4 SET @ActionParts = LEFT(@ActionParts, DATALENGTH(@ActionParts)/2 - 2);
         IF @ActionParts = N'' SET @ActionParts = N'No-op save';
 
-        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(
+        DECLARE @ActivityRaw NVARCHAR(MAX) =
             @Subject + N' ' + Audit.ufn_MidDot() + N' Attributes ' + Audit.ufn_MidDot() +
-            N' ' + @ActionParts + N'; ' + CAST(@TotalRows AS NVARCHAR) + N' rows');
+            N' ' + @ActionParts + N'; ' + CAST(@TotalRows AS NVARCHAR(10)) + N' rows';
+        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
 
         DECLARE @OldValueResolved NVARCHAR(MAX) = (
             SELECT ta.Id,
