@@ -171,7 +171,7 @@
           "pageScope": true,
           "sessionScope": false,
           "viewScope": false,
-          "script": "\taction = (payload or {}).get('action')\n\tif action != 'confirm':\n\t\treturn\n\tmeta = (self.view.custom.selected or {}).get('meta') or {}\n\ttemplateId = meta.get('Id')\n\tif templateId is None:\n\t\treturn\n\tresult = BlueRidge.Parts.OperationTemplate.deprecate(templateId)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Template deprecated')\n\tif result and result.get('Status'):\n\t\tself.view.custom.selected  = {'meta': None}\n\t\tself.view.custom.editDraft = {'meta': None}\n\t\tself.view.custom.mode = 'view'\n\t\tself.view.custom.selectedTemplateCode = ''\n\t\tself.view.custom.selectedVersionId    = 0\n\t\tself.view.custom.fieldRows = []\n\t\tsystem.perspective.sendMessage('templateListRefresh', scope='page')"
+          "script": "\taction = (payload or {}).get('action')\n\tif action != 'confirm':\n\t\treturn\n\tmeta = (self.view.custom.selected or {}).get('meta') or {}\n\ttemplateId = meta.get('Id')\n\tif templateId is None:\n\t\treturn\n\tresult = BlueRidge.Parts.OperationTemplate.deprecate(templateId)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Template deprecated')\n\tif result and result.get('Status'):\n\t\tself.view.custom.selected  = {'meta': None}\n\t\tself.view.custom.editDraft = {'meta': None}\n\t\tself.view.custom.mode = 'view'\n\t\tself.view.custom.selectedTemplateCode = ''\n\t\tself.view.custom.selectedVersionId    = 0\n\t\tself.view.custom.fieldsState = {\"selected\": {\"rows\": []}, \"editDraft\": {\"rows\": []}}\n\t\tsystem.perspective.sendMessage('templateListRefresh', scope='page')"
         },
         {
           "messageType": "templateVersionClicked",

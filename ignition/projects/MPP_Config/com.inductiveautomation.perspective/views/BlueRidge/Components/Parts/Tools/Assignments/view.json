@@ -134,7 +134,7 @@
                     "binding": {
                       "type": "expr",
                       "config": {
-                        "expression": "'Mounted on ' + coalesce({view.custom.active.CellName}, '-')"
+                        "expression": "'Mounted on ' + if(isNull({view.custom.active.CellName}), '-', toStr({view.custom.active.CellName}))"
                       }
                     }
                   }
@@ -156,7 +156,7 @@
                     "binding": {
                       "type": "expr",
                       "config": {
-                        "expression": "'Assigned ' + coalesce({view.custom.active.AssignedAt}, '-') + ' by ' + coalesce({view.custom.active.AssignedByInitials}, '-')"
+                        "expression": "'Assigned ' + if(isNull({view.custom.active.AssignedAt}), '-', toStr({view.custom.active.AssignedAt})) + ' by ' + if(isNull({view.custom.active.AssignedByInitials}), '-', toStr({view.custom.active.AssignedByInitials}))"
                       }
                     }
                   }
