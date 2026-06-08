@@ -399,7 +399,14 @@ button {
 .ia_dropdown:hover {
     border-color: var(--mpp-border-strong);
 }
-
+.iaDropdownCommon_options_modal {
+	background-color: var(--mpp-surface-raised);
+	
+	}
+.iaDropdownCommon_option {
+	color: var(--mpp-text-primary);
+	
+}
 .ia_textField:focus,
 .ia_numericEntryField:focus,
 .ia_dropdown:focus,

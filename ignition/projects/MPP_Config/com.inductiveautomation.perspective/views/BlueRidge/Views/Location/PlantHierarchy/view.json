@@ -1,18 +1,24 @@
 {
   "custom": {
-    "selected":     null,
-    "selectedPath": null,
+    "dirty": false,
+    "draftPath": null,
     "editDraft": {
-      "meta":       null,
-      "attributes": []
+      "attributes": [],
+      "meta": null
     },
-    "mode":         "view",
-    "draftPath":    null,
-    "dirty":        false,
-    "pendingNav":   null
+    "mode": "view",
+    "pendingNav": null,
+    "selected": null,
+    "selectedPath": null
   },
   "params": {},
   "propConfig": {
+    "custom.selected": {
+      "onChange": {
+        "enabled": true,
+        "script": "\t# Tree\u0027s bidirectional writeback hands us BasicQualifiedValue\n\t# wrappers around the node\u0027s data dict + every nested field.\n\t# Deep-unwrap before passing Ids across module boundaries --\n\t# NQ param-binding rejects the wrappers with a ClassCastException.\n\tprev \u003d BlueRidge.Common.Util.extractQualifiedValues(previousValue.value) if previousValue else None\n\tcurr \u003d BlueRidge.Common.Util.extractQualifiedValues(currentValue.value) if currentValue else None\n\tprevId \u003d prev.get(\"id\") if prev else None\n\tcurrId \u003d curr.get(\"id\") if curr else None\n\tif currId is None or currId \u003d\u003d prevId:\n\t\treturn\n\tif self.view.custom.mode \u003d\u003d \"create\":\n\t\treturn\n\tloc \u003d BlueRidge.Location.Location.getOne(currId)\n\tif not loc:\n\t\tself.view.custom.editDraft \u003d {\"meta\": None, \"attributes\": []}\n\t\tself.view.custom.mode \u003d \"view\"\n\t\tself.view.custom.dirty \u003d False\n\t\treturn\n\tmeta \u003d BlueRidge.Location.Location.metaFromLocation(loc)\n\tattrs \u003d BlueRidge.Location.Location.buildAttributesForType(meta.get(\"locationTypeDefinitionId\"), meta.get(\"id\"))\n\tself.view.custom.editDraft \u003d {\"meta\": meta, \"attributes\": attrs}\n\tself.view.custom.mode \u003d \"update\"\n\tself.view.custom.dirty \u003d False\n\tself.view.custom.draftPath \u003d None"
+      }
+    },
     "custom.selectedPath": {
       "persistent": true
     },
@@ -23,961 +29,1366 @@
         },
         "type": "expr"
       }
-    },
-    "custom.selected": {
-      "onChange": {
-        "enabled": true,
-        "script": "\t# Tree's bidirectional writeback hands us BasicQualifiedValue\n\t# wrappers around the node's data dict + every nested field.\n\t# Deep-unwrap before passing Ids across module boundaries --\n\t# NQ param-binding rejects the wrappers with a ClassCastException.\n\tprev = BlueRidge.Common.Util.extractQualifiedValues(previousValue.value) if previousValue else None\n\tcurr = BlueRidge.Common.Util.extractQualifiedValues(currentValue.value) if currentValue else None\n\tprevId = prev.get(\"id\") if prev else None\n\tcurrId = curr.get(\"id\") if curr else None\n\tif currId is None or currId == prevId:\n\t\treturn\n\tif self.view.custom.mode == \"create\":\n\t\treturn\n\tloc = BlueRidge.Location.Location.getOne(currId)\n\tif not loc:\n\t\tself.view.custom.editDraft = {\"meta\": None, \"attributes\": []}\n\t\tself.view.custom.mode = \"view\"\n\t\tself.view.custom.dirty = False\n\t\treturn\n\tmeta = BlueRidge.Location.Location.metaFromLocation(loc)\n\tattrs = BlueRidge.Location.Location.buildAttributesForType(meta.get(\"locationTypeDefinitionId\"), meta.get(\"id\"))\n\tself.view.custom.editDraft = {\"meta\": meta, \"attributes\": attrs}\n\tself.view.custom.mode = \"update\"\n\tself.view.custom.dirty = False\n\tself.view.custom.draftPath = None"
-      }
     }
   },
   "props": {
     "defaultSize": {
       "height": 720,
-      "width":  1280
+      "width": 1280
     }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": { "name": "root" },
-    "props": {
-      "direction": "column",
-      "style":     { "classes": "screen-active" }
-    },
-    "scripts": {
-      "customMethods":      [],
-      "extensionFunctions": null,
-      "messageHandlers": [
-        {
-          "messageType":  "locAttrValueUpdate",
-          "pageScope":    true,
-          "sessionScope": false,
-          "viewScope":    false,
-          "script": "\tidx = payload.get(\"index\") if payload else None\n\tval = payload.get(\"value\") if payload else None\n\tif idx is None:\n\t\treturn\n\tdraft = self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\tattrs = list(draft.get(\"attributes\") or [])\n\tif idx < 0 or idx >= len(attrs):\n\t\treturn\n\trow = dict(attrs[idx])\n\trow[\"value\"] = val if val is not None else \"\"\n\tattrs[idx] = row\n\tself.view.custom.editDraft = {\"meta\": draft.get(\"meta\"), \"attributes\": attrs}\n\tself.view.custom.dirty = True"
-        },
-        {
-          "messageType":  "confirmUnsavedResult",
-          "pageScope":    true,
-          "sessionScope": false,
-          "viewScope":    false,
-          "script": "\taction = payload.get(\"action\") if payload else None\n\tpending = self.view.custom.pendingNav\n\tif action == \"save\":\n\t\tdraft = self.view.custom.editDraft or {}\n\t\tresult = BlueRidge.Location.Location.handleSaveAll(draft.get(\"meta\") or {}, draft.get(\"attributes\") or [])\n\t\tif not result:\n\t\t\treturn\n\t\tself.view.custom.tree = result[\"tree\"]\n\t\tself.view.custom.selectedPath = result[\"selectedPath\"]\n\t\tself.view.custom.selected = result[\"selected\"]\n\t\tself.view.custom.editDraft = result[\"editDraft\"]\n\t\tself.view.custom.mode = result[\"mode\"]\n\t\tself.view.custom.draftPath = None\n\t\tself.view.custom.dirty = False\n\t\tself.view.custom.pendingNav = None\n\telif action == \"discard\":\n\t\tself.view.custom.dirty = False\n\t\tself.view.custom.draftPath = None\n\t\tself.view.custom.pendingNav = None\n\t\tBlueRidge.Common.Notify.toast(\"Discarded\", \"Changes discarded.\", \"info\")"
-        }
-      ]
-    },
     "children": [
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "TitleRow" },
-        "position": { "shrink": 0 },
-        "props": {
-          "alignItems": "center",
-          "style": {
-            "background":    "var(--mpp-surface-raised)",
-            "borderBottom":  "1px solid var(--mpp-border-subtle)",
-            "classes":       "title-row",
-            "paddingBottom": "8px"
-          }
-        },
         "children": [
           {
-            "type": "ia.container.flex",
-            "meta": { "name": "TitleColumn" },
-            "props": {
-              "direction": "column",
-              "style":     { "gap": "2px" }
-            },
             "children": [
               {
-                "type": "ia.container.flex",
-                "meta": { "name": "Breadcrumb" },
-                "props": {
-                  "alignItems": "center",
-                  "style":      { "classes": "breadcrumb" }
-                },
                 "children": [
                   {
-                    "type": "ia.display.label",
-                    "meta": { "name": "BreadcrumbCategory" },
+                    "meta": {
+                      "name": "BreadcrumbCategory"
+                    },
                     "props": {
-                      "style": { "classes": "breadcrumb" },
-                      "text":  "Plant"
-                    }
+                      "style": {
+                        "classes": "breadcrumb"
+                      },
+                      "text": "Plant"
+                    },
+                    "type": "ia.display.label"
                   },
                   {
-                    "type": "ia.display.label",
-                    "meta": { "name": "BreadcrumbSep" },
+                    "meta": {
+                      "name": "BreadcrumbSep"
+                    },
                     "props": {
-                      "style": { "classes": "breadcrumb crumb-sep" },
-                      "text":  "›"
-                    }
+                      "style": {
+                        "classes": "breadcrumb crumb-sep"
+                      },
+                      "text": "›"
+                    },
+                    "type": "ia.display.label"
                   },
                   {
-                    "type": "ia.display.label",
-                    "meta": { "name": "BreadcrumbActive" },
+                    "meta": {
+                      "name": "BreadcrumbActive"
+                    },
                     "props": {
-                      "style": { "classes": "crumb-active" },
-                      "text":  "Plant Hierarchy"
-                    }
+                      "style": {
+                        "classes": "crumb-active"
+                      },
+                      "text": "Plant Hierarchy"
+                    },
+                    "type": "ia.display.label"
                   }
-                ]
+                ],
+                "meta": {
+                  "name": "Breadcrumb"
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "classes": "breadcrumb"
+                  }
+                },
+                "type": "ia.container.flex"
               },
               {
-                "type": "ia.display.label",
-                "meta": { "name": "Title" },
+                "meta": {
+                  "name": "Title"
+                },
                 "props": {
-                  "style": { "classes": "title-row-h1" },
-                  "text":  "Plant Hierarchy"
-                }
+                  "style": {
+                    "classes": "title-row-h1"
+                  },
+                  "text": "Plant Hierarchy"
+                },
+                "type": "ia.display.label"
               }
-            ]
+            ],
+            "meta": {
+              "name": "TitleColumn"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "2px"
+              }
+            },
+            "type": "ia.container.flex"
           },
           {
-            "type": "ia.container.flex",
-            "meta": { "name": "TitleRowSpacer" },
-            "position": { "grow": 1 }
+            "meta": {
+              "name": "TitleRowSpacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.container.flex"
           },
           {
-            "type": "ia.display.label",
-            "meta": { "name": "DirtyIndicator" },
-            "position": { "shrink": 0 },
+            "meta": {
+              "name": "DirtyIndicator"
+            },
+            "position": {
+              "shrink": 0
+            },
             "propConfig": {
               "props.text": {
                 "binding": {
-                  "type": "expr",
                   "config": {
                     "expression": "if({view.custom.dirty}, \"● Unsaved changes\", \"\")"
-                  }
+                  },
+                  "type": "expr"
                 }
               }
             },
             "props": {
               "style": {
-                "color":      "var(--mpp-state-warn-fg)",
-                "fontSize":   "12px",
+                "color": "var(--mpp-state-warn-fg)",
+                "fontSize": "12px",
                 "marginRight": "12px"
               }
-            }
+            },
+            "type": "ia.display.label"
           },
           {
-            "type": "ia.display.icon",
-            "meta": {
-              "name":    "LocationTypeEditorButton",
-              "tooltip": { "text": "Location Type Editor" }
-            },
-            "props": {
-              "path":  "material/settings",
-              "style": {
-                "cursor":      "pointer",
-                "height":      "18px",
-                "marginRight": "12px",
-                "width":       "18px"
-              }
-            },
             "events": {
               "dom": {
                 "onClick": {
-                  "type":   "script",
-                  "scope":  "G",
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\n\t\tid=\"mpp-loc-type-editor\",\n\t\tview=\"BlueRidge/Components/Popups/LocationTypeEditor\",\n\t\tmodal=True,\n\t\tdraggable=False,\n\t\tshowCloseIcon=False,\n\t\tresizable=False,\n\t\toverlayDismiss=False,\n\t\tviewportBound=True\n\t)"
-                  }
+                    "script": "\tsystem.perspective.openPopup(\n\t\tid\u003d\"mpp-loc-type-editor\",\n\t\tview\u003d\"BlueRidge/Components/Popups/LocationTypeEditor\",\n\t\tmodal\u003dTrue,\n\t\tdraggable\u003dFalse,\n\t\tshowCloseIcon\u003dFalse,\n\t\tresizable\u003dFalse,\n\t\toverlayDismiss\u003dFalse,\n\t\tviewportBound\u003dTrue\n\t)"
+                  },
+                  "scope": "G",
+                  "type": "script"
                 }
               }
-            }
-          }
-        ]
-      },
-      {
-        "type": "ia.container.flex",
-        "meta": { "name": "MainSplit" },
-        "position": { "grow": 1 },
-        "props": {
-          "style": {
-            "borderTop": "1px solid var(--mpp-border-subtle)",
-            "overflow":  "hidden"
-          }
-        },
-        "children": [
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "TreePanel" },
-            "position": { "basis": "240px", "shrink": 0 },
-            "props": {
-              "direction": "column",
-              "style": {
-                "classes":  "tree-panel",
-                "minWidth": "240px",
-                "width":    "240px"
+            },
+            "meta": {
+              "name": "LocationTypeEditorButton",
+              "tooltip": {
+                "text": "Location Type Editor"
               }
             },
+            "props": {
+              "path": "material/settings",
+              "style": {
+                "cursor": "pointer",
+                "height": "18px",
+                "marginRight": "12px",
+                "width": "18px"
+              }
+            },
+            "type": "ia.display.icon"
+          }
+        ],
+        "meta": {
+          "name": "TitleRow"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "classes": "title-row",
+            "paddingBottom": "8px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
             "children": [
               {
-                "type": "ia.container.flex",
-                "meta": { "name": "TreeHeader" },
+                "children": [
+                  {
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "config": {
+                            "script": "\tsel \u003d self.view.custom.selected\n\tif not sel or sel.get(\"id\") is None:\n\t\tBlueRidge.Common.Notify.toast(\"Pick a parent\", \"Select a Location in the tree first.\", \"warning\")\n\t\treturn\n\tparentId \u003d sel.get(\"id\")\n\tparentLevel \u003d sel.get(\"hierarchyLevel\")\n\tcurrentTree \u003d self.view.custom.tree\n\tinit \u003d BlueRidge.Location.Location.beginCreate(parentId, parentLevel, currentTree)\n\tif not init:\n\t\treturn\n\tself.view.custom.tree \u003d init[\"tree\"]\n\tself.view.custom.draftPath \u003d init[\"draftPath\"]\n\tself.view.custom.selectedPath \u003d init[\"draftPath\"]\n\tself.view.custom.selected \u003d {\"id\": None, \"name\": \"(new Location)\", \"hierarchyLevel\": parentLevel}\n\tself.view.custom.editDraft \u003d {\"meta\": init[\"meta\"], \"attributes\": []}\n\tself.view.custom.mode \u003d \"create\"\n\tself.view.custom.dirty \u003d True"
+                          },
+                          "scope": "G",
+                          "type": "script"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "name": "AddLocationButton"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "btn btn-primary",
+                        "width": "100%"
+                      },
+                      "text": "+ Add Location"
+                    },
+                    "type": "ia.input.button"
+                  },
+                  {
+                    "meta": {
+                      "name": "TreeSearchInput"
+                    },
+                    "props": {
+                      "placeholder": "Search locations…",
+                      "style": {
+                        "classes": "search-input",
+                        "width": "100%"
+                      }
+                    },
+                    "type": "ia.input.text-field"
+                  }
+                ],
+                "meta": {
+                  "name": "TreeHeader"
+                },
                 "props": {
                   "direction": "column",
                   "style": {
                     "borderBottom": "1px solid var(--mpp-border-subtle)",
-                    "gap":          "8px",
-                    "padding":      "8px 10px"
+                    "gap": "8px",
+                    "padding": "8px 10px"
                   }
                 },
-                "children": [
-                  {
-                    "type": "ia.input.button",
-                    "meta": { "name": "AddLocationButton" },
-                    "props": {
-                      "style": { "classes": "btn btn-primary", "width": "100%" },
-                      "text":  "+ Add Location"
-                    },
-                    "events": {
-                      "component": {
-                        "onActionPerformed": {
-                          "type":   "script",
-                          "scope":  "G",
-                          "config": {
-                            "script": "\tsel = self.view.custom.selected\n\tif not sel or sel.get(\"id\") is None:\n\t\tBlueRidge.Common.Notify.toast(\"Pick a parent\", \"Select a Location in the tree first.\", \"warning\")\n\t\treturn\n\tparentId = sel.get(\"id\")\n\tparentLevel = sel.get(\"hierarchyLevel\")\n\tcurrentTree = self.view.custom.tree\n\tinit = BlueRidge.Location.Location.beginCreate(parentId, parentLevel, currentTree)\n\tif not init:\n\t\treturn\n\tself.view.custom.tree = init[\"tree\"]\n\tself.view.custom.draftPath = init[\"draftPath\"]\n\tself.view.custom.selectedPath = init[\"draftPath\"]\n\tself.view.custom.selected = {\"id\": None, \"name\": \"(new Location)\", \"hierarchyLevel\": parentLevel}\n\tself.view.custom.editDraft = {\"meta\": init[\"meta\"], \"attributes\": []}\n\tself.view.custom.mode = \"create\"\n\tself.view.custom.dirty = True"
-                          }
-                        }
-                      }
-                    }
-                  },
-                  {
-                    "type": "ia.input.text-field",
-                    "meta": { "name": "TreeSearchInput" },
-                    "props": {
-                      "placeholder": "Search locations…",
-                      "style":       { "classes": "search-input", "width": "100%" }
-                    }
-                  }
-                ]
+                "type": "ia.container.flex"
               },
               {
-                "type": "ia.display.tree",
-                "meta": { "name": "Tree" },
-                "position": { "grow": 1 },
+                "meta": {
+                  "name": "Tree"
+                },
+                "position": {
+                  "grow": 1
+                },
                 "propConfig": {
                   "props.items": {
                     "binding": {
-                      "type":   "property",
-                      "config": { "path": "view.custom.tree" }
+                      "config": {
+                        "path": "view.custom.tree"
+                      },
+                      "type": "property"
                     }
                   },
                   "props.selectionData[0].value": {
                     "binding": {
-                      "type":   "property",
-                      "config": { "bidirectional": true, "path": "view.custom.selected" }
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.selected"
+                      },
+                      "type": "property"
                     }
                   },
                   "props.selection[0]": {
                     "binding": {
-                      "type":   "property",
-                      "config": { "bidirectional": true, "path": "view.custom.selectedPath" }
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.selectedPath"
+                      },
+                      "type": "property"
                     }
                   }
                 },
                 "props": {
                   "appearance": {
                     "defaultNodeIcons": {
-                      "collapsed": { "path": "material/account_tree" },
-                      "empty":     { "path": "material/inventory" },
-                      "expanded":  { "path": "material/account_tree" }
+                      "collapsed": {
+                        "path": "material/account_tree"
+                      },
+                      "empty": {
+                        "path": "material/inventory"
+                      },
+                      "expanded": {
+                        "path": "material/account_tree"
+                      }
                     },
                     "expandIcons": {
-                      "collapsed": { "path": "material/chevron_right" },
-                      "expanded":  { "path": "material/expand_more" }
+                      "collapsed": {
+                        "path": "material/chevron_right"
+                      },
+                      "expanded": {
+                        "path": "material/expand_more"
+                      }
                     }
                   },
-                  "selection":     [ null ],
-                  "selectionData": [ { "itemPath": null } ]
-                }
+                  "selection": [
+                    null
+                  ],
+                  "selectionData": [
+                    {
+                      "itemPath": null
+                    }
+                  ]
+                },
+                "type": "ia.display.tree"
               }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "DetailArea" },
-            "position": { "grow": 1 },
+            ],
+            "meta": {
+              "name": "TreePanel"
+            },
+            "position": {
+              "basis": "300px",
+              "shrink": 0
+            },
             "props": {
               "direction": "column",
               "style": {
-                "background": "var(--mpp-surface-canvas)",
-                "gap":        "10px",
-                "overflowX":  "hidden",
-                "overflowY":  "auto",
-                "padding":    "12px"
+                "classes": "tree-panel",
+                "minWidth": "240px",
+                "width": "240px"
               }
             },
+            "type": "ia.container.flex"
+          },
+          {
             "children": [
               {
-                "type": "ia.container.flex",
-                "meta": { "name": "LocationDetailsPanel" },
-                "propConfig": {
-                  "position.display": {
-                    "binding": {
-                      "type":   "expr",
-                      "config": { "expression": "{view.custom.mode} != \"view\"" }
-                    }
-                  }
-                },
-                "props": {
-                  "direction": "column",
-                  "style":     { "classes": "detail-panel", "padding": "0" }
-                },
                 "children": [
                   {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "Header" },
-                    "props": {
-                      "alignItems": "center",
-                      "style":      { "classes": "detail-header", "gap": "12px" }
-                    },
                     "children": [
                       {
-                        "type": "ia.display.label",
-                        "meta": { "name": "Title" },
+                        "meta": {
+                          "name": "Title"
+                        },
                         "props": {
-                          "style": { "classes": "detail-header-h2" },
-                          "text":  "Location Details"
-                        }
+                          "style": {
+                            "classes": "detail-header-h2"
+                          },
+                          "text": "Location Details"
+                        },
+                        "type": "ia.display.label"
                       },
                       {
-                        "type": "ia.display.label",
-                        "meta": { "name": "TypeBadge" },
+                        "meta": {
+                          "name": "TypeBadge"
+                        },
                         "propConfig": {
                           "props.text": {
                             "binding": {
-                              "type":   "expr",
                               "config": {
-                                "expression": "if({view.custom.mode} = \"create\", \"NEW LOCATION\", coalesce({view.custom.selected.typeName}, \"\") + \" • \" + replace(coalesce({view.custom.selected.definitionName}, \"\"), \" \", \"\"))"
-                              }
+                                "expression": "if({view.custom.mode} \u003d \"create\", \"NEW LOCATION\", coalesce({view.custom.selected.typeName}, \"\") + \" • \" + replace(coalesce({view.custom.selected.definitionName}, \"\"), \" \", \"\"))"
+                              },
+                              "type": "expr"
                             }
                           }
                         },
                         "props": {
-                          "style": { "classes": "badge badge-type" }
-                        }
+                          "style": {
+                            "classes": "badge badge-type"
+                          }
+                        },
+                        "type": "ia.display.label"
                       },
                       {
-                        "type":     "ia.display.label",
-                        "meta":     { "name": "HeaderSpacer" },
-                        "position": { "grow": 1 }
+                        "meta": {
+                          "name": "HeaderSpacer"
+                        },
+                        "position": {
+                          "grow": 1
+                        },
+                        "type": "ia.display.label"
                       },
                       {
-                        "type": "ia.input.button",
-                        "meta": { "name": "CancelButton" },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tif self.view.custom.mode \u003d\u003d \"create\":\n\t\t# Discard the draft entirely; rebuild tree from DB\n\t\tself.view.custom.tree \u003d BlueRidge.Location.Tree.buildTree(1, 2, \"mpp/factory\")\n\t\tself.view.custom.selected \u003d None\n\t\tself.view.custom.selectedPath \u003d None\n\t\tself.view.custom.editDraft \u003d {\"meta\": None, \"attributes\": []}\n\t\tself.view.custom.mode \u003d \"view\"\n\t\tself.view.custom.draftPath \u003d None\n\t\tself.view.custom.dirty \u003d False\n\telse:\n\t\t# Revert editDraft from selected\n\t\tsel \u003d self.view.custom.selected\n\t\tif sel and sel.get(\"id\") is not None:\n\t\t\tmeta \u003d BlueRidge.Location.Location.metaFromLocation(BlueRidge.Location.Location.getOne(sel.get(\"id\")))\n\t\t\tattrs \u003d BlueRidge.Location.Location.buildAttributesForType(meta.get(\"locationTypeDefinitionId\"), meta.get(\"id\"))\n\t\t\tself.view.custom.editDraft \u003d {\"meta\": meta, \"attributes\": attrs}\n\t\tself.view.custom.dirty \u003d False"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "CancelButton"
+                        },
                         "propConfig": {
                           "position.display": {
                             "binding": {
-                              "type":   "expr",
-                              "config": { "expression": "{view.custom.dirty}" }
+                              "config": {
+                                "expression": "{view.custom.dirty}"
+                              },
+                              "type": "expr"
                             }
                           }
                         },
                         "props": {
-                          "style": { "classes": "btn btn-sm" },
-                          "text":  "Cancel"
+                          "style": {
+                            "classes": "btn btn-sm"
+                          },
+                          "text": "Cancel"
                         },
+                        "type": "ia.input.button"
+                      },
+                      {
                         "events": {
                           "component": {
                             "onActionPerformed": {
-                              "type":   "script",
-                              "scope":  "G",
                               "config": {
-                                "script": "\tif self.view.custom.mode == \"create\":\n\t\t# Discard the draft entirely; rebuild tree from DB\n\t\tself.view.custom.tree = BlueRidge.Location.Tree.buildTree(1, 2, \"mpp/factory\")\n\t\tself.view.custom.selected = None\n\t\tself.view.custom.selectedPath = None\n\t\tself.view.custom.editDraft = {\"meta\": None, \"attributes\": []}\n\t\tself.view.custom.mode = \"view\"\n\t\tself.view.custom.draftPath = None\n\t\tself.view.custom.dirty = False\n\telse:\n\t\t# Revert editDraft from selected\n\t\tsel = self.view.custom.selected\n\t\tif sel and sel.get(\"id\") is not None:\n\t\t\tmeta = BlueRidge.Location.Location.metaFromLocation(BlueRidge.Location.Location.getOne(sel.get(\"id\")))\n\t\t\tattrs = BlueRidge.Location.Location.buildAttributesForType(meta.get(\"locationTypeDefinitionId\"), meta.get(\"id\"))\n\t\t\tself.view.custom.editDraft = {\"meta\": meta, \"attributes\": attrs}\n\t\tself.view.custom.dirty = False"
-                              }
+                                "script": "\tdraft \u003d self.view.custom.editDraft or {}\n\tresult \u003d BlueRidge.Location.Location.handleSaveAll(draft.get(\"meta\") or {}, draft.get(\"attributes\") or [])\n\tif not result:\n\t\treturn\n\tself.view.custom.tree \u003d result[\"tree\"]\n\tself.view.custom.selectedPath \u003d result[\"selectedPath\"]\n\tself.view.custom.selected \u003d result[\"selected\"]\n\tself.view.custom.editDraft \u003d result[\"editDraft\"]\n\tself.view.custom.mode \u003d result[\"mode\"]\n\tself.view.custom.draftPath \u003d None\n\tself.view.custom.dirty \u003d False"
+                              },
+                              "scope": "G",
+                              "type": "script"
                             }
                           }
-                        }
-                      },
-                      {
-                        "type": "ia.input.button",
-                        "meta": { "name": "SaveButton" },
+                        },
+                        "meta": {
+                          "name": "SaveButton"
+                        },
                         "props": {
-                          "style": { "classes": "btn btn-primary btn-sm" },
-                          "text":  "Save"
+                          "style": {
+                            "classes": "btn btn-primary btn-sm"
+                          },
+                          "text": "Save"
                         },
+                        "type": "ia.input.button"
+                      },
+                      {
                         "events": {
                           "component": {
                             "onActionPerformed": {
-                              "type":   "script",
-                              "scope":  "G",
                               "config": {
-                                "script": "\tdraft = self.view.custom.editDraft or {}\n\tresult = BlueRidge.Location.Location.handleSaveAll(draft.get(\"meta\") or {}, draft.get(\"attributes\") or [])\n\tif not result:\n\t\treturn\n\tself.view.custom.tree = result[\"tree\"]\n\tself.view.custom.selectedPath = result[\"selectedPath\"]\n\tself.view.custom.selected = result[\"selected\"]\n\tself.view.custom.editDraft = result[\"editDraft\"]\n\tself.view.custom.mode = result[\"mode\"]\n\tself.view.custom.draftPath = None\n\tself.view.custom.dirty = False"
-                              }
+                                "script": "\tsel \u003d self.view.custom.selected or {}\n\tlocId \u003d sel.get(\"id\")\n\tif locId is None:\n\t\treturn\n\tresult \u003d BlueRidge.Location.Location.handleDeprecate(locId)\n\tif not result:\n\t\treturn\n\t# Order matters: clear the old selection state before swapping items.\n\t# Tree component caches its selected path internally; if the new items\n\t# arrive first, that cached path no longer resolves -- Component Error.\n\tself.view.custom.selected \u003d None\n\tself.view.custom.selectedPath \u003d None\n\tself.view.custom.editDraft \u003d {\"meta\": None, \"attributes\": []}\n\tself.view.custom.mode \u003d \"view\"\n\tself.view.custom.dirty \u003d False\n\tself.view.custom.draftPath \u003d None\n\t# Apply the refreshed tree (handleDeprecate re-anchors on the parent\n\t# of the deprecated row).\n\tself.view.custom.tree \u003d result[\"tree\"]\n\t# Now land selection on the parent so the operator keeps context.\n\tnewParent \u003d result.get(\"selected\")\n\tif newParent and newParent.get(\"id\") is not None:\n\t\tself.view.custom.selectedPath \u003d result.get(\"selectedPath\")\n\t\tself.view.custom.selected \u003d newParent\n\t\tloc \u003d BlueRidge.Location.Location.getOne(newParent.get(\"id\"))\n\t\tif loc:\n\t\t\tmeta \u003d BlueRidge.Location.Location.metaFromLocation(loc)\n\t\t\tattrs \u003d BlueRidge.Location.Location.buildAttributesForType(meta.get(\"locationTypeDefinitionId\"), meta.get(\"id\"))\n\t\t\tself.view.custom.editDraft \u003d {\"meta\": meta, \"attributes\": attrs}\n\t\t\tself.view.custom.mode \u003d \"update\""
+                              },
+                              "scope": "G",
+                              "type": "script"
                             }
                           }
-                        }
-                      },
-                      {
-                        "type": "ia.input.button",
-                        "meta": { "name": "DeprecateButton" },
+                        },
+                        "meta": {
+                          "name": "DeprecateButton"
+                        },
                         "propConfig": {
                           "position.display": {
                             "binding": {
-                              "type":   "expr",
-                              "config": { "expression": "{view.custom.mode} = \"update\"" }
+                              "config": {
+                                "expression": "{view.custom.mode} \u003d \"update\""
+                              },
+                              "type": "expr"
                             }
                           }
                         },
                         "props": {
-                          "style": { "classes": "btn btn-danger btn-sm" },
-                          "text":  "Deprecate"
+                          "style": {
+                            "classes": "btn btn-danger btn-sm"
+                          },
+                          "text": "Deprecate"
                         },
-                        "events": {
-                          "component": {
-                            "onActionPerformed": {
-                              "type":   "script",
-                              "scope":  "G",
-                              "config": {
-                                "script": "\tsel = self.view.custom.selected or {}\n\tlocId = sel.get(\"id\")\n\tif locId is None:\n\t\treturn\n\tresult = BlueRidge.Location.Location.handleDeprecate(locId)\n\tif not result:\n\t\treturn\n\t# Order matters: clear the old selection state before swapping items.\n\t# Tree component caches its selected path internally; if the new items\n\t# arrive first, that cached path no longer resolves -- Component Error.\n\tself.view.custom.selected = None\n\tself.view.custom.selectedPath = None\n\tself.view.custom.editDraft = {\"meta\": None, \"attributes\": []}\n\tself.view.custom.mode = \"view\"\n\tself.view.custom.dirty = False\n\tself.view.custom.draftPath = None\n\t# Apply the refreshed tree (handleDeprecate re-anchors on the parent\n\t# of the deprecated row).\n\tself.view.custom.tree = result[\"tree\"]\n\t# Now land selection on the parent so the operator keeps context.\n\tnewParent = result.get(\"selected\")\n\tif newParent and newParent.get(\"id\") is not None:\n\t\tself.view.custom.selectedPath = result.get(\"selectedPath\")\n\t\tself.view.custom.selected = newParent\n\t\tloc = BlueRidge.Location.Location.getOne(newParent.get(\"id\"))\n\t\tif loc:\n\t\t\tmeta = BlueRidge.Location.Location.metaFromLocation(loc)\n\t\t\tattrs = BlueRidge.Location.Location.buildAttributesForType(meta.get(\"locationTypeDefinitionId\"), meta.get(\"id\"))\n\t\t\tself.view.custom.editDraft = {\"meta\": meta, \"attributes\": attrs}\n\t\t\tself.view.custom.mode = \"update\""
-                              }
-                            }
-                          }
-                        }
+                        "type": "ia.input.button"
                       }
-                    ]
+                    ],
+                    "meta": {
+                      "name": "Header"
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "style": {
+                        "classes": "detail-header",
+                        "gap": "12px"
+                      }
+                    },
+                    "type": "ia.container.flex"
                   },
                   {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "Body" },
-                    "props": {
-                      "direction": "column",
-                      "style":     { "classes": "detail-body", "gap": "10px" }
-                    },
                     "children": [
                       {
-                        "type": "ia.container.flex",
-                        "meta": { "name": "TypeRow" },
-                        "propConfig": {
-                          "position.display": {
-                            "binding": {
-                              "type":   "expr",
-                              "config": { "expression": "{view.custom.mode} = \"create\"" }
-                            }
-                          }
-                        },
-                        "props": {
-                          "style": { "classes": "field-row", "gap": "12px" }
-                        },
                         "children": [
                           {
-                            "type": "ia.container.flex",
-                            "meta": { "name": "TypeField" },
-                            "position": { "basis": "0", "grow": 1 },
-                            "props": {
-                              "direction": "column",
-                              "style":     { "classes": "field", "minWidth": "0" }
-                            },
                             "children": [
                               {
-                                "type":  "ia.display.label",
-                                "meta":  { "name": "Label" },
-                                "props": { "style": { "classes": "field-label" }, "text": "Type *" }
+                                "meta": {
+                                  "name": "Label"
+                                },
+                                "props": {
+                                  "style": {
+                                    "classes": "field-label"
+                                  },
+                                  "text": "Type *"
+                                },
+                                "type": "ia.display.label"
                               },
                               {
-                                "type": "ia.input.dropdown",
-                                "meta": { "name": "TypeDropdown" },
+                                "events": {
+                                  "component": {
+                                    "onActionPerformed": {
+                                      "config": {
+                                        "script": "\t# Reset locationTypeDefinitionId when Type changes\n\tdraft \u003d self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\tmeta \u003d dict(draft.get(\"meta\") or {})\n\tmeta[\"locationTypeDefinitionId\"] \u003d None\n\tself.view.custom.editDraft \u003d {\"meta\": meta, \"attributes\": []}\n\tself.view.custom.dirty \u003d True\n\t# Stash the selected Type Id in a transient view custom so DefinitionDropdown can read it.\n\tself.view.custom.draftTypeId \u003d event.newValue if hasattr(event, \"newValue\") else self.props.value"
+                                      },
+                                      "scope": "G",
+                                      "type": "script"
+                                    }
+                                  }
+                                },
+                                "meta": {
+                                  "name": "TypeDropdown"
+                                },
                                 "propConfig": {
                                   "props.options": {
                                     "binding": {
-                                      "type":   "expr",
                                       "config": {
                                         "expression": "runScript(\"BlueRidge.Location.Location.eligibleTypes\", 0, {view.custom.selected.hierarchyLevel})"
                                       },
                                       "transforms": [
                                         {
-                                          "type": "script",
-                                          "code": "\treturn [{\"label\": t.get(\"Name\"), \"value\": t.get(\"Id\")} for t in (value or [])]"
+                                          "code": "\treturn [{\"label\": t.get(\"Name\"), \"value\": t.get(\"Id\")} for t in (value or [])]",
+                                          "type": "script"
                                         }
-                                      ]
+                                      ],
+                                      "type": "expr"
                                     }
                                   }
                                 },
                                 "props": {
                                   "placeholder": "Select…"
                                 },
+                                "type": "ia.input.dropdown"
+                              }
+                            ],
+                            "meta": {
+                              "name": "TypeField"
+                            },
+                            "position": {
+                              "basis": "0",
+                              "grow": 1
+                            },
+                            "props": {
+                              "direction": "column",
+                              "style": {
+                                "classes": "field",
+                                "minWidth": "0"
+                              }
+                            },
+                            "type": "ia.container.flex"
+                          },
+                          {
+                            "children": [
+                              {
+                                "meta": {
+                                  "name": "Label"
+                                },
+                                "props": {
+                                  "style": {
+                                    "classes": "field-label"
+                                  },
+                                  "text": "Definition *"
+                                },
+                                "type": "ia.display.label"
+                              },
+                              {
                                 "events": {
                                   "component": {
                                     "onActionPerformed": {
-                                      "type":   "script",
-                                      "scope":  "G",
                                       "config": {
-                                        "script": "\t# Reset locationTypeDefinitionId when Type changes\n\tdraft = self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\tmeta = dict(draft.get(\"meta\") or {})\n\tmeta[\"locationTypeDefinitionId\"] = None\n\tself.view.custom.editDraft = {\"meta\": meta, \"attributes\": []}\n\tself.view.custom.dirty = True\n\t# Stash the selected Type Id in a transient view custom so DefinitionDropdown can read it.\n\tself.view.custom.draftTypeId = event.newValue if hasattr(event, \"newValue\") else self.props.value"
-                                      }
+                                        "script": "\tdraft \u003d self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\tmeta \u003d draft.get(\"meta\") or {}\n\tdefId \u003d meta.get(\"locationTypeDefinitionId\")\n\tif defId is None:\n\t\tself.view.custom.editDraft \u003d {\"meta\": meta, \"attributes\": []}\n\t\treturn\n\tattrs \u003d BlueRidge.Location.Location.buildAttributesForType(defId, None)\n\tself.view.custom.editDraft \u003d {\"meta\": meta, \"attributes\": attrs}\n\tself.view.custom.dirty \u003d True"
+                                      },
+                                      "scope": "G",
+                                      "type": "script"
                                     }
                                   }
-                                }
-                              }
-                            ]
-                          },
-                          {
-                            "type": "ia.container.flex",
-                            "meta": { "name": "DefinitionField" },
-                            "position": { "basis": "0", "grow": 1 },
-                            "props": {
-                              "direction": "column",
-                              "style":     { "classes": "field", "minWidth": "0" }
-                            },
-                            "children": [
-                              {
-                                "type":  "ia.display.label",
-                                "meta":  { "name": "Label" },
-                                "props": { "style": { "classes": "field-label" }, "text": "Definition *" }
-                              },
-                              {
-                                "type": "ia.input.dropdown",
-                                "meta": { "name": "DefinitionDropdown" },
+                                },
+                                "meta": {
+                                  "name": "DefinitionDropdown"
+                                },
                                 "propConfig": {
                                   "props.options": {
                                     "binding": {
-                                      "type":   "expr",
                                       "config": {
                                         "expression": "runScript(\"BlueRidge.Location.Location.eligibleDefinitions\", 0, {view.custom.draftTypeId})"
                                       },
                                       "transforms": [
                                         {
-                                          "type": "script",
-                                          "code": "\treturn [{\"label\": d.get(\"Name\"), \"value\": d.get(\"Id\")} for d in (value or [])]"
+                                          "code": "\treturn [{\"label\": d.get(\"Name\"), \"value\": d.get(\"Id\")} for d in (value or [])]",
+                                          "type": "script"
                                         }
-                                      ]
+                                      ],
+                                      "type": "expr"
                                     }
                                   },
                                   "props.value": {
                                     "binding": {
-                                      "type":   "property",
-                                      "config": { "bidirectional": true, "path": "view.custom.editDraft.meta.locationTypeDefinitionId" }
+                                      "config": {
+                                        "bidirectional": true,
+                                        "path": "view.custom.editDraft.meta.locationTypeDefinitionId"
+                                      },
+                                      "type": "property"
                                     }
                                   }
                                 },
                                 "props": {
                                   "placeholder": "Select…"
                                 },
+                                "type": "ia.input.dropdown"
+                              }
+                            ],
+                            "meta": {
+                              "name": "DefinitionField"
+                            },
+                            "position": {
+                              "basis": "0",
+                              "grow": 1
+                            },
+                            "props": {
+                              "direction": "column",
+                              "style": {
+                                "classes": "field",
+                                "minWidth": "0"
+                              }
+                            },
+                            "type": "ia.container.flex"
+                          }
+                        ],
+                        "meta": {
+                          "name": "TypeRow"
+                        },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "config": {
+                                "expression": "{view.custom.mode} \u003d \"create\""
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "field-row",
+                            "gap": "12px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "meta": {
+                                  "name": "Label"
+                                },
+                                "props": {
+                                  "style": {
+                                    "classes": "field-label"
+                                  },
+                                  "text": "Name"
+                                },
+                                "type": "ia.display.label"
+                              },
+                              {
                                 "events": {
-                                  "component": {
-                                    "onActionPerformed": {
-                                      "type":   "script",
-                                      "scope":  "G",
+                                  "dom": {
+                                    "onBlur": {
                                       "config": {
-                                        "script": "\tdraft = self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\tmeta = draft.get(\"meta\") or {}\n\tdefId = meta.get(\"locationTypeDefinitionId\")\n\tif defId is None:\n\t\tself.view.custom.editDraft = {\"meta\": meta, \"attributes\": []}\n\t\treturn\n\tattrs = BlueRidge.Location.Location.buildAttributesForType(defId, None)\n\tself.view.custom.editDraft = {\"meta\": meta, \"attributes\": attrs}\n\tself.view.custom.dirty = True"
-                                      }
-                                    }
-                                  }
-                                }
-                              }
-                            ]
-                          }
-                        ]
-                      },
-                      {
-                        "type": "ia.container.flex",
-                        "meta": { "name": "FieldRow1" },
-                        "props": { "style": { "classes": "field-row", "gap": "12px" } },
-                        "children": [
-                          {
-                            "type": "ia.container.flex",
-                            "meta": { "name": "NameField" },
-                            "position": { "basis": "0", "grow": 1 },
-                            "props": {
-                              "direction": "column",
-                              "style":     { "classes": "field", "minWidth": "0" }
-                            },
-                            "children": [
-                              {
-                                "type":  "ia.display.label",
-                                "meta":  { "name": "Label" },
-                                "props": { "style": { "classes": "field-label" }, "text": "Name" }
-                              },
-                              {
-                                "type": "ia.input.text-field",
-                                "meta": { "name": "Input" },
-                                "propConfig": {
-                                  "props.text": {
-                                    "binding": {
-                                      "type":   "property",
-                                      "config": { "bidirectional": true, "path": "view.custom.editDraft.meta.name" }
+                                        "script": "\tself.view.custom.dirty \u003d True"
+                                      },
+                                      "scope": "G",
+                                      "type": "script"
                                     }
                                   }
                                 },
-                                "events": {
-                                  "dom": {
-                                    "onBlur": {
-                                      "type":   "script",
-                                      "scope":  "G",
-                                      "config": { "script": "\tself.view.custom.dirty = True" }
+                                "meta": {
+                                  "name": "Input"
+                                },
+                                "propConfig": {
+                                  "props.text": {
+                                    "binding": {
+                                      "config": {
+                                        "bidirectional": true,
+                                        "path": "view.custom.editDraft.meta.name"
+                                      },
+                                      "type": "property"
                                     }
                                   }
                                 },
                                 "props": {
-                                  "style": { "boxSizing": "border-box", "classes": "search-input", "width": "100%" }
-                                }
+                                  "style": {
+                                    "boxSizing": "border-box",
+                                    "classes": "search-input",
+                                    "width": "100%"
+                                  }
+                                },
+                                "type": "ia.input.text-field"
                               }
-                            ]
+                            ],
+                            "meta": {
+                              "name": "NameField"
+                            },
+                            "position": {
+                              "basis": "0",
+                              "grow": 1
+                            },
+                            "props": {
+                              "direction": "column",
+                              "style": {
+                                "classes": "field",
+                                "minWidth": "0"
+                              }
+                            },
+                            "type": "ia.container.flex"
                           },
                           {
-                            "type": "ia.container.flex",
-                            "meta": { "name": "CodeField" },
-                            "position": { "basis": "0", "grow": 1 },
-                            "props": {
-                              "direction": "column",
-                              "style":     { "classes": "field", "minWidth": "0" }
-                            },
                             "children": [
                               {
-                                "type":  "ia.display.label",
-                                "meta":  { "name": "Label" },
-                                "props": { "style": { "classes": "field-label" }, "text": "Code" }
+                                "meta": {
+                                  "name": "Label"
+                                },
+                                "props": {
+                                  "style": {
+                                    "classes": "field-label"
+                                  },
+                                  "text": "Code"
+                                },
+                                "type": "ia.display.label"
                               },
                               {
-                                "type": "ia.input.text-field",
-                                "meta": { "name": "Input" },
-                                "propConfig": {
-                                  "props.text": {
-                                    "binding": {
-                                      "type":   "property",
-                                      "config": { "bidirectional": true, "path": "view.custom.editDraft.meta.code" }
-                                    }
-                                  }
-                                },
                                 "events": {
                                   "dom": {
                                     "onBlur": {
-                                      "type":   "script",
-                                      "scope":  "G",
-                                      "config": { "script": "\tself.view.custom.dirty = True" }
+                                      "config": {
+                                        "script": "\tself.view.custom.dirty \u003d True"
+                                      },
+                                      "scope": "G",
+                                      "type": "script"
+                                    }
+                                  }
+                                },
+                                "meta": {
+                                  "name": "Input"
+                                },
+                                "propConfig": {
+                                  "props.text": {
+                                    "binding": {
+                                      "config": {
+                                        "bidirectional": true,
+                                        "path": "view.custom.editDraft.meta.code"
+                                      },
+                                      "type": "property"
                                     }
                                   }
                                 },
                                 "props": {
-                                  "style": { "boxSizing": "border-box", "classes": "search-input", "width": "100%" }
-                                }
+                                  "style": {
+                                    "boxSizing": "border-box",
+                                    "classes": "search-input",
+                                    "width": "100%"
+                                  }
+                                },
+                                "type": "ia.input.text-field"
                               }
-                            ]
+                            ],
+                            "meta": {
+                              "name": "CodeField"
+                            },
+                            "position": {
+                              "basis": "0",
+                              "grow": 1
+                            },
+                            "props": {
+                              "direction": "column",
+                              "style": {
+                                "classes": "field",
+                                "minWidth": "0"
+                              }
+                            },
+                            "type": "ia.container.flex"
                           }
-                        ]
+                        ],
+                        "meta": {
+                          "name": "FieldRow1"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "field-row",
+                            "gap": "12px"
+                          }
+                        },
+                        "type": "ia.container.flex"
                       },
                       {
-                        "type": "ia.container.flex",
-                        "meta": { "name": "FieldRow2" },
-                        "props": { "style": { "classes": "field-row", "gap": "12px" } },
                         "children": [
                           {
-                            "type": "ia.container.flex",
-                            "meta": { "name": "DescriptionField" },
-                            "position": { "basis": "0", "grow": 1 },
-                            "props": {
-                              "direction": "column",
-                              "style":     { "classes": "field", "minWidth": "0" }
-                            },
                             "children": [
                               {
-                                "type":  "ia.display.label",
-                                "meta":  { "name": "Label" },
-                                "props": { "style": { "classes": "field-label" }, "text": "Description" }
+                                "meta": {
+                                  "name": "Label"
+                                },
+                                "props": {
+                                  "style": {
+                                    "classes": "field-label"
+                                  },
+                                  "text": "Description"
+                                },
+                                "type": "ia.display.label"
                               },
                               {
-                                "type": "ia.input.text-field",
-                                "meta": { "name": "Input" },
-                                "propConfig": {
-                                  "props.text": {
-                                    "binding": {
-                                      "type":   "property",
-                                      "config": { "bidirectional": true, "path": "view.custom.editDraft.meta.description" }
-                                    }
-                                  }
-                                },
                                 "events": {
                                   "dom": {
                                     "onBlur": {
-                                      "type":   "script",
-                                      "scope":  "G",
-                                      "config": { "script": "\tself.view.custom.dirty = True" }
+                                      "config": {
+                                        "script": "\tself.view.custom.dirty \u003d True"
+                                      },
+                                      "scope": "G",
+                                      "type": "script"
+                                    }
+                                  }
+                                },
+                                "meta": {
+                                  "name": "Input"
+                                },
+                                "propConfig": {
+                                  "props.text": {
+                                    "binding": {
+                                      "config": {
+                                        "bidirectional": true,
+                                        "path": "view.custom.editDraft.meta.description"
+                                      },
+                                      "type": "property"
                                     }
                                   }
                                 },
                                 "props": {
-                                  "style": { "boxSizing": "border-box", "classes": "search-input", "width": "100%" }
-                                }
+                                  "style": {
+                                    "boxSizing": "border-box",
+                                    "classes": "search-input",
+                                    "width": "100%"
+                                  }
+                                },
+                                "type": "ia.input.text-field"
                               }
-                            ]
-                          },
-                          {
-                            "type": "ia.container.flex",
-                            "meta": { "name": "SortOrderField" },
-                            "position": { "basis": "100px", "shrink": 0 },
+                            ],
+                            "meta": {
+                              "name": "DescriptionField"
+                            },
+                            "position": {
+                              "basis": "0",
+                              "grow": 1
+                            },
                             "props": {
                               "direction": "column",
-                              "style":     { "classes": "field", "minWidth": "0" }
+                              "style": {
+                                "classes": "field",
+                                "minWidth": "0"
+                              }
                             },
+                            "type": "ia.container.flex"
+                          },
+                          {
                             "children": [
                               {
-                                "type":  "ia.display.label",
-                                "meta":  { "name": "Label" },
-                                "props": { "style": { "classes": "field-label" }, "text": "Sort Order" }
+                                "meta": {
+                                  "name": "Label"
+                                },
+                                "props": {
+                                  "style": {
+                                    "classes": "field-label"
+                                  },
+                                  "text": "Sort Order"
+                                },
+                                "type": "ia.display.label"
                               },
                               {
-                                "type": "ia.container.flex",
-                                "meta": { "name": "SortRow" },
-                                "props": {
-                                  "alignItems": "center",
-                                  "style":      { "gap": "6px" }
-                                },
                                 "children": [
                                   {
-                                    "type": "ia.input.text-field",
-                                    "meta": { "name": "SortValue" },
-                                    "propConfig": {
-                                      "props.text": {
-                                        "binding": {
-                                          "type":   "property",
-                                          "config": { "bidirectional": true, "path": "view.custom.editDraft.meta.sortOrder" }
-                                        }
-                                      }
-                                    },
                                     "events": {
                                       "dom": {
                                         "onBlur": {
-                                          "type":   "script",
-                                          "scope":  "G",
-                                          "config": { "script": "\tself.view.custom.dirty = True" }
+                                          "config": {
+                                            "script": "\tself.view.custom.dirty \u003d True"
+                                          },
+                                          "scope": "G",
+                                          "type": "script"
+                                        }
+                                      }
+                                    },
+                                    "meta": {
+                                      "name": "SortValue"
+                                    },
+                                    "propConfig": {
+                                      "props.text": {
+                                        "binding": {
+                                          "config": {
+                                            "bidirectional": true,
+                                            "path": "view.custom.editDraft.meta.sortOrder"
+                                          },
+                                          "type": "property"
                                         }
                                       }
                                     },
                                     "props": {
                                       "style": {
                                         "boxSizing": "border-box",
-                                        "classes":   "search-input",
+                                        "classes": "search-input",
                                         "textAlign": "center",
-                                        "width":     "44px"
+                                        "width": "44px"
                                       }
-                                    }
+                                    },
+                                    "type": "ia.input.text-field"
                                   },
                                   {
-                                    "type": "ia.container.flex",
-                                    "meta": { "name": "Arrows" },
+                                    "children": [
+                                      {
+                                        "events": {
+                                          "dom": {
+                                            "onClick": {
+                                              "config": {
+                                                "script": "\tresult \u003d BlueRidge.Location.Location.handleMoveUp(self.view.custom.selected)\n\tif result:\n\t\tself.view.custom.tree \u003d result[\"tree\"]\n\t\tself.view.custom.selectedPath \u003d result[\"selectedPath\"]\n\t\tself.view.custom.selected \u003d result[\"selected\"]"
+                                              },
+                                              "scope": "G",
+                                              "type": "script"
+                                            }
+                                          }
+                                        },
+                                        "meta": {
+                                          "name": "UpArrow",
+                                          "tooltip": {
+                                            "text": "Move Up"
+                                          }
+                                        },
+                                        "props": {
+                                          "path": "material/arrow_drop_up",
+                                          "style": {
+                                            "classes": "arrow-btn"
+                                          }
+                                        },
+                                        "type": "ia.display.icon"
+                                      },
+                                      {
+                                        "events": {
+                                          "dom": {
+                                            "onClick": {
+                                              "config": {
+                                                "script": "\tresult \u003d BlueRidge.Location.Location.handleMoveDown(self.view.custom.selected)\n\tif result:\n\t\tself.view.custom.tree \u003d result[\"tree\"]\n\t\tself.view.custom.selectedPath \u003d result[\"selectedPath\"]\n\t\tself.view.custom.selected \u003d result[\"selected\"]"
+                                              },
+                                              "scope": "G",
+                                              "type": "script"
+                                            }
+                                          }
+                                        },
+                                        "meta": {
+                                          "name": "DownArrow",
+                                          "tooltip": {
+                                            "text": "Move Down"
+                                          }
+                                        },
+                                        "props": {
+                                          "path": "material/arrow_drop_down",
+                                          "style": {
+                                            "classes": "arrow-btn"
+                                          }
+                                        },
+                                        "type": "ia.display.icon"
+                                      }
+                                    ],
+                                    "meta": {
+                                      "name": "Arrows"
+                                    },
                                     "propConfig": {
                                       "position.display": {
                                         "binding": {
-                                          "type":   "expr",
-                                          "config": { "expression": "{view.custom.mode} = \"update\"" }
+                                          "config": {
+                                            "expression": "{view.custom.mode} \u003d \"update\""
+                                          },
+                                          "type": "expr"
                                         }
                                       }
                                     },
-                                    "props": { "style": { "classes": "arrows", "gap": "2px" } },
-                                    "children": [
-                                      {
-                                        "type": "ia.display.icon",
-                                        "meta": { "name": "UpArrow", "tooltip": { "text": "Move Up" } },
-                                        "props": { "path": "material/arrow_drop_up", "style": { "classes": "arrow-btn" } },
-                                        "events": {
-                                          "dom": {
-                                            "onClick": {
-                                              "type":   "script",
-                                              "scope":  "G",
-                                              "config": {
-                                                "script": "\tresult = BlueRidge.Location.Location.handleMoveUp(self.view.custom.selected)\n\tif result:\n\t\tself.view.custom.tree = result[\"tree\"]\n\t\tself.view.custom.selectedPath = result[\"selectedPath\"]\n\t\tself.view.custom.selected = result[\"selected\"]"
-                                              }
-                                            }
-                                          }
-                                        }
-                                      },
-                                      {
-                                        "type": "ia.display.icon",
-                                        "meta": { "name": "DownArrow", "tooltip": { "text": "Move Down" } },
-                                        "props": { "path": "material/arrow_drop_down", "style": { "classes": "arrow-btn" } },
-                                        "events": {
-                                          "dom": {
-                                            "onClick": {
-                                              "type":   "script",
-                                              "scope":  "G",
-                                              "config": {
-                                                "script": "\tresult = BlueRidge.Location.Location.handleMoveDown(self.view.custom.selected)\n\tif result:\n\t\tself.view.custom.tree = result[\"tree\"]\n\t\tself.view.custom.selectedPath = result[\"selectedPath\"]\n\t\tself.view.custom.selected = result[\"selected\"]"
-                                              }
-                                            }
-                                          }
-                                        }
+                                    "props": {
+                                      "style": {
+                                        "classes": "arrows",
+                                        "gap": "2px"
                                       }
-                                    ]
+                                    },
+                                    "type": "ia.container.flex"
                                   }
-                                ]
+                                ],
+                                "meta": {
+                                  "name": "SortRow"
+                                },
+                                "props": {
+                                  "alignItems": "center",
+                                  "style": {
+                                    "gap": "6px"
+                                  }
+                                },
+                                "type": "ia.container.flex"
                               }
-                            ]
+                            ],
+                            "meta": {
+                              "name": "SortOrderField"
+                            },
+                            "position": {
+                              "basis": "100px",
+                              "shrink": 0
+                            },
+                            "props": {
+                              "direction": "column",
+                              "style": {
+                                "classes": "field",
+                                "minWidth": "0"
+                              }
+                            },
+                            "type": "ia.container.flex"
                           }
-                        ]
+                        ],
+                        "meta": {
+                          "name": "FieldRow2"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "field-row",
+                            "gap": "12px"
+                          }
+                        },
+                        "type": "ia.container.flex"
                       }
-                    ]
+                    ],
+                    "meta": {
+                      "name": "Body"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "classes": "detail-body",
+                        "gap": "10px"
+                      }
+                    },
+                    "type": "ia.container.flex"
                   }
-                ]
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": { "name": "AttributesPanel" },
+                ],
+                "meta": {
+                  "name": "LocationDetailsPanel"
+                },
                 "propConfig": {
                   "position.display": {
                     "binding": {
-                      "type":   "expr",
-                      "config": { "expression": "{view.custom.mode} != \"view\"" }
+                      "config": {
+                        "expression": "{view.custom.mode} !\u003d \"view\""
+                      },
+                      "type": "expr"
                     }
                   }
                 },
                 "props": {
                   "direction": "column",
-                  "style":     { "classes": "detail-panel", "padding": "0" }
+                  "style": {
+                    "classes": "detail-panel",
+                    "padding": "0"
+                  }
                 },
+                "type": "ia.container.flex"
+              },
+              {
                 "children": [
                   {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "Header" },
-                    "props": {
-                      "alignItems": "center",
-                      "style":      { "classes": "detail-header", "gap": "12px" }
-                    },
                     "children": [
                       {
-                        "type":  "ia.display.label",
-                        "meta":  { "name": "Title" },
-                        "props": { "style": { "classes": "detail-header-h2" }, "text": "Attributes" }
+                        "meta": {
+                          "name": "Title"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "detail-header-h2"
+                          },
+                          "text": "Attributes"
+                        },
+                        "type": "ia.display.label"
                       },
                       {
-                        "type": "ia.display.label",
-                        "meta": { "name": "SchemaLabel" },
+                        "meta": {
+                          "name": "SchemaLabel"
+                        },
                         "propConfig": {
                           "props.text": {
                             "binding": {
-                              "type":   "expr",
                               "config": {
                                 "expression": "\"(\" + replace(coalesce({view.custom.selected.definitionName}, \"\"), \" \", \"\") + \" schema)\""
-                              }
+                              },
+                              "type": "expr"
                             }
                           }
                         },
-                        "props": { "style": { "color": "--mpp-text-tertiary", "fontSize": "11px" } }
-                      }
-                    ]
-                  },
-                  {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "AttributesTable" },
-                    "props": {
-                      "direction": "column",
-                      "style": {
-                        "classes":   "detail-body",
-                        "overflowX": "auto",
-                        "padding":   "0"
-                      }
-                    },
-                    "children": [
-                      {
-                        "type": "ia.container.flex",
-                        "meta": { "name": "TableHeader" },
                         "props": {
                           "style": {
-                            "background":     "var(--mpp-surface-card)",
-                            "borderBottom":   "1px solid var(--mpp-border-subtle)",
-                            "color":          "var(--mpp-text-secondary)",
-                            "fontSize":       "11px",
-                            "fontWeight":     "600",
-                            "letterSpacing":  "0.05em",
-                            "padding":        "8px 12px",
-                            "textTransform":  "uppercase"
+                            "color": "--mpp-text-tertiary",
+                            "fontSize": "11px"
                           }
                         },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "Header"
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "style": {
+                        "classes": "detail-header",
+                        "gap": "12px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
                         "children": [
                           {
-                            "type":     "ia.display.label",
-                            "meta":     { "name": "ColAttribute" },
-                            "position": { "basis": "0", "grow": 1 },
-                            "props":    { "text": "Attribute" }
+                            "meta": {
+                              "name": "ColAttribute"
+                            },
+                            "position": {
+                              "basis": "0",
+                              "grow": 1
+                            },
+                            "props": {
+                              "text": "Attribute"
+                            },
+                            "type": "ia.display.label"
                           },
                           {
-                            "type":     "ia.display.label",
-                            "meta":     { "name": "ColValue" },
-                            "position": { "basis": "0", "grow": 2 },
-                            "props":    { "text": "Value" }
+                            "meta": {
+                              "name": "ColValue"
+                            },
+                            "position": {
+                              "basis": "0",
+                              "grow": 2
+                            },
+                            "props": {
+                              "text": "Value"
+                            },
+                            "type": "ia.display.label"
                           },
                           {
-                            "type":     "ia.display.label",
-                            "meta":     { "name": "ColDataType" },
-                            "position": { "basis": "80px", "shrink": 0 },
-                            "props":    { "text": "Data Type" }
+                            "meta": {
+                              "name": "ColDataType"
+                            },
+                            "position": {
+                              "basis": "80px",
+                              "shrink": 0
+                            },
+                            "props": {
+                              "text": "Data Type"
+                            },
+                            "type": "ia.display.label"
                           },
                           {
-                            "type":     "ia.display.label",
-                            "meta":     { "name": "ColUom" },
-                            "position": { "basis": "70px", "shrink": 0 },
-                            "props":    { "text": "UOM" }
+                            "meta": {
+                              "name": "ColUom"
+                            },
+                            "position": {
+                              "basis": "70px",
+                              "shrink": 0
+                            },
+                            "props": {
+                              "text": "UOM"
+                            },
+                            "type": "ia.display.label"
                           },
                           {
-                            "type":     "ia.display.label",
-                            "meta":     { "name": "ColReq" },
-                            "position": { "basis": "60px", "shrink": 0 },
-                            "props":    { "text": "Req" }
+                            "meta": {
+                              "name": "ColReq"
+                            },
+                            "position": {
+                              "basis": "60px",
+                              "shrink": 0
+                            },
+                            "props": {
+                              "text": "Req"
+                            },
+                            "type": "ia.display.label"
                           }
-                        ]
+                        ],
+                        "meta": {
+                          "name": "TableHeader"
+                        },
+                        "props": {
+                          "style": {
+                            "background": "var(--mpp-surface-card)",
+                            "borderBottom": "1px solid var(--mpp-border-subtle)",
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "11px",
+                            "fontWeight": "600",
+                            "letterSpacing": "0.05em",
+                            "padding": "8px 12px",
+                            "textTransform": "uppercase"
+                          }
+                        },
+                        "type": "ia.container.flex"
                       },
                       {
-                        "type": "ia.display.flex-repeater",
-                        "meta": { "name": "AttributeRows" },
+                        "meta": {
+                          "name": "AttributeRows"
+                        },
                         "propConfig": {
                           "props.instances": {
                             "binding": {
-                              "type":   "property",
-                              "config": { "path": "view.custom.editDraft.attributes" },
+                              "config": {
+                                "path": "view.custom.editDraft.attributes"
+                              },
                               "transforms": [
                                 {
-                                  "type": "script",
-                                  "code": "\trows = value or []\n\tn = len(rows)\n\treturn [\n\t\t{\n\t\t\t\"index\":        i,\n\t\t\t\"totalRows\":    n,\n\t\t\t\"definitionId\": r.get(\"definitionId\"),\n\t\t\t\"name\":         r.get(\"name\") or \"\",\n\t\t\t\"value\":        r.get(\"value\") or \"\",\n\t\t\t\"dataType\":     r.get(\"dataType\") or \"\",\n\t\t\t\"uom\":          r.get(\"uom\") or \"\",\n\t\t\t\"required\":     bool(r.get(\"required\")),\n\t\t\t\"defaultValue\": r.get(\"defaultValue\") or \"\"\n\t\t}\n\t\tfor i, r in enumerate(rows)\n\t]"
+                                  "code": "\trows \u003d value or []\n\tn \u003d len(rows)\n\treturn [\n\t\t{\n\t\t\t\"index\":        i,\n\t\t\t\"totalRows\":    n,\n\t\t\t\"definitionId\": r.get(\"definitionId\"),\n\t\t\t\"name\":         r.get(\"name\") or \"\",\n\t\t\t\"value\":        r.get(\"value\") or \"\",\n\t\t\t\"dataType\":     r.get(\"dataType\") or \"\",\n\t\t\t\"uom\":          r.get(\"uom\") or \"\",\n\t\t\t\"required\":     bool(r.get(\"required\")),\n\t\t\t\"defaultValue\": r.get(\"defaultValue\") or \"\"\n\t\t}\n\t\tfor i, r in enumerate(rows)\n\t]",
+                                  "type": "script"
                                 }
-                              ]
+                              ],
+                              "type": "property"
                             }
                           }
                         },
                         "props": {
-                          "direction":            "column",
-                          "elementPosition":      { "basis": "48px", "shrink": 0 },
-                          "path":                 "BlueRidge/Components/LocationAttributeValueRow",
+                          "direction": "column",
+                          "elementPosition": {
+                            "basis": "48px",
+                            "shrink": 0
+                          },
+                          "path": "BlueRidge/Components/LocationAttributeValueRow",
                           "useDefaultViewHeight": false,
-                          "useDefaultViewWidth":  false
-                        }
+                          "useDefaultViewWidth": false
+                        },
+                        "type": "ia.display.flex-repeater"
                       }
-                    ]
+                    ],
+                    "meta": {
+                      "name": "AttributesTable"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "classes": "detail-body",
+                        "overflowX": "auto",
+                        "padding": "0"
+                      }
+                    },
+                    "type": "ia.container.flex"
                   }
-                ]
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": { "name": "EmptyState" },
+                ],
+                "meta": {
+                  "name": "AttributesPanel"
+                },
                 "propConfig": {
                   "position.display": {
                     "binding": {
-                      "type":   "expr",
-                      "config": { "expression": "{view.custom.mode} = \"view\"" }
+                      "config": {
+                        "expression": "{view.custom.mode} !\u003d \"view\""
+                      },
+                      "type": "expr"
                     }
                   }
                 },
                 "props": {
-                  "alignItems":    "center",
-                  "justify":       "center",
-                  "direction":     "column",
+                  "direction": "column",
                   "style": {
-                    "color":      "var(--mpp-text-tertiary)",
-                    "fontSize":   "13px",
-                    "minHeight":  "120px",
-                    "padding":    "32px"
+                    "classes": "detail-panel",
+                    "padding": "0"
                   }
                 },
+                "type": "ia.container.flex"
+              },
+              {
                 "children": [
                   {
-                    "type":  "ia.display.label",
-                    "meta":  { "name": "EmptyText" },
-                    "props": { "text": "Select a Location to view details, or click + Add Location to create one." }
+                    "meta": {
+                      "name": "EmptyText"
+                    },
+                    "props": {
+                      "text": "Select a Location to view details, or click + Add Location to create one."
+                    },
+                    "type": "ia.display.label"
                   }
-                ]
+                ],
+                "meta": {
+                  "name": "EmptyState"
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.mode} \u003d \"view\""
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "alignItems": "center",
+                  "direction": "column",
+                  "justify": "center",
+                  "style": {
+                    "color": "var(--mpp-text-tertiary)",
+                    "fontSize": "13px",
+                    "minHeight": "120px",
+                    "padding": "32px"
+                  }
+                },
+                "type": "ia.container.flex"
               }
-            ]
+            ],
+            "meta": {
+              "name": "DetailArea"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "background": "var(--mpp-surface-canvas)",
+                "gap": "10px",
+                "overflowX": "hidden",
+                "overflowY": "auto",
+                "padding": "12px"
+              }
+            },
+            "type": "ia.container.flex"
           }
-        ]
+        ],
+        "meta": {
+          "name": "MainSplit"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "style": {
+            "borderTop": "1px solid var(--mpp-border-subtle)",
+            "overflow": "hidden"
+          }
+        },
+        "type": "ia.container.flex"
       }
-    ]
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "screen-active"
+      }
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "locAttrValueUpdate",
+          "pageScope": true,
+          "script": "\tidx \u003d payload.get(\"index\") if payload else None\n\tval \u003d payload.get(\"value\") if payload else None\n\tif idx is None:\n\t\treturn\n\tdraft \u003d self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\tattrs \u003d list(draft.get(\"attributes\") or [])\n\tif idx \u003c 0 or idx \u003e\u003d len(attrs):\n\t\treturn\n\trow \u003d dict(attrs[idx])\n\trow[\"value\"] \u003d val if val is not None else \"\"\n\tattrs[idx] \u003d row\n\tself.view.custom.editDraft \u003d {\"meta\": draft.get(\"meta\"), \"attributes\": attrs}\n\tself.view.custom.dirty \u003d True",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "confirmUnsavedResult",
+          "pageScope": true,
+          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tpending \u003d self.view.custom.pendingNav\n\tif action \u003d\u003d \"save\":\n\t\tdraft \u003d self.view.custom.editDraft or {}\n\t\tresult \u003d BlueRidge.Location.Location.handleSaveAll(draft.get(\"meta\") or {}, draft.get(\"attributes\") or [])\n\t\tif not result:\n\t\t\treturn\n\t\tself.view.custom.tree \u003d result[\"tree\"]\n\t\tself.view.custom.selectedPath \u003d result[\"selectedPath\"]\n\t\tself.view.custom.selected \u003d result[\"selected\"]\n\t\tself.view.custom.editDraft \u003d result[\"editDraft\"]\n\t\tself.view.custom.mode \u003d result[\"mode\"]\n\t\tself.view.custom.draftPath \u003d None\n\t\tself.view.custom.dirty \u003d False\n\t\tself.view.custom.pendingNav \u003d None\n\telif action \u003d\u003d \"discard\":\n\t\tself.view.custom.dirty \u003d False\n\t\tself.view.custom.draftPath \u003d None\n\t\tself.view.custom.pendingNav \u003d None\n\t\tBlueRidge.Common.Notify.toast(\"Discarded\", \"Changes discarded.\", \"info\")",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
   }
 }
