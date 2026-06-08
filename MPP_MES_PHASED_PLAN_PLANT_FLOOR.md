@@ -1,14 +1,12 @@
 # MPP MES — Phased Delivery Plan: Arc 2 (Plant Floor MES)
 
-**Document ID:** MPP-PLAN-ARC2-v1.0
+**Document ID:** MPP-PLAN-ARC2-v1.3
 **Project:** Madison Precision Products MES Replacement
 **Contractor:** Blue Ridge Automation
-**Version:** 1.1 (2026-06-03)
-**Status:** Working draft — full rebuild against current source-of-truth docs (FDS v0.11m, Data Model v1.9l, User Journeys v0.9, Open Issues Register v2.16, Seeding Registry v1.0). Supersedes the v0.1 → v0.3 line; the prior draft chain is retained in git history.
+**Version:** 1.3 (2026-06-08)
+**Status:** Working draft — full rebuild against current source-of-truth docs (FDS v1.3, Data Model v1.9q, User Journeys v0.9, Open Issues Register v2.17, Seeding Registry v1.0). Supersedes the v0.1 → v0.3 line; the prior draft chain is retained in git history.
 
 > **Reader note (v1.0):** This is a clean rebuild. Read top-to-bottom. Cross-Cutting Concerns (B1–B17) are normative for every phase. **Phase 0 has two parallel tracks** — MPP-owned customer validation and Blue Ridge–owned architecture decisions (OI-35) — both must complete before Phase 1 SQL build commences. Per-phase narratives reference current source-of-truth docs by version; updates to those docs propagate here at the next plan revision.
-
-> **In-progress note (v1.0a, 2026-04-29):** This file currently contains Phases 0–4 of the rebuild. Phases 5–8 are placeholders awaiting review of the first half. The closing sections (Out of Scope, Open Items Affecting This Plan, Related Documents) will land with Phases 5–8.
 
 ---
 
@@ -16,7 +14,9 @@
 
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
-| 1.1 | 2026-06-03 | Blue Ridge Automation | **Sub-LOT split relocated from Trim OUT to Machining OUT** (per MPP, confirmed 2026-06 — settled, not an open item). Reverses the v1.0 driver-(a) claim that the split sits at Trim OUT. Trim is now a **1:1 whole-LOT move tracked at Area resolution**; the `Parts.OperationTemplate.RequiresSubLotSplit` flag plus the split UX / `*_Record` split branch / split tests move from **Phase 4 (Trim, migration `0017`)** to **Phase 5 (Machining OUT, migration `0018`)**. Phase 4 Trim OUT becomes move-whole-only (`TrimOut_Record` no longer splits); Phase 5 Machining OUT gains an **operator-initiated split path on sublotting lines** (physical signature: a dedicated Machining OUT terminal) alongside the existing PLC auto-move on coupled lines. UJ-03 reframed (was closed backwards as "Machining no longer splits"). The Phase 4→5 ordering is unchanged but its nature shifts: a whole-LOT handoff into the Machining FIFO queue, not pre-split sub-LOTs. Mirrors **FDS v1.3**. **No schema change** — `Lot.ParentLotId` / `LotGenealogy` already model machining-origin sub-LOTs; the `RequiresSubLotSplit` column simply lands in `0018` instead of `0017`. |
+| 1.3 | 2026-06-08 | Blue Ridge Automation | **MVP scope decisions ratified (2026-06-08) + migration re-baseline.** (1) **Three gap items moved in-scope as new Phase 9:** inspection recording (FDS-08-011..013), the Controlled Run Tag workflow (FDS-10-012 — `Lot.CrtActive` hook added to the Phase 1 `Lot` CREATE per Data Model v1.9q), and the Global Trace Tool + LOT Genealogy Report (FDS-12). The legacy PD operational reports stay deferred to near/post-deployment (UJ-19). (2) **Arc 2 migrations re-baselined +1 to `0020`-`0027`** (Phase 9 = `0028`) because `0019_location_coupled_downstream_cell` landed on disk 2026-06-08; per-phase numbers are now framed as next-free-at-build-time with a drift note. (3) Data Model reference bumped to v1.9q. |
+| 1.2 | 2026-06-08 | Blue Ridge Automation | **Validation-correction pass (build-readiness).** (1) **Migration renumber** - Arc 1 shipped through `0018`, so all Arc 2 migrations shift from `0014`-`0021` to **`0020`-`0027`** and test suites to **`0020`-`0027`** (Arc 1 test suites end at `0019`). (2) **Phase 1 now CREATEs `Lots.Lot` (Tool/Cavity columns inline) + `LotStatusHistory` + `LotMovement`, and Phase 2 CREATEs `LotGenealogy` + `LotAttributeChange` + `LotLabel`** - these core tables were never built by Arc 1 (which created only the Lots code tables); the prior plan wrongly ALTERed `Lot` as if it existed. (3) CREATE-ownership pinned: `HoldEvent`=Phase 7, `DowntimeEvent`=Phase 8, `ShippingLabel`=Phase 6 (incl. `ContainerSerial.HardwareInterlockBypassed`). (4) Phase 4 dependency corrected to {1,3} (not 2). (5) Stale v1.0a placeholder note removed; FDS/Data Model versions restamped to FDS v1.3 / DM v1.9o; Phase 7 gateway-script count corrected to six. (6) Three MVP gaps flagged for scope decision (inspection recording FDS-08-011..013; Controlled Run Tag FDS-10-012, also missing from schema; FDS-12 reporting + Global Trace Tool). Companion artifacts: `MPP_MES_PLANT_FLOOR_PLAN_VALIDATION.md` + `MPP_MES_TASK_LIST_PLANT_FLOOR.csv`. |
+| 1.1 | 2026-06-03 | Blue Ridge Automation | **Sub-LOT split relocated from Trim OUT to Machining OUT** (per MPP, confirmed 2026-06 — settled, not an open item). Reverses the v1.0 driver-(a) claim that the split sits at Trim OUT. Trim is now a **1:1 whole-LOT move tracked at Area resolution**; the `Parts.OperationTemplate.RequiresSubLotSplit` flag plus the split UX / `*_Record` split branch / split tests move from **Phase 4 (Trim, migration `0023`)** to **Phase 5 (Machining OUT, migration `0024`)**. Phase 4 Trim OUT becomes move-whole-only (`TrimOut_Record` no longer splits); Phase 5 Machining OUT gains an **operator-initiated split path on sublotting lines** (physical signature: a dedicated Machining OUT terminal) alongside the existing PLC auto-move on coupled lines. UJ-03 reframed (was closed backwards as "Machining no longer splits"). The Phase 4→5 ordering is unchanged but its nature shifts: a whole-LOT handoff into the Machining FIFO queue, not pre-split sub-LOTs. Mirrors **FDS v1.3**. **No schema change** — `Lot.ParentLotId` / `LotGenealogy` already model machining-origin sub-LOTs; the `RequiresSubLotSplit` column simply lands in `0023` instead of `0022`. |
 | 1.0 | 2026-04-29 | Blue Ridge Automation | **Full rebuild against current source-of-truth docs.** Replaces the v0.1 → v0.3 line. Drivers: (a) the v0.11k/l/m FDS continuity passes shifted three workflow boundaries — sub-LOT split moved from Machining IN to **Trim OUT** (FDS-05-009), part-identity rename moved from Casting→Trim to **Trim→Machining** (FDS-05-033), Machining OUT became event-driven PLC-auto-complete + auto-move to coupled Cell (FDS-06-008); (b) container closure granularity moved from container-level to **tray-level** with three peer methods `ByCount` / `ByWeight` / `ByVision` (FDS-06-014); (c) end-of-shift time entry reframed as a single FDS-09-013 submission with shift-schedule durations (no minute adjustments); (d) OIR v2.16 added **OI-35** (long-horizon scaling + retention + archiving — gates Arc 2 Phase 1 SQL build); (e) OIR closures v2.10 → v2.16 retired ~14 prior gating items. Phase shape preserved (9 phases, 0–8); structural elements lifted verbatim (Cross-Cutting Concerns B1–B17, Architecture Pattern, Phase template, SP convention). Per-phase narratives rewritten from current source where FDS reframes hit; lifted with light touch-up where current. NEW section *Seeding Registry — Phase Coupling* maps S-01..S-11 to phases. Phase 0 expanded with the Architecture Decision track (OI-35 — 8 decisions). Phase 1 entry gated on **both** Phase 0 tracks; migration baked-in with the architectural decisions on day one. |
 
 ---
@@ -25,7 +25,7 @@
 
 This document is the phased delivery plan for **Arc 2 (Plant Floor MES)** — the operator-facing portion of the MPP MES replacement. It is the sibling of `MPP_MES_PHASED_PLAN_CONFIG_TOOL.docx` (Arc 1), which is complete.
 
-**Arc 1** built the Configuration Tool: the engineering-facing surface where plant, items, routes, BOMs, quality specs, and reference vocabularies (shifts, downtime codes, defect codes) are authored. Arc 1 delivered across eight phases, with 13 versioned migrations (`0001`–`0013`), ~216 repeatable stored procedures, and **858/858 passing tests** as of 2026-04-28.
+**Arc 1** built the Configuration Tool: the engineering-facing surface where plant, items, routes, BOMs, quality specs, and reference vocabularies (shifts, downtime codes, defect codes) are authored. Arc 1 delivered across eight phases, with 19 versioned migrations (`0001`–`0019`), ~216 repeatable stored procedures, and **858/858 passing tests** as of 2026-04-28.
 
 **Arc 2** builds the Plant Floor MES: the operator-facing surface that runs against Arc 1's configured master data. Its audiences are **shop-floor operators, supervisors, quality staff, and shipping staff**, interacting through Ignition Perspective touch terminals, barcode scanners, and PLC-integrated production machinery. Arc 2 captures LOT lifecycle from die-cast origination through containerized shipment to Honda, with traceable genealogy at every step.
 
@@ -258,9 +258,9 @@ Phase 3 (Die Cast) ────────────────────�
 | 1 | 0 (both tracks) | 2, 8 |
 | 2 | 1 | 3 |
 | 3 | 1, 2 | 4, 7 |
-| 4 | 1, 2, 3 | 5 |
+| 4 | 1, 3 | 5 |
 | 5 | 1, 2, 3, 4 | 6 |
-| 6 | 1, 2, 3, 4, 5 | 7 |
+| 6 | 1, 2, 3, 4, 5 (+ Phase 7 `AimShipperIdPool` schema must ship first) | 7 |
 | 7 | 1, 2, 3, 6 | — |
 | 8 | 1 | — (parallel track) |
 
@@ -373,7 +373,7 @@ No test suite additions.
 - [ ] **Track A:** Workshop held with MPP representatives. Decision log for items A1–A9 appended to Open Issues Register with signed-off dates.
 - [ ] **Track B:** Architecture decisions B1–B8 finalized. Data Model § "Scaling Decisions" added (data model bump). FDS-11 retention paragraph drafted (FDS bump).
 - [ ] **B10 convention** (serial migration audit) rewritten with the chosen UJ-05 pattern (default direction: update-in-place + `Lots.ContainerSerialHistory`; awaits MPP Quality + Honda affirmation).
-- [ ] Any DDL deltas (Track A column lists, Track B partitioning + closure table + materialization columns + filtered indexes) captured in the Arc 2 Phase 1 migration draft. **Migration numbering:** versioned migrations 0001–0013 are landed (Arc 1 complete + 0013 OI-07/OI-12 corrections). Arc 2 Phase 1 lands at `0014_arc2_phase1_shop_floor_foundation.sql`.
+- [ ] Any DDL deltas (Track A column lists, Track B partitioning + closure table + materialization columns + filtered indexes) captured in the Arc 2 Phase 1 migration draft. **Migration numbering:** versioned migrations 0001–0019 are landed (Arc 1 Config Tool through `0018`; `0019_location_coupled_downstream_cell` landed 2026-06-08). Arc 2 Phase 1 lands at `0020_arc2_phase1_shop_floor_foundation.sql`, Phases 2-8 increment to `0027`, gap-fill Phase 9 at `0028`. **These are next-free-at-build-time numbers** — Arc 2 is OI-35-gated and pre-Arc-2 foundation migrations keep landing (e.g. `0019` just did), so treat the per-phase numbers as relative (+1 from the prior phase) and re-baseline against the actual migration high-water mark when the Arc 2 build commences.
 - [ ] Opportunistic items resolved or explicitly deferred with a documented fallback (UJ-19 PD reports, UJ-05 Sort Cage serial migration, UJ-03 sublot trigger, OI-24..30 discovery items, OI-34 production schedule leverage).
 
 ---
@@ -388,23 +388,29 @@ No test suite additions.
 
 ## Data Model Changes
 
-**Migration `sql/migrations/versioned/0014_arc2_phase1_shop_floor_foundation.sql`** (next unclaimed number — Arc 1 consumed `0001`–`0013`).
+**Migration `sql/migrations/versioned/0020_arc2_phase1_shop_floor_foundation.sql`** (next unclaimed number — Arc 1 consumed `0001`–`0019`).
 
 The Phase 1 migration carries **two distinct concerns** simultaneously: the new tables required by the operator-facing surface, and the OI-35 architectural decisions resolved in Phase 0. This is intentional — partitioning, closure tables, materialization, and filtered indexes are all cheaper to land at CREATE time than retrofit. The actual contents of the migration depend on Phase 0 outputs; the descriptions below assume the Phase 0 default decisions (with each variant called out).
 
-**New tables (Arc 2 — introduced here, per Data Model v1.9l):**
+**New tables (Arc 2 — introduced here, per Data Model v1.9o):**
 
-- `Workorder.WorkOrder` — CREATE with the v1.9l column contract: `Id`, `WoNumber`, `WorkOrderTypeId` (FK → `Workorder.WorkOrderType`; defaults to the single-seeded `Production` row per OI-07), `ItemId`, `RouteTemplateId`, `WorkOrderStatusId`, `ToolId` (FK → `Tools.Tool`, NULL — schema hook for FUTURE Maintenance WOs, unpopulated in MVP), `CreatedAt`, `CompletedAt`. **Plus the FDS-06-030 Phase-0-confirmed BIT-flag columns** (live flags only, per A2 decision).
+- `Workorder.WorkOrder` — CREATE with the v1.9o column contract: `Id`, `WoNumber`, `WorkOrderTypeId` (FK → `Workorder.WorkOrderType`; defaults to the single-seeded `Production` row per OI-07), `ItemId`, `RouteTemplateId`, `WorkOrderStatusId`, `ToolId` (FK → `Tools.Tool`, NULL — schema hook for FUTURE Maintenance WOs, unpopulated in MVP), `CreatedAt`, `CompletedAt`. **Plus the FDS-06-030 Phase-0-confirmed BIT-flag columns** (live flags only, per A2 decision).
 - `Workorder.WorkOrderOperation` — CREATE per Data Model §4. `AppUserId BIGINT NULL FK → AppUser.Id`.
-- `Workorder.ProductionEvent` — CREATE per Data Model v1.9l checkpoint shape: `Id`, `LotId`, `OperationTemplateId`, `WorkOrderOperationId` (NULL), `EventAt`, `ShotCount` (NULL, cumulative), `ScrapCount` (NULL, cumulative), `ScrapSourceId` (NULL FK → `Workorder.ScrapSource`), `WeightValue`, `WeightUomId`, `AppUserId BIGINT NOT NULL FK → AppUser.Id`, `TerminalLocationId`, `Remarks`. **Required index `(LotId, EventAt DESC)`.** No `LocationId`, no `ItemId`, no `DieIdentifier`, no `CavityNumber`, no `GoodCount` / `NoGoodCount`, no `StartedAt` / `EndedAt`.
+- `Workorder.ProductionEvent` — CREATE per Data Model v1.9o checkpoint shape: `Id`, `LotId`, `OperationTemplateId`, `WorkOrderOperationId` (NULL), `EventAt`, `ShotCount` (NULL, cumulative), `ScrapCount` (NULL, cumulative), `ScrapSourceId` (NULL FK → `Workorder.ScrapSource`), `WeightValue`, `WeightUomId`, `AppUserId BIGINT NOT NULL FK → AppUser.Id`, `TerminalLocationId`, `Remarks`. **Required index `(LotId, EventAt DESC)`.** No `LocationId`, no `ItemId`, no `DieIdentifier`, no `CavityNumber`, no `GoodCount` / `NoGoodCount`, no `StartedAt` / `EndedAt`.
 - `Workorder.ProductionEventValue` — CREATE per Data Model §4 (child of ProductionEvent, extensible `DataCollectionField` capture).
 - `Workorder.ConsumptionEvent` — CREATE per Data Model §4. `AppUserId BIGINT NOT NULL FK → AppUser.Id`.
 - `Workorder.RejectEvent` — CREATE per Data Model §4. `AppUserId BIGINT NOT NULL FK → AppUser.Id`.
 - `Lots.IdentifierSequence` — CREATE per Data Model §3 (OI-31). Seed `Lot` (`MESL{0:D7}`) + `SerializedItem` (`MESI{0:D7}`) rows with `LastValue` set from the cutover-day Flexware snapshot (S-10, Phase 0 Track A delivers the values). **Implementation depends on Phase 0 Track B / B6:** if `SEQUENCE` object elected, `IdentifierSequence_Next` wraps a `SEQUENCE` per code; if row-locked-update elected, the proc uses `UPDATE ... WITH (ROWLOCK, UPDLOCK)`.
 
+- `Lots.Lot` -- **CREATE (not ALTER).** Arc 1 built only the Lots *code* tables (`0004`); `Lot` itself is new here. Full v1.9q column contract per Data Model section 3, **with `ToolId BIGINT NULL FK -> Tools.Tool(Id)` and `ToolCavityId BIGINT NULL FK -> Tools.ToolCavity(Id)` columns built in** (required at `Lot_Create` for die-cast-origin LOTs; NULL elsewhere; NULL after `Lot_Merge`), the **`CrtActive BIT NOT NULL DEFAULT 0`** Controlled Run Tag flag (FDS-10-012 — the CRT workflow itself builds in Phase 9), plus the OI-35 B5 materialized `TotalInProcess` / `InventoryAvailable` columns (below).
+- `Lots.LotStatusHistory` -- CREATE per Data Model section 3 (append-only; written by `Lot_UpdateStatus`). Never built by Arc 1.
+- `Lots.LotMovement` -- CREATE per Data Model section 3 (append-only; written by `Lot_MoveTo`). Never built by Arc 1.
+- `Parts.v_EffectiveItemLocation` -- CREATE VIEW (direct + BOM-derived eligibility; read by scan-in eligibility checks). Arc 2 Phase 1 per Data Model.
+  > **Note (B-2):** `LotGenealogy`, `LotAttributeChange`, and `LotLabel` are likewise net-new Arc-2 tables, CREATEd in **Phase 2** (their first writers live there).
+
 **OI-35 architectural additions (per Phase 0 Track B outputs):**
 
-- **Partition functions + schemes** for the high-volume event tables: `Workorder.ProductionEvent`, `Workorder.ConsumptionEvent`, `Workorder.RejectEvent`, `Lots.LotMovement`, `Lots.LotStatusHistory`, `Lots.LotAttributeChange`, `Lots.LotGenealogy`, `Lots.ContainerSerial`, `Audit.OperationLog`, `Audit.InterfaceLog`, `Audit.FailureLog`, `Oee.DowntimeEvent`, `Quality.HoldEvent`. Range partitioned on `CreatedAt` / `EventAt` / `LoggedAt` per table. Monthly boundaries; sliding-window maintenance lands in a Phase 1 Gateway timer.
+- **Partition functions + schemes** for the high-volume event tables: `Workorder.ProductionEvent`, `Workorder.ConsumptionEvent`, `Workorder.RejectEvent`, `Lots.LotMovement`, `Lots.LotStatusHistory`, `Lots.LotAttributeChange`, `Lots.LotGenealogy`, `Lots.ContainerSerial`, `Audit.OperationLog`, `Audit.InterfaceLog`, `Audit.FailureLog`. Range partitioned on `CreatedAt` / `EventAt` / `LoggedAt` per table. Monthly boundaries; sliding-window maintenance lands in a Phase 1 Gateway timer. (`Oee.DowntimeEvent` and `Quality.HoldEvent` are CREATEd in their owning phases -- Phase 8 and Phase 7 -- and partitioned there with the same monthly scheme.)
 - **Materialized closure table for `Lots.LotGenealogy`** (if Phase 0 elected B4): `Lots.LotGenealogyClosure (AncestorLotId BIGINT, DescendantLotId BIGINT, Depth INT, CONSTRAINT PK_LotGenealogyClosure PRIMARY KEY (AncestorLotId, DescendantLotId))`. Indexed on both directions. `Lot_Create` and `Lot_Split` / `Lot_Merge` write closure rows transactionally alongside the genealogy edge.
 - **Materialized derived-quantity columns on `Lots.Lot`** (if Phase 0 elected B5): `TotalInProcess INT NOT NULL DEFAULT 0`, `InventoryAvailable INT NOT NULL DEFAULT 0`. Updated by `ProductionEvent_Record` / `ConsumptionEvent_Record` inside the same transaction. The `Lots.v_LotDerivedQuantities` view stays as a diagnostic fallback.
 - **Split `Audit.OperationLog`** (if Phase 0 elected B7): new `Lots.LotEventLog` table created with the same row shape as `OperationLog` plus `LotId BIGINT NOT NULL FK → Lots.Lot.Id`. The shared `Audit_LogOperation` proc routes by entity type — LOT events to `LotEventLog`, everything else to `OperationLog`. Retention class differs (20-year vs 7-year).
@@ -412,7 +418,7 @@ The Phase 1 migration carries **two distinct concerns** simultaneously: the new 
 
 **ALTERs (Arc 2 Phase 1):**
 
-- `Lots.Lot` ADD `ToolId BIGINT NULL FK → Tools.Tool(Id)` and `ToolCavityId BIGINT NULL FK → Tools.ToolCavity(Id)`. Required at `Lot_Create` for die-cast-origin LOTs; NULL elsewhere; NULL after `Lot_Merge`.
+- **None.** The `Lots.Lot` `ToolId` / `ToolCavityId` columns are part of the `Lot` **CREATE** above. (The prior plan ALTERed `Lots.Lot` as if Arc 1 had built it; Arc 1 created only the Lots *code* tables, so `Lot` is new in this migration.)
 
 **LocationAttributeDefinition seeds on the `Terminal` `LocationTypeDefinition`:**
 
@@ -535,7 +541,7 @@ Shift boundaries are driven by a Gateway script tick (`ShiftBoundaryTicker`, run
 
 Phase 1 delivers minimal LOT procs — enough to let Phase 3 (Die Cast) create its first LOT. Full LOT lifecycle (`Lot_Update`, `Lot_UpdateAttribute`, genealogy) is Phase 2.
 
-`Lot_Create` flow (narrated from Phase 3's perspective — the proc is delivered here). Aligned to Data Model v1.9l + FDS-05-034 / FDS-05-035:
+`Lot_Create` flow (narrated from Phase 3's perspective — the proc is delivered here). Aligned to Data Model v1.9o + FDS-05-034 / FDS-05-035:
 
 1. Operator takes a basket from a machine's active cavity and scans a fresh pre-printed LTT barcode at the terminal. Perspective builds the parameter set: `@LotName = NULL` (proc mints via `IdentifierSequence_Next @Code='Lot'`), `@ItemId`, `@LotOriginTypeId`, `@CurrentLocationId` (Cell), `@PieceCount`, `@ToolId` (NULL for non-die-cast origins; required for Die Cast — Perspective auto-populates from `ToolAssignment_ListActiveByCell` and operator confirms), `@ToolCavityId` (same rule), `@Weight`, `@WeightUomId`, `@VendorLotNumber` (Received only), `@AppUserId`, `@TerminalLocationId`.
 2. Proc validates parameters (no NULLs on required, FKs resolve).
@@ -635,7 +641,7 @@ Procedure called by every downstream proc that advances a LOT. Reads `Lot.LotSta
 
 ## Test Coverage
 
-New test suite at `sql/tests/0014_PlantFloor_Foundation/` (next unclaimed test-suite number — Arc 1 consumed `0001`–`0019`):
+New test suite at `sql/tests/0020_PlantFloor_Foundation/` (next unclaimed test-suite number — Arc 1 consumed `0001`–`0019`):
 
 | File | Covers |
 |---|---|
@@ -651,15 +657,15 @@ New test suite at `sql/tests/0014_PlantFloor_Foundation/` (next unclaimed test-s
 | `070_Lot_MoveTo.sql` | Valid move updates CurrentLocationId + inserts LotMovement; move from unblocked Lot succeeds; move from blocked Lot (Hold/Scrap/Closed) rejects via `Lot_AssertNotBlocked`. |
 | `080_Lot_AssertNotBlocked.sql` | Good returns `IsBlocked=0`; Hold/Scrap/Closed return `IsBlocked=1` with correct Message; non-existent Lot returns `IsBlocked=1` with 'LOT not found' message. |
 
-Target: 80–105 passing tests in suite 0014 (up from v0.x target — adds closure-table tests + Tool/Cavity validation + IdentifierSequence + AD elevation).
+Target: 80–105 passing tests in suite 0020 (up from v0.x target — adds closure-table tests + Tool/Cavity validation + IdentifierSequence + AD elevation).
 
 ## Phase 1 complete when
 
-- [ ] Migration `0014_arc2_phase1_shop_floor_foundation.sql` applied to dev. All Phase 1 CREATE / ALTER / seed delivered.
+- [ ] Migration `0020_arc2_phase1_shop_floor_foundation.sql` applied to dev. All Phase 1 CREATE / ALTER / seed delivered.
 - [ ] **OI-35 architectural decisions baked in** per Phase 0 outputs — partition functions in place, closure table CREATEd (if B4), materialized columns added (if B5), `OperationLog` split (if B7), filtered indexes per B8.
 - [ ] All repeatable procs present and up-to-date.
 - [ ] **No proc anywhere in the repo references `AppUser.ClockNumber` or `AppUser.PinHash`** (both columns dropped by Phase G migration `0011`). Grep verification: `grep -ri 'ClockNumber\|PinHash' sql/` returns zero hits in active code.
-- [ ] All tests in `sql/tests/0014_PlantFloor_Foundation/` pass (target 80–105).
+- [ ] All tests in `sql/tests/0020_PlantFloor_Foundation/` pass (target 80–105).
 - [ ] Reset script (`Reset-DevDatabase.ps1`) discovers and applies the new migration and runs the new test suite.
 - [ ] Gateway script `Terminal_ResolveFromSession` implemented and tested against Perspective sessions from known + unknown IPs.
 - [ ] Gateway script `ShiftBoundaryTicker` implemented; verified end-to-end against a dev ShiftSchedule that crosses a boundary within the test window.
@@ -675,16 +681,19 @@ Target: 80–105 passing tests in suite 0014 (up from v0.x target — adds closu
 
 **Goal:** Fill out the complete LOT surface — all mutation procs, append-only history streams, full genealogy (split / merge / consumption), pause lifecycle, derived quantity reads, and label reprint — so downstream operator-station phases compose from a stable LOT API.
 
-**Dependencies:** Phase 1 (foundation). Most Lots schema tables already exist from Phase 1 migration.
+**Dependencies:** Phase 1 (foundation). Phase 1 created `Lots.Lot` + `LotStatusHistory` + `LotMovement`; Phase 2 CREATEs the remaining LOT-lifecycle tables (`LotGenealogy`, `LotAttributeChange`, `LotLabel`) -- none of which Arc 1 built (B-2 correction).
 
 **Status:** Blocked on Phase 1.
 
 ## Data Model Changes
 
-**Migration `sql/migrations/versioned/0015_arc2_phase2_lot_lifecycle.sql`** (next unclaimed after Phase 1).
+**Migration `sql/migrations/versioned/0021_arc2_phase2_lot_lifecycle.sql`** (next unclaimed after Phase 1).
 
 **New tables:**
 
+- **`Lots.LotGenealogy`** (FDS-05-016) -- **CREATE (net-new; never built by Arc 1).** Append-only edge table: `Id BIGINT PK`, `ParentLotId BIGINT NOT NULL FK -> Lots.Lot.Id`, `ChildLotId BIGINT NOT NULL FK -> Lots.Lot.Id`, `RelationshipTypeId BIGINT NOT NULL FK -> Lots.GenealogyRelationshipType.Id` (Split/Merge/Consumption), `PieceCount INT NULL`, `EventUserId`, `TerminalLocationId`, `EventAt`. Written by `Lot_Split` / `Lot_Merge` / `LotGenealogy_RecordConsumption`; closure rows (B4) maintained transactionally alongside.
+- **`Lots.LotAttributeChange`** (FDS-05-021) -- **CREATE (net-new).** Append-only: `Id`, `LotId FK -> Lots.Lot.Id`, `AttributeName`, `OldValue`, `NewValue`, `ChangedByUserId`, `TerminalLocationId`, `ChangedAt`. Written by `Lot_UpdateAttribute`.
+- **`Lots.LotLabel`** (FDS-05-019) -- **CREATE (net-new).** Append-only LTT print log: `Id`, `LotId FK`, `LabelTypeCodeId`, `PrintReasonCodeId`, `ParentLotId NULL` (sublot labels per FDS-05-024), `ZplContent`, `PrinterName`, `PrintedByUserId`, `TerminalLocationId`, `PrintedAt`. Written by `LotLabel_Print` / `LotLabel_Reprint`.
 - **`Lots.PauseEvent`** (OI-21 / FDS-05-038) — append-only place + close lifecycle for operator-driven LOT pauses at a workstation. Columns: `Id BIGINT PK`, `LotId BIGINT NOT NULL FK → Lots.Lot.Id`, `LocationId BIGINT NOT NULL FK → Location.Location.Id (Cell-tier)`, `PausedByUserId BIGINT NOT NULL FK → AppUser.Id`, `PausedAt DATETIME2(3) NOT NULL DEFAULT SYSUTCDATETIME()`, `PausedReason NVARCHAR(500) NULL`, `ResumedByUserId BIGINT NULL FK → AppUser.Id`, `ResumedAt DATETIME2(3) NULL`, `ResumedRemarks NVARCHAR(500) NULL`. Constraints: `CK_PauseEvent_ResumePaired` pairing the resume cols; filtered UNIQUE `UQ_PauseEvent_OpenLotLocation (LotId, LocationId) WHERE ResumedAt IS NULL`. Filtered indexes: `IX_PauseEvent_OpenByLocation (LocationId) WHERE ResumedAt IS NULL` (Paused-LOT indicator counter) + `IX_PauseEvent_Lot (LotId, PausedAt DESC)` (per-LOT pause history). `Audit.LogEntityType` +1 row (`PauseEvent`).
 
 **New views (if Phase 0 B5 NOT elected — view stays as primary read path):**
@@ -845,7 +854,7 @@ None new in Phase 2 — all writes are operator-initiated through Perspective.
 
 ## Test Coverage
 
-New test suite at `sql/tests/0015_PlantFloor_Lot_Lifecycle/`:
+New test suite at `sql/tests/0021_PlantFloor_Lot_Lifecycle/`:
 
 | File | Covers |
 |---|---|
@@ -858,13 +867,13 @@ New test suite at `sql/tests/0015_PlantFloor_Lot_Lifecycle/`:
 | `065_LotPause_indicator.sql` | `_GetCountsByLocation` returns correct open count; `_GetByLocation` returns correct list ordered by `PausedAt`. |
 | `070_Label_print_reprint.sql` | Initial print; reprint with reason; ZPL content rendered. |
 
-Target: 90–120 passing tests in suite 0015.
+Target: 90–120 passing tests in suite 0021.
 
 ## Phase 2 complete when
 
-- [ ] Migration `0015_arc2_phase2_lot_lifecycle.sql` applied. `PauseEvent` CREATEd; `v_LotDerivedQuantities` view CREATEd (or skipped if B5 elected).
+- [ ] Migration `0021_arc2_phase2_lot_lifecycle.sql` applied. `PauseEvent` CREATEd; `v_LotDerivedQuantities` view CREATEd (or skipped if B5 elected).
 - [ ] All Phase 2 procs (Lot mutation expansion, genealogy traversal, pause lifecycle, label print/reprint) delivered.
-- [ ] All tests in `sql/tests/0015_PlantFloor_Lot_Lifecycle/` pass.
+- [ ] All tests in `sql/tests/0021_PlantFloor_Lot_Lifecycle/` pass.
 - [ ] Perspective views: LOT Detail, LOT Search, Genealogy Viewer, Paused-LOT Indicator implemented.
 - [ ] Phase 3+ stations can call `Lot_Split`, `Lot_Merge`, `LotGenealogy_RecordConsumption`, `LotLabel_Print`, `LotPause_Place`, `LotPause_Resume`, `Lot_GetGenealogyTree` against the delivered contract.
 
@@ -880,7 +889,7 @@ Target: 90–120 passing tests in suite 0015.
 
 ## Data Model Changes
 
-**Migration `sql/migrations/versioned/0016_arc2_phase3_die_cast.sql`** (next unclaimed).
+**Migration `sql/migrations/versioned/0022_arc2_phase3_die_cast.sql`** (next unclaimed).
 
 - Seed `Parts.OperationTemplate` rows for `DieCastShot` with the appropriate `OperationTemplateField` entries (no `DieIdentifier` / `CavityNumber` / `WarmupShotCount` — Tool/Cavity on Lot per B13; warm-up on `DowntimeEvent` per UJ-14).
 - Seed `Audit.LogEventType` rows: `DieCastCheckpointRecorded`, `RejectEventRecorded` (if not already seeded).
@@ -967,7 +976,7 @@ A press stops; the operator logs the event via the Phase 8 Downtime Entry view �
 
 ## Test Coverage
 
-New test suite at `sql/tests/0016_PlantFloor_DieCast/`:
+New test suite at `sql/tests/0022_PlantFloor_DieCast/`:
 
 | File | Covers |
 |---|---|
@@ -976,14 +985,14 @@ New test suite at `sql/tests/0016_PlantFloor_DieCast/`:
 | `030_DieCast_walkthrough.sql` | End-to-end scenario: ToolAssignment lookup against a selected Cell → Lot_Create with Tool/Cavity → first ProductionEvent → second ProductionEvent at later time → LAG delta correct. |
 | `040_CavityParallel_peers.sql` | Two LOTs created on the same Tool, different Cavities, no parent-child FK; each closes independently. |
 
-Target: 50–70 passing tests in suite 0016.
+Target: 50–70 passing tests in suite 0022.
 
 ## Phase 3 complete when
 
-- [ ] Migration `0016_arc2_phase3_die_cast.sql` applied. OperationTemplate seeds in place. LogEventType seeds in place.
+- [ ] Migration `0022_arc2_phase3_die_cast.sql` applied. OperationTemplate seeds in place. LogEventType seeds in place.
 - [ ] `ProductionEvent_Record` and `RejectEvent_Record` procs delivered with checkpoint shape (no `GoodCount` / `NoGoodCount` parameters).
 - [ ] `ToolAssignment_ListActiveByCell` and `ToolCavity_ListActiveByTool` procs delivered.
-- [ ] All tests in `sql/tests/0016_PlantFloor_DieCast/` pass (target 50–70).
+- [ ] All tests in `sql/tests/0022_PlantFloor_DieCast/` pass (target 50–70).
 - [ ] Perspective Die Cast LOT Entry view implemented with Tool auto-populate + elevated Edit + Cavity dropdown.
 - [ ] Gateway `DieCastCycleReader` implemented (optional — operator override path covers if not yet wired).
 - [ ] **End-to-end integration check:** an operator at a Shared Die Cast terminal selects a press as Cell context, creates a Cavity-A LOT, then later creates a Cavity-B LOT on the same press; both peer LOTs exist with their respective `ToolCavityId`; first `ProductionEvent` written for each with cumulative `ShotCount`; one reject event recorded; LTT labels printed; navigation to Phase 2 `LOT Detail` shows Tool/Cavity rendered correctly.
@@ -1000,11 +1009,11 @@ Target: 50–70 passing tests in suite 0016.
 
 ## Data Model Changes
 
-**Migration `sql/migrations/versioned/0017_arc2_phase4_movement_trim_receiving.sql`** (next unclaimed).
+**Migration `sql/migrations/versioned/0023_arc2_phase4_movement_trim_receiving.sql`** (next unclaimed).
 
-- Seed `Parts.OperationTemplate` rows for `TrimIn`, `TrimOut`, `ReceivingScan` with appropriate `OperationTemplateField` entries. `TrimOut` is a whole-LOT move — it carries no split flag (the `RequiresSubLotSplit` column now lands in Phase 5's migration `0018` on the `MachiningOut` template).
+- Seed `Parts.OperationTemplate` rows for `TrimIn`, `TrimOut`, `ReceivingScan` with appropriate `OperationTemplateField` entries. `TrimOut` is a whole-LOT move — it carries no split flag (the `RequiresSubLotSplit` column now lands in Phase 5's migration `0024` on the `MachiningOut` template).
 - Seed `Audit.LogEventType` rows: `LotMoved`, `TrimCheckpointRecorded`, `TrimOutRecorded`, `ReceivingScanRecorded` (where missing).
-- No new tables. No schema additions (the `RequiresSubLotSplit` ALTER moved to Phase 5 / migration `0018`).
+- No new tables. No schema additions (the `RequiresSubLotSplit` ALTER moved to Phase 5 / migration `0024`).
 
 **Tables used:** `Lots.Lot`, `Lots.LotMovement`, `Workorder.ProductionEvent`, `Workorder.RejectEvent`, `Parts.OperationTemplate`, `Parts.v_EffectiveItemLocation`, `Parts.Item.MaxParts` (OI-12 cap), `Location.LocationAttribute` (`LinesideLimit`). (No `Lots.LotGenealogy` / closure writes in Phase 4 — Trim OUT moves the LOT whole; genealogy split edges are written in Phase 5 at Machining OUT.)
 
@@ -1096,7 +1105,7 @@ After submit, navigation from any Trim view routes to the polymorphic Phase 2 `L
 
 ## Test Coverage
 
-New test suite at `sql/tests/0017_PlantFloor_Movement_Trim/`:
+New test suite at `sql/tests/0023_PlantFloor_Movement_Trim/`:
 
 | File | Covers |
 |---|---|
@@ -1107,17 +1116,17 @@ New test suite at `sql/tests/0017_PlantFloor_Movement_Trim/`:
 | `050_TrimOut_Record_validation.sql` | Missing destination rejects; non-Machining destination rejects (eligibility check); blocked LOT rejects via `Lot_AssertNotBlocked`. |
 | `070_Receiving_pass_through.sql` | Lot_Create with `LotOriginType = 'Received'`; vendor lot number captured; serial range captured. |
 
-(Sub-LOT split tests — multi-way split, split-to-same-cell, flag-mismatch — moved to Phase 5 suite `0018`, where the split now lives.)
+(Sub-LOT split tests — multi-way split, split-to-same-cell, flag-mismatch — moved to Phase 5 suite `0024`, where the split now lives.)
 
-Target: 55–75 passing tests in suite 0017.
+Target: 55–75 passing tests in suite 0023.
 
 ## Phase 4 complete when
 
-- [ ] Migration `0017_arc2_phase4_movement_trim_receiving.sql` applied. OperationTemplate seeds in place. LogEventType seeds in place.
+- [ ] Migration `0023_arc2_phase4_movement_trim_receiving.sql` applied. OperationTemplate seeds in place. LogEventType seeds in place.
 - [ ] Movement Scan pattern delivered (helper procs + Perspective component).
 - [ ] `TrimOut_Record` proc delivered — whole-LOT move to the destination Machining line (no split).
 - [ ] `Lot_GetWipQueueByLocation` delivered (consumed by Phase 5).
-- [ ] All tests in `sql/tests/0017_PlantFloor_Movement_Trim/` pass (target 55–75).
+- [ ] All tests in `sql/tests/0023_PlantFloor_Movement_Trim/` pass (target 55–75).
 - [ ] Perspective Movement Scan, Trim Station IN, Trim Station OUT (whole-LOT move), Receiving Dock views implemented.
 - [ ] Gateway `LttZplDispatcher` implemented and tested against Zebra emulator + real Zebra at the dev Trim terminal.
 - [ ] **End-to-end integration check:** A LOT created in Phase 3 moves to Trim → Trim IN checkpoint event written → Trim OUT moves the whole LOT to one Machining line → LOT visible in that line's FIFO queue via `Lot_GetWipQueueByLocation` (no split at Trim — the sub-LOT split is exercised in Phase 5).
@@ -1134,7 +1143,7 @@ Target: 55–75 passing tests in suite 0017.
 
 ## Data Model Changes
 
-**Migration `sql/migrations/versioned/0018_arc2_phase5_machining.sql`** (next unclaimed).
+**Migration `sql/migrations/versioned/0024_arc2_phase5_machining.sql`** (next unclaimed).
 
 - **ALTER `Parts.OperationTemplate` ADD `RequiresSubLotSplit BIT NOT NULL DEFAULT 0`** — controls the **Machining OUT** outbound flow (relocated here from Phase 4 per FDS v1.3 / Phased Plan v1.1). When `1`, the line sublots: the Machining OUT screen presents the multi-destination split UX (one sub-LOT per destination). When `0` (default), the line does not sublot — Machining OUT is the PLC-driven auto-move (coupled) or manual whole-move (uncoupled). Versioned per the existing OperationTemplate clone-to-modify pattern. Engineering authors per Item per Cell via the Configuration Tool; the physical correlate is whether the line has a dedicated Machining OUT terminal.
 - Seed `Parts.OperationTemplate` rows for `MachiningIn` and `MachiningOut` with the appropriate `OperationTemplateField` entries (cycle time, fixture, program — final list confirmed during Phase 0 A5 walkthrough alongside `DefaultScreen` / `ConfirmationMethod` seeding). Initial `MachiningOut` seed rows carry `RequiresSubLotSplit = 1` for lines known to sublot; the rest default to `0` and Engineering edits per Item later.
@@ -1246,7 +1255,7 @@ Machining may process a rework LOT returning from Phase 7's Sort Cage. Rework LO
 
 ## Test Coverage
 
-New test suite at `sql/tests/0018_PlantFloor_Machining/`:
+New test suite at `sql/tests/0024_PlantFloor_Machining/`:
 
 | File | Covers |
 |---|---|
@@ -1261,15 +1270,15 @@ New test suite at `sql/tests/0018_PlantFloor_Machining/`:
 | `080_MachiningOut_RecordSplit_validation.sql` | Sum-of-children ≠ parent rejects; missing destination rejects; blocked parent LOT rejects via `Lot_AssertNotBlocked`. |
 | `090_Rework_LOT_in_queue.sql` | Rework LOT routed back to a Machining Cell from Sort Cage flows through the same MachiningIn pick + rename without special handling. |
 
-Target: 80–110 passing tests in suite 0018.
+Target: 80–110 passing tests in suite 0024.
 
 ## Phase 5 complete when
 
-- [ ] Migration `0018_arc2_phase5_machining.sql` applied — including the `RequiresSubLotSplit` ALTER (moved from Phase 4). OperationTemplate seeds in place. LogEventType seeds in place.
+- [ ] Migration `0024_arc2_phase5_machining.sql` applied — including the `RequiresSubLotSplit` ALTER (moved from Phase 4). OperationTemplate seeds in place. LogEventType seeds in place.
 - [ ] `MachiningIn_PickAndConsume` composite proc delivered.
 - [ ] `MachiningOut_AutoComplete` PLC-trigger proc delivered.
 - [ ] `MachiningOut_RecordSplit` operator-split proc delivered (sublotting lines).
-- [ ] All tests in `sql/tests/0018_PlantFloor_Machining/` pass (target 80–110).
+- [ ] All tests in `sql/tests/0024_PlantFloor_Machining/` pass (target 80–110).
 - [ ] Perspective Machining IN view implemented with FIFO Queue Repeater + BOM-Driven Rename Confirmation Modal.
 - [ ] Perspective Machining OUT Split view implemented (Flex Repeater destination selectors) for sublotting lines.
 - [ ] Gateway `MachiningOpCompleteWatcher` per-Cell implemented and tested against PLC `OperationComplete` edge in dev (non-sublotting cells).
@@ -1289,7 +1298,7 @@ Target: 80–110 passing tests in suite 0018.
 
 ## Data Model Changes
 
-**Migration `sql/migrations/versioned/0019_arc2_phase6_assembly.sql`** (next unclaimed).
+**Migration `sql/migrations/versioned/0025_arc2_phase6_assembly.sql`** (next unclaimed).
 
 **New tables (Container family — anchored here, consumed across Phases 6 + 7):**
 
@@ -1297,11 +1306,12 @@ Target: 80–110 passing tests in suite 0018.
 - `Lots.ContainerTray` — child of Container. Columns: `Id BIGINT PK`, `ContainerId BIGINT FK → Container.Id`, `TrayPosition INT NOT NULL`, `PartsClosedCount INT NOT NULL DEFAULT 0`, `ClosedAt DATETIME2(3) NULL`, `ClosedByUserId BIGINT FK → AppUser.Id NULL`, `ClosureMethod NVARCHAR(20) NULL` (`ByCount`/`ByWeight`/`ByVision` — captured from `Parts.ContainerConfig.ClosureMethod` at the moment of closure for audit). Filtered UNIQUE `(ContainerId, TrayPosition)`.
 - `Lots.ContainerSerial` — junction: serial numbers in container tray positions. Columns: `Id BIGINT PK`, `ContainerId BIGINT FK → Container.Id`, `ContainerTrayId BIGINT FK → ContainerTray.Id NULL`, `SerializedPartId BIGINT FK → SerializedPart.Id`, `TrayPosition INT NULL`, `HardwareInterlockBypassed BIT NOT NULL DEFAULT 0` (UJ-16 Option A). Filtered indexes for serial lookups and per-Container drilldown.
 - `Lots.SerializedPart` — the laser-etched part itself. Columns: `Id BIGINT PK`, `SerialNumber NVARCHAR(50) UNIQUE`, `ItemId BIGINT FK → Parts.Item.Id`, `ProducingLotId BIGINT FK → Lots.Lot.Id`, `EtchedAt DATETIME2(3) NOT NULL`, `EtchedByUserId BIGINT FK → AppUser.Id`. `SerialNumber` mints via `Lots.IdentifierSequence_Next @Code='SerializedItem'` per B15.
+- `Lots.ShippingLabel` -- **CREATE (per C-5 -- `Container_Complete` inserts it; was missing from the plan's CREATE list).** Container shipping-label print/void/reprint history. Columns: `Id BIGINT PK`, `ContainerId BIGINT FK -> Container.Id`, `AimShipperId NVARCHAR(50) NOT NULL` (from `AimShipperIdPool_Claim`), `LabelTypeCodeId BIGINT FK -> Lots.LabelTypeCode.Id`, `PrintedByUserId`, `TerminalLocationId`, `IsVoid BIT DEFAULT 0`, `PrintedAt NULL`, `VoidedAt NULL`, `VoidedByUserId NULL`, `PrintAttempts INT DEFAULT 0`, `LastPrintAttemptAt NULL`, `LastPrintError NULL`, `PrintFailedAt NULL`, `BannerAcknowledgedAt NULL` (FDS-07-006a/b print-failure surfacing). Phase 7 reads / voids / reprints it -- it does not re-CREATE it.
 
 **Seeds:**
 
 - `Parts.OperationTemplate` rows for assembly operations per Item — one set per serialized line (5G0 family) and one per non-serialized line (6B2, RPY, etc.). Final list confirmed during Phase 0 A5 walkthrough.
-- `Audit.LogEntityType` rows: `Container`, `ContainerTray`, `ContainerSerial`, `SerializedPart`.
+- `Audit.LogEntityType` rows: `Container`, `ContainerTray`, `ContainerSerial`, `SerializedPart`, `ShippingLabel`.
 - `Audit.LogEventType` rows: `ContainerOpened`, `TrayClosed`, `ContainerCompleted`, `ContainerSerialAdded`, `MaterialSubstituteOverride` (UJ-09), `WorkOrderCompletionConfirmed` (FDS-06-028 / OI-16).
 
 **Tables used (existing + new):** `Lots.Lot`, `Lots.LotGenealogy` (+ closure if B4), `Lots.LotMovement`, `Workorder.ConsumptionEvent`, `Workorder.ProductionEvent`, `Workorder.RejectEvent`, `Parts.Bom`, `Parts.BomLine`, `Parts.ContainerConfig` (`ClosureMethod`, `TraysPerContainer`, `PartsPerTray`), `Parts.Item.MaxParts` (lineside cap), `Location.LocationAttribute` (`ConfirmationMethod`, `RequiresCompletionConfirm`).
@@ -1418,7 +1428,7 @@ When the PLC asserts `HardwareInterlockEnable = false` (a valid bypass mode per 
 
 ## Test Coverage
 
-New test suite at `sql/tests/0019_PlantFloor_Assembly/`:
+New test suite at `sql/tests/0025_PlantFloor_Assembly/`:
 
 | File | Covers |
 |---|---|
@@ -1432,13 +1442,13 @@ New test suite at `sql/tests/0019_PlantFloor_Assembly/`:
 | `080_BomCheck_supervisor_override.sql` | Off-BOM + valid supervisor @OverrideAppUserId + @OverrideAuthorized=1 succeeds; audit row captures both AppUserIds. |
 | `090_SerializedPart_Mint.sql` | Mints via IdentifierSequence_Next; SerialNumber matches `MESI{0:D7}` format; rolls back on unrelated transaction failure does not burn the counter (per B6 row-locked-update model — note: if Phase 0 elected SEQUENCE, the counter does burn, accepted tradeoff). |
 
-Target: 100–135 passing tests in suite 0019.
+Target: 100–135 passing tests in suite 0025.
 
 ## Phase 6 complete when
 
-- [ ] Migration `0019_arc2_phase6_assembly.sql` applied. Container family CREATEd. Seeds in place.
+- [ ] Migration `0025_arc2_phase6_assembly.sql` applied. Container family CREATEd. Seeds in place.
 - [ ] All Phase 6 procs delivered.
-- [ ] All tests in `sql/tests/0019_PlantFloor_Assembly/` pass.
+- [ ] All tests in `sql/tests/0025_PlantFloor_Assembly/` pass.
 - [ ] Perspective Assembly Serialized + Assembly Non-Serialized views implemented composing all cross-cutting components.
 - [ ] Gateway `AssemblyMipHandler` per serialized line implemented and tested against PLC simulator + dev 5G0 MIP.
 - [ ] Gateway `ShippingLabelDispatcher` implemented; 3-retry mechanism tested against Zebra emulator failures; `PrintFailedAt` set correctly on exhaustion.
@@ -1458,11 +1468,11 @@ Target: 100–135 passing tests in suite 0019.
 
 ## Data Model Changes
 
-**Migration `sql/migrations/versioned/0020_arc2_phase7_hold_sort_shipping_aim.sql`** (next unclaimed).
+**Migration `sql/migrations/versioned/0026_arc2_phase7_hold_sort_shipping_aim.sql`** (next unclaimed).
 
 **New tables:**
 
-- `Quality.HoldEvent` (if not already in Phase 1 — confirm during Phase 0 scoping). Columns per Data Model v1.9l §5: `Id`, `LotId NULL FK → Lots.Lot.Id`, `ContainerId NULL FK → Lots.Container.Id`, `HoldTypeCodeId BIGINT FK → Quality.HoldTypeCode.Id`, `Reason NVARCHAR(500)`, `PlacedByUserId BIGINT FK → AppUser.Id`, `PlacedAt DATETIME2(3)`, `ReleasedByUserId BIGINT FK → AppUser.Id NULL`, `ReleasedAt DATETIME2(3) NULL`. Filtered UNIQUE for at-most-one-open per `(LotId)` and `(ContainerId)` per B3.
+- `Quality.HoldEvent` -- **CREATE here (C-4: this is its owning phase; it is NOT created in Phase 1).** Columns per Data Model v1.9o section 5: `Id`, `LotId NULL FK → Lots.Lot.Id`, `ContainerId NULL FK → Lots.Container.Id`, `HoldTypeCodeId BIGINT FK → Quality.HoldTypeCode.Id`, `Reason NVARCHAR(500)`, `PlacedByUserId BIGINT FK → AppUser.Id`, `PlacedAt DATETIME2(3)`, `ReleasedByUserId BIGINT FK → AppUser.Id NULL`, `ReleasedAt DATETIME2(3) NULL`. Filtered UNIQUE for at-most-one-open per `(LotId)` and `(ContainerId)` per B3.
 - `Lots.AimShipperIdPool` (per Data Model v1.9h / UJ-04). Columns: `Id`, `AimShipperId NVARCHAR(50) UNIQUE`, `PartNumber NVARCHAR(50)` (AIM IDs are fetched per-part-number), `FetchedAt`, `FetchedInterfaceLogId BIGINT FK → Audit.InterfaceLog.Id`, `ConsumedAt NULL`, `ConsumedByContainerId NULL FK → Lots.Container.Id`, `ConsumedByUserId NULL FK → AppUser.Id`. Filtered index `IX_AimShipperIdPool_AvailableByPart (PartNumber, FetchedAt) WHERE ConsumedAt IS NULL` — drives the FIFO-by-part-number claim.
 - `Lots.AimPoolConfig` (per Data Model v1.9h). Single-row table holding configurable thresholds: `TargetBufferDepth INT DEFAULT 50`, `TopupThreshold INT DEFAULT 30`, `AlarmWarningDepth INT DEFAULT 20`, `AlarmCriticalDepth INT DEFAULT 10`. `CHECK (Id = 1)` enforces single-row.
 - `Lots.ContainerSerialHistory` (UJ-05 default direction — update-in-place). Columns: `Id`, `ContainerSerialId BIGINT FK → ContainerSerial.Id`, `OldContainerId BIGINT FK → Container.Id`, `NewContainerId BIGINT FK → Container.Id`, `OldTrayPosition INT NULL`, `NewTrayPosition INT NULL`, `MigrationReasonCode NVARCHAR(50)` (`SortCage`, `Repack`, `RangeAdjustment`), `MigratedAt DATETIME2(3)`, `MigratedByUserId BIGINT FK → AppUser.Id`. Filtered index for per-SerializedPart history walk.
@@ -1615,7 +1625,7 @@ If the sweep finds more than **5** stranded labels at once, fire a supervisor al
 
 ## Test Coverage
 
-New test suite at `sql/tests/0020_PlantFloor_Hold_Sort_Shipping_Aim/`:
+New test suite at `sql/tests/0026_PlantFloor_Hold_Sort_Shipping_Aim/`:
 
 | File | Covers |
 |---|---|
@@ -1628,15 +1638,15 @@ New test suite at `sql/tests/0020_PlantFloor_Hold_Sort_Shipping_Aim/`:
 | `070_PrintFailure_safety_sweep.sql` | Stranded row recovered on first sweep; double-strand sets PrintFailedAt; > 5 stranded triggers alarm. |
 | `080_ShippingLabel_Void_Reprint.sql` | Void marks IsVoid + VoidedAt; Reprint inserts new row with PrintReasonCode; original row unchanged. |
 
-Target: 90–120 passing tests in suite 0020.
+Target: 90–120 passing tests in suite 0026.
 
 ## Phase 7 complete when
 
-- [ ] Migration `0020_arc2_phase7_hold_sort_shipping_aim.sql` applied. New tables CREATEd. Seeds in place.
+- [ ] Migration `0026_arc2_phase7_hold_sort_shipping_aim.sql` applied. New tables CREATEd. Seeds in place.
 - [ ] All Phase 7 procs delivered.
-- [ ] All tests in `sql/tests/0020_PlantFloor_Hold_Sort_Shipping_Aim/` pass.
+- [ ] All tests in `sql/tests/0026_PlantFloor_Hold_Sort_Shipping_Aim/` pass.
 - [ ] Perspective views (Hold Management, Sort Cage Workflow, Shipping Dock, AIM Pool Config) implemented.
-- [ ] All five Gateway scripts (Topup, AlarmMonitor, AimHoldHandler, AimUpdateHandler, PrintFailureSafetySweep, PrintFailureBroadcaster) implemented and tested.
+- [ ] All six Gateway scripts (Topup, AlarmMonitor, AimHoldHandler, AimUpdateHandler, PrintFailureSafetySweep, PrintFailureBroadcaster) implemented and tested.
 - [ ] **End-to-end integration check (hold + Sort Cage + reship):** complete a Container in Phase 6 → place hold via Hold Management → AIM PlaceOnHold logs to InterfaceLog → operator at Sort Cage migrates serials to a new Container via Flex Repeater → original ShippingLabel voided → new Container completes + new AIM ID claimed + new ShippingLabel printed → AimUpdate logs to InterfaceLog → ship the new Container.
 - [ ] **End-to-end integration check (pool exhaustion):** drain pool to zero → Container_Complete attempt hard-fails → operator banner → topup script refills → retry succeeds.
 - [ ] **End-to-end integration check (stranded print recovery):** kill Gateway between Container_Complete commit and print dispatch → safety sweep recovers and dispatches.
@@ -1654,9 +1664,9 @@ Target: 90–120 passing tests in suite 0020.
 
 ## Data Model Changes
 
-**Migration `sql/migrations/versioned/0021_arc2_phase8_downtime_shift.sql`** (next unclaimed).
+**Migration `sql/migrations/versioned/0027_arc2_phase8_downtime_shift.sql`** (next unclaimed).
 
-- `Oee.DowntimeEvent` — CREATE per Data Model v1.9l §6 if not already in Phase 1: `Id`, `LocationId BIGINT FK → Location.Location.Id`, `DowntimeReasonCodeId BIGINT FK → DowntimeReasonCode.Id NULL` (per B7 — late-binding reason codes), `ShiftId BIGINT FK → Oee.Shift.Id NULL`, `StartedAt`, `EndedAt NULL`, `DowntimeSourceCodeId BIGINT FK → DowntimeSourceCode.Id`, `AppUserId BIGINT FK → AppUser.Id NULL`, `ShotCount INT NULL` (UJ-14 — warm-up shots when ReasonType=Setup), `Remarks NVARCHAR(500) NULL`, `CreatedAt`. Filtered UNIQUE for at-most-one-open per `(LocationId)` per B3.
+- `Oee.DowntimeEvent` -- **CREATE here (C-4: Phase 8 owns it; it is NOT created in Phase 1).** Per Data Model v1.9o section 6: `Id`, `LocationId BIGINT FK → Location.Location.Id`, `DowntimeReasonCodeId BIGINT FK → DowntimeReasonCode.Id NULL` (per B7 — late-binding reason codes), `ShiftId BIGINT FK → Oee.Shift.Id NULL`, `StartedAt`, `EndedAt NULL`, `DowntimeSourceCodeId BIGINT FK → DowntimeSourceCode.Id`, `AppUserId BIGINT FK → AppUser.Id NULL`, `ShotCount INT NULL` (UJ-14 — warm-up shots when ReasonType=Setup), `Remarks NVARCHAR(500) NULL`, `CreatedAt`. Filtered UNIQUE for at-most-one-open per `(LocationId)` per B3.
 - Seed `Audit.LogEventType` rows: `DowntimeStarted`, `DowntimeEnded`, `DowntimeReasonAssigned`, `EndOfShiftSubmitted`, `ShiftHandoverAcknowledged`.
 
 **Tables used:** `Oee.Shift`, `Oee.ShiftSchedule`, `Oee.DowntimeEvent`, `Oee.DowntimeReasonCode`, `Oee.DowntimeReasonType`, `Oee.DowntimeSourceCode`, `Lots.PauseEvent` (read at shift end summary), `Lots.LotMovement` + `v_LotDerivedQuantities` (read at shift end summary).
@@ -1751,7 +1761,7 @@ The Supervisor Dashboard top-level view aggregates across multiple Cells (parent
 
 ## Test Coverage
 
-New test suite at `sql/tests/0021_PlantFloor_Downtime_Shift/`:
+New test suite at `sql/tests/0027_PlantFloor_Downtime_Shift/`:
 
 | File | Covers |
 |---|---|
@@ -1763,16 +1773,65 @@ New test suite at `sql/tests/0021_PlantFloor_Downtime_Shift/`:
 | `060_Shift_GetEndOfShiftSummary.sql` | Three lists return correctly; in-process LOTs query uses the LotMovement (ToLocationId, MovedAt DESC) index. |
 | `070_OpenEvents_span_boundary.sql` | Shift_End leaves open DowntimeEvent / PauseEvent / HoldEvent rows untouched per UJ-10 / OI-03. |
 
-Target: 60–80 passing tests in suite 0021.
+Target: 60–80 passing tests in suite 0027.
 
 ## Phase 8 complete when
 
-- [ ] Migration `0021_arc2_phase8_downtime_shift.sql` applied. DowntimeEvent CREATEd if not already. Seeds in place.
+- [ ] Migration `0027_arc2_phase8_downtime_shift.sql` applied. DowntimeEvent CREATEd if not already. Seeds in place.
 - [ ] All Phase 8 procs delivered.
-- [ ] All tests in `sql/tests/0021_PlantFloor_Downtime_Shift/` pass.
+- [ ] All tests in `sql/tests/0027_PlantFloor_Downtime_Shift/` pass.
 - [ ] Perspective views (Downtime Entry, End-of-Shift Time Entry, Shift-end Summary, Supervisor Dashboard) implemented.
 - [ ] Gateway `DowntimePlcWatcher` per machine implemented and tested against PLC simulator.
 - [ ] **End-to-end integration check:** PLC opens a downtime event with NULL reason → operator assigns reason via Downtime Entry view → operator runs shift → 15 min before scheduled end, EndOfShiftWindowTrigger surfaces the time-entry control → operator submits (Dedicated single-button) → DowntimeEvent rows for lunch + breaks inserted → Shift-end Summary shows open events; operator acknowledges → next shift's operator closes the open downtime when the machine resumes.
+
+---
+
+# Phase 9 — Quality Capture, Controlled Run Tag & Global Trace (MVP gap-closure)
+
+**Goal:** Close the three MVP requirements the prior plan revisions left unhomed, ratified in-scope by MPP 2026-06-08: operator **inspection recording**, the **Controlled Run Tag** workflow, and the **Global Trace Tool** + LOT Genealogy Report. (The legacy PD operational reports remain deferred — see Out of Scope.)
+
+**Dependencies:** Phases 1–7 (reads LOT / event / container / quality data across the board). The `Lot.CrtActive` schema hook ships earlier, in the Phase 1 `Lots.Lot` CREATE (Data Model v1.9q).
+
+**Status:** In scope (2026-06-08). Only the PD-report subset stays deferred.
+
+## Data Model Changes
+
+**Migration `sql/migrations/versioned/0028_arc2_phase9_quality_capture.sql`** (next free after the Phase-8 migration).
+
+**New tables — inspection recording (FDS-08-011 / 012 / 013; specified in Data Model section 5, never built):**
+
+- `Quality.QualitySample` — CREATE. Inspection header: `Id`, `LotId FK -> Lots.Lot.Id`, `QualitySpecVersionId FK -> Quality.QualitySpecVersion.Id`, `LocationId NULL`, `SampleTriggerCodeId NULL`, `SampledByUserId FK -> AppUser.Id`, `InspectionResultCodeId FK` (overall pass/fail), `SampledAt`.
+- `Quality.QualityResult` — CREATE. Per-attribute result: `Id`, `QualitySampleId FK`, `QualitySpecAttributeId FK`, `MeasuredValue NVARCHAR`, `NumericValue DECIMAL(18,4) NULL` (v1.9p indexable shadow), `IsPass BIT`.
+- `Quality.QualityAttachment` — CREATE. File metadata (CSV/XLSX/PDF/PNG/JPG to filesystem) linked to a sample.
+
+**Controlled Run Tag (FDS-10-011 / 012):**
+
+- Schema hook `Lots.Lot.CrtActive BIT` ships in **Phase 1** (Data Model v1.9q). Phase 9 seeds the CRT `Audit.LogEventType` rows (`CrtActivated`, `CrtCleared`, `MissedCrtInspect`) and builds the workflow: a CRT-active LOT requires a `QualitySample` per part on downstream operations (200% inspection); a missed inspection is flagged `MissedCrtInspect` and forces an operation re-run; clearance is a supervisor-AD-elevated release. No new table beyond the inspection tables above — the per-op inspection record *is* the `QualitySample` stream.
+
+**Global Trace (FDS-12-001 / 012 / 013 / 014):** no new tables — read-only over the existing LOT / genealogy / production / movement / hold / container / shipping tables.
+
+## API Layer (Named Queries -> Stored Procedures)
+
+- **Inspection:** `Quality.QualitySample_Record`, `QualitySample_GetByLot`, the `QualityResult` writers, an attachment-metadata writer.
+- **CRT:** `Lots.Lot_SetCrt` / `Lot_ClearCrt` (supervisor-elevated), `Quality.Crt_GetRequiredInspections` (200% gate); missed-inspect detection is consumed by the production procs.
+- **Global Trace:** `Trace.GlobalTrace_Resolve` (LOT / Serial / Container / Shipper -> entity + disambiguation), `GlobalTrace_GetFullTrace` (header + genealogy tree + production + movement + holds + shipping).
+
+## Perspective Views
+
+- Inspection Entry + Inspection History.
+- Global Trace Tool (Track home tile, any context, read-only, Print/Export) + a printable LOT Genealogy Report.
+- CRT controls fold into the existing LOT Detail + assembly/inspection screens (set/clear flag, 200%-inspect prompt, supervisor release).
+
+## Test Coverage
+
+New suite `sql/tests/0028_PlantFloor_Quality_Capture/`: inspection record + pass/fail rollup + no-auto-hold (FDS-08-012); CRT activate/clear + 200% gate + missed-inspect re-run + elevated release; Global Trace resolve/disambiguation + full-trace assembly. Target ~70–95 assertions.
+
+## Phase 9 complete when
+
+- [ ] Inspection recording end-to-end (sample + per-attribute results + attachments; a failed inspection alerts but does not auto-hold).
+- [ ] CRT workflow: activate -> 200% downstream inspection enforced -> missed inspection flagged + re-run -> supervisor-elevated clearance; audit rows for each.
+- [ ] Global Trace Tool resolves any LOT / Serial / Container / Shipper and renders the full read-only trace with Print/Export; LOT Genealogy Report prints.
+- [ ] Migration `0028_arc2_phase9_quality_capture.sql` applied; suite `0028_PlantFloor_Quality_Capture/` passes.
 
 ---
 
@@ -1781,7 +1840,7 @@ Target: 60–80 passing tests in suite 0021.
 Explicitly excluded from this plan — handled elsewhere or deferred:
 
 - **OEE Snapshot calculation.** `Oee.OeeSnapshot` table exists in the data model as FUTURE scope. No Phase is dedicated to it; no stored procs, no Gateway scripts. Post-MVP workstream.
-- **PD Reports replacement.** The four legacy Productivity Database reports (Die Shot, Rejects, Downtime, Production) are a separate Reporting workstream driven from the data captured here. Ignition Reporting module or an equivalent tool will consume the `ProductionEvent`, `RejectEvent`, `DowntimeEvent`, and `Shift` tables directly. Couples to **UJ-19** + **OI-30** Reports tile contents.
+- **Reporting split (ratified 2026-06-08).** The **LOT Genealogy Report** and the **Global Trace Tool** (FDS-12-001 / 012 / 013 / 014 — primary Honda traceability) are **MVP and in-scope**, built in **Phase 9** (they read existing event tables; not gated on UJ-19). The four legacy Productivity-Database operational reports (Die Shot, Rejects, Downtime, Production) **and Shipping History** are **deferred to near/post-deployment**: a separate Reporting workstream (Ignition Reporting module over `ProductionEvent` / `RejectEvent` / `DowntimeEvent` / `Shift`), gated on **UJ-19** (MPP names the four PD reports + data sources) + **OI-30**.
 - **Macola integration.** FUTURE — not in this plan.
 - **Intelex integration.** FUTURE — NCM / Failure Analysis remains in Intelex separately. Phase 7's hold mechanism is the operational disposition tool in MVP; formal NCM workflows stay in Intelex.
 - **Pixel-level Perspective mockups and Perspective JSON project exports.** Functional view descriptions only. Mockup production, if done, is a parallel workstream.
@@ -1821,8 +1880,8 @@ See `MPP_MES_Open_Issues_Register.docx` v2.16 for full text and decision history
 | Document | Version (2026-04-29) | Relevance |
 |---|---|---|
 | `MPP_MES_SUMMARY.md` | current | Project index, scope matrix overview |
-| `MPP_MES_DATA_MODEL.docx` | v1.9l | Every table + view + column referenced in this plan |
-| `MPP_MES_FDS.docx` | v0.11m | Functional Design Specification — every FDS-XX-NNN cited |
+| `MPP_MES_DATA_MODEL.docx` | v1.9o | Every table + view + column referenced in this plan |
+| `MPP_MES_FDS.docx` | v1.3 | Functional Design Specification — every FDS-XX-NNN cited |
 | `MPP_MES_FDS_CHANGELOG.docx` | tracks v0.11m | Pre-release revision history companion to the FDS |
 | `MPP_MES_USER_JOURNEYS.docx` | v0.9 | Arc 2 narrative — this plan is the execution map for the Arc 2 journey |
 | `MPP_MES_Open_Issues_Register.docx` | v2.16 | Open items tracking (OI-XX, UJ-XX) |
