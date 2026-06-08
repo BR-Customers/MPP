@@ -76,9 +76,21 @@ INSERT INTO #R5 EXEC Tools.ToolCavity_SaveAll @ToolId=@ToolId, @RowsJson=N'[]', 
 SELECT @S = Status FROM #R5; DROP TABLE #R5;
 SET @SStr = CAST(@S AS NVARCHAR(1));
 EXEC test.Assert_IsEqual @TestName=N'[CavSaveEmpty] Status is 1', @Expected=N'1', @Actual=@SStr;
-DECLARE @Cnt INT = (SELECT COUNT(*) FROM Tools.ToolCavity WHERE ToolId=@ToolId);
+DECLARE @Cnt INT = (SELECT COUNT(*) FROM Tools.ToolCavity WHERE ToolId=@ToolId AND DeprecatedAt IS NULL);
 DECLARE @CntStr NVARCHAR(10) = CAST(@Cnt AS NVARCHAR(10));
 EXEC test.Assert_IsEqual @TestName=N'[CavSaveEmpty] Cavity persists (not deleted on absent)', @Expected=N'1', @Actual=@CntStr;
+GO
+
+-- Test 6: invalid StatusCode -> Status=0
+DECLARE @S BIT, @SStr NVARCHAR(1);
+DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'SA-CAV-TOOL');
+CREATE TABLE #R6 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #R6 EXEC Tools.ToolCavity_SaveAll @ToolId=@ToolId,
+    @RowsJson=N'[{"Id":null,"CavityNumber":5,"Description":null,"StatusCode":"InvalidStatus"}]',
+    @AppUserId=1;
+SELECT @S = Status FROM #R6; DROP TABLE #R6;
+SET @SStr = CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual @TestName=N'[CavSaveBadStatus] Status is 0', @Expected=N'0', @Actual=@SStr;
 GO
 
 EXEC test.EndTestFile;

@@ -168,7 +168,7 @@ BEGIN
         SELECT N'~', ROW_NUMBER() OVER (ORDER BY c.CavityNumber), c.CavityNumber,
                oldsc.Code, i.StatusCode, c.Description, i.Description
         FROM @Incoming i
-        INNER JOIN Tools.ToolCavity c ON c.Id = i.Id
+        INNER JOIN Tools.ToolCavity c ON c.Id = i.Id AND c.DeprecatedAt IS NULL
         INNER JOIN Tools.ToolCavityStatusCode oldsc ON oldsc.Id = c.StatusCodeId
         WHERE oldsc.Code <> i.StatusCode OR ISNULL(c.Description,N'') <> ISNULL(i.Description,N'');
 
