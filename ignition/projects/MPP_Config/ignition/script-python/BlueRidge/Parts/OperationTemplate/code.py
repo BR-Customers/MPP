@@ -467,3 +467,29 @@ def setFieldRequired(junctionId, isRequired):
             "appUserId":  BlueRidge.Common.Util._currentAppUserId(),
         },
     )
+
+
+def saveFieldsAll(operationTemplateId, rows):
+    """Bundled SaveAll for the Fields panel. `rows` keys: id (BIGINT|None),
+    dataCollectionFieldId (BIGINT), isRequired (bool).
+    Returns {Status, Message, NewId}."""
+    operationTemplateId = _u(operationTemplateId)
+    BlueRidge.Common.Util.log("templateId=%s rows=%d" % (operationTemplateId, len(rows or [])))
+    if operationTemplateId is None:
+        return {"Status": 0, "Message": "No template selected.", "NewId": None}
+    cleaned = []
+    for r in (rows or []):
+        r = _u(r) or {}
+        cleaned.append({
+            "Id":                    r.get("id"),
+            "DataCollectionFieldId": r.get("dataCollectionFieldId"),
+            "IsRequired":            bool(r.get("isRequired")),
+        })
+    return BlueRidge.Common.Db.execMutation(
+        "parts/OperationTemplateField_SaveAll",
+        {
+            "operationTemplateId": operationTemplateId,
+            "rowsJson":            BlueRidge.Common.Util.convertWrapperObjectToJson(cleaned),
+            "appUserId":           BlueRidge.Common.Util._currentAppUserId(),
+        },
+    )
