@@ -11,15 +11,27 @@
       "searchText": "",
       "statusCode": "All"
     },
-    "dirtySections": {},
+    "sectionDirty": {
+      "attributes": false,
+      "cavities": false
+    },
+    "activeTab": "attributes",
+    "activeTabIndex": 0,
     "tools": [],
     "pendingNav": null,
+    "pendingSwitch": null,
     "dirty": false,
     "rankOptions": [],
     "statusOptions": []
   },
   "params": {},
   "propConfig": {
+    "custom.activeTabIndex": {
+      "onChange": {
+        "enabled": true,
+        "script": "\tcurr = currentValue.value if currentValue is not None else None\n\tsectionKeys = [\"attributes\", \"cavities\", \"assignments\"]\n\tif curr is not None and 0 <= curr < len(sectionKeys):\n\t\tself.custom.activeTab = sectionKeys[curr]"
+      }
+    },
     "custom.filter.searchText": {
       "persistent": true
     },
@@ -82,6 +94,26 @@
           "name": "_loadTool",
           "params": ["toolId"],
           "script": "\ttoolMeta = BlueRidge.Parts.Tool.getOne(toolId)\n\tif toolMeta is None:\n\t\tBlueRidge.Common.Notify.toast('Tool not found', 'Tool id ' + str(toolId) + ' no longer exists.', 'warning')\n\t\treturn\n\tself.view.custom.selected  = {'meta': dict(toolMeta)}\n\tself.view.custom.editDraft = {'meta': dict(toolMeta)}\n\tself.view.custom.mode = 'update'"
+        },
+        {
+          "name": "_anyDirty",
+          "params": [],
+          "script": "\t# True when the meta header has unsaved edits OR any draft section is dirty.\n\tif self.view.custom.dirty:\n\t\treturn True\n\tsectionMap = self.view.custom.sectionDirty or {}\n\treturn any(sectionMap.values())"
+        },
+        {
+          "name": "openConfirmUnsaved",
+          "params": [],
+          "script": "\tsystem.perspective.openPopup(\n\t\tid='mpp-confirm-unsaved',\n\t\tview='BlueRidge/Components/Popups/ConfirmUnsaved',\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t'title':   'Unsaved changes',\n\t\t\t'message': 'You have unsaved changes to this tool. Save before switching?'\n\t\t}\n\t)"
+        },
+        {
+          "name": "completeSwitch",
+          "params": [],
+          "script": "\tpending = self.view.custom.pendingSwitch or {}\n\tkind   = pending.get('kind')\n\ttarget = pending.get('to')\n\tself.view.custom.pendingSwitch = None\n\tif kind == 'tab':\n\t\tsectionKeys = ['attributes', 'cavities', 'assignments']\n\t\tself.view.custom.activeTabIndex = target\n\t\tif target is not None and 0 <= target < len(sectionKeys):\n\t\t\tself.view.custom.activeTab = sectionKeys[target]\n\telif kind == 'tool':\n\t\tself._loadTool(target)"
+        },
+        {
+          "name": "cancelSwitch",
+          "params": [],
+          "script": "\tself.view.custom.pendingSwitch = None"
         }
       ],
       "extensionFunctions": null,
@@ -91,7 +123,7 @@
           "pageScope": true,
           "sessionScope": false,
           "viewScope": false,
-          "script": "\tclickedId = payload.get('id') if payload else None\n\tif clickedId is None:\n\t\treturn\n\t# Single source of truth: view.custom.dirty is bound to the same\n\t# expression that drives the title-bar 'Unsaved changes' notice, so\n\t# popup and notice always agree.\n\tif self.view.custom.dirty:\n\t\tself.view.custom.pendingNav = clickedId\n\t\tsystem.perspective.openPopup(\n\t\t\tid='mpp-confirm-unsaved',\n\t\t\tview='BlueRidge/Components/Popups/ConfirmUnsaved',\n\t\t\tmodal=True,\n\t\t\tshowCloseIcon=False,\n\t\t\tparams={\n\t\t\t\t'title':   'Unsaved changes',\n\t\t\t\t'message': 'You have unsaved changes to this tool. Save before switching?'\n\t\t\t}\n\t\t)\n\t\treturn\n\tself._loadTool(clickedId)"
+          "script": "\tclickedId = payload.get('id') if payload else None\n\tif clickedId is None:\n\t\treturn\n\tcurrentId = (self.view.custom.selected.meta or {}).get('Id') if self.view.custom.selected else None\n\tif clickedId == currentId:\n\t\treturn\n\t# Gate on meta-header dirty OR any draft section dirty (Attributes /\n\t# Cavities). Assignments is non-draft and never reports dirty, so it\n\t# is naturally excluded.\n\tif self._anyDirty():\n\t\tself.view.custom.pendingSwitch = {'kind': 'tool', 'to': clickedId}\n\t\tself.openConfirmUnsaved()\n\t\treturn\n\tself._loadTool(clickedId)"
         },
         {
           "messageType": "toolRefresh",
@@ -108,11 +140,18 @@
           "script": "\ttoolId = (payload or {}).get('id')\n\tif toolId is None:\n\t\treturn\n\tself._loadTool(toolId)"
         },
         {
+          "messageType": "sectionDirtyChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tsection = payload.get('section') if payload else None\n\tisDirty = bool(payload.get('isDirty')) if payload else False\n\tif not section:\n\t\treturn\n\tnextMap = dict(self.view.custom.sectionDirty or {})\n\tnextMap[section] = isDirty\n\tself.view.custom.sectionDirty = nextMap\n\t# Deferred completion: once a staged switch's sections have all gone\n\t# clean (and the meta header is clean too), finish the switch.\n\tpending = self.view.custom.pendingSwitch\n\tif pending and not any(nextMap.values()) and not self.view.custom.dirty:\n\t\tself.completeSwitch()"
+        },
+        {
           "messageType": "confirmUnsavedResult",
           "pageScope": true,
           "sessionScope": false,
           "viewScope": false,
-          "script": "\taction = payload.get('action') if payload else None\n\tpendingId = self.view.custom.pendingNav\n\tself.view.custom.pendingNav = None\n\tif pendingId is None or action == 'cancel':\n\t\treturn\n\tif action == 'save':\n\t\tdraft = self.view.custom.editDraft or {}\n\t\tmeta  = draft.get('meta') or {}\n\t\tif meta.get('Id') is not None:\n\t\t\tresult = BlueRidge.Parts.Tool.update(meta)\n\t\t\tBlueRidge.Common.Ui.notifyResult(result, 'Tool saved')\n\tself._loadTool(pendingId)"
+          "script": "\taction = payload.get('action') if payload else None\n\tpending = self.view.custom.pendingSwitch\n\tif not pending:\n\t\treturn\n\tif action == 'cancel':\n\t\tself.cancelSwitch()\n\t\treturn\n\tsectionMap = dict(self.view.custom.sectionDirty or {})\n\tdirtySections = [k for k, v in sectionMap.items() if v]\n\tmetaDirty = bool(self.view.custom.dirty)\n\tif action == 'save':\n\t\tif metaDirty:\n\t\t\tdraft = self.view.custom.editDraft or {}\n\t\t\tmeta  = draft.get('meta') or {}\n\t\t\tif meta.get('Id') is not None:\n\t\t\t\tresult = BlueRidge.Parts.Tool.update(meta)\n\t\t\t\tBlueRidge.Common.Ui.notifyResult(result, 'Tool saved')\n\t\t\t\tif result and result.get('Status'):\n\t\t\t\t\trefreshed = BlueRidge.Parts.Tool.getOne(meta.get('Id'))\n\t\t\t\t\tif refreshed is not None:\n\t\t\t\t\t\tself.view.custom.selected  = {'meta': dict(refreshed)}\n\t\t\t\t\t\tself.view.custom.editDraft = {'meta': dict(refreshed)}\n\t\t\t\tsystem.perspective.sendMessage('toolRefresh', scope='page')\n\t\tfor sec in dirtySections:\n\t\t\tsystem.perspective.sendMessage('sectionSaveRequested', payload={'section': sec}, scope='page')\n\telif action == 'discard':\n\t\tif metaDirty:\n\t\t\tself.view.custom.editDraft = {'meta': dict((self.view.custom.selected or {}).get('meta') or {})}\n\t\tfor sec in dirtySections:\n\t\t\tsystem.perspective.sendMessage('sectionDiscardRequested', payload={'section': sec}, scope='page')\n\t# If no draft sections were dirty, the section-clean callback never\n\t# fires -- complete the switch now that the meta leg is resolved.\n\tif not dirtySections:\n\t\tself.completeSwitch()"
         },
         {
           "messageType": "toolRetireConfirmed",
@@ -247,7 +286,7 @@
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "if({view.custom.editDraft} != {view.custom.selected}, '● Unsaved changes', '')"
+                    "expression": "if({view.custom.editDraft} != {view.custom.selected} || {view.custom.sectionDirty.attributes} || {view.custom.sectionDirty.cavities}, '● Unsaved changes', '')"
                   }
                 }
               }
@@ -1053,6 +1092,25 @@
                 "position": {
                   "grow": 1
                 },
+                "propConfig": {
+                  "props.currentTabIndex": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.activeTabIndex"
+                      }
+                    }
+                  },
+                  "props.tabs": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "runScript(\"BlueRidge.Parts.Tool.toolTabObjects\", 0, {view.custom.sectionDirty}, {view.custom.activeTab})"
+                      }
+                    }
+                  }
+                },
                 "props": {
                   "currentTabIndex": 0,
                   "menuType": "modern",
@@ -1072,12 +1130,7 @@
                     "active":   { "classes": "tab-item tab-item-active" },
                     "disabled": { "classes": "tab-item" },
                     "inactive": { "classes": "tab-item" }
-                  },
-                  "tabs": [
-                    "Attributes",
-                    "Cavities",
-                    "Assignments"
-                  ]
+                  }
                 },
                 "children": [
                   {

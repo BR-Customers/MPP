@@ -474,6 +474,45 @@ def getToolTypesForDropdown():
     return [{"label": r.get("Name") or r.get("Code"), "value": r.get("Code")} for r in rows or []]
 
 
+# -----------------------------------------------------------------------------
+# Tools detail-tab objects (dirty-gating).
+#   Mirrors BlueRidge.Parts.Item.itemMasterTabObjects: the parent Tools view
+#   binds props.tabs to this so non-active tabs lock while a draft section is
+#   dirty. Assignments is non-draft -- it never reports dirty, so it is only
+#   ever disabled when ANOTHER tab is mid-edit (same rule as the rest).
+# -----------------------------------------------------------------------------
+_TOOL_TAB_LABELS = [
+    ("attributes",  "Attributes"),
+    ("cavities",    "Cavities"),
+    ("assignments", "Assignments"),
+]
+
+
+def toolTabObjects(sectionDirty, activeTab):
+    """Returns the 3 tab objects for the Tools detail ia.container.tab.
+
+    - text:           label with leading bullet when its section is dirty
+    - runWhileHidden: True (keep each embed's local editDraft across switches)
+    - disabled:       True when any section is dirty AND this isn't the active
+                      tab (locks navigation until the user saves or discards)
+
+    sectionDirty: dict { section_key: bool } from view.custom.sectionDirty
+    activeTab:    string section-key from view.custom.activeTab
+    Assignments never reports dirty so it is excluded from anyDirty naturally.
+    """
+    d = _u(sectionDirty) or {}
+    activeTab = _u(activeTab)
+    anyDirty = any(d.get(k, False) for k, _ in _TOOL_TAB_LABELS)
+    out = []
+    for key, label in _TOOL_TAB_LABELS:
+        out.append({
+            "text":           (u"● " + label) if d.get(key, False) else label,
+            "runWhileHidden": True,
+            "disabled":       bool(anyDirty and key != activeTab),
+        })
+    return out
+
+
 def addAttributeDefinition(toolTypeId, code, name, dataType, isRequired=False):
     """Insert a new ToolAttributeDefinition row scoped to a ToolType.
     Returns {Status, Message, NewId}."""
