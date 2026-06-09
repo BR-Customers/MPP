@@ -10,7 +10,7 @@
 --
 --              Designed to be called INSIDE the caller's transaction
 --              (e.g. Lot_Create): a rolled-back caller un-burns the
---              counter — the whole point of the row-lock approach over a
+--              counter - the whole point of the row-lock approach over a
 --              SQL SEQUENCE object.
 --
 --              Single result set: Value NVARCHAR(50) (Ignition JDBC
@@ -22,8 +22,8 @@
 --              sequence gap-free and prevent a stuck one-past-end state).
 --
 --              FormatString is parsed as the .NET pattern '<PREFIX>{0:D<N>}'
---              — text before '{' is the literal prefix, the integer after
---              'D' is the zero-pad width. (DM §3 retains FormatString rather
+--              - text before '{' is the literal prefix, the integer after
+--              'D' is the zero-pad width. (DM section 3 retains FormatString rather
 --              than separate Prefix/Padding columns.)
 -- ============================================================
 

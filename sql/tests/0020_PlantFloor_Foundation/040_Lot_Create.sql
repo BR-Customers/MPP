@@ -3,7 +3,7 @@
 -- Author:       Blue Ridge Automation
 -- Created:      2026-06-09
 -- Description:  Tests for Lots.Lot_Create. Covers the validation rejections
---               and the accept paths from the plan §"API Layer" / B-3:
+--               and the accept paths from the plan section "API Layer" / B-3:
 --                 - valid manufacture -> Lot + LotStatusHistory, Tool/Cavity
 --                   set, MintedLotName ~ 'MESL%'
 --                 - die-cast-origin (active ToolAssignment on cell) + NULL

@@ -4,7 +4,7 @@
 -- Modified:    2026-06-09
 -- Version:     1.0
 -- Description: Creates a LOT (status 'Good'). Phase 1 Task B core skeleton
---              (plan §"Lot core skeleton" steps 1-12; aligned to DM v1.9q +
+--              (plan section "Lot core skeleton" steps 1-12; aligned to DM v1.9q +
 --              FDS-05-034/-035).
 --
 --              Flow: validate params/FKs -> validate business rules
@@ -77,7 +77,7 @@ BEGIN
             SET @Message = N'Required parameter missing (ItemId, LotOriginTypeId, CurrentLocationId, PieceCount, AppUserId).';
             -- FailureLog.AppUserId is NOT NULL + FK; only attribute the failure
             -- when we have a user. A NULL @AppUserId rejection cannot be logged
-            -- (no actor) — return cleanly without a FailureLog row.
+            -- (no actor) - return cleanly without a FailureLog row.
             IF @AppUserId IS NOT NULL
                 EXEC Audit.Audit_LogFailure
                     @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',

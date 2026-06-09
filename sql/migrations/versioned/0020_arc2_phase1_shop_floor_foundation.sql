@@ -449,7 +449,7 @@ GO
 
 
 -- ============================================================
--- == SECTION B — Lot core tables (Task B) ====================
+-- == SECTION B - Lot core tables (Task B) ====================
 -- ============================================================
 -- Lot family per Data Model v1.9q section 3 + the v1.9q deltas in the
 -- Phase 1 plan / design spec (materialized B5 columns + Tool/Cavity FKs +
@@ -460,34 +460,34 @@ GO
 -- seeded here (guarded; Task F won't double-insert).
 --
 -- PK rule (see PARTITIONED-TABLE PK CORRECTION at top of file):
---   * Lots.Lot — header, NOT partitioned -> bare NONCLUSTERED PK (Id).
---   * LotStatusHistory — aligned composite PK NONCLUSTERED (Id, ChangedAt)
+--   * Lots.Lot - header, NOT partitioned -> bare NONCLUSTERED PK (Id).
+--   * LotStatusHistory - aligned composite PK NONCLUSTERED (Id, ChangedAt)
 --     ON ps_MonthlyUtc(ChangedAt) + clustered (LotId, ChangedAt) ON the scheme.
---   * LotMovement — aligned composite PK NONCLUSTERED (Id, MovedAt)
+--   * LotMovement - aligned composite PK NONCLUSTERED (Id, MovedAt)
 --     ON ps_MonthlyUtc(MovedAt) + clustered (LotId, MovedAt) ON the scheme.
 --   (No incoming bare-Id FK on either history table, so the composite PK is safe.)
 --
 -- DM-vs-build reconciliations (resolved, documented):
---   * DM §3 IdentifierSequence carries FormatString / StartingValue / EndingValue
---     / LastValue (NOT Prefix/Padding — the plan's draft proc skeleton named
---     Prefix/Padding; DM §3 is authoritative). IdentifierSequence_Next parses
+--   * DM section 3 IdentifierSequence carries FormatString / StartingValue / EndingValue
+--     / LastValue (NOT Prefix/Padding - the plan's draft proc skeleton named
+--     Prefix/Padding; DM section 3 is authoritative). IdentifierSequence_Next parses
 --     the .NET-style FormatString (e.g. 'MESL{0:D7}') for prefix + pad width.
---   * DM §3 (line 496) describes v_LotDerivedQuantities as the SOLE source (no
---     materialized columns). The v1.9q decision (design §2 B5, migration TODO,
+--   * DM section 3 (line 496) describes v_LotDerivedQuantities as the SOLE source (no
+--     materialized columns). The v1.9q decision (design section 2 B5, migration TODO,
 --     plan B-CREATE) supersedes that line: Lot carries materialized
 --     TotalInProcess / InventoryAvailable, with the view kept as a diagnostic
 --     fallback. This build follows v1.9q.
 --   * Lots.Lot gains a RowVersion ROWVERSION column (not in the DM column list)
 --     to back the @RowVersion optimistic-lock contract of Lot_UpdateStatus
---     (plan §"API Layer"). Lot is a high-concurrency shop-floor entity; this is
+--     (plan section "API Layer"). Lot is a high-concurrency shop-floor entity; this is
 --     the one place the project adopts optimistic locking (config tables remain
 --     last-write-wins per the Item-Master design precedent).
 
 -- ---- Lots.IdentifierSequence (+ B-SEED) ----
--- Row-locked gap-free identifier minting (B6). DM §3 columns. Seeded with the
+-- Row-locked gap-free identifier minting (B6). DM section 3 columns. Seeded with the
 -- Lot (MESL) + SerializedItem (MESI) counters. Seed LastValue sits at the
 -- ~3,000,000 integration floor; the EXACT cutover seed is owed from Ben and is
--- a cutover gate, NOT a build gate — these values are PROVISIONAL.
+-- a cutover gate, NOT a build gate - these values are PROVISIONAL.
 IF OBJECT_ID(N'Lots.IdentifierSequence', N'U') IS NULL
 BEGIN
     CREATE TABLE Lots.IdentifierSequence (
@@ -509,7 +509,7 @@ END
 GO
 
 -- B-SEED: the two MPP-internal counters. LastValue = 3,000,000 floor
--- (PROVISIONAL — re-sampled from live Flexware at cutover; see DM §3 / OI-31).
+-- (PROVISIONAL - re-sampled from live Flexware at cutover; see DM section 3 / OI-31).
 IF NOT EXISTS (SELECT 1 FROM Lots.IdentifierSequence WHERE Code = N'Lot')
     INSERT INTO Lots.IdentifierSequence (Code, Name, Description, FormatString, StartingValue, EndingValue, LastValue)
     VALUES (N'Lot', N'LOT Tracking Ticket', N'LTT barcode counter (MESL). PROVISIONAL seed at the 3,000,000 integration floor - exact cutover value owed from Ben.', N'MESL{0:D7}', 1, 9999999, 3000000);
@@ -520,7 +520,7 @@ IF NOT EXISTS (SELECT 1 FROM Lots.IdentifierSequence WHERE Code = N'SerializedIt
 GO
 
 -- ---- Lots.Lot (header; NOT partitioned) ----
--- Central tracking entity (DM §3) + v1.9q deltas: ToolId / ToolCavityId NULL
+-- Central tracking entity (DM section 3) + v1.9q deltas: ToolId / ToolCavityId NULL
 -- FKs, CrtActive (FDS-10-012), materialized B5 TotalInProcess / InventoryAvailable,
 -- RowVersion optimistic-lock token. Legacy DieNumber / CavityNumber retained per
 -- DM (cutover transition; removed once all writers use the Tool FKs).
@@ -574,7 +574,7 @@ END
 GO
 
 -- ---- Lots.LotStatusHistory (BORN PARTITIONED on ChangedAt) ----
--- Immutable log of every status transition (DM §3). Written by Lot_Create
+-- Immutable log of every status transition (DM section 3). Written by Lot_Create
 -- (Old=NULL,New='Good') + Lot_UpdateStatus. No incoming bare-Id FK -> aligned
 -- composite PK NONCLUSTERED (Id, ChangedAt) + clustered (LotId, ChangedAt).
 IF OBJECT_ID(N'Lots.LotStatusHistory', N'U') IS NULL
@@ -599,7 +599,7 @@ END
 GO
 
 -- ---- Lots.LotMovement (BORN PARTITIONED on MovedAt) ----
--- Append-only location-change log (DM §3). Written by Lot_Create (first
+-- Append-only location-change log (DM section 3). Written by Lot_Create (first
 -- placement, From=NULL) + Lot_MoveTo. No incoming bare-Id FK -> aligned
 -- composite PK NONCLUSTERED (Id, MovedAt) + clustered (LotId, MovedAt).
 IF OBJECT_ID(N'Lots.LotMovement', N'U') IS NULL
