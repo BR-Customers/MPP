@@ -313,9 +313,10 @@ BEGIN
         CONSTRAINT PK_ProductionEventValue PRIMARY KEY NONCLUSTERED (Id),
         CONSTRAINT UQ_ProductionEventValue_EventField UNIQUE (ProductionEventId, DataCollectionFieldId)
     );
-
-    CREATE INDEX IX_ProductionEventValue_ProductionEventId
-        ON Workorder.ProductionEventValue (ProductionEventId);
+    -- NOTE: no standalone IX on (ProductionEventId) - the unique constraint
+    -- UQ_ProductionEventValue_EventField (ProductionEventId, DataCollectionFieldId)
+    -- has ProductionEventId as its leading key, so lookups / joins / FK-cascade
+    -- on ProductionEventId are already covered.
 END
 GO
 
@@ -383,6 +384,12 @@ BEGIN
         ON Workorder.RejectEvent (LotId, RecordedAt)
         ON ps_MonthlyUtc(RecordedAt);
 
+    -- FK index: "rejects for a production event" path (nullable FK -> filtered).
+    CREATE INDEX IX_RejectEvent_ProductionEventId
+        ON Workorder.RejectEvent (ProductionEventId, RecordedAt)
+        WHERE ProductionEventId IS NOT NULL
+        ON ps_MonthlyUtc(RecordedAt);
+
     CREATE INDEX IX_RejectEvent_DefectCodeId
         ON Workorder.RejectEvent (DefectCodeId, RecordedAt)
         ON ps_MonthlyUtc(RecordedAt);
@@ -391,8 +398,11 @@ GO
 
 -- ---- Parts.v_EffectiveItemLocation (FDS-02-012: Direct UNION BOM-derived) ----
 -- Resolves Part <-> Cell eligibility for Lot_Create (Section B) and the
--- ItemLocation_CheckEligibility proc. Two legs, UNION'd, with a Source
--- discriminator so callers can distinguish:
+-- ItemLocation_CheckEligibility proc. Two legs, UNION ALL'd, with a Source
+-- discriminator so callers can distinguish (the legs differ on Source so they
+-- cannot collide cross-leg; the BomDerived leg cannot emit intra-leg dups
+-- because UQ_BomLine_Bom_ChildItem and UQ_ItemLocation_ActiveItemLocation both
+-- guarantee single-row joins -> set-UNION dedup would be pure wasted cost):
 --   * 'Direct'     - a Parts.ItemLocation row exists for the Item at the
 --                    Location (active rows only: DeprecatedAt IS NULL).
 --   * 'BomDerived' - the Item is a child line on the ACTIVE published BOM
@@ -417,7 +427,7 @@ AS
     FROM Parts.ItemLocation il
     WHERE il.DeprecatedAt IS NULL
 
-    UNION
+    UNION ALL
 
     -- BOM-derived leg: child Item is eligible wherever its parent Item is
     -- Direct-eligible, via the parent's active published BOM.
