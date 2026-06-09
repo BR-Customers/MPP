@@ -1,0 +1,317 @@
+{
+  "custom": {
+    "Locations": [
+      {
+        "data": {
+          "LocationId": 1,
+          "code": "MPP-ENT",
+          "definitionName": "Organization",
+          "depth": 0,
+          "name": "Madison Precision Products",
+          "typeName": "Enterprise"
+        },
+        "expanded": true,
+        "icon": {
+          "color": "",
+          "path": "material/domain",
+          "style": {}
+        },
+        "items": [
+          {
+            "data": {
+              "LocationId": 2,
+              "code": "MPP-MAD",
+              "definitionName": "Facility",
+              "depth": 1,
+              "name": "Madison Facility",
+              "typeName": "Site"
+            },
+            "expanded": true,
+            "icon": {
+              "color": "",
+              "path": "material/factory",
+              "style": {}
+            },
+            "items": [
+              {
+                "data": {
+                  "LocationId": 3,
+                  "code": "DIECAST",
+                  "definitionName": "Production Area",
+                  "depth": 2,
+                  "name": "Die Cast",
+                  "typeName": "Area"
+                },
+                "expanded": false,
+                "icon": {
+                  "color": "",
+                  "path": "material/workspaces",
+                  "style": {}
+                },
+                "items": [
+                  {
+                    "data": {
+                      "LocationId": 6,
+                      "code": "DC-LINE-01",
+                      "definitionName": "Production Line",
+                      "depth": 3,
+                      "name": "Die Cast Line 1",
+                      "typeName": "Work Center"
+                    },
+                    "expanded": false,
+                    "icon": {
+                      "color": "",
+                      "path": "material/conveyor_belt",
+                      "style": {}
+                    },
+                    "items": [
+                      {
+                        "data": {
+                          "LocationId": 9,
+                          "code": "DC-401",
+                          "definitionName": "Die Cast Machine",
+                          "depth": 4,
+                          "name": "Die Cast 401",
+                          "typeName": "Cell"
+                        },
+                        "expanded": false,
+                        "icon": {
+                          "color": "",
+                          "path": "material/local_fire_department",
+                          "style": {}
+                        },
+                        "items": [],
+                        "label": "Die Cast 401"
+                      },
+                      {
+                        "data": {
+                          "LocationId": 10,
+                          "code": "DC-402",
+                          "definitionName": "Die Cast Machine",
+                          "depth": 4,
+                          "name": "Die Cast 402",
+                          "typeName": "Cell"
+                        },
+                        "expanded": false,
+                        "icon": {
+                          "color": "",
+                          "path": "material/local_fire_department",
+                          "style": {}
+                        },
+                        "items": [],
+                        "label": "Die Cast 402"
+                      }
+                    ],
+                    "label": "Die Cast Line 1"
+                  },
+                  {
+                    "data": {
+                      "LocationId": 7,
+                      "code": "DC-LINE-02",
+                      "definitionName": "Production Line",
+                      "depth": 3,
+                      "name": "Die Cast Line 2",
+                      "typeName": "Work Center"
+                    },
+                    "expanded": false,
+                    "icon": {
+                      "color": "",
+                      "path": "material/conveyor_belt",
+                      "style": {}
+                    },
+                    "items": [
+                      {
+                        "data": {
+                          "LocationId": 11,
+                          "code": "DC-501",
+                          "definitionName": "Die Cast Machine",
+                          "depth": 4,
+                          "name": "Die Cast 501",
+                          "typeName": "Cell"
+                        },
+                        "expanded": false,
+                        "icon": {
+                          "color": "",
+                          "path": "material/local_fire_department",
+                          "style": {}
+                        },
+                        "items": [],
+                        "label": "Die Cast 501"
+                      }
+                    ],
+                    "label": "Die Cast Line 2"
+                  }
+                ],
+                "label": "Die Cast"
+              },
+              {
+                "data": {
+                  "LocationId": 4,
+                  "code": "MACHSHOP",
+                  "definitionName": "Production Area",
+                  "depth": 2,
+                  "name": "Machine Shop",
+                  "typeName": "Area"
+                },
+                "expanded": false,
+                "icon": {
+                  "color": "",
+                  "path": "material/workspaces",
+                  "style": {}
+                },
+                "items": [
+                  {
+                    "data": {
+                      "LocationId": 8,
+                      "code": "MS-LINE-01",
+                      "definitionName": "Production Line",
+                      "depth": 3,
+                      "name": "Machine Shop Line 1",
+                      "typeName": "Work Center"
+                    },
+                    "expanded": false,
+                    "icon": {
+                      "color": "",
+                      "path": "material/conveyor_belt",
+                      "style": {}
+                    },
+                    "items": [
+                      {
+                        "data": {
+                          "LocationId": 12,
+                          "code": "MS-101",
+                          "definitionName": "CNC Machine",
+                          "depth": 4,
+                          "name": "CNC Machine 101",
+                          "typeName": "Cell"
+                        },
+                        "expanded": false,
+                        "icon": {
+                          "color": "",
+                          "path": "material/precision_manufacturing",
+                          "style": {}
+                        },
+                        "items": [],
+                        "label": "CNC Machine 101"
+                      }
+                    ],
+                    "label": "Machine Shop Line 1"
+                  }
+                ],
+                "label": "Machine Shop"
+              },
+              {
+                "data": {
+                  "LocationId": 5,
+                  "code": "QC",
+                  "definitionName": "Support Area",
+                  "depth": 2,
+                  "name": "Quality Control",
+                  "typeName": "Area"
+                },
+                "expanded": false,
+                "icon": {
+                  "color": "",
+                  "path": "material/engineering",
+                  "style": {}
+                },
+                "items": [],
+                "label": "Quality Control"
+              },
+              {
+                "data": {
+                  "LocationId": 13,
+                  "code": "TRIM",
+                  "definitionName": "Production Area",
+                  "depth": 2,
+                  "name": "Trim Shop",
+                  "typeName": "Area"
+                },
+                "expanded": false,
+                "icon": {
+                  "color": "",
+                  "path": "material/workspaces",
+                  "style": {}
+                },
+                "items": [],
+                "label": "Trim Shop"
+              }
+            ],
+            "label": "Madison Facility"
+          }
+        ],
+        "label": "Madison Precision Products"
+      }
+    ]
+  },
+  "propConfig": {
+    "props.auth": {
+      "access": "PRIVATE",
+      "persistent": false
+    },
+    "props.device.accelerometer": {
+      "access": "SYSTEM",
+      "persistent": false
+    },
+    "props.device.identifier": {
+      "access": "SYSTEM",
+      "persistent": false
+    },
+    "props.device.timezone": {
+      "access": "SYSTEM",
+      "persistent": false
+    },
+    "props.device.type": {
+      "access": "SYSTEM",
+      "persistent": false
+    },
+    "props.device.userAgent": {
+      "access": "SYSTEM",
+      "persistent": false
+    },
+    "props.gateway": {
+      "access": "SYSTEM",
+      "persistent": false
+    },
+    "props.geolocation.data": {
+      "access": "SYSTEM",
+      "persistent": false
+    },
+    "props.geolocation.permissionGranted": {
+      "access": "SYSTEM",
+      "persistent": false
+    },
+    "props.host": {
+      "access": "SYSTEM",
+      "persistent": false
+    },
+    "props.id": {
+      "access": "SYSTEM",
+      "persistent": false
+    },
+    "props.lastActivity": {
+      "access": "SYSTEM",
+      "persistent": false
+    },
+    "props.offline.capable": {
+      "access": "SYSTEM",
+      "persistent": false
+    },
+    "props.offline.enabled": {
+      "access": "SYSTEM",
+      "persistent": false
+    },
+    "props.offline.lastSynced": {
+      "access": "SYSTEM",
+      "persistent": false
+    }
+  },
+  "props": {
+    "address": "[0:0:0:0:0:0:0:1]",
+    "device": {},
+    "geolocation": {},
+    "locale": "en-US",
+    "offline": {},
+    "timeZoneId": "America/Indianapolis"
+  }
+}

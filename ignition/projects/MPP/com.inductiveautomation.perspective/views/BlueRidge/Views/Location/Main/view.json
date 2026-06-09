@@ -1,0 +1,275 @@
+{
+  "custom": {
+    "key": "value",
+    "selectedLocation": {
+      "LocationId": 13,
+      "code": "TRIM",
+      "definitionName": "Production Area",
+      "depth": 2,
+      "name": "Trim Shop",
+      "typeName": "Area"
+    }
+  },
+  "params": {},
+  "propConfig": {
+    "custom.key": {
+      "persistent": true
+    },
+    "custom.selectedLocation": {
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 1000,
+      "width": 1600
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "FlexContainer_0"
+        },
+        "position": {
+          "basis": "64px"
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "events": {
+                      "dom": {
+                        "onClick": {
+                          "config": {
+                            "script": "\t\tself.session.custom.Locations \u003d Location.buildTree(1, expandDepth\u003d2, defaultIcon\u003d\"material/place\")"
+                          },
+                          "scope": "G",
+                          "type": "script"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "name": "Icon"
+                    },
+                    "position": {
+                      "basis": "30px"
+                    },
+                    "props": {
+                      "path": "material/refresh"
+                    },
+                    "type": "ia.display.icon"
+                  },
+                  {
+                    "meta": {
+                      "name": "Icon_0"
+                    },
+                    "position": {
+                      "basis": "30px"
+                    },
+                    "props": {
+                      "path": "material/add",
+                      "style": {
+                        "marginLeft": 10
+                      }
+                    },
+                    "type": "ia.display.icon"
+                  }
+                ],
+                "meta": {
+                  "name": "Action_Flex"
+                },
+                "position": {
+                  "basis": "36px"
+                },
+                "props": {
+                  "justify": "flex-end",
+                  "style": {
+                    "paddingLeft": 10,
+                    "paddingRight": 10
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "Tree"
+                },
+                "position": {
+                  "basis": "200px",
+                  "grow": 1
+                },
+                "propConfig": {
+                  "props.items": {
+                    "binding": {
+                      "config": {
+                        "path": "session.custom.Locations"
+                      },
+                      "type": "property"
+                    }
+                  },
+                  "props.selectionData[0].value": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.selectedLocation"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "appearance": {
+                    "defaultNodeIcons": {
+                      "collapsed": {
+                        "path": "material/folder"
+                      },
+                      "empty": {
+                        "path": "material/stop"
+                      },
+                      "expanded": {
+                        "path": "material/folder_open"
+                      }
+                    },
+                    "expandIcons": {
+                      "collapsed": {
+                        "path": "material/arrow_right"
+                      },
+                      "expanded": {
+                        "path": "material/arrow_drop_down"
+                      }
+                    },
+                    "selectedStyle": {
+                      "classes": "tree-item-selected"
+                    },
+                    "unselectedStyle": {
+                      "classes": "tree-item"
+                    }
+                  },
+                  "selection": [
+                    "0/0/3",
+                    "0"
+                  ],
+                  "selectionData": [
+                    {
+                      "itemPath": "0/0/3"
+                    },
+                    {
+                      "itemPath": "0",
+                      "value": {
+                        "LocationId": 1,
+                        "code": "MPP-ENT",
+                        "definitionName": "Organization",
+                        "depth": 0,
+                        "name": "Madison Precision Products",
+                        "typeName": "Enterprise"
+                      }
+                    }
+                  ]
+                },
+                "type": "ia.display.tree"
+              }
+            ],
+            "meta": {
+              "name": "Menu_Flex"
+            },
+            "position": {
+              "basis": "400px"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "surface-raised",
+                "margin": 20
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "EmbeddedView"
+                    },
+                    "position": {
+                      "basis": "320px",
+                      "grow": 1
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/Configuration/PrimaryKPI View"
+                    },
+                    "type": "ia.display.view"
+                  }
+                ],
+                "meta": {
+                  "name": "Meta_Flex"
+                },
+                "position": {
+                  "basis": "30%"
+                },
+                "props": {
+                  "style": {
+                    "classes": "surface-card",
+                    "margin": 20
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "Attributes_Flex"
+                },
+                "position": {
+                  "basis": "70%"
+                },
+                "props": {
+                  "style": {
+                    "classes": "surface-card",
+                    "margin": 20
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "Body_Flex"
+            },
+            "position": {
+              "basis": "200px",
+              "grow": 1
+            },
+            "props": {
+              "direction": "column"
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "FlexContainer"
+        },
+        "position": {
+          "basis": "200px",
+          "grow": 1
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "canvas"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

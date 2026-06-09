@@ -1,0 +1,62 @@
+{
+  "pages": {
+    "/": {
+      "viewPath": "BlueRidge/Views/Home"
+    },
+    "/Location": {
+      "viewPath": "BlueRidge/Views/Location/Main"
+    },
+    "/tags": {
+      "viewPath": "BlueRidge/Samples/Tags"
+    }
+  },
+  "sharedDocks": {
+    "cornerPriority": "top-bottom",
+    "left": [
+      {
+        "anchor": "fixed",
+        "autoBreakpoint": 480,
+        "content": "push",
+        "handle": "hide",
+        "iconUrl": "",
+        "id": "ColapsedLeftNav",
+        "modal": false,
+        "resizable": false,
+        "show": "auto",
+        "size": 64,
+        "viewParams": {},
+        "viewPath": "BlueRidge/Components/Configuration/ColapsedLeftNav"
+      },
+      {
+        "anchor": "fixed",
+        "autoBreakpoint": 480,
+        "content": "push",
+        "handle": "hide",
+        "iconUrl": "",
+        "id": "ExpandedLeftNav",
+        "modal": false,
+        "resizable": false,
+        "show": "onDemand",
+        "size": 256,
+        "viewParams": {},
+        "viewPath": "BlueRidge/Components/Configuration/ExpandedLeftNav"
+      }
+    ],
+    "top": [
+      {
+        "anchor": "fixed",
+        "autoBreakpoint": 480,
+        "content": "push",
+        "handle": "hide",
+        "iconUrl": "",
+        "id": "",
+        "modal": false,
+        "resizable": false,
+        "show": "visible",
+        "size": 64,
+        "viewParams": {},
+        "viewPath": "BlueRidge/Components/GlobalHeader"
+      }
+    ]
+  }
+}
