@@ -55,7 +55,7 @@
         {
           "name": "resolveInitials",
           "params": [],
-          "script": "res = BlueRidge.Location.AppUser.resolveForPresence(self.view.custom.initials)\nself.view.custom.resolved = res\nsystem.perspective.sendMessage(self.view.params.replyMessage, res, scope=\"page\")"
+          "script": "\tres = BlueRidge.Location.AppUser.resolveForPresence(self.view.custom.initials)\n\tself.view.custom.resolved = res\n\tsystem.perspective.sendMessage(self.view.params.replyMessage, res, scope=\"page\")"
         }
       ]
     },
