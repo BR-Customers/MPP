@@ -944,10 +944,63 @@ GO
 -- ============================================================
 -- == SECTION C — Terminal resolution seeds (Task C) ==========
 -- ============================================================
--- TODO[Task C]: Seed LocationAttributeDefinition on the Terminal type
---   (DefaultScreen NVARCHAR, RequiresCompletionConfirm BIT). Insert the
---   fallback Terminal Location row (global default for unregistered IP).
---   Ensure an IpAddress index on Location.LocationAttribute. ASCII-only.
+-- Backs Location.Terminal_GetByIpAddress / Terminal_List (repeatable procs).
+-- The Terminal kind is LocationTypeDefinition DefId 7 (Cell-tier, seeded in
+-- 0002). Terminals carry an EAV IpAddress attribute (already seeded in 0002:
+-- LocationAttributeDefinition DefId-7 'IpAddress' NVARCHAR). The resolver reads
+-- Location.LocationAttribute.AttributeValue (NOT a bare AttributeName/Value pair
+-- — the value lives on LocationAttribute and the name lives on its
+-- LocationAttributeDefinition) joined through the IpAddress attr-def to find the
+-- Terminal Location for a connecting IP.
+--
+-- This section adds:
+--   1. Two NEW LocationAttributeDefinition rows on the Terminal type:
+--      'DefaultScreen' (NVARCHAR) + 'RequiresCompletionConfirm' (BIT, OI-16).
+--      Guarded against the 0014 filtered-unique (LocationTypeDefinitionId,
+--      AttributeName) WHERE DeprecatedAt IS NULL.
+--   2. A covering index on Location.LocationAttribute (LocationAttributeDefinitionId,
+--      AttributeValue) for the reverse IP lookup (existing indexes only cover the
+--      forward LocationId / (LocationId, DefinitionId) paths).
+--
+-- The global FALLBACK Terminal Location ('FALLBACK-TERMINAL') — returned by the
+-- resolver when an unregistered IP connects (the resolver NEVER errors) — is NOT
+-- seeded here: it is a Location row whose parent is the plant Site (MPP-MAD),
+-- which only exists after the plant-hierarchy seed runs. Migrations run BEFORE
+-- seeds, so the row lives in sql/seeds/011_seed_locations_mpp_plant.sql (emitted
+-- by gen_locations_mpp.js), parented at the Site for a 'Shared'-mode default.
+--
+-- NOT seeded (per Task C contract): TerminalMode (DERIVED from the parent tier in
+-- the resolver), IdleTimeoutSeconds / RequiresReauthForSensitive (Perspective /
+-- per-action AD elevation — out of SQL scope). ASCII-only strings throughout.
+
+-- ---- 1. Terminal attribute definitions: DefaultScreen + RequiresCompletionConfirm ----
+IF NOT EXISTS (
+    SELECT 1 FROM Location.LocationAttributeDefinition
+    WHERE LocationTypeDefinitionId = 7 AND AttributeName = N'DefaultScreen' AND DeprecatedAt IS NULL)
+    INSERT INTO Location.LocationAttributeDefinition
+        (LocationTypeDefinitionId, AttributeName, DataType, IsRequired, DefaultValue, Uom, SortOrder, Description)
+    VALUES
+        (7, N'DefaultScreen', N'NVARCHAR', 0, NULL, NULL, 4, N'Perspective view path this terminal opens to on session start.');
+GO
+IF NOT EXISTS (
+    SELECT 1 FROM Location.LocationAttributeDefinition
+    WHERE LocationTypeDefinitionId = 7 AND AttributeName = N'RequiresCompletionConfirm' AND DeprecatedAt IS NULL)
+    INSERT INTO Location.LocationAttributeDefinition
+        (LocationTypeDefinitionId, AttributeName, DataType, IsRequired, DefaultValue, Uom, SortOrder, Description)
+    VALUES
+        (7, N'RequiresCompletionConfirm', N'BIT', 0, N'0', NULL, 5, N'OI-16: terminal prompts for explicit completion confirmation before advancing a LOT.');
+GO
+
+-- ---- 2. Reverse IP-lookup index on Location.LocationAttribute ----
+-- The resolver filters LocationAttribute by (LocationAttributeDefinitionId =
+-- <IpAddress def>, AttributeValue = @IpAddress). Existing 0002 indexes cover only
+-- LocationId / (LocationId, DefinitionId); add the (DefinitionId, AttributeValue)
+-- path so the IP resolve is a seek. Guarded so a re-apply is a no-op.
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_LocationAttribute_DefinitionValue' AND object_id = OBJECT_ID(N'Location.LocationAttribute'))
+    CREATE INDEX IX_LocationAttribute_DefinitionValue
+        ON Location.LocationAttribute (LocationAttributeDefinitionId, AttributeValue)
+        INCLUDE (LocationId);
+GO
 
 
 -- ============================================================

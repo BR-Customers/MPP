@@ -137,6 +137,15 @@ for (const [code, name, desc] of [
   loc(DEF.SUPPORT, 'MPP-MAD', name, code, desc, areaSort++);
 }
 
+// Fallback Terminal (Arc 2 Phase 1 Task C): global default returned by
+// Location.Terminal_GetByIpAddress when an unregistered IP connects. Parented at
+// the Site (MPP-MAD) so its derived TerminalMode is 'Shared' (non-Cell parent).
+// Lives here (not in migration 0020) because the plant hierarchy parent only
+// exists after this seed runs - migrations run before seeds.
+out.push('\n-- === Fallback Terminal (Arc 2 Phase 1 Task C) ===');
+loc(DEF.TERM, 'MPP-MAD', 'Fallback Terminal', 'FALLBACK-TERMINAL',
+    'Global default terminal returned when an unregistered IP address connects.', areaSort++);
+
 const sqlPath = path.join(__dirname, '011_seed_locations_mpp_plant.sql');
 fs.writeFileSync(sqlPath, out.join('\n') + '\n', 'utf8');
 const n = out.join('\n').split('IF NOT EXISTS').length - 1;
