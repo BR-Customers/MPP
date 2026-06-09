@@ -451,19 +451,238 @@ GO
 -- ============================================================
 -- == SECTION B — Lot core tables (Task B) ====================
 -- ============================================================
--- TODO[Task B]: CREATE Lots.Lot (NONCLUSTERED PK Id — Lot is a header, NOT
---   partitioned; ToolId/ToolCavityId NULL FKs; CrtActive/TotalInProcess/
---   InventoryAvailable; B8 filtered index), Lots.LotStatusHistory +
---   Lots.LotMovement (born partitioned on ps_MonthlyUtc), Lots.IdentifierSequence
---   (+ seeds, B-SEED), Lots.LotGenealogyClosure, Lots.v_LotDerivedQuantities
---   (after Section E events exist). Per Data Model v1.9q section 3.
---   PK rule (see PARTITIONED-TABLE PK CORRECTION at top of file):
---     * Lots.Lot — NOT partitioned -> bare NONCLUSTERED PK (Id) as usual.
---     * LotStatusHistory — aligned composite PK NONCLUSTERED (Id, ChangedAt)
---       ON ps_MonthlyUtc(ChangedAt) + clustered (LotId, ChangedAt) ON the scheme.
---     * LotMovement — aligned composite PK NONCLUSTERED (Id, MovedAt)
---       ON ps_MonthlyUtc(MovedAt) + clustered (LotId, MovedAt) ON the scheme.
+-- Lot family per Data Model v1.9q section 3 + the v1.9q deltas in the
+-- Phase 1 plan / design spec (materialized B5 columns + Tool/Cavity FKs +
+-- CrtActive). Ordering inside this section: IdentifierSequence (+ seeds)
+-- -> Lot (header, not partitioned) -> LotStatusHistory + LotMovement (born
+-- partitioned) -> LotGenealogyClosure -> v_LotDerivedQuantities (reads the
+-- Section E event tables, created above). Audit lookup LotStatusChanged (26)
+-- seeded here (guarded; Task F won't double-insert).
+--
+-- PK rule (see PARTITIONED-TABLE PK CORRECTION at top of file):
+--   * Lots.Lot — header, NOT partitioned -> bare NONCLUSTERED PK (Id).
+--   * LotStatusHistory — aligned composite PK NONCLUSTERED (Id, ChangedAt)
+--     ON ps_MonthlyUtc(ChangedAt) + clustered (LotId, ChangedAt) ON the scheme.
+--   * LotMovement — aligned composite PK NONCLUSTERED (Id, MovedAt)
+--     ON ps_MonthlyUtc(MovedAt) + clustered (LotId, MovedAt) ON the scheme.
 --   (No incoming bare-Id FK on either history table, so the composite PK is safe.)
+--
+-- DM-vs-build reconciliations (resolved, documented):
+--   * DM §3 IdentifierSequence carries FormatString / StartingValue / EndingValue
+--     / LastValue (NOT Prefix/Padding — the plan's draft proc skeleton named
+--     Prefix/Padding; DM §3 is authoritative). IdentifierSequence_Next parses
+--     the .NET-style FormatString (e.g. 'MESL{0:D7}') for prefix + pad width.
+--   * DM §3 (line 496) describes v_LotDerivedQuantities as the SOLE source (no
+--     materialized columns). The v1.9q decision (design §2 B5, migration TODO,
+--     plan B-CREATE) supersedes that line: Lot carries materialized
+--     TotalInProcess / InventoryAvailable, with the view kept as a diagnostic
+--     fallback. This build follows v1.9q.
+--   * Lots.Lot gains a RowVersion ROWVERSION column (not in the DM column list)
+--     to back the @RowVersion optimistic-lock contract of Lot_UpdateStatus
+--     (plan §"API Layer"). Lot is a high-concurrency shop-floor entity; this is
+--     the one place the project adopts optimistic locking (config tables remain
+--     last-write-wins per the Item-Master design precedent).
+
+-- ---- Lots.IdentifierSequence (+ B-SEED) ----
+-- Row-locked gap-free identifier minting (B6). DM §3 columns. Seeded with the
+-- Lot (MESL) + SerializedItem (MESI) counters. Seed LastValue sits at the
+-- ~3,000,000 integration floor; the EXACT cutover seed is owed from Ben and is
+-- a cutover gate, NOT a build gate — these values are PROVISIONAL.
+IF OBJECT_ID(N'Lots.IdentifierSequence', N'U') IS NULL
+BEGIN
+    CREATE TABLE Lots.IdentifierSequence (
+        Id                   BIGINT         NOT NULL IDENTITY(1,1),
+        Code                 NVARCHAR(30)   NOT NULL,
+        Name                 NVARCHAR(100)  NOT NULL,
+        Description          NVARCHAR(500)  NULL,
+        FormatString         NVARCHAR(50)   NOT NULL,
+        StartingValue        BIGINT         NOT NULL CONSTRAINT DF_IdentifierSequence_StartingValue DEFAULT (1),
+        EndingValue          BIGINT         NOT NULL CONSTRAINT DF_IdentifierSequence_EndingValue   DEFAULT (9999999),
+        LastValue            BIGINT         NOT NULL CONSTRAINT DF_IdentifierSequence_LastValue      DEFAULT (0),
+        ResetIntervalMinutes INT            NULL,
+        LastResetAt          DATETIME2(3)   NULL,
+        UpdatedAt            DATETIME2(3)   NOT NULL CONSTRAINT DF_IdentifierSequence_UpdatedAt      DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT PK_IdentifierSequence PRIMARY KEY NONCLUSTERED (Id),
+        CONSTRAINT UQ_IdentifierSequence_Code UNIQUE (Code)
+    );
+END
+GO
+
+-- B-SEED: the two MPP-internal counters. LastValue = 3,000,000 floor
+-- (PROVISIONAL — re-sampled from live Flexware at cutover; see DM §3 / OI-31).
+IF NOT EXISTS (SELECT 1 FROM Lots.IdentifierSequence WHERE Code = N'Lot')
+    INSERT INTO Lots.IdentifierSequence (Code, Name, Description, FormatString, StartingValue, EndingValue, LastValue)
+    VALUES (N'Lot', N'LOT Tracking Ticket', N'LTT barcode counter (MESL). PROVISIONAL seed at the 3,000,000 integration floor - exact cutover value owed from Ben.', N'MESL{0:D7}', 1, 9999999, 3000000);
+GO
+IF NOT EXISTS (SELECT 1 FROM Lots.IdentifierSequence WHERE Code = N'SerializedItem')
+    INSERT INTO Lots.IdentifierSequence (Code, Name, Description, FormatString, StartingValue, EndingValue, LastValue)
+    VALUES (N'SerializedItem', N'Serialized Item ID', N'Serialized-part identifier counter (MESI). PROVISIONAL seed at the 3,000,000 integration floor - exact cutover value owed from Ben.', N'MESI{0:D7}', 1, 9999999, 3000000);
+GO
+
+-- ---- Lots.Lot (header; NOT partitioned) ----
+-- Central tracking entity (DM §3) + v1.9q deltas: ToolId / ToolCavityId NULL
+-- FKs, CrtActive (FDS-10-012), materialized B5 TotalInProcess / InventoryAvailable,
+-- RowVersion optimistic-lock token. Legacy DieNumber / CavityNumber retained per
+-- DM (cutover transition; removed once all writers use the Tool FKs).
+IF OBJECT_ID(N'Lots.Lot', N'U') IS NULL
+BEGIN
+    CREATE TABLE Lots.Lot (
+        Id                  BIGINT         NOT NULL IDENTITY(1,1),
+        LotName             NVARCHAR(50)   NOT NULL,
+        ItemId              BIGINT         NOT NULL REFERENCES Parts.Item(Id),
+        LotOriginTypeId     BIGINT         NOT NULL REFERENCES Lots.LotOriginType(Id),
+        LotStatusId         BIGINT         NOT NULL REFERENCES Lots.LotStatusCode(Id),
+        PieceCount          INT            NOT NULL,
+        MaxPieceCount       INT            NULL,
+        Weight              DECIMAL(12,4)  NULL,
+        WeightUomId         BIGINT         NULL     REFERENCES Parts.Uom(Id),
+        ToolId              BIGINT         NULL     REFERENCES Tools.Tool(Id),
+        ToolCavityId        BIGINT         NULL     REFERENCES Tools.ToolCavity(Id),
+        DieNumber           NVARCHAR(50)   NULL,     -- legacy as of v1.9 (superseded by ToolId)
+        CavityNumber        NVARCHAR(50)   NULL,     -- legacy as of v1.9 (superseded by ToolCavityId)
+        VendorLotNumber     NVARCHAR(100)  NULL,
+        MinSerialNumber     INT            NULL,
+        MaxSerialNumber     INT            NULL,
+        ParentLotId         BIGINT         NULL     REFERENCES Lots.Lot(Id),
+        CurrentLocationId   BIGINT         NOT NULL REFERENCES Location.Location(Id),
+        CrtActive           BIT            NOT NULL CONSTRAINT DF_Lot_CrtActive          DEFAULT (0),  -- v1.9q FDS-10-012
+        TotalInProcess      INT            NOT NULL CONSTRAINT DF_Lot_TotalInProcess     DEFAULT (0),  -- v1.9q B5 materialized
+        InventoryAvailable  INT            NOT NULL CONSTRAINT DF_Lot_InventoryAvailable DEFAULT (0),  -- v1.9q B5 materialized
+        CreatedByUserId     BIGINT         NOT NULL REFERENCES Location.AppUser(Id),
+        CreatedAtTerminalId BIGINT         NULL     REFERENCES Location.Location(Id),
+        CreatedAt           DATETIME2(3)   NOT NULL CONSTRAINT DF_Lot_CreatedAt DEFAULT SYSUTCDATETIME(),
+        UpdatedAt           DATETIME2(3)   NULL,
+        UpdatedByUserId     BIGINT         NULL     REFERENCES Location.AppUser(Id),
+        RowVersion          ROWVERSION     NOT NULL,  -- optimistic-lock token (Lot_UpdateStatus / Lot_Update)
+        CONSTRAINT PK_Lot PRIMARY KEY NONCLUSTERED (Id),
+        CONSTRAINT UQ_Lot_LotName UNIQUE (LotName)
+    );
+
+    CREATE INDEX IX_Lot_ItemId          ON Lots.Lot (ItemId);
+    CREATE INDEX IX_Lot_CurrentLocationId ON Lots.Lot (CurrentLocationId);
+    CREATE INDEX IX_Lot_ToolId          ON Lots.Lot (ToolId) WHERE ToolId IS NOT NULL;
+
+    -- B8 filtered index: active (in-process) lots by current location. Active =
+    -- not in a terminal LotStatus (Closed=4 / Scrap=3); the hot dashboard query
+    -- is "lots currently at / advancing through a location". LotStatus ids are
+    -- the stable seeded code-table ids (Good=1, Hold=2, Scrap=3, Closed=4).
+    CREATE INDEX IX_Lot_Active
+        ON Lots.Lot (CurrentLocationId, LotStatusId)
+        INCLUDE (ItemId, PieceCount)
+        WHERE LotStatusId IN (1, 2);  -- Good, Hold (still on the floor); excludes Scrap/Closed
+END
+GO
+
+-- ---- Lots.LotStatusHistory (BORN PARTITIONED on ChangedAt) ----
+-- Immutable log of every status transition (DM §3). Written by Lot_Create
+-- (Old=NULL,New='Good') + Lot_UpdateStatus. No incoming bare-Id FK -> aligned
+-- composite PK NONCLUSTERED (Id, ChangedAt) + clustered (LotId, ChangedAt).
+IF OBJECT_ID(N'Lots.LotStatusHistory', N'U') IS NULL
+BEGIN
+    CREATE TABLE Lots.LotStatusHistory (
+        Id                 BIGINT         NOT NULL IDENTITY(1,1),
+        LotId              BIGINT         NOT NULL REFERENCES Lots.Lot(Id),
+        OldStatusId        BIGINT         NULL     REFERENCES Lots.LotStatusCode(Id),  -- NULL on first (create) row
+        NewStatusId        BIGINT         NOT NULL REFERENCES Lots.LotStatusCode(Id),
+        Reason             NVARCHAR(500)  NULL,
+        ChangedByUserId    BIGINT         NOT NULL REFERENCES Location.AppUser(Id),
+        TerminalLocationId BIGINT         NULL     REFERENCES Location.Location(Id),
+        ChangedAt          DATETIME2(3)   NOT NULL CONSTRAINT DF_LotStatusHistory_ChangedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT PK_LotStatusHistory PRIMARY KEY NONCLUSTERED (Id, ChangedAt)
+            ON ps_MonthlyUtc(ChangedAt)
+    );
+
+    CREATE CLUSTERED INDEX CIX_LotStatusHistory_LotChangedAt
+        ON Lots.LotStatusHistory (LotId, ChangedAt)
+        ON ps_MonthlyUtc(ChangedAt);
+END
+GO
+
+-- ---- Lots.LotMovement (BORN PARTITIONED on MovedAt) ----
+-- Append-only location-change log (DM §3). Written by Lot_Create (first
+-- placement, From=NULL) + Lot_MoveTo. No incoming bare-Id FK -> aligned
+-- composite PK NONCLUSTERED (Id, MovedAt) + clustered (LotId, MovedAt).
+IF OBJECT_ID(N'Lots.LotMovement', N'U') IS NULL
+BEGIN
+    CREATE TABLE Lots.LotMovement (
+        Id                 BIGINT         NOT NULL IDENTITY(1,1),
+        LotId              BIGINT         NOT NULL REFERENCES Lots.Lot(Id),
+        FromLocationId     BIGINT         NULL     REFERENCES Location.Location(Id),  -- NULL on first placement
+        ToLocationId       BIGINT         NOT NULL REFERENCES Location.Location(Id),
+        MovedByUserId      BIGINT         NOT NULL REFERENCES Location.AppUser(Id),
+        TerminalLocationId BIGINT         NULL     REFERENCES Location.Location(Id),
+        MovedAt            DATETIME2(3)   NOT NULL CONSTRAINT DF_LotMovement_MovedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT PK_LotMovement PRIMARY KEY NONCLUSTERED (Id, MovedAt)
+            ON ps_MonthlyUtc(MovedAt)
+    );
+
+    CREATE CLUSTERED INDEX CIX_LotMovement_LotMovedAt
+        ON Lots.LotMovement (LotId, MovedAt)
+        ON ps_MonthlyUtc(MovedAt);
+END
+GO
+
+-- ---- Lots.LotGenealogyClosure (B4; NOT partitioned) ----
+-- Materialized closure of the genealogy graph for O(1) Honda trace. Keyed by
+-- the (ancestor, descendant) lot pair. Lot_Create writes only the self-row
+-- (Depth=0); Split/Merge maintenance is Phase 2. Indexed both directions.
+IF OBJECT_ID(N'Lots.LotGenealogyClosure', N'U') IS NULL
+BEGIN
+    CREATE TABLE Lots.LotGenealogyClosure (
+        AncestorLotId   BIGINT NOT NULL REFERENCES Lots.Lot(Id),
+        DescendantLotId BIGINT NOT NULL REFERENCES Lots.Lot(Id),
+        Depth           INT    NOT NULL,
+        CONSTRAINT PK_LotGenealogyClosure PRIMARY KEY (AncestorLotId, DescendantLotId),
+        CONSTRAINT CK_LotGenealogyClosure_Depth CHECK (Depth >= 0)
+    );
+
+    CREATE INDEX IX_Closure_Descendant
+        ON Lots.LotGenealogyClosure (DescendantLotId, AncestorLotId);
+END
+GO
+
+-- ---- Lots.v_LotDerivedQuantities (B5 diagnostic fallback) ----
+-- Derives in-process / available per LOT from the Section E event tables at
+-- read time. Diagnostic fallback only; the authoritative values are the
+-- materialized Lot.TotalInProcess / Lot.InventoryAvailable columns (v1.9q B5).
+-- Derivation (FDS-05-031 intent): a LOT's pieces are reduced by what was
+-- consumed FROM it (ConsumptionEvent.SourceLotId) and increased by what was
+-- produced INTO it (ConsumptionEvent.ProducedLotId). TotalInProcess is the
+-- net still-open quantity at downstream operations; InventoryAvailable is the
+-- LOT's seed PieceCount net of consumption. Phase 1 ships the structural view;
+-- precise OEE-grade formulas are refined when the event writers land (Phase 3+).
+IF OBJECT_ID(N'Lots.v_LotDerivedQuantities', N'V') IS NOT NULL
+    DROP VIEW Lots.v_LotDerivedQuantities;
+GO
+CREATE VIEW Lots.v_LotDerivedQuantities
+AS
+    SELECT
+        l.Id AS LotId,
+        -- Produced into this LOT (downstream output) minus consumed from it.
+        CAST(ISNULL(prod.Produced, 0) - ISNULL(cons.Consumed, 0) AS INT) AS TotalInProcess,
+        -- Seed pieces net of what has been consumed out of this LOT.
+        CAST(l.PieceCount - ISNULL(cons.Consumed, 0) AS INT)             AS InventoryAvailable
+    FROM Lots.Lot l
+    LEFT JOIN (
+        SELECT ce.SourceLotId AS LotId, SUM(ce.PieceCount) AS Consumed
+        FROM Workorder.ConsumptionEvent ce
+        GROUP BY ce.SourceLotId
+    ) cons ON cons.LotId = l.Id
+    LEFT JOIN (
+        SELECT ce.ProducedLotId AS LotId, SUM(ce.PieceCount) AS Produced
+        FROM Workorder.ConsumptionEvent ce
+        WHERE ce.ProducedLotId IS NOT NULL
+        GROUP BY ce.ProducedLotId
+    ) prod ON prod.LotId = l.Id;
+GO
+
+-- ---- Audit lookup: LotStatusChanged (Id 26) ----
+-- Seeded here (guarded) for Lot_UpdateStatus. LotCreated(5) / LotMoved(6) exist.
+-- Task F's guard on the same Id makes a double-insert a no-op either order.
+IF NOT EXISTS (SELECT 1 FROM Audit.LogEventType WHERE Id = 26)
+    INSERT INTO Audit.LogEventType (Id, Code, Name, Description) VALUES
+        (26, N'LotStatusChanged', N'LOT Status Changed', N'A LOT status transition was recorded.');
+GO
 
 
 -- ============================================================
