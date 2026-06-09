@@ -1,0 +1,192 @@
+{
+  "custom": {
+    "initials": "",
+    "resolved": {
+      "appUserId": null,
+      "checked": false,
+      "displayName": "",
+      "valid": false
+    }
+  },
+  "params": {
+    "label": "Initials",
+    "replyMessage": "initialsResolved"
+  },
+  "propConfig": {
+    "params.label": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.replyMessage": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 78,
+      "width": 280
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "pf-field"
+      }
+    },
+    "events": {
+      "component": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tt = self.session.custom.terminal\n\tu = self.session.custom.user\n\tif t and t.get(\"terminalMode\") == \"Dedicated\" and u and u.get(\"initials\"):\n\t\tself.view.custom.initials = u.get(\"initials\")\n\t\tself.resolveInitials()"
+          }
+        }
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "resolveInitials",
+          "params": [],
+          "script": "res = BlueRidge.Location.AppUser.resolveForPresence(self.view.custom.initials)\nself.view.custom.resolved = res\nsystem.perspective.sendMessage(self.view.params.replyMessage, res, scope=\"page\")"
+        }
+      ]
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "FieldLabel"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.label"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-field-label"
+          }
+        }
+      },
+      {
+        "type": "ia.input.text-field",
+        "meta": {
+          "name": "InitialsInput"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "bidirectional": true,
+                "path": "view.custom.initials"
+              }
+            }
+          }
+        },
+        "props": {
+          "placeholder": "Enter initials",
+          "style": {
+            "classes": "pf-field-input-mono",
+            "textTransform": "uppercase"
+          }
+        },
+        "events": {
+          "dom": {
+            "onBlur": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tself.view.rootContainer.resolveInitials()"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "ResolvedName"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.custom.resolved.valid}"
+              }
+            }
+          },
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.custom.resolved.displayName"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-state-good-fg)",
+            "fontSize": "13px",
+            "marginTop": "2px"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "NotRecognised"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.custom.resolved.checked} && !{view.custom.resolved.valid} && {view.custom.initials} != \"\""
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "Initials not recognised",
+          "style": {
+            "color": "var(--mpp-state-bad-fg)",
+            "fontSize": "13px",
+            "marginTop": "2px"
+          }
+        }
+      }
+    ]
+  }
+}
