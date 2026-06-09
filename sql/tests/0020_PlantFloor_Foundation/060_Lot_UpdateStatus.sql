@@ -13,6 +13,18 @@ SET XACT_ABORT ON;
 EXEC test.BeginTestFile @FileName = N'0020_PlantFloor_Foundation/060_Lot_UpdateStatus.sql';
 GO
 
+-- =============================================
+-- Guard: IX_Lot_Active (0020 Section B) hardcodes WHERE LotStatusId IN (1, 2)
+-- (Good, Hold) - filtered-index literals are forced and cannot reference the
+-- code-table. Assert the seeded ids have not drifted so any reseed that breaks
+-- the "active lots" index coverage fails the suite loudly.
+-- =============================================
+DECLARE @GoodIdStr NVARCHAR(20) = CAST((SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Good') AS NVARCHAR(20));
+DECLARE @HoldIdStr NVARCHAR(20) = CAST((SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Hold') AS NVARCHAR(20));
+EXEC test.Assert_IsEqual @TestName = N'[StatIdGuard] LotStatusCode Good id = 1 (IX_Lot_Active literal)', @Expected = N'1', @Actual = @GoodIdStr;
+EXEC test.Assert_IsEqual @TestName = N'[StatIdGuard] LotStatusCode Hold id = 2 (IX_Lot_Active literal)', @Expected = N'2', @Actual = @HoldIdStr;
+GO
+
 -- ---- fixture: one Good lot via Lot_Create ----
 DELETE FROM Lots.LotStatusHistory WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
 DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');

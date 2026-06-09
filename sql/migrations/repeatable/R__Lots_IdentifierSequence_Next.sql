@@ -32,6 +32,7 @@ CREATE OR ALTER PROCEDURE Lots.IdentifierSequence_Next
 AS
 BEGIN
     SET NOCOUNT ON;
+    SET XACT_ABORT ON;
 
     DECLARE @Last         BIGINT,
             @End          BIGINT,
@@ -40,60 +41,78 @@ BEGIN
             @Pad          INT,
             @Value        NVARCHAR(50);
 
-    -- Row-locked read-modify within an explicit tran so a breach can be
-    -- rolled back atomically (and so the lock is held only as briefly as
-    -- the increment needs when this proc is called standalone).
-    BEGIN TRANSACTION;
+    BEGIN TRY
+        -- Row-locked read-modify within an explicit tran so a breach can be
+        -- rolled back atomically (and so the lock is held only as briefly as
+        -- the increment needs when this proc is called standalone). XACT_ABORT
+        -- + the TRY/CATCH guarantee an unexpected error (deadlock, lock
+        -- timeout) never leaves the tran open on the pooled JDBC connection.
+        BEGIN TRANSACTION;
 
-    -- Acquire the row lock and capture current state. We compute the NEXT
-    -- value as @Last but do NOT persist the increment until the breach
-    -- check passes.
-    SELECT @Last   = s.LastValue + 1,
-           @End    = s.EndingValue,
-           @Format = s.FormatString
-    FROM Lots.IdentifierSequence s WITH (ROWLOCK, UPDLOCK, HOLDLOCK)
-    WHERE s.Code = @Code;
+        -- Acquire the row lock and capture current state. We compute the NEXT
+        -- value as @Last but do NOT persist the increment until the breach
+        -- check passes.
+        SELECT @Last   = s.LastValue + 1,
+               @End    = s.EndingValue,
+               @Format = s.FormatString
+        FROM Lots.IdentifierSequence s WITH (ROWLOCK, UPDLOCK, HOLDLOCK)
+        WHERE s.Code = @Code;
 
-    IF @Last IS NULL
-    BEGIN
-        ROLLBACK TRANSACTION;
-        RAISERROR(N'Unknown identifier sequence code: %s', 16, 1, @Code);
-        RETURN;
-    END
+        IF @Last IS NULL
+        BEGIN
+            ROLLBACK TRANSACTION;
+            RAISERROR(N'Unknown identifier sequence code: %s', 16, 1, @Code);
+            RETURN;
+        END
 
-    IF @Last > @End
-    BEGIN
-        ROLLBACK TRANSACTION;
-        RAISERROR(N'Identifier sequence %s exhausted at ending value %I64d.', 16, 1, @Code, @End);
-        RETURN;
-    END
+        IF @Last > @End
+        BEGIN
+            ROLLBACK TRANSACTION;
+            RAISERROR(N'Identifier sequence %s exhausted at ending value %I64d.', 16, 1, @Code, @End);
+            RETURN;
+        END
 
-    -- Persist the increment (gap-free).
-    UPDATE Lots.IdentifierSequence
-    SET LastValue = @Last,
-        UpdatedAt = SYSUTCDATETIME()
-    WHERE Code = @Code;
+        -- Persist the increment (gap-free).
+        UPDATE Lots.IdentifierSequence
+        SET LastValue = @Last,
+            UpdatedAt = SYSUTCDATETIME()
+        WHERE Code = @Code;
 
-    COMMIT TRANSACTION;
+        COMMIT TRANSACTION;
 
-    -- Parse the .NET FormatString '<PREFIX>{0:D<N>}' -> prefix + pad width.
-    SET @Prefix = CASE WHEN CHARINDEX(N'{', @Format) > 0
-                       THEN LEFT(@Format, CHARINDEX(N'{', @Format) - 1)
-                       ELSE @Format END;
+        -- Parse the .NET FormatString '<PREFIX>{0:D<N>}' -> prefix + pad width.
+        SET @Prefix = CASE WHEN CHARINDEX(N'{', @Format) > 0
+                           THEN LEFT(@Format, CHARINDEX(N'{', @Format) - 1)
+                           ELSE @Format END;
 
-    SET @Pad = TRY_CAST(
-        SUBSTRING(
-            @Format,
-            CHARINDEX(N'D', @Format, CHARINDEX(N'{', @Format)) + 1,
-            CHARINDEX(N'}', @Format) - CHARINDEX(N'D', @Format, CHARINDEX(N'{', @Format)) - 1
-        ) AS INT);
+        SET @Pad = TRY_CAST(
+            SUBSTRING(
+                @Format,
+                CHARINDEX(N'D', @Format, CHARINDEX(N'{', @Format)) + 1,
+                CHARINDEX(N'}', @Format, CHARINDEX(N'{', @Format)) - CHARINDEX(N'D', @Format, CHARINDEX(N'{', @Format)) - 1
+            ) AS INT);
 
-    -- Defensive: if the format has no D-pad token, fall back to no padding.
-    IF @Pad IS NULL OR @Pad < 1
-        SET @Value = @Prefix + CAST(@Last AS NVARCHAR(20));
-    ELSE
-        SET @Value = @Prefix + RIGHT(REPLICATE(N'0', @Pad) + CAST(@Last AS NVARCHAR(20)), @Pad);
+        -- Defensive: if the format has no D-pad token, fall back to no padding.
+        IF @Pad IS NULL OR @Pad < 1
+            SET @Value = @Prefix + CAST(@Last AS NVARCHAR(20));
+        ELSE
+            SET @Value = @Prefix + RIGHT(REPLICATE(N'0', @Pad) + CAST(@Last AS NVARCHAR(20)), @Pad);
 
-    SELECT @Value AS Value;
+        SELECT @Value AS Value;
+    END TRY
+    BEGIN CATCH
+        -- Defensive cleanup: an unexpected error (deadlock, lock timeout) must
+        -- not leak an open tran onto the pooled JDBC connection. The explicit
+        -- ROLLBACK paths above handle the known breach cases; this catches the
+        -- rest. RAISERROR (not THROW) per project convention.
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        DECLARE @ErrMsg   NVARCHAR(4000) = ERROR_MESSAGE();
+        DECLARE @ErrSev   INT            = ERROR_SEVERITY();
+        DECLARE @ErrState INT            = ERROR_STATE();
+
+        RAISERROR(@ErrMsg, @ErrSev, @ErrState);
+    END CATCH
 END;
 GO

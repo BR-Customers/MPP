@@ -290,7 +290,7 @@ BEGIN
         SET @SeqPad = TRY_CAST(
             SUBSTRING(@SeqFormat,
                       CHARINDEX(N'D', @SeqFormat, CHARINDEX(N'{', @SeqFormat)) + 1,
-                      CHARINDEX(N'}', @SeqFormat) - CHARINDEX(N'D', @SeqFormat, CHARINDEX(N'{', @SeqFormat)) - 1)
+                      CHARINDEX(N'}', @SeqFormat, CHARINDEX(N'{', @SeqFormat)) - CHARINDEX(N'D', @SeqFormat, CHARINDEX(N'{', @SeqFormat)) - 1)
             AS INT);
         SET @MintedLotName = CASE WHEN @SeqPad IS NULL OR @SeqPad < 1
             THEN @SeqPrefix + CAST(@SeqLast AS NVARCHAR(20))

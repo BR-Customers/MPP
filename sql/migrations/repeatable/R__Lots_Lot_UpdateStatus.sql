@@ -14,6 +14,12 @@
 --              params; every exit ends SELECT @Status, @Message. RAISERROR in
 --              nested CATCH with failure logging.
 --
+--              Optimistic lock is INTENTIONALLY LENIENT (Phase 1 opt-in): the
+--              check runs only when @RowVersion is supplied; a caller that omits
+--              the token (passes NULL) bypasses it entirely. Phase 2+ callers
+--              that read RowVersion from Lot_Get SHOULD always supply it so a
+--              concurrent edit is detected. See the inline note on the check.
+--
 --              NOTE: this proc CHANGES status, so it does NOT call
 --              Lot_AssertNotBlocked (that guard is for status-preserving
 --              advancing procs like Lot_MoveTo). It validates the transition
@@ -79,7 +85,9 @@ BEGIN
             RETURN;
         END
 
-        -- Optimistic-lock check (when a token is supplied).
+        -- Optimistic-lock check. INTENTIONALLY LENIENT: skipped entirely when
+        -- @RowVersion IS NULL (Phase 1 opt-in). Callers that read RowVersion
+        -- from Lot_Get SHOULD always supply it; omitting it bypasses the check.
         IF @RowVersion IS NOT NULL AND @RowVersion <> @CurrentRowVer
         BEGIN
             SET @Message = N'LOT was modified by another user (stale RowVersion). Reload and retry.';
