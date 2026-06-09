@@ -803,11 +803,18 @@ BEGIN
         ON Audit.OperationLog (LoggedAt)
         ON ps_MonthlyUtc(LoggedAt);
 
+    -- Each secondary index individually guarded so a partial re-apply (crash
+    -- after the clustered index but before the secondaries) still recreates the
+    -- missing ones — the outer "already repartitioned" guard would otherwise skip
+    -- this whole block and leave them permanently absent. DESC on the timestamp
+    -- key matches the 0001 originals' recent-first intent.
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_OperationLog_EntityType' AND object_id = OBJECT_ID(N'Audit.OperationLog'))
     CREATE INDEX IX_OperationLog_EntityType
-        ON Audit.OperationLog (LogEntityTypeId, EntityId, LoggedAt)
+        ON Audit.OperationLog (LogEntityTypeId, EntityId, LoggedAt DESC)
         ON ps_MonthlyUtc(LoggedAt);
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_OperationLog_User' AND object_id = OBJECT_ID(N'Audit.OperationLog'))
     CREATE INDEX IX_OperationLog_User
-        ON Audit.OperationLog (UserId, LoggedAt)
+        ON Audit.OperationLog (UserId, LoggedAt DESC)
         ON ps_MonthlyUtc(LoggedAt);
 END
 GO
@@ -841,8 +848,10 @@ BEGIN
         ON Audit.InterfaceLog (LoggedAt)
         ON ps_MonthlyUtc(LoggedAt);
 
+    -- Individually guarded (partial-re-apply safe) + DESC matches 0001 original.
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_InterfaceLog_System' AND object_id = OBJECT_ID(N'Audit.InterfaceLog'))
     CREATE INDEX IX_InterfaceLog_System
-        ON Audit.InterfaceLog (SystemName, LoggedAt)
+        ON Audit.InterfaceLog (SystemName, LoggedAt DESC)
         ON ps_MonthlyUtc(LoggedAt);
 END
 GO
@@ -880,14 +889,19 @@ BEGIN
         ON Audit.FailureLog (AttemptedAt)
         ON ps_MonthlyUtc(AttemptedAt);
 
+    -- Each secondary index individually guarded (partial-re-apply safe) +
+    -- DESC on AttemptedAt matches the 0001 originals' recent-first intent.
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_FailureLog_AppUser' AND object_id = OBJECT_ID(N'Audit.FailureLog'))
     CREATE INDEX IX_FailureLog_AppUser
-        ON Audit.FailureLog (AppUserId, AttemptedAt)
+        ON Audit.FailureLog (AppUserId, AttemptedAt DESC)
         ON ps_MonthlyUtc(AttemptedAt);
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_FailureLog_EntityEvent' AND object_id = OBJECT_ID(N'Audit.FailureLog'))
     CREATE INDEX IX_FailureLog_EntityEvent
-        ON Audit.FailureLog (LogEntityTypeId, LogEventTypeId, AttemptedAt)
+        ON Audit.FailureLog (LogEntityTypeId, LogEventTypeId, AttemptedAt DESC)
         ON ps_MonthlyUtc(AttemptedAt);
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_FailureLog_ProcedureName' AND object_id = OBJECT_ID(N'Audit.FailureLog'))
     CREATE INDEX IX_FailureLog_ProcedureName
-        ON Audit.FailureLog (ProcedureName, AttemptedAt)
+        ON Audit.FailureLog (ProcedureName, AttemptedAt DESC)
         ON ps_MonthlyUtc(AttemptedAt);
 END
 GO
@@ -912,6 +926,18 @@ GO
 IF NOT EXISTS (SELECT 1 FROM Audit.LogEntityType WHERE Id = 41)
     INSERT INTO Audit.LogEntityType (Id, Code, Name, Description) VALUES
         (41, N'Shift', N'Shift', N'Runtime production shift instance (Oee.Shift).');
+GO
+
+-- ---- B3 single-open-Shift invariant: DB-level backstop ----
+-- Oee.Shift_Start rejects (friendly status row) when ANY open shift exists
+-- (WHERE ActualEnd IS NULL — GLOBAL, not scoped to a schedule/line/location).
+-- That proc-level EXISTS check can race under concurrency, so a UNIQUE FILTERED
+-- index on ActualEnd (filtered to the open rows) backs the invariant at the DB:
+-- a unique index treats the all-NULL filtered rows as mutually equal, permitting
+-- exactly one row where ActualEnd IS NULL. The proc's status-row rejection still
+-- fires first on the happy path; this index is the concurrency backstop.
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UIX_Shift_SingleOpen' AND object_id = OBJECT_ID(N'Oee.Shift'))
+    CREATE UNIQUE INDEX UIX_Shift_SingleOpen ON Oee.Shift (ActualEnd) WHERE ActualEnd IS NULL;
 GO
 
 

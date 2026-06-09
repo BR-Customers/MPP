@@ -41,6 +41,7 @@ BEGIN
         IF @AppUserId IS NULL
         BEGIN
             SET @Message = N'Required parameter missing (AppUserId).';
+            -- cannot Audit_LogFailure here: no @AppUserId to attribute the failure to
             SELECT @Status AS Status, @Message AS Message;
             RETURN;
         END
