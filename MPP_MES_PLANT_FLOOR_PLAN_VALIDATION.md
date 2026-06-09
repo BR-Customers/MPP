@@ -138,6 +138,8 @@ This is a **scope decision, not a bug** — but it is a large MVP surface sittin
 
 ## Section 5 — Recommended actions, in order
 
+> **Resolution status (2026-06-09):** Actions 1–3 + 6 are **APPLIED**. Plan v1.2/v1.3 renumbered the Arc-2 migrations to `0020`–`0028` (action 1), converted `Lots.Lot` to a full CREATE + added the Lot append tables to Phases 1/2 (action 2), and **pinned `HoldEvent`=Phase 7 / `DowntimeEvent`=Phase 8 / `ShippingLabel`=Phase 6 CREATE ownership with both excluded from Phase 1's partition list (C-4/C-5)** — ratified in Phase 0 T009 Block 5. OI-35 defaults adopted (action 6) and signed off 2026-06-08 (B2–B8/B1; OIR v2.18; Data Model § "Scaling Decisions" rev 1.9s). Action 4 (G-1/G-2/G-3 scope) decided 2026-06-08 — all three in-scope as plan **Phase 9** (v1.3). Action 5 (mechanical C-1/2/3/6/7/8/9 sweep) folds into the next plan bump.
+
 1. **Renumber** all Arc-2 migrations `0014→0019` … `0021→0026` and test suites; fix plan line 28 ("0001–0018"). *(B-1)*
 2. **Convert** Phase 1's `Lots.Lot` ALTER into a full CREATE (Tool/Cavity columns inline); add `LotStatusHistory` + `LotMovement` CREATEs to Phase 1 and `LotGenealogy` + `LotAttributeChange` + `LotLabel` to Phase 2. *(B-2)*
 3. **Pin** `HoldEvent` (Phase 7), `DowntimeEvent` (Phase 8), `ShippingLabel` (Phase 6) CREATE ownership; remove them from Phase 1's partition list or move CREATE forward. *(C-4, C-5)*

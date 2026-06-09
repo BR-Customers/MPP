@@ -1,7 +1,7 @@
 # MPP MES — Open Issues Register
 
 **Document:** FDS-MPP-MES-OIR-001
-**Version:** 2.17 — Working Draft
+**Version:** 2.18 — Working Draft
 **Date:** 2026-05-01
 **Prepared By:** Blue Ridge Automation
 **Prepared For:** Madison Precision Products, Inc. (Madison, IN)
@@ -14,6 +14,7 @@ This register consolidates all open items and design decisions that gate Perspec
 
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
+| 2.18 | 2026-06-09 | Blue Ridge Automation | **OI-35 RESOLVED — Phase 0 architecture gate cleared (Arc-2 Phase-1 SQL unblocked).** Track B (OI-35 B1–B8) signed off 2026-06-08 (`Meeting_Notes/2026-06-08_Phase0_Decision_Log.md`); decisions baked into migration `0020` (design spec `docs/superpowers/specs/2026-06-09-arc2-phase1-sql-foundation-design.md`): B2 monthly partitioning + `TRUNCATE` sliding-window (singleton `Id` PK preserved), B3 columnstore deferred, B4 `LotGenealogyClosure`, B5 materialized qty + fallback view, B6 row-locked `IdentifierSequence_Next` (seed ≈3M, MESL/MESI), B7 `OperationLog`→`LotEventLog` split, B8 filtered indexes, B1 retention → FDS §11. Track A = build-on-assumed-defaults (A4 ShotCount cumulative locked; A1/A2/A5/A6/A7 MPP-confirm in parallel; A8 close-as-not-reproduced; A9 hard-fail). **UJ-03 ⚠️ changed** (Phase 0 T008): no auto even-split default — operator enters all split quantities; FDS §5/§6 even-split-default prose to be removed at next FDS pass. **UJ-05** build default locked to update-in-place + `ContainerSerialHistory` (B10), stays Open pending Quality/Honda affirmation. **Count shifts:** Part A Resolved 30 → 31, Open 4 → 3 (OI-32/-34 + OI-33 remain; OI-35 → Resolved). Grand total: 48 resolved, 0 in review, 5 open, 1 superseded. Companion edits applied same pass: Data Model § "Scaling Decisions" (rev 1.9s), FDS-11-009 retention table, Plant Floor plan B10. |
 | 2.17 | 2026-05-01 | Blue Ridge Automation | **Nine items closed from Jacques's 2026-05-01 markup of the Outstanding Items extract.** OI-07 (Production-only WO seed confirmed → ✅ Resolved). OI-24 (legacy Automation tile not reproduced; covered by `Audit.InterfaceLog` + OPC tag management → ✅ Resolved). OI-25 (Notifications module out-of-MVP; banner notifications already covered via terminal context per FDS-07-006a/b; text/email notifications a future change order or follow-on project → ✅ Resolved). OI-27 (Supply-part flag covered by existing component-part modeling — `Parts.Item` + `Parts.Bom` + `Parts.ItemType` Cast/Machined/Assembled/Received → ✅ Resolved). OI-28 (Cast-override flag covered by `LocationAttribute` system; no new BIT column on Cell → ✅ Resolved). OI-29 (Workstation Category covered by ISA-95 hierarchy; no `WorkstationCategory` LocationAttribute → ✅ Resolved). OI-30 (Legacy Reports-tile contents not mirrored 1:1; the four named PD reports stay MVP via UJ-19; additional Ignition reports beyond those four = post-deployment change order → ✅ Resolved). OI-31 (Proposed direction confirmed + new business rule: cutover seed at **+10,000 above current Flexware `LastCounterValue`** — or MPP-agreed delta — to avoid LTT collisions during partial-cutover windows. Format `MESL{0:D7}` / `MESI{0:D7}` retained, no reset policy, rollover deferred ~30 yrs → ✅ Resolved). UJ-03 (Per-Operation `Parts.OperationTemplate.RequiresSubLotSplit BIT` flag confirmed; mockup verified at Trim OUT with `+ Add sub-LOT` button toggling 1 vs N destination rows; Configuration Tool surfaces this as "may split for machining" toggle on the per-Operation row of the Item edit screen → ✅ Resolved). UJ-19 confirmed in MVP scope: the four named PD reports are deliverables for this project; the post-deployment change-order comment in OI-30 was about reports BEYOND the four. **Count shifts:** Part A Resolved 22 → 30, In Review 1 → 0, Open 11 → 4 (only OI-32, OI-33, OI-34, OI-35 remain); Part B Resolved 16 → 17, In Review 1 → 0, Open 2 → 2 (UJ-05, UJ-19). Grand total: 54 items, 47 resolved, 0 in review, 6 open, 1 superseded. **Companion FDS amendments queued separately:** §16 cutover-offset rule (FDS-16-003) + §12 banners-only / text-out one-liner; FDS embedded Open Items Register trimmed to the 6 remaining items. No data model / SQL changes this revision — register entries + FDS prose only. |
 | 2.16 | 2026-04-29 | Blue Ridge Automation | **OI-35 NEW / ⬜ Open / HIGH — Long-horizon scaling, retention, and archiving strategy.** Captures the 20-year-retention architectural decisions surfaced during the 2026-04-28 indexing & query-perf review. **Tagged "must decide before Arc 2 Phase 1 SQL build"** — partition functions, materialization columns, and closure-table presence all need to be in the CREATE migration; retrofitting them on a populated 100M+ row table is operationally painful. The decision space: per-table retention class (push-back candidates: `Audit.OperationLog` / `InterfaceLog` / `FailureLog` at 7-year vs 20-year), monthly range partitioning + sliding-window automation for ~14 high-volume event tables, clustered columnstore on partitions older than 90 days, materialized closure table for `Lots.LotGenealogy` (so Honda audits don't recursive-CTE-walk 100M+ rows at year 15), materialize `TotalInProcess` / `InventoryAvailable` columns onto `Lots.Lot` (replaces the read-time `v_LotDerivedQuantities` view at scale), switch `Lots.IdentifierSequence_Next` to SQL Server `SEQUENCE` object (eliminates row-level lock contention at LOT creation), split `Audit.OperationLog` into a 7-year retention general audit + a separate 20-year `Lots.LotEventLog` for traceability events. Owner: Blue Ridge architecture + MPP IT (retention policy negotiation). Last-responsible-moment posture confirmed by Jacques 2026-04-29 — the decision is deferred but the gate is hard. Couples to: indexing review meeting note (`Meeting_Notes/2026-04-28_DataModel_Indexing_Scaling_Review.md`), the data model spec § for Arc 2 deferred tables, and the existing "indexing pass" follow-up. Count shifts: Part A Open 10 → 11 (added OI-35 HIGH). Active Part A item count 34 → 35. No FDS / data model / SQL changes this revision — register entry only. |
 | 2.15 | 2026-04-28 | Blue Ridge Automation | **Canonical sync of OI-33 + OI-34 from the embedded FDS Open Items Register.** Both items were added to the FDS body's Open Items Register during the 2026-04-28 v0.11m continuity + clarity pass but had not yet been folded into this canonical OIR. **OI-33 ⬜ Open / HIGH** — AIM Shipper ID pool empty-pool **hard-fail** behavior (FDS-07-010a). When the local pool is exhausted, `Container_Complete` rolls back and production stops on affected lines until the pool refills (no soft-fallback, no placeholder-then-reconcile). Customer validation needed: confirm hard-fail is the desired operational posture given trucks cannot ship without valid Honda-issued AIM IDs. Owner: MPP Operations / IT. Couples to UJ-04 (already Resolved — pool design locked v2.12). **OI-34 ⬜ Open / MEDIUM** — MPP-authored production schedules — how should the MES leverage them beyond shift-window timing (FDS-09-008 / FDS-09-012)? Current design imports them for shift-instance creation and event-derived availability math. Whether MPP wants additional uses (target quotas per shift, line scheduling drift detection, throughput planning, etc.) is unanswered. Owner: MPP Production Control. Couples to UJ-19 (PD report enumeration) and OI-30 (Reports tile contents). Count shifts: Part A Resolved 22 → 22, In Review 1 → 1, Open 8 → 10 (added OI-33 + OI-34), Superseded 1 → 1. Active Part A item count 32 → 34. No FDS / data model / SQL changes — OIR sync only. |
@@ -36,21 +37,21 @@ This register consolidates all open items and design decisions that gate Perspec
 
 ## Summary
 
-**Part A counts (35 items — updated v2.17):**
+**Part A counts (35 items — updated v2.18):**
 
 | Priority | ✅ Resolved | 🔶 In Review | ⬜ Open | Superseded | **Total** |
 |---|---|---|---|---|---|
-| HIGH | 4 (OI-01, OI-02, OI-05, OI-07) | 0 | 2 (OI-33, OI-35) | 0 | **6** |
+| HIGH | 5 (OI-01, OI-02, OI-05, OI-07, OI-35) | 0 | 1 (OI-33) | 0 | **6** |
 | MEDIUM | 16 (OI-03, OI-04, OI-06, OI-08, OI-09, OI-11, OI-12, OI-16, OI-17, OI-18, OI-21, OI-22, OI-24, OI-28, OI-30, OI-31) | 0 | 2 (OI-32, OI-34) | 0 | **18** |
 | LOW | 10 (OI-13, OI-14, OI-15, OI-19, OI-20, OI-23, OI-25, OI-27, OI-29, OI-32b) | 0 | 0 | 0 | **10** |
 | — | 0 | 0 | 0 | 1 (OI-10) | **1** |
-| **Total** | **30** | **0** | **4** | **1** | **35** |
+| **Total** | **31** | **0** | **3** | **1** | **35** |
 
-> **Authoritative row lists (after v2.17 sync):**
+> **Authoritative row lists (after v2.18 sync):**
 >
-> - Resolved (30) = OI-01, -02, -03, -04, -05, -06, -07, -08, -09, -11, -12, -13, -14, -15, -16, -17, -18, -19, -20, -21, -22, -23, -24, -25, -27, -28, -29, -30, -31, -32b
+> - Resolved (31) = OI-01, -02, -03, -04, -05, -06, -07, -08, -09, -11, -12, -13, -14, -15, -16, -17, -18, -19, -20, -21, -22, -23, -24, -25, -27, -28, -29, -30, -31, -32b, -35
 > - In Review (0) = —
-> - Open (4) = OI-32, -33, -34, -35
+> - Open (3) = OI-32, -33, -34
 > - Superseded (1) = OI-10
 
 **Part B counts (19 items) — updated v2.17:**
@@ -62,7 +63,7 @@ This register consolidates all open items and design decisions that gate Perspec
 | LOW | 1 (UJ-06) | 0 | 0 | **1** |
 | **Total** | **17** | **0** | **2** | **19** |
 
-**Grand total:** 54 items (35 Part A + 19 Part B). **47 resolved, 0 in review, 6 open, 1 superseded.**
+**Grand total:** 54 items (35 Part A + 19 Part B). **48 resolved, 0 in review, 5 open, 1 superseded.**
 
 > **Note on UJ descriptions:** Jacques flagged 2026-04-24 that UJ entries lack the options/impact/reference depth of the OI entries. A separate enrichment pass is queued before the next MPP review — not addressed in v2.10.
 
@@ -891,7 +892,9 @@ Under our design:
 
 ---
 
-### OI-35 — Long-horizon scaling, retention, and archiving strategy — ⬜ Open / **MUST DECIDE BEFORE ARC 2 PHASE 1 SQL BUILD** (new, 2026-04-29)
+### OI-35 — Long-horizon scaling, retention, and archiving strategy — ✅ RESOLVED (2026-06-08, Blue Ridge architecture review)
+
+**Resolution (2026-06-08, Phase 0 Track B — `Meeting_Notes/2026-06-08_Phase0_Decision_Log.md`):** Architecture gate **CLEARED — Arc-2 Phase-1 SQL unblocked.** Decisions baked into migration `0020_arc2_phase1_shop_floor_foundation.sql` (design spec `docs/superpowers/specs/2026-06-09-arc2-phase1-sql-foundation-design.md`; Data Model § "Scaling Decisions"): **B2** monthly `RANGE RIGHT` partitioning + **`TRUNCATE`-based sliding-window** (CREATE; singleton `Id` PK preserved — TRUNCATE imposes no aligned-index requirement); **B3** columnstore deferred (partition-compatible, not built); **B4** `LotGenealogyClosure` table (CREATE); **B5** materialized `TotalInProcess`/`InventoryAvailable` + `v_LotDerivedQuantities` fallback view (CREATE); **B6** row-locked `IdentifierSequence_Next` (NOT SQL `SEQUENCE`), seed ≈3,000,000, MESL/MESI retained (CREATE); **B7** `OperationLog`→7-yr + 20-yr `Lots.LotEventLog` split (CREATE); **B8** known filtered indexes (CREATE); **B1** per-table retention → FDS §11 (20-yr Honda / 7-yr general, MPP IT confirms). **Track A (customer validation):** gate posture = build on assumed-defaults, MPP confirms in parallel; only S-08 a true blocker. A4 ShotCount = **cumulative** (locked). A1 seed ≈3M / keep MESL/MESI (Ben → exact seeds + rollout shape). A2/A5/A6/A7 adopt-default, MPP confirms. A8 (OI-32) close-as-not-reproduced (Ben). A9 (OI-33) hard-fail posture confirmed.
 
 **Priority:** HIGH
 **Owner:** Blue Ridge architecture + MPP IT (retention policy negotiation)
@@ -1012,6 +1015,8 @@ These are the 19 assumptions from `MPP_MES_USER_JOURNEYS.md`. Each gates one or 
 
 **Trigger location** is **Trim OUT** (split happens when LOT exits Trim, sub-LOTs route into Machining FIFO already split), not Machining IN — matches the 2026-04-29 design decision.
 
+**Decision (2026-06-08, Phase 0 T008) — split-quantity entry + trigger location updated:** **No auto even-split default.** The operator enters **all** split quantities manually at the split screen; the system does not pre-fill a 50/50 (or any) even division. This **supersedes the Option-A "auto-prompt 50/50 default"** language above. Separately, per FDS v1.3 / Phased Plan v1.1 the split **trigger moved from Trim OUT to Machining OUT** (Trim is now a 1:1 whole-LOT move at Area resolution); the `RequiresSubLotSplit` per-Operation mechanism is unchanged. Action: remove the 50/50 even-split-default wording from FDS §5/§6 sub-LOT-split prose at the next FDS pass.
+
 **Per-Operation vs per-Item placement (locked):** the flag stays on `Parts.OperationTemplate` (per-Op-per-Item) rather than directly on `Parts.Item`. Per-Operation gives more flexibility — the same Item could split at one Operation but not another in some future workflow — without losing the simpler day-to-day UX (Item edit screen surfaces a single "may split" toggle on the relevant Operation row).
 
 **Integration queued:**
@@ -1089,6 +1094,8 @@ These are the 19 assumptions from `MPP_MES_USER_JOURNEYS.md`. Each gates one or 
 **What's needed to decide:** MPP Quality + Honda compliance affirmation that update-in-place satisfies traceability requirements (the typical Honda question is "show me every container this serial has ever been in" — answerable via `ContainerSerialHistory` join). Operational walk-through: confirm Sort Cage operators understand what re-sort does to the serial trail. Edge case: serial moves to a container, then that destination container is voided — what's the right next step? (Likely: another move event + container void event.)
 
 **Decision (existing):** Highest traceability-loss risk of any sort scenario. Needs customer discussion. Schema supports update-in-place via `ContainerSerialHistory` but the business rule is undefined.
+
+**Decision (2026-06-08, Phase 0 T008):** Build default **locked to Option A** — update-in-place + `Lots.ContainerSerialHistory` (one row per superseded serial: timestamp + reason + actor; no new container row minted; see Plant Floor plan Cross-Cutting **B10**). **Stays ⬜ Open** pending MPP Quality + Honda affirmation, but is **buildable now** — Phase 7 procs are structured so a void-and-recreate flip can swap in without a migration rebuild if MPP rejects update-in-place.
 
 ---
 

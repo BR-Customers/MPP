@@ -104,6 +104,22 @@ The Item Master design has been **reworked from bundled-editDraft + bidi-Object-
 
 ## ✅ Recently closed
 
+### Arc 2 Phase 1 SQL — Phase 0 gate signed off + design/plan committed + dispatch begun (2026-06-09)
+
+**OI-35 architecture gate CLEARED.** Phase 0 Track B was decided 2026-06-08 (`Meeting_Notes/2026-06-08_Phase0_Decision_Log.md`); the staged T009 sign-off Blocks 1–5 were applied to the canonical docs this session:
+- **Data Model** → new § "Scaling Decisions (OI-35)" (rev **1.9s**).
+- **FDS** → FDS-11-009 differentiated retention table (20-yr Honda / 7-yr general) (rev **1.3a**).
+- **OIR** → OI-35 **RESOLVED**; UJ-03 changed (no auto even-split, Phase 0 T008); UJ-05 build-default locked; counts/version (**v2.18**).
+- **Plant Floor plan** → B10 serial-migration convention refined.
+- **Validation doc** → Section 5 resolution banner (C-4/C-5 CREATE-ownership pinned).
+- **CLAUDE.md** → Active Blockers cleared. Decision-log T009 marked Done.
+
+**Phase 1 scoped + designed + planned (SQL-first push).** Brainstormed the build approach: SQL foundation first (migration `0020` + ~16 procs + `0020_PlantFloor_Foundation/` test suite green, target 80–105), Ignition layer (3 Gateway scripts + 7 Perspective views) deferred to a follow-on push; subagent-driven execution. **Key design decision — partitioning:** monthly `RANGE RIGHT` + **`TRUNCATE`-based sliding-window** (not `SWITCH`) so the singleton `BIGINT IDENTITY Id` PK convention is preserved (clustered index = partition-aligned hot path; `Id` stays NONCLUSTERED PK); single `PRIMARY` filegroup; sliding-window logic in a testable proc so the future Gateway timer is a thin caller. Grounding catch: `Audit_LogOperation` (B7 target) has near-zero Arc-1 blast radius (Arc 1 audits to `ConfigLog`); no partitioning exists in the repo yet (genuinely new ground).
+
+- **Design spec:** `docs/superpowers/specs/2026-06-09-arc2-phase1-sql-foundation-design.md` (commit `2785590`).
+- **Implementation plan:** `docs/superpowers/plans/2026-06-09-arc2-phase1-sql-foundation.md` (commit `e1ef121`) — Tasks A–G (A partitioning in-session; B Lot core; C Terminal; D AppUser/elevation; E WorkOrder+eligibility view; F audit split+Shift; G integration/sign-off).
+- **Status:** dispatch (subagent-driven) has **begun** on the SQL build (separate session). All on `jacques/working`.
+
 ### Eligibility-style config editors — backend built + verified, UI drafted (2026-06-08)
 
 Executed the plan `docs/superpowers/plans/2026-06-08-eligibility-style-config-editors.md` (turned from spec `7f41a2d` via `writing-plans`) using **subagent-driven-development** — fresh implementer per task + two-stage (spec then code-quality) review per task + a final holistic cross-cutting review. All on `jacques/working`, commits `81f7a82`..`33b94e5`.
