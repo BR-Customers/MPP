@@ -1,7 +1,8 @@
 {
   "pages": {
     "/": {
-      "viewPath": "BlueRidge/Views/Home"
+      "title": "MPP MES",
+      "viewPath": "BlueRidge/Views/ShopFloor/HomeRouter"
     },
     "/Location": {
       "viewPath": "BlueRidge/Views/Location/Main"
