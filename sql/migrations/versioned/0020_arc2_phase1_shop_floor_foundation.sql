@@ -688,25 +688,231 @@ GO
 -- ============================================================
 -- == SECTION F — Audit split + LotEventLog + repartition (Task F)
 -- ============================================================
--- TODO[Task F]: CREATE Lots.LotEventLog (OperationLog row shape + LotId FK
---   -> Lots.Lot, born partitioned ON ps_MonthlyUtc, 20-yr class).
---   Repartition Audit.OperationLog / InterfaceLog / FailureLog clustered
---   index onto ps_MonthlyUtc(<timestamp col>). Seed LogEventType 24/25/26
---   (ShiftStarted/ShiftEnded/LotStatusChanged) + LogEntityType 41 (Shift).
---   PK rule (see PARTITIONED-TABLE PK CORRECTION at top of file):
---     * LotEventLog — aligned composite PK NONCLUSTERED (Id, <LoggedAt/CreatedAt>)
---       ON ps_MonthlyUtc(<ts>); confirm the timestamp col name vs DM. If it
---       should age out via TRUNCATE, register it in Audit.PartitionRetention
---       (240 months). No incoming bare-Id FK -> composite PK is safe.
---     * Repartitioning OperationLog/InterfaceLog/FailureLog: their existing PK
---       is a bare-Id CLUSTERED PK (from 0001). To put the CLUSTERED index on
---       ps_MonthlyUtc you must drop that clustered PK and re-add it either as
---       the aligned composite clustered PK (Id, LoggedAt/AttemptedAt) ON the
---       scheme, OR as a NONCLUSTERED PK + aligned clustered index on the ts.
---       Verify no Arc-1 proc/test depends on the bare-Id clustered key (grep).
---       Note these three are NOT in the PartitionRetention catalog yet, so a
---       non-aligned PK would not break TRUNCATE today — but align them now to
---       keep the family uniform and TRUNCATE-ready.
+-- B7 (OI-35 Phase 0 decision): split the single Audit.OperationLog into a
+-- 7-yr general OperationLog + a 20-yr Honda-class Lots.LotEventLog. Lot-relevant
+-- audit events (Phase 1: entity 'Lot'; container-close / ShippingLabel-mint
+-- arrive in later phases) route to LotEventLog via Audit.Audit_LogOperation
+-- (the routing change lives in the repeatable proc, not here). Everything else
+-- stays in OperationLog. This section:
+--   1. CREATEs Lots.LotEventLog (OperationLog row shape + LotId FK -> Lots.Lot),
+--      born partitioned on LoggedAt, registered at the 240-month (20-yr) class.
+--   2. Repartitions the three existing audit log tables (OperationLog,
+--      InterfaceLog, FailureLog) onto ps_MonthlyUtc so the whole family is
+--      partition-uniform and TRUNCATE-ready.
+--   3. Seeds LogEventType 24/25 (ShiftStarted/ShiftEnded) + LogEntityType 41
+--      (Shift). (LogEventType 26 LotStatusChanged was already seeded by Task B;
+--      re-seeded here only under an IF NOT EXISTS guard -> no-op either order.)
+--
+-- TIMESTAMP COLUMN (resolved): LotEventLog mirrors Audit.OperationLog exactly,
+-- whose timestamp column is LoggedAt (0001). The DM describes LotEventLog only
+-- as "the OperationLog row shape" (B7), so LoggedAt is authoritative. The
+-- partition key is LoggedAt.
+--
+-- PK rule (see PARTITIONED-TABLE PK CORRECTION at top of file):
+--   * LotEventLog — no incoming bare-Id FK -> aligned composite
+--     PK NONCLUSTERED (Id, LoggedAt) ON ps_MonthlyUtc(LoggedAt) + aligned
+--     CLUSTERED INDEX (LotId, LoggedAt) ON the scheme (the natural "events for
+--     this LOT" hot path). Registered in Audit.PartitionRetention @ 240 months.
+--   * OperationLog / InterfaceLog / FailureLog — their original 0001 PK is a
+--     bare-Id CLUSTERED PK with an AUTO-GENERATED name (PK__Operatio__...).
+--     We DROP it (looked up dynamically by parent table, since the name is not
+--     deterministic), re-add it as the aligned composite PK NONCLUSTERED
+--     (Id, <ts>) ON ps_MonthlyUtc(<ts>) named PK_<Table>, add an aligned
+--     CLUSTERED INDEX on (<ts>) ON the scheme, and rebuild the three/four
+--     secondary indexes ONTO the scheme (each already carries the partition
+--     column as a key, so alignment is free). No incoming FK references their
+--     Id (verified via sys.foreign_keys 2026-06-09), and no Arc-1 proc/test
+--     depends on the clustered-key shape (only Audit.Audit_LogOperation /
+--     Audit_LogFailure INSERT, and the ConfigLog/FailureLog reader procs read
+--     OTHER tables). The deferred outgoing FKs added to OperationLog by 0002
+--     (FK_OperationLog_TerminalLocationId / _LocationId) are unaffected by
+--     clustered-index changes and survive the rebuild. These three are NOT
+--     registered in PartitionRetention in Phase 1 (age-out deferred); aligning
+--     them now keeps the family uniform + TRUNCATE-ready for later.
+--   Every DDL below is guarded on current state so a re-run is a no-op.
+
+-- ---- Lots.LotEventLog (BORN PARTITIONED on LoggedAt; 20-yr Honda class) ----
+IF OBJECT_ID(N'Lots.LotEventLog', N'U') IS NULL
+BEGIN
+    CREATE TABLE Lots.LotEventLog (
+        Id                  BIGINT          NOT NULL IDENTITY(1,1),
+        LoggedAt            DATETIME2(3)    NOT NULL CONSTRAINT DF_LotEventLog_LoggedAt DEFAULT SYSUTCDATETIME(),
+        UserId              BIGINT          NULL     REFERENCES Location.AppUser(Id),
+        TerminalLocationId  BIGINT          NULL     REFERENCES Location.Location(Id),
+        LocationId          BIGINT          NULL     REFERENCES Location.Location(Id),
+        LogSeverityId       BIGINT          NOT NULL REFERENCES Audit.LogSeverity(Id),
+        LogEventTypeId      BIGINT          NOT NULL REFERENCES Audit.LogEventType(Id),
+        LogEntityTypeId     BIGINT          NOT NULL REFERENCES Audit.LogEntityType(Id),
+        EntityId            BIGINT          NULL,
+        LotId               BIGINT          NOT NULL REFERENCES Lots.Lot(Id),
+        Description         NVARCHAR(1000)  NOT NULL,
+        OldValue            NVARCHAR(MAX)   NULL,
+        NewValue            NVARCHAR(MAX)   NULL,
+        CONSTRAINT PK_LotEventLog PRIMARY KEY NONCLUSTERED (Id, LoggedAt)
+            ON ps_MonthlyUtc(LoggedAt)
+    );
+
+    -- Partition-aligned clustered hot path: "all audit events for this LOT".
+    CREATE CLUSTERED INDEX CIX_LotEventLog_LotLoggedAt
+        ON Lots.LotEventLog (LotId, LoggedAt)
+        ON ps_MonthlyUtc(LoggedAt);
+
+    -- Aligned secondary: entity-type browse (mirrors OperationLog's EntityType index).
+    CREATE INDEX IX_LotEventLog_EntityType
+        ON Lots.LotEventLog (LogEntityTypeId, EntityId, LoggedAt)
+        ON ps_MonthlyUtc(LoggedAt);
+END
+GO
+
+-- Register LotEventLog for 240-month (20-yr Honda) sliding-window age-out.
+IF NOT EXISTS (SELECT 1 FROM Audit.PartitionRetention WHERE SchemaName = N'Lots' AND TableName = N'LotEventLog')
+    INSERT INTO Audit.PartitionRetention (SchemaName, TableName, RetentionMonths, Description)
+    VALUES (N'Lots', N'LotEventLog', 240, N'B7 LOT audit-event split. Honda 20-yr traceability retention class.');
+GO
+
+-- ---- Repartition Audit.OperationLog onto ps_MonthlyUtc(LoggedAt) ----
+-- Idempotency: only act if the clustered index is NOT already on the scheme.
+IF EXISTS (
+    SELECT 1 FROM sys.indexes i
+    WHERE i.object_id = OBJECT_ID(N'Audit.OperationLog')
+      AND i.type_desc = N'CLUSTERED'
+      AND i.data_space_id = (SELECT data_space_id FROM sys.partition_schemes WHERE name = N'ps_MonthlyUtc')
+)
+    PRINT 'Audit.OperationLog already repartitioned onto ps_MonthlyUtc - skipping.';
+ELSE
+BEGIN
+    DECLARE @opPk NVARCHAR(128) = (
+        SELECT kc.name FROM sys.key_constraints kc
+        WHERE kc.type = N'PK' AND kc.parent_object_id = OBJECT_ID(N'Audit.OperationLog'));
+    IF @opPk IS NOT NULL
+        EXEC(N'ALTER TABLE Audit.OperationLog DROP CONSTRAINT ' + @opPk + N';');
+
+    -- Drop the original non-aligned secondary indexes (recreated aligned below).
+    IF EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'Audit.OperationLog') AND name = N'IX_OperationLog_LoggedAt')
+        DROP INDEX IX_OperationLog_LoggedAt ON Audit.OperationLog;
+    IF EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'Audit.OperationLog') AND name = N'IX_OperationLog_EntityType')
+        DROP INDEX IX_OperationLog_EntityType ON Audit.OperationLog;
+    IF EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'Audit.OperationLog') AND name = N'IX_OperationLog_User')
+        DROP INDEX IX_OperationLog_User ON Audit.OperationLog;
+
+    ALTER TABLE Audit.OperationLog
+        ADD CONSTRAINT PK_OperationLog PRIMARY KEY NONCLUSTERED (Id, LoggedAt)
+            ON ps_MonthlyUtc(LoggedAt);
+
+    CREATE CLUSTERED INDEX CIX_OperationLog_LoggedAt
+        ON Audit.OperationLog (LoggedAt)
+        ON ps_MonthlyUtc(LoggedAt);
+
+    CREATE INDEX IX_OperationLog_EntityType
+        ON Audit.OperationLog (LogEntityTypeId, EntityId, LoggedAt)
+        ON ps_MonthlyUtc(LoggedAt);
+    CREATE INDEX IX_OperationLog_User
+        ON Audit.OperationLog (UserId, LoggedAt)
+        ON ps_MonthlyUtc(LoggedAt);
+END
+GO
+
+-- ---- Repartition Audit.InterfaceLog onto ps_MonthlyUtc(LoggedAt) ----
+IF EXISTS (
+    SELECT 1 FROM sys.indexes i
+    WHERE i.object_id = OBJECT_ID(N'Audit.InterfaceLog')
+      AND i.type_desc = N'CLUSTERED'
+      AND i.data_space_id = (SELECT data_space_id FROM sys.partition_schemes WHERE name = N'ps_MonthlyUtc')
+)
+    PRINT 'Audit.InterfaceLog already repartitioned onto ps_MonthlyUtc - skipping.';
+ELSE
+BEGIN
+    DECLARE @ifPk NVARCHAR(128) = (
+        SELECT kc.name FROM sys.key_constraints kc
+        WHERE kc.type = N'PK' AND kc.parent_object_id = OBJECT_ID(N'Audit.InterfaceLog'));
+    IF @ifPk IS NOT NULL
+        EXEC(N'ALTER TABLE Audit.InterfaceLog DROP CONSTRAINT ' + @ifPk + N';');
+
+    IF EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'Audit.InterfaceLog') AND name = N'IX_InterfaceLog_LoggedAt')
+        DROP INDEX IX_InterfaceLog_LoggedAt ON Audit.InterfaceLog;
+    IF EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'Audit.InterfaceLog') AND name = N'IX_InterfaceLog_System')
+        DROP INDEX IX_InterfaceLog_System ON Audit.InterfaceLog;
+
+    ALTER TABLE Audit.InterfaceLog
+        ADD CONSTRAINT PK_InterfaceLog PRIMARY KEY NONCLUSTERED (Id, LoggedAt)
+            ON ps_MonthlyUtc(LoggedAt);
+
+    CREATE CLUSTERED INDEX CIX_InterfaceLog_LoggedAt
+        ON Audit.InterfaceLog (LoggedAt)
+        ON ps_MonthlyUtc(LoggedAt);
+
+    CREATE INDEX IX_InterfaceLog_System
+        ON Audit.InterfaceLog (SystemName, LoggedAt)
+        ON ps_MonthlyUtc(LoggedAt);
+END
+GO
+
+-- ---- Repartition Audit.FailureLog onto ps_MonthlyUtc(AttemptedAt) ----
+IF EXISTS (
+    SELECT 1 FROM sys.indexes i
+    WHERE i.object_id = OBJECT_ID(N'Audit.FailureLog')
+      AND i.type_desc = N'CLUSTERED'
+      AND i.data_space_id = (SELECT data_space_id FROM sys.partition_schemes WHERE name = N'ps_MonthlyUtc')
+)
+    PRINT 'Audit.FailureLog already repartitioned onto ps_MonthlyUtc - skipping.';
+ELSE
+BEGIN
+    DECLARE @flPk NVARCHAR(128) = (
+        SELECT kc.name FROM sys.key_constraints kc
+        WHERE kc.type = N'PK' AND kc.parent_object_id = OBJECT_ID(N'Audit.FailureLog'));
+    IF @flPk IS NOT NULL
+        EXEC(N'ALTER TABLE Audit.FailureLog DROP CONSTRAINT ' + @flPk + N';');
+
+    IF EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'Audit.FailureLog') AND name = N'IX_FailureLog_AttemptedAt')
+        DROP INDEX IX_FailureLog_AttemptedAt ON Audit.FailureLog;
+    IF EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'Audit.FailureLog') AND name = N'IX_FailureLog_AppUser')
+        DROP INDEX IX_FailureLog_AppUser ON Audit.FailureLog;
+    IF EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'Audit.FailureLog') AND name = N'IX_FailureLog_EntityEvent')
+        DROP INDEX IX_FailureLog_EntityEvent ON Audit.FailureLog;
+    IF EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'Audit.FailureLog') AND name = N'IX_FailureLog_ProcedureName')
+        DROP INDEX IX_FailureLog_ProcedureName ON Audit.FailureLog;
+
+    ALTER TABLE Audit.FailureLog
+        ADD CONSTRAINT PK_FailureLog PRIMARY KEY NONCLUSTERED (Id, AttemptedAt)
+            ON ps_MonthlyUtc(AttemptedAt);
+
+    CREATE CLUSTERED INDEX CIX_FailureLog_AttemptedAt
+        ON Audit.FailureLog (AttemptedAt)
+        ON ps_MonthlyUtc(AttemptedAt);
+
+    CREATE INDEX IX_FailureLog_AppUser
+        ON Audit.FailureLog (AppUserId, AttemptedAt)
+        ON ps_MonthlyUtc(AttemptedAt);
+    CREATE INDEX IX_FailureLog_EntityEvent
+        ON Audit.FailureLog (LogEntityTypeId, LogEventTypeId, AttemptedAt)
+        ON ps_MonthlyUtc(AttemptedAt);
+    CREATE INDEX IX_FailureLog_ProcedureName
+        ON Audit.FailureLog (ProcedureName, AttemptedAt)
+        ON ps_MonthlyUtc(AttemptedAt);
+END
+GO
+
+-- ---- Audit lookups: ShiftStarted (24) / ShiftEnded (25) + LotStatusChanged (26) ----
+IF NOT EXISTS (SELECT 1 FROM Audit.LogEventType WHERE Id = 24)
+    INSERT INTO Audit.LogEventType (Id, Code, Name, Description) VALUES
+        (24, N'ShiftStarted', N'Shift Started', N'A production shift instance was opened (Oee.Shift_Start).');
+GO
+IF NOT EXISTS (SELECT 1 FROM Audit.LogEventType WHERE Id = 25)
+    INSERT INTO Audit.LogEventType (Id, Code, Name, Description) VALUES
+        (25, N'ShiftEnded', N'Shift Ended', N'A production shift instance was closed (Oee.Shift_End).');
+GO
+-- LotStatusChanged (26) is normally seeded by Task B (Section B); guarded here so
+-- a Section-F-first apply still has it and a Section-B-first apply is a no-op.
+IF NOT EXISTS (SELECT 1 FROM Audit.LogEventType WHERE Id = 26)
+    INSERT INTO Audit.LogEventType (Id, Code, Name, Description) VALUES
+        (26, N'LotStatusChanged', N'LOT Status Changed', N'A LOT status transition was recorded.');
+GO
+
+-- ---- Audit lookup: Shift entity type (41) ----
+IF NOT EXISTS (SELECT 1 FROM Audit.LogEntityType WHERE Id = 41)
+    INSERT INTO Audit.LogEntityType (Id, Code, Name, Description) VALUES
+        (41, N'Shift', N'Shift', N'Runtime production shift instance (Oee.Shift).');
+GO
 
 
 -- ============================================================

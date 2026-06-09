@@ -38,6 +38,7 @@ EXEC test.Assert_IsEqual
     @Actual   = @SelfStr;
 
 -- cleanup this lot
+DELETE FROM Lots.LotEventLog WHERE LotId = @NewId;
 DELETE FROM Lots.LotMovement WHERE LotId = @NewId;
 DELETE FROM Lots.LotStatusHistory WHERE LotId = @NewId;
 DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId = @NewId OR DescendantLotId = @NewId;

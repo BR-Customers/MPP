@@ -30,6 +30,7 @@ GO
 -- DIFFERENT Direct-eligible (Item, Cell) pair (no tool) for the non-die-cast
 -- accept path. Create a Tool with an Active cavity + a Closed cavity, and mount
 -- the Tool on the die-cast cell.
+DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
 DELETE FROM Lots.Lot WHERE LotName LIKE N'MESL%' AND CreatedByUserId = 1
     AND ItemId IN (SELECT Id FROM Parts.Item);  -- conservative no-op guard (real cleanup below)
 GO
@@ -294,6 +295,7 @@ EXEC test.Assert_IsEqual @TestName = N'[LcNoUser] Reject missing @AppUserId', @E
 GO
 
 -- ---- cleanup fixtures ----
+DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
 DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
 DELETE FROM Lots.LotStatusHistory WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
 DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%');
