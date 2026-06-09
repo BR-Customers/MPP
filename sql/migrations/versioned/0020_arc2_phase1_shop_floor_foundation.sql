@@ -1006,8 +1006,30 @@ GO
 -- ============================================================
 -- == SECTION D — AppUser / AD-elevation seeds (Task D) =======
 -- ============================================================
--- TODO[Task D]: Seed Audit.LogEventType 27/28 (ElevationGranted /
---   ElevationDenied). (Procs are repeatable files.)
+-- Backs Location.AppUser_AuthenticateAd (per-action AD elevation, FDS-04-006)
+-- and the presence flow (AppUser_GetByInitials / AppUser_GetRoles — all
+-- repeatable procs). NO authorization happens in SQL: roles are defined in
+-- Ignition and per-action authorization is enforced in the Perspective/UI
+-- layer. AuthenticateAd authenticates the (already AD-password-validated-by-
+-- Ignition) account and RECORDS the elevation outcome; the @ActionCode it is
+-- elevating for is captured in the audit Description only, never gated here.
+-- Hence there is NO action->role permission table and NO permission seed.
+--
+-- This section adds the two Audit.LogEventType lookups the elevation audit
+-- emits. Elevation events use entity code 'AppUser' (Id 16, seeded in 0001),
+-- which routes through Audit_LogOperation/Audit_LogFailure to the general
+-- OperationLog / FailureLog (NOT Lots.LotEventLog — only entity 'Lot' routes
+-- there). ASCII-only strings throughout.
+
+-- ---- Audit lookups: ElevationGranted (27) / ElevationDenied (28) ----
+IF NOT EXISTS (SELECT 1 FROM Audit.LogEventType WHERE Id = 27)
+    INSERT INTO Audit.LogEventType (Id, Code, Name, Description) VALUES
+        (27, N'ElevationGranted', N'Elevation Granted', N'A per-action AD elevation was authenticated (Location.AppUser_AuthenticateAd).');
+GO
+IF NOT EXISTS (SELECT 1 FROM Audit.LogEventType WHERE Id = 28)
+    INSERT INTO Audit.LogEventType (Id, Code, Name, Description) VALUES
+        (28, N'ElevationDenied', N'Elevation Denied', N'A per-action AD elevation attempt was rejected (unknown/deprecated AD account or missing input).');
+GO
 
 
 -- ============================================================
