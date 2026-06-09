@@ -24,6 +24,20 @@
 --              Lot_AssertNotBlocked (that guard is for status-preserving
 --              advancing procs like Lot_MoveTo). It validates the transition
 --              against the Phase 1 allowed set instead.
+--
+--              *** PHASE-2 MAINTAINER WARNING ***
+--              This proc is the SOLE OWNER of the LOT status-transition matrix.
+--              It INTENTIONALLY omits the B2 advancing-guard (Lot_AssertNotBlocked):
+--              a status change DECIDES ITS OWN LEGALITY here, it is never gated by
+--              the not-blocked guard that protects status-preserving moves. The
+--              Phase 1 matrix is the single line Good -> Closed (see the inline
+--              "Phase 1 allowed transition matrix" check below). When you expand
+--              it, add the Hold / Scrap / Closed transitions EXPLICITLY here (e.g.
+--              Good -> Hold, Hold -> Good, Good/Hold -> Scrap, etc.) — do NOT push
+--              that legality into a shared guard, and do NOT introduce
+--              Lot_AssertNotBlocked into this path. Keep the transition matrix
+--              owned by this one check so there is exactly one place that defines
+--              which LOT status transitions are legal.
 -- ============================================================
 
 CREATE OR ALTER PROCEDURE Lots.Lot_UpdateStatus

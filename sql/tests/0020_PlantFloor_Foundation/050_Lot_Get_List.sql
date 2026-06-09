@@ -90,7 +90,7 @@ DECLARE @Cnt INT, @CntStr NVARCHAR(10);
 CREATE TABLE #l (Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, LotOriginTypeId BIGINT, LotStatusId BIGINT,
     PieceCount INT, MaxPieceCount INT, ToolId BIGINT, ToolCavityId BIGINT, CurrentLocationId BIGINT,
     CrtActive BIT, TotalInProcess INT, InventoryAvailable INT, CreatedAt DATETIME2(3),
-    ItemPartNumber NVARCHAR(50), LotStatusCode NVARCHAR(20), CurrentLocationName NVARCHAR(200));
+    ItemPartNumber NVARCHAR(50), LotStatusCode NVARCHAR(20), CurrentLocationName NVARCHAR(200), TotalCount BIGINT);
 INSERT INTO #l EXEC Lots.Lot_List @ItemId = @ItemId;
 SELECT @Cnt = COUNT(*) FROM #l WHERE LotName LIKE N'MESL%';
 DROP TABLE #l;
@@ -105,7 +105,7 @@ DECLARE @Cnt INT, @CntStr NVARCHAR(10);
 CREATE TABLE #l2 (Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, LotOriginTypeId BIGINT, LotStatusId BIGINT,
     PieceCount INT, MaxPieceCount INT, ToolId BIGINT, ToolCavityId BIGINT, CurrentLocationId BIGINT,
     CrtActive BIT, TotalInProcess INT, InventoryAvailable INT, CreatedAt DATETIME2(3),
-    ItemPartNumber NVARCHAR(50), LotStatusCode NVARCHAR(20), CurrentLocationName NVARCHAR(200));
+    ItemPartNumber NVARCHAR(50), LotStatusCode NVARCHAR(20), CurrentLocationName NVARCHAR(200), TotalCount BIGINT);
 INSERT INTO #l2 EXEC Lots.Lot_List @LimitRows = 1;
 SELECT @Cnt = COUNT(*) FROM #l2;
 DROP TABLE #l2;

@@ -25,6 +25,30 @@
 --              - text before '{' is the literal prefix, the integer after
 --              'D' is the zero-pad width. (DM section 3 retains FormatString rather
 --              than separate Prefix/Padding columns.)
+--
+--              TRANSACTION SEMANTICS (Fix 6, holistic review): this proc holds
+--              NO explicit transaction of its own. The earlier draft wrapped the
+--              read-modify in BEGIN/COMMIT/ROLLBACK TRANSACTION; that was unsafe
+--              when called inside a caller's (ambient) transaction because the
+--              bare ROLLBACK on a breach path would unwind the caller's ENTIRE
+--              outer transaction (and under XACT_ABORT ON a breach RAISERROR
+--              already dooms the whole transaction regardless, so a savepoint
+--              cannot rescue it either). The explicit transaction is in fact
+--              UNNECESSARY: the increment is now done as a SINGLE atomic
+--              UPDATE ... WITH (ROWLOCK, UPDLOCK, HOLDLOCK) ... OUTPUT, so there
+--              is no SELECT-then-UPDATE window that needs a transaction to hold
+--              the lock across statements. The lone UPDATE is atomic on its own,
+--              gap-free, and composes cleanly with ANY ambient transaction:
+--                * Inside a caller's tran (the Lot_Create-style pattern) the
+--                  UPDATE enlists in that tran, so a caller ROLLBACK un-burns the
+--                  counter — the whole point of B6 — with no nesting hazard.
+--                * Standalone (Ignition autocommit) the UPDATE is its own atomic
+--                  unit; the row lock is held for the statement, which is all the
+--                  gap-free guarantee requires.
+--              The exhaustion breach is enforced in the UPDATE's WHERE
+--              (LastValue + 1 <= EndingValue): on breach zero rows update, nothing
+--              is persisted, and we RAISERROR. Unknown @Code is distinguished from
+--              exhaustion by a prior existence check.
 -- ============================================================
 
 CREATE OR ALTER PROCEDURE Lots.IdentifierSequence_Next
@@ -35,50 +59,47 @@ BEGIN
     SET XACT_ABORT ON;
 
     DECLARE @Last         BIGINT,
-            @End          BIGINT,
             @Format       NVARCHAR(50),
             @Prefix       NVARCHAR(50),
             @Pad          INT,
             @Value        NVARCHAR(50);
 
+    -- Captures the post-increment LastValue + FormatString from the atomic UPDATE.
+    DECLARE @Minted TABLE (NewLast BIGINT, Format NVARCHAR(50));
+
     BEGIN TRY
-        -- Row-locked read-modify within an explicit tran so a breach can be
-        -- rolled back atomically (and so the lock is held only as briefly as
-        -- the increment needs when this proc is called standalone). XACT_ABORT
-        -- + the TRY/CATCH guarantee an unexpected error (deadlock, lock
-        -- timeout) never leaves the tran open on the pooled JDBC connection.
-        BEGIN TRANSACTION;
-
-        -- Acquire the row lock and capture current state. We compute the NEXT
-        -- value as @Last but do NOT persist the increment until the breach
-        -- check passes.
-        SELECT @Last   = s.LastValue + 1,
-               @End    = s.EndingValue,
-               @Format = s.FormatString
-        FROM Lots.IdentifierSequence s WITH (ROWLOCK, UPDLOCK, HOLDLOCK)
-        WHERE s.Code = @Code;
-
-        IF @Last IS NULL
+        -- Distinguish "unknown code" (raise) from "exhausted" (also raise, but a
+        -- different message + the row exists). The atomic UPDATE below cannot tell
+        -- the two apart (both update zero rows), so check existence first.
+        IF NOT EXISTS (SELECT 1 FROM Lots.IdentifierSequence WHERE Code = @Code)
         BEGIN
-            ROLLBACK TRANSACTION;
             RAISERROR(N'Unknown identifier sequence code: %s', 16, 1, @Code);
             RETURN;
         END
 
-        IF @Last > @End
+        -- Single ATOMIC increment + breach guard. The WHERE clause's
+        -- (LastValue + 1 <= EndingValue) predicate means an exhausted sequence
+        -- updates ZERO rows (nothing persisted), keeping the counter gap-free and
+        -- never advancing past EndingValue. ROWLOCK/UPDLOCK/HOLDLOCK serialize
+        -- concurrent minters on the single row. OUTPUT hands back the new value +
+        -- format without a second read. No explicit transaction: this lone UPDATE
+        -- is atomic and enlists in the caller's ambient tran when there is one.
+        UPDATE Lots.IdentifierSequence WITH (ROWLOCK, UPDLOCK, HOLDLOCK)
+        SET LastValue = LastValue + 1,
+            UpdatedAt = SYSUTCDATETIME()
+        OUTPUT inserted.LastValue, inserted.FormatString INTO @Minted (NewLast, Format)
+        WHERE Code = @Code
+          AND LastValue + 1 <= EndingValue;
+
+        SELECT @Last = NewLast, @Format = Format FROM @Minted;
+
+        IF @Last IS NULL
         BEGIN
-            ROLLBACK TRANSACTION;
-            RAISERROR(N'Identifier sequence %s exhausted at ending value %I64d.', 16, 1, @Code, @End);
+            -- Zero rows updated but the code exists -> rollover breach.
+            DECLARE @EndVal BIGINT = (SELECT EndingValue FROM Lots.IdentifierSequence WHERE Code = @Code);
+            RAISERROR(N'Identifier sequence %s exhausted at ending value %I64d.', 16, 1, @Code, @EndVal);
             RETURN;
         END
-
-        -- Persist the increment (gap-free).
-        UPDATE Lots.IdentifierSequence
-        SET LastValue = @Last,
-            UpdatedAt = SYSUTCDATETIME()
-        WHERE Code = @Code;
-
-        COMMIT TRANSACTION;
 
         -- Parse the .NET FormatString '<PREFIX>{0:D<N>}' -> prefix + pad width.
         SET @Prefix = CASE WHEN CHARINDEX(N'{', @Format) > 0
@@ -101,13 +122,14 @@ BEGIN
         SELECT @Value AS Value;
     END TRY
     BEGIN CATCH
-        -- Defensive cleanup: an unexpected error (deadlock, lock timeout) must
-        -- not leak an open tran onto the pooled JDBC connection. The explicit
-        -- ROLLBACK paths above handle the known breach cases; this catches the
-        -- rest. RAISERROR (not THROW) per project convention.
-        IF @@TRANCOUNT > 0
-            ROLLBACK TRANSACTION;
-
+        -- This proc owns no transaction, so there is nothing to roll back here:
+        -- the breach / unknown-code paths RAISERROR + RETURN above, and the lone
+        -- atomic UPDATE either fully applied or (on an unexpected error under
+        -- XACT_ABORT ON) was rolled back by the engine within whatever transaction
+        -- context the caller supplied. We simply re-surface the error. If a caller
+        -- ambient transaction is doomed (XACT_STATE() = -1) it is the CALLER's
+        -- responsibility to roll back — we do NOT touch the caller's tran.
+        -- RAISERROR (not THROW) per project convention.
         DECLARE @ErrMsg   NVARCHAR(4000) = ERROR_MESSAGE();
         DECLARE @ErrSev   INT            = ERROR_SEVERITY();
         DECLARE @ErrState INT            = ERROR_STATE();

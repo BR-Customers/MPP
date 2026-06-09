@@ -16,8 +16,12 @@
 --              EntityId IS the LOT id, so LotEventLog.LotId is populated from
 --              @EntityId. If a 'Lot' event arrives with a NULL @EntityId we
 --              CANNOT satisfy LotEventLog.LotId NOT NULL, so we fall back to
---              OperationLog rather than fail the caller's transaction.
---              Everything else -> Audit.OperationLog as before.
+--              OperationLog rather than fail the caller's transaction. That
+--              fallback is a silent Honda-20yr retention downgrade, so it is made
+--              DETECTABLE: the row is forced to 'Warning' severity and its
+--              Description is prefixed '[LOT-EVENT-FALLBACK] ' so the mis-
+--              attributed rows are queryable / correctable. Everything else ->
+--              Audit.OperationLog as before.
 --
 --              Emits NO result set: it runs inside caller transactions, and a
 --              result set would break the INSERT-EXEC + ROLLBACK pattern.
@@ -81,6 +85,22 @@ BEGIN
             @NewValue
         );
         RETURN;
+    END
+
+    -- LOT-EVENT FALLBACK DETECTION (Fix 2, holistic review): a 'Lot' event with
+    -- a NULL @EntityId cannot satisfy LotEventLog.LotId NOT NULL, so it lands in
+    -- the 7-yr OperationLog instead of the 20-yr LotEventLog — a SILENT Honda-
+    -- 20yr-class retention downgrade. Make these mis-attributed rows DETECTABLE
+    -- (so they can be found + corrected) without failing the caller:
+    --   (a) force @LogSeverityCode -> 'Warning' (re-resolve @LogSeverityId), and
+    --   (b) prefix the Description with a queryable '[LOT-EVENT-FALLBACK] ' marker.
+    -- Truncate the marked Description to the 1000-char column width so the prefix
+    -- never overflows the insert.
+    IF @LogEntityTypeCode = N'Lot' AND @EntityId IS NULL
+    BEGIN
+        SET @LogSeverityCode = N'Warning';
+        SELECT @LogSeverityId = Id FROM Audit.LogSeverity WHERE Code = @LogSeverityCode;
+        SET @Description = LEFT(N'[LOT-EVENT-FALLBACK] ' + ISNULL(@Description, N''), 1000);
     END
 
     INSERT INTO Audit.OperationLog (

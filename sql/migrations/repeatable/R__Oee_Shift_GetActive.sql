@@ -19,8 +19,12 @@
 --              StartTime falls on, for the late portion, OR the prior day for
 --              the early-morning portion - handled below.
 --
---              Read proc: ONE result set, empty = no scheduled shift matches.
---              No OUTPUT params, no audit.
+--              Read proc: ONE result set, AT MOST ONE row, empty = no scheduled
+--              shift matches. SINGLE-ROW CONTRACT: if two ShiftSchedules overlap
+--              the same moment (mis-configuration), TOP 1 + the deterministic
+--              ORDER BY (EffectiveFrom DESC, Id DESC) picks the most recently-
+--              effective one as "the active schedule", matching Shift_GetOpen's
+--              single-row contract. No OUTPUT params, no audit.
 -- ============================================================
 
 CREATE OR ALTER PROCEDURE Oee.Shift_GetActive
@@ -40,7 +44,7 @@ BEGIN
     DECLARE @PrevIsoDow INT = CASE WHEN @IsoDow = 1 THEN 7 ELSE @IsoDow - 1 END;
     DECLARE @PrevBit INT = POWER(2, @PrevIsoDow - 1);
 
-    SELECT
+    SELECT TOP 1
         ss.Id,
         ss.Name,
         ss.Description,

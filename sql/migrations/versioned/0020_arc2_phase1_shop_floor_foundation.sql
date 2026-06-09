@@ -1033,6 +1033,55 @@ GO
 
 
 -- ============================================================
+-- == SECTION G — deferred FK wiring (after Lots.Lot exists) ==
+-- ============================================================
+-- Task E created Workorder.ProductionEvent / ConsumptionEvent / RejectEvent
+-- with their lot-reference columns as plain BIGINT (no FK) because Lots.Lot is
+-- created later in this same migration (Section B follows Section E). By the
+-- time control reaches HERE, Lots.Lot exists (Section B ran), so the deferred
+-- Lot FKs are wired now — this section is deliberately placed LAST (after the
+-- Section C/D seeds, before SchemaVersion) so the parent table is guaranteed
+-- present.
+--
+-- Column inventory (verified against the Section E DDL above):
+--   * ProductionEvent.LotId           NOT NULL  -> Lots.Lot(Id)   FK_ProductionEvent_Lot
+--   * ConsumptionEvent.SourceLotId    NOT NULL  -> Lots.Lot(Id)   FK_ConsumptionEvent_SourceLot
+--   * ConsumptionEvent.ProducedLotId  NULL      -> Lots.Lot(Id)   FK_ConsumptionEvent_ProducedLot (nullable FK ok)
+--   * RejectEvent.LotId               NOT NULL  -> Lots.Lot(Id)   FK_RejectEvent_Lot
+--
+-- NOT wired (parent tables do not exist in Phase 1 — a later Arc 2 Container
+-- phase creates Parts.Container / Parts.ContainerTray): ConsumptionEvent.
+-- ProducedContainerId and ConsumptionEvent.TrayId stay typed BIGINT, no FK.
+--
+-- SAFETY NOTE (partition age-out): adding an OUTGOING FK from ProductionEvent
+-- to Lots.Lot does NOT block partition-level TRUNCATE of ProductionEvent —
+-- TRUNCATE is rejected only by INCOMING FK references (a table being pointed AT),
+-- not by a table's own outgoing FKs. ProductionEvent's deferred TRUNCATE age-out
+-- (it keeps a non-aligned PK because ProductionEventValue references it) is
+-- unaffected. Each FK guarded on sys.foreign_keys + GO so a re-apply is a no-op.
+IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_ProductionEvent_Lot')
+    ALTER TABLE Workorder.ProductionEvent
+        ADD CONSTRAINT FK_ProductionEvent_Lot
+            FOREIGN KEY (LotId) REFERENCES Lots.Lot(Id);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_ConsumptionEvent_SourceLot')
+    ALTER TABLE Workorder.ConsumptionEvent
+        ADD CONSTRAINT FK_ConsumptionEvent_SourceLot
+            FOREIGN KEY (SourceLotId) REFERENCES Lots.Lot(Id);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_ConsumptionEvent_ProducedLot')
+    ALTER TABLE Workorder.ConsumptionEvent
+        ADD CONSTRAINT FK_ConsumptionEvent_ProducedLot
+            FOREIGN KEY (ProducedLotId) REFERENCES Lots.Lot(Id);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_RejectEvent_Lot')
+    ALTER TABLE Workorder.RejectEvent
+        ADD CONSTRAINT FK_RejectEvent_Lot
+            FOREIGN KEY (LotId) REFERENCES Lots.Lot(Id);
+GO
+
+
+-- ============================================================
 -- == Record migration ========================================
 -- ============================================================
 IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0020_arc2_phase1_shop_floor_foundation')
