@@ -6,6 +6,10 @@
     "/Location": {
       "viewPath": "BlueRidge/Views/Location/Main"
     },
+    "/shop-floor/initials": {
+      "title": "Operator Entry",
+      "viewPath": "BlueRidge/Views/ShopFloor/InitialsEntry"
+    },
     "/tags": {
       "viewPath": "BlueRidge/Samples/Tags"
     }
