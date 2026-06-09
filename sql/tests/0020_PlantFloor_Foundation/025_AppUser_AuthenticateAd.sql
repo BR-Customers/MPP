@@ -198,7 +198,13 @@ EXEC test.Assert_IsEqual @TestName = N'[AuthNoPresence] Status is 0 (no throw)',
 DECLARE @FailNewE INT =
     (SELECT COUNT(*) FROM Audit.FailureLog WHERE LogEventTypeId = @DeniedEvtId AND Id > @FailBaseline);
 DECLARE @FailNewEStr NVARCHAR(10) = CAST(@FailNewE AS NVARCHAR(10));
-EXEC test.Assert_IsEqual @TestName = N'[AuthNoPresence] FailureLog row still written (bootstrap-attributed)', @Expected = N'1', @Actual = @FailNewEStr;
+EXEC test.Assert_IsEqual @TestName = N'[AuthNoPresence] FailureLog row still written (no throw)', @Expected = N'1', @Actual = @FailNewEStr;
+
+-- And it must be attributed to the bootstrap user (Id=1), proving the ISNULL coalesce.
+DECLARE @FailEUser BIGINT =
+    (SELECT TOP 1 AppUserId FROM Audit.FailureLog WHERE LogEventTypeId = @DeniedEvtId AND Id > @FailBaseline ORDER BY Id DESC);
+DECLARE @FailEUserStr NVARCHAR(20) = CAST(@FailEUser AS NVARCHAR(20));
+EXEC test.Assert_IsEqual @TestName = N'[AuthNoPresence] FailureLog row attributed to bootstrap user (1)', @Expected = N'1', @Actual = @FailEUserStr;
 GO
 
 -- ---- cleanup fixtures ----

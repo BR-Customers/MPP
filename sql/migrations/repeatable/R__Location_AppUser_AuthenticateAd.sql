@@ -67,7 +67,8 @@ BEGIN
     DECLARE @Params   NVARCHAR(MAX) =
         (SELECT @AdAccount          AS AdAccount,
                 @ActionCode         AS ActionCode,
-                @TerminalLocationId AS TerminalLocationId
+                @TerminalLocationId AS TerminalLocationId,
+                @AppUserId          AS PresenceAppUserId
          FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
     BEGIN TRY
@@ -117,8 +118,11 @@ BEGIN
         -- Authenticated: record the grant (NO authorization in SQL — the UI
         -- decides based on the returned IgnitionRole). @ActionCode is recorded.
         -- ====================
-        DECLARE @Desc NVARCHAR(1000) =
-            N'AD elevation granted for action ' + @ActionLabel + N'.';
+        -- Audit-readable Description convention: SUBJECT (MidDot) CATEGORY (MidDot) ACTION,
+        -- capped at 500 via ufn_TruncateActivity (matches Lot_MoveTo / Shift_Start).
+        DECLARE @Desc NVARCHAR(500) = Audit.ufn_TruncateActivity(
+            @AdAccount + N' ' + Audit.ufn_MidDot() + N' Elevation ' + Audit.ufn_MidDot()
+            + N' Granted for ' + @ActionLabel);
 
         EXEC Audit.Audit_LogOperation
             @AppUserId          = @ResolvedId,
