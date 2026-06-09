@@ -10,6 +10,10 @@
       "title": "Operator Entry",
       "viewPath": "BlueRidge/Views/ShopFloor/InitialsEntry"
     },
+    "/shop-floor/terminal-selector": {
+      "title": "Select Terminal",
+      "viewPath": "BlueRidge/Views/ShopFloor/TerminalSelector"
+    },
     "/tags": {
       "viewPath": "BlueRidge/Samples/Tags"
     }

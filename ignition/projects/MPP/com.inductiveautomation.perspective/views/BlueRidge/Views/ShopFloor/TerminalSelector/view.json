@@ -1,0 +1,372 @@
+{
+  "custom": {
+    "terminals": [],
+    "scanCode": ""
+  },
+  "params": {},
+  "propConfig": {
+    "custom.terminals": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Location.Terminal.listAll\", 0)"
+        }
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 800,
+      "width": 1280
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "alignItems": "center",
+      "justify": "flex-start",
+      "style": {
+        "classes": "canvas",
+        "padding": "40px",
+        "gap": "20px"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "selectTerminal",
+          "params": [
+            "row"
+          ],
+          "script": "\trow = BlueRidge.Common.Util.extractQualifiedValues(row) or {}\n\tif not row.get(\"TerminalId\"):\n\t\treturn\n\tself.session.custom.terminal = {\"terminalLocationId\": row.get(\"TerminalId\"), \"terminalCode\": row.get(\"TerminalCode\"), \"terminalName\": row.get(\"TerminalName\"), \"zoneLocationId\": row.get(\"ZoneId\"), \"zoneName\": row.get(\"ZoneName\"), \"defaultScreen\": row.get(\"DefaultScreen\") or \"\", \"terminalMode\": row.get(\"TerminalMode\") or \"\", \"isFallback\": bool(row.get(\"IsFallback\"))}\n\tsystem.perspective.navigate(row.get(\"DefaultScreen\") or \"/\")"
+        },
+        {
+          "name": "selectByScan",
+          "params": [],
+          "script": "\tcode = (self.view.custom.scanCode or \"\").strip().upper()\n\tif not code:\n\t\treturn\n\tmatch = BlueRidge.Location.Terminal.findByCode(self.view.custom.terminals, code)\n\tif match is None:\n\t\treturn\n\tself.selectTerminal(match)"
+        }
+      ]
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Heading"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "text": "Select your terminal",
+          "style": {
+            "color": "var(--mpp-text-primary)",
+            "fontSize": "34px",
+            "fontWeight": "600"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "Subheading"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "text": "Scan a terminal barcode or tap your terminal in the list below.",
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "15px"
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "ScanField"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "justify": "center",
+          "style": {
+            "gap": "10px",
+            "marginTop": "4px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.icon",
+            "meta": {
+              "name": "ScanIcon"
+            },
+            "position": {
+              "basis": "26px",
+              "shrink": 0
+            },
+            "props": {
+              "path": "mpp/qr_code_scanner",
+              "style": {
+                "width": "26px",
+                "height": "26px",
+                "color": "var(--mpp-text-secondary)"
+              }
+            }
+          },
+          {
+            "type": "ia.input.text-field",
+            "meta": {
+              "name": "ScannerInput"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.scanCode"
+                  }
+                }
+              }
+            },
+            "props": {
+              "placeholder": "Scan terminal barcode",
+              "style": {
+                "classes": "pf-field-input-mono",
+                "textTransform": "uppercase",
+                "width": "360px",
+                "textAlign": "center"
+              }
+            },
+            "events": {
+              "dom": {
+                "onBlur": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tself.view.rootContainer.selectByScan()"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.table",
+        "meta": {
+          "name": "TerminalsTable"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1,
+          "shrink": 1
+        },
+        "propConfig": {
+          "props.data": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.custom.terminals"
+              }
+            }
+          }
+        },
+        "props": {
+          "selection": {
+            "enabled": true,
+            "mode": "single"
+          },
+          "style": {
+            "width": "100%",
+            "maxWidth": "900px"
+          },
+          "columns": [
+            {
+              "align": "center",
+              "boolean": "checkbox",
+              "dateFormat": "MM/DD/YYYY",
+              "editable": false,
+              "field": "TerminalId",
+              "filter": {
+                "boolean": { "condition": "" },
+                "date": { "condition": "", "value": "" },
+                "enabled": false,
+                "number": { "condition": "", "value": "" },
+                "string": { "condition": "", "value": "" },
+                "visible": "on-hover"
+              },
+              "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
+              "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Id" },
+              "justify": "auto",
+              "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
+              "number": "value",
+              "numberFormat": "0,0.##",
+              "progressBar": {
+                "bar": { "color": "", "style": { "classes": "" } },
+                "max": 100,
+                "min": 0,
+                "track": { "color": "", "style": { "classes": "" } },
+                "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
+              },
+              "render": "auto",
+              "resizable": true,
+              "sort": "none",
+              "sortable": false,
+              "strictWidth": false,
+              "style": { "classes": "" },
+              "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+              "viewParams": {},
+              "viewPath": "",
+              "visible": false,
+              "width": ""
+            },
+            {
+              "align": "center",
+              "boolean": "checkbox",
+              "dateFormat": "MM/DD/YYYY",
+              "editable": false,
+              "field": "TerminalCode",
+              "filter": {
+                "boolean": { "condition": "" },
+                "date": { "condition": "", "value": "" },
+                "enabled": false,
+                "number": { "condition": "", "value": "" },
+                "string": { "condition": "", "value": "" },
+                "visible": "on-hover"
+              },
+              "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
+              "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Terminal Code" },
+              "justify": "auto",
+              "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
+              "number": "value",
+              "numberFormat": "0,0.##",
+              "progressBar": {
+                "bar": { "color": "", "style": { "classes": "" } },
+                "max": 100,
+                "min": 0,
+                "track": { "color": "", "style": { "classes": "" } },
+                "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
+              },
+              "render": "auto",
+              "resizable": true,
+              "sort": "none",
+              "sortable": true,
+              "strictWidth": false,
+              "style": { "classes": "" },
+              "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+              "viewParams": {},
+              "viewPath": "",
+              "visible": true,
+              "width": 260
+            },
+            {
+              "align": "center",
+              "boolean": "checkbox",
+              "dateFormat": "MM/DD/YYYY",
+              "editable": false,
+              "field": "TerminalName",
+              "filter": {
+                "boolean": { "condition": "" },
+                "date": { "condition": "", "value": "" },
+                "enabled": false,
+                "number": { "condition": "", "value": "" },
+                "string": { "condition": "", "value": "" },
+                "visible": "on-hover"
+              },
+              "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
+              "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Terminal Name" },
+              "justify": "auto",
+              "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
+              "number": "value",
+              "numberFormat": "0,0.##",
+              "progressBar": {
+                "bar": { "color": "", "style": { "classes": "" } },
+                "max": 100,
+                "min": 0,
+                "track": { "color": "", "style": { "classes": "" } },
+                "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
+              },
+              "render": "auto",
+              "resizable": true,
+              "sort": "none",
+              "sortable": true,
+              "strictWidth": false,
+              "style": { "classes": "" },
+              "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+              "viewParams": {},
+              "viewPath": "",
+              "visible": true,
+              "width": ""
+            },
+            {
+              "align": "center",
+              "boolean": "checkbox",
+              "dateFormat": "MM/DD/YYYY",
+              "editable": false,
+              "field": "ZoneName",
+              "filter": {
+                "boolean": { "condition": "" },
+                "date": { "condition": "", "value": "" },
+                "enabled": false,
+                "number": { "condition": "", "value": "" },
+                "string": { "condition": "", "value": "" },
+                "visible": "on-hover"
+              },
+              "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
+              "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Zone" },
+              "justify": "auto",
+              "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
+              "number": "value",
+              "numberFormat": "0,0.##",
+              "progressBar": {
+                "bar": { "color": "", "style": { "classes": "" } },
+                "max": 100,
+                "min": 0,
+                "track": { "color": "", "style": { "classes": "" } },
+                "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
+              },
+              "render": "auto",
+              "resizable": true,
+              "sort": "none",
+              "sortable": true,
+              "strictWidth": false,
+              "style": { "classes": "" },
+              "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+              "viewParams": {},
+              "viewPath": "",
+              "visible": true,
+              "width": 240
+            }
+          ]
+        },
+        "events": {
+          "component": {
+            "onSelectionChange": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsel = self.props.selection.data\n\tif sel:\n\t\tself.view.rootContainer.selectTerminal(sel[0])"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

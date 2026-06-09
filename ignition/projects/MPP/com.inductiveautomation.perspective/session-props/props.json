@@ -17,6 +17,11 @@
       "displayName": "",
       "ignitionRole": ""
     },
+    "cell": {
+      "locationId": null,
+      "code": "",
+      "name": ""
+    },
     "toastInstances": []
   },
   "propConfig": {

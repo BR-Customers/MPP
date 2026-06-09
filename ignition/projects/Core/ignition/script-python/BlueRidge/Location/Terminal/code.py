@@ -18,6 +18,30 @@ def getByIpAddress(ipAddress):
 
 
 def listAll():
-    """List every configured terminal. Returns list[dict]."""
+    """List every configured terminal. Returns list[dict].
+
+       Always returns a list (Common.Db.execList never returns None) so the
+       runScript-bound view.custom.terminals default ([]) on the Terminal
+       Selector is never overwritten with null."""
     BlueRidge.Common.Util.log("listing terminals")
     return BlueRidge.Common.Db.execList("location/Terminal_List")
+
+
+def findByCode(terminals, code):
+    """Find a terminal row in an already-loaded list by TerminalCode
+       (case-insensitive). Used by the Terminal Selector scan handler so
+       a scanned barcode resolves to its row without a DB round-trip.
+
+       The `terminals` arg arrives from view.custom (Java-wrapped), so it
+       is unwrapped to plain dicts before matching.
+
+       Returns the matching dict, or None if no terminal matches."""
+    rows = BlueRidge.Common.Util.extractQualifiedValues(terminals) or []
+    target = (code or "").strip().upper()
+    if not target:
+        return None
+    for r in rows:
+        r = r or {}
+        if (r.get("TerminalCode") or "").strip().upper() == target:
+            return r
+    return None

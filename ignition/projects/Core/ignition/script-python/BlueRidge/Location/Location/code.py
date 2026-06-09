@@ -65,6 +65,10 @@
 #   2026-05-19 - 1.6 - Add listByTier(tierCode) — generic tier-scoped read via
 #                      location/Location_ListByTier NQ; first consumer: Defect
 #                      Codes Area dropdown.
+#   2026-06-09 - 1.7 - Add getCellsForDropdown() - Cell-tier [{label,value,
+#                      code,name}] for the Plant-Floor Cell Context Selector
+#                      (Shared terminals). Plus findCellById / findCellByCode
+#                      scan/select resolvers. Always returns a list.
 #   2026-05-18 - 1.4 - Editor write surface: emptyMeta, metaFromLocation,
 #                      eligibleTypes, eligibleDefinitions, buildAttributesForType,
 #                      beginCreate, handleSaveAll, handleDeprecate. Wraps
@@ -201,6 +205,84 @@ def listByTier(tierCode):
         BlueRidge.Common.Util.log("listByTier failed: %s" % str(e))
         BlueRidge.Common.Notify.toast("Could not load locations", str(e), "error")
         return []
+
+
+def getCellsForDropdown():
+    """Cell-tier Locations shaped for ia.input.dropdown + scan matching.
+
+       Used by the Cell Context Selector (Shared terminals) so the operator
+       can pick the active Cell. Each option carries the dropdown contract
+       keys (label/value) plus code/name so the scan-match path can resolve
+       a scanned Cell.Code back to its row without a second DB round-trip.
+
+       PHASE-1 SIMPLIFICATION: the Cell Context Selector currently scopes to
+       "pick a Cell + persist + broadcast" only. The design's cascading
+       zone->cell selection and v_EffectiveItemLocation enrichment are
+       later-phase and deliberately NOT built here.
+
+       Returns:
+           list[dict]: [{label: '<Code> - <Name>', value: Id,
+                         code: Code, name: Name}].
+                       Always a list (never None) so the runScript-bound
+                       view.custom.cells default ([]) is never overwritten
+                       with null. Empty if no active Cells exist.
+    """
+    BlueRidge.Common.Util.log("loading cells for dropdown")
+    rows = listByTier("Cell") or []
+    out = []
+    for r in rows:
+        code = r.get("Code") or ""
+        name = r.get("Name") or ""
+        out.append({
+            "label": ("%s - %s" % (code, name)).strip(" -"),
+            "value": r.get("Id"),
+            "code":  code,
+            "name":  name,
+        })
+    return out
+
+
+def findCellById(cells, cellId):
+    """Resolve a Cell Id (dropdown `value`) to its option dict within an
+       already-loaded options list (as getCellsForDropdown returns).
+
+       Used by the Cell Context Selector applyCell handler so a dropdown
+       selection (which yields only the Id) recovers the code/name needed
+       to persist session.custom.cell, without a DB round-trip. The `cells`
+       arg arrives from view.custom (Java-wrapped) and is unwrapped first.
+
+       Returns the matching option dict ({label,value,code,name}), or None.
+    """
+    rows = BlueRidge.Common.Util.extractQualifiedValues(cells) or []
+    if cellId is None:
+        return None
+    for r in rows:
+        r = r or {}
+        if r.get("value") == cellId:
+            return r
+    return None
+
+
+def findCellByCode(cells, code):
+    """Resolve a scanned Cell.Code to its dropdown-option dict within an
+       already-loaded options list (as getCellsForDropdown returns).
+
+       Used by the Cell Context Selector scan handler so a scanned Cell
+       barcode selects the matching Cell without a DB round-trip. The
+       `cells` arg arrives from view.custom (Java-wrapped) and is unwrapped
+       before matching; match is case-insensitive on the option's `code`.
+
+       Returns the matching option dict ({label,value,code,name}), or None.
+    """
+    rows = BlueRidge.Common.Util.extractQualifiedValues(cells) or []
+    target = (code or "").strip().upper()
+    if not target:
+        return None
+    for r in rows:
+        r = r or {}
+        if (r.get("code") or "").strip().upper() == target:
+            return r
+    return None
 
 
 def _u(value):
