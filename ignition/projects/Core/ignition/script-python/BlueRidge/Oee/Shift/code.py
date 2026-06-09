@@ -59,3 +59,36 @@ def getOpen():
     """Return the single currently-open shift instance, or None."""
     BlueRidge.Common.Util.log("getting open shift")
     return BlueRidge.Common.Db.execOne("oee/Shift_GetOpen")
+
+
+def tickShiftBoundary(nowUtc=None):
+    """Called every 60s by the ShiftBoundaryTicker gateway timer.
+
+       Singleton shift model: at most one active schedule + one open shift.
+       - active schedule = getActive(nowUtc)  (active.Id IS the ShiftScheduleId)
+       - open shift      = getOpen()
+       Starts/ends shifts on boundary crossings. No auto-carryover of open
+       downtime/pause events (UJ-10) - the procs own that. Returns a small
+       dict describing what it did (for logging/testing). The body is fully
+       guarded; a gateway timer must never throw uncaught."""
+    BlueRidge.Common.Util.log("tick nowUtc=%s" % nowUtc)
+    try:
+        active = getActive(nowUtc)      # dict|None; active.Id is the ShiftScheduleId
+        openShift = getOpen()           # dict|None
+        if active is None:
+            # No schedule active right now (gap between shifts). Do nothing -
+            # leave any open shift open; boundary handling happens when the
+            # next schedule becomes active. Phase 1: no gap auto-close.
+            return {"action": "none", "reason": "no active schedule"}
+        activeScheduleId = active.get("Id")
+        if openShift is None:
+            return {"action": "start",
+                    "result": start(activeScheduleId, actualStart=nowUtc)}
+        if openShift.get("ShiftScheduleId") != activeScheduleId:
+            endResult = end(actualEnd=nowUtc)
+            startResult = start(activeScheduleId, actualStart=nowUtc)
+            return {"action": "boundary", "end": endResult, "start": startResult}
+        return {"action": "none", "reason": "open shift matches active schedule"}
+    except Exception as e:
+        BlueRidge.Common.Util.log("tickShiftBoundary error: %s" % e)
+        return {"action": "error", "error": str(e)}
