@@ -1,0 +1,100 @@
+{
+  "scope": "DG",
+  "version": 2,
+  "restricted": false,
+  "overridable": true,
+  "files": [
+    "query.sql"
+  ],
+  "attributes": {
+    "useMaxReturnSize": false,
+    "autoBatchEnabled": false,
+    "fallbackValue": "",
+    "maxReturnSize": 100,
+    "cacheUnit": "SEC",
+    "type": "Query",
+    "enabled": true,
+    "cacheAmount": 1,
+    "cacheEnabled": false,
+    "database": "MPP",
+    "fallbackEnabled": false,
+    "lastModificationSignature": "",
+    "permissions": [
+      {
+        "zone": "",
+        "role": ""
+      }
+    ],
+    "lastModification": {
+      "actor": "claude",
+      "timestamp": "2026-06-09T12:00:00Z"
+    },
+    "parameters": [
+      {
+        "type": "Parameter",
+        "identifier": "itemId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "lotOriginTypeId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "currentLocationId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "pieceCount",
+        "sqlType": 2
+      },
+      {
+        "type": "Parameter",
+        "identifier": "weight",
+        "sqlType": 5
+      },
+      {
+        "type": "Parameter",
+        "identifier": "weightUomId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "toolId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "toolCavityId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "vendorLotNumber",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "minSerialNumber",
+        "sqlType": 2
+      },
+      {
+        "type": "Parameter",
+        "identifier": "maxSerialNumber",
+        "sqlType": 2
+      },
+      {
+        "type": "Parameter",
+        "identifier": "appUserId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "terminalLocationId",
+        "sqlType": 3
+      }
+    ]
+  }
+}
