@@ -22,7 +22,7 @@
 -- Result set (zero or more rows, ordered by TerminalCode):
 --   TerminalId, TerminalCode, TerminalName,
 --   ZoneId, ZoneCode, ZoneName,
---   IpAddress, DefaultScreen, TerminalMode
+--   IpAddress, DefaultScreen, TerminalMode, IsFallback
 --
 -- Dependencies:
 --   Tables: Location.Location, Location.LocationAttribute,
@@ -47,7 +47,9 @@ BEGIN
         ip.AttributeValue                                   AS IpAddress,
         ds.AttributeValue                                   AS DefaultScreen,
         CAST(CASE WHEN plt.Code = N'Cell' THEN N'Dedicated'
-                  ELSE N'Shared' END AS NVARCHAR(20))       AS TerminalMode
+                  ELSE N'Shared' END AS NVARCHAR(20))       AS TerminalMode,
+        CAST(CASE WHEN t.Code = N'FALLBACK-TERMINAL' THEN 1
+                  ELSE 0 END AS BIT)                        AS IsFallback
     FROM Location.Location t
     LEFT JOIN Location.Location p
         ON p.Id = t.ParentLocationId

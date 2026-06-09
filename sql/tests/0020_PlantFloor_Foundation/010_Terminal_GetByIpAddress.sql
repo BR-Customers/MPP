@@ -75,8 +75,8 @@ GO
 -- =============================================
 DECLARE @TermCode NVARCHAR(50), @ZoneCode NVARCHAR(50), @Screen NVARCHAR(255),
         @Mode NVARCHAR(20), @Fallback BIT, @FbStr NVARCHAR(1);
-CREATE TABLE #C (TerminalId BIGINT, TerminalCode NVARCHAR(50), TerminalName NVARCHAR(200),
-                 ZoneId BIGINT, ZoneCode NVARCHAR(50), ZoneName NVARCHAR(200),
+CREATE TABLE #C (TerminalLocationId BIGINT, TerminalCode NVARCHAR(50), TerminalName NVARCHAR(200),
+                 ZoneLocationId BIGINT, ZoneCode NVARCHAR(50), ZoneName NVARCHAR(200),
                  DefaultScreen NVARCHAR(255), TerminalMode NVARCHAR(20), IsFallback BIT);
 INSERT INTO #C EXEC Location.Terminal_GetByIpAddress @IpAddress = N'10.99.0.1';
 SELECT @TermCode = TerminalCode, @ZoneCode = ZoneCode, @Screen = DefaultScreen,
@@ -104,8 +104,8 @@ GO
 -- Test 2: Known IP, Area parent -> Shared mode + NULL DefaultScreen
 -- =============================================
 DECLARE @TermCode NVARCHAR(50), @Mode NVARCHAR(20), @Screen NVARCHAR(255);
-CREATE TABLE #A (TerminalId BIGINT, TerminalCode NVARCHAR(50), TerminalName NVARCHAR(200),
-                 ZoneId BIGINT, ZoneCode NVARCHAR(50), ZoneName NVARCHAR(200),
+CREATE TABLE #A (TerminalLocationId BIGINT, TerminalCode NVARCHAR(50), TerminalName NVARCHAR(200),
+                 ZoneLocationId BIGINT, ZoneCode NVARCHAR(50), ZoneName NVARCHAR(200),
                  DefaultScreen NVARCHAR(255), TerminalMode NVARCHAR(20), IsFallback BIT);
 INSERT INTO #A EXEC Location.Terminal_GetByIpAddress @IpAddress = N'10.99.0.2';
 SELECT @TermCode = TerminalCode, @Mode = TerminalMode, @Screen = DefaultScreen FROM #A;
@@ -125,8 +125,8 @@ GO
 -- Test 3: Unknown IP -> fallback Terminal (never empty / error)
 -- =============================================
 DECLARE @TermCode NVARCHAR(50), @Fallback BIT, @FbStr NVARCHAR(1), @Rows INT;
-CREATE TABLE #U (TerminalId BIGINT, TerminalCode NVARCHAR(50), TerminalName NVARCHAR(200),
-                 ZoneId BIGINT, ZoneCode NVARCHAR(50), ZoneName NVARCHAR(200),
+CREATE TABLE #U (TerminalLocationId BIGINT, TerminalCode NVARCHAR(50), TerminalName NVARCHAR(200),
+                 ZoneLocationId BIGINT, ZoneCode NVARCHAR(50), ZoneName NVARCHAR(200),
                  DefaultScreen NVARCHAR(255), TerminalMode NVARCHAR(20), IsFallback BIT);
 INSERT INTO #U EXEC Location.Terminal_GetByIpAddress @IpAddress = N'203.0.113.250';
 SELECT @Rows = COUNT(*) FROM #U;
@@ -148,8 +148,8 @@ GO
 -- Test 4: Deprecated Terminal's IP -> NOT returned; falls through to fallback
 -- =============================================
 DECLARE @TermCode NVARCHAR(50), @Fallback BIT, @FbStr NVARCHAR(1);
-CREATE TABLE #D (TerminalId BIGINT, TerminalCode NVARCHAR(50), TerminalName NVARCHAR(200),
-                 ZoneId BIGINT, ZoneCode NVARCHAR(50), ZoneName NVARCHAR(200),
+CREATE TABLE #D (TerminalLocationId BIGINT, TerminalCode NVARCHAR(50), TerminalName NVARCHAR(200),
+                 ZoneLocationId BIGINT, ZoneCode NVARCHAR(50), ZoneName NVARCHAR(200),
                  DefaultScreen NVARCHAR(255), TerminalMode NVARCHAR(20), IsFallback BIT);
 INSERT INTO #D EXEC Location.Terminal_GetByIpAddress @IpAddress = N'10.99.0.3';
 SELECT @TermCode = TerminalCode, @Fallback = IsFallback FROM #D;

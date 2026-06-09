@@ -25,11 +25,12 @@
 --   No OUTPUT params (Ignition JDBC). One result set.
 --
 -- Parameters:
---   @IpAddress NVARCHAR(50)  - connecting client IP. NULL / unknown -> fallback.
+--   @IpAddress NVARCHAR(45)  - connecting client IP (max IPv6 canonical length).
+--                              NULL / unknown -> fallback.
 --
--- Result set (always one row):
---   TerminalId, TerminalCode, TerminalName,
---   ZoneId, ZoneCode, ZoneName,
+-- Result set (always one row, except the seed-missing degenerate case below):
+--   TerminalLocationId, TerminalCode, TerminalName,
+--   ZoneLocationId, ZoneCode, ZoneName,
 --   DefaultScreen, TerminalMode, IsFallback
 --
 -- Dependencies:
@@ -41,7 +42,7 @@
 --   2026-06-09 - 1.0 - Initial version (Phase 1 Task C).
 -- =============================================
 CREATE OR ALTER PROCEDURE Location.Terminal_GetByIpAddress
-    @IpAddress NVARCHAR(50)
+    @IpAddress NVARCHAR(45)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -49,7 +50,11 @@ BEGIN
     -- 1. Resolve the matched Terminal Location.Id by IpAddress attribute.
     --    Active Terminal only (DeprecatedAt IS NULL); attribute def is the
     --    Terminal-type (DefId 7) 'IpAddress' definition (active).
-    DECLARE @TerminalId BIGINT = (
+    --    Tie-break: if two active Terminals are misconfigured with the SAME
+    --    IpAddress (no DB constraint enforces uniqueness across Locations),
+    --    the lowest LocationId wins DETERMINISTICALLY. Duplicate-IP detection
+    --    belongs in admin-side validation, not here.
+    DECLARE @TerminalLocationId BIGINT = (
         SELECT TOP 1 la.LocationId
         FROM Location.LocationAttribute la
         INNER JOIN Location.LocationAttributeDefinition lad
@@ -68,18 +73,41 @@ BEGIN
 
     -- 2. No active match -> fall back to the global FALLBACK Terminal.
     DECLARE @IsFallback BIT = 0;
-    IF @TerminalId IS NULL
+    IF @TerminalLocationId IS NULL
     BEGIN
         SET @IsFallback = 1;
-        SET @TerminalId = (SELECT Id FROM Location.Location WHERE Code = N'FALLBACK-TERMINAL');
+        SET @TerminalLocationId = (SELECT Id FROM Location.Location WHERE Code = N'FALLBACK-TERMINAL' AND DeprecatedAt IS NULL);
+    END
+
+    -- 2b. Seed-missing guard: the FALLBACK-TERMINAL seed (sql/seeds/011) has NOT
+    --     been applied (seeds run AFTER migrations, so on a fresh migrate-only
+    --     DB the fallback Location does not yet exist). Rather than let the final
+    --     WHERE t.Id = @TerminalLocationId silently match zero rows on a NULL
+    --     predicate, return an EXPLICIT empty result set with the SAME column
+    --     shape and RETURN. The Gateway session-init MUST treat an empty set as
+    --     "terminal registry not provisioned" and route to an error screen.
+    IF @TerminalLocationId IS NULL
+    BEGIN
+        SELECT
+            CAST(NULL AS BIGINT)        AS TerminalLocationId,
+            CAST(NULL AS NVARCHAR(50))  AS TerminalCode,
+            CAST(NULL AS NVARCHAR(200)) AS TerminalName,
+            CAST(NULL AS BIGINT)        AS ZoneLocationId,
+            CAST(NULL AS NVARCHAR(50))  AS ZoneCode,
+            CAST(NULL AS NVARCHAR(200)) AS ZoneName,
+            CAST(NULL AS NVARCHAR(255)) AS DefaultScreen,
+            CAST(NULL AS NVARCHAR(20))  AS TerminalMode,
+            CAST(1 AS BIT)              AS IsFallback
+        WHERE 1 = 0;
+        RETURN;
     END
 
     -- 3. Project the Terminal + parent ("Zone") + DefaultScreen + derived mode.
     SELECT
-        t.Id                                                AS TerminalId,
+        t.Id                                                AS TerminalLocationId,
         t.Code                                              AS TerminalCode,
         t.Name                                              AS TerminalName,
-        p.Id                                                AS ZoneId,
+        p.Id                                                AS ZoneLocationId,
         p.Code                                              AS ZoneCode,
         p.Name                                              AS ZoneName,
         ds.AttributeValue                                   AS DefaultScreen,
@@ -103,6 +131,6 @@ BEGIN
            AND dslad.AttributeName = N'DefaultScreen'
            AND dslad.DeprecatedAt IS NULL
     ) ds ON ds.LocationId = t.Id
-    WHERE t.Id = @TerminalId;
+    WHERE t.Id = @TerminalLocationId;
 END;
 GO
