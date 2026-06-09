@@ -27,8 +27,12 @@ EXEC test.BeginTestFile @FileName = N'0020_PlantFloor_Foundation/025_AppUser_Aut
 GO
 
 -- ---- fixtures ----
--- Clean any prior fixture artifacts (audit rows reference these user ids, but
--- AppUser has no FK back from the logs; deleting the AppUser is safe).
+-- Clean any prior fixture artifacts. Audit rows DO FK back to AppUser
+-- (Audit.OperationLog.UserId and Audit.FailureLog.AppUserId both reference
+-- Location.AppUser.Id), so delete the elevation audit rows for these users
+-- BEFORE the users themselves (FK-safe order).
+DELETE FROM Audit.OperationLog WHERE UserId    IN (SELECT Id FROM Location.AppUser WHERE AdAccount IN (N'p1.elev.active', N'p1.elev.dep'));
+DELETE FROM Audit.FailureLog   WHERE AppUserId IN (SELECT Id FROM Location.AppUser WHERE AdAccount IN (N'p1.elev.active', N'p1.elev.dep'));
 DELETE FROM Location.AppUser WHERE AdAccount IN (N'p1.elev.active', N'p1.elev.dep');
 GO
 
@@ -170,7 +174,38 @@ DECLARE @FailNewDStr NVARCHAR(10) = CAST(@FailNewD AS NVARCHAR(10));
 EXEC test.Assert_IsEqual @TestName = N'[AuthNullAd] One ElevationDenied FailureLog row', @Expected = N'1', @Actual = @FailNewDStr;
 GO
 
+-- =============================================
+-- Test (e): denied path with NO @AppUserId supplied -> must NOT throw and must
+--   STILL write a FailureLog row (attributed to the bootstrap user). Regression
+--   guard: FailureLog.AppUserId is NOT NULL, so the proc must coalesce a missing
+--   presence id rather than violate the constraint and lose the audit row.
+-- =============================================
+DECLARE @DeniedEvtId BIGINT = (SELECT Id FROM Audit.LogEventType WHERE Code = N'ElevationDenied');
+DECLARE @FailBaseline BIGINT =
+    ISNULL((SELECT MAX(Id) FROM Audit.FailureLog WHERE LogEventTypeId = @DeniedEvtId), 0);
+
+CREATE TABLE #E (Status BIT, Message NVARCHAR(500), AppUserId BIGINT, IgnitionRole NVARCHAR(100));
+INSERT INTO #E EXEC Location.AppUser_AuthenticateAd
+    @AdAccount  = N'no.such.account.zzz',
+    @ActionCode = N'MaterialSubstituteOverride';   -- @AppUserId intentionally omitted (NULL)
+DECLARE @eS BIT;
+SELECT @eS = Status FROM #E;
+DROP TABLE #E;
+
+DECLARE @eSStr NVARCHAR(1) = CAST(@eS AS NVARCHAR(1));
+EXEC test.Assert_IsEqual @TestName = N'[AuthNoPresence] Status is 0 (no throw)', @Expected = N'0', @Actual = @eSStr;
+
+DECLARE @FailNewE INT =
+    (SELECT COUNT(*) FROM Audit.FailureLog WHERE LogEventTypeId = @DeniedEvtId AND Id > @FailBaseline);
+DECLARE @FailNewEStr NVARCHAR(10) = CAST(@FailNewE AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[AuthNoPresence] FailureLog row still written (bootstrap-attributed)', @Expected = N'1', @Actual = @FailNewEStr;
+GO
+
 -- ---- cleanup fixtures ----
+-- FK-safe order: delete the elevation audit rows referencing these users first
+-- (OperationLog.UserId / FailureLog.AppUserId FK to AppUser), then the users.
+DELETE FROM Audit.OperationLog WHERE UserId    IN (SELECT Id FROM Location.AppUser WHERE AdAccount IN (N'p1.elev.active', N'p1.elev.dep'));
+DELETE FROM Audit.FailureLog   WHERE AppUserId IN (SELECT Id FROM Location.AppUser WHERE AdAccount IN (N'p1.elev.active', N'p1.elev.dep'));
 DELETE FROM Location.AppUser WHERE AdAccount IN (N'p1.elev.active', N'p1.elev.dep');
 GO
 

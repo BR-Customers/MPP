@@ -57,6 +57,10 @@ BEGIN
     DECLARE @Message       NVARCHAR(500)  = N'Unknown error';
     DECLARE @ResolvedId    BIGINT         = NULL;
     DECLARE @IgnitionRole  NVARCHAR(100)  = NULL;
+    -- Audit.FailureLog.AppUserId is NOT NULL; a denied elevation may have no
+    -- resolved/presence user, so attribute the failure row to the bootstrap
+    -- user (Id 1) when the caller supplies none. (Success audits to @ResolvedId.)
+    DECLARE @AppUserIdEff  BIGINT         = ISNULL(@AppUserId, 1);
 
     DECLARE @ProcName NVARCHAR(200) = N'Location.AppUser_AuthenticateAd';
     DECLARE @ActionLabel NVARCHAR(50) = ISNULL(@ActionCode, N'(unspecified)');
@@ -74,7 +78,7 @@ BEGIN
         BEGIN
             SET @Message = N'AD account is required for elevation.';
             EXEC Audit.Audit_LogFailure
-                @AppUserId           = @AppUserId,
+                @AppUserId           = @AppUserIdEff,
                 @LogEntityTypeCode   = N'AppUser',
                 @EntityId            = NULL,
                 @LogEventTypeCode    = N'ElevationDenied',
@@ -98,7 +102,7 @@ BEGIN
         BEGIN
             SET @Message = N'AD account not recognised or is deprecated.';
             EXEC Audit.Audit_LogFailure
-                @AppUserId           = @AppUserId,
+                @AppUserId           = @AppUserIdEff,
                 @LogEntityTypeCode   = N'AppUser',
                 @EntityId            = NULL,
                 @LogEventTypeCode    = N'ElevationDenied',
@@ -145,7 +149,7 @@ BEGIN
 
         BEGIN TRY
             EXEC Audit.Audit_LogFailure
-                @AppUserId           = @AppUserId,
+                @AppUserId           = @AppUserIdEff,
                 @LogEntityTypeCode   = N'AppUser',
                 @EntityId            = NULL,
                 @LogEventTypeCode    = N'ElevationDenied',
