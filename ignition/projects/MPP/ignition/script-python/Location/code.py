@@ -14,7 +14,7 @@
 #   feeds a Perspective Tree's `props.items`.
 #
 # Dependencies:
-#   - Named Query at "Location/GetTree" wrapping EXEC Location.Location_GetTree
+#   - Named Query at "location/GetTree" wrapping EXEC Location.Location_GetTree
 #       Parameter: rootId (Long)
 #       Query text:
 #           DECLARE @s BIT, @m NVARCHAR(500);
@@ -56,7 +56,7 @@ def buildTree(rootId, expandDepth=2, defaultIcon="material/place"):
     if rootId is None:
         return []
 
-    ds = system.db.runNamedQuery("Location/GetTree", {"rootId": rootId})
+    ds = system.db.runNamedQuery("location/GetTree", {"rootId": rootId})
     if ds is None or ds.getRowCount() == 0:
         return []
 
