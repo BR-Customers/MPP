@@ -122,6 +122,7 @@ The `ignition-context-pack/` folder contains a vendor-neutral, DevTools-verified
 - Named queries / DB access         → `ignition-context-pack/04_named_queries.md`
 - Project lifecycle / timers        → `ignition-context-pack/05_lifecycle_and_timers.md`
 - Custom icon libraries             → `ignition-context-pack/08_custom_icon_libraries.md`
+- Repo ↔ Gateway sync / linking      → `ignition-context-pack/09_repo_gateway_sync.md`
 - All view authoring (always read)  → `ignition-context-pack/07_conventions_and_antipatterns.md`
 
 Pack pattern is "read it when relevant, don't preload" — most tasks need only one or two files. Project-specific overlays (this section's MPP-specific subsections) take precedence over the pack where they conflict.
