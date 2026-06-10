@@ -1,28 +1,28 @@
 {
   "custom": {
     "appUserId": null,
-    "terminal": {
-      "terminalLocationId": null,
-      "terminalCode": "",
-      "terminalName": "",
-      "zoneLocationId": null,
-      "zoneName": "",
-      "defaultScreen": "",
-      "terminalMode": "",
-      "isFallback": false
-    },
-    "user": {
-      "appUserId": null,
-      "initials": "",
-      "displayName": "",
-      "ignitionRole": ""
-    },
     "cell": {
-      "locationId": null,
       "code": "",
+      "locationId": null,
       "name": ""
     },
-    "toastInstances": []
+    "terminal": {
+      "defaultScreen": "",
+      "isFallback": false,
+      "terminalCode": "",
+      "terminalLocationId": null,
+      "terminalMode": "",
+      "terminalName": "",
+      "zoneLocationId": null,
+      "zoneName": ""
+    },
+    "toastInstances": [],
+    "user": {
+      "appUserId": null,
+      "displayName": "",
+      "ignitionRole": "",
+      "initials": ""
+    }
   },
   "propConfig": {
     "props.auth": {
@@ -87,7 +87,7 @@
     }
   },
   "props": {
-    "address": "[0:0:0:0:0:0:0:1]",
+    "address": "127.0.0.1",
     "device": {},
     "geolocation": {},
     "locale": "en-US",
