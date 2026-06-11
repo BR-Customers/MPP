@@ -6,6 +6,7 @@
    Read surface:
        getByIpAddress(ipAddress)                      -> dict | None
        listAll()                                      -> list[dict]
+       findById(terminals, terminalId)                -> dict | None
        findByCode(terminals, code)                    -> dict | None
        listContextCells(terminalLocationId)           -> list[dict]
        getContextCellsForDropdown(terminalLocationId) -> list[{label, value, code, name}]
@@ -36,6 +37,26 @@ def listAll():
        Selector is never overwritten with null."""
     BlueRidge.Common.Util.log("listing terminals")
     return BlueRidge.Common.Db.execList("location/Terminal_List")
+
+
+def findById(terminals, terminalId):
+    """Find a terminal row in an already-loaded list by TerminalId.
+
+       The Terminal Selector table's selection payload carries only the
+       fields defined as table columns (TerminalId/Code/Name/ZoneName) -
+       DefaultScreen, ZoneId and IsFallback are stripped. This re-resolves
+       the FULL Terminal_List row from view.custom.terminals without a DB
+       round-trip, same as findByCode does for the scan path.
+
+       Returns the matching dict, or None if no terminal matches."""
+    rows = BlueRidge.Common.Util.extractQualifiedValues(terminals) or []
+    if terminalId is None:
+        return None
+    for r in rows:
+        r = r or {}
+        if r.get("TerminalId") == terminalId:
+            return r
+    return None
 
 
 def findByCode(terminals, code):
