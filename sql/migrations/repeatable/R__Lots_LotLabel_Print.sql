@@ -17,6 +17,10 @@
 --              the returned string (B17 async, later phase). Rendering is pure
 --              deterministic string substitution -- no business logic.
 --
+--              DEFERRED: LotLabel.PrinterName is inserted NULL in Phase 2. When the
+--              B17 gateway dispatcher lands, add a @PrinterName param (here AND in
+--              LotLabel_Reprint) so the target printer is recorded on the row.
+--
 --              ParentLotId (FDS-05-024 sublot rule): set to Lot.ParentLotId so a
 --              sublot label record carries its parent linkage; the parent's
 --              LotName also fills the {ParentLotNumber} token. NULL / '' for a

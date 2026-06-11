@@ -184,6 +184,24 @@ DROP TABLE #lr;
 GO
 
 -- =============================================
+-- Test 3b: reprint with the Initial reason is rejected (Initial is reserved
+--          for the first print via LotLabel_Print).
+-- =============================================
+DECLARE @RiLotId BIGINT = (SELECT LotId FROM #LblFix WHERE Tag = N'L_PRIMARY');
+CREATE TABLE #lri (Status BIT, Message NVARCHAR(500), NewId BIGINT, ZplContent NVARCHAR(MAX));
+INSERT INTO #lri EXEC Lots.LotLabel_Reprint
+    @LotId = @RiLotId, @PrintReasonCodeId = 1 /*Initial*/, @AppUserId = 1;
+DECLARE @riStatus BIT = (SELECT TOP 1 Status FROM #lri);
+DECLARE @riCond BIT = CASE WHEN @riStatus = 0 THEN 1 ELSE 0 END;
+EXEC test.Assert_IsTrue @TestName = N'[Label] reprint with Initial reason rejected', @Condition = @riCond;
+-- no new row written on the rejected reprint (still 2 from Test 1 + Test 3)
+DECLARE @riRows INT = (SELECT COUNT(*) FROM Lots.LotLabel WHERE LotId = @RiLotId);
+EXEC test.Assert_RowCount @TestName = N'[Label] rejected Initial-reprint writes no row (still 2)',
+    @ExpectedCount = 2, @ActualCount = @riRows;
+DROP TABLE #lri;
+GO
+
+-- =============================================
 -- Test 4: missing active template rejected (Status=0).
 --   Deprecate the active 'Void' (type 4) LabelTemplate, then print a type-4
 --   label -> reject. Restore the template afterward so the seed stays intact.

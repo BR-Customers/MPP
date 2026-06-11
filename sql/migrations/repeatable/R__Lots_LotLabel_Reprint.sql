@@ -103,6 +103,20 @@ BEGIN
             RETURN;
         END
 
+        -- A reprint forces a non-Initial reason (FDS-05-020 / spec sec 4.4): the
+        -- 'Initial' reason is reserved for the first print via LotLabel_Print.
+        IF @PrintReasonCodeId = (SELECT Id FROM Lots.PrintReasonCode WHERE Code = N'Initial')
+        BEGIN
+            SET @Message = N'Reprint requires a non-Initial print reason.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'LotLabel',
+                @EntityId = @LotId, @LogEventTypeCode = N'LabelPrinted',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @Zpl AS ZplContent;
+            RETURN;
+        END
+
         -- ---- Resolve the label TYPE: most recent prior label, else Primary (1) ----
         SET @LabelTypeCodeId = (
             SELECT TOP 1 LabelTypeCodeId FROM Lots.LotLabel
