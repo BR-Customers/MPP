@@ -15,6 +15,24 @@ def getByInitials(initials):
     )
 
 
+def create(data):
+    """Create a new AppUser. Returns {Status, Message, NewId}.
+
+       Shop-floor self-registration (UnknownInitials -> RegisterOperator) creates
+       Operator-class rows: Initials + DisplayName only, AdAccount/IgnitionRole NULL.
+       appUserId defaults to 1 (the bootstrap/system user) because nobody is
+       authenticated at the Initials screen -- attribution policy, not a rule."""
+    BlueRidge.Common.Util.log("data=%s" % data)
+    params = {
+        "initials":     (data.get("initials") or "").strip().upper(),
+        "displayName":  data.get("displayName"),
+        "adAccount":    data.get("adAccount"),
+        "ignitionRole": data.get("ignitionRole"),
+        "appUserId":    data.get("appUserId") or 1,
+    }
+    return BlueRidge.Common.Db.execMutation("location/AppUser_Create", params)
+
+
 def authenticateAd(adAccount, actionCode=None, terminalLocationId=None, appUserId=None):
     """Authenticate / elevate an AD account for a protected action.
        Returns {Status, Message, AppUserId, IgnitionRole}."""
