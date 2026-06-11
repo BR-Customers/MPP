@@ -4,7 +4,9 @@
 
 ---
 
-## 🔖 Next Session Pickup — Designer smoke the eligibility-style editors (2026-06-08)
+## ✅ Closed 2026-06-11 — Eligibility-style config editors signed off (was: Designer-smoke pickup, 2026-06-08)
+
+**Jacques closed this out 2026-06-11** — the eligibility-style editors are accepted and the Phase H3 Designer-smoke obligation is retired. Original pickup detail retained below for reference.
 
 **The eligibility-style config editors are built: backend COMPLETE + verified, Perspective UI drafted.** Plan at `docs/superpowers/plans/2026-06-08-eligibility-style-config-editors.md` executed via subagent-driven-development on `jacques/working` (commits `81f7a82`..`33b94e5`). SQL suite **1196/1196**; every Ignition resource scanned clean. **Nothing has been visually smoked yet — that is the entire remaining task.**
 
