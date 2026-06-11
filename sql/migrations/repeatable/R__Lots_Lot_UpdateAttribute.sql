@@ -127,6 +127,11 @@ BEGIN
             FROM Lots.Lot WHERE Id = @LotId);
 
         -- ===== Mutation (atomic) =====
+        -- NOTE: the validation below is PieceCount-specific (INT coercion). PieceCount is the
+        -- only supported attribute in Phase 2 and the proc already RETURNed above for any other
+        -- name. When a second attribute (e.g. Weight DECIMAL) is added, move this per-type
+        -- coercion + NULL-check INTO an attribute-keyed branch -- do NOT leave an unconditional
+        -- INT TRY_CAST here, or it will reject valid non-integer values for the new attribute.
         DECLARE @NewPieceCount INT = TRY_CAST(@NewValue AS INT);
         IF @NewPieceCount IS NULL
         BEGIN

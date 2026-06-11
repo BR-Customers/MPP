@@ -134,6 +134,8 @@ GO
 -- =============================================
 DECLARE @LotId BIGINT = (SELECT LotId FROM #UpdFix WHERE Slot = N'C');
 DECLARE @HoldId BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Hold');
+-- Direct UPDATE: the Good->Hold transition is Phase 7 scope; bypassing Lot_UpdateStatus
+-- here is an intentional test-fixture expedient to exercise the not-blocked guard.
 UPDATE Lots.Lot SET LotStatusId = @HoldId WHERE Id = @LotId;
 
 DECLARE @r4 TABLE (Status BIT, Message NVARCHAR(500));

@@ -160,6 +160,12 @@ BEGIN
             RETURN;
         END
 
+        -- Resolve WeightUomId to a readable Uom.Code for the Description prose
+        -- (raw FK ids belong in the JSON, not the human-readable diff). Only runs
+        -- when WeightUom actually changed, so the subselects are cheap.
+        DECLARE @CurWeightUomCode NVARCHAR(50) = (SELECT Code FROM Parts.Uom WHERE Id = @CurWeightUomId);
+        DECLARE @NewWeightUomCode NVARCHAR(50) = (SELECT Code FROM Parts.Uom WHERE Id = @WeightUomId);
+
         -- Build the field-diff Description (changed fields only).
         DECLARE @Diff NVARCHAR(MAX) = N'';
         IF @ChgPieceCount = 1
@@ -167,7 +173,7 @@ BEGIN
         IF @ChgWeight = 1
             SET @Diff = @Diff + N'Weight ' + ISNULL(CAST(@CurWeight AS NVARCHAR(40)), N'(null)') + NCHAR(8594) + CAST(@Weight AS NVARCHAR(40)) + N'; ';
         IF @ChgWeightUom = 1
-            SET @Diff = @Diff + N'WeightUom ' + ISNULL(CAST(@CurWeightUomId AS NVARCHAR(20)), N'(null)') + NCHAR(8594) + CAST(@WeightUomId AS NVARCHAR(20)) + N'; ';
+            SET @Diff = @Diff + N'WeightUom ' + ISNULL(@CurWeightUomCode, N'(null)') + NCHAR(8594) + ISNULL(@NewWeightUomCode, N'(null)') + N'; ';
         IF @ChgVendorLot = 1
             SET @Diff = @Diff + N'VendorLot ' + ISNULL(@CurVendorLot, N'(null)') + NCHAR(8594) + @VendorLotNumber + N'; ';
 
