@@ -1,0 +1,103 @@
+{
+  "custom": {},
+  "params": {
+    "action": "key",
+    "key": "",
+    "label": "",
+    "messageName": "keyboardKeyPressed",
+    "variant": "default"
+  },
+  "propConfig": {
+    "params.action": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.key": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.label": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.messageName": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.variant": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 62,
+      "width": 62
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "alignItems": "stretch"
+    },
+    "children": [
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "KeyButton"
+        },
+        "position": {
+          "basis": "auto",
+          "grow": 1,
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.label"
+              }
+            }
+          },
+          "props.style.classes": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "\"pf-btn pf-btn-large\" + if({view.params.variant} = \"primary\", \" pf-btn-primary\", if({view.params.variant} = \"secondary\", \" pf-btn-secondary\", \"\"))"
+              }
+            }
+          },
+          "props.style.fontSize": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.action} = \"key\", \"22px\", \"18px\")"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "height": "62px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(self.view.params.messageName or \"keyboardKeyPressed\", {\"action\": self.view.params.action, \"key\": self.view.params.key}, scope=\"page\")"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}
