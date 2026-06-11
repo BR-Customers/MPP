@@ -234,9 +234,9 @@ This FDS describes how Blue Ridge Automation will implement the MES requirements
 │    └────┬──────┬──────┬──────┬───────────┘                      │
 │         │      │      │      │                                   │
 │    ┌────┴┐ ┌──┴──┐ ┌─┴──┐ ┌┴─────┐                            │
-│    │DC   │ │Trim │ │Mach│ │Assy  │  Shared terminals            │
-│    │Terms│ │Terms│ │Terms│ │Terms │  (fewer than machines;       │
-│    └──┬──┘ └──┬──┘ └──┬─┘ └──┬───┘   machine resolved by scan)  │
+│    │DC   │ │Trim │ │Mach│ │Assy  │  Operator terminals          │
+│    │Terms│ │Terms│ │Terms│ │Terms │  (view-policy, FDS-02-010;   │
+│    └──┬──┘ └──┬──┘ └──┬─┘ └──┬───┘   DC shared; rest dedicated) │
 │       │       │       │      │                                   │
 │  ┌────┴───────┴───────┴──────┴───────────────────┐              │
 │  │              OPC / Device Layer                 │              │
@@ -937,7 +937,7 @@ Every time a LOT physically moves to a new location, the system SHALL record an 
 A LOT movement is always initiated by an operator at a terminal. The explicit workflow SHALL be:
 
 1. **Presence** — The terminal already has an operator presence context established via initials (per §4). If 30 minutes have elapsed, the operator confirms or changes presence via the re-confirmation overlay. The terminal's `TerminalLocationId` is the `Location` where the operator is standing.
-2. **Set destination Cell** — On a dedicated terminal the destination defaults to the terminal's parent Cell (FDS-02-009) and is read-only. On a shared terminal the operator selects the destination Cell by scan or dropdown (constrained to descendant Cells of the terminal's parent Location). Either path resolves to a `Location.Id` and SHALL verify the destination is a valid production context (Cell-tier, appropriate definition).
+2. **Set destination** — On a dedicated terminal the destination defaults to the terminal's parent Location (a Cell, Line, or Area per FDS-02-009) and is read-only. On a shared terminal the operator selects the destination Cell by scan or dropdown (constrained to descendant equipment Cells of the terminal's parent Location). Either path resolves to a `Location.Id` and SHALL verify the destination is a valid production context (a Cell-tier Location — or, on line/area-resolution terminals, the line/area itself per FDS-02-009 — with an appropriate definition).
 3. **Scan LOT** — Operator scans the LOT's LTT barcode. The system looks up the LOT by `LotName`, validates it is not CLOSED, and reads its current `CurrentLocationId` as the from-location.
 4. **Record Movement** — The system writes a `LotMovement` row (from-location, to-location, resolved `AppUserId` from the pre-populated initials, terminal location, timestamp) and updates the LOT's `CurrentLocationId` to the scanned destination.
 5. **Confirm** — The screen displays the movement confirmation and transitions to the appropriate next action (production recording, inspection, split, etc.) based on the destination's `LocationTypeDefinition`.
