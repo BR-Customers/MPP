@@ -2,7 +2,7 @@
 -- Procedure:   Location.Terminal_GetByIpAddress
 -- Author:      Blue Ridge Automation
 -- Created:     2026-06-09
--- Version:     1.0
+-- Version:     1.1
 --
 -- Description:
 --   Resolves the shop-floor Terminal Location for a connecting IP address
@@ -11,10 +11,10 @@
 --   Location.LocationAttribute.AttributeValue, the name 'IpAddress' lives on its
 --   LocationAttributeDefinition. Returns, for the matched (active) Terminal:
 --   its Id/Code/Name, its parent ("Zone") Id/Code/Name, the DefaultScreen
---   attribute value (NULL when unset), and a DERIVED TerminalMode:
---       'Dedicated'  when the parent Location is a Cell-tier Location,
---       'Shared'     when the parent is a WorkCenter- or Area-tier Location
---                    (and for any other / NULL parent tier).
+--   attribute value (NULL when unset). TerminalMode was REMOVED in v1.1:
+--   terminal behavior (dedicated vs shared) is a property of the assigned
+--   view per FDS-02-010 (view-policy model) and the spec
+--   docs/superpowers/specs/2026-06-10-terminal-mode-view-policy-design.md.
 --
 --   This proc ALWAYS returns exactly one row and NEVER raises: when no active
 --   Terminal matches @IpAddress (unknown IP, or the matched Terminal is
@@ -31,15 +31,15 @@
 -- Result set (always one row, except the seed-missing degenerate case below):
 --   TerminalLocationId, TerminalCode, TerminalName,
 --   ZoneLocationId, ZoneCode, ZoneName,
---   DefaultScreen, TerminalMode, IsFallback
+--   DefaultScreen, IsFallback
 --
 -- Dependencies:
 --   Tables: Location.Location, Location.LocationAttribute,
---           Location.LocationAttributeDefinition, Location.LocationTypeDefinition,
---           Location.LocationType
+--           Location.LocationAttributeDefinition
 --
 -- Change Log:
 --   2026-06-09 - 1.0 - Initial version (Phase 1 Task C).
+--   2026-06-10 - 1.1 - Drop derived TerminalMode (view-policy model).
 -- =============================================
 CREATE OR ALTER PROCEDURE Location.Terminal_GetByIpAddress
     @IpAddress NVARCHAR(45)
@@ -96,13 +96,12 @@ BEGIN
             CAST(NULL AS NVARCHAR(50))  AS ZoneCode,
             CAST(NULL AS NVARCHAR(200)) AS ZoneName,
             CAST(NULL AS NVARCHAR(255)) AS DefaultScreen,
-            CAST(NULL AS NVARCHAR(20))  AS TerminalMode,
             CAST(1 AS BIT)              AS IsFallback
         WHERE 1 = 0;
         RETURN;
     END
 
-    -- 3. Project the Terminal + parent ("Zone") + DefaultScreen + derived mode.
+    -- 3. Project the Terminal + parent ("Zone") + DefaultScreen.
     SELECT
         t.Id                                                AS TerminalLocationId,
         t.Code                                              AS TerminalCode,
@@ -111,16 +110,10 @@ BEGIN
         p.Code                                              AS ZoneCode,
         p.Name                                              AS ZoneName,
         ds.AttributeValue                                   AS DefaultScreen,
-        CAST(CASE WHEN plt.Code = N'Cell' THEN N'Dedicated'
-                  ELSE N'Shared' END AS NVARCHAR(20))       AS TerminalMode,
         @IsFallback                                         AS IsFallback
     FROM Location.Location t
     LEFT JOIN Location.Location p
         ON p.Id = t.ParentLocationId
-    LEFT JOIN Location.LocationTypeDefinition pltd
-        ON pltd.Id = p.LocationTypeDefinitionId
-    LEFT JOIN Location.LocationType plt
-        ON plt.Id = pltd.LocationTypeId
     -- DefaultScreen attribute value for this Terminal (NULL when unset).
     LEFT JOIN (
         SELECT dsla.LocationId, dsla.AttributeValue

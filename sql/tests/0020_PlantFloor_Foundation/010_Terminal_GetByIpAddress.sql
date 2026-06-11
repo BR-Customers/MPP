@@ -5,9 +5,9 @@
 -- Description:  Tests for Location.Terminal_GetByIpAddress (Phase 1 Task C).
 --               Asserts:
 --                 * Known IP (Cell-parented Terminal) -> correct Terminal +
---                   Zone + DefaultScreen + TerminalMode='Dedicated'.
---                 * Known IP (Area-parented Terminal) -> TerminalMode='Shared'
---                   and (this fixture has no DefaultScreen) NULL DefaultScreen.
+--                   Zone + DefaultScreen.
+--                 * Known IP (Area-parented Terminal) -> resolves; NULL
+--                   DefaultScreen when unset.
 --                 * Unknown IP -> the global FALLBACK Terminal (IsFallback=1),
 --                   never an error / empty set.
 --                 * Deprecated Terminal's IP -> NOT returned; falls through to
@@ -71,16 +71,16 @@ VALUES
 GO
 
 -- =============================================
--- Test 1: Known IP, Cell parent -> correct Terminal, Zone, DefaultScreen, Dedicated
+-- Test 1: Known IP, Cell parent -> correct Terminal, Zone, DefaultScreen
 -- =============================================
 DECLARE @TermCode NVARCHAR(50), @ZoneCode NVARCHAR(50), @Screen NVARCHAR(255),
-        @Mode NVARCHAR(20), @Fallback BIT, @FbStr NVARCHAR(1);
+        @Fallback BIT, @FbStr NVARCHAR(1);
 CREATE TABLE #C (TerminalLocationId BIGINT, TerminalCode NVARCHAR(50), TerminalName NVARCHAR(200),
                  ZoneLocationId BIGINT, ZoneCode NVARCHAR(50), ZoneName NVARCHAR(200),
-                 DefaultScreen NVARCHAR(255), TerminalMode NVARCHAR(20), IsFallback BIT);
+                 DefaultScreen NVARCHAR(255), IsFallback BIT);
 INSERT INTO #C EXEC Location.Terminal_GetByIpAddress @IpAddress = N'10.99.0.1';
 SELECT @TermCode = TerminalCode, @ZoneCode = ZoneCode, @Screen = DefaultScreen,
-       @Mode = TerminalMode, @Fallback = IsFallback FROM #C;
+       @Fallback = IsFallback FROM #C;
 DROP TABLE #C;
 SET @FbStr = CAST(@Fallback AS NVARCHAR(1));
 EXEC test.Assert_IsEqual
@@ -93,29 +93,23 @@ EXEC test.Assert_IsEqual
     @TestName = N'[TermCell] DefaultScreen returned',
     @Expected = N'perspective:DieCast', @Actual = @Screen;
 EXEC test.Assert_IsEqual
-    @TestName = N'[TermCell] TerminalMode derived Dedicated (Cell parent)',
-    @Expected = N'Dedicated', @Actual = @Mode;
-EXEC test.Assert_IsEqual
     @TestName = N'[TermCell] IsFallback=0 for a real match',
     @Expected = N'0', @Actual = @FbStr;
 GO
 
 -- =============================================
--- Test 2: Known IP, Area parent -> Shared mode + NULL DefaultScreen
+-- Test 2: Known IP, Area parent -> resolves + NULL DefaultScreen
 -- =============================================
-DECLARE @TermCode NVARCHAR(50), @Mode NVARCHAR(20), @Screen NVARCHAR(255);
+DECLARE @TermCode NVARCHAR(50), @Screen NVARCHAR(255);
 CREATE TABLE #A (TerminalLocationId BIGINT, TerminalCode NVARCHAR(50), TerminalName NVARCHAR(200),
                  ZoneLocationId BIGINT, ZoneCode NVARCHAR(50), ZoneName NVARCHAR(200),
-                 DefaultScreen NVARCHAR(255), TerminalMode NVARCHAR(20), IsFallback BIT);
+                 DefaultScreen NVARCHAR(255), IsFallback BIT);
 INSERT INTO #A EXEC Location.Terminal_GetByIpAddress @IpAddress = N'10.99.0.2';
-SELECT @TermCode = TerminalCode, @Mode = TerminalMode, @Screen = DefaultScreen FROM #A;
+SELECT @TermCode = TerminalCode, @Screen = DefaultScreen FROM #A;
 DROP TABLE #A;
 EXEC test.Assert_IsEqual
     @TestName = N'[TermArea] Known IP resolves the Area terminal',
     @Expected = N'TEST-TERM-AREA', @Actual = @TermCode;
-EXEC test.Assert_IsEqual
-    @TestName = N'[TermArea] TerminalMode derived Shared (Area parent)',
-    @Expected = N'Shared', @Actual = @Mode;
 EXEC test.Assert_IsNull
     @TestName = N'[TermArea] DefaultScreen is NULL when unset',
     @Value = @Screen;
@@ -127,7 +121,7 @@ GO
 DECLARE @TermCode NVARCHAR(50), @Fallback BIT, @FbStr NVARCHAR(1), @Rows INT;
 CREATE TABLE #U (TerminalLocationId BIGINT, TerminalCode NVARCHAR(50), TerminalName NVARCHAR(200),
                  ZoneLocationId BIGINT, ZoneCode NVARCHAR(50), ZoneName NVARCHAR(200),
-                 DefaultScreen NVARCHAR(255), TerminalMode NVARCHAR(20), IsFallback BIT);
+                 DefaultScreen NVARCHAR(255), IsFallback BIT);
 INSERT INTO #U EXEC Location.Terminal_GetByIpAddress @IpAddress = N'203.0.113.250';
 SELECT @Rows = COUNT(*) FROM #U;
 SELECT @TermCode = TerminalCode, @Fallback = IsFallback FROM #U;
@@ -150,7 +144,7 @@ GO
 DECLARE @TermCode NVARCHAR(50), @Fallback BIT, @FbStr NVARCHAR(1);
 CREATE TABLE #D (TerminalLocationId BIGINT, TerminalCode NVARCHAR(50), TerminalName NVARCHAR(200),
                  ZoneLocationId BIGINT, ZoneCode NVARCHAR(50), ZoneName NVARCHAR(200),
-                 DefaultScreen NVARCHAR(255), TerminalMode NVARCHAR(20), IsFallback BIT);
+                 DefaultScreen NVARCHAR(255), IsFallback BIT);
 INSERT INTO #D EXEC Location.Terminal_GetByIpAddress @IpAddress = N'10.99.0.3';
 SELECT @TermCode = TerminalCode, @Fallback = IsFallback FROM #D;
 DROP TABLE #D;
