@@ -174,7 +174,7 @@ BEGIN
 
     -- Per-LOT pause history.
     CREATE INDEX IX_PauseEvent_Lot
-        ON Lots.PauseEvent (LotId, PausedAt DESC);
+        ON Lots.PauseEvent (LotId, PausedAt DESC);  -- DESC: per-LOT pause history reads newest-first
 END
 GO
 
@@ -184,6 +184,9 @@ GO
 -- tokens resolved at print time: {LotName} {ParentLotNumber} {ItemCode}
 -- {PieceCount} {PrintedAt}. Filtered-unique enforces one active template per
 -- label type.
+-- NOTE: CreatedByUserId intentionally omitted in Phase 2 (templates seeded directly,
+-- no writer proc yet). A future writer-proc migration MUST add it as NULL (not NOT NULL)
+-- so it does not block the existing seed rows.
 IF OBJECT_ID(N'Lots.LabelTemplate', N'U') IS NULL
 BEGIN
     CREATE TABLE Lots.LabelTemplate (
@@ -211,29 +214,29 @@ GO
 -- codes. Guarded IF NOT EXISTS on Code so a re-run is a no-op.
 
 -- ---- New operational LogEventType codes (Ids 29/30/31) ----
-IF NOT EXISTS (SELECT 1 FROM Audit.LogEventType WHERE Code = N'LotUpdated')
+IF NOT EXISTS (SELECT 1 FROM Audit.LogEventType WHERE Id = 29 OR Code = N'LotUpdated')
     INSERT INTO Audit.LogEventType (Id, Code, Name, Description) VALUES
         (29, N'LotUpdated', N'LOT Updated', N'A LOT header attribute was updated (Lot_Update / Lot_UpdateAttribute).');
 GO
-IF NOT EXISTS (SELECT 1 FROM Audit.LogEventType WHERE Code = N'LotPaused')
+IF NOT EXISTS (SELECT 1 FROM Audit.LogEventType WHERE Id = 30 OR Code = N'LotPaused')
     INSERT INTO Audit.LogEventType (Id, Code, Name, Description) VALUES
         (30, N'LotPaused', N'LOT Paused', N'An operator placed a pause on a LOT at a location (LotPause_Place).');
 GO
-IF NOT EXISTS (SELECT 1 FROM Audit.LogEventType WHERE Code = N'LotResumed')
+IF NOT EXISTS (SELECT 1 FROM Audit.LogEventType WHERE Id = 31 OR Code = N'LotResumed')
     INSERT INTO Audit.LogEventType (Id, Code, Name, Description) VALUES
         (31, N'LotResumed', N'LOT Resumed', N'An operator resumed a paused LOT (LotPause_Resume).');
 GO
 
 -- ---- New LogEntityType codes (Ids 42/43/44) ----
-IF NOT EXISTS (SELECT 1 FROM Audit.LogEntityType WHERE Code = N'LotLabel')
+IF NOT EXISTS (SELECT 1 FROM Audit.LogEntityType WHERE Id = 42 OR Code = N'LotLabel')
     INSERT INTO Audit.LogEntityType (Id, Code, Name, Description) VALUES
         (42, N'LotLabel', N'LOT Label', N'Printed LTT label record (Lots.LotLabel).');
 GO
-IF NOT EXISTS (SELECT 1 FROM Audit.LogEntityType WHERE Code = N'PauseEvent')
+IF NOT EXISTS (SELECT 1 FROM Audit.LogEntityType WHERE Id = 43 OR Code = N'PauseEvent')
     INSERT INTO Audit.LogEntityType (Id, Code, Name, Description) VALUES
         (43, N'PauseEvent', N'Pause Event', N'LOT pause place/resume lifecycle event (Lots.PauseEvent).');
 GO
-IF NOT EXISTS (SELECT 1 FROM Audit.LogEntityType WHERE Code = N'LotGenealogy')
+IF NOT EXISTS (SELECT 1 FROM Audit.LogEntityType WHERE Id = 44 OR Code = N'LotGenealogy')
     INSERT INTO Audit.LogEntityType (Id, Code, Name, Description) VALUES
         (44, N'LotGenealogy', N'LOT Genealogy', N'Genealogy edge record (Lots.LotGenealogy).');
 GO

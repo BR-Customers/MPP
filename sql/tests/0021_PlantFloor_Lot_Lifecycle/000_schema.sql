@@ -32,15 +32,20 @@ DECLARE @ix INT = (SELECT COUNT(*) FROM sys.indexes WHERE name = N'UQ_PauseEvent
 EXEC test.Assert_RowCount @TestName = N'[Schema] PauseEvent open-pause unique index', @ExpectedCount = 1, @ActualCount = @ix;
 GO
 
--- New LogEventType codes seeded
+-- All 7 Phase 2 LogEventType codes present (3 new in 0021 + 4 pre-existing from 0001)
 DECLARE @ev INT = (SELECT COUNT(*) FROM Audit.LogEventType
                    WHERE Code IN (N'LotUpdated', N'LotSplit', N'LotMerged', N'LotConsumed', N'LotPaused', N'LotResumed', N'LabelPrinted'));
-EXEC test.Assert_RowCount @TestName = N'[Schema] 7 new LogEventType codes seeded', @ExpectedCount = 7, @ActualCount = @ev;
+EXEC test.Assert_RowCount @TestName = N'[Schema] all 7 Phase 2 LogEventType codes present', @ExpectedCount = 7, @ActualCount = @ev;
+
+-- Exactly the 3 codes newly seeded by 0021
+DECLARE @evNew INT = (SELECT COUNT(*) FROM Audit.LogEventType
+                      WHERE Code IN (N'LotUpdated', N'LotPaused', N'LotResumed'));
+EXEC test.Assert_RowCount @TestName = N'[Schema] 3 new LogEventType codes seeded by 0021', @ExpectedCount = 3, @ActualCount = @evNew;
 GO
 
--- One active LabelTemplate per active LabelTypeCode (>=1)
-DECLARE @lt INT = (SELECT COUNT(*) FROM Lots.LabelTemplate WHERE DeprecatedAt IS NULL);
-DECLARE @ltOk BIT = CASE WHEN @lt >= 1 THEN 1 ELSE 0 END;
-EXEC test.Assert_IsTrue @TestName = N'[Schema] >=1 active LabelTemplate seeded',
-    @Condition = @ltOk;
+-- One active LabelTemplate per LabelTypeCode (LabelTypeCode has no DeprecatedAt)
+DECLARE @ltExpected INT = (SELECT COUNT(*) FROM Lots.LabelTypeCode);
+DECLARE @ltActual INT = (SELECT COUNT(*) FROM Lots.LabelTemplate WHERE DeprecatedAt IS NULL);
+EXEC test.Assert_RowCount @TestName = N'[Schema] active LabelTemplate count matches LabelTypeCode count',
+    @ExpectedCount = @ltExpected, @ActualCount = @ltActual;
 GO
