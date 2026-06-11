@@ -104,6 +104,15 @@ The Item Master design has been **reworked from bundled-editDraft + bidi-Object-
 
 ## ✅ Recently closed
 
+### Terminal-mode view-policy model — smoke-discovered redesign landed end-to-end (2026-06-10/11)
+
+Designer-smoking Phase 1 exposed that FDS-02-010's parent-tier TerminalMode derivation misclassified every machining/assembly-line + trim terminal (cell-less parents -> Shared with an EMPTY context picker; attribution broken). MPP ruling: lines are tracked at line resolution; stations are operation points. Redesign (spec `docs/superpowers/specs/2026-06-10-terminal-mode-view-policy-design.md`, plan + 8-task subagent-driven execution): **there is no TerminalMode anywhere** — behavior is a property of the operator view assigned via `DefaultScreen` (shared-flavor views open with a select-location step; dedicated-flavor views bind context to the terminal's parent Location at ANY tier).
+
+- **SQL:** `Terminal_GetByIpAddress`/`Terminal_List` v1.1 (mode column dropped; `HasPrinter` registry flag added — every terminal must carry >= 1 child Printer; seed has 62/63, FALLBACK-TERMINAL flagged); NEW `Location.Terminal_ListContextCells` (recursive equipment-cell picker excluding Terminal/Printer kinds, MAXRECURSION 8); test file `015_Terminal_ContextCells_List.sql`. Suite **1308/1308**.
+- **Ignition:** Core NQ + `Terminal.listContextCells`/`getContextCellsForDropdown`; MPP session shape drops `terminalMode`, adds `presence.policy` (default `strict`; dedicated views set `confirm`); HomeRouter initials-gate removed (view flavor owns it); CellContextSelector re-pointed to the terminal-scoped picker (also fixes its old all-Cells list offering terminals/printers); PresenceIdleWatcher gates on `policy != "confirm"` (strict-flavor idle handling TODO'd for first work views); InitialsField auto-fill re-anchored to `policy == "confirm"`; TerminalSelector session-write purged.
+- **FDS v1.4** (+docx): §2.5, 02-008/009/010/011, 04-003 amended; 04-006 explicitly unchanged (both flavors keep the 30-min re-confirm); §1 diagram + FDS-05-008 move step re-anchored; stale header version fixed (was reading 1.3).
+- **⚠️ Owed:** gateway RESTART so MPP scope resolves the new inherited `location/Terminal_ListContextCells` NQ (known registry-staleness; scan insufficient for new inherited NQs), then a 60-second session smoke: select DC1-T1 -> CellContextSelector lists exactly the 11 DC1 presses; line terminal -> empty picker.
+
 ### Arc 2 Phase 1 Ignition layer — NQs + gateway scripts + 7 Perspective views built (2026-06-09)
 
 The follow-on Ignition push to the Phase 1 SQL foundation (tasks T030–T041, ~54h) is **built + file-authored + statically reviewed**, committed on `jacques/working` (`07f2e10`..`848426b`). Executed subagent-driven (fresh implementer + spec/quality review per task + a final holistic cross-cutting review). **NOT yet Designer-smoked — that is the remaining manual step.**
@@ -407,7 +416,7 @@ This file holds the **volatile** state of the project — current doc versions, 
 | Doc | Version | Rev Date | Status / Notes |
 |---|---|---|---|
 | Data Model | **v1.9q** | 2026-06-08 | Current. v1.9q (2026-06-08): `Lots.Lot.CrtActive BIT` added (FDS-10-012 Controlled Run Tag hook). v1.9p (2026-06-08): Location `CoupledDownstreamCellLocationId` typed-FK promotion (migration `0019_location_coupled_downstream_cell`) + `Quality.QualityResult.NumericValue` + OI-35 scaling fold-in. v1.9o: `Tools.ToolType.CompatibleLocationTypeDefinitionId` (migration `0018`) for the Mount-to-Cell tool-type filter (Die→DieCastMachine). v1.9n (2026-06-04): sub-LOT split relocated Trim OUT → Machining OUT. v1.9m: `Parts.OperationTemplate.RequiresSubLotSplit`. |
-| FDS | **v1.3** | 2026-06-03 | Current. v1.3 (2026-06-03): sub-LOT split relocated Trim OUT → Machining OUT. v1.2 (2026-05-18): `ParentLocationId` immutability (FDS-02-002a). v1.1 (2026-05-12): Customer Acceptance signature page. v1.0 (2026-05-04): first customer-review release. ⚠️ The FDS **body header still reads "v1.1"** while its revision history is at v1.3 — stale, worth a one-line fix. |
+| FDS | **v1.4** | 2026-06-10 | Current. v1.4 (2026-06-10): terminal-mode view-policy model — FDS-02-010 rewritten (behavior by assigned view; parent-tier derivation retired), 02-008/009/011 + 04-003 amended, 04-006 unchanged; header-version stale note resolved. v1.3 (2026-06-03): sub-LOT split relocated Trim OUT → Machining OUT. v1.2 (2026-05-18): `ParentLocationId` immutability (FDS-02-002a). v1.1 (2026-05-12): Customer Acceptance signature page. v1.0 (2026-05-04): first customer-review release. |
 | Open Issues Register | **v2.17** | 2026-05-01 | Current. **9 items closed** from Jacques's 2026-05-01 markup: OI-07, -24, -25, -27, -28, -29, -30, -31, UJ-03 → all ✅ Resolved. 6 items remain Open. |
 | Outstanding Items extract | **v2.0** | 2026-05-01 | Current. Reduced to 6 Open items per OIR v2.17. |
 | User Journeys | **v0.9** | 2026-04-29 | Current. FDS v0.11m reconciliation pass. |
