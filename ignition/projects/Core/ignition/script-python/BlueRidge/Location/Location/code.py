@@ -210,10 +210,11 @@ def listByTier(tierCode):
 def getCellsForDropdown():
     """Cell-tier Locations shaped for ia.input.dropdown + scan matching.
 
-       Used by the Cell Context Selector (Shared terminals) so the operator
-       can pick the active Cell. Each option carries the dropdown contract
-       keys (label/value) plus code/name so the scan-match path can resolve
-       a scanned Cell.Code back to its row without a second DB round-trip.
+       SUPERSEDED for the Cell Context Selector by
+       BlueRidge.Location.Terminal.getContextCellsForDropdown (view-policy
+       model, 2026-06-10) which scopes to the terminal parent's descendant
+       equipment cells. This generic all-Cells variant remains for ad-hoc
+       dropdowns but note it includes Terminal/Printer kind cells.
 
        PHASE-1 SIMPLIFICATION: the Cell Context Selector currently scopes to
        "pick a Cell + persist + broadcast" only. The design's cascading
