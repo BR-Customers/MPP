@@ -40,6 +40,9 @@
 --
 -- Change Log:
 --   2026-06-10 - 1.0 - Initial version (view-policy model).
+--   2026-06-10 - 1.0 - MAXRECURSION tightened 32 -> 8 in review (real ISA-95
+--                      depth below the anchor is <= 4; fail fast on corrupt
+--                      parent cycles).
 -- =============================================
 CREATE OR ALTER PROCEDURE Location.Terminal_ListContextCells
     @TerminalId BIGINT
