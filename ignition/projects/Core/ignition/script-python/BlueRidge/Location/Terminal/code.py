@@ -1,7 +1,18 @@
 """BlueRidge.Location.Terminal - thin read access to terminal resolution procs.
 
    Wrappers only; no business logic. Calls route View -> here ->
-   BlueRidge.Common.Db -> system.db.*."""
+   BlueRidge.Common.Db -> system.db.*.
+
+   Read surface:
+       getByIpAddress(ipAddress)                      -> dict | None
+       listAll()                                      -> list[dict]
+       findByCode(terminals, code)                    -> dict | None
+       listContextCells(terminalLocationId)           -> list[dict]
+       getContextCellsForDropdown(terminalLocationId) -> list[{label, value, code, name}]
+
+   Change Log:
+       2026-06-11 - Add listContextCells + getContextCellsForDropdown
+                    (location/Terminal_ListContextCells NQ access layer)."""
 
 import BlueRidge.Common.Db
 import BlueRidge.Common.Util
@@ -45,3 +56,37 @@ def findByCode(terminals, code):
         if (r.get("TerminalCode") or "").strip().upper() == target:
             return r
     return None
+
+
+def listContextCells(terminalLocationId):
+    """Eligible location-context rows for a shared-flavor view at the given
+       terminal: active descendant EQUIPMENT cells of the terminal's parent
+       (Terminal/Printer kinds excluded by the proc). Returns list[dict]
+       (LocationId, Code, Name, Kind); always a list, empty when the
+       terminal is unknown or its parent has no equipment cells."""
+    BlueRidge.Common.Util.log("terminalLocationId=%s" % terminalLocationId)
+    if terminalLocationId is None:
+        return []
+    return BlueRidge.Common.Db.execList(
+        "location/Terminal_ListContextCells",
+        {"terminalId": terminalLocationId},
+    )
+
+
+def getContextCellsForDropdown(terminalLocationId):
+    """listContextCells shaped for ia.input.dropdown + scan matching:
+       [{label: '<Code> - <Name>', value: LocationId, code, name}].
+       Always returns a list (never None) so the runScript-bound
+       view.custom.cells default ([]) is never overwritten with null."""
+    rows = listContextCells(terminalLocationId) or []
+    out = []
+    for r in rows:
+        code = r.get("Code") or ""
+        name = r.get("Name") or ""
+        out.append({
+            "label": ("%s - %s" % (code, name)).strip(" -"),
+            "value": r.get("LocationId"),
+            "code":  code,
+            "name":  name,
+        })
+    return out
