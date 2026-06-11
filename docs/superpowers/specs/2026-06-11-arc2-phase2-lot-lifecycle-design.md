@@ -98,7 +98,7 @@ Clustered hot path: `CIX_LotGenealogy_ParentEventAt (ParentLotId, EventAt) ON ps
    - increment ordinal.
 6. Reduce parent `PieceCount` by `SUM(children)` via `Lot_UpdateAttribute`. If residual = 0, `Lot_UpdateStatus` parent → `Closed`.
 7. `Audit_LogOperation` `LogEventType='LotSplit'`. `COMMIT`.
-8. Return the minted children. **Single result set** (JDBC rule): the caller needs `ChildLotId, ChildLotName, PieceCount` per child plus the operation status — the plan resolves the exact shape (status columns on each child row, vs. status-only + a sibling `Lot_GetChildren` read). See §8.
+8. **Return shape (Option A, locked):** a single result set, **one row per minted child**, columns `Status, Message, ChildLotId, ChildLotName, PieceCount`. `Status`/`Message` repeat on every row (the success status). On any validation/error exit the proc returns a **single** row with the error `Status`/`Message` and `ChildLotId`/`ChildLotName`/`PieceCount` = NULL. The caller reads status off the first row and iterates rows for the children. One round-trip; honors the one-result-set JDBC rule.
 
 **`Lot_Merge(@SourceLotIdsJson, @OutputItemId, @OutputLocationId, @AppUserId, @TerminalLocationId)`** — per FDS-05-025..030 + UJ-08 (Option A):
 1. Validate ≥2 sources; `Lot_AssertNotBlocked` on each.
@@ -139,7 +139,7 @@ No TTL — paused LOTs persist across shifts/operators; never auto-resumed/auto-
 ## 5. Conventions & error handling
 
 - **Stored proc template** `sql/scripts/_TEMPLATE_stored_procedure.sql`: three-tier error hierarchy, `RAISERROR` (not `THROW`) in CATCH with nested TRY/CATCH for failure logging, schema-qualified references, `EXEC` params literals/`@vars` only.
-- **Ignition JDBC (FDS-11-011):** no `OUTPUT` params. Mutation procs end every exit path with `SELECT @Status AS Status, @Message AS Message, @NewId AS NewId` (drop `@NewId` for Update/Resume). Reads return an empty result set on not-found. **One result set per proc** — `Lot_Split` does not emit a separate header SELECT plus a child SELECT; it returns a single rowset whose shape the plan pins down (see §8) and the test asserts via INSERT-EXEC.
+- **Ignition JDBC (FDS-11-011):** no `OUTPUT` params. Mutation procs end every exit path with `SELECT @Status AS Status, @Message AS Message, @NewId AS NewId` (drop `@NewId` for Update/Resume). Reads return an empty result set on not-found. **One result set per proc** — `Lot_Split` is the only multi-row mutation: it returns one row per child with `Status`/`Message` repeated (Option A, §4.2 step 8), not a separate header SELECT. Asserted via INSERT-EXEC into a temp table matching that column shape.
 - **Audit readability:** success → `Audit_LogOperation` with the `<SUBJECT> · <CATEGORY> · <ACTION>` `Description` (via `Audit.ufn_MidDot` + `Audit.ufn_TruncateActivity`) and resolved-FK Old/New JSON (`JSON_QUERY((... FOR JSON PATH, WITHOUT_ARRAY_WRAPPER))` — never a bare aliased `FOR JSON` subquery, which double-encodes). Validation failures → `Audit_LogFailure`. Mirrors `Lot_Create` exactly.
 - **ASCII-only** seed strings + ZPL bodies; byte-scan before applying.
 - **Repeatable procs** live under `sql/migrations/repeatable/R__Lots_*.sql`, one per proc, `CREATE OR ALTER`. Named queries (the Ignition follow-on, not this push) all land in Core per `project_mpp_nq_core_topology`.
@@ -172,7 +172,7 @@ Test fixtures avoid free-text names that collide with other suites' `@Descriptio
 
 ## 8. Risks & open notes
 
-- **`Lot_Split` result-set shape.** The plan lists "header `Status, Message` + per-child rowset." Under the one-result-set JDBC rule the implementer returns the child rowset as the single SELECT and conveys failure via an empty rowset + a status column on each child row, OR returns status-only and exposes children via a sibling `Lot_GetChildren` call. Pick one in the plan and assert it via INSERT-EXEC; do not emit two result sets.
+- **`Lot_Split` result-set shape — RESOLVED (Option A).** Single result set, one row per child, `Status, Message, ChildLotId, ChildLotName, PieceCount`; status repeats per row; error exits return a single row with NULL child columns. Locked in §4.2 step 8.
 - **Supervisor override mechanics for `Lot_Merge`.** FDS-04-007 AD elevation is default-deny until the gateway IdP is wired (Phase 1 carry-forward). The proc accepts an elevated-context signal (param/flag) and trusts it; the *enforcement* of who may elevate is the gateway's job. Until S-08 `DieRankCompatibility` is populated, cross-rank merges reject without override — acceptable per UJ-08.
 - **Materialized-column precision.** Phase 2 keeps `InventoryAvailable` / `TotalInProcess` internally consistent but does not implement the full event-driven OEE formula — that lands with the Phase 3+ event writers. Flagged so a reviewer doesn't read the simplified recompute as a bug.
 - **Partition family.** `LotGenealogy` joins the born-partitioned 20-yr Honda family (`ps_MonthlyUtc`, aligned composite PK). `LotAttributeChange` / `LotLabel` / `PauseEvent` are left non-partitioned in Phase 2 (lower volume, no incoming bare-Id FK pressure); revisit if volume warrants, consistent with `project_mpp_partition_aligned_pk`.
