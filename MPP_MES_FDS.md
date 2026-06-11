@@ -4,8 +4,8 @@
 **Project:** Madison Precision Products MES Replacement
 **Prepared By:** Blue Ridge Automation
 **Client:** Madison Precision Products, Inc. (Madison, IN)
-**Version:** 1.3 — Customer Review Release
-**Date:** 2026-06-03
+**Version:** 1.4 — Customer Review Release
+**Date:** 2026-06-10
 
 ---
 
@@ -32,6 +32,7 @@ Comments may be returned as annotations on the Word document, an annotated PDF, 
 
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
+| 1.4 | 2026-06-10 | Blue Ridge Automation | **Terminal mode model replaced (view-policy).** FDS-02-010 rewritten — dedicated-vs-shared behavior is a property of the operator view assigned via the Terminal's `DefaultScreen` attribute; the parent-tier derivation is retired (MPP's machining/assembly lines + trim shops are tracked at line/area resolution with no equipment cells beneath their terminals, so the hierarchy cannot encode behavior; smoke-discovered 2026-06-10). Dedicated context = the Terminal's parent Location at any tier; shared context picker = descendant **equipment** Cells (new `Location.Terminal_ListContextCells`, excluding Terminal/Printer kinds). FDS-02-008 (no mode attribute; ≥1 child Printer required, `HasPrinter` registry flag), FDS-02-009/011 (context rules re-anchored to view flavor), FDS-04-003 (presence policy via `session.custom.presence.policy`) amended; **FDS-04-006 explicitly unchanged** — both flavors keep the 30-minute re-confirmation. Design record: `docs/superpowers/specs/2026-06-10-terminal-mode-view-policy-design.md`. |
 | 1.3a | 2026-06-09 | Blue Ridge Automation | **FDS-11-009 retention policy amended per OI-35 B1 sign-off (2026-06-08).** The flat "all MES data 20 years" rule is replaced with **differentiated per-table retention** — 20-yr Honda traceability (`Lots.*` events, `ContainerSerial`/`History`, `ShippingLabel`, `Workorder.ConsumptionEvent`/`RejectEvent`, `Quality.QualitySample`/`QualityResult`) vs 7-yr general operational/audit (`Audit.OperationLog`/`FailureLog`/`InterfaceLog`/`ConfigLog`, `Oee.DowntimeEvent`, `Workorder.ProductionEvent`/`Value`, `Quality.QualityAttachment`) — enforced via the OI-35 B2 monthly sliding-window partition process (`TRUNCATE` age-out; see Data Model § "Scaling Decisions"). Final windows subject to MPP IT confirmation (B1). Post-acceptance amendment from the signed-off Phase 0 Track-B architecture review; no other §11 change. **Carried action:** remove the 50/50 even-split-default wording from §5/§6 sub-LOT-split prose at the next pass (UJ-03 changed per Phase 0 T008 — operator enters all split quantities). |
 | 1.3 | 2026-06-03 | Blue Ridge Automation | **Sub-LOT split relocated from Trim OUT to Machining OUT** (per MPP, confirmed 2026-06 — supersedes the prior Trim-OUT split design; not an open item, the question is settled with the customer). Trim is now a **1:1 whole-LOT move tracked at Area resolution** (check-in → process → check-out, no line/cell tracking, no split). The Trim → Machining rename still fires at Machining IN (FDS-05-033) on the whole LOT; the split into N machined sub-LOTs now fires at **Machining OUT** on lines that sublot — physical signature is a dedicated Machining OUT terminal. Edits: FDS-05-009 (retitled "Machining OUT Sub-LOT Split Workflow"), FDS-06-006 (Trim OUT → whole-LOT move), FDS-06-004 (Trim tracked at Area), FDS-06-007 (Machining IN FIFO holds whole LOTs), FDS-06-008 (Machining OUT branches: split on sublotting lines, else auto-move to coupled Assembly), §5.4 intro, §6.3 / §6.4 narrative, and the §8 partial-quality-split reference (now points to FDS-05-022). **No schema change** — `Lot.ParentLotId` / `LotGenealogy` already model machining-origin sub-LOTs, so the Arc 2 Phase 1 build (`0014`) is unaffected. |
 | 1.2 | 2026-05-18 | Blue Ridge Automation | **Location-hierarchy immutability made explicit.** Added **FDS-02-002a — `ParentLocationId` is Immutable**: a `Location`'s parent SHALL NOT change after creation, because retroactive hierarchy changes would silently rewrite historical track-and-trace reports (LotMovement, ConsumptionEvent, RejectEvent, DowntimeEvent, HoldEvent, OperationLog) — which join event rows to the live Location row to derive tier path. Physical relocations are handled by Deprecate + Create New (industry-standard MES pattern; preserves event-anchored history verbatim). The rule was previously an implementation-only convention buried in `Location.Location_Update`; promoted to FDS so it is auditable and survives any future code rewrite. |
@@ -501,46 +502,49 @@ The ~230 machines from FRS Appendix B SHALL be loaded as seed data during deploy
 
 ### 2.5 Terminals
 
-Terminals are a mix of **dedicated** and **shared**. `Terminal` is a `LocationTypeDefinition` under the `Cell` type, but a Terminal `Location` MAY be parented at any tier — Cell, WorkCenter, or Area — and its parent tier determines the mode. Dedicated terminals (Cell-parented) have a fixed Cell context that cannot be changed in the UI. Shared terminals (WorkCenter- or Area-parented) let the operator pick a Cell context — by **scan or dropdown** — constrained to descendant Cells of the parent Location. Part ↔ Cell eligibility is enforced via `Parts.ItemLocation` plus BOM-derived component eligibility (§3.5 + FDS-02-012). Honda plans to place RFID tags on container labels in the future; the MES SHALL stay RFID-agnostic (FUTURE).
+Terminals are a mix of **dedicated** and **shared** — determined by the operator view each terminal is assigned via its `DefaultScreen` attribute, not by its position in the hierarchy (FDS-02-010). `Terminal` is a `LocationTypeDefinition` under the `Cell` type, and a Terminal `Location` MAY be parented at any tier — Cell, WorkCenter, or Area. Dedicated-flavor views carry a fixed location context: the Terminal's parent Location, at whatever tier it sits (a press Cell, a machining/assembly Line tracked at line resolution, or an Area such as a Trim Shop tracked at area resolution). Shared-flavor views open with a select-location step that lets the operator pick the context — by **scan or dropdown** — constrained to descendant *equipment* Cells of the parent Location (excluding the `Terminal` / `Printer` infrastructure kinds). Part ↔ Cell eligibility is enforced via `Parts.ItemLocation` plus BOM-derived component eligibility (§3.5 + FDS-02-012). Honda plans to place RFID tags on container labels in the future; the MES SHALL stay RFID-agnostic (FUTURE).
 
 #### FDS-02-008 — Terminal as Cell Kind
-Each Ignition Perspective client station on the shop floor SHALL be registered as a `Location` record with `LocationTypeDefinition` = `Terminal` (which resolves to `LocationType` = `Cell`), parented under the appropriate Cell, WorkCenter, or Area in the hierarchy. Terminal-specific configuration (IP address, default Zebra printer, barcode scanner availability) SHALL be stored as `LocationAttribute` entries referencing the attribute definitions attached to the `Terminal` definition (see FDS-02-005 Example 1). Terminal mode (Dedicated vs Shared) is derived from the parent tier per FDS-02-010 — not stored as an attribute.
+Each Ignition Perspective client station on the shop floor SHALL be registered as a `Location` record with `LocationTypeDefinition` = `Terminal` (which resolves to `LocationType` = `Cell`), parented under the appropriate Cell, WorkCenter, or Area in the hierarchy. Terminal-specific configuration (IP address, default Zebra printer, barcode scanner availability) SHALL be stored as `LocationAttribute` entries referencing the attribute definitions attached to the `Terminal` definition (see FDS-02-005 Example 1). Terminal behavior (dedicated vs shared) follows the operator view assigned via the Terminal's `DefaultScreen` attribute per FDS-02-010 — it is neither derived from the parent tier nor stored as a mode attribute. Every Terminal SHALL carry at least one active child `Printer` Location (multiple supported); the terminal registry surfaces a `HasPrinter` validation flag.
 
 #### FDS-02-009 — Cell Context Selection
 Every event written from a terminal carries two `Location` references:
 
 - `TerminalLocationId` — FK → `Location.Id` where the definition is `Terminal` (where the operator is standing)
-- `LocationId` — FK → `Location.Id` where the production happens (a Cell — `DieCastMachine`, `CNCMachine`, `TrimPress`, `AssemblyStation`, `InspectionStation`, etc.)
+- `LocationId` — FK → `Location.Id` where the production happens (an equipment Cell — `DieCastMachine`, `CNCMachine`, `TrimPress`, `AssemblyStation`, `InspectionStation`, etc. — or, for terminals running a dedicated-flavor view whose parent is a Line or Area, that parent Location itself)
 
-On **Dedicated** terminals (FDS-02-010) the Cell context SHALL be the Terminal Location's parent Cell — fixed, with no selector exposed in the UI.
+On terminals running a **dedicated-flavor** view (FDS-02-010) the location context SHALL be the Terminal Location's parent — fixed, with no selector exposed in the UI. The parent MAY be any tier: a Cell (e.g., a die-cast machine), a WorkCenter/Line (machining + assembly lines tracked at line resolution per MPP's traceability requirement), or an Area (e.g., a Trim Shop tracked at area resolution).
 
-On **Shared** terminals the Cell context SHALL be selected by the operator at session start using either of two equivalent mechanisms:
+On terminals running a **shared-flavor** view the location context SHALL be selected by the operator at session start using either of two equivalent mechanisms:
 
 1. **Scan** — the operator scans the destination Cell's barcode or QR code, or
-2. **Dropdown** — the operator picks from a dropdown of eligible Cells (the descendant Cells of the terminal's parent Location).
+2. **Dropdown** — the operator picks from a dropdown of eligible Cells (the descendant **equipment** Cells of the terminal's parent Location — Cell-tier Locations excluding the `Terminal` and `Printer` infrastructure kinds; proc `Location.Terminal_ListContextCells`).
 
 The operator MAY change the Cell context mid-session by either mechanism. The new `LocationId` SHALL apply to all subsequent events written from the terminal until changed again.
 
-#### FDS-02-010 — Terminal Mode Determined by Location Assignment — `MVP`
+#### FDS-02-010 — Terminal Behavior Determined by Assigned View — `MVP`
 
-A Terminal's mode (Dedicated or Shared) is **derived from the tier of its parent Location in the ISA-95 hierarchy**. No separate `TerminalMode` attribute is configured.
+A Terminal's dedicated-vs-shared behavior is a property of the **operator view it is assigned** via its `DefaultScreen` attribute. There is no `TerminalMode` — neither derived from the hierarchy nor stored as an attribute. Operator views are authored in one of two flavors:
 
-| Terminal's parent Location tier | Mode | Behavior |
+| | **Shared-flavor view** | **Dedicated-flavor view** |
 |---|---|---|
-| **Cell** | **Dedicated** | Terminal is bound to a specific Cell. Cell context is the parent Cell — fixed, no selector exposed. Operator initials persist with 30-min idle re-confirmation (FDS-04-006). **Example:** a paired Machining + Assembly WorkCenter typically carries two terminals — `MS1-MachiningIntake-Term` parented to the `MS1-Machining` Cell, and `MS1-AssemblyOut-Term` parented to the `MS1-Assembly` Cell. Each terminal is dedicated to its own Cell; both are sibling children of the same WorkCenter. |
-| **WorkCenter** | **Shared** | Terminal serves multiple Cells within a single WorkCenter. Cell context (the specific Cell within the WorkCenter) SHALL be selected at session start by scan or dropdown (FDS-02-009) and MAY be changed mid-session by either mechanism. Initials presence SHALL be re-prompted on first action after idle and on Cell-context change. **Example:** a small trim line where one terminal serves a cluster of trim presses parented to the same WorkCenter. |
-| **Area** | **Shared** | Terminal serves multiple Cells under an Area. Same selection mechanics as the WorkCenter case but the picker spans the entire Area's descendant Cells. **Example:** a Die Cast cabin terminal parented to the `Die Cast` Area, serving all die cast machines beneath it; the operator picks the press by scan or dropdown at session start and re-picks on machine change. |
+| Opening step | Select-location menu (or persistent location dropdown) | None |
+| Location context | Operator-selected from the terminal-parent's descendant equipment Cells (FDS-02-009) | Bound automatically to the Terminal's parent Location (any tier) |
+| Context change | Re-select via the same selector | Not changeable in the UI |
+| Presence policy | `strict` — idle ⇒ initials re-entry; context change ⇒ re-prompt (FDS-04-003) | `confirm` — idle ⇒ "Operate as [XY]? [Yes]" continue (FDS-04-006); initials persist through the shift |
 
-The Gateway `Terminal_ResolveFromSession` proc SHALL read the Terminal Location's parent tier via the Location hierarchy and return `TerminalMode` as a derived result (not a stored attribute). Configuration Tool Location admin screens SHALL let Engineering attach a Terminal under any Cell, WorkCenter, or Area — the mode follows automatically.
+The view sets `session.custom.presence.policy` on load; a single always-present idle watcher branches on it (FDS-04-006 applies to BOTH flavors). **Examples:** the Die Cast cabin terminals (`DC1-T1`..`DC4-T1`) run a shared-flavor view and the operator picks the press; the machining/assembly line terminals (`MA1-*`, `MA2-*`) and Trim Shop terminals run dedicated-flavor views whose context is the line / trim shop itself.
 
-**Why the model works:** The mode IS the assignment. A Terminal parked under a Cell is dedicated to that Cell; a Terminal parked under a WorkCenter or Area is shared across the descendant Cells of that scope. Encoding mode as a separate attribute would be redundant with the tree structure and would invite drift between the two.
+The Gateway terminal resolver returns the terminal identity, parent ("zone"), and `DefaultScreen`; it carries no mode. Configuration Tool Location admin screens let Engineering attach a Terminal under any Cell, WorkCenter, or Area and assign its `DefaultScreen` from the MPP-supplied per-workstation list (Phase 0 Track A item 4) — the behavior follows the assigned view.
+
+**Design history:** v1.0–v1.3a derived the mode from the Terminal's parent tier ("the mode IS the assignment"). That rule was retired 2026-06-10: MPP's machining/assembly lines and trim shops are tracked at line/area resolution with NO equipment cells beneath them, and terminals carry mandatory child Printer locations — the tree cannot reliably encode behavior. See `docs/superpowers/specs/2026-06-10-terminal-mode-view-policy-design.md`.
 
 FUTURE: an `AutoReleaseOnIdle` attribute may be added to tune the re-confirmation interval per terminal — out of MVP.
 
 #### FDS-02-011 — Cell Context Change Rules
 
-- On **Dedicated** terminals the active Cell context SHALL NOT be changeable via the UI. The terminal's parent Cell IS the context for the session; no scan, dropdown, or search is offered.
-- On **Shared** terminals the active Cell context SHALL be changeable only via the FDS-02-009 selectors (scan or dropdown), constrained to descendant Cells of the terminal's parent Location. Each change SHALL write the new `LocationId` on subsequent events. Workflows that require switching context (e.g., reprint on a different Cell) SHALL invoke the same scan-or-dropdown prompt rather than reaching into other Cells programmatically.
+- On terminals running a **dedicated-flavor** view the active location context SHALL NOT be changeable via the UI. The terminal's parent Location IS the context for the session; no scan, dropdown, or search is offered.
+- On terminals running a **shared-flavor** view the active location context SHALL be changeable only via the FDS-02-009 selectors (scan or dropdown), constrained to descendant equipment Cells of the terminal's parent Location. Each change SHALL write the new `LocationId` on subsequent events. Workflows that require switching context (e.g., reprint on a different Cell) SHALL invoke the same scan-or-dropdown prompt rather than reaching into other Cells programmatically.
 
 Both rules together prevent the cross-machine event-attribution failure mode raised by MPP at the 2026-04-20 review. Dropdown selection on shared terminals — when constrained to the terminal's eligible descendant Cells — is functionally equivalent to a scan, and operationally faster for operators carrying multiple LOTs.
 
@@ -743,11 +747,11 @@ When an operator approaches a shop-floor terminal to perform their first action,
 
 Operator presence is NOT an authenticated session. It is a stamping context. The operator cannot perform elevated actions from within it.
 
-#### FDS-04-003 — Terminal Mode: Dedicated vs Shared — `MVP`
-Terminal mode is **derived from the Terminal Location's parent tier** in the ISA-95 hierarchy per FDS-02-010 — it is not configured as a separate attribute.
+#### FDS-04-003 — Presence Policy: Dedicated vs Shared Views — `MVP`
+Presence behavior follows the **view flavor** assigned to the terminal (FDS-02-010), surfaced at runtime as `session.custom.presence.policy`:
 
-- **Dedicated terminals** (Terminal's parent Location is a Cell). The Cell context is fixed, so presence context persists across idle gaps subject only to the 30-minute re-confirmation prompt. Initials do not clear unless explicitly changed.
-- **Shared terminals** (Terminal's parent Location is a WorkCenter or Area; e.g., a Die Cast cabin or Trim Shop where one terminal serves multiple Cells). The presence context SHALL be requested on first action after any idle period longer than the presence-timeout, and SHALL also be re-prompted when the operator changes Cell context — by scan or dropdown — per FDS-02-009.
+- **Dedicated-flavor views** (`policy = confirm`): the location context is fixed, so presence context persists across idle gaps subject only to the 30-minute re-confirmation prompt (FDS-04-006). Initials do not clear unless explicitly changed.
+- **Shared-flavor views** (`policy = strict`; e.g., a Die Cast cabin where one terminal serves multiple presses): the presence context SHALL be requested on first action after any idle period longer than the presence-timeout, and SHALL also be re-prompted when the operator changes location context — by scan or dropdown — per FDS-02-009.
 
 #### FDS-04-004 — Interactive User Authentication
 Interactive users (Quality, Supervisor, Engineering, Admin) SHALL authenticate via Ignition's Active Directory User Source. AD groups SHALL map to the Ignition roles in FDS-04-008. Operators SHALL NOT exist in AD.
@@ -1473,7 +1477,7 @@ Legacy Flexware surfaces this as the "Camera system automatic processing options
 |---|---|---|
 | `RequiresCompletionConfirm` | BIT | When set on a Dedicated (1:1 fixed) Terminal, the Perspective auto-finish completion flow SHALL present a large "Confirm Completion" button the operator must physically press before the WO / Tray / Container close proceeds. When NOT set (or NULL), the flow shows a passive popup ("WorkOrder Completed" / "Tray Completed" / "Container Completed" — whichever is relevant) and proceeds without operator gesture. |
 
-Rationale: some production lines require explicit operator acknowledgement at close moments (MPP's existing operational habit on specific cells); others don't. The attribute lets Engineering configure per Terminal. Only meaningful on Dedicated terminals (FDS-02-010) — Shared terminals always require operator interaction per their mode.
+Rationale: some production lines require explicit operator acknowledgement at close moments (MPP's existing operational habit on specific cells); others don't. The attribute lets Engineering configure per Terminal. Only meaningful on terminals running a dedicated-flavor view (FDS-02-010) — shared-flavor views always require operator interaction at close moments by design.
 
 **Seed behavior:** `RequiresCompletionConfirm` is nullable with NULL semantically equivalent to `0` (no confirm button). Engineering sets it to `1` only where the operational workflow demands acknowledgement.
 
@@ -1898,12 +1902,12 @@ The MES SHALL accept a single time entry per operator per shift, capturing wheth
 
 **Visibility window.** The header SHALL surface a time-entry control from approximately 15 minutes before through 15 minutes after the scheduled shift end. Outside that window the control is hidden.
 
-**Selection mechanism — button-toggle on both terminal modes.** The shift schedule defines the lunch and breaks for that shift. The view renders one **toggleable button per scheduled break** (e.g., `Lunch`, `Break 1`, `Break 2`). The operator taps each button the operator took during this shift; tapping again deselects. There is **no numeric duration entry**, no dropdown, no checkbox list — just toggleable buttons. Durations and start times are resolved from the shift schedule at submit time.
+**Selection mechanism — button-toggle on both view flavors.** The shift schedule defines the lunch and breaks for that shift. The view renders one **toggleable button per scheduled break** (e.g., `Lunch`, `Break 1`, `Break 2`). The operator taps each button the operator took during this shift; tapping again deselects. There is **no numeric duration entry**, no dropdown, no checkbox list — just toggleable buttons. Durations and start times are resolved from the shift schedule at submit time.
 
-**Workflow varies by terminal mode only in identity capture, not in selection** (per FDS-02-010):
+**Workflow varies by view flavor only in identity capture, not in selection** (per FDS-02-010):
 
-- **Dedicated terminals** (Cell-parented). Operator taps any breaks taken, then taps Submit. The submission is recorded against the operator's initials presence context (per FDS-04-002) and the current shift instance.
-- **Shared terminals** (WorkCenter- or Area-parented). Same selection buttons, with one addition: An inline initials field — operator types or scans their initials before submit; Initials resolve to an `AppUser` per FDS-04-005; the submission writes against the current shift instance and stamps the resulting `DowntimeEvent` rows with that user.
+- **Terminals running a dedicated-flavor view.** Operator taps any breaks taken, then taps Submit. The submission is recorded against the operator's initials presence context (per FDS-04-002) and the current shift instance.
+- **Terminals running a shared-flavor view.** Same selection buttons, with one addition: An inline initials field — operator types or scans their initials before submit; Initials resolve to an `AppUser` per FDS-04-005; the submission writes against the current shift instance and stamps the resulting `DowntimeEvent` rows with that user.
 
 The system SHALL write `Oee.DowntimeEvent` rows for each selected lunch / break, with durations and start times populated from the shift schedule's break configuration (durations are NOT operator-entered). This preserves the downtime classification Honda needs for OEE reporting without imposing live-entry friction during production. Selecting zero buttons is valid (operator skipped all breaks); the system writes no `DowntimeEvent` rows in that case but still records the shift-end acknowledgement. (FRS 3.15.2)
 
