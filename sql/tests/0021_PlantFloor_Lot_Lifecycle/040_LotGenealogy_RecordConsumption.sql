@@ -62,6 +62,7 @@ DECLARE @GpId BIGINT = (SELECT LotId FROM #ConsFix WHERE Tag = N'GP');
 DECLARE @CellGp BIGINT = (SELECT CurrentLocationId FROM Lots.Lot WHERE Id = @GpId);
 DECLARE @jsonSplit NVARCHAR(MAX) =
     N'[{"pieceCount":40,"currentLocationId":' + CAST(@CellGp AS NVARCHAR(20)) + N'}]';
+IF OBJECT_ID(N'tempdb..#sp') IS NOT NULL DROP TABLE #sp;
 CREATE TABLE #sp (Status BIT, Message NVARCHAR(500), ChildLotId BIGINT, ChildLotName NVARCHAR(50), PieceCount INT);
 INSERT INTO #sp EXEC Lots.Lot_Split
     @ParentLotId = @GpId, @ChildrenJson = @jsonSplit, @AppUserId = 1;

@@ -196,6 +196,10 @@ BEGIN
         -- closure history, unlike a brand-new split child). On a duplicate
         -- (ancestor, produced) the existing row's depth wins -- acceptable for
         -- consumption per the spec.
+        -- NOTE: the kept Depth reflects the order edges were recorded, not the shortest path.
+        -- The closure table is authoritative for REACHABILITY (does ancestor A reach descendant D?),
+        -- not for exact level. A future read proc that filters WHERE Depth = N must not assume the
+        -- stored Depth is the minimum across all paths.
         INSERT INTO Lots.LotGenealogyClosure (AncestorLotId, DescendantLotId, Depth)
         SELECT c.AncestorLotId, @ProducedLotId, c.Depth + 1
         FROM Lots.LotGenealogyClosure c
