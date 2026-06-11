@@ -14,10 +14,16 @@
 --   production context). Recursive: equipment cells any depth below the
 --   parent qualify.
 --
+--   NOTE: a deprecated INTERMEDIATE Location prunes its entire subtree -
+--   active equipment cells beneath a deprecated container are NOT returned
+--   (a deprecated branch is considered decommissioned).
+--
 --   Empty result set when: the Terminal id is unknown / deprecated / has no
 --   parent, or the parent has no active equipment cells beneath it (e.g., a
 --   machining line tracked at line resolution - dedicated-flavor views bind
---   the parent itself and never call this proc). Never raises.
+--   the parent itself and never call this proc). Never raises under normal
+--   plant hierarchy data; a corrupt parent-cycle or depth > 8 terminates
+--   with Msg 530.
 --
 --   No OUTPUT params (Ignition JDBC). One result set.
 --
@@ -83,6 +89,6 @@ BEGIN
     WHERE lt.Code = N'Cell'
       AND ltd.Code NOT IN (N'Terminal', N'Printer')
     ORDER BY d.Code
-    OPTION (MAXRECURSION 32);
+    OPTION (MAXRECURSION 8);  -- ISA-95 depth below the terminal-parent anchor is <= 4 in any real plant; 8 is a generous ceiling
 END;
 GO

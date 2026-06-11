@@ -22,6 +22,7 @@
 --                   +- TEST-CTX-TERM (Terminal, DefId 7)
 --                        +- TEST-CTX-PRN (Printer, DefId 16)
 --                   +- TEST-CTX-TERM2 (Terminal, DefId 7, NO printer)
+--                   +- TEST-CTX-TDEP (Terminal, DefId 7, deprecated)
 --                 TEST-CTX-LINE (Line, DefId 5)
 --                   +- TEST-CTX-LTERM (Terminal, DefId 7)
 --                        +- TEST-CTX-LPRN (Printer, DefId 16)
@@ -33,7 +34,7 @@ GO
 
 -- ---- teardown any prior fixtures (children before parents) ----
 DELETE FROM Location.Location WHERE Code IN (N'TEST-CTX-PRN', N'TEST-CTX-LPRN');
-DELETE FROM Location.Location WHERE Code IN (N'TEST-CTX-M1', N'TEST-CTX-M2', N'TEST-CTX-MDEP', N'TEST-CTX-TERM', N'TEST-CTX-TERM2', N'TEST-CTX-LTERM');
+DELETE FROM Location.Location WHERE Code IN (N'TEST-CTX-M1', N'TEST-CTX-M2', N'TEST-CTX-MDEP', N'TEST-CTX-TERM', N'TEST-CTX-TERM2', N'TEST-CTX-LTERM', N'TEST-CTX-TDEP');
 DELETE FROM Location.Location WHERE Code IN (N'TEST-CTX-AREA', N'TEST-CTX-LINE');
 GO
 
@@ -63,6 +64,10 @@ DECLARE @LTermId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TEST-
 INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
 VALUES (16, @TermId,  N'Ctx Printer',      N'TEST-CTX-PRN',  N'Printer under terminal', 1),
        (16, @LTermId, N'Ctx Line Printer', N'TEST-CTX-LPRN', N'Printer under line terminal', 1);
+
+-- deprecated terminal under the area (for the deprecated-id test)
+INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder, DeprecatedAt)
+VALUES (7, @AreaId, N'Ctx Terminal Depr', N'TEST-CTX-TDEP', N'Deprecated area terminal', 6, SYSUTCDATETIME());
 GO
 
 -- =============================================
@@ -111,6 +116,20 @@ EXEC test.Assert_RowCount
 GO
 
 -- =============================================
+-- Test 3b: Deprecated terminal id -> empty set
+-- =============================================
+DECLARE @DepTermId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TEST-CTX-TDEP');
+DECLARE @Rows INT;
+CREATE TABLE #CD (LocationId BIGINT, Code NVARCHAR(50), Name NVARCHAR(200), Kind NVARCHAR(100));
+INSERT INTO #CD EXEC Location.Terminal_ListContextCells @TerminalId = @DepTermId;
+SELECT @Rows = COUNT(*) FROM #CD;
+DROP TABLE #CD;
+EXEC test.Assert_RowCount
+    @TestName = N'[CtxCells] Deprecated terminal id -> empty set',
+    @ExpectedCount = 0, @ActualCount = @Rows;
+GO
+
+-- =============================================
 -- Test 4: Terminal_List v1.1 shape + HasPrinter flags
 -- =============================================
 DECLARE @HasPrn BIT, @NoPrn BIT, @HasStr NVARCHAR(1), @NoStr NVARCHAR(1);
@@ -133,7 +152,7 @@ GO
 
 -- ---- cleanup (children before parents) ----
 DELETE FROM Location.Location WHERE Code IN (N'TEST-CTX-PRN', N'TEST-CTX-LPRN');
-DELETE FROM Location.Location WHERE Code IN (N'TEST-CTX-M1', N'TEST-CTX-M2', N'TEST-CTX-MDEP', N'TEST-CTX-TERM', N'TEST-CTX-TERM2', N'TEST-CTX-LTERM');
+DELETE FROM Location.Location WHERE Code IN (N'TEST-CTX-M1', N'TEST-CTX-M2', N'TEST-CTX-MDEP', N'TEST-CTX-TERM', N'TEST-CTX-TERM2', N'TEST-CTX-LTERM', N'TEST-CTX-TDEP');
 DELETE FROM Location.Location WHERE Code IN (N'TEST-CTX-AREA', N'TEST-CTX-LINE');
 GO
 
