@@ -58,7 +58,7 @@
       ]
     },
     "events": {
-      "component": {
+      "system": {
         "onStartup": {
           "type": "script",
           "scope": "G",
