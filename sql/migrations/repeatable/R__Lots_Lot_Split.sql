@@ -26,8 +26,10 @@
 --              So each child LOT is INSERTed inline with the SAME side effects
 --              Lot_Create produces (LotStatusHistory 'Good' row, LotGenealogyClosure
 --              self-row Depth=0, first LotMovement From=NULL), mirroring its INSERT
---              column list exactly so split children are indistinguishable from
---              normally-created LOTs. The child LotName is the parent-derived
+--              column list so split children are indistinguishable from
+--              normally-created LOTs -- with ONE deliberate exception: MaxPieceCount
+--              is set NULL for sublots (Machining LOTs, FDS-05-023; MaxLotSize is a
+--              Lot_Create origin-creation constraint only). The child LotName is the parent-derived
 --              suffix (NOT minted from IdentifierSequence_Next -- B6 is not
 --              consulted for split children per spec section 2.2), so no sequence
 --              counter is burned.
@@ -333,7 +335,8 @@ BEGIN
                 CreatedByUserId, CreatedAtTerminalId, CreatedAt
             )
             VALUES (
-                @ChildName, @ParentItem, @ParentOrigin, @GoodStatusId, @ChildPc, NULL,
+                @ChildName, @ParentItem, @ParentOrigin, @GoodStatusId, @ChildPc,
+                NULL,   -- MaxPieceCount intentionally NULL for sublots (Machining LOTs, FDS-05-023); MaxLotSize is a Lot_Create origin-creation constraint only.
                 NULL, NULL, NULL, NULL, NULL,
                 NULL, NULL, @ParentLotId, @ChildLoc,
                 0, @ChildPc,                              -- B5 materialized: TotalInProcess / InventoryAvailable
@@ -374,6 +377,7 @@ BEGIN
 
         -- ---- 10. Reduce parent PieceCount (inline; mirrors Lot_UpdateAttribute) ----
         DECLARE @Residual INT = @ParentPc - @SumChildren;
+        DECLARE @ParentClosed BIT = 0;   -- read later in the audit JSON; declared here (T-SQL has no block scope) for clarity.
 
         INSERT INTO Lots.LotAttributeChange (LotId, AttributeName, OldValue, NewValue, ChangedByUserId, TerminalLocationId, ChangedAt)
         VALUES (@ParentLotId, N'PieceCount', CAST(@ParentPc AS NVARCHAR(500)), CAST(@Residual AS NVARCHAR(500)), @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
@@ -386,7 +390,6 @@ BEGIN
         WHERE Id = @ParentLotId;
 
         -- ---- 11. Auto-Close the parent at residual 0 (inline; mirrors Lot_UpdateStatus) ----
-        DECLARE @ParentClosed BIT = 0;
         IF @Residual = 0
         BEGIN
             UPDATE Lots.Lot

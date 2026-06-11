@@ -262,6 +262,9 @@ DECLARE @P99Loc BIGINT = (SELECT CurrentLocationId FROM Lots.Lot WHERE Id = @P99
 DECLARE @stItem BIGINT = (SELECT ItemId FROM Lots.Lot WHERE Id = @P99);
 DECLARE @stOrigin BIGINT = (SELECT LotOriginTypeId FROM Lots.Lot WHERE Id = @P99);
 DECLARE @stGood BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Good');
+-- Stub child: only LotName + ParentLotId are needed to drive the ordinal probe to 100.
+-- LotStatusHistory / self-closure side-effects are intentionally omitted -- this parent
+-- is rejected at validation and never reaches the mutation path.
 INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount,
     ParentLotId, CurrentLocationId, TotalInProcess, InventoryAvailable,
     CreatedByUserId, CreatedAt)
