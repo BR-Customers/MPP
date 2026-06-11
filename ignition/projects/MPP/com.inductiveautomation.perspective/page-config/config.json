@@ -4,6 +4,10 @@
       "title": "MPP MES",
       "viewPath": "BlueRidge/Views/ShopFloor/HomeRouter"
     },
+    "/navigation-testing": {
+      "title": "",
+      "viewPath": "BlueRidge/Views/Navigation Testing"
+    },
     "/shop-floor/initials": {
       "title": "Operator Entry",
       "viewPath": "BlueRidge/Views/ShopFloor/InitialsEntry"
@@ -12,5 +16,6 @@
       "title": "Select Terminal",
       "viewPath": "BlueRidge/Views/ShopFloor/TerminalSelector"
     }
-  }
+  },
+  "sharedDocks": {}
 }
