@@ -42,6 +42,11 @@
           "script": "\tself.view.custom.error = \"\"\n\tself.view.custom.initials = \"\""
         },
         {
+          "name": "backspaceKey",
+          "params": [],
+          "script": "\tself.view.custom.error = \"\"\n\tself.view.custom.initials = (self.view.custom.initials or \"\")[:-1]"
+        },
+        {
           "name": "loginAs",
           "params": [
             "appUserId",
@@ -63,7 +68,7 @@
           "pageScope": true,
           "sessionScope": false,
           "viewScope": false,
-          "script": "\ta = payload.get(\"action\") if payload else None\n\tif a == \"key\":\n\t\tself.appendKey(payload.get(\"key\"))\n\telif a == \"clear\":\n\t\tself.clearKeys()\n\telif a == \"enter\":\n\t\tself.submitInitials()"
+          "script": "\ta = payload.get(\"action\") if payload else None\n\tif a == \"key\":\n\t\tself.appendKey(payload.get(\"key\"))\n\telif a == \"space\":\n\t\tself.appendKey(\" \")\n\telif a == \"backspace\":\n\t\tself.backspaceKey()\n\telif a == \"clear\":\n\t\tself.clearKeys()\n\telif a == \"enter\":\n\t\tself.submitInitials()"
         },
         {
           "messageType": "unknownInitialsResult",
@@ -203,7 +208,7 @@
           "name": "Keyboard"
         },
         "position": {
-          "basis": "240px",
+          "basis": "300px",
           "shrink": 0
         },
         "props": {

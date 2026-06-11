@@ -26,7 +26,7 @@
   },
   "props": {
     "defaultSize": {
-      "height": 720,
+      "height": 760,
       "width": 880
     }
   },
@@ -83,7 +83,7 @@
           "pageScope": true,
           "sessionScope": false,
           "viewScope": false,
-          "script": "\ta = payload.get(\"action\") if payload else None\n\tif a == \"key\":\n\t\tself.appendToFocused(payload.get(\"key\"))\n\telif a == \"clear\":\n\t\tself.clearFocused()\n\telif a == \"enter\":\n\t\tself.saveOperator()"
+          "script": "\ta = payload.get(\"action\") if payload else None\n\tif a == \"key\":\n\t\tself.appendToFocused(payload.get(\"key\"))\n\telif a == \"space\":\n\t\tself.appendToFocused(\" \")\n\telif a == \"backspace\":\n\t\tself.backspaceFocused()\n\telif a == \"clear\":\n\t\tself.clearFocused()\n\telif a == \"enter\":\n\t\tself.saveOperator()"
         }
       ]
     },
@@ -341,7 +341,7 @@
               "name": "Keyboard"
             },
             "position": {
-              "basis": "210px",
+              "basis": "280px",
               "shrink": 0
             },
             "props": {
@@ -355,83 +355,6 @@
               "useDefaultViewHeight": false,
               "useDefaultViewWidth": false
             }
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": {
-              "name": "HelperKeys"
-            },
-            "position": {
-              "basis": "auto",
-              "shrink": 0
-            },
-            "props": {
-              "alignItems": "center",
-              "justify": "center",
-              "style": {
-                "gap": "8px"
-              }
-            },
-            "children": [
-              {
-                "type": "ia.input.button",
-                "meta": {
-                  "name": "SpaceButton"
-                },
-                "position": {
-                  "basis": "0",
-                  "grow": 1,
-                  "shrink": 0
-                },
-                "props": {
-                  "text": "Space",
-                  "style": {
-                    "classes": "pf-btn pf-btn-large pf-btn-secondary",
-                    "height": "62px"
-                  }
-                },
-                "events": {
-                  "component": {
-                    "onActionPerformed": {
-                      "type": "script",
-                      "scope": "G",
-                      "config": {
-                        "script": "\tself.view.rootContainer.appendToFocused(\" \")"
-                      }
-                    }
-                  }
-                }
-              },
-              {
-                "type": "ia.input.button",
-                "meta": {
-                  "name": "BackspaceButton"
-                },
-                "position": {
-                  "basis": "200px",
-                  "grow": 0,
-                  "shrink": 0
-                },
-                "props": {
-                  "text": "Backspace",
-                  "style": {
-                    "classes": "pf-btn pf-btn-large pf-btn-secondary",
-                    "height": "62px"
-                  }
-                },
-                "events": {
-                  "component": {
-                    "onActionPerformed": {
-                      "type": "script",
-                      "scope": "G",
-                      "config": {
-                        "script": "\tself.view.rootContainer.backspaceFocused()"
-                      }
-                    }
-                  }
-                }
-              }
-            ]
           },
           {
             "type": "ia.display.label",
