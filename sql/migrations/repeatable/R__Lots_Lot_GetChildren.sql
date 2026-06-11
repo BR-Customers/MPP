@@ -18,9 +18,11 @@
 --                ChildLotId BIGINT, ChildLotName NVARCHAR(50), ItemId BIGINT,
 --                ItemCode NVARCHAR(50), RelationshipTypeCode NVARCHAR(20),
 --                RelationshipTypeName NVARCHAR(100), PieceCount INT,
+--                EventUserId BIGINT, EventUserName NVARCHAR(200),
 --                EventAt DATETIME2(3)
---              ItemCode is Parts.Item.PartNumber. Ordered by EventAt then
---              ChildLotName for a stable, chronological listing.
+--              ItemCode is Parts.Item.PartNumber. EventUserName is the acting
+--              operator resolved from Location.AppUser.DisplayName. Ordered by
+--              EventAt then ChildLotName for a stable, chronological listing.
 -- ============================================================
 
 CREATE OR ALTER PROCEDURE Lots.Lot_GetChildren
@@ -37,11 +39,14 @@ BEGIN
         rt.Code       AS RelationshipTypeCode,
         rt.Name       AS RelationshipTypeName,
         g.PieceCount,
+        g.EventUserId,
+        au.DisplayName AS EventUserName,
         g.EventAt
     FROM Lots.LotGenealogy g
     INNER JOIN Lots.Lot                       cl ON cl.Id = g.ChildLotId
     INNER JOIN Parts.Item                     i  ON i.Id  = cl.ItemId
     INNER JOIN Lots.GenealogyRelationshipType rt ON rt.Id = g.RelationshipTypeId
+    INNER JOIN Location.AppUser               au ON au.Id = g.EventUserId
     WHERE g.ParentLotId = @LotId
     ORDER BY g.EventAt, cl.LotName;
 END;

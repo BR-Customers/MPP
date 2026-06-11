@@ -16,7 +16,7 @@
 --               A genuine 3-level tree is built with the REAL Lots.Lot_Split proc so
 --               the closure/edge rows the reads project are exactly what the writers
 --               produce:
---                   GP  --split 2-->  P1, P2          (P1, P2 are GP's children)
+--                   GP  --split 2-->  P1, P2          (P1, P2 are GP's direct children, and are themselves parents of L1/L2)
 --                   P1  --split 2-->  P1-01, P1-02    (leaves; GP's grandchildren)
 --               Descendants(GP) = {P1, P2, P1-01, P1-02} (P1-01/-02 at Depth 2).
 --               Ancestors(P1-01) = {P1 (Depth 1), GP (Depth 2)}.
@@ -181,7 +181,8 @@ DECLARE @P1 BIGINT = (SELECT LotId FROM #GenFix WHERE Tag = N'P1');
 
 IF OBJECT_ID(N'tempdb..#par') IS NOT NULL DROP TABLE #par;
 CREATE TABLE #par (ParentLotId BIGINT, ParentLotName NVARCHAR(50), ItemId BIGINT, ItemCode NVARCHAR(50),
-                   RelationshipTypeCode NVARCHAR(20), RelationshipTypeName NVARCHAR(100), PieceCount INT, EventAt DATETIME2(3));
+                   RelationshipTypeCode NVARCHAR(20), RelationshipTypeName NVARCHAR(100), PieceCount INT,
+                   EventUserId BIGINT, EventUserName NVARCHAR(200), EventAt DATETIME2(3));
 INSERT INTO #par EXEC Lots.Lot_GetParents @LotId = @L1;
 
 DECLARE @parCount INT = (SELECT COUNT(*) FROM #par);
@@ -206,7 +207,8 @@ DECLARE @L2 BIGINT = (SELECT LotId FROM #GenFix WHERE Tag = N'L2');
 
 IF OBJECT_ID(N'tempdb..#chl') IS NOT NULL DROP TABLE #chl;
 CREATE TABLE #chl (ChildLotId BIGINT, ChildLotName NVARCHAR(50), ItemId BIGINT, ItemCode NVARCHAR(50),
-                   RelationshipTypeCode NVARCHAR(20), RelationshipTypeName NVARCHAR(100), PieceCount INT, EventAt DATETIME2(3));
+                   RelationshipTypeCode NVARCHAR(20), RelationshipTypeName NVARCHAR(100), PieceCount INT,
+                   EventUserId BIGINT, EventUserName NVARCHAR(200), EventAt DATETIME2(3));
 INSERT INTO #chl EXEC Lots.Lot_GetChildren @LotId = @P1;
 
 DECLARE @chlCount INT = (SELECT COUNT(*) FROM #chl);
@@ -221,7 +223,8 @@ EXEC test.Assert_IsTrue @TestName = N'[Children] direct children are exactly L1 
 -- A leaf has no children -> empty result set.
 IF OBJECT_ID(N'tempdb..#chl2') IS NOT NULL DROP TABLE #chl2;
 CREATE TABLE #chl2 (ChildLotId BIGINT, ChildLotName NVARCHAR(50), ItemId BIGINT, ItemCode NVARCHAR(50),
-                    RelationshipTypeCode NVARCHAR(20), RelationshipTypeName NVARCHAR(100), PieceCount INT, EventAt DATETIME2(3));
+                    RelationshipTypeCode NVARCHAR(20), RelationshipTypeName NVARCHAR(100), PieceCount INT,
+                    EventUserId BIGINT, EventUserName NVARCHAR(200), EventAt DATETIME2(3));
 INSERT INTO #chl2 EXEC Lots.Lot_GetChildren @LotId = @L1;
 DECLARE @leafChildren INT = (SELECT COUNT(*) FROM #chl2);
 EXEC test.Assert_RowCount @TestName = N'[Children] leaf has no children (empty set)', @ExpectedCount = 0, @ActualCount = @leafChildren;
@@ -234,7 +237,11 @@ GO
 --         (PieceCount change -> Attribute) + a Lot_MoveTo (Movement) on HIST -- on
 --         top of the create-time Status + first Movement rows -- the proc returns
 --         >= 2 rows spanning >= 2 distinct EventKinds, ordered ascending by EventAt.
+--         The two mutations are asserted Status=1 so a silent failure (which would
+--         leave only Lot_Create's own Status+Movement rows) is a test failure, not a
+--         false pass.
 -- =============================================
+SET XACT_ABORT ON;
 DECLARE @Hist BIGINT = (SELECT LotId FROM #GenFix WHERE Tag = N'HIST');
 DECLARE @HistLoc BIGINT = (SELECT CurrentLocationId FROM Lots.Lot WHERE Id = @Hist);
 
@@ -242,12 +249,20 @@ DECLARE @HistLoc BIGINT = (SELECT CurrentLocationId FROM Lots.Lot WHERE Id = @Hi
 DECLARE @upd TABLE (Status BIT, Message NVARCHAR(500));
 INSERT INTO @upd EXEC Lots.Lot_Update @LotId = @Hist, @PieceCount = 55, @AppUserId = 1;
 
+DECLARE @updStatus BIT = (SELECT TOP 1 Status FROM @upd);
+EXEC test.Assert_IsTrue @TestName = N'[History] Lot_Update succeeded (Status=1)', @Condition = @updStatus;
+
 -- Movement to any OTHER active location (Lot_MoveTo does not gate destination on
 -- eligibility; it only requires the destination to exist and differ).
 DECLARE @MoveTo BIGINT = (SELECT TOP 1 Id FROM Location.Location
                           WHERE DeprecatedAt IS NULL AND Id <> @HistLoc ORDER BY Id);
+EXEC test.Assert_IsNotNull @TestName = N'[History] a destination location resolved for MoveTo', @Value = @MoveTo;
+
 DECLARE @mv TABLE (Status BIT, Message NVARCHAR(500));
 INSERT INTO @mv EXEC Lots.Lot_MoveTo @LotId = @Hist, @ToLocationId = @MoveTo, @AppUserId = 1;
+
+DECLARE @mvStatus BIT = (SELECT TOP 1 Status FROM @mv);
+EXEC test.Assert_IsTrue @TestName = N'[History] Lot_MoveTo succeeded (Status=1)', @Condition = @mvStatus;
 
 IF OBJECT_ID(N'tempdb..#hist') IS NOT NULL DROP TABLE #hist;
 CREATE TABLE #hist (EventAt DATETIME2(3), EventKind NVARCHAR(20), Detail NVARCHAR(500), ByUserId BIGINT, ByUserName NVARCHAR(200));
@@ -261,10 +276,14 @@ DECLARE @kinds INT = (SELECT COUNT(DISTINCT EventKind) FROM #hist);
 DECLARE @kindsAtLeast2 BIT = CASE WHEN @kinds >= 2 THEN 1 ELSE 0 END;
 EXEC test.Assert_IsTrue @TestName = N'[History] spans >= 2 distinct EventKinds', @Condition = @kindsAtLeast2;
 
--- Attribute + Movement streams both present.
-DECLARE @hasAttr INT = (SELECT COUNT(*) FROM #hist WHERE EventKind = N'Attribute');
+-- Attribute + Movement streams both present, and specifically the rows produced by
+-- the two mutations above (not merely the create-time Status/Movement). The
+-- Attribute Detail format is '<AttributeName>: <Old> -> <New>', so the PieceCount
+-- change surfaces as 'PieceCount: ...' (see Lots.Lot_GetAttributeHistory).
+DECLARE @hasAttr INT = (SELECT COUNT(*) FROM #hist
+                        WHERE EventKind = N'Attribute' AND Detail LIKE N'PieceCount%');
 DECLARE @hasAttrBit BIT = CASE WHEN @hasAttr >= 1 THEN 1 ELSE 0 END;
-EXEC test.Assert_IsTrue @TestName = N'[History] Attribute stream present', @Condition = @hasAttrBit;
+EXEC test.Assert_IsTrue @TestName = N'[History] Attribute stream present (PieceCount change row)', @Condition = @hasAttrBit;
 
 DECLARE @hasMove INT = (SELECT COUNT(*) FROM #hist WHERE EventKind = N'Movement');
 DECLARE @hasMoveBit BIT = CASE WHEN @hasMove >= 1 THEN 1 ELSE 0 END;
