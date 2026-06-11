@@ -144,6 +144,20 @@ INSERT INTO @cr EXEC Lots.Lot_Create
     @PieceCount = 12, @AppUserId = 1;
 INSERT INTO #MrgFix (Tag, LotId, LotName) SELECT N'O2', NewId, MintedLotName FROM @cr;
 
+-- D1 (TOOL_X / rankX), D2 (TOOL_X2 / rankX) -> two DIFFERENT tools of the SAME
+-- die rank. Proves the SELECT DISTINCT DieRankId dedup collapses two ToolIds to
+-- one rank, so the merge succeeds with @SupervisorOverride=0.
+DELETE FROM @cr;
+INSERT INTO @cr EXEC Lots.Lot_Create
+    @ItemId = @ItemId, @LotOriginTypeId = @OriginRcv, @CurrentLocationId = @CellId,
+    @PieceCount = 13, @AppUserId = 1;
+INSERT INTO #MrgFix (Tag, LotId, LotName) SELECT N'D1', NewId, MintedLotName FROM @cr;
+DELETE FROM @cr;
+INSERT INTO @cr EXEC Lots.Lot_Create
+    @ItemId = @ItemId, @LotOriginTypeId = @OriginRcv, @CurrentLocationId = @CellId,
+    @PieceCount = 14, @AppUserId = 1;
+INSERT INTO #MrgFix (Tag, LotId, LotName) SELECT N'D2', NewId, MintedLotName FROM @cr;
+
 -- Wire ToolIds onto the source LOTs (rank rule keys off Lots.Lot.ToolId).
 UPDATE Lots.Lot SET ToolId = (SELECT ToolId FROM #MrgTool WHERE Tag = N'TOOL_X')  WHERE Id = (SELECT LotId FROM #MrgFix WHERE Tag = N'A1');
 UPDATE Lots.Lot SET ToolId = (SELECT ToolId FROM #MrgTool WHERE Tag = N'TOOL_X')  WHERE Id = (SELECT LotId FROM #MrgFix WHERE Tag = N'A2');
@@ -153,6 +167,8 @@ UPDATE Lots.Lot SET ToolId = (SELECT ToolId FROM #MrgTool WHERE Tag = N'TOOL_X')
 UPDATE Lots.Lot SET ToolId = (SELECT ToolId FROM #MrgTool WHERE Tag = N'TOOL_N')  WHERE Id = (SELECT LotId FROM #MrgFix WHERE Tag = N'I2');
 UPDATE Lots.Lot SET ToolId = (SELECT ToolId FROM #MrgTool WHERE Tag = N'TOOL_X')  WHERE Id = (SELECT LotId FROM #MrgFix WHERE Tag = N'O1');
 UPDATE Lots.Lot SET ToolId = (SELECT ToolId FROM #MrgTool WHERE Tag = N'TOOL_N')  WHERE Id = (SELECT LotId FROM #MrgFix WHERE Tag = N'O2');
+UPDATE Lots.Lot SET ToolId = (SELECT ToolId FROM #MrgTool WHERE Tag = N'TOOL_X')  WHERE Id = (SELECT LotId FROM #MrgFix WHERE Tag = N'D1');
+UPDATE Lots.Lot SET ToolId = (SELECT ToolId FROM #MrgTool WHERE Tag = N'TOOL_X2') WHERE Id = (SELECT LotId FROM #MrgFix WHERE Tag = N'D2');
 GO
 
 -- =============================================
@@ -228,6 +244,28 @@ DECLARE @okC BIT = (SELECT Status FROM @rC);
 EXEC test.Assert_IsTrue @TestName = N'[Merge] cross-Tool rank-compat=1 succeeds', @Condition = @okC;
 INSERT INTO #MrgFix (Tag, LotId, LotName)
     SELECT N'OUT_C', NewId, (SELECT LotName FROM Lots.Lot WHERE Id = (SELECT NewId FROM @rC)) FROM @rC;
+GO
+
+-- =============================================
+-- Test 2b: two DIFFERENT tools of the SAME die rank merge successfully with
+--          @SupervisorOverride=0 (D1 TOOL_X / rankX, D2 TOOL_X2 / rankX). The
+--          SELECT DISTINCT DieRankId dedup collapses both ToolIds to one rank,
+--          so the rank gate (which needs 2+ distinct ranks) is skipped.
+-- =============================================
+DECLARE @D1 BIGINT = (SELECT LotId FROM #MrgFix WHERE Tag = N'D1');
+DECLARE @D2 BIGINT = (SELECT LotId FROM #MrgFix WHERE Tag = N'D2');
+DECLARE @ItemD BIGINT = (SELECT ItemId FROM Lots.Lot WHERE Id = @D1);
+DECLARE @LocD BIGINT = (SELECT CurrentLocationId FROM Lots.Lot WHERE Id = @D1);
+DECLARE @jsonD NVARCHAR(MAX) = N'[' + CAST(@D1 AS NVARCHAR(20)) + N',' + CAST(@D2 AS NVARCHAR(20)) + N']';
+
+DECLARE @rD TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @rD EXEC Lots.Lot_Merge
+    @SourceLotIdsJson = @jsonD, @OutputItemId = @ItemD, @OutputLocationId = @LocD, @AppUserId = 1, @SupervisorOverride = 0;
+
+DECLARE @okD BIT = (SELECT Status FROM @rD);
+EXEC test.Assert_IsTrue @TestName = N'[Merge] two tools sharing one die rank merge (no override)', @Condition = @okD;
+INSERT INTO #MrgFix (Tag, LotId, LotName)
+    SELECT N'OUT_D', NewId, (SELECT LotName FROM Lots.Lot WHERE Id = (SELECT NewId FROM @rD)) FROM @rD;
 GO
 
 -- =============================================
@@ -396,6 +434,8 @@ BEGIN
     DECLARE @sMixCond BIT = CASE WHEN @sMix = 0 THEN 1 ELSE 0 END;
     EXEC test.Assert_IsTrue @TestName = N'[Merge] mixed-Item sources rejected (Status=0)', @Condition = @sMixCond;
 END
+ELSE
+    PRINT N'[Merge] mixed-Item rejected - SKIPPED (only one eligible Item in DB)';
 
 -- 6c: non-Good source rejected. Create two sources, force one to Hold.
 DECLARE @crN1 TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));

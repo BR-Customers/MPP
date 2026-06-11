@@ -39,8 +39,9 @@
 --              Flow: validate params -> parse @SourceLotIdsJson -> validate
 --              >=2 distinct sources / each exists / each not-blocked (inline B2
 --              guard) / all same ItemId = @OutputItemId / all Good -> die-rank
---              compat check (only when sources differ in ToolId): for each differing
---              pair consult Tools.DieRankCompatibility (CanMix=1 compatible; CanMix=0
+--              compat check (only when sources carry 2+ distinct non-NULL
+--              DieRankIds): for each differing rank pair consult
+--              Tools.DieRankCompatibility (CanMix=1 compatible; CanMix=0
 --              OR no-row = incompatible); any incompatible pair AND
 --              @SupervisorOverride=0 -> reject; @SupervisorOverride=1 bypasses the
 --              rank check entirely -> BEGIN TRAN -> inline-mint + INSERT the output
@@ -225,11 +226,15 @@ BEGIN
             RETURN;
         END
 
-        -- ---- 8. Die-rank compatibility (only when sources differ in ToolId) ----
+        -- ---- 8. Die-rank compatibility (only when sources carry 2+ distinct
+        -- non-NULL DieRankIds) ----
         -- The rule keys off each source LOT's ToolId -> Tools.Tool.DieRankId.
-        -- Build the set of DISTINCT die ranks across the sources (NULL rank --
-        -- a LOT with no ToolId, or a Tool with no DieRankId -- is excluded from the
-        -- pairing; the rank gate concerns Tool-bearing differing ranks only).
+        -- Two different ToolIds that resolve to the SAME DieRankId collapse to one
+        -- rank and skip the check (the gate is rank-driven, not ToolId-driven).
+        -- Build the set of DISTINCT die ranks across the sources. Sources with a
+        -- NULL ToolId or a NULL DieRankId (e.g. blended Received-origin LOTs) are
+        -- intentionally excluded from the rank set; the gate concerns Tool-bearing
+        -- differing ranks only.
         -- For EACH distinct unordered rank pair, look up Tools.DieRankCompatibility
         -- canonically (RankAId <= RankBId): CanMix=1 is compatible; CanMix=0 OR
         -- no row is INCOMPATIBLE. If any pair is incompatible and there is no
@@ -275,11 +280,28 @@ BEGIN
             END
         END
 
+        -- ---- 8b. Overflow guard on the merged PieceCount ----
+        -- Sum into BIGINT first: a large consolidation merge is the one path that
+        -- produces a quantity larger than any single input, so the INT @OutPc could
+        -- overflow INT_MAX. Reject cleanly before opening the txn.
+        DECLARE @OutPcBig BIGINT = (SELECT SUM(CAST(l.PieceCount AS BIGINT)) FROM @Sources s INNER JOIN Lots.Lot l ON l.Id = s.LotId);
+        IF @OutPcBig > 2147483647
+        BEGIN
+            SET @Message = N'Merged piece count exceeds the maximum supported lot size.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
+                @EntityId = NULL, @LogEventTypeCode = N'LotMerged',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, CAST(NULL AS BIGINT) AS NewId;
+            RETURN;
+        END
+
         -- Output PieceCount = SUM of source PieceCounts (computed pre-tran; values
         -- are stable because sources are Good and serialized below via the inline
         -- Close. A concurrent mutation of a source between here and the txn is a
         -- genuine race surfaced through the CATCH.)
-        DECLARE @OutPc INT = (SELECT SUM(l.PieceCount) FROM @Sources s INNER JOIN Lots.Lot l ON l.Id = s.LotId);
+        DECLARE @OutPc INT = CAST(@OutPcBig AS INT);
 
         -- ===== Mutation (atomic) =====
         BEGIN TRANSACTION;
@@ -358,12 +380,25 @@ BEGIN
         SELECT s.LotId, @NewId, @MergeRelId, l.PieceCount, @AppUserId, @TerminalLocationId
         FROM @Sources s INNER JOIN Lots.Lot l ON l.Id = s.LotId;
 
+        -- Capture the pre-mutation source state for the audit @OldValue BEFORE the
+        -- inline source-close below. The close doesn't touch PieceCount today, but
+        -- capturing here keeps @OldValue correct even if a future close starts
+        -- zeroing source PieceCount.
+        DECLARE @OldValue NVARCHAR(MAX) = (
+            SELECT JSON_QUERY((
+                SELECT l.Id, l.LotName, l.PieceCount
+                FROM @Sources s INNER JOIN Lots.Lot l ON l.Id = s.LotId
+                ORDER BY l.Id
+                FOR JSON PATH)) AS Sources
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+
         -- Inline-Close each source (mirrors Lot_UpdateStatus: UPDATE LotStatusId +
         -- a LotStatusHistory Old=Good->Closed row).
         INSERT INTO Lots.LotStatusHistory (LotId, OldStatusId, NewStatusId, Reason, ChangedByUserId, TerminalLocationId, ChangedAt)
         SELECT s.LotId, @GoodStatusId, @ClosedStatusId, N'Closed by merge (pieces folded into merged output).', @AppUserId, @TerminalLocationId, SYSUTCDATETIME()
         FROM @Sources s;
 
+        -- Mirrors Lot_UpdateStatus's Phase-1 close (LotStatusId/UpdatedAt/UpdatedByUserId only). If Lot_UpdateStatus later zeroes B5 materialized cols (InventoryAvailable/TotalInProcess) on Close, mirror that here.
         UPDATE l
         SET l.LotStatusId    = @ClosedStatusId,
             l.UpdatedAt      = SYSUTCDATETIME(),
@@ -392,14 +427,8 @@ BEGIN
             + CASE WHEN @SupervisorOverride = 1 THEN N' (supervisor override)' ELSE N'' END;
         DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
 
-        DECLARE @OldValue NVARCHAR(MAX) = (
-            SELECT JSON_QUERY((
-                SELECT l.Id, l.LotName, l.PieceCount
-                FROM @Sources s INNER JOIN Lots.Lot l ON l.Id = s.LotId
-                ORDER BY l.Id
-                FOR JSON PATH)) AS Sources
-            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
-
+        -- @OldValue (pre-mutation source snapshot) was captured above, before the
+        -- inline source-close.
         DECLARE @NewValue NVARCHAR(MAX) = (
             SELECT l.Id, l.LotName, l.PieceCount,
                    JSON_QUERY((SELECT i.Id, i.PartNumber AS Code, i.Description AS Name
