@@ -4,93 +4,44 @@
     "initials": ""
   },
   "params": {},
-  "propConfig": {},
   "props": {
     "defaultSize": {
-      "height": 800,
       "width": 1280
     }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": {
-      "name": "root"
-    },
-    "props": {
-      "direction": "column",
-      "alignItems": "center",
-      "justify": "center",
-      "style": {
-        "classes": "canvas",
-        "padding": "32px",
-        "gap": "20px"
-      }
-    },
-    "scripts": {
-      "customMethods": [
-        {
-          "name": "appendKey",
-          "params": [
-            "ch"
-          ],
-          "script": "\tself.view.custom.error = \"\"\n\tself.view.custom.initials = (self.view.custom.initials or \"\") + ch"
-        },
-        {
-          "name": "clearKeys",
-          "params": [],
-          "script": "\tself.view.custom.error = \"\"\n\tself.view.custom.initials = \"\""
-        },
-        {
-          "name": "submitInitials",
-          "params": [],
-          "script": "\tu = BlueRidge.Location.AppUser.getByInitials((self.view.custom.initials or \"\").strip().upper())\n\tif u is None:\n\t\tself.view.custom.error = \"Initials not recognised - ask Admin to add this operator\"\n\t\treturn\n\tself.session.custom.user = {\"appUserId\": u[\"Id\"], \"initials\": u[\"Initials\"], \"displayName\": u[\"DisplayName\"], \"ignitionRole\": u.get(\"IgnitionRole\")}\n\tself.session.custom.appUserId = u[\"Id\"]\n\tsystem.perspective.navigate(self.session.custom.terminal.defaultScreen or \"/\")"
-        }
-      ],
-      "messageHandlers": [
-        {
-          "messageType": "initialsKeyPressed",
-          "pageScope": true,
-          "sessionScope": false,
-          "viewScope": false,
-          "script": "\ta = payload.get(\"action\") if payload else None\n\tif a == \"key\":\n\t\tself.appendKey(payload.get(\"key\"))\n\telif a == \"clear\":\n\t\tself.clearKeys()\n\telif a == \"enter\":\n\t\tself.submitInitials()"
-        }
-      ]
-    },
     "children": [
       {
-        "type": "ia.display.label",
         "meta": {
           "name": "Heading"
         },
         "position": {
-          "basis": "auto",
           "shrink": 0
         },
         "props": {
-          "text": "Enter your initials",
           "style": {
             "color": "var(--mpp-text-primary)",
             "fontSize": "34px",
             "fontWeight": "600"
-          }
-        }
+          },
+          "text": "Enter your initials"
+        },
+        "type": "ia.display.label"
       },
       {
-        "type": "ia.display.label",
         "meta": {
           "name": "TerminalName"
         },
         "position": {
-          "basis": "auto",
           "shrink": 0
         },
         "propConfig": {
           "props.text": {
             "binding": {
-              "type": "property",
               "config": {
                 "path": "session.custom.terminal.terminalName"
-              }
+              },
+              "type": "property"
             }
           }
         },
@@ -99,55 +50,64 @@
             "color": "var(--mpp-text-secondary)",
             "fontSize": "16px"
           }
-        }
+        },
+        "type": "ia.display.label"
       },
       {
-        "type": "ia.display.label",
         "meta": {
           "name": "InitialsEcho"
         },
         "position": {
-          "basis": "auto",
           "shrink": 0
         },
         "propConfig": {
           "props.text": {
             "binding": {
-              "type": "expr",
               "config": {
-                "expression": "if({view.custom.initials} = \"\", \"- - -\", {view.custom.initials})"
-              }
+                "expression": "if({view.custom.initials} \u003d \"\", \"- - -\", {view.custom.initials})"
+              },
+              "type": "expr"
             }
           }
         },
         "props": {
           "style": {
             "color": "var(--mpp-text-accent)",
-            "fontSize": "56px",
             "fontFamily": "monospace",
+            "fontSize": "56px",
             "letterSpacing": "0.15em",
-            "marginTop": "8px",
-            "marginBottom": "8px"
+            "marginBottom": "8px",
+            "marginTop": "8px"
           }
-        }
+        },
+        "type": "ia.display.label"
       },
       {
-        "type": "ia.input.text-field",
+        "events": {
+          "dom": {
+            "onBlur": {
+              "config": {
+                "script": "\tself.view.rootContainer.submitInitials()"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
         "meta": {
           "name": "ScannerInput"
         },
         "position": {
-          "basis": "auto",
           "shrink": 0
         },
         "propConfig": {
           "props.text": {
             "binding": {
-              "type": "property",
               "config": {
                 "bidirectional": true,
                 "path": "view.custom.initials"
-              }
+              },
+              "type": "property"
             }
           }
         },
@@ -155,30 +115,19 @@
           "placeholder": "Scan or type initials",
           "style": {
             "classes": "pf-field-input-mono",
+            "textAlign": "center",
             "textTransform": "uppercase",
-            "width": "320px",
-            "textAlign": "center"
+            "width": "320px"
           }
         },
-        "events": {
-          "dom": {
-            "onBlur": {
-              "type": "script",
-              "scope": "G",
-              "config": {
-                "script": "\tself.view.rootContainer.submitInitials()"
-              }
-            }
-          }
-        }
+        "type": "ia.input.text-field"
       },
       {
-        "type": "ia.display.view",
         "meta": {
           "name": "Keyboard"
         },
         "position": {
-          "basis": "210px",
+          "basis": "240px",
           "shrink": 0
         },
         "props": {
@@ -188,36 +137,33 @@
           "path": "BlueRidge/Components/PlantFloor/Keyboard",
           "style": {
             "marginTop": "8px",
-            "width": "700px"
-          },
-          "useDefaultViewHeight": false,
-          "useDefaultViewWidth": false
-        }
+            "width": "800px"
+          }
+        },
+        "type": "ia.display.view"
       },
       {
-        "type": "ia.display.label",
         "meta": {
           "name": "ErrorLabel"
         },
         "position": {
-          "basis": "auto",
           "shrink": 0
         },
         "propConfig": {
           "position.display": {
             "binding": {
-              "type": "expr",
               "config": {
-                "expression": "{view.custom.error} != \"\""
-              }
+                "expression": "{view.custom.error} !\u003d \"\""
+              },
+              "type": "expr"
             }
           },
           "props.text": {
             "binding": {
-              "type": "property",
               "config": {
                 "path": "view.custom.error"
-              }
+              },
+              "type": "property"
             }
           }
         },
@@ -227,8 +173,54 @@
             "fontSize": "15px",
             "marginTop": "8px"
           }
-        }
+        },
+        "type": "ia.display.label"
       }
-    ]
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "direction": "column",
+      "justify": "center",
+      "style": {
+        "classes": "canvas",
+        "gap": "20px",
+        "padding": "32px"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "appendKey",
+          "params": [
+            "ch"
+          ],
+          "script": "\tself.view.custom.error \u003d \"\"\n\tself.view.custom.initials \u003d (self.view.custom.initials or \"\") + ch"
+        },
+        {
+          "name": "clearKeys",
+          "params": [],
+          "script": "\tself.view.custom.error \u003d \"\"\n\tself.view.custom.initials \u003d \"\""
+        },
+        {
+          "name": "submitInitials",
+          "params": [],
+          "script": "\tu \u003d BlueRidge.Location.AppUser.getByInitials((self.view.custom.initials or \"\").strip().upper())\n\tif u is None:\n\t\tself.view.custom.error \u003d \"Initials not recognised - ask Admin to add this operator\"\n\t\treturn\n\tself.session.custom.user \u003d {\"appUserId\": u[\"Id\"], \"initials\": u[\"Initials\"], \"displayName\": u[\"DisplayName\"], \"ignitionRole\": u.get(\"IgnitionRole\")}\n\tself.session.custom.appUserId \u003d u[\"Id\"]\n\tsystem.perspective.navigate(self.session.custom.terminal.defaultScreen or \"/\")"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "initialsKeyPressed",
+          "pageScope": true,
+          "script": "\ta \u003d payload.get(\"action\") if payload else None\n\tif a \u003d\u003d \"key\":\n\t\tself.appendKey(payload.get(\"key\"))\n\telif a \u003d\u003d \"clear\":\n\t\tself.clearKeys()\n\telif a \u003d\u003d \"enter\":\n\t\tself.submitInitials()",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
   }
 }
