@@ -129,7 +129,7 @@ Pack pattern is "read it when relevant, don't preload" — most tasks need only 
 
 ### MPP custom Perspective icon library
 
-The `mpp` icon library lives at `ignition/icons/mpp/` and is referenced from views as `mpp/<icon-name>` (e.g., `mpp/play_arrow`, `mpp/qr_code_scanner`). 34 unique sprites locked against Material Symbols Outlined / wght 300 / grade -25 / opsz 48; the locked set is in `mockup/icons.csv` and the realized library files (with `config.json` + `resource.json`) mirror the gateway path `data/config/resources/core/com.inductiveautomation.perspective/icons/mpp/`. Project-specific deploy + recolor recipe documented in `ignition/icons/README.md`. General 8.3 custom-icon-library mechanics (path layout, viewBox + no-fill rule, Material Symbols GitHub source URL pattern) are in `ignition-context-pack/08_custom_icon_libraries.md` — read that file when extending or troubleshooting any custom icon library.
+The `mpp` icon library lives at `ignition/icons/mpp/` and is referenced from views as `mpp/<icon-name>` (e.g., `mpp/play_arrow`, `mpp/qr_code_scanner`). 37 unique sprites (38 logical icons) locked against Material Symbols Outlined / wght 300 / grade -25 / opsz 48; the locked set is in `mockup/icons.csv` and the realized library files (with `config.json` + `resource.json`) mirror the gateway path `data/config/resources/core/com.inductiveautomation.perspective/icons/mpp/`. Project-specific deploy + recolor recipe documented in `ignition/icons/README.md`. General 8.3 custom-icon-library mechanics (path layout, viewBox + no-fill rule, Material Symbols GitHub source URL pattern) are in `ignition-context-pack/08_custom_icon_libraries.md` — read that file when extending or troubleshooting any custom icon library.
 
 ### Ignition file-edit boundary
 
