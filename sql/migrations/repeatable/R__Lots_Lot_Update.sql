@@ -206,10 +206,17 @@ BEGIN
         -- ----- Audit (resolved-FK JSON: before vs after) -----
         DECLARE @OldValue NVARCHAR(MAX) = (
             SELECT @CurPieceCount AS PieceCount, @CurWeight AS Weight,
-                   @CurWeightUomId AS WeightUomId, @CurVendorLot AS VendorLotNumber
+                   JSON_QUERY((SELECT u.Id, u.Code, u.Name
+                               FROM Parts.Uom u WHERE u.Id = @CurWeightUomId
+                               FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS WeightUomId,
+                   @CurVendorLot AS VendorLotNumber
             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
         DECLARE @NewValue NVARCHAR(MAX) = (
-            SELECT l.PieceCount, l.Weight, l.WeightUomId, l.VendorLotNumber
+            SELECT l.PieceCount, l.Weight,
+                   JSON_QUERY((SELECT u.Id, u.Code, u.Name
+                               FROM Parts.Uom u WHERE u.Id = l.WeightUomId
+                               FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS WeightUomId,
+                   l.VendorLotNumber
             FROM Lots.Lot l WHERE l.Id = @LotId
             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 

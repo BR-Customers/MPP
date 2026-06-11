@@ -148,6 +148,30 @@ EXEC test.Assert_Contains @TestName = N'[LotUpdate] reject message mentions bloc
     @HaystackStr = @msg4, @NeedleStr = N'blocked';
 GO
 
+-- =============================================
+-- Test 5: WeightUomId change resolves the FK to a {Id,Code,Name} sub-object in
+--         the Audit.OperationLog NewValue JSON (not a bare integer). Uses LOT B
+--         (slot B), which is unmodified (Test 2's stale update was rejected).
+-- =============================================
+DECLARE @LotId BIGINT = (SELECT LotId FROM #UpdFix WHERE Slot = N'B');
+DECLARE @UomKg BIGINT = (SELECT Id FROM Parts.Uom WHERE Code = N'KG');
+DECLARE @r5 TABLE (Status BIT, Message NVARCHAR(500));
+INSERT INTO @r5 EXEC Lots.Lot_Update @LotId = @LotId, @WeightUomId = @UomKg, @AppUserId = 1;
+
+DECLARE @s5 BIT = (SELECT Status FROM @r5);
+EXEC test.Assert_IsTrue @TestName = N'[LotUpdate] WeightUomId update succeeds', @Condition = @s5;
+
+-- B7 routing: 'Lot' events with a non-NULL EntityId land in Lots.LotEventLog
+-- (20-yr Honda retention), not Audit.OperationLog.
+DECLARE @LotUpdEvtId BIGINT = (SELECT Id FROM Audit.LogEventType WHERE Code = N'LotUpdated');
+DECLARE @newJson NVARCHAR(MAX) = (
+    SELECT TOP 1 NewValue FROM Lots.LotEventLog
+    WHERE LotId = @LotId AND LogEventTypeId = @LotUpdEvtId
+    ORDER BY Id DESC);
+EXEC test.Assert_Contains @TestName = N'[LotUpdate] audit NewValue resolves WeightUomId to Uom Code',
+    @HaystackStr = @newJson, @NeedleStr = N'"Code":"KG"';
+GO
+
 -- ---- cleanup (FK-safe: child rows -> LOTs) ----
 -- Audit.OperationLog / Audit.FailureLog have NO FK to Lots.Lot (EntityId is a
 -- bare BIGINT) and attribute to AppUser, so they do not block LOT deletion and
