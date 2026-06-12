@@ -1,0 +1,1 @@
+EXEC Lots.Lot_GetGenealogyTree @LotId = :lotId, @Direction = :direction

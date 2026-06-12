@@ -1,0 +1,1 @@
+EXEC Lots.Lot_Search @Query = :query, @LotStatusId = :lotStatusId, @LotOriginTypeId = :lotOriginTypeId, @LimitRows = :limitRows

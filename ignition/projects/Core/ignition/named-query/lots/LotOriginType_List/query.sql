@@ -1,0 +1,1 @@
+EXEC Lots.LotOriginType_List

@@ -1,0 +1,1 @@
+EXEC Lots.Lot_GetChildren @LotId = :lotId

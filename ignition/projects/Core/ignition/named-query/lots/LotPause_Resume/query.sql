@@ -1,0 +1,1 @@
+EXEC Lots.LotPause_Resume @PauseEventId = :pauseEventId, @ResumedRemarks = :resumedRemarks, @AppUserId = :appUserId

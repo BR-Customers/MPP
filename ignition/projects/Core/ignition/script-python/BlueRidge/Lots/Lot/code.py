@@ -112,3 +112,42 @@ def assertNotBlocked(lotId):
         "lots/Lot_AssertNotBlocked",
         {"lotId": lotId},
     )
+
+
+def getParents(lotId):
+    BlueRidge.Common.Util.log("lotId=%s" % lotId)
+    return BlueRidge.Common.Db.execList("lots/Lot_GetParents", {"lotId": lotId})
+
+
+def getChildren(lotId):
+    BlueRidge.Common.Util.log("lotId=%s" % lotId)
+    return BlueRidge.Common.Db.execList("lots/Lot_GetChildren", {"lotId": lotId})
+
+
+def getHistory(lotId):
+    BlueRidge.Common.Util.log("lotId=%s" % lotId)
+    return BlueRidge.Common.Db.execList("lots/Lot_GetAttributeHistory", {"lotId": lotId})
+
+
+def getPauses(lotId):
+    BlueRidge.Common.Util.log("lotId=%s" % lotId)
+    return BlueRidge.Common.Db.execList("lots/LotPause_GetByLot", {"lotId": lotId})
+
+
+def getGenealogyTree(lotId, direction="Both"):
+    BlueRidge.Common.Util.log("lotId=%s direction=%s" % (lotId, direction))
+    return BlueRidge.Common.Db.execList("lots/Lot_GetGenealogyTree", {"lotId": lotId, "direction": direction})
+
+
+def search(query=None, lotStatusId=None, lotOriginTypeId=None, limitRows=100):
+    BlueRidge.Common.Util.log("query=%s statusId=%s originId=%s limit=%s" % (query, lotStatusId, lotOriginTypeId, limitRows))
+    params = {"query": query, "lotStatusId": lotStatusId, "lotOriginTypeId": lotOriginTypeId, "limitRows": limitRows}
+    return BlueRidge.Common.Db.execList("lots/Lot_Search", params)
+
+
+def getStatusOptions():
+    return [{"label": r["Name"], "value": r["Id"]} for r in BlueRidge.Common.Db.execList("lots/LotStatusCode_List")]
+
+
+def getOriginOptions():
+    return [{"label": r["Name"], "value": r["Id"]} for r in BlueRidge.Common.Db.execList("lots/LotOriginType_List")]
