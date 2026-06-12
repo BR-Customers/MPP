@@ -1,0 +1,166 @@
+{
+  "custom": {},
+  "params": {
+    "LotId": null,
+    "LotName": "",
+    "ItemCode": "",
+    "Depth": 0,
+    "Direction": ""
+  },
+  "propConfig": {
+    "params.LotId": {
+      "paramDirection": "input"
+    },
+    "params.LotName": {
+      "paramDirection": "input"
+    },
+    "params.ItemCode": {
+      "paramDirection": "input"
+    },
+    "params.Depth": {
+      "paramDirection": "input"
+    },
+    "params.Direction": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 48,
+      "width": 800
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "cursor": "pointer",
+        "gap": "12px",
+        "minHeight": "48px",
+        "paddingLeft": "12px",
+        "paddingRight": "12px",
+        "paddingTop": "8px",
+        "paddingBottom": "8px"
+      }
+    },
+    "propConfig": {
+      "props.style": {
+        "binding": {
+          "type": "property",
+          "config": {
+            "path": "view.params.Depth"
+          },
+          "transforms": [
+            {
+              "type": "script",
+              "code": "\tdepth = value if value is not None else 0\n\treturn {\n\t\t\"borderBottom\": \"1px solid var(--mpp-border-subtle)\",\n\t\t\"cursor\": \"pointer\",\n\t\t\"gap\": \"12px\",\n\t\t\"minHeight\": \"48px\",\n\t\t\"paddingTop\": \"8px\",\n\t\t\"paddingBottom\": \"8px\",\n\t\t\"paddingRight\": \"12px\",\n\t\t\"paddingLeft\": str(12 + depth * 18) + \"px\"\n\t}"
+            }
+          ]
+        }
+      }
+    },
+    "events": {
+      "component": {
+        "onActionPerformed": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tsystem.perspective.navigate(\"/shop-floor/lot-detail\", params={\"lotId\": self.view.params.LotId})"
+          }
+        }
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "DepthIndicator"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.Direction} = \"Ancestor\", \"↑\", \"↓\")"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "14px",
+            "width": "16px"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "NodeLabel"
+        },
+        "position": {
+          "grow": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.params.LotName} + \" · \" + {view.params.ItemCode} + \" · depth \" + toStr({view.params.Depth})"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-primary)",
+            "fontSize": "14px",
+            "fontFamily": "monospace"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "DirectionBadge"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.Direction"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "background": "var(--mpp-surface-alt)",
+            "borderRadius": "4px",
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "11px",
+            "fontWeight": "600",
+            "letterSpacing": "0.05em",
+            "padding": "2px 8px",
+            "textTransform": "uppercase"
+          }
+        }
+      }
+    ]
+  }
+}
