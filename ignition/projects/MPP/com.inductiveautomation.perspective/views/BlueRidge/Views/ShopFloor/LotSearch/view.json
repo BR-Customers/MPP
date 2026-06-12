@@ -409,7 +409,7 @@
                     "binding": {
                       "type": "expr",
                       "config": {
-                        "expression": "toStr(len({view.custom.results})) + \" results· sorted by recency\""
+                        "expression": "toStr(len({view.custom.results})) + \" results · sorted by recency\""
                       }
                     }
                   }
@@ -716,98 +716,6 @@
                   "width": 180,
                   "style": {
                     "classes": "pf-field-input-mono"
-                  },
-                  "viewPath": "",
-                  "viewParams": {}
-                },
-                {
-                  "field": "Detail",
-                  "header": {
-                    "title": "Item · Pcs · Location",
-                    "align": "center",
-                    "justify": "left",
-                    "style": {
-                      "classes": ""
-                    }
-                  },
-                  "footer": {
-                    "title": "",
-                    "align": "center",
-                    "justify": "left",
-                    "style": {
-                      "classes": ""
-                    }
-                  },
-                  "visible": false,
-                  "editable": false,
-                  "render": "auto",
-                  "justify": "auto",
-                  "align": "center",
-                  "resizable": true,
-                  "sortable": false,
-                  "sort": "none",
-                  "filter": {
-                    "enabled": false,
-                    "visible": "on-hover",
-                    "string": {
-                      "condition": "",
-                      "value": ""
-                    },
-                    "number": {
-                      "condition": "",
-                      "value": ""
-                    },
-                    "date": {
-                      "condition": "",
-                      "value": ""
-                    },
-                    "boolean": {
-                      "condition": ""
-                    }
-                  },
-                  "boolean": "checkbox",
-                  "number": "value",
-                  "numberFormat": "0,0.##",
-                  "dateFormat": "MM/DD/YYYY",
-                  "progressBar": {
-                    "min": 0,
-                    "max": 100,
-                    "bar": {
-                      "color": "",
-                      "style": {
-                        "classes": ""
-                      }
-                    },
-                    "track": {
-                      "color": "",
-                      "style": {
-                        "classes": ""
-                      }
-                    },
-                    "value": {
-                      "enabled": true,
-                      "format": "0,0.##",
-                      "justify": "center",
-                      "style": {
-                        "classes": ""
-                      }
-                    }
-                  },
-                  "toggleSwitch": {
-                    "color": {
-                      "selected": "",
-                      "unselected": ""
-                    }
-                  },
-                  "nullFormat": {
-                    "strict": false,
-                    "nullFormatValue": "",
-                    "includeNullStrings": false
-                  },
-                  "strictWidth": false,
-                  "width": "",
-                  "style": {
-                    "classes": ""
                   },
                   "viewPath": "",
                   "viewParams": {}
@@ -1284,7 +1192,7 @@
               "component": {
                 "onSelectionChange": {
                   "config": {
-                    "script": "\tsel = event.source.props.selection.data\n\tif not sel:\n\t\treturn\n\trow = BlueRidge.Common.Util.extractQualifiedValues(sel[0]) or {}\n\tlot_id = row.get(\"Id\")\n\tif not lot_id:\n\t\treturn\n\tsystem.perspective.navigate(page=\"/shop-floor/lot-detail\", params={\"lotId\": lot_id})"
+                    "script": "\tsel = self.props.selection.data\n\tif not sel:\n\t\treturn\n\trow = BlueRidge.Common.Util.extractQualifiedValues(sel[0]) or {}\n\tlot_id = row.get(\"Id\")\n\tif not lot_id:\n\t\treturn\n\tsystem.perspective.navigate(page=\"/shop-floor/lot-detail\", params={\"lotId\": lot_id})"
                   },
                   "scope": "G",
                   "type": "script"

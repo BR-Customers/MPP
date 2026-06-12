@@ -469,7 +469,7 @@
                       "transforms": [
                         {
                           "type": "script",
-                          "code": "\treturn [\n\t\t{\n\t\t\t\"LotId\":    r.get(\"LotId\"),\n\t\t\t\"LotName\":  r.get(\"LotName\") or \"\",\n\t\t\t\"ItemCode\": r.get(\"ItemCode\") or \"\",\n\t\t\t\"Depth\":    r.get(\"Depth\") or 0,\n\t\t\t\"Direction\": r.get(\"Direction\") or \"\"\n\t\t}\n\t\tfor r in (value or [])\n\t]"
+                          "code": "\treturn [\n\t\t{\n\t\t\t\"LotId\":    r.get(\"LotId\"),\n\t\t\t\"LotName\":  r.get(\"LotName\") or \"\",\n\t\t\t\"ItemCode\": r.get(\"ItemCode\") or \"\",\n\t\t\t\"Depth\":    r.get(\"Depth\") or 0,\n\t\t\t\"Direction\": r.get(\"Direction\") or \"\"\n\t\t}\n\t\tfor r in (BlueRidge.Common.Util.extractQualifiedValues(value) or [])\n\t]"
                         }
                       ]
                     }
@@ -642,7 +642,7 @@
                       "transforms": [
                         {
                           "type": "script",
-                          "code": "\treturn [\n\t\t{\n\t\t\t\"LotId\":    r.get(\"LotId\"),\n\t\t\t\"LotName\":  r.get(\"LotName\") or \"\",\n\t\t\t\"ItemCode\": r.get(\"ItemCode\") or \"\",\n\t\t\t\"Depth\":    r.get(\"Depth\") or 0,\n\t\t\t\"Direction\": r.get(\"Direction\") or \"\"\n\t\t}\n\t\tfor r in (value or [])\n\t]"
+                          "code": "\treturn [\n\t\t{\n\t\t\t\"LotId\":    r.get(\"LotId\"),\n\t\t\t\"LotName\":  r.get(\"LotName\") or \"\",\n\t\t\t\"ItemCode\": r.get(\"ItemCode\") or \"\",\n\t\t\t\"Depth\":    r.get(\"Depth\") or 0,\n\t\t\t\"Direction\": r.get(\"Direction\") or \"\"\n\t\t}\n\t\tfor r in (BlueRidge.Common.Util.extractQualifiedValues(value) or [])\n\t]"
                         }
                       ]
                     }

@@ -61,7 +61,7 @@
         {
           "name": "load",
           "params": [],
-          "script": "\tlotId = self.view.params.lotId\n\tif not lotId:\n\t\treturn\n\tself.view.custom.lot      = BlueRidge.Lots.Lot.get(lotId) or {}\n\tself.view.custom.history  = BlueRidge.Lots.Lot.getHistory(lotId)\n\tself.view.custom.parents  = BlueRidge.Lots.Lot.getParents(lotId)\n\tself.view.custom.children = BlueRidge.Lots.Lot.getChildren(lotId)\n\tself.view.custom.pauses   = BlueRidge.Lots.Lot.getPauses(lotId)"
+          "script": "\tlotId = self.view.params.lotId\n\tif not lotId:\n\t\treturn\n\tself.view.custom.lot      = BlueRidge.Lots.Lot.get(lotId) or self.view.custom.lot\n\tself.view.custom.history  = BlueRidge.Lots.Lot.getHistory(lotId)\n\tself.view.custom.parents  = BlueRidge.Lots.Lot.getParents(lotId)\n\tself.view.custom.children = BlueRidge.Lots.Lot.getChildren(lotId)\n\tself.view.custom.pauses   = BlueRidge.Lots.Lot.getPauses(lotId)"
         }
       ],
       "messageHandlers": null,
@@ -158,7 +158,7 @@
                     "binding": {
                       "type": "expr",
                       "config": {
-                        "expression": "if(isNull({view.custom.lot.ItemPartNumber}), \"\", {view.custom.lot.ItemPartNumber}) + \" · \" + if(isNull({view.custom.lot.LotOriginTypeCode}), \"\", {view.custom.lot.LotOriginTypeCode}) + \" · single view across all phases\""
+                        "expression": "if(isNull({view.custom.lot.ItemPartNumber}), \"\", {view.custom.lot.ItemPartNumber}) + \" · \" + if(isNull({view.custom.lot.LotOriginTypeCode}), \"\", {view.custom.lot.LotOriginTypeCode})"
                       }
                     }
                   }

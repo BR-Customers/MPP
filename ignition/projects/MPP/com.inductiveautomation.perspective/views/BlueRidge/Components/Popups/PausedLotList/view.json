@@ -256,7 +256,13 @@
                   "type": "property",
                   "config": {
                     "path": "view.custom.pauses"
-                  }
+                  },
+                  "transforms": [
+                    {
+                      "type": "script",
+                      "code": "\treturn [BlueRidge.Common.Util.extractQualifiedValues(r) or {} for r in (value or [])]"
+                    }
+                  ]
                 }
               }
             },
