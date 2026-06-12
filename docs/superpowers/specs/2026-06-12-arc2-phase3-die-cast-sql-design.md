@@ -61,10 +61,12 @@ All follow FDS-11-011 (single result set; `@Status`/`@Message`/`@NewId` locals; 
 ```
 
 - Independent of `ProductionEvent` (rejects can fire any time; `@ProductionEventId` optional link).
-- Validate: `@LotId`/`@DefectCodeId`/`@AppUserId` present; LOT exists; `@Quantity > 0`; `DefectCode` exists.
-- Insert one `RejectEvent` row. **`@TerminalLocationId` is audit-only** — there is no `TerminalLocationId` column on `RejectEvent`; pass it to the audit row, do not attempt to store it on the table.
-- **Piece-count interaction** — see Decision D3.
-- Audit `RejectEventRecorded`.
+- **Validate (all before `BEGIN TRANSACTION`):** `@LotId`/`@DefectCodeId`/`@AppUserId` present; LOT exists; `DefectCode` exists; `@Quantity > 0`; **`@Quantity <= Lot.PieceCount`** (cannot scrap more pieces than the LOT holds — reject with a clear message).
+- **One action — log the defect AND decrement the LOT (Decision D3):** inside the transaction, with `UPDLOCK`/`HOLDLOCK` on the `Lot` row (the same serialization `Lot_Split`/`Lot_Merge` use, since all three mutate `PieceCount`):
+  1. Insert one `RejectEvent` row (`@TerminalLocationId` is **audit-only** — there is no such column on `RejectEvent`; it goes to the audit row, not the table).
+  2. `Lot.PieceCount -= @Quantity` and `Lot.InventoryAvailable -= @Quantity` (B5 kept consistent; guard `>= 0`).
+  3. **Close-at-zero:** if `PieceCount` reaches 0, set `LotStatusCode = Closed` and write a `LotStatusHistory` row — **inlined**, not via `EXEC Lots.Lot_UpdateStatus` (this proc returns a status row and is captured by `INSERT-EXEC` in tests, so it must not `EXEC` a sibling status-row proc — mirror the inline-sub-mutation pattern in `R__Lots_Lot_Split.sql`). No genealogy/closure edge — scrap creates no child LOT.
+- Audit `RejectEventRecorded` (resolved defect-code + the new piece count in the prose).
 
 ### 4.3 `Tools.ToolCavity_ListActiveByTool`
 
@@ -78,9 +80,11 @@ All follow FDS-11-011 (single result set; `@Status`/`@Message`/`@NewId` locals; 
 
 - **D1 — ShotCount semantics (A4): cumulative.** `ProductionEvent.ShotCount`/`ScrapCount` store the **cumulative** cavity counter at checkpoint time (the shipped default). Per-interval deltas are a **read/report-time** concern via `LAG(ShotCount) OVER (PARTITION BY LotId ORDER BY EventAt)`; the proc does not compute deltas. Reframe to derived-from-aggregated-quantities only if MPP elects it post-Phase-3.
 - **D2 — B5 materialized columns at die cast: checkpoints do NOT change piece availability.** A die-cast `ProductionEvent` is a cumulative production *metric* (shots/scrap), not a piece *movement*. A freshly-created die-cast LOT has `InventoryAvailable = PieceCount`, `TotalInProcess = 0` (set by `Lot_Create`); recording shot checkpoints leaves both **unchanged**. The B5 columns are driven by movement/consumption events (Phases 4–6), not die-cast checkpoints. **Recommendation:** `ProductionEvent_Record` does not touch `Lot.TotalInProcess`/`InventoryAvailable` at die cast. (This refines the phased plan's generic "if B5, update" line — the precise OEE-grade recompute the Phase 2 notes deferred "to the Phase 3 event writers" applies to downstream piece-flow events, not die-cast shot metrics.)
-- **D3 — RejectEvent does NOT decrement `Lot.PieceCount` / `InventoryAvailable`.** Scrap/reject is retained for analysis and charged to an Area (FRS §4), separate from the LOT's good-piece count (the operator already enters `PieceCount` as good parts in the basket). **Recommendation:** `RejectEvent_Record` records the reject + audit only; it does not mutate `Lot` piece columns. (If MPP wants reject to reduce a LOT's available count, that's a deliberate rule change with genealogy/closure implications — flag, don't assume.)
+- **D3 — RejectEvent DOES decrement the LOT (confirmed with Jacques 2026-06-12).** Two distinct scrap concepts:
+  - **Die-cast production scrap** — shots that fail *during the run, before the basket is issued as a LOT*. Captured as the cumulative `ProductionEvent.ScrapCount` metric. Pre-LOT → does **not** decrement (the operator enters `PieceCount` = good parts). This half of the original D3 stands.
+  - **A RejectEvent** — a part of an *already-existing* LOT is found failed/damaged, at **any** step (die cast post-issue, trim, machining, assembly). This is **one action** that logs the defect *and* scraps the part off the LOT: `RejectEvent_Record` decrements `Lot.PieceCount` + `InventoryAvailable` by `@Quantity`, and closes the LOT (status `Closed` + `LotStatusHistory`) when the count hits zero. Reject and inventory-reduction are the same operation — there is no separate "Scrap" proc. `RejectEvent_Record` is built in Phase 3 but reused at every downstream step, so this decrement behavior is the general contract, not die-cast-specific.
 
-These three are the only genuine open calls; everything else follows the phased plan verbatim.
+These three are the genuine design calls (all now settled); everything else follows the phased plan verbatim.
 
 ## 6. Conventions
 
@@ -94,7 +98,7 @@ These three are the only genuine open calls; everything else follows the phased 
 | File | Covers |
 |---|---|
 | `010_ProductionEvent_Record.sql` | Checkpoint insert; `ProductionEventValue` shred from JSON; cumulative `ShotCount` stored as-supplied; `LAG`-delta = cumulative diff across two checkpoints; missing required params reject; blocked-LOT rejects (`Lot_AssertNotBlocked`); **D2** — `Lot.InventoryAvailable`/`TotalInProcess` unchanged by a checkpoint. |
-| `020_RejectEvent_Record.sql` | Insert; `DefectCode` FK validation; `@Quantity > 0` enforced; optional `@ProductionEventId` link; **D3** — `Lot.PieceCount` unchanged. |
+| `020_RejectEvent_Record.sql` | Insert; `DefectCode` FK validation; `@Quantity > 0` enforced; `@Quantity > Lot.PieceCount` rejects; optional `@ProductionEventId` link; **D3 decrement** — `Lot.PieceCount` + `InventoryAvailable` drop by `@Quantity`; **close-at-zero** — a reject that zeroes the count sets `LotStatusCode=Closed` + writes `LotStatusHistory`; the die-cast `ProductionEvent.ScrapCount` metric (test 010) does NOT decrement. |
 | `030_DieCast_walkthrough.sql` | End-to-end: `ToolAssignment_ListActiveByCell` on a selected Cell → `Lot_Create` with Tool/Cavity → first `ProductionEvent` → second at later `EventAt` → LAG delta correct. |
 | `040_CavityParallel_peers.sql` | Two LOTs, same Tool, different Cavities, **no** parent/child genealogy FK; each closes independently. |
 
