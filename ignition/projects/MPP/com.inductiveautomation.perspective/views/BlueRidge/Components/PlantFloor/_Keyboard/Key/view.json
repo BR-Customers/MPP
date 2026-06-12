@@ -36,48 +36,49 @@
     }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": {
-      "name": "root"
-    },
-    "props": {
-      "direction": "column",
-      "alignItems": "stretch"
-    },
     "children": [
       {
-        "type": "ia.input.button",
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(self.view.params.messageName or \"keyboardKeyPressed\", {\"action\": self.view.params.action, \"key\": self.view.params.key}, scope\u003d\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
         "meta": {
           "name": "KeyButton"
         },
         "position": {
-          "basis": "auto",
           "grow": 1,
           "shrink": 0
         },
         "propConfig": {
-          "props.text": {
-            "binding": {
-              "type": "property",
-              "config": {
-                "path": "view.params.label"
-              }
-            }
-          },
           "props.style.classes": {
             "binding": {
-              "type": "expr",
               "config": {
-                "expression": "\"pf-btn pf-btn-large\" + if({view.params.variant} = \"primary\", \" pf-btn-primary\", if({view.params.variant} = \"secondary\", \" pf-btn-secondary\", \"\"))"
-              }
+                "expression": "\"pf-btn pf-btn-large\" + if({view.params.variant} \u003d \"primary\", \" pf-btn-primary\", if({view.params.variant} \u003d \"secondary\", \" pf-btn-secondary\", \"\"))"
+              },
+              "type": "expr"
             }
           },
           "props.style.fontSize": {
             "binding": {
-              "type": "expr",
               "config": {
-                "expression": "if({view.params.action} = \"key\", \"22px\", \"18px\")"
-              }
+                "expression": "if({view.params.action} \u003d \"key\", \"22px\", \"18px\")"
+              },
+              "type": "expr"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.label"
+              },
+              "type": "property"
             }
           }
         },
@@ -86,18 +87,15 @@
             "height": "62px"
           }
         },
-        "events": {
-          "component": {
-            "onActionPerformed": {
-              "type": "script",
-              "scope": "G",
-              "config": {
-                "script": "\tsystem.perspective.sendMessage(self.view.params.messageName or \"keyboardKeyPressed\", {\"action\": self.view.params.action, \"key\": self.view.params.key}, scope=\"page\")"
-              }
-            }
-          }
-        }
+        "type": "ia.input.button"
       }
-    ]
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column"
+    },
+    "type": "ia.container.flex"
   }
 }
