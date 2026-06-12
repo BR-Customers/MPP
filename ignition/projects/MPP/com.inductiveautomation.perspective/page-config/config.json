@@ -15,6 +15,22 @@
     "/shop-floor/terminal-selector": {
       "title": "Select Terminal",
       "viewPath": "BlueRidge/Views/ShopFloor/TerminalSelector"
+    },
+    "/shop-floor/lot-detail": {
+      "title": "LOT Detail",
+      "viewPath": "BlueRidge/Views/ShopFloor/LotDetail"
+    },
+    "/shop-floor/lot-search": {
+      "title": "LOT Search",
+      "viewPath": "BlueRidge/Views/ShopFloor/LotSearch"
+    },
+    "/shop-floor/genealogy": {
+      "title": "Genealogy",
+      "viewPath": "BlueRidge/Views/ShopFloor/GenealogyViewer"
+    },
+    "/shop-floor/paused-demo": {
+      "title": "Paused Demo",
+      "viewPath": "BlueRidge/Views/ShopFloor/PausedDemo"
     }
   },
   "sharedDocks": {}

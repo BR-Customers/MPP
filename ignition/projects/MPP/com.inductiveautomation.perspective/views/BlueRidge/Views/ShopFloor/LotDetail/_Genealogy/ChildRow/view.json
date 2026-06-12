@@ -1,0 +1,129 @@
+{
+  "custom": {},
+  "params": {
+    "row": {
+      "ChildLotId": null,
+      "ChildLotName": "",
+      "ItemCode": "",
+      "RelationshipTypeName": ""
+    }
+  },
+  "propConfig": {
+    "params.row": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 44,
+      "width": 800
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "cursor": "pointer",
+        "gap": "12px",
+        "minHeight": "44px",
+        "paddingLeft": "12px",
+        "paddingRight": "12px",
+        "paddingTop": "8px",
+        "paddingBottom": "8px"
+      }
+    },
+    "events": {
+      "component": {
+        "onActionPerformed": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tif self.view.params.row and self.view.params.row.ChildLotId:\n\t\tsystem.perspective.navigate(\"/shop-floor/lot-detail\", params={\"lotId\": self.view.params.row.ChildLotId})"
+          }
+        }
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "DownArrow"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "text": "↓",
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "14px",
+            "width": "16px"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "LotNameLabel"
+        },
+        "position": {
+          "grow": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.params.row.ChildLotName}) + \"  ·  \" + toStr({view.params.row.ItemCode})"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-primary)",
+            "fontFamily": "monospace",
+            "fontSize": "14px"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "RelationshipBadge"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.row.RelationshipTypeName"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "background": "var(--mpp-surface-alt)",
+            "borderRadius": "4px",
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "11px",
+            "fontWeight": "600",
+            "padding": "2px 8px",
+            "textTransform": "uppercase"
+          }
+        }
+      }
+    ]
+  }
+}

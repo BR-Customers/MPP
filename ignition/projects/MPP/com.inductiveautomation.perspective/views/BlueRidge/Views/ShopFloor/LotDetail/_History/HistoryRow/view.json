@@ -1,0 +1,126 @@
+{
+  "custom": {},
+  "params": {
+    "row": {
+      "EventAt": "",
+      "EventKind": "",
+      "Detail": "",
+      "ByUserName": ""
+    }
+  },
+  "propConfig": {
+    "params.row": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 44,
+      "width": 800
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "gap": "12px",
+        "minHeight": "44px",
+        "paddingLeft": "12px",
+        "paddingRight": "12px",
+        "paddingTop": "8px",
+        "paddingBottom": "8px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "EventKindBadge"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.row.EventKind"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "background": "var(--mpp-surface-alt)",
+            "borderRadius": "4px",
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "11px",
+            "fontWeight": "600",
+            "letterSpacing": "0.05em",
+            "padding": "2px 8px",
+            "textTransform": "uppercase",
+            "width": "80px"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "DetailLabel"
+        },
+        "position": {
+          "grow": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.row.Detail"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-primary)",
+            "fontSize": "14px"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "MetaLabel"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.params.row.ByUserName}) + \"  ·  \" + toStr({view.params.row.EventAt})"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "12px"
+          }
+        }
+      }
+    ]
+  }
+}
