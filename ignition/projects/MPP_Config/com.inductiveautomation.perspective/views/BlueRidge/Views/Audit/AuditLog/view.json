@@ -6,9 +6,9 @@
         "$": [
           "ts",
           192,
-          1780017942491
+          1781279767297
         ],
-        "$ts": 1780017942491
+        "$ts": 1781279767297
       },
       "entityTypeCode": null,
       "logSeverityCode": null,
@@ -17,13 +17,13 @@
         "$": [
           "ts",
           192,
-          1780017942491
+          1781279767297
         ],
-        "$ts": 1779413142491
+        "$ts": 1780674967297
       }
     },
     "rows": [],
-    "totalCount": 412
+    "totalCount": 0
   },
   "params": {},
   "propConfig": {
@@ -119,7 +119,7 @@
                         },
                         "props": {
                           "format": "YYYY-MM-DD",
-                          "formattedValue": "2026-05-21",
+                          "formattedValue": "2026-06-05",
                           "pickerType": "date"
                         },
                         "type": "ia.input.date-time-input"
@@ -167,7 +167,7 @@
                         },
                         "props": {
                           "format": "YYYY-MM-DD",
-                          "formattedValue": "2026-05-28",
+                          "formattedValue": "2026-06-12",
                           "pickerType": "date"
                         },
                         "type": "ia.input.date-time-input"
