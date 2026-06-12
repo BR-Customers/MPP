@@ -1,0 +1,328 @@
+{
+  "custom": {
+    "pauses": []
+  },
+  "params": {
+    "locationId": null
+  },
+  "propConfig": {
+    "params.locationId": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 520,
+      "width": 720
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "modal"
+      }
+    },
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tself.load()"
+          }
+        }
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "load",
+          "params": [],
+          "script": "\tself.view.custom.pauses = BlueRidge.Lots.LotPause.getByLocation(self.view.params.locationId) or []"
+        },
+        {
+          "name": "resumePause",
+          "params": [
+            "pauseEventId",
+            "lotId"
+          ],
+          "script": "\tresult = BlueRidge.Lots.LotPause.resume(pauseEventId)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle=\"Resumed\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.pauses = BlueRidge.Lots.LotPause.getByLocation(self.view.params.locationId) or []\n\t\tsystem.perspective.sendMessage(\"pausedLotResumed\", {\"lotId\": lotId}, scope=\"page\")"
+        }
+      ],
+      "messageHandlers": [
+        {
+          "messageType": "resumePauseRequested",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif payload:\n\t\tself.resumePause(payload.get(\"pauseEventId\"), payload.get(\"lotId\"))"
+        }
+      ]
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "classes": "modal-header",
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "PauseIconLabel"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "text": "⏸",
+              "style": {
+                "fontSize": "20px",
+                "color": "var(--pf-status-warn-fg)"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "HeaderTitle"
+            },
+            "position": {
+              "basis": "auto",
+              "grow": 1
+            },
+            "props": {
+              "text": "Paused LOTs",
+              "style": {
+                "fontSize": "18px",
+                "fontWeight": "600"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "CountBadge"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "toStr(len({view.custom.pauses})) + \" paused\""
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "0 paused",
+              "style": {
+                "fontSize": "13px",
+                "color": "var(--mpp-text-secondary)",
+                "padding": "4px 10px",
+                "borderRadius": "12px",
+                "background": "var(--bg-row-alt)"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "modal-body",
+            "gap": "0px",
+            "overflowY": "auto"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "EmptyState"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "len({view.custom.pauses}) = 0"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "center",
+              "justify": "center",
+              "style": {
+                "gap": "12px",
+                "padding": "48px 24px",
+                "color": "var(--mpp-text-secondary)"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "EmptyIcon"
+                },
+                "position": {
+                  "basis": "auto",
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "✓",
+                  "style": {
+                    "fontSize": "36px",
+                    "color": "var(--mpp-state-good-fg)"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "EmptyMessage"
+                },
+                "position": {
+                  "basis": "auto",
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "No paused LOTs at this Cell",
+                  "style": {
+                    "fontSize": "15px",
+                    "color": "var(--mpp-text-secondary)"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.display.flex-repeater",
+            "meta": {
+              "name": "PauseList"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "len({view.custom.pauses}) > 0"
+                  }
+                }
+              },
+              "props.instances": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.pauses"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "elementPosition": {
+                "basis": "auto",
+                "grow": 0,
+                "shrink": 0
+              },
+              "path": "BlueRidge/Components/Popups/PausedLotList/PausedLotRow",
+              "style": {
+                "gap": "0px"
+              },
+              "useDefaultViewHeight": false,
+              "useDefaultViewWidth": false
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Footer"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "justify": "flex-end",
+          "style": {
+            "classes": "modal-footer",
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "CloseButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Close",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(id=\"mpp-paused-list\")"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

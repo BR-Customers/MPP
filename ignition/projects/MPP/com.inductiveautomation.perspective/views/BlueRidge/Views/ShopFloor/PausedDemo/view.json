@@ -1,0 +1,292 @@
+{
+  "custom": {
+    "cells": [],
+    "demoLocationId": null
+  },
+  "params": {},
+  "propConfig": {
+    "custom.cells": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Location.Location.getCellsForDropdown\", 0)"
+        }
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 600,
+      "width": 900
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "alignItems": "flex-start",
+      "style": {
+        "classes": "canvas",
+        "gap": "32px",
+        "padding": "40px 48px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "PageTitle"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "text": "Paused-LOT Indicator — Demo",
+          "style": {
+            "color": "var(--mpp-text-primary)",
+            "fontSize": "28px",
+            "fontWeight": "700"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "PageSubtitle"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "text": "Select a Cell to load its paused-LOT count. Click the badge to open the resume popup.",
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "14px"
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "CellRow"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "gap": "16px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "CellLabel"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Cell:",
+              "style": {
+                "classes": "pf-field-label",
+                "marginBottom": "0px",
+                "fontWeight": "500",
+                "fontSize": "14px"
+              }
+            }
+          },
+          {
+            "type": "ia.input.dropdown",
+            "meta": {
+              "name": "CellDropdown"
+            },
+            "position": {
+              "basis": "280px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.options": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.cells"
+                  }
+                }
+              },
+              "props.value": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.demoLocationId"
+                  }
+                }
+              }
+            },
+            "props": {
+              "placeholder": "Select a cell...",
+              "style": {
+                "classes": "pf-field-select"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "IndicatorSection"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "alignItems": "flex-start",
+          "style": {
+            "gap": "12px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "IndicatorSectionLabel"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Indicator (embedded component):",
+              "style": {
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "12px",
+                "textTransform": "uppercase",
+                "letterSpacing": "0.06em"
+              }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "NoCellMsg"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "isNull({view.custom.demoLocationId})"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "14px",
+                "fontStyle": "italic"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "NoCellText"
+                },
+                "position": {
+                  "basis": "auto",
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "Select a cell above to display the indicator.",
+                  "style": {
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "14px",
+                    "fontStyle": "italic"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.display.view",
+            "meta": {
+              "name": "PausedLotIndicatorEmbed"
+            },
+            "position": {
+              "basis": "44px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "!isNull({view.custom.demoLocationId})"
+                  }
+                }
+              },
+              "props.params.locationId": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.demoLocationId"
+                  }
+                }
+              }
+            },
+            "props": {
+              "params": {
+                "locationId": null
+              },
+              "path": "BlueRidge/Components/PlantFloor/PausedLotIndicator",
+              "useDefaultViewHeight": false,
+              "useDefaultViewWidth": false,
+              "style": {
+                "height": "44px",
+                "width": "auto"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "SmokeTestHint"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "text": "Smoke test: pause 2 LOTs at a Cell via LotPause_Place -> badge shows 2; click badge -> popup lists both; Resume one -> toast, list drops to 1, badge refreshes to 1.",
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "12px",
+            "fontStyle": "italic",
+            "maxWidth": "600px"
+          }
+        }
+      }
+    ]
+  }
+}
