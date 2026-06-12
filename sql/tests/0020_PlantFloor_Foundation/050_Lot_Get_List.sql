@@ -38,7 +38,8 @@ CREATE TABLE #g (Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, LotOriginTypeId
     VendorLotNumber NVARCHAR(100), MinSerialNumber INT, MaxSerialNumber INT, ParentLotId BIGINT, CurrentLocationId BIGINT,
     CrtActive BIT, TotalInProcess INT, InventoryAvailable INT, CreatedByUserId BIGINT, CreatedAtTerminalId BIGINT,
     CreatedAt DATETIME2(3), UpdatedAt DATETIME2(3), UpdatedByUserId BIGINT, RowVersion BINARY(8),
-    ItemPartNumber NVARCHAR(50), LotOriginTypeCode NVARCHAR(30), LotStatusCode NVARCHAR(20), LotStatusName NVARCHAR(100), CurrentLocationName NVARCHAR(200));
+    ItemPartNumber NVARCHAR(50), LotOriginTypeCode NVARCHAR(30), LotStatusCode NVARCHAR(20), LotStatusName NVARCHAR(100), CurrentLocationName NVARCHAR(200),
+    ToolCode NVARCHAR(50), ToolCavityNumber NVARCHAR(20));
 INSERT INTO #g EXEC Lots.Lot_Get @LotId = @LotId;
 SELECT @InvAvail = InventoryAvailable, @PieceCount = PieceCount FROM #g;
 DROP TABLE #g;
@@ -57,7 +58,8 @@ CREATE TABLE #g2 (Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, LotOriginTypeI
     VendorLotNumber NVARCHAR(100), MinSerialNumber INT, MaxSerialNumber INT, ParentLotId BIGINT, CurrentLocationId BIGINT,
     CrtActive BIT, TotalInProcess INT, InventoryAvailable INT, CreatedByUserId BIGINT, CreatedAtTerminalId BIGINT,
     CreatedAt DATETIME2(3), UpdatedAt DATETIME2(3), UpdatedByUserId BIGINT, RowVersion BINARY(8),
-    ItemPartNumber NVARCHAR(50), LotOriginTypeCode NVARCHAR(30), LotStatusCode NVARCHAR(20), LotStatusName NVARCHAR(100), CurrentLocationName NVARCHAR(200));
+    ItemPartNumber NVARCHAR(50), LotOriginTypeCode NVARCHAR(30), LotStatusCode NVARCHAR(20), LotStatusName NVARCHAR(100), CurrentLocationName NVARCHAR(200),
+    ToolCode NVARCHAR(50), ToolCavityNumber NVARCHAR(20));
 INSERT INTO #g2 EXEC Lots.Lot_Get @LotName = @Name;
 SELECT @Cnt = COUNT(*) FROM #g2;
 DROP TABLE #g2;
@@ -74,7 +76,8 @@ CREATE TABLE #g3 (Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, LotOriginTypeI
     VendorLotNumber NVARCHAR(100), MinSerialNumber INT, MaxSerialNumber INT, ParentLotId BIGINT, CurrentLocationId BIGINT,
     CrtActive BIT, TotalInProcess INT, InventoryAvailable INT, CreatedByUserId BIGINT, CreatedAtTerminalId BIGINT,
     CreatedAt DATETIME2(3), UpdatedAt DATETIME2(3), UpdatedByUserId BIGINT, RowVersion BINARY(8),
-    ItemPartNumber NVARCHAR(50), LotOriginTypeCode NVARCHAR(30), LotStatusCode NVARCHAR(20), LotStatusName NVARCHAR(100), CurrentLocationName NVARCHAR(200));
+    ItemPartNumber NVARCHAR(50), LotOriginTypeCode NVARCHAR(30), LotStatusCode NVARCHAR(20), LotStatusName NVARCHAR(100), CurrentLocationName NVARCHAR(200),
+    ToolCode NVARCHAR(50), ToolCavityNumber NVARCHAR(20));
 INSERT INTO #g3 EXEC Lots.Lot_Get @LotId = 9999999999;
 SELECT @Cnt = COUNT(*) FROM #g3;
 DROP TABLE #g3;
