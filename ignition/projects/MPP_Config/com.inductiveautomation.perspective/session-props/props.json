@@ -1,11 +1,5 @@
 {
-  "custom": {
-    "activeCategory": "",
-    "activeScreen": "BlueRidge/Views/Landing",
-    "navPanelOpen": false,
-    "qsIncomingSpecId": 0,
-    "toastInstances": []
-  },
+  "custom": {},
   "propConfig": {
     "props.auth": {
       "access": "PRIVATE",
@@ -68,15 +62,5 @@
       "persistent": false
     }
   },
-  "props": {
-    "address": "127.0.0.1",
-    "appBar": {
-      "togglePosition": "hidden"
-    },
-    "device": {},
-    "geolocation": {},
-    "locale": "en-US",
-    "offline": {},
-    "timeZoneId": "America/Indianapolis"
-  }
+  "props": {}
 }
