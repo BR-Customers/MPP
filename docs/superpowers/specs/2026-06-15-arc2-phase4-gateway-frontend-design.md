@@ -57,17 +57,19 @@ Extend the existing terminal resolution: after `session.custom.terminal` is set,
 
 All under `BlueRidge/Views/ShopFloor/...`; flex-repeater ROW sub-views under `Components/PlantFloor/<Page>/<Row>` (never nested in a page-view folder). `meta.name:"root"`; every binding-read `view.custom.*` prop pre-declared with a shaped default; ≥44px targets, portrait (FDS-02-013); no drag-and-drop.
 
+**Scan-or-dropdown inputs (FDS-02-009) = one `ia.input.dropdown` with `allowCustomOptions: true`.** Where the plan says "scan **or** dropdown," do NOT pair a separate scan field with a picker — use a single dropdown with `props.allowCustomOptions: true` + `props.search.enabled: true`. A barcode scanner types into the search box and the value either matches a listed option or is accepted as a typed/scanned custom entry; the `onActionPerformed` handler resolves it (option Id, or the raw scanned string passed to the resolving entity call). This unifies the two input modes in one component. Applies to the **Trim OUT destination selector** (§6.2) and the **Receiving PartNumber** field (§6.3).
+
 ### 6.1 Movement Scan — reusable embedded component (`Components/PlantFloor/MovementScan`) — MVP
 Host passes `params` (`replyMessage`, `destinationLocationId`); component owns its scan + validation cycle and returns the outcome by page-scoped message (mirrors `CellContextSelector`). Cycle: LTT scan/entry → `Lot.getByName` → `ItemLocation.checkEligibility(itemId, destinationLocationId)` (gate; render FDS-02-012 message on miss) → `Item.getMaxParts` + `Lot.getCellLineQuantity` (show "N of M capacity") → **`Lot.moveToValidated`** commit (server re-checks; surface its `Message`). Embedded in any receive station.
 
 ### 6.2 Trim Station — one tabbed top-level view (`Views/ShopFloor/TrimStation`) — MVP
 Your call: a single view with an **`ia.container.tab`** shell (IN / OUT), sharing the scanned-LOT context on `view.custom.activeLotId` (`tab-strip`/`tab-item`/`tab-item-active` style slots per `feedback_ignition_tab_container_slots`). Header: `InitialsField` + `PausedLotIndicator` (bound to the Trim Area).
 - **IN tab** — `MovementScan` embed (destination = Trim Shop **Area**) → on move, `ProductionEvent.record` (`TrimIn` template, carried-forward cumulative counters) → optional `RejectEvent.record` (scrap/yield loss) + optional `Lot.update` (weight-based piece correction, FRS 2.2.3). Trim is yield-loss only — no rename, no genealogy.
-- **OUT tab** — single destination selector (scan or dropdown, FDS-02-009) → `TrimOut.record(parentLotId, TrimOutTemplateId, shotCount, scrapCount, destinationCellLocationId, …)` (whole-LOT move into the Machining FIFO queue). No split/multi-destination UX (that's Phase 5).
+- **OUT tab** — single destination selector: one `ia.input.dropdown` with `allowCustomOptions: true` (scan **or** pick, FDS-02-009) → `TrimOut.record(parentLotId, TrimOutTemplateId, shotCount, scrapCount, destinationCellLocationId, …)` (whole-LOT move into the Machining FIFO queue). No split/multi-destination UX (that's Phase 5).
 After submit, navigate to the Phase 2 `LOT Detail`.
 
 ### 6.3 Receiving Dock (`Views/ShopFloor/ReceivingDock`) — MVP
-`Lot.create` form, `LotOriginType='Received'`, `currentLocationId = session.custom.cell` (Receiving Dock): PartNumber (scan-to-resolve via `Item.getByPartNumber`, or manual), VendorLotNumber, PieceCount (text-field + proc coercion), optional serial range (`MinSerialNumber`/`MaxSerialNumber`). On success → **print the LTT via `LotLabel.print` (§3)** → navigate to `LOT Detail`. No movement (creation, not move).
+`Lot.create` form, `LotOriginType='Received'`, `currentLocationId = session.custom.cell` (Receiving Dock): PartNumber (one `ia.input.dropdown` with `allowCustomOptions: true` — scan or pick, resolved via `Item.getByPartNumber`), VendorLotNumber, PieceCount (text-field + proc coercion), optional serial range (`MinSerialNumber`/`MaxSerialNumber`). On success → **print the LTT via `LotLabel.print` (§3)** → navigate to `LOT Detail`. No movement (creation, not move).
 
 ### 6.4 Row sub-views
 `Components/PlantFloor/TrimStation/WipQueueRow` (if the OUT/destination picker lists queue entries) and any dynamic field rows reuse the Phase 3 `FieldInputRow` pattern. Receiving uses none.
