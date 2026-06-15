@@ -1,7 +1,7 @@
 {
   "custom": {
-    "activeTab": "boms",
-    "activeTabIndex": 2,
+    "activeTab": "containerConfig",
+    "activeTabIndex": 0,
     "itemTypes": [
       "Raw Material",
       "Component",
