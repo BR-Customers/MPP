@@ -1,10 +1,7 @@
 {
   "custom": {
-    "selected": {
-      "meta": null
-    },
-    "activeTab": "cavities",
-    "activeTabIndex": 1,
+    "activeTab": "attributes",
+    "activeTabIndex": 0,
     "editDraft": {
       "meta": null
     },

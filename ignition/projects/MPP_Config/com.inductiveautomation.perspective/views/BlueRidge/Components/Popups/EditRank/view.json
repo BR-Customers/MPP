@@ -1,145 +1,136 @@
 {
   "custom": {
+    "editDraft": {
+      "meta": {
+        "Code": "",
+        "Id": null,
+        "Name": ""
+      }
+    },
     "mode": "create",
     "selected": {
       "meta": {
-        "Id": null,
         "Code": "",
+        "Id": null,
         "Name": ""
       }
-    },
-    "editDraft": {
-      "meta": {
-        "Id": null,
-        "Code": "",
-        "Name": ""
-      }
-    },
-    "dirty": false,
-    "_initFired": false
+    }
   },
   "params": {
-    "mode": "create",
-    "dieRankId": null
+    "dieRankId": null,
+    "mode": "create"
   },
   "propConfig": {
-    "params.mode":      { "paramDirection": "input", "persistent": true },
-    "params.dieRankId": { "paramDirection": "input", "persistent": true },
-    "custom.dirty": {
-      "binding": {
-        "type": "expr",
-        "config": {
-          "expression": "{view.custom.editDraft} != {view.custom.selected}"
-        }
-      }
-    },
     "custom._initFired": {
       "binding": {
-        "type": "expr",
-        "config": { "expression": "true" }
+        "config": {
+          "expression": "true"
+        },
+        "type": "expr"
       },
       "onChange": {
         "enabled": true,
         "script": "\tself.rootContainer.loadIfUpdateMode()"
       }
+    },
+    "custom.dirty": {
+      "binding": {
+        "config": {
+          "expression": "{view.custom.editDraft} !\u003d {view.custom.selected}"
+        },
+        "type": "expr"
+      }
+    },
+    "params.dieRankId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.mode": {
+      "paramDirection": "input",
+      "persistent": true
     }
   },
   "props": {
-    "defaultSize": { "width": 460, "height": 280 }
+    "defaultSize": {
+      "height": 280,
+      "width": 460
+    }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": { "name": "root" },
-    "props": {
-      "direction": "column",
-      "style": {
-        "background": "var(--mpp-surface-canvas)",
-        "borderRadius": "var(--mpp-radius-md, 8px)",
-        "height": "100%",
-        "overflow": "hidden",
-        "width": "100%"
-      }
-    },
     "children": [
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "HeaderBar" },
-        "position": { "basis": "50px", "shrink": 0 },
-        "props": {
-          "alignItems": "center",
-          "style": {
-            "background": "var(--mpp-surface-raised)",
-            "borderBottom": "1px solid var(--mpp-border-subtle)",
-            "gap": "12px",
-            "overflow": "hidden",
-            "padding": "0 16px"
-          }
-        },
         "children": [
           {
-            "type": "ia.display.label",
-            "meta": { "name": "TitleLabel" },
+            "meta": {
+              "name": "TitleLabel"
+            },
             "propConfig": {
               "props.text": {
                 "binding": {
-                  "type": "expr",
                   "config": {
-                    "expression": "if({view.params.mode} = 'create', 'Add Rank', 'Edit Rank')"
-                  }
+                    "expression": "if({view.params.mode} \u003d \u0027create\u0027, \u0027Add Rank\u0027, \u0027Edit Rank\u0027)"
+                  },
+                  "type": "expr"
                 }
               }
             },
             "props": {
-              "text": "Edit Rank",
               "style": {
                 "classes": "modal-title",
                 "fontSize": "14px",
                 "fontWeight": "600"
               }
-            }
+            },
+            "type": "ia.display.label"
           },
           {
-            "type": "ia.container.flex",
-            "meta": { "name": "Spacer" },
-            "position": { "grow": 1 }
+            "meta": {
+              "name": "Spacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.container.flex"
           },
           {
-            "type": "ia.display.label",
-            "meta": { "name": "DirtyIndicator" },
+            "meta": {
+              "name": "DirtyIndicator"
+            },
             "propConfig": {
               "props.text": {
                 "binding": {
-                  "type": "expr",
                   "config": {
-                    "expression": "if({view.custom.dirty}, '● Unsaved changes', '')"
-                  }
+                    "expression": "if({view.custom.dirty}, \u0027● Unsaved changes\u0027, \u0027\u0027)"
+                  },
+                  "type": "expr"
                 }
               }
             },
             "props": {
-              "text": "",
               "style": {
                 "color": "var(--mpp-accent)",
                 "fontSize": "11px",
                 "fontStyle": "italic"
               }
-            }
+            },
+            "type": "ia.display.label"
           },
           {
-            "type": "ia.display.icon",
-            "meta": {
-              "name": "CloseIcon",
-              "tooltip": { "text": "Close" }
-            },
             "events": {
               "dom": {
                 "onClick": {
-                  "type": "script",
-                  "scope": "G",
                   "config": {
                     "script": "\tself.view.rootContainer.handleClose()"
-                  }
+                  },
+                  "scope": "G",
+                  "type": "script"
                 }
+              }
+            },
+            "meta": {
+              "name": "CloseIcon",
+              "tooltip": {
+                "text": "Close"
               }
             },
             "props": {
@@ -150,50 +141,57 @@
                 "height": "18px",
                 "width": "18px"
               }
-            }
+            },
+            "type": "ia.display.icon"
           }
-        ]
-      },
-      {
-        "type": "ia.container.flex",
-        "meta": { "name": "FormBody" },
-        "position": { "grow": 1 },
+        ],
+        "meta": {
+          "name": "HeaderBar"
+        },
+        "position": {
+          "basis": "50px",
+          "shrink": 0
+        },
         "props": {
-          "direction": "column",
+          "alignItems": "center",
           "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
             "gap": "12px",
-            "overflowY": "auto",
-            "padding": "16px"
+            "overflow": "hidden",
+            "padding": "0 16px"
           }
         },
+        "type": "ia.container.flex"
+      },
+      {
         "children": [
           {
-            "type": "ia.container.flex",
-            "meta": { "name": "CodeField" },
-            "props": {
-              "direction": "column",
-              "style": { "gap": "4px" }
-            },
             "children": [
               {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
+                "meta": {
+                  "name": "Label"
+                },
                 "props": {
-                  "text": "Code",
-                  "style": { "classes": "field-label" }
-                }
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Code"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.text-field",
-                "meta": { "name": "Input" },
+                "meta": {
+                  "name": "Input"
+                },
                 "propConfig": {
                   "props.text": {
                     "binding": {
-                      "type": "property",
                       "config": {
                         "bidirectional": true,
                         "path": "view.custom.editDraft.meta.Code"
-                      }
+                      },
+                      "type": "property"
                     }
                   }
                 },
@@ -204,37 +202,47 @@
                     "classes": "search-input",
                     "width": "100%"
                   }
-                }
+                },
+                "type": "ia.input.text-field"
               }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "NameField" },
+            ],
+            "meta": {
+              "name": "CodeField"
+            },
             "props": {
               "direction": "column",
-              "style": { "gap": "4px" }
+              "style": {
+                "gap": "4px"
+              }
             },
+            "type": "ia.container.flex"
+          },
+          {
             "children": [
               {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
+                "meta": {
+                  "name": "Label"
+                },
                 "props": {
-                  "text": "Name",
-                  "style": { "classes": "field-label" }
-                }
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Name"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.text-field",
-                "meta": { "name": "Input" },
+                "meta": {
+                  "name": "Input"
+                },
                 "propConfig": {
                   "props.text": {
                     "binding": {
-                      "type": "property",
                       "config": {
                         "bidirectional": true,
                         "path": "view.custom.editDraft.meta.Name"
-                      }
+                      },
+                      "type": "property"
                     }
                   }
                 },
@@ -245,16 +253,150 @@
                     "classes": "search-input",
                     "width": "100%"
                   }
-                }
+                },
+                "type": "ia.input.text-field"
               }
-            ]
+            ],
+            "meta": {
+              "name": "NameField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
           }
-        ]
+        ],
+        "meta": {
+          "name": "FormBody"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "12px",
+            "overflowY": "auto",
+            "padding": "16px"
+          }
+        },
+        "type": "ia.container.flex"
       },
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "FooterBar" },
-        "position": { "basis": "50px", "shrink": 0 },
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleDelete()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "DeleteButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.params.mode} \u003d \u0027update\u0027"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-danger btn-sm"
+              },
+              "text": "Remove"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "children": [
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.handleClose()"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "CancelButton"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "btn btn-sm"
+                  },
+                  "text": "Cancel"
+                },
+                "type": "ia.input.button"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.handleSave()"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "SaveButton"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "btn btn-primary btn-sm"
+                  },
+                  "text": "Save"
+                },
+                "type": "ia.input.button"
+              }
+            ],
+            "meta": {
+              "name": "RightCluster"
+            },
+            "props": {
+              "alignItems": "center",
+              "style": {
+                "gap": "8px"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "FooterBar"
+        },
+        "position": {
+          "basis": "50px",
+          "shrink": 0
+        },
         "props": {
           "alignItems": "center",
           "justify": "space-between",
@@ -266,109 +408,43 @@
             "padding": "12px 16px"
           }
         },
-        "children": [
-          {
-            "type": "ia.input.button",
-            "meta": { "name": "DeleteButton" },
-            "position": { "shrink": 0 },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\tself.view.rootContainer.handleDelete()"
-                  }
-                }
-              }
-            },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "type": "expr",
-                  "config": { "expression": "{view.params.mode} = 'update'" }
-                }
-              }
-            },
-            "props": {
-              "text": "Remove",
-              "style": { "classes": "btn btn-danger btn-sm" }
-            }
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "RightCluster" },
-            "props": {
-              "alignItems": "center",
-              "style": { "gap": "8px" }
-            },
-            "children": [
-              {
-                "type": "ia.input.button",
-                "meta": { "name": "CancelButton" },
-                "position": { "shrink": 0 },
-                "events": {
-                  "component": {
-                    "onActionPerformed": {
-                      "type": "script",
-                      "scope": "G",
-                      "config": {
-                        "script": "\tself.view.rootContainer.handleClose()"
-                      }
-                    }
-                  }
-                },
-                "props": {
-                  "text": "Cancel",
-                  "style": { "classes": "btn btn-sm" }
-                }
-              },
-              {
-                "type": "ia.input.button",
-                "meta": { "name": "SaveButton" },
-                "position": { "shrink": 0 },
-                "events": {
-                  "component": {
-                    "onActionPerformed": {
-                      "type": "script",
-                      "scope": "G",
-                      "config": {
-                        "script": "\tself.view.rootContainer.handleSave()"
-                      }
-                    }
-                  }
-                },
-                "props": {
-                  "text": "Save",
-                  "style": { "classes": "btn btn-primary btn-sm" }
-                }
-              }
-            ]
-          }
-        ]
+        "type": "ia.container.flex"
       }
     ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "background": "var(--mpp-surface-canvas)",
+        "borderRadius": "var(--mpp-radius-md, 8px)",
+        "height": "100%",
+        "overflow": "hidden",
+        "width": "100%"
+      }
+    },
     "scripts": {
       "customMethods": [
         {
           "name": "loadIfUpdateMode",
           "params": [],
-          "script": "\tmode = self.view.params.mode\n\tself.view.custom.mode = mode\n\tif mode != 'update':\n\t\temptyMeta = {'Id': None, 'Code': '', 'Name': ''}\n\t\tself.view.custom.selected  = {'meta': dict(emptyMeta)}\n\t\tself.view.custom.editDraft = {'meta': dict(emptyMeta)}\n\t\treturn\n\trankId = self.view.params.dieRankId\n\trow = BlueRidge.Parts.DieRank.getOne(rankId)\n\tif not row:\n\t\tBlueRidge.Common.Notify.toast('Not found', 'Die rank ' + str(rankId) + ' could not be loaded.', 'error')\n\t\tsystem.perspective.closePopup(id='mpp-edit-rank')\n\t\treturn\n\tmeta = {'Id': row.get('Id'), 'Code': row.get('Code') or '', 'Name': row.get('Name') or ''}\n\tself.view.custom.selected  = {'meta': dict(meta)}\n\tself.view.custom.editDraft = {'meta': dict(meta)}"
+          "script": "\tmode \u003d self.view.params.mode\n\tself.view.custom.mode \u003d mode\n\tif mode !\u003d \u0027update\u0027:\n\t\temptyMeta \u003d {\u0027Id\u0027: None, \u0027Code\u0027: \u0027\u0027, \u0027Name\u0027: \u0027\u0027}\n\t\tself.view.custom.selected  \u003d {\u0027meta\u0027: dict(emptyMeta)}\n\t\tself.view.custom.editDraft \u003d {\u0027meta\u0027: dict(emptyMeta)}\n\t\treturn\n\trankId \u003d self.view.params.dieRankId\n\trow \u003d BlueRidge.Parts.DieRank.getOne(rankId)\n\tif not row:\n\t\tBlueRidge.Common.Notify.toast(\u0027Not found\u0027, \u0027Die rank \u0027 + str(rankId) + \u0027 could not be loaded.\u0027, \u0027error\u0027)\n\t\tsystem.perspective.closePopup(id\u003d\u0027mpp-edit-rank\u0027)\n\t\treturn\n\tmeta \u003d {\u0027Id\u0027: row.get(\u0027Id\u0027), \u0027Code\u0027: row.get(\u0027Code\u0027) or \u0027\u0027, \u0027Name\u0027: row.get(\u0027Name\u0027) or \u0027\u0027}\n\tself.view.custom.selected  \u003d {\u0027meta\u0027: dict(meta)}\n\tself.view.custom.editDraft \u003d {\u0027meta\u0027: dict(meta)}"
         },
         {
           "name": "handleSave",
           "params": [],
-          "script": "\tmode  = self.view.custom.mode\n\tdraft = self.view.custom.editDraft or {}\n\tmeta  = draft.get('meta') or {}\n\tif mode == 'create':\n\t\tresult = BlueRidge.Parts.DieRank.add(meta)\n\t\tsuccess = 'Die rank created'\n\telse:\n\t\tresult = BlueRidge.Parts.DieRank.update(meta)\n\t\tsuccess = 'Die rank updated'\n\tBlueRidge.Common.Ui.notifyResult(result, success)\n\tif result and result.get('Status'):\n\t\tself.view.custom.selected = {'meta': dict(meta)}\n\t\tsystem.perspective.sendMessage('dieRankRefresh', scope='page')\n\t\tsystem.perspective.closePopup(id='mpp-edit-rank')"
+          "script": "\tmode  \u003d self.view.custom.mode\n\tdraft \u003d self.view.custom.editDraft or {}\n\tmeta  \u003d draft.get(\u0027meta\u0027) or {}\n\tif mode \u003d\u003d \u0027create\u0027:\n\t\tresult \u003d BlueRidge.Parts.DieRank.add(meta)\n\t\tsuccess \u003d \u0027Die rank created\u0027\n\telse:\n\t\tresult \u003d BlueRidge.Parts.DieRank.update(meta)\n\t\tsuccess \u003d \u0027Die rank updated\u0027\n\tBlueRidge.Common.Ui.notifyResult(result, success)\n\tif result and result.get(\u0027Status\u0027):\n\t\tself.view.custom.selected \u003d {\u0027meta\u0027: dict(meta)}\n\t\tsystem.perspective.sendMessage(\u0027dieRankRefresh\u0027, scope\u003d\u0027page\u0027)\n\t\tsystem.perspective.closePopup(id\u003d\u0027mpp-edit-rank\u0027)"
         },
         {
           "name": "handleDelete",
           "params": [],
-          "script": "\t# Route through ConfirmDestructive instead of deleting directly --\n\t# the editRankDeleteConfirmed messageHandler does the real work\n\t# once the user clicks Remove on the confirm popup.\n\tdraft = self.view.custom.editDraft or {}\n\tmeta  = draft.get('meta') or {}\n\trankId = meta.get('Id')\n\tif rankId is None:\n\t\treturn\n\tcode = meta.get('Code') or ''\n\tname = meta.get('Name') or ''\n\tlabel = (code + ' - ' + name) if code and name else (code or name or 'this rank')\n\tsystem.perspective.openPopup(\n\t\tid='mpp-confirm-destructive',\n\t\tview='BlueRidge/Components/Popups/ConfirmDestructive',\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t'title':        'Remove Die Rank',\n\t\t\t'message':      'Remove die rank ' + label + '? This cannot be undone.',\n\t\t\t'confirmLabel': 'Remove',\n\t\t\t'replyMessage': 'editRankDeleteConfirmed'\n\t\t}\n\t)"
+          "script": "\t# Route through ConfirmDestructive instead of deleting directly --\n\t# the editRankDeleteConfirmed messageHandler does the real work\n\t# once the user clicks Remove on the confirm popup.\n\tdraft \u003d self.view.custom.editDraft or {}\n\tmeta  \u003d draft.get(\u0027meta\u0027) or {}\n\trankId \u003d meta.get(\u0027Id\u0027)\n\tif rankId is None:\n\t\treturn\n\tcode \u003d meta.get(\u0027Code\u0027) or \u0027\u0027\n\tname \u003d meta.get(\u0027Name\u0027) or \u0027\u0027\n\tlabel \u003d (code + \u0027 - \u0027 + name) if code and name else (code or name or \u0027this rank\u0027)\n\tsystem.perspective.openPopup(\n\t\tid\u003d\u0027mpp-confirm-destructive\u0027,\n\t\tview\u003d\u0027BlueRidge/Components/Popups/ConfirmDestructive\u0027,\n\t\tmodal\u003dTrue,\n\t\tshowCloseIcon\u003dFalse,\n\t\tparams\u003d{\n\t\t\t\u0027title\u0027:        \u0027Remove Die Rank\u0027,\n\t\t\t\u0027message\u0027:      \u0027Remove die rank \u0027 + label + \u0027? This cannot be undone.\u0027,\n\t\t\t\u0027confirmLabel\u0027: \u0027Remove\u0027,\n\t\t\t\u0027replyMessage\u0027: \u0027editRankDeleteConfirmed\u0027\n\t\t}\n\t)"
         },
         {
           "name": "handleClose",
           "params": [],
-          "script": "\t# Reset draft to selected so the next open lands clean. No nested\n\t# confirm popup -- matches the AddDie / dirty-on-list-switch policy.\n\tself.view.custom.editDraft = {'meta': dict(self.view.custom.selected['meta'])}\n\tsystem.perspective.closePopup(id='mpp-edit-rank')"
+          "script": "\t# Reset draft to selected so the next open lands clean. No nested\n\t# confirm popup -- matches the AddDie / dirty-on-list-switch policy.\n\tself.view.custom.editDraft \u003d {\u0027meta\u0027: dict(self.view.custom.selected[\u0027meta\u0027])}\n\tsystem.perspective.closePopup(id\u003d\u0027mpp-edit-rank\u0027)"
         }
       ],
       "extensionFunctions": null,
@@ -376,11 +452,12 @@
         {
           "messageType": "editRankDeleteConfirmed",
           "pageScope": true,
+          "script": "\taction \u003d payload.get(\u0027action\u0027) if payload else None\n\tif action !\u003d \u0027confirm\u0027:\n\t\treturn\n\tdraft \u003d self.view.custom.editDraft or {}\n\tmeta  \u003d draft.get(\u0027meta\u0027) or {}\n\trankId \u003d meta.get(\u0027Id\u0027)\n\tif rankId is None:\n\t\treturn\n\tresult \u003d BlueRidge.Parts.DieRank.deprecate(rankId)\n\tBlueRidge.Common.Ui.notifyResult(result, \u0027Die rank removed\u0027)\n\tif result and result.get(\u0027Status\u0027):\n\t\tsystem.perspective.sendMessage(\u0027dieRankRefresh\u0027, scope\u003d\u0027page\u0027)\n\t\tsystem.perspective.closePopup(id\u003d\u0027mpp-edit-rank\u0027)",
           "sessionScope": false,
-          "viewScope": false,
-          "script": "\taction = payload.get('action') if payload else None\n\tif action != 'confirm':\n\t\treturn\n\tdraft = self.view.custom.editDraft or {}\n\tmeta  = draft.get('meta') or {}\n\trankId = meta.get('Id')\n\tif rankId is None:\n\t\treturn\n\tresult = BlueRidge.Parts.DieRank.deprecate(rankId)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Die rank removed')\n\tif result and result.get('Status'):\n\t\tsystem.perspective.sendMessage('dieRankRefresh', scope='page')\n\t\tsystem.perspective.closePopup(id='mpp-edit-rank')"
+          "viewScope": false
         }
       ]
-    }
+    },
+    "type": "ia.container.flex"
   }
 }
