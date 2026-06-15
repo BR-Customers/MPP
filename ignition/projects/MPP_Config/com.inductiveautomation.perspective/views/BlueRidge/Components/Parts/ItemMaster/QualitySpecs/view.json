@@ -429,18 +429,6 @@
               "rows": {
                 "height": 36
               },
-              "selection": {
-                "data": [
-                  {
-                    "activeVersion": "",
-                    "id": 1,
-                    "specName": "5G0 Dimensional Spec",
-                    "statusLabel": "Active"
-                  }
-                ],
-                "selectedColumn": "activeVersion",
-                "selectedRow": 0
-              },
               "style": {
                 "classes": "data-table"
               }
