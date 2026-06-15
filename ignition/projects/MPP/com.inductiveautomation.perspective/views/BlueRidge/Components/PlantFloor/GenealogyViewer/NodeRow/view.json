@@ -70,7 +70,7 @@
           "type": "script",
           "scope": "G",
           "config": {
-            "script": "\tsystem.perspective.navigate(\"/shop-floor/lot-detail\", params={\"lotId\": self.view.params.LotId})"
+            "script": "\tsystem.perspective.navigate(\"/shop-floor/lot-detail/\" + str(self.view.params.LotId))"
           }
         }
       }

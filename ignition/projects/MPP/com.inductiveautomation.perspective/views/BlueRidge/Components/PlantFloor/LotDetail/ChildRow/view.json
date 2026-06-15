@@ -2,10 +2,10 @@
   "custom": {},
   "params": {
     "row": {
-      "EventAt": "",
-      "EventKind": "",
-      "Detail": "",
-      "ByUserName": ""
+      "ChildLotId": null,
+      "ChildLotName": "",
+      "ItemCode": "",
+      "RelationshipTypeName": ""
     }
   },
   "propConfig": {
@@ -28,6 +28,7 @@
       "alignItems": "center",
       "style": {
         "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "cursor": "pointer",
         "gap": "12px",
         "minHeight": "44px",
         "paddingLeft": "12px",
@@ -36,11 +37,66 @@
         "paddingBottom": "8px"
       }
     },
+    "events": {
+      "component": {
+        "onActionPerformed": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tif self.view.params.row and self.view.params.row.ChildLotId:\n\t\tsystem.perspective.navigate(\"/shop-floor/lot-detail/\" + str(self.view.params.row.ChildLotId))"
+          }
+        }
+      }
+    },
     "children": [
       {
         "type": "ia.display.label",
         "meta": {
-          "name": "EventKindBadge"
+          "name": "DownArrow"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "text": "↓",
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "14px",
+            "width": "16px"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "LotNameLabel"
+        },
+        "position": {
+          "grow": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.params.row.ChildLotName}) + \"  ·  \" + toStr({view.params.row.ItemCode})"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-primary)",
+            "fontFamily": "monospace",
+            "fontSize": "14px"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "RelationshipBadge"
         },
         "position": {
           "basis": "auto",
@@ -51,7 +107,7 @@
             "binding": {
               "type": "property",
               "config": {
-                "path": "view.params.row.EventKind"
+                "path": "view.params.row.RelationshipTypeName"
               }
             }
           }
@@ -63,61 +119,8 @@
             "color": "var(--mpp-text-secondary)",
             "fontSize": "11px",
             "fontWeight": "600",
-            "letterSpacing": "0.05em",
             "padding": "2px 8px",
-            "textTransform": "uppercase",
-            "width": "80px"
-          }
-        }
-      },
-      {
-        "type": "ia.display.label",
-        "meta": {
-          "name": "DetailLabel"
-        },
-        "position": {
-          "grow": 1
-        },
-        "propConfig": {
-          "props.text": {
-            "binding": {
-              "type": "property",
-              "config": {
-                "path": "view.params.row.Detail"
-              }
-            }
-          }
-        },
-        "props": {
-          "style": {
-            "color": "var(--mpp-text-primary)",
-            "fontSize": "14px"
-          }
-        }
-      },
-      {
-        "type": "ia.display.label",
-        "meta": {
-          "name": "MetaLabel"
-        },
-        "position": {
-          "basis": "auto",
-          "shrink": 0
-        },
-        "propConfig": {
-          "props.text": {
-            "binding": {
-              "type": "expr",
-              "config": {
-                "expression": "toStr({view.params.row.ByUserName}) + \"  ·  \" + toStr({view.params.row.EventAt})"
-              }
-            }
-          }
-        },
-        "props": {
-          "style": {
-            "color": "var(--mpp-text-secondary)",
-            "fontSize": "12px"
+            "textTransform": "uppercase"
           }
         }
       }

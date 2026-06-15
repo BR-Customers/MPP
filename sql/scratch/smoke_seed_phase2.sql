@@ -114,8 +114,7 @@ UNION ALL SELECT 'B sublot #1 (Closed)',                     @Child1, @Child1Nam
 UNION ALL SELECT 'B sublot #2 (paused @ Cell 4)',            @Child2, (SELECT ChildLotName FROM @rS WHERE ChildLotId=@Child2);
 
 SELECT 'LOT Search'        AS [View], 'http://localhost:8088/data/perspective/client/MPP/shop-floor/lot-search' AS Url
-UNION ALL SELECT 'LOT Detail (B, tool cards)',  'http://localhost:8088/data/perspective/client/MPP/shop-floor/lot-detail?lotId=' + CAST(@BId AS NVARCHAR(20))
-UNION ALL SELECT 'LOT Detail (A, no cards)',    'http://localhost:8088/data/perspective/client/MPP/shop-floor/lot-detail?lotId=' + CAST(@AId AS NVARCHAR(20))
-UNION ALL SELECT 'Genealogy (type B name)',     'http://localhost:8088/data/perspective/client/MPP/shop-floor/genealogy'
-UNION ALL SELECT 'Paused demo (pick Machine 01)','http://localhost:8088/data/perspective/client/MPP/shop-floor/paused-demo';
+UNION ALL SELECT 'LOT Detail (B, tool cards)',  'http://localhost:8088/data/perspective/client/MPP/shop-floor/lot-detail/' + CAST(@BId AS NVARCHAR(20))
+UNION ALL SELECT 'LOT Detail (A, no cards)',    'http://localhost:8088/data/perspective/client/MPP/shop-floor/lot-detail/' + CAST(@AId AS NVARCHAR(20))
+UNION ALL SELECT 'Genealogy (type B name)',     'http://localhost:8088/data/perspective/client/MPP/shop-floor/genealogy';
 GO

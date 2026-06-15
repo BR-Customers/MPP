@@ -2,8 +2,8 @@
   "custom": {},
   "params": {
     "row": {
-      "ChildLotId": null,
-      "ChildLotName": "",
+      "ParentLotId": null,
+      "ParentLotName": "",
       "ItemCode": "",
       "RelationshipTypeName": ""
     }
@@ -43,7 +43,7 @@
           "type": "script",
           "scope": "G",
           "config": {
-            "script": "\tif self.view.params.row and self.view.params.row.ChildLotId:\n\t\tsystem.perspective.navigate(\"/shop-floor/lot-detail\", params={\"lotId\": self.view.params.row.ChildLotId})"
+            "script": "\tif self.view.params.row and self.view.params.row.ParentLotId:\n\t\tsystem.perspective.navigate(\"/shop-floor/lot-detail/\" + str(self.view.params.row.ParentLotId))"
           }
         }
       }
@@ -52,14 +52,14 @@
       {
         "type": "ia.display.label",
         "meta": {
-          "name": "DownArrow"
+          "name": "UpArrow"
         },
         "position": {
           "basis": "auto",
           "shrink": 0
         },
         "props": {
-          "text": "↓",
+          "text": "↑",
           "style": {
             "color": "var(--mpp-text-secondary)",
             "fontSize": "14px",
@@ -80,7 +80,7 @@
             "binding": {
               "type": "expr",
               "config": {
-                "expression": "toStr({view.params.row.ChildLotName}) + \"  ·  \" + toStr({view.params.row.ItemCode})"
+                "expression": "toStr({view.params.row.ParentLotName}) + \"  ·  \" + toStr({view.params.row.ItemCode})"
               }
             }
           }

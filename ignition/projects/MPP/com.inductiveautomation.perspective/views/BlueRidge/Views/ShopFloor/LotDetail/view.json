@@ -1,6 +1,5 @@
 {
   "custom": {
-    "activeTab": "history",
     "children": [],
     "history": [],
     "lot": {
@@ -667,560 +666,425 @@
           "style": {
             "classes": "pf-panel",
             "margin": "16px 24px",
-            "padding": "20px",
+            "padding": "0px",
             "gap": "0px",
-            "overflowY": "auto"
+            "overflow": "hidden"
           }
         },
         "children": [
           {
-            "type": "ia.container.flex",
+            "type": "ia.container.tab",
             "meta": {
-              "name": "TabBar"
+              "name": "TabContainer"
             },
             "position": {
-              "basis": "44px",
-              "shrink": 0
+              "grow": 1,
+              "basis": "0"
             },
             "props": {
-              "direction": "row",
-              "alignItems": "stretch",
-              "style": {
-                "classes": "pf-tabs",
-                "margin": "-20px -20px 16px -20px",
-                "height": "44px",
-                "gap": "0px"
-              }
-            },
-            "children": [
-              {
-                "type": "ia.input.button",
-                "meta": {
-                  "name": "TabHistory"
-                },
-                "position": {
-                  "basis": "auto",
-                  "shrink": 0
-                },
-                "propConfig": {
-                  "props.style.classes": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "if({view.custom.activeTab} = \"history\", \"pf-tab active\", \"pf-tab\")"
-                      }
-                    }
-                  }
-                },
-                "props": {
+              "currentTabIndex": 0,
+              "menuType": "modern",
+              "tabs": [
+                {
                   "text": "History",
-                  "style": {
-                    "classes": "pf-tab active"
-                  }
+                  "runWhileHidden": true,
+                  "disabled": false
                 },
-                "events": {
-                  "component": {
-                    "onActionPerformed": {
-                      "type": "script",
-                      "scope": "G",
-                      "config": {
-                        "script": "\tself.view.custom.activeTab = \"history\""
-                      }
-                    }
-                  }
-                }
-              },
-              {
-                "type": "ia.input.button",
-                "meta": {
-                  "name": "TabGenealogy"
-                },
-                "position": {
-                  "basis": "auto",
-                  "shrink": 0
-                },
-                "propConfig": {
-                  "props.style.classes": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "if({view.custom.activeTab} = \"genealogy\", \"pf-tab active\", \"pf-tab\")"
-                      }
-                    }
-                  }
-                },
-                "props": {
+                {
                   "text": "Genealogy",
-                  "style": {
-                    "classes": "pf-tab"
-                  }
+                  "runWhileHidden": true,
+                  "disabled": false
                 },
-                "events": {
-                  "component": {
-                    "onActionPerformed": {
-                      "type": "script",
-                      "scope": "G",
-                      "config": {
-                        "script": "\tself.view.custom.activeTab = \"genealogy\""
-                      }
-                    }
-                  }
-                }
-              },
-              {
-                "type": "ia.input.button",
-                "meta": {
-                  "name": "TabPaused"
-                },
-                "position": {
-                  "basis": "auto",
-                  "shrink": 0
-                },
-                "propConfig": {
-                  "props.style.classes": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "if({view.custom.activeTab} = \"paused\", \"pf-tab active\", \"pf-tab\")"
-                      }
-                    }
-                  }
-                },
-                "props": {
+                {
                   "text": "Paused-at",
-                  "style": {
-                    "classes": "pf-tab"
-                  }
+                  "runWhileHidden": true,
+                  "disabled": false
                 },
-                "events": {
-                  "component": {
-                    "onActionPerformed": {
-                      "type": "script",
-                      "scope": "G",
-                      "config": {
-                        "script": "\tself.view.custom.activeTab = \"paused\""
-                      }
-                    }
-                  }
-                }
-              },
-              {
-                "type": "ia.input.button",
-                "meta": {
-                  "name": "TabContainer"
-                },
-                "position": {
-                  "basis": "auto",
-                  "shrink": 0
-                },
-                "propConfig": {
-                  "props.style.classes": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "if({view.custom.activeTab} = \"container\", \"pf-tab active\", \"pf-tab\")"
-                      }
-                    }
-                  }
-                },
-                "props": {
+                {
                   "text": "Linked Container",
+                  "runWhileHidden": true,
+                  "disabled": false
+                }
+              ],
+              "menuStyle": {
+                "classes": "tab-strip"
+              },
+              "contentStyle": {
+                "classes": "tab-content-fill"
+              },
+              "tabStyle": {
+                "active": {
+                  "classes": "tab-item tab-item-active"
+                },
+                "inactive": {
+                  "classes": "tab-item"
+                },
+                "disabled": {
+                  "classes": "tab-item"
+                }
+              }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "PanelHistory"
+                },
+                "position": {
+                  "tabIndex": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "alignItems": "stretch",
                   "style": {
-                    "classes": "pf-tab"
+                    "gap": "8px",
+                    "overflowY": "auto"
                   }
                 },
-                "events": {
-                  "component": {
-                    "onActionPerformed": {
-                      "type": "script",
-                      "scope": "G",
-                      "config": {
-                        "script": "\tself.view.custom.activeTab = \"container\""
+                "children": [
+                  {
+                    "type": "ia.display.flex-repeater",
+                    "meta": {
+                      "name": "HistoryRepeater"
+                    },
+                    "position": {
+                      "grow": 1,
+                      "basis": "0"
+                    },
+                    "propConfig": {
+                      "props.instances": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.history"
+                          },
+                          "transforms": [
+                            {
+                              "type": "script",
+                              "code": "\trows = value or []\n\tout = []\n\tfor r in rows:\n\t\tr = BlueRidge.Common.Util.extractQualifiedValues(r) or {}\n\t\tout.append({'row': r})\n\treturn out"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "column",
+                      "elementPosition": {
+                        "basis": "auto",
+                        "grow": 0,
+                        "shrink": 0
+                      },
+                      "path": "BlueRidge/Components/PlantFloor/LotDetail/HistoryRow",
+                      "style": {
+                        "gap": "6px"
+                      },
+                      "useDefaultViewHeight": false,
+                      "useDefaultViewWidth": false,
+                      "elementStyle": {
+                        "maxHeight": "80px",
+                        "classes": ""
                       }
                     }
                   }
-                }
-              }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": {
-              "name": "PanelHistory"
-            },
-            "position": {
-              "grow": 1,
-              "basis": "0"
-            },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "{view.custom.activeTab} = \"history\""
-                  }
-                }
-              }
-            },
-            "props": {
-              "direction": "column",
-              "alignItems": "stretch",
-              "style": {
-                "gap": "8px",
-                "overflowY": "auto"
-              }
-            },
-            "children": [
+                ]
+              },
               {
-                "type": "ia.display.flex-repeater",
+                "type": "ia.container.flex",
                 "meta": {
-                  "name": "HistoryRepeater"
+                  "name": "PanelGenealogy"
                 },
                 "position": {
-                  "grow": 1,
-                  "basis": "0"
-                },
-                "propConfig": {
-                  "props.instances": {
-                    "binding": {
-                      "type": "property",
-                      "config": {
-                        "path": "view.custom.history"
-                      },
-                      "transforms": [
-                        {
-                          "type": "script",
-                          "code": "\trows = value or []\n\tout = []\n\tfor r in rows:\n\t\tr = BlueRidge.Common.Util.extractQualifiedValues(r) or {}\n\t\tout.append({'row': r})\n\treturn out"
-                        }
-                      ]
-                    }
-                  }
+                  "tabIndex": 1
                 },
                 "props": {
                   "direction": "column",
-                  "elementPosition": {
-                    "basis": "auto"
-                  },
-                  "path": "BlueRidge/Views/ShopFloor/LotDetail/_History/HistoryRow",
+                  "alignItems": "stretch",
                   "style": {
-                    "gap": "6px"
-                  },
-                  "useDefaultViewHeight": false,
-                  "useDefaultViewWidth": false
-                }
-              }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": {
-              "name": "PanelGenealogy"
-            },
-            "position": {
-              "grow": 1,
-              "basis": "0"
-            },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "{view.custom.activeTab} = \"genealogy\""
-                  }
-                }
-              }
-            },
-            "props": {
-              "direction": "column",
-              "alignItems": "stretch",
-              "style": {
-                "gap": "16px",
-                "overflowY": "auto"
-              }
-            },
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "ParentsHeading"
-                },
-                "position": {
-                  "basis": "auto",
-                  "shrink": 0
-                },
-                "props": {
-                  "text": "Parents",
-                  "style": {
-                    "color": "var(--mpp-text-muted)",
-                    "fontSize": "11px",
-                    "fontWeight": "600",
-                    "textTransform": "uppercase",
-                    "letterSpacing": "0.08em"
-                  }
-                }
-              },
-              {
-                "type": "ia.display.flex-repeater",
-                "meta": {
-                  "name": "ParentsRepeater"
-                },
-                "position": {
-                  "basis": "auto",
-                  "shrink": 0
-                },
-                "propConfig": {
-                  "props.instances": {
-                    "binding": {
-                      "type": "property",
-                      "config": {
-                        "path": "view.custom.parents"
-                      },
-                      "transforms": [
-                        {
-                          "type": "script",
-                          "code": "\trows = value or []\n\tout = []\n\tfor r in rows:\n\t\tr = BlueRidge.Common.Util.extractQualifiedValues(r) or {}\n\t\tout.append({'row': r})\n\treturn out"
-                        }
-                      ]
-                    }
+                    "gap": "16px",
+                    "overflowY": "auto"
                   }
                 },
-                "props": {
-                  "direction": "column",
-                  "elementPosition": {
-                    "basis": "auto"
-                  },
-                  "path": "BlueRidge/Views/ShopFloor/LotDetail/_Genealogy/ParentRow",
-                  "style": {
-                    "gap": "6px"
-                  },
-                  "useDefaultViewHeight": false,
-                  "useDefaultViewWidth": false
-                }
-              },
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "ChildrenHeading"
-                },
-                "position": {
-                  "basis": "auto",
-                  "shrink": 0
-                },
-                "props": {
-                  "text": "Children",
-                  "style": {
-                    "color": "var(--mpp-text-muted)",
-                    "fontSize": "11px",
-                    "fontWeight": "600",
-                    "textTransform": "uppercase",
-                    "letterSpacing": "0.08em"
-                  }
-                }
-              },
-              {
-                "type": "ia.display.flex-repeater",
-                "meta": {
-                  "name": "ChildrenRepeater"
-                },
-                "position": {
-                  "basis": "auto",
-                  "shrink": 0
-                },
-                "propConfig": {
-                  "props.instances": {
-                    "binding": {
-                      "type": "property",
-                      "config": {
-                        "path": "view.custom.children"
-                      },
-                      "transforms": [
-                        {
-                          "type": "script",
-                          "code": "\trows = value or []\n\tout = []\n\tfor r in rows:\n\t\tr = BlueRidge.Common.Util.extractQualifiedValues(r) or {}\n\t\tout.append({'row': r})\n\treturn out"
-                        }
-                      ]
-                    }
-                  }
-                },
-                "props": {
-                  "direction": "column",
-                  "elementPosition": {
-                    "basis": "auto"
-                  },
-                  "path": "BlueRidge/Views/ShopFloor/LotDetail/_Genealogy/ChildRow",
-                  "style": {
-                    "gap": "6px"
-                  },
-                  "useDefaultViewHeight": false,
-                  "useDefaultViewWidth": false
-                }
-              }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": {
-              "name": "PanelPaused"
-            },
-            "position": {
-              "grow": 1,
-              "basis": "0"
-            },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "{view.custom.activeTab} = \"paused\""
-                  }
-                }
-              }
-            },
-            "props": {
-              "direction": "column",
-              "alignItems": "stretch",
-              "style": {
-                "gap": "8px",
-                "overflowY": "auto"
-              }
-            },
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "EmptyState"
-                },
-                "position": {
-                  "basis": "auto",
-                  "shrink": 0
-                },
-                "propConfig": {
-                  "position.display": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "len({view.custom.pauses}) = 0"
-                      }
-                    }
-                  }
-                },
-                "props": {
-                  "text": "No paused entries — this LOT has no open pause rows.",
-                  "style": {
-                    "classes": "pf-empty-state",
-                    "color": "var(--mpp-text-secondary)",
-                    "fontSize": "15px",
-                    "padding": "32px",
-                    "textAlign": "center"
-                  }
-                }
-              },
-              {
-                "type": "ia.display.flex-repeater",
-                "meta": {
-                  "name": "PausesRepeater"
-                },
-                "position": {
-                  "grow": 1,
-                  "basis": "0"
-                },
-                "propConfig": {
-                  "position.display": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "len({view.custom.pauses}) > 0"
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "ParentsHeading"
+                    },
+                    "position": {
+                      "basis": "auto",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Parents",
+                      "style": {
+                        "color": "var(--mpp-text-muted)",
+                        "fontSize": "11px",
+                        "fontWeight": "600",
+                        "textTransform": "uppercase",
+                        "letterSpacing": "0.08em"
                       }
                     }
                   },
-                  "props.instances": {
-                    "binding": {
-                      "type": "property",
-                      "config": {
-                        "path": "view.custom.pauses"
-                      },
-                      "transforms": [
-                        {
-                          "type": "script",
-                          "code": "\trows = value or []\n\tout = []\n\tfor r in rows:\n\t\tr = BlueRidge.Common.Util.extractQualifiedValues(r) or {}\n\t\tout.append({'row': r})\n\treturn out"
+                  {
+                    "type": "ia.display.flex-repeater",
+                    "meta": {
+                      "name": "ParentsRepeater"
+                    },
+                    "position": {
+                      "basis": "auto",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.instances": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.parents"
+                          },
+                          "transforms": [
+                            {
+                              "type": "script",
+                              "code": "\trows = value or []\n\tout = []\n\tfor r in rows:\n\t\tr = BlueRidge.Common.Util.extractQualifiedValues(r) or {}\n\t\tout.append({'row': r})\n\treturn out"
+                            }
+                          ]
                         }
-                      ]
+                      }
+                    },
+                    "props": {
+                      "direction": "column",
+                      "elementPosition": {
+                        "basis": "auto",
+                        "grow": 0,
+                        "shrink": 0
+                      },
+                      "path": "BlueRidge/Components/PlantFloor/LotDetail/ParentRow",
+                      "style": {
+                        "gap": "6px"
+                      },
+                      "useDefaultViewHeight": false,
+                      "useDefaultViewWidth": false,
+                      "elementStyle": {
+                        "maxHeight": "80px",
+                        "classes": ""
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "ChildrenHeading"
+                    },
+                    "position": {
+                      "basis": "auto",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Children",
+                      "style": {
+                        "color": "var(--mpp-text-muted)",
+                        "fontSize": "11px",
+                        "fontWeight": "600",
+                        "textTransform": "uppercase",
+                        "letterSpacing": "0.08em"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.flex-repeater",
+                    "meta": {
+                      "name": "ChildrenRepeater"
+                    },
+                    "position": {
+                      "basis": "auto",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.instances": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.children"
+                          },
+                          "transforms": [
+                            {
+                              "type": "script",
+                              "code": "\trows = value or []\n\tout = []\n\tfor r in rows:\n\t\tr = BlueRidge.Common.Util.extractQualifiedValues(r) or {}\n\t\tout.append({'row': r})\n\treturn out"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "column",
+                      "elementPosition": {
+                        "basis": "auto",
+                        "grow": 0,
+                        "shrink": 0
+                      },
+                      "path": "BlueRidge/Components/PlantFloor/LotDetail/ChildRow",
+                      "style": {
+                        "gap": "6px"
+                      },
+                      "useDefaultViewHeight": false,
+                      "useDefaultViewWidth": false,
+                      "elementStyle": {
+                        "maxHeight": "80px",
+                        "classes": ""
+                      }
                     }
                   }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "PanelPaused"
+                },
+                "position": {
+                  "tabIndex": 2
                 },
                 "props": {
                   "direction": "column",
-                  "elementPosition": {
-                    "basis": "auto"
-                  },
-                  "path": "BlueRidge/Views/ShopFloor/LotDetail/_Paused/PauseRow",
+                  "alignItems": "stretch",
                   "style": {
-                    "gap": "6px"
-                  },
-                  "useDefaultViewHeight": false,
-                  "useDefaultViewWidth": false
-                }
-              }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": {
-              "name": "PanelContainer"
-            },
-            "position": {
-              "grow": 1,
-              "basis": "0"
-            },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "{view.custom.activeTab} = \"container\""
+                    "gap": "8px",
+                    "overflowY": "auto"
                   }
-                }
-              }
-            },
-            "props": {
-              "direction": "column",
-              "alignItems": "center",
-              "justify": "center",
-              "style": {
-                "gap": "8px"
-              }
-            },
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "ContainerStub"
                 },
-                "props": {
-                  "text": "Linked container — later phase",
-                  "style": {
-                    "classes": "pf-empty-state",
-                    "color": "var(--mpp-text-secondary)",
-                    "fontSize": "15px",
-                    "padding": "32px",
-                    "textAlign": "center"
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "EmptyState"
+                    },
+                    "position": {
+                      "basis": "auto",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "len({view.custom.pauses}) = 0"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "text": "No paused entries — this LOT has no open pause rows.",
+                      "style": {
+                        "classes": "pf-empty-state",
+                        "color": "var(--mpp-text-secondary)",
+                        "fontSize": "15px",
+                        "padding": "32px",
+                        "textAlign": "center"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.flex-repeater",
+                    "meta": {
+                      "name": "PausesRepeater"
+                    },
+                    "position": {
+                      "grow": 1,
+                      "basis": "0"
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "len({view.custom.pauses}) > 0"
+                          }
+                        }
+                      },
+                      "props.instances": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.pauses"
+                          },
+                          "transforms": [
+                            {
+                              "type": "script",
+                              "code": "\trows = value or []\n\tout = []\n\tfor r in rows:\n\t\tr = BlueRidge.Common.Util.extractQualifiedValues(r) or {}\n\t\tout.append({'row': r})\n\treturn out"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "column",
+                      "elementPosition": {
+                        "basis": "auto",
+                        "grow": 0,
+                        "shrink": 0
+                      },
+                      "path": "BlueRidge/Components/PlantFloor/LotDetail/PauseRow",
+                      "style": {
+                        "gap": "6px"
+                      },
+                      "useDefaultViewHeight": false,
+                      "useDefaultViewWidth": false,
+                      "elementStyle": {
+                        "maxHeight": "80px",
+                        "classes": ""
+                      }
+                    }
                   }
-                }
+                ]
               },
               {
-                "type": "ia.display.label",
+                "type": "ia.container.flex",
                 "meta": {
-                  "name": "ContainerDetail"
+                  "name": "PanelContainer"
+                },
+                "position": {
+                  "tabIndex": 3
                 },
                 "props": {
-                  "text": "Container links land at Assembly when serialized parts produce into a Container (Phase 6).",
+                  "direction": "column",
+                  "alignItems": "center",
+                  "justify": "center",
                   "style": {
-                    "color": "var(--mpp-text-muted)",
-                    "fontSize": "13px",
-                    "textAlign": "center",
-                    "maxWidth": "480px"
+                    "gap": "8px"
                   }
-                }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "ContainerStub"
+                    },
+                    "props": {
+                      "text": "Linked container — later phase",
+                      "style": {
+                        "classes": "pf-empty-state",
+                        "color": "var(--mpp-text-secondary)",
+                        "fontSize": "15px",
+                        "padding": "32px",
+                        "textAlign": "center"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "ContainerDetail"
+                    },
+                    "props": {
+                      "text": "Container links land at Assembly when serialized parts produce into a Container (Phase 6).",
+                      "style": {
+                        "color": "var(--mpp-text-muted)",
+                        "fontSize": "13px",
+                        "textAlign": "center",
+                        "maxWidth": "480px"
+                      }
+                    }
+                  }
+                ]
               }
             ]
           }

@@ -489,7 +489,7 @@
                     "basis": "auto",
                     "shrink": 0
                   },
-                  "path": "BlueRidge/Views/ShopFloor/GenealogyViewer/_NodeRow",
+                  "path": "BlueRidge/Components/PlantFloor/GenealogyViewer/NodeRow",
                   "style": {
                     "gap": "0"
                   },
@@ -662,7 +662,7 @@
                     "basis": "auto",
                     "shrink": 0
                   },
-                  "path": "BlueRidge/Views/ShopFloor/GenealogyViewer/_NodeRow",
+                  "path": "BlueRidge/Components/PlantFloor/GenealogyViewer/NodeRow",
                   "style": {
                     "gap": "0"
                   },

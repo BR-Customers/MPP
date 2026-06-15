@@ -16,7 +16,7 @@
       "title": "Select Terminal",
       "viewPath": "BlueRidge/Views/ShopFloor/TerminalSelector"
     },
-    "/shop-floor/lot-detail": {
+    "/shop-floor/lot-detail/:lotId": {
       "title": "LOT Detail",
       "viewPath": "BlueRidge/Views/ShopFloor/LotDetail"
     },
@@ -27,10 +27,6 @@
     "/shop-floor/genealogy": {
       "title": "Genealogy",
       "viewPath": "BlueRidge/Views/ShopFloor/GenealogyViewer"
-    },
-    "/shop-floor/paused-demo": {
-      "title": "Paused Demo",
-      "viewPath": "BlueRidge/Views/ShopFloor/PausedDemo"
     }
   },
   "sharedDocks": {}
