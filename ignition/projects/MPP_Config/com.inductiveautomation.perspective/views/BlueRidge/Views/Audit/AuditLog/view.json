@@ -6,9 +6,9 @@
         "$": [
           "ts",
           192,
-          1781279767297
+          1781535487886
         ],
-        "$ts": 1781279767297
+        "$ts": 1781535487886
       },
       "entityTypeCode": null,
       "logSeverityCode": null,
@@ -17,13 +17,278 @@
         "$": [
           "ts",
           192,
-          1781279767297
+          1781535487886
         ],
-        "$ts": 1780674967297
+        "$ts": 1780930687886
       }
     },
-    "rows": [],
-    "totalCount": 0
+    "rows": [
+      {
+        "ChangesSummary": "+ VersionNumber, Name, Item +1 more",
+        "Description": "5G0-C · Route v1 (Draft) · Created",
+        "EntityId": 3,
+        "Id": 11,
+        "LogEntityTypeCode": "Route",
+        "LogEntityTypeName": "Route",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781535487893
+          ],
+          "$ts": 1781533895282
+        },
+        "NewValue": "{\"Id\":3,\"VersionNumber\":1,\"Name\":\"Route v1\",\"EffectiveFrom\":\"2026-06-15T14:31:35.280\",\"Item\":{\"Id\":2,\"PartNumber\":\"5G0-C\",\"Description\":\"5G0 Front Cover Casting\"}}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 3 → 4",
+        "Description": "Location DC3 · Reordered from #3 to #4 within MPP-MAD",
+        "EntityId": 23,
+        "Id": 10,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781535487893
+          ],
+          "$ts": 1781533094029
+        },
+        "NewValue": "{\"Id\":23,\"Code\":\"DC3\",\"Name\":\"Die Cast 3\",\"SortOrder\":4,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "OldValue": "{\"Id\":23,\"Code\":\"DC3\",\"Name\":\"Die Cast 3\",\"SortOrder\":3,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 2 → 3",
+        "Description": "Location DC3 · Reordered from #2 to #3 within MPP-MAD",
+        "EntityId": 23,
+        "Id": 9,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781535487893
+          ],
+          "$ts": 1781533093503
+        },
+        "NewValue": "{\"Id\":23,\"Code\":\"DC3\",\"Name\":\"Die Cast 3\",\"SortOrder\":3,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "OldValue": "{\"Id\":23,\"Code\":\"DC3\",\"Name\":\"Die Cast 3\",\"SortOrder\":2,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 3 → 2",
+        "Description": "Location DC3 · Reordered from #3 to #2 within MPP-MAD",
+        "EntityId": 23,
+        "Id": 8,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781535487893
+          ],
+          "$ts": 1781533092184
+        },
+        "NewValue": "{\"Id\":23,\"Code\":\"DC3\",\"Name\":\"Die Cast 3\",\"SortOrder\":2,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "OldValue": "{\"Id\":23,\"Code\":\"DC3\",\"Name\":\"Die Cast 3\",\"SortOrder\":3,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "StatusCode: \"Active\" → \"Retired\"",
+        "Description": "Tool retired (deprecated; status set to Retired).",
+        "EntityId": 2,
+        "Id": 7,
+        "LogEntityTypeCode": "Tool",
+        "LogEntityTypeName": "Tool",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781535487893
+          ],
+          "$ts": 1781529831073
+        },
+        "NewValue": "{\"Id\":2,\"StatusCode\":\"Retired\"}",
+        "OldValue": "{\"StatusCode\":\"Active\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Code, Name, ToolTypeId +1 more",
+        "Description": "Tool created.",
+        "EntityId": 2,
+        "Id": 6,
+        "LogEntityTypeCode": "Tool",
+        "LogEntityTypeName": "Tool",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781535487893
+          ],
+          "$ts": 1781529826438
+        },
+        "NewValue": "{\"ToolTypeId\":1,\"Code\":\"jkhbj\",\"Name\":\"hbjnjhbhj\",\"StatusCodeId\":1}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location updated with attribute reconciliation.",
+        "EntityId": 17,
+        "Id": 5,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781535487893
+          ],
+          "$ts": 1781291936767
+        },
+        "NewValue": "{\"Location\":\"{\\\"Id\\\":17,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC2\\\",\\\"Name\\\":\\\"Die Cast 2\\\",\\\"Description\\\":\\\"Die casting area - 3 machines\\\",\\\"SortOrder\\\":2}\"}",
+        "OldValue": "{\"Location\":\"{\\\"Id\\\":17,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC2\\\",\\\"Name\\\":\\\"Die Cast 2\\\",\\\"Description\\\":\\\"Die casting area - 3 machines\\\",\\\"SortOrder\\\":2}\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "OperationTemplate deprecated.",
+        "EntityId": 5,
+        "Id": 4,
+        "LogEntityTypeCode": "OperationTemplate",
+        "LogEntityTypeName": "Operation Template",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781535487893
+          ],
+          "$ts": 1781288446416
+        },
+        "NewValue": "{\"Id\":5}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ AreaLocationId, Description, Code +1 more",
+        "Description": "OperationTemplate created (v1).",
+        "EntityId": 5,
+        "Id": 3,
+        "LogEntityTypeCode": "OperationTemplate",
+        "LogEntityTypeName": "Operation Template",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781535487893
+          ],
+          "$ts": 1781287689310
+        },
+        "NewValue": "{\"Code\":\"rtdrttr\",\"Name\":\"rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr rrrrrrrrrrrrrrrrrrrr\",\"AreaLocationId\":3,\"Description\":\"ersdf\"}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Code, Name, ToolTypeId +1 more",
+        "Description": "Tool created.",
+        "EntityId": 1,
+        "Id": 2,
+        "LogEntityTypeCode": "Tool",
+        "LogEntityTypeName": "Tool",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781535487893
+          ],
+          "$ts": 1781287073863
+        },
+        "NewValue": "{\"ToolTypeId\":1,\"Code\":\"dsgdgq\",\"Name\":\"efsdfs\",\"StatusCodeId\":1}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "5G0 — 5G0 Front Cover Assembly · Eligibility · +SHIPOUT (Support Area); 5 rows",
+        "EntityId": 1,
+        "Id": 1,
+        "LogEntityTypeCode": "ItemLocation",
+        "LogEntityTypeName": "Item-Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781535487893
+          ],
+          "$ts": 1781284806115
+        },
+        "NewValue": "[{\"Id\":1,\"Location\":{\"Id\":8,\"Code\":\"DC1-M05\",\"Name\":\"Machine 05\"},\"IsConsumptionPoint\":false},{\"Id\":2,\"Location\":{\"Id\":9,\"Code\":\"DC1-M06\",\"Name\":\"Machine 06\"},\"IsConsumptionPoint\":false},{\"Id\":3,\"Location\":{\"Id\":10,\"Code\":\"DC1-M07\",\"Name\":\"Machine 07\"},\"IsConsumptionPoint\":false},{\"Id\":4,\"Location\":{\"Id\":11,\"Code\":\"DC1-M08\",\"Name\":\"Machine 08\"},\"IsConsumptionPoint\":true,\"MinQuantity\":10,\"MaxQuantity\":500,\"DefaultQuantity\":100},{\"Location\":{\"Id\":177,\"Code\":\"SHIPOUT\",\"Name\":\"Shipping OUT\"},\"IsConsumptionPoint\":false}]",
+        "OldValue": "[{\"Id\":1,\"Location\":{\"Id\":8,\"Code\":\"DC1-M05\",\"Name\":\"Machine 05\"},\"IsConsumptionPoint\":false},{\"Id\":2,\"Location\":{\"Id\":9,\"Code\":\"DC1-M06\",\"Name\":\"Machine 06\"},\"IsConsumptionPoint\":false},{\"Id\":3,\"Location\":{\"Id\":10,\"Code\":\"DC1-M07\",\"Name\":\"Machine 07\"},\"IsConsumptionPoint\":false},{\"Id\":4,\"Location\":{\"Id\":11,\"Code\":\"DC1-M08\",\"Name\":\"Machine 08\"},\"IsConsumptionPoint\":true,\"MinQuantity\":10,\"MaxQuantity\":500,\"DefaultQuantity\":100}]",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      }
+    ],
+    "totalCount": 11
   },
   "params": {},
   "propConfig": {
@@ -88,102 +353,6 @@
             "children": [
               {
                 "children": [
-                  {
-                    "children": [
-                      {
-                        "meta": {
-                          "name": "StartDateLabel"
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "label-eyebrow"
-                          },
-                          "text": "Start Date"
-                        },
-                        "type": "ia.display.label"
-                      },
-                      {
-                        "meta": {
-                          "name": "StartDateInput"
-                        },
-                        "propConfig": {
-                          "props.value": {
-                            "binding": {
-                              "config": {
-                                "bidirectional": true,
-                                "path": "view.custom.filter.startDate"
-                              },
-                              "type": "property"
-                            }
-                          }
-                        },
-                        "props": {
-                          "format": "YYYY-MM-DD",
-                          "formattedValue": "2026-06-05",
-                          "pickerType": "date"
-                        },
-                        "type": "ia.input.date-time-input"
-                      }
-                    ],
-                    "meta": {
-                      "name": "StartDateField"
-                    },
-                    "props": {
-                      "direction": "column",
-                      "style": {
-                        "gap": "4px"
-                      }
-                    },
-                    "type": "ia.container.flex"
-                  },
-                  {
-                    "children": [
-                      {
-                        "meta": {
-                          "name": "EndDateLabel"
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "label-eyebrow"
-                          },
-                          "text": "End Date"
-                        },
-                        "type": "ia.display.label"
-                      },
-                      {
-                        "meta": {
-                          "name": "EndDateInput"
-                        },
-                        "propConfig": {
-                          "props.value": {
-                            "binding": {
-                              "config": {
-                                "bidirectional": true,
-                                "path": "view.custom.filter.endDate"
-                              },
-                              "type": "property"
-                            }
-                          }
-                        },
-                        "props": {
-                          "format": "YYYY-MM-DD",
-                          "formattedValue": "2026-06-12",
-                          "pickerType": "date"
-                        },
-                        "type": "ia.input.date-time-input"
-                      }
-                    ],
-                    "meta": {
-                      "name": "EndDateField"
-                    },
-                    "props": {
-                      "direction": "column",
-                      "style": {
-                        "gap": "4px"
-                      }
-                    },
-                    "type": "ia.container.flex"
-                  },
                   {
                     "children": [
                       {
@@ -299,6 +468,102 @@
                     ],
                     "meta": {
                       "name": "SeverityField"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "4px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "StartDateLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "label-eyebrow"
+                          },
+                          "text": "Start Date"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "StartDateInput"
+                        },
+                        "propConfig": {
+                          "props.value": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.filter.startDate"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "format": "YYYY-MM-DD",
+                          "formattedValue": "2026-06-08",
+                          "pickerType": "date"
+                        },
+                        "type": "ia.input.date-time-input"
+                      }
+                    ],
+                    "meta": {
+                      "name": "StartDateField"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "4px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "EndDateLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "label-eyebrow"
+                          },
+                          "text": "End Date"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "EndDateInput"
+                        },
+                        "propConfig": {
+                          "props.value": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.filter.endDate"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "format": "YYYY-MM-DD",
+                          "formattedValue": "2026-06-15",
+                          "pickerType": "date"
+                        },
+                        "type": "ia.input.date-time-input"
+                      }
+                    ],
+                    "meta": {
+                      "name": "EndDateField"
                     },
                     "props": {
                       "direction": "column",
