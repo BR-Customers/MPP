@@ -137,7 +137,7 @@ After `_End` / `_Release` / `_Resume`, tests assert the same row's terminal colu
 
 ### B10 — Serial number migration audit
 
-UJ-05 default direction (committed 2026-04-27): **update-in-place + new `Lots.ContainerSerialHistory` table** capturing each migration event. Awaits MPP Quality + Honda compliance affirmation before final lock; if MPP rejects update-in-place, the convention reverts to void-and-recreate with no history table. Schema delivers in Phase 7 alongside the rest of the Sort Cage workflow. Until UJ-05 closes definitively, Phase 7 builds against the default direction with the procs structured so a void-and-recreate flip can swap in without a migration rebuild.
+UJ-05 default direction (committed 2026-04-27; **reaffirmed Phase 0 T008, 2026-06-08**): re-serialization **updates the container serial in place** and records each superseded serial in the new `Lots.ContainerSerialHistory` table — **one row per superseded serial: timestamp + reason + actor**. **No new container row is minted.** Buildable now; awaits MPP Quality + Honda compliance affirmation before final lock; if MPP rejects update-in-place, the convention reverts to void-and-recreate with no history table. Schema delivers in Phase 7 alongside the rest of the Sort Cage workflow. Until UJ-05 closes definitively, Phase 7 builds against the default direction with the procs structured so a void-and-recreate flip can swap in without a migration rebuild.
 
 ### B11 — Zone-based default screen routing
 

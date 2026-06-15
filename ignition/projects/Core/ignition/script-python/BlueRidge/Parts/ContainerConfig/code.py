@@ -1,0 +1,102 @@
+# =============================================================================
+# Project Library:  BlueRidge.Parts.ContainerConfig
+#
+# Author:           Blue Ridge Automation
+# Created:          2026-05-20
+# Version:          1.1
+#
+# Description:
+#   Read + mutation surface for the Item Master Container Config tab.
+#   Routes through BlueRidge.Common.Db.*.
+#
+# Public surface:
+#   getByItem(itemId) -> dict | None
+#   add(data)         -> {Status, Message, NewId}
+#   update(data)      -> {Status, Message}
+#
+# Change Log:
+#   2026-05-20 - 1.0 - Initial version (getByItem only).
+#   2026-05-26 - 1.1 - Phase 4: add() + update() mutation surface.
+# =============================================================================
+
+
+def _u(value):
+    """Deep-unwrap shorthand for QualifiedValue / Java Map containers."""
+    return BlueRidge.Common.Util.extractQualifiedValues(value)
+
+
+def getByItem(itemId):
+    """Returns the active ContainerConfig row for the Item.
+    Always returns a dict (possibly empty) so view bindings on
+    view.custom.data.<field> never traverse into None."""
+    itemId = _u(itemId)
+    BlueRidge.Common.Util.log("itemId=%s" % itemId)
+    if not itemId:
+        return {}
+    try:
+        row = BlueRidge.Common.Db.execOne(
+            "parts/ContainerConfig_GetByItem",
+            {"itemId": itemId},
+        )
+        return row if row is not None else {}
+    except Exception as e:
+        BlueRidge.Common.Util.log("getByItem failed: %s" % str(e))
+        BlueRidge.Common.Notify.toast(
+            "Could not load container config", str(e), "error")
+        return {}
+
+
+def add(data):
+    """Create a new active ContainerConfig for an Item.
+
+    data: {ItemId, TraysPerContainer, PartsPerTray, IsSerialized,
+           ClosureMethod, TargetWeight, DunnageCode, CustomerCode}
+    Returns {Status, Message, NewId}.
+
+    The proc enforces at-most-one-active-config-per-Item via a filtered
+    unique index. Attempting to add a second active config for the same
+    Item returns Status=0 with a descriptive message.
+    """
+    data = _u(data) or {}
+    BlueRidge.Common.Util.log("data=%s" % data)
+    return BlueRidge.Common.Db.execMutation(
+        "parts/ContainerConfig_Create",
+        {
+            "itemId":            data.get("ItemId"),
+            "traysPerContainer": data.get("TraysPerContainer"),
+            "partsPerTray":      data.get("PartsPerTray"),
+            "isSerialized":      bool(data.get("IsSerialized", False)),
+            "dunnageCode":       data.get("DunnageCode"),
+            "customerCode":      data.get("CustomerCode"),
+            "closureMethod":     data.get("ClosureMethod"),
+            "targetWeight":      data.get("TargetWeight"),
+            "appUserId":         BlueRidge.Common.Util._currentAppUserId(),
+        },
+    )
+
+
+def update(data):
+    """Update an existing active ContainerConfig in place. ItemId is
+    immutable per the proc -- to re-associate with a different Item,
+    deprecate this one and add a new one.
+
+    data: {Id, TraysPerContainer, PartsPerTray, IsSerialized,
+           ClosureMethod, TargetWeight, DunnageCode, CustomerCode}
+    Returns {Status, Message}.
+    """
+    data = _u(data) or {}
+    BlueRidge.Common.Util.log("data=%s" % data)
+    return BlueRidge.Common.Db.execMutation(
+        "parts/ContainerConfig_Update",
+        {
+            "id":                data.get("Id"),
+            "traysPerContainer": data.get("TraysPerContainer"),
+            "partsPerTray":      data.get("PartsPerTray"),
+            "isSerialized":      bool(data.get("IsSerialized", False)),
+            "dunnageCode":       data.get("DunnageCode"),
+            "customerCode":      data.get("CustomerCode"),
+            "closureMethod":     data.get("ClosureMethod"),
+            "targetWeight":      data.get("TargetWeight"),
+            "appUserId":         BlueRidge.Common.Util._currentAppUserId(),
+        },
+    )

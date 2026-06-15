@@ -12,7 +12,7 @@ Blue Ridge Automation is building a replacement MES for **Madison Precision Prod
 
 ## Active Blockers
 
-🚨 **OI-35 architecture gate** — long-horizon scaling, retention, and archiving strategy must resolve before Arc 2 Phase 1 SQL build (`0014_arc2_phase1_shop_floor_foundation.sql`) commences. Eight pending architectural decisions; items 2/4/5/7 must be in the CREATE migration. Detail in `PROJECT_STATUS.md`.
+✅ **OI-35 architecture gate — CLEARED 2026-06-08** (Phase 0 Track B signed off; canonical docs updated 2026-06-09). Arc 2 Phase 1 SQL build is **unblocked**; decisions (B2 partitioning + `TRUNCATE` sliding-window, B4 closure, B5 materialized qty, B6 row-locked sequence, B7 OperationLog split, B8 filtered indexes, B1 retention) bake into migration `0020_arc2_phase1_shop_floor_foundation.sql`. See Data Model § "Scaling Decisions" + `docs/superpowers/specs/2026-06-09-arc2-phase1-sql-foundation-design.md`. No active blockers; current state in `PROJECT_STATUS.md`.
 
 ## Key Terminology
 
@@ -122,6 +122,7 @@ The `ignition-context-pack/` folder contains a vendor-neutral, DevTools-verified
 - Named queries / DB access         → `ignition-context-pack/04_named_queries.md`
 - Project lifecycle / timers        → `ignition-context-pack/05_lifecycle_and_timers.md`
 - Custom icon libraries             → `ignition-context-pack/08_custom_icon_libraries.md`
+- Repo ↔ Gateway sync / linking      → `ignition-context-pack/09_repo_gateway_sync.md`
 - All view authoring (always read)  → `ignition-context-pack/07_conventions_and_antipatterns.md`
 
 Pack pattern is "read it when relevant, don't preload" — most tasks need only one or two files. Project-specific overlays (this section's MPP-specific subsections) take precedence over the pack where they conflict.

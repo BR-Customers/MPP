@@ -16,6 +16,7 @@ The content is technology-specific (Ignition 8.3 file-based projects, Perspectiv
 | `06_component_quirks.md` | DevTools-verified specifics: actual DOM class names, format-token differences between components, table-component virtualized DOM, value type quirks. |
 | `07_conventions_and_antipatterns.md` | View authoring rules ("root" container, no `psc-` prefix, `position.display` for conditional flex visibility, underscore folder convention, no drag-and-drop). Save semantics (`editDraft` + explicit Save, no auto-save, no nav guard, dirty indicator). Versioned-entity workflow (Draft / Published / Deprecated, optimistic locking via `RowVersion`, `EffectiveFrom` scheduled-publish). Audit user attribution via `session.custom.appUserId`. Mutation feedback via `notifyResult`. Anti-patterns to flag rather than silently propagate. |
 | `08_custom_icon_libraries.md` | Custom icon library setup (8.3 path moved from 8.1's `data/modules/...`); SVG sprite format; viewBox + no-fill-on-path rules; recolor mechanism; Material Symbols GitHub source URL pattern for non-default axes. |
+| `09_repo_gateway_sync.md` | Repo-as-source-of-truth dev workflow: Gateway project folders as directory junctions into the repo working tree, the scan-to-register loop (`POST /data/api/v1/scan/projects`), the one-time elevated link setup (incl. converting Designer-created real folders), and the deploy-box `pull.ps1` mechanism. |
 
 Read in order if you're new to Ignition projects. Skim by topic if you're solving a specific problem.
 
@@ -41,6 +42,7 @@ When writing or editing anything under `ignition/projects/`, read the
 - Named queries / DB access         → 04_named_queries.md
 - Project lifecycle / timers        → 05_lifecycle_and_timers.md
 - Custom icon libraries             → 08_custom_icon_libraries.md
+- Repo ↔ Gateway sync / linking      → 09_repo_gateway_sync.md
 - All view authoring (always read)  → 07_conventions_and_antipatterns.md
 ```
 

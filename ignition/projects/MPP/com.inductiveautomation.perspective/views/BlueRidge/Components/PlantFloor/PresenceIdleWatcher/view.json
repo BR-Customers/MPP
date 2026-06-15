@@ -1,0 +1,50 @@
+{
+  "custom": {
+    "idleMinutes": 0,
+    "modalOpen": false
+  },
+  "params": {},
+  "propConfig": {
+    "custom.idleMinutes": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "dateDiff({session.props.lastActivity}, now(30000), \"mn\")"
+        }
+      },
+      "onChange": {
+        "enabled": true,
+        "script": "\tif self.session.custom.terminal.terminalMode != \"Dedicated\":\n\t\treturn\n\tif self.session.custom.user.appUserId is None:\n\t\treturn\n\tif currentValue.value >= 30 and not self.view.custom.modalOpen:\n\t\tself.view.custom.modalOpen = True\n\t\tsystem.perspective.openPopup(id=\"mpp-idle-reconfirm\", view=\"BlueRidge/Components/PlantFloor/IdleReconfirmModal\", params={\"displayName\": self.session.custom.user.displayName, \"initials\": self.session.custom.user.initials, \"popupId\": \"mpp-idle-reconfirm\", \"replyMessage\": \"idleReconfirmResult\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 1,
+      "width": 1
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "style": {
+        "display": "none"
+      }
+    },
+    "scripts": {
+      "messageHandlers": [
+        {
+          "messageType": "idleReconfirmResult",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif payload and payload.get(\"action\") == \"continue\":\n\t\tself.view.custom.modalOpen = False"
+        }
+      ]
+    },
+    "children": []
+  }
+}

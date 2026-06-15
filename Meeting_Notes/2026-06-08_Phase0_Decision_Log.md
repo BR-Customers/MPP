@@ -76,7 +76,9 @@ Build the 3 Flexware templates (CONTAINER / LOT / CONTAINER_HOLD); Sort-Cage/Hol
 - **UJ-03:** **NO auto-split default — operator enters all split quantities manually.** ⚠️ This DROPS the prior FDS assumption of an auto-prompt 50/50 even split — flag for FDS/UJ reconciliation at T009 (remove the even-split-default language).
 - **UJ-05:** **Update-in-place + `ContainerSerialHistory`** (B10 serial-migration convention). Buildable now; awaits MPP Quality + Honda affirmation before cutover.
 
-## T009 — Phase 0 sign-off GATE ✅ Amendment package STAGED 2026-06-08 · apply to canonical docs when next editing them
+## T009 — Phase 0 sign-off GATE ✅ DONE 2026-06-09 — Blocks 1–5 applied to canonical docs; Phase 0 signed off; T010 unblocked
+
+> **Applied 2026-06-09:** Block 1 → Data Model § "Scaling Decisions" (rev 1.9s); Block 2 → FDS-11-009 retention table (FDS rev 1.3a); Block 3 → Plant Floor plan Cross-Cutting **B10** refined; Block 4 → OIR OI-35 **RESOLVED** + UJ-03 changed (T008) + UJ-05 default locked + counts/version (OIR v2.18); Block 5 → Plant Floor plan validation Section 5 resolution banner (C-4/C-5 pinned). Phase 0 (T001–T009) complete. **Arc-2 Phase-1 SQL (migration `0020`) is unblocked** — design spec `docs/superpowers/specs/2026-06-09-arc2-phase1-sql-foundation-design.md`, plan `docs/superpowers/plans/2026-06-09-arc2-phase1-sql-foundation.md`.
 
 Phase 0 decisions (T001–T008) are complete. The blocks below are **insert-ready** — paste into the named canonical doc (DM / FDS / OIR) at your next edit pass; they were staged here (not applied in place) to avoid colliding with the uncommitted parallel edits in those files. Once pasted, Phase 0 is signed off and **Arc-2 Phase 1 (T010+) is unblocked**.
 

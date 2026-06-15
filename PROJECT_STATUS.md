@@ -104,6 +104,39 @@ The Item Master design has been **reworked from bundled-editDraft + bidi-Object-
 
 ## ✅ Recently closed
 
+### Arc 2 Phase 1 Ignition layer — NQs + gateway scripts + 7 Perspective views built (2026-06-09)
+
+The follow-on Ignition push to the Phase 1 SQL foundation (tasks T030–T041, ~54h) is **built + file-authored + statically reviewed**, committed on `jacques/working` (`07f2e10`..`848426b`). Executed subagent-driven (fresh implementer + spec/quality review per task + a final holistic cross-cutting review). **NOT yet Designer-smoked — that is the remaining manual step.**
+
+- **New project topology (Jacques's decision):** introduced **`Core`** (inheritable parent; holds the moved `BlueRidge.*` scripting library) and **`MPP`** (`parent=Core`; the plant-floor operator project) — pulled from the gateway projects folder into the repo (`ee70f4a`). The legacy `MPP_Config` (config tool) stays as-is. Entity scripts + NQs → Core; views + session-startup + timers → MPP.
+- **DB-access layer (T030, Core):** 17 thin Named Queries wrapping the Phase-1 procs (all `type:"Query"` — even mutations, status-row pattern) + 6 entity-script modules (`Location.Terminal`, `Location.AppUser`, `Oee.Shift`, `Lots.Lot`, `Lots.IdentifierSequence`, `Audit.Partition`). Later migrated `location/Location_ListByTier` into Core too (for the Cell selector).
+- **Session bootstrap + gateway timers (T031/T033/T034, MPP):** rewrote `onStartup` to resolve the terminal from client IP (`Terminal_GetByIpAddress`) into `session.custom.terminal.*`; declared the plant-floor `session.custom` shape (`terminal`/`user`/`appUserId`/`cell`); `ShiftBoundaryTicker` (60s) → `Shift.tickShiftBoundary`; `PartitionMaintenance` (24h) → `Audit.Partition.maintain`.
+- **7 Perspective views (T035–T041, MPP):** Per-Mutation Initials Field, Elevation Modal, Initials Entry (+ A-Z keypad), 30-Min Idle Re-Confirm Modal, PresenceIdleWatcher (`now(30000)` idle binding), Terminal Selector (`ia.display.table` full-schema + `onSelectionChange`), Cell Context Selector, Home Router (gates terminal→Dedicated-presence→defaultScreen, repointed `/`). Routes added: `/shop-floor/initials`, `/shop-floor/terminal-selector`, `/` → HomeRouter.
+
+**Known follow-ups / flagged decisions (none blocking the build):**
+1. **Gateway sync + Designer smoke** is the only remaining step a CLI can't do — the new files are in the repo but NOT yet in the live gateway's `Core`/`MPP` copies. Sync repo→gateway (carefully, to avoid clobbering in-Designer work) then smoke each surface in a Perspective session.
+2. **AD elevation is default-deny:** `AppUser.elevate`'s `_validateAdCredentials` denies all until the gateway AD Identity Provider is wired (FDS-04-007). No invented permissive rule — wire the IdP at deployment and decide the validation mechanism.
+3. `ia.input.password-field` (Elevation Modal) is unconfirmed in Designer — verify it renders.
+4. Timers attribute shift/partition audit to the dev-fallback AppUser `2`; seed a dedicated **system** AppUser before cutover.
+5. `now(30000)` idle re-fire + the PresenceIdleWatcher embedding into work screens are runtime-verify / later-phase items.
+6. Cell Context Selector is Phase-1-scoped (pick+persist+broadcast); zone cascade + `v_EffectiveItemLocation` enrichment are later-phase.
+
+### Arc 2 Phase 1 SQL — Phase 0 gate signed off + design/plan committed + dispatch begun (2026-06-09)
+
+**OI-35 architecture gate CLEARED.** Phase 0 Track B was decided 2026-06-08 (`Meeting_Notes/2026-06-08_Phase0_Decision_Log.md`); the staged T009 sign-off Blocks 1–5 were applied to the canonical docs this session:
+- **Data Model** → new § "Scaling Decisions (OI-35)" (rev **1.9s**).
+- **FDS** → FDS-11-009 differentiated retention table (20-yr Honda / 7-yr general) (rev **1.3a**).
+- **OIR** → OI-35 **RESOLVED**; UJ-03 changed (no auto even-split, Phase 0 T008); UJ-05 build-default locked; counts/version (**v2.18**).
+- **Plant Floor plan** → B10 serial-migration convention refined.
+- **Validation doc** → Section 5 resolution banner (C-4/C-5 CREATE-ownership pinned).
+- **CLAUDE.md** → Active Blockers cleared. Decision-log T009 marked Done.
+
+**Phase 1 scoped + designed + planned (SQL-first push).** Brainstormed the build approach: SQL foundation first (migration `0020` + ~16 procs + `0020_PlantFloor_Foundation/` test suite green, target 80–105), Ignition layer (3 Gateway scripts + 7 Perspective views) deferred to a follow-on push; subagent-driven execution. **Key design decision — partitioning:** monthly `RANGE RIGHT` + **`TRUNCATE`-based sliding-window** (not `SWITCH`) so the singleton `BIGINT IDENTITY Id` PK convention is preserved (clustered index = partition-aligned hot path; `Id` stays NONCLUSTERED PK); single `PRIMARY` filegroup; sliding-window logic in a testable proc so the future Gateway timer is a thin caller. Grounding catch: `Audit_LogOperation` (B7 target) has near-zero Arc-1 blast radius (Arc 1 audits to `ConfigLog`); no partitioning exists in the repo yet (genuinely new ground).
+
+- **Design spec:** `docs/superpowers/specs/2026-06-09-arc2-phase1-sql-foundation-design.md` (commit `2785590`).
+- **Implementation plan:** `docs/superpowers/plans/2026-06-09-arc2-phase1-sql-foundation.md` (commit `e1ef121`) — Tasks A–G (A partitioning in-session; B Lot core; C Terminal; D AppUser/elevation; E WorkOrder+eligibility view; F audit split+Shift; G integration/sign-off).
+- **Status:** dispatch (subagent-driven) has **begun** on the SQL build (separate session). All on `jacques/working`.
+
 ### Eligibility-style config editors — backend built + verified, UI drafted (2026-06-08)
 
 Executed the plan `docs/superpowers/plans/2026-06-08-eligibility-style-config-editors.md` (turned from spec `7f41a2d` via `writing-plans`) using **subagent-driven-development** — fresh implementer per task + two-stage (spec then code-quality) review per task + a final holistic cross-cutting review. All on `jacques/working`, commits `81f7a82`..`33b94e5`.

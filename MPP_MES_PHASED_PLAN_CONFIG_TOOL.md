@@ -3,8 +3,8 @@
 **Document:** MPP-MES-DEVPLAN-CONFIG-001
 **Project:** Madison Precision Products MES Replacement
 **Prepared By:** Blue Ridge Automation
-**Version:** 1.7
-**Date:** 2026-04-21
+**Version:** 1.8
+**Date:** 2026-06-09
 
 ---
 
@@ -12,6 +12,7 @@
 
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
+| 1.8 | 2026-06-09 | Blue Ridge Automation | **Stored Procedure Template and Conventions reconciled to the live FDS-11-011 output standard.** The shipped procs already conform; this updates the stale documentation. Replaced the `@Status`/`@Message`/`@NewId` **OUTPUT-parameter** contract with the **status-row** pattern: status fields are local variables returned via a single `SELECT @Status AS Status, @Message AS Message[, @NewId AS NewId]` result set, emitted on *every* exit path (each validation/business-rule `RETURN`, the success path, and the CATCH). No `OUTPUT` parameters anywhere — the Ignition JDBC driver reads an OUTPUT param as the first result set and silently drops subsequent SELECTs. CATCH now ends with `RAISERROR(@ErrMsg, @ErrSev, @ErrState)` (THROW is not used in this project), after emitting the status row. Rewrote the **Read procs** variation: reads take no `@Status`/`@Message` params and return no status row — they SELECT their rowset directly and an empty result set means "not found". Updated The Contract, The Error Hierarchy, the Full Template (header doc comment + signature + body), and the Code-Review Checklist accordingly. Mirrors `sql/scripts/_TEMPLATE_stored_procedure.sql` v2.0 and the deployed `R__Location_Location_Create.sql`. |
 | 0.1 | 2026-04-10 | Blue Ridge Automation | Initial phased plan covering 8 configuration tool phases. Each phase scopes data model, API layer (Named Queries → stored procedures), and Perspective frontend requirements. Conceptual — no SQL scripts produced. |
 | 0.2 | 2026-04-10 | Blue Ridge Automation | Reformatted API Layer sections from bulleted lists to tables (Procedure / Parameters / Notes) for Word readability. Added explicit Seed Data tables to Phases 1, 7, and 8 with row counts and source CSVs. No content changes — purely a presentation pass. |
 | 0.3 | 2026-04-10 | Blue Ridge Automation | Restructured the phase ordering: new Phase 1 is **Identity & Audit Foundation** (formerly Phase 2), and the old Phase 1 (Plant Model) is now Phase 2. Added 3 shared **audit infrastructure procedures** (`Audit.Audit_LogConfigChange`, `Audit.Audit_LogOperation`, `Audit.Audit_LogInterfaceCall`) that every CRUD proc in every later phase must call instead of writing audit entries inline. Documented the bootstrap admin user (`Id = 1`, inserted via migration script) to break the chicken-and-egg dependency. Added a **Dependencies** column to every API table across all 8 phases — shows which other procs and tables each procedure relies on, plus which mutating procs call `Audit.Audit_LogConfigChange`. Updated cross-cutting concerns to reflect the shared-audit-proc pattern. |
@@ -85,7 +86,7 @@ These rules apply to every entity in every phase. The plan does not repeat them 
 1. **Audit attribution via shared procs.** Every Create/Update/Deprecate stored procedure takes `@AppUserId BIGINT` and calls one of the shared audit procs defined in Phase 1:
    - **On success:** call `Audit.Audit_LogConfigChange` to write a row to `Audit.ConfigLog` (inside the transaction — rolls back with the data if anything fails).
    - **On business-rule rejection:** call `Audit.Audit_LogFailure` to write a row to `Audit.FailureLog` with the reason, the procedure name, and a JSON snapshot of the input parameters. This creates an ongoing record of what operators and engineers are trying to do that isn't working — invaluable for UX improvement and root-cause analysis.
-   - **On unexpected exception** (CATCH block): also call `Audit.Audit_LogFailure` — but *outside* the rolled-back transaction, then `THROW` to bubble the exception to Ignition.
+   - **On unexpected exception** (CATCH block): also call `Audit.Audit_LogFailure` — but *outside* the rolled-back transaction, then emit the status row and `RAISERROR(@ErrMsg, @ErrSev, @ErrState)` (THROW is not used in this project) to surface the exception to Ignition.
 
    The shared procs are the single source of truth for how audit entries are written — entity-specific procs never touch `Audit.ConfigLog` or `Audit.FailureLog` directly. A future change to the audit schema touches only the shared procs, not 100+ entity procs.
 2. **Soft delete only.** Hard `DELETE` is forbidden for any table with downstream references. Use `DeprecatedAt` (set non-null to deactivate). Procedures should validate that an entity has no active dependents before deprecating.
@@ -106,15 +107,19 @@ Every stored procedure written in this project — in the Configuration Tool, th
 
 ### The Contract
 
-Every proc, read or write, has the same output contract:
+**No `OUTPUT` parameters anywhere (FDS-11-011).** The Ignition JDBC driver reads an `OUTPUT` parameter as the first result set and silently drops every `SELECT` after it — so a proc that returns status via `OUTPUT` params *and* a data rowset will lose the rowset. Instead, every mutation proc declares its status fields as **local variables** and returns them as a **single status-row result set** via a final `SELECT`.
 
-| Output Parameter | Type | Purpose |
+Every **mutation** proc returns exactly one status-row result set:
+
+| Result Column | Type | Purpose |
 |---|---|---|
-| `@Status` | `BIT OUTPUT` | `1` on success, `0` on failure. **Always set before returning.** |
-| `@Message` | `NVARCHAR(500) OUTPUT` | Human-readable status message. On success: a short confirmation. On failure: a user-friendly reason. |
-| *(proc-specific)* | various `OUTPUT` | E.g., `@NewId BIGINT OUTPUT` for Create procs. |
+| `Status` | `BIT` | `1` on success, `0` on failure. |
+| `Message` | `NVARCHAR(500)` | Human-readable status message. On success: a short confirmation. On failure: a user-friendly reason. |
+| *(proc-specific)* | various | E.g., `NewId BIGINT` for Create/Add procs only. Drop it from Update/Deprecate/Publish procs. |
 
-Read procs additionally return a data rowset. Write procs typically do not return a rowset (the data output is via `@NewId` or similar). Status is read by the caller to branch success/failure; `@Message` is surfaced directly in the Perspective UI on error.
+`@Status`, `@Message`, and (Create/Add) `@NewId` are **local variables** initialized to the failure defaults, never `OUTPUT` params. Every exit path — each validation/business-rule `RETURN`, the success path, and the CATCH — ends with `SELECT @Status AS Status, @Message AS Message[, @NewId AS NewId];`. `Status` is read by the caller to branch success/failure; `Message` is surfaced directly in the Perspective UI on error.
+
+**Read procs** take NO `@Status` / `@Message` params and emit NO status row — they `SELECT` their data rowset directly. An empty result set means "not found" (do not invent a 404 status row). One result set per proc.
 
 ### The Error Hierarchy
 
@@ -124,7 +129,7 @@ Errors fall into three tiers. Each is handled differently:
 |---|---|---|
 | **Parameter validation** | NULL where required, missing FK target, bad range | Set `@Status = 0`, set friendly `@Message`, call `Audit.Audit_LogFailure`, `RETURN`. **No transaction started.** No exception thrown. |
 | **Business rule violation** | Duplicate code, deprecate-with-dependents, stale data, optimistic-lock mismatch | Same as above: `@Status = 0`, friendly `@Message`, call `Audit.Audit_LogFailure`, `RETURN`. No exception thrown. |
-| **Unexpected exception** | Deadlock, trigger failure, constraint violation from corrupt data, NULL in unexpected place | Caught by CATCH: rollback if transaction open, set `@Status = 0`, capture `ERROR_MESSAGE()` in `@Message`, call `Audit.Audit_LogFailure` *outside the rolled-back transaction*, then **`THROW`** to bubble the exception to Ignition. |
+| **Unexpected exception** | Deadlock, trigger failure, constraint violation from corrupt data, NULL in unexpected place | Caught by CATCH: rollback if transaction open, set `@Status = 0`, capture `ERROR_MESSAGE()` in `@Message`, call `Audit.Audit_LogFailure` *outside the rolled-back transaction*, emit the status row, then **`RAISERROR(@ErrMsg, @ErrSev, @ErrState)`** (THROW is not used in this project) to surface the exception to Ignition. |
 
 **Why the distinction?** Business-rule rejections are expected behavior — the UI needs to show them gracefully (e.g., "Cannot deprecate: active dependents exist"). Unexpected exceptions are bugs or infrastructure problems — the UI should show a generic error and Ignition's logs should capture the stack for debugging.
 
@@ -174,21 +179,20 @@ The CATCH handler's `Audit.Audit_LogFailure` call is wrapped in its own nested `
 --   @Description NVARCHAR(500) NULL    - Optional description.
 --   @AppUserId BIGINT                  - User performing the action. Required for audit attribution.
 --
--- Parameters (output):
---   @Status BIT                        - 1 on success, 0 on failure.
---   @Message NVARCHAR(500)             - Human-readable status message.
---   @NewId BIGINT                      - New Location.Id on success, NULL on failure.
---
 -- Result set:
---   None. Data output is via @NewId.
+--   Single row with Status (BIT), Message (NVARCHAR), NewId (BIGINT).
+--   Status=1 on success, 0 on failure. NewId is NULL on failure.
+--   (No OUTPUT params — values are returned via SELECT per FDS-11-011.)
 --
 -- Dependencies:
 --   Tables: Location.Location, Location.LocationTypeDefinition
 --   Procs:  Audit.Audit_LogConfigChange, Audit.Audit_LogFailure
 --
 -- Error Handling:
---   - Validation/business-rule failures: @Status=0, @Message set, Audit_LogFailure, RETURN.
---   - CATCH handler: rollback, @Status=0, @Message captured, Audit_LogFailure, THROW.
+--   - Validation/business-rule failures: @Status=0, @Message set, Audit_LogFailure,
+--     status-row SELECT, RETURN.
+--   - CATCH handler: rollback, @Status=0, @Message captured, Audit_LogFailure,
+--     status-row SELECT, RAISERROR.
 --
 -- Change Log:
 --   2026-04-XX - 1.0 - Initial version
@@ -199,19 +203,16 @@ CREATE OR ALTER PROCEDURE Location.Location_Create
     @Name                      NVARCHAR(200),
     @Code                      NVARCHAR(50),
     @Description               NVARCHAR(500)  = NULL,
-    @AppUserId                 BIGINT,
-    @Status                    BIT            OUTPUT,
-    @Message                   NVARCHAR(500)  OUTPUT,
-    @NewId                     BIGINT         = NULL OUTPUT
+    @AppUserId                 BIGINT
 AS
 BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
 
-    -- Initialize output
-    SET @Status  = 0;
-    SET @Message = N'Unknown error';
-    SET @NewId   = NULL;
+    -- Result variables (returned via SELECT instead of OUTPUT)
+    DECLARE @Status  BIT           = 0;
+    DECLARE @Message NVARCHAR(500) = N'Unknown error';
+    DECLARE @NewId   BIGINT        = NULL;
 
     -- Capture input for failure-log snapshots
     DECLARE @ProcName NVARCHAR(200) = N'Location.Location_Create';
@@ -238,6 +239,7 @@ BEGIN
                 @FailureReason       = @Message,
                 @ProcedureName       = @ProcName,
                 @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
             RETURN;
         END
 
@@ -249,6 +251,7 @@ BEGIN
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'Location', @EntityId = NULL,
                 @LogEventTypeCode = N'Created', @FailureReason = @Message,
                 @ProcedureName = @ProcName, @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
             RETURN;
         END
 
@@ -260,6 +263,7 @@ BEGIN
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'Location', @EntityId = NULL,
                 @LogEventTypeCode = N'Created', @FailureReason = @Message,
                 @ProcedureName = @ProcName, @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
             RETURN;
         END
 
@@ -273,6 +277,7 @@ BEGIN
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'Location', @EntityId = NULL,
                 @LogEventTypeCode = N'Created', @FailureReason = @Message,
                 @ProcedureName = @ProcName, @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
             RETURN;
         END
 
@@ -303,13 +308,19 @@ BEGIN
 
         SET @Status  = 1;
         SET @Message = N'Location created successfully.';
+        SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0
             ROLLBACK TRANSACTION;
 
+        -- Capture error details BEFORE the nested TRY/CATCH clears the error context
+        DECLARE @ErrMsg   NVARCHAR(4000) = ERROR_MESSAGE();
+        DECLARE @ErrSev   INT            = ERROR_SEVERITY();
+        DECLARE @ErrState INT            = ERROR_STATE();
+
         SET @Status  = 0;
-        SET @Message = N'Unexpected error: ' + LEFT(ERROR_MESSAGE(), 400);
+        SET @Message = N'Unexpected error: ' + LEFT(@ErrMsg, 400);
         SET @NewId   = NULL;
 
         -- Failure log OUTSIDE the rolled-back transaction
@@ -328,54 +339,35 @@ BEGIN
             -- Swallow; we're already in a bad state and shouldn't mask the original exception
         END CATCH
 
-        -- Re-throw so Ignition logs it as a critical exception
-        THROW;
+        -- Emit the status row, then re-raise so Ignition logs it as a critical exception
+        SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+        RAISERROR(@ErrMsg, @ErrSev, @ErrState);
     END CATCH
 END
 GO
 ```
 
+> The deployed `R__Location_Location_Create.sql` (v2.x) additionally emits a human-readable `Audit.ConfigLog.Description` narrative and resolved-FK `OldValue`/`NewValue` JSON. See `sql_best_practices_mes.md` § Audit Log Description Convention. The template above keeps the audit payload minimal to keep the focus on the OUTPUT-contract + error mechanics.
+
 ### Variations
 
-**Read procs** — no transaction, no success audit, but still get `@Status` / `@Message` output params and still log validation failures:
+**Read procs** — no transaction, no success audit, and **no `@Status` / `@Message` params or status row**. A read proc simply `SELECT`s its data rowset; an **empty result set means "not found"** (do not invent a 404 status row). One result set per proc.
 
 ```sql
 CREATE OR ALTER PROCEDURE Location.Location_Get
-    @Id      BIGINT,
-    @Status  BIT            OUTPUT,
-    @Message NVARCHAR(500)  OUTPUT
+    @Id BIGINT
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    SET @Status = 0;
-    SET @Message = N'Unknown error';
-
-    IF @Id IS NULL
-    BEGIN
-        SET @Message = N'Id is required.';
-        -- Read procs typically don't log parameter failures (noise), but may at author's discretion
-        RETURN;
-    END
-
-    BEGIN TRY
-        SELECT l.Id, l.LocationTypeDefinitionId, l.ParentLocationId, l.Name, l.Code, l.Description
-        FROM Location.Location l
-        WHERE l.Id = @Id;
-
-        SET @Status  = 1;
-        SET @Message = N'Query executed successfully.';
-    END TRY
-    BEGIN CATCH
-        SET @Status  = 0;
-        SET @Message = N'Unexpected error: ' + LEFT(ERROR_MESSAGE(), 400);
-        THROW;
-    END CATCH
+    SELECT l.Id, l.LocationTypeDefinitionId, l.ParentLocationId, l.Name, l.Code, l.Description
+    FROM Location.Location l
+    WHERE l.Id = @Id AND l.DeprecatedAt IS NULL;
 END
 GO
 ```
 
-**Note on read failure logging:** Parameter-validation failures on reads generally should *not* be written to `Audit.FailureLog` — it creates too much noise from minor UI bugs and typo queries. Only business-rule failures and unexpected exceptions on reads warrant a log entry. (This is a style rule, not a hard constraint — override at the author's discretion if a specific read proc has valuable failure signal.)
+**Note on read failure logging:** Reads return only their data rowset; there is no status row to populate, and parameter-validation failures on reads generally should *not* be written to `Audit.FailureLog` — it creates too much noise from minor UI bugs and typo queries. An empty result set is the canonical "not found" signal. (Override at the author's discretion only if a specific read proc has valuable failure signal — but never add `@Status`/`@Message` OUTPUT params.)
 
 **Update/Deprecate procs** follow the same structure as Create, with these differences:
 - Additional pre-transaction check: the target row must exist and not be deprecated
@@ -389,14 +381,16 @@ When reviewing a new stored procedure, the reviewer should confirm:
 
 - [ ] Header comment block is filled in (author, created, version, description, all parameters documented)
 - [ ] `SET NOCOUNT ON` and `SET XACT_ABORT ON` at the top
-- [ ] Every output parameter is initialized at the top (`@Status = 0`, `@Message = 'Unknown error'`, etc.)
+- [ ] No `OUTPUT` parameters (FDS-11-011) — the Ignition JDBC driver drops SELECTs after an OUTPUT param
+- [ ] `@Status` / `@Message` [/ `@NewId` for Create/Add] declared as locals + initialized to failure defaults at the top
+- [ ] Every exit path (each validation `RETURN`, success, CATCH) emits the status-row `SELECT @Status AS Status, @Message AS Message[, @NewId AS NewId]`
 - [ ] `@ProcName` and `@Params` locals captured once, reused in every audit call
 - [ ] Parameter validation runs BEFORE `BEGIN TRANSACTION`
 - [ ] Business rule checks run BEFORE `BEGIN TRANSACTION`
 - [ ] Every validation failure path: sets `@Message`, calls `Audit.Audit_LogFailure`, `RETURN`s
 - [ ] The mutation is wrapped in `BEGIN TRANSACTION` / `COMMIT TRANSACTION`
 - [ ] `Audit.Audit_LogConfigChange` is called INSIDE the transaction, before `COMMIT`
-- [ ] CATCH handler: `ROLLBACK` if `@@TRANCOUNT > 0`, set error output, nested-TRY `Audit.Audit_LogFailure`, `THROW`
+- [ ] CATCH handler: `ROLLBACK` if `@@TRANCOUNT > 0`, set error output, nested-TRY `Audit.Audit_LogFailure`, status-row `SELECT`, `RAISERROR(@ErrMsg, @ErrSev, @ErrState)`
 - [ ] `@Status = 1` and friendly `@Message` set only on the success path
 - [ ] Every `EXEC Audit_LogFailure` uses named parameters (not positional) — clarity over brevity
 - [ ] `@FailureReason` passed to `Audit.Audit_LogFailure` matches the `@Message` returned to the caller (consistency)

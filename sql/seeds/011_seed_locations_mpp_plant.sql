@@ -570,3 +570,8 @@ IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'SHIPIN')
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'SHIPOUT')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 4, (SELECT Id FROM Location.Location WHERE Code = N'MPP-MAD'), N'Shipping OUT', N'SHIPOUT', N'Finished-goods staging', 11;
+
+-- === Fallback Terminal (Arc 2 Phase 1 Task C) ===
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'FALLBACK-TERMINAL')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
+    SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'MPP-MAD'), N'Fallback Terminal', N'FALLBACK-TERMINAL', N'Global default terminal returned when an unregistered IP address connects.', 12;

@@ -1,0 +1,16 @@
+{
+  "pages": {
+    "/": {
+      "title": "MPP MES",
+      "viewPath": "BlueRidge/Views/ShopFloor/HomeRouter"
+    },
+    "/shop-floor/initials": {
+      "title": "Operator Entry",
+      "viewPath": "BlueRidge/Views/ShopFloor/InitialsEntry"
+    },
+    "/shop-floor/terminal-selector": {
+      "title": "Select Terminal",
+      "viewPath": "BlueRidge/Views/ShopFloor/TerminalSelector"
+    }
+  }
+}
