@@ -88,6 +88,7 @@ Follow `sql_best_practices_mes.md` and `sql_version_control_guide.md`:
 - `BIGINT IDENTITY` surrogate `Id` PKs everywhere; `BIGINT` for FKs
 - `NVARCHAR` (never `VARCHAR`)
 - `DATETIME2(3)` everywhere; `DECIMAL` not `FLOAT`
+- **Timestamps stored UTC, displayed Eastern.** Persist event/audit times with `GETUTCDATETIME()`; every operator-facing read/display proc converts at the boundary via `CAST(<col> AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3))` (the Audit Browser + LOT history timeline already do). **All displayed timestamps are ET.** Refactor sweep of the remaining UTC-displaying reads is tracked as OI-36.
 - All enum/status columns code-table backed with FK — no magic integers, no free-text
 - User attribution via `BIGINT FK → AppUser.Id`
 - Append-only events; `DeprecatedAt` soft deletes
