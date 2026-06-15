@@ -3,20 +3,104 @@
     "activeTab": "attributes",
     "activeTabIndex": 0,
     "editDraft": {
-      "meta": null
+      "meta": {
+        "Code": "jkhbj",
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1781530515951
+          ],
+          "$ts": 1781544226425
+        },
+        "CreatedByUserId": 2,
+        "DeprecatedAt": {
+          "$": [
+            "ts",
+            192,
+            1781530515951
+          ],
+          "$ts": 1781544231072
+        },
+        "Description": "",
+        "DieRankCode": null,
+        "DieRankId": null,
+        "DieRankName": null,
+        "HasCavities": true,
+        "Id": 2,
+        "Name": "hbjnjhbhj",
+        "StatusCode": "Retired",
+        "StatusCodeId": 4,
+        "StatusName": "Retired",
+        "ToolTypeCode": "Die",
+        "ToolTypeId": 1,
+        "ToolTypeName": "Die Cast Die",
+        "UpdatedAt": {
+          "$": [
+            "ts",
+            192,
+            1781530515951
+          ],
+          "$ts": 1781544231072
+        },
+        "UpdatedByUserId": 2,
+        "deprecated": true
+      }
     },
     "filter": {
       "searchText": "",
       "statusCode": "All"
     },
-    "mode": "view",
+    "mode": "update",
     "pendingSwitch": null,
     "sectionDirty": {
       "attributes": false,
       "cavities": false
     },
     "selected": {
-      "meta": null
+      "meta": {
+        "Code": "jkhbj",
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1781530515951
+          ],
+          "$ts": 1781544226425
+        },
+        "CreatedByUserId": 2,
+        "DeprecatedAt": {
+          "$": [
+            "ts",
+            192,
+            1781530515951
+          ],
+          "$ts": 1781544231072
+        },
+        "Description": "",
+        "DieRankCode": null,
+        "DieRankId": null,
+        "DieRankName": null,
+        "HasCavities": true,
+        "Id": 2,
+        "Name": "hbjnjhbhj",
+        "StatusCode": "Retired",
+        "StatusCodeId": 4,
+        "StatusName": "Retired",
+        "ToolTypeCode": "Die",
+        "ToolTypeId": 1,
+        "ToolTypeName": "Die Cast Die",
+        "UpdatedAt": {
+          "$": [
+            "ts",
+            192,
+            1781530515951
+          ],
+          "$ts": 1781544231072
+        },
+        "UpdatedByUserId": 2,
+        "deprecated": true
+      }
     }
   },
   "params": {},
@@ -541,6 +625,16 @@
                         },
                         "meta": {
                           "name": "BtnRetire"
+                        },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "config": {
+                                "expression": "({view.custom.selected.meta.deprecated} \u003d false)"
+                              },
+                              "type": "expr"
+                            }
+                          }
                         },
                         "props": {
                           "style": {

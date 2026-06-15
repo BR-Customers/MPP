@@ -8,17 +8,10 @@
     "thumbnail.png"
   ],
   "attributes": {
-<<<<<<< HEAD
     "lastModificationSignature": "4f98a576042c15113e42fa8533399b60d82e11c42c181aa630e0794e060730ed",
     "lastModification": {
       "actor": "admin",
       "timestamp": "2026-06-12T14:26:38Z"
-=======
-    "lastModificationSignature": "648ee8db4f6b09eb59c0942e4d8cafa8f22d7caa2a9691ba61c7b3615226ca63",
-    "lastModification": {
-      "actor": "admin",
-      "timestamp": "2026-06-12T13:27:23Z"
->>>>>>> 1ffce35e5ae21c97e5edda1aefa6e708dff94758
     }
   }
 }
