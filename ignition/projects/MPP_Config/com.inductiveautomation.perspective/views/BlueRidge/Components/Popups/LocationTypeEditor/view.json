@@ -1,7 +1,44 @@
 {
   "custom": {
     "editDraft": {
-      "attributes": [],
+      "attributes": [
+        {
+          "AttributeName": "",
+          "DataType": "NVARCHAR",
+          "DefaultValue": "",
+          "Description": "",
+          "Id": null,
+          "IsRequired": false,
+          "Uom": ""
+        },
+        {
+          "AttributeName": "",
+          "DataType": "NVARCHAR",
+          "DefaultValue": "",
+          "Description": "",
+          "Id": null,
+          "IsRequired": false,
+          "Uom": ""
+        },
+        {
+          "AttributeName": "",
+          "DataType": "NVARCHAR",
+          "DefaultValue": "",
+          "Description": "",
+          "Id": null,
+          "IsRequired": false,
+          "Uom": ""
+        },
+        {
+          "AttributeName": "",
+          "DataType": "NVARCHAR",
+          "DefaultValue": "",
+          "Description": "",
+          "Id": null,
+          "IsRequired": false,
+          "Uom": ""
+        }
+      ],
       "meta": {
         "Code": "",
         "Description": "",
@@ -1162,11 +1199,10 @@
             "props": {
               "direction": "column",
               "elementPosition": {
-                "basis": "56px",
+                "basis": "58px",
                 "shrink": 0
               },
               "path": "BlueRidge/Components/AttributeDefinitionRow",
-              "useDefaultViewHeight": false,
               "useDefaultViewWidth": false
             },
             "type": "ia.display.flex-repeater"

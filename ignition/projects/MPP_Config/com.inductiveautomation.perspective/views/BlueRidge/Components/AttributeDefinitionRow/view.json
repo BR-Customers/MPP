@@ -42,7 +42,7 @@
   },
   "props": {
     "defaultSize": {
-      "height": 56,
+      "height": 58,
       "width": 1000
     }
   },

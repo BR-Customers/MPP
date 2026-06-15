@@ -1,49 +1,59 @@
 {
   "custom": {},
   "params": {
-    "title": "Unsaved Changes",
-    "message": "You have unsaved changes. Do you want to save before closing?",
-    "saveLabel": "Save & Close",
-    "discardLabel": "Discard & Close",
     "cancelLabel": "Cancel",
+    "discardLabel": "Discard \u0026 Close",
+    "message": "You have unsaved changes. Do you want to save before closing?",
+    "popupId": "mpp-confirm-unsaved",
     "replyMessage": "confirmUnsavedResult",
-    "popupId": "mpp-confirm-unsaved"
+    "saveLabel": "Save \u0026 Close",
+    "title": "Unsaved Changes"
   },
   "propConfig": {
-    "params.title":         { "paramDirection": "input" },
-    "params.message":       { "paramDirection": "input" },
-    "params.saveLabel":     { "paramDirection": "input" },
-    "params.discardLabel":  { "paramDirection": "input" },
-    "params.cancelLabel":   { "paramDirection": "input" },
-    "params.replyMessage":  { "paramDirection": "input" },
-    "params.popupId":       { "paramDirection": "input" }
+    "params.cancelLabel": {
+      "paramDirection": "input"
+    },
+    "params.discardLabel": {
+      "paramDirection": "input"
+    },
+    "params.message": {
+      "paramDirection": "input"
+    },
+    "params.popupId": {
+      "paramDirection": "input"
+    },
+    "params.replyMessage": {
+      "paramDirection": "input"
+    },
+    "params.saveLabel": {
+      "paramDirection": "input"
+    },
+    "params.title": {
+      "paramDirection": "input"
+    }
   },
   "props": {
-    "defaultSize": { "height": 200, "width": 520 }
+    "defaultSize": {
+      "height": 200,
+      "width": 520
+    }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": { "name": "root" },
-    "props": {
-      "direction": "column",
-      "style": {
-        "background": "var(--mpp-surface-canvas)",
-        "borderRadius": "var(--mpp-radius-md, 8px)",
-        "height": "100%",
-        "overflow": "hidden",
-        "width": "100%"
-      }
-    },
     "children": [
       {
-        "type": "ia.display.label",
-        "meta": { "name": "Title" },
-        "position": { "basis": "auto", "shrink": 0 },
+        "meta": {
+          "name": "Title"
+        },
+        "position": {
+          "shrink": 0
+        },
         "propConfig": {
           "props.text": {
             "binding": {
-              "type": "property",
-              "config": { "path": "view.params.title" }
+              "config": {
+                "path": "view.params.title"
+              },
+              "type": "property"
             }
           }
         },
@@ -55,17 +65,24 @@
             "fontWeight": "600",
             "padding": "14px 16px 4px 16px"
           }
-        }
+        },
+        "type": "ia.display.label"
       },
       {
-        "type": "ia.display.label",
-        "meta": { "name": "Message" },
-        "position": { "basis": "0", "grow": 1 },
+        "meta": {
+          "name": "Message"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
         "propConfig": {
           "props.text": {
             "binding": {
-              "type": "property",
-              "config": { "path": "view.params.message" }
+              "config": {
+                "path": "view.params.message"
+              },
+              "type": "property"
             }
           }
         },
@@ -76,12 +93,133 @@
             "lineHeight": "1.5",
             "padding": "8px 16px 16px 16px"
           }
-        }
+        },
+        "type": "ia.display.label"
       },
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "Footer" },
-        "position": { "basis": "60px", "shrink": 0 },
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload\u003d{\"action\": \"cancel\"}, scope\u003d\"page\")\n\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CancelButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.cancelLabel"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-sm"
+              }
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "meta": {
+              "name": "Spacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload\u003d{\"action\": \"discard\"}, scope\u003d\"page\")\n\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "DiscardButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.discardLabel"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-danger btn-sm"
+              }
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload\u003d{\"action\": \"save\"}, scope\u003d\"page\")\n\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "SaveButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.saveLabel"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-primary btn-sm"
+              }
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "Footer"
+        },
+        "position": {
+          "basis": "60px",
+          "shrink": 0
+        },
         "props": {
           "alignItems": "center",
           "style": {
@@ -92,95 +230,22 @@
             "padding": "12px 16px"
           }
         },
-        "children": [
-          {
-            "type": "ia.input.button",
-            "meta": { "name": "CancelButton" },
-            "position": { "shrink": 0 },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "property",
-                  "config": { "path": "view.params.cancelLabel" }
-                }
-              }
-            },
-            "props": {
-              "style": { "classes": "btn btn-sm" }
-            },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"action\": \"cancel\"}, scope=\"page\")\n\tsystem.perspective.closePopup(id=self.view.params.popupId)"
-                  }
-                }
-              }
-            }
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "Spacer" },
-            "position": { "grow": 1 }
-          },
-          {
-            "type": "ia.input.button",
-            "meta": { "name": "DiscardButton" },
-            "position": { "shrink": 0 },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "property",
-                  "config": { "path": "view.params.discardLabel" }
-                }
-              }
-            },
-            "props": {
-              "style": { "classes": "btn btn-danger btn-sm" }
-            },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"action\": \"discard\"}, scope=\"page\")\n\tsystem.perspective.closePopup(id=self.view.params.popupId)"
-                  }
-                }
-              }
-            }
-          },
-          {
-            "type": "ia.input.button",
-            "meta": { "name": "SaveButton" },
-            "position": { "shrink": 0 },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "property",
-                  "config": { "path": "view.params.saveLabel" }
-                }
-              }
-            },
-            "props": {
-              "style": { "classes": "btn btn-primary btn-sm" }
-            },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"action\": \"save\"}, scope=\"page\")\n\tsystem.perspective.closePopup(id=self.view.params.popupId)"
-                  }
-                }
-              }
-            }
-          }
-        ]
+        "type": "ia.container.flex"
       }
-    ]
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "background": "var(--mpp-surface-canvas)",
+        "borderRadius": "var(--mpp-radius-md, 8px)",
+        "height": "100%",
+        "overflow": "hidden",
+        "width": "100%"
+      }
+    },
+    "type": "ia.container.flex"
   }
 }
