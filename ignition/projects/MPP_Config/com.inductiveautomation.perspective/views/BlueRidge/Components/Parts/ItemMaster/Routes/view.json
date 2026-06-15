@@ -264,7 +264,7 @@
             "props": {
               "placeholder": "EffectiveFrom (ISO)",
               "style": {
-                "classes": "psc-search-input"
+                "classes": "search-input"
               }
             },
             "type": "ia.input.text-field"
