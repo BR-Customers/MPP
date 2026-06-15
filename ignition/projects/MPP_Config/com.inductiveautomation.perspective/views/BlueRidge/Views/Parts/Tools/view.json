@@ -3,24 +3,105 @@
     "activeTab": "attributes",
     "activeTabIndex": 0,
     "editDraft": {
-      "meta": null
+      "meta": {
+        "Code": "jkhbj",
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1781530515951
+          ],
+          "$ts": 1781544226425
+        },
+        "CreatedByUserId": 2,
+        "DeprecatedAt": {
+          "$": [
+            "ts",
+            192,
+            1781530515951
+          ],
+          "$ts": 1781544231072
+        },
+        "Description": "",
+        "DieRankCode": null,
+        "DieRankId": null,
+        "DieRankName": null,
+        "HasCavities": true,
+        "Id": 2,
+        "Name": "hbjnjhbhj",
+        "StatusCode": "Retired",
+        "StatusCodeId": 4,
+        "StatusName": "Retired",
+        "ToolTypeCode": "Die",
+        "ToolTypeId": 1,
+        "ToolTypeName": "Die Cast Die",
+        "UpdatedAt": {
+          "$": [
+            "ts",
+            192,
+            1781530515951
+          ],
+          "$ts": 1781544231072
+        },
+        "UpdatedByUserId": 2,
+        "deprecated": true
+      }
     },
-    "mode": "view",
     "filter": {
       "searchText": "",
       "statusCode": "All"
     },
+    "mode": "update",
+    "pendingSwitch": null,
     "sectionDirty": {
       "attributes": false,
       "cavities": false
     },
-    "activeTab": "attributes",
-    "activeTabIndex": 0,
-    "tools": [],
-    "pendingSwitch": null,
-    "dirty": false,
-    "rankOptions": [],
-    "statusOptions": []
+    "selected": {
+      "meta": {
+        "Code": "jkhbj",
+        "CreatedAt": {
+          "$": [
+            "ts",
+            192,
+            1781530515951
+          ],
+          "$ts": 1781544226425
+        },
+        "CreatedByUserId": 2,
+        "DeprecatedAt": {
+          "$": [
+            "ts",
+            192,
+            1781530515951
+          ],
+          "$ts": 1781544231072
+        },
+        "Description": "",
+        "DieRankCode": null,
+        "DieRankId": null,
+        "DieRankName": null,
+        "HasCavities": true,
+        "Id": 2,
+        "Name": "hbjnjhbhj",
+        "StatusCode": "Retired",
+        "StatusCodeId": 4,
+        "StatusName": "Retired",
+        "ToolTypeCode": "Die",
+        "ToolTypeId": 1,
+        "ToolTypeName": "Die Cast Die",
+        "UpdatedAt": {
+          "$": [
+            "ts",
+            192,
+            1781530515951
+          ],
+          "$ts": 1781544231072
+        },
+        "UpdatedByUserId": 2,
+        "deprecated": true
+      }
+    }
   },
   "params": {},
   "propConfig": {
@@ -700,6 +781,19 @@
                               "config": {
                                 "script": "\tmeta = (self.view.custom.selected or {}).get('meta') or {}\n\ttoolId = meta.get('Id')\n\tif toolId is None:\n\t\treturn\n\tcode = meta.get('Code') or ''\n\tname = meta.get('Name') or ''\n\tlabel = (code + ' - ' + name) if code and name else (code or name or 'this tool')\n\tsystem.perspective.openPopup(\n\t\tid='mpp-confirm-destructive',\n\t\tview='BlueRidge/Components/Popups/ConfirmDestructive',\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t'title':        'Retire Tool',\n\t\t\t'message':      'Retire ' + label + '? This will mark the tool as deprecated.',\n\t\t\t'confirmLabel': 'Retire',\n\t\t\t'replyMessage': 'toolRetireConfirmed'\n\t\t}\n\t)"
                               }
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "BtnRetire"
+                        },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "config": {
+                                "expression": "({view.custom.selected.meta.deprecated} \u003d false)"
+                              },
+                              "type": "expr"
                             }
                           }
                         },
