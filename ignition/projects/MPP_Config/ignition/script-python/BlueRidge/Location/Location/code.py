@@ -243,12 +243,13 @@ def handleMoveUp(selected, userId=None,
         "location/MoveSortOrderUp",
         {"locationId": selected.get("id"), "userId": userId},
     )
-    BlueRidge.Common.Ui.notifyResult(
-        result,
-        successTitle = "Moved up",
-        successMsg   = "Reordered " + (selected.get("name") or ""),
-        errorTitle   = "Move failed",
-    )
+    # Removed for being unnecessary
+    #BlueRidge.Common.Ui.notifyResult(
+    #    result,
+    #    successTitle = "Moved up",
+    #    successMsg   = "Reordered " + (selected.get("name") or ""),
+    #    errorTitle   = "Move failed",
+    #)
     if not result.get("Status"):
         return None
     return _refreshAfterMutation(selected.get("id"),
@@ -270,12 +271,13 @@ def handleMoveDown(selected, userId=None,
         "location/MoveSortOrderDown",
         {"locationId": selected.get("id"), "userId": userId},
     )
-    BlueRidge.Common.Ui.notifyResult(
-        result,
-        successTitle = "Moved down",
-        successMsg   = "Reordered " + (selected.get("name") or ""),
-        errorTitle   = "Move failed",
-    )
+    # Removed for being unnecessary
+    #BlueRidge.Common.Ui.notifyResult(
+    #    result,
+    #    successTitle = "Moved down",
+    #    successMsg   = "Reordered " + (selected.get("name") or ""),
+    #    errorTitle   = "Move failed",
+    #)
     if not result.get("Status"):
         return None
     return _refreshAfterMutation(selected.get("id"),
