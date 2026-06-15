@@ -6,9 +6,9 @@
         "$": [
           "ts",
           192,
-          1781535487886
+          1781547114800
         ],
-        "$ts": 1781535487886
+        "$ts": 1781547114799
       },
       "entityTypeCode": null,
       "logSeverityCode": null,
@@ -17,12 +17,324 @@
         "$": [
           "ts",
           192,
-          1781535487886
+          1781547114800
         ],
-        "$ts": 1780930687886
+        "$ts": 1780942314799
       }
     },
     "rows": [
+      {
+        "ChangesSummary": "Header: {u\u0027ItemId\u0027: 2, u\u0027VersionNumbe… → {u\u0027ItemId\u0027: 2, u\u0027VersionNumbe…",
+        "Description": "5G0-C · Route v1 (Draft) · No-op save; 0 steps",
+        "EntityId": 3,
+        "Id": 24,
+        "LogEntityTypeCode": "Route",
+        "LogEntityTypeName": "Route",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781547120019
+          ],
+          "$ts": 1781544027225
+        },
+        "NewValue": "{\"Header\":{\"Id\":3,\"ItemId\":2,\"VersionNumber\":1,\"Name\":\"Route v1\",\"EffectiveFrom\":\"2026-06-15T00:00:00\",\"Item\":{\"Id\":2,\"PartNumber\":\"5G0-C\",\"Description\":\"5G0 Front Cover Casting\"}},\"Steps\":[]}",
+        "OldValue": "{\"Header\":{\"Id\":3,\"ItemId\":2,\"VersionNumber\":1,\"Name\":\"Route v1\",\"EffectiveFrom\":\"2026-06-15T14:31:35.280\",\"Item\":{\"Id\":2,\"PartNumber\":\"5G0-C\",\"Description\":\"5G0 Front Cover Casting\"}},\"Steps\":[]}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Definition: {u\u0027Description\u0027: \u0027jkghgjgj\u0027, … → {u\u0027Description\u0027: \u0027jkghgjgjcc\u0027…, +Attributes: [{u\u0027Description\u0027: \u0027sefsfd\u0027, u…",
+        "Description": "Location Type Definition \"Facilityc\" · +Attribute safsfdd",
+        "EntityId": 2,
+        "Id": 23,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781547120019
+          ],
+          "$ts": 1781541561549
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":2,\"Name\":\"Site\"},\"Definition\":{\"Id\":2,\"Code\":\"Facility\",\"Name\":\"Facilityc\",\"Icon\":\"mpp\\/factory\",\"Description\":\"jkghgjgjcc\"},\"Attributes\":[{\"Id\":19,\"AttributeName\":\"safsfdd\",\"DataType\":\"NVARCHAR\",\"IsRequired\":false,\"DefaultValue\":\"sefs\",\"Uom\":\"fdb\",\"SortOrder\":1,\"Description\":\"sefsfd\"}]}",
+        "OldValue": "{\"LocationType\":{\"Id\":2,\"Name\":\"Site\"},\"Definition\":{\"Id\":2,\"Code\":\"Facility\",\"Name\":\"Facility\",\"Icon\":\"mpp\\/factory\",\"Description\":\"jkghgjgj\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location Type Definition \"Inspection Line\" · Updated (no attribute changes)",
+        "EntityId": 6,
+        "Id": 22,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781547120019
+          ],
+          "$ts": 1781541179874
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":4,\"Name\":\"Work Center\"},\"Definition\":{\"Id\":6,\"Code\":\"InspectionLine\",\"Name\":\"Inspection Line\",\"Icon\":\"mpp\\/fact_check\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":4,\"Name\":\"Work Center\"},\"Definition\":{\"Id\":6,\"Code\":\"InspectionLine\",\"Name\":\"Inspection Line\",\"Icon\":\"mpp\\/fact_check\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location Type Definition \"Inspection Line\" · Updated (no attribute changes)",
+        "EntityId": 6,
+        "Id": 21,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781547120019
+          ],
+          "$ts": 1781541168843
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":4,\"Name\":\"Work Center\"},\"Definition\":{\"Id\":6,\"Code\":\"InspectionLine\",\"Name\":\"Inspection Line\",\"Icon\":\"mpp\\/fact_check\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":4,\"Name\":\"Work Center\"},\"Definition\":{\"Id\":6,\"Code\":\"InspectionLine\",\"Name\":\"Inspection Line\",\"Icon\":\"mpp\\/fact_check\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location Type Definition \"Facility\" · Updated (no attribute changes)",
+        "EntityId": 2,
+        "Id": 20,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781547120019
+          ],
+          "$ts": 1781541145408
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":2,\"Name\":\"Site\"},\"Definition\":{\"Id\":2,\"Code\":\"Facility\",\"Name\":\"Facility\",\"Icon\":\"mpp\\/factory\",\"Description\":\"jkghgjgj\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":2,\"Name\":\"Site\"},\"Definition\":{\"Id\":2,\"Code\":\"Facility\",\"Name\":\"Facility\",\"Icon\":\"mpp\\/factory\",\"Description\":\"jkghgjgj\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location Type Definition \"Facility\" · Updated (no attribute changes)",
+        "EntityId": 2,
+        "Id": 19,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781547120019
+          ],
+          "$ts": 1781539269695
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":2,\"Name\":\"Site\"},\"Definition\":{\"Id\":2,\"Code\":\"Facility\",\"Name\":\"Facility\",\"Icon\":\"mpp\\/factory\",\"Description\":\"jkghgjgj\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":2,\"Name\":\"Site\"},\"Definition\":{\"Id\":2,\"Code\":\"Facility\",\"Name\":\"Facility\",\"Icon\":\"mpp\\/factory\",\"Description\":\"jkghgjgj\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location Type Definition \"Facility\" · Updated (no attribute changes)",
+        "EntityId": 2,
+        "Id": 18,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781547120019
+          ],
+          "$ts": 1781539264009
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":2,\"Name\":\"Site\"},\"Definition\":{\"Id\":2,\"Code\":\"Facility\",\"Name\":\"Facility\",\"Icon\":\"mpp\\/factory\",\"Description\":\"jkghgjgj\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":2,\"Name\":\"Site\"},\"Definition\":{\"Id\":2,\"Code\":\"Facility\",\"Name\":\"Facility\",\"Icon\":\"mpp\\/factory\",\"Description\":\"jkghgjgj\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Definition: {u\u0027Code\u0027: \u0027Facility\u0027, u\u0027Name\u0027… → {u\u0027Description\u0027: \u0027jkghgjgj\u0027, …",
+        "Description": "Location Type Definition \"Facility\" · Updated (no attribute changes)",
+        "EntityId": 2,
+        "Id": 17,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781547120019
+          ],
+          "$ts": 1781539249122
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":2,\"Name\":\"Site\"},\"Definition\":{\"Id\":2,\"Code\":\"Facility\",\"Name\":\"Facility\",\"Icon\":\"mpp\\/factory\",\"Description\":\"jkghgjgj\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":2,\"Name\":\"Site\"},\"Definition\":{\"Id\":2,\"Code\":\"Facility\",\"Name\":\"Facility\",\"Icon\":\"mpp\\/factory\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location Type Definition \"Facility\" · Updated (no attribute changes)",
+        "EntityId": 2,
+        "Id": 16,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781547120019
+          ],
+          "$ts": 1781539158808
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":2,\"Name\":\"Site\"},\"Definition\":{\"Id\":2,\"Code\":\"Facility\",\"Name\":\"Facility\",\"Icon\":\"mpp\\/factory\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":2,\"Name\":\"Site\"},\"Definition\":{\"Id\":2,\"Code\":\"Facility\",\"Name\":\"Facility\",\"Icon\":\"mpp\\/factory\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location updated with attribute reconciliation.",
+        "EntityId": 3,
+        "Id": 15,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781547120019
+          ],
+          "$ts": 1781538328987
+        },
+        "NewValue": "{\"Location\":\"{\\\"Id\\\":3,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC1\\\",\\\"Name\\\":\\\"Die Cast 1\\\",\\\"Description\\\":\\\"Die casting area - 11 machines\\\",\\\"SortOrder\\\":1}\"}",
+        "OldValue": "{\"Location\":\"{\\\"Id\\\":3,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC1\\\",\\\"Name\\\":\\\"Die Cast 1\\\",\\\"Description\\\":\\\"Die casting area - 11 machines\\\",\\\"SortOrder\\\":1}\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location updated with attribute reconciliation.",
+        "EntityId": 3,
+        "Id": 14,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781547120019
+          ],
+          "$ts": 1781538117140
+        },
+        "NewValue": "{\"Location\":\"{\\\"Id\\\":3,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC1\\\",\\\"Name\\\":\\\"Die Cast 1\\\",\\\"Description\\\":\\\"Die casting area - 11 machines\\\",\\\"SortOrder\\\":1}\"}",
+        "OldValue": "{\"Location\":\"{\\\"Id\\\":3,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC1\\\",\\\"Name\\\":\\\"Die Cast 1\\\",\\\"Description\\\":\\\"Die casting area - 11 machines\\\",\\\"SortOrder\\\":1}\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location updated with attribute reconciliation.",
+        "EntityId": 31,
+        "Id": 13,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781547120019
+          ],
+          "$ts": 1781536883043
+        },
+        "NewValue": "{\"Location\":\"{\\\"Id\\\":31,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC4\\\",\\\"Name\\\":\\\"Die Cast 4\\\",\\\"Description\\\":\\\"Die casting area - 3 machines\\\",\\\"SortOrder\\\":3}\"}",
+        "OldValue": "{\"Location\":\"{\\\"Id\\\":31,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC4\\\",\\\"Name\\\":\\\"Die Cast 4\\\",\\\"Description\\\":\\\"Die casting area - 3 machines\\\",\\\"SortOrder\\\":3}\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location updated with attribute reconciliation.",
+        "EntityId": 31,
+        "Id": 12,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781547120019
+          ],
+          "$ts": 1781536881073
+        },
+        "NewValue": "{\"Location\":\"{\\\"Id\\\":31,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC4\\\",\\\"Name\\\":\\\"Die Cast 4\\\",\\\"Description\\\":\\\"Die casting area - 3 machines\\\",\\\"SortOrder\\\":3}\"}",
+        "OldValue": "{\"Location\":\"{\\\"Id\\\":31,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC4\\\",\\\"Name\\\":\\\"Die Cast 4\\\",\\\"Description\\\":\\\"Die casting area - 3 machines\\\",\\\"SortOrder\\\":3}\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
       {
         "ChangesSummary": "+ VersionNumber, Name, Item +1 more",
         "Description": "5G0-C · Route v1 (Draft) · Created",
@@ -38,7 +350,7 @@
           "$": [
             "ts",
             192,
-            1781535487893
+            1781547120019
           ],
           "$ts": 1781533895282
         },
@@ -62,7 +374,7 @@
           "$": [
             "ts",
             192,
-            1781535487893
+            1781547120019
           ],
           "$ts": 1781533094029
         },
@@ -86,7 +398,7 @@
           "$": [
             "ts",
             192,
-            1781535487893
+            1781547120019
           ],
           "$ts": 1781533093503
         },
@@ -110,7 +422,7 @@
           "$": [
             "ts",
             192,
-            1781535487893
+            1781547120019
           ],
           "$ts": 1781533092184
         },
@@ -134,7 +446,7 @@
           "$": [
             "ts",
             192,
-            1781535487893
+            1781547120019
           ],
           "$ts": 1781529831073
         },
@@ -158,7 +470,7 @@
           "$": [
             "ts",
             192,
-            1781535487893
+            1781547120019
           ],
           "$ts": 1781529826438
         },
@@ -182,7 +494,7 @@
           "$": [
             "ts",
             192,
-            1781535487893
+            1781547120019
           ],
           "$ts": 1781291936767
         },
@@ -206,7 +518,7 @@
           "$": [
             "ts",
             192,
-            1781535487893
+            1781547120019
           ],
           "$ts": 1781288446416
         },
@@ -230,7 +542,7 @@
           "$": [
             "ts",
             192,
-            1781535487893
+            1781547120019
           ],
           "$ts": 1781287689310
         },
@@ -254,7 +566,7 @@
           "$": [
             "ts",
             192,
-            1781535487893
+            1781547120019
           ],
           "$ts": 1781287073863
         },
@@ -278,7 +590,7 @@
           "$": [
             "ts",
             192,
-            1781535487893
+            1781547120019
           ],
           "$ts": 1781284806115
         },
@@ -288,7 +600,7 @@
         "UserId": 2
       }
     ],
-    "totalCount": 11
+    "totalCount": 24
   },
   "params": {},
   "propConfig": {
@@ -757,9 +1069,9 @@
                       {
                         "events": {
                           "component": {
-                            "onSelectionChange": {
+                            "onRowDoubleClick": {
                               "config": {
-                                "script": "\tsel \u003d event.get(\"selectedRow\") if event else None\n\tif sel is None:\n\t\treturn\n\tidx \u003d sel\n\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(self.props.data) or []\n\tif idx \u003c 0 or idx \u003e\u003d len(rows):\n\t\treturn\n\tdata \u003d rows[idx] or {}\n\tsystem.perspective.openPopup(\n\t\tid\u003d\"mpp-config-change-detail\",\n\t\tview\u003d\"BlueRidge/Components/Popups/ConfigChangeDetail\",\n\t\tmodal\u003dTrue,\n\t\tdraggable\u003dFalse,\n\t\tshowCloseIcon\u003dFalse,\n\t\tparams\u003d{\n\t\t\t\"id\":                data.get(\"Id\"),\n\t\t\t\"loggedAt\":          data.get(\"LoggedAt\"),\n\t\t\t\"userDisplayName\":   data.get(\"UserDisplayName\"),\n\t\t\t\"logEntityTypeName\": data.get(\"LogEntityTypeName\"),\n\t\t\t\"entityId\":          data.get(\"EntityId\"),\n\t\t\t\"logEventTypeCode\":  data.get(\"LogEventTypeCode\"),\n\t\t\t\"logSeverityCode\":   data.get(\"LogSeverityCode\"),\n\t\t\t\"description\":       data.get(\"Description\"),\n\t\t\t\"oldValue\":          data.get(\"OldValue\"),\n\t\t\t\"newValue\":          data.get(\"NewValue\"),\n\t\t\t\"popupId\":           \"mpp-config-change-detail\"\n\t\t}\n\t)"
+                                "script": "\t#if self.view.custom.sortingApplied:\n\t#\tself.view.custom.sortingApplied \u003d False\n\t#\treturn\n\t\t\n\tsel \u003d self.props.selection.selectedRow\n\tif sel is None:\n\t\treturn\n\tidx \u003d sel\n\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(self.props.data) or []\n\tif idx \u003c 0 or idx \u003e\u003d len(rows):\n\t\treturn\n\tdata \u003d rows[idx] or {}\n\tsystem.perspective.openPopup(\n\t\tid\u003d\"mpp-config-change-detail\",\n\t\tview\u003d\"BlueRidge/Components/Popups/ConfigChangeDetail\",\n\t\tmodal\u003dTrue,\n\t\tdraggable\u003dFalse,\n\t\tshowCloseIcon\u003dFalse,\n\t\tparams\u003d{\n\t\t\t\"id\":                data.get(\"Id\"),\n\t\t\t\"loggedAt\":          data.get(\"LoggedAt\"),\n\t\t\t\"userDisplayName\":   data.get(\"UserDisplayName\"),\n\t\t\t\"logEntityTypeName\": data.get(\"LogEntityTypeName\"),\n\t\t\t\"entityId\":          data.get(\"EntityId\"),\n\t\t\t\"logEventTypeCode\":  data.get(\"LogEventTypeCode\"),\n\t\t\t\"logSeverityCode\":   data.get(\"LogSeverityCode\"),\n\t\t\t\"description\":       data.get(\"Description\"),\n\t\t\t\"oldValue\":          data.get(\"OldValue\"),\n\t\t\t\"newValue\":          data.get(\"NewValue\"),\n\t\t\t\"popupId\":           \"mpp-config-change-detail\"\n\t\t}\n\t)"
                               },
                               "scope": "G",
                               "type": "script"
@@ -791,7 +1103,7 @@
                                 "title": "Timestamp"
                               },
                               "render": "date",
-                              "sort": "desc",
+                              "sort": "none",
                               "sortable": true,
                               "visible": true
                             },
@@ -800,6 +1112,7 @@
                               "header": {
                                 "title": "User"
                               },
+                              "sort": "none",
                               "sortable": true,
                               "visible": true
                             },
@@ -808,6 +1121,7 @@
                               "header": {
                                 "title": "Entity Type"
                               },
+                              "sort": "none",
                               "sortable": true,
                               "visible": true
                             },
@@ -816,6 +1130,7 @@
                               "header": {
                                 "title": "Event"
                               },
+                              "sort": "none",
                               "sortable": true,
                               "visible": true
                             },
@@ -824,6 +1139,7 @@
                               "header": {
                                 "title": "Severity"
                               },
+                              "sort": "none",
                               "sortable": true,
                               "visible": true
                             },
@@ -832,6 +1148,7 @@
                               "header": {
                                 "title": "Changes"
                               },
+                              "sort": "none",
                               "sortable": false,
                               "visible": true
                             },
@@ -840,6 +1157,7 @@
                               "header": {
                                 "title": "Activity"
                               },
+                              "sort": "none",
                               "sortable": true,
                               "visible": true
                             }
@@ -849,6 +1167,21 @@
                               "enabled": true,
                               "selectionMode": "single"
                             }
+                          },
+                          "selection": {
+                            "data": [
+                              {
+                                "ChangesSummary": "Header: {u\u0027ItemId\u0027: 2, u\u0027VersionNumbe… → {u\u0027ItemId\u0027: 2, u\u0027VersionNumbe…",
+                                "Description": "5G0-C · Route v1 (Draft) · No-op save; 0 steps",
+                                "LogEntityTypeName": "Route",
+                                "LogEventTypeCode": "Updated",
+                                "LogSeverityCode": "Info",
+                                "LoggedAt": "Mon Jun 15 2026 13:20:27 GMT-0400 (Eastern Daylight Time)",
+                                "UserDisplayName": "Dev User"
+                              }
+                            ],
+                            "selectedColumn": "LogEntityTypeName",
+                            "selectedRow": 0
                           },
                           "style": {
                             "classes": "data-table audit-log-table"
@@ -933,7 +1266,7 @@
         {
           "name": "applySearch",
           "params": [],
-          "script": "\tresult \u003d BlueRidge.Audit.ConfigLog.search(self.view.custom.filter)\n\tself.view.custom.rows       \u003d result[\"rows\"]\n\tself.view.custom.totalCount \u003d result[\"totalCount\"]"
+          "script": "\toldSelection \u003d self.getChild(\"MainSplit\").getChild(\"ContentArea\").getChild(\"AuditPanelWrapper\").getChild(\"AuditPanel\").getChild(\"AuditTable\").props.selection.selectedRow\n\tresult \u003d BlueRidge.Audit.ConfigLog.search(self.view.custom.filter)\n\tself.view.custom.rows       \u003d result[\"rows\"]\n\tself.view.custom.totalCount \u003d result[\"totalCount\"]\n\t\n\tnewSelection \u003d self.getChild(\"MainSplit\").getChild(\"ContentArea\").getChild(\"AuditPanelWrapper\").getChild(\"AuditPanel\").getChild(\"AuditTable\").props.selection.selectedRow\n\t#if oldSelection !\u003d newSelection:\n\t#self.view.custom.sortingApplied \u003d True"
         },
         {
           "name": "resetFilter",
@@ -942,7 +1275,7 @@
         }
       ],
       "extensionFunctions": null,
-      "messageHandlers": null
+      "messageHandlers": []
     },
     "type": "ia.container.flex"
   }
