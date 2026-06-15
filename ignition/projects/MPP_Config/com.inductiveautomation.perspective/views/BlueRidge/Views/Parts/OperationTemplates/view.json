@@ -1,213 +1,237 @@
 {
   "custom": {
-    "selected": { "meta": null },
-    "editDraft": { "meta": null },
-    "mode": "view",
-    "filter": {
-      "searchText": "",
-      "areaLocationId": null,
-      "includeDeprecated": false
+    "editDraft": {
+      "meta": null
     },
-    "rows": [],
-    "versions": [],
+    "fieldRows": [],
+    "fieldsState": {
+      "editDraft": {
+        "rows": []
+      },
+      "selected": {
+        "rows": []
+      }
+    },
+    "filter": {
+      "areaLocationId": null,
+      "includeDeprecated": false,
+      "searchText": ""
+    },
+    "mode": "view",
+    "pendingNav": null,
+    "selected": {
+      "meta": null
+    },
+    "selectedFieldDcfId": null,
     "selectedTemplateCode": "",
     "selectedVersionId": 0,
-    "showDeprecatedVersions": false,
-    "fieldRows": [],
-    "areaOptions": [],
-    "fieldOptions": [],
-    "selectedFieldDcfId": null,
-    "fieldsState": {
-      "selected":  { "rows": [] },
-      "editDraft": { "rows": [] }
-    },
-    "fieldsDirty": false,
-    "pendingNav": null,
-    "dirty": false
+    "showDeprecatedVersions": false
   },
   "params": {},
   "propConfig": {
-    "custom.filter.searchText":     { "persistent": true },
-    "custom.filter.areaLocationId": { "persistent": true },
-    "custom.dirty": {
-      "binding": {
-        "type": "expr",
-        "config": {
-          "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.editDraft}) != runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.selected})"
-        }
-      }
-    },
-    "custom.rows": {
-      "binding": {
-        "type": "expr",
-        "config": {
-          "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.search\", 0, {view.custom.filter})"
-        }
-      }
-    },
-    "custom.versions": {
-      "binding": {
-        "type": "expr",
-        "config": {
-          "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.getVersionsForCode\", 0, {view.custom.selectedTemplateCode}, {view.custom.showDeprecatedVersions})"
-        }
-      }
-    },
     "custom.areaOptions": {
       "binding": {
-        "type": "expr",
         "config": {
           "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.getAreasForDropdown\", 0)"
-        }
+        },
+        "type": "expr"
+      }
+    },
+    "custom.dirty": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.editDraft}) !\u003d runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.selected})"
+        },
+        "type": "expr"
       }
     },
     "custom.fieldOptions": {
       "binding": {
-        "type": "expr",
         "config": {
           "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.getAvailableDataCollectionFields\", 0, {view.custom.selectedVersionId})"
-        }
+        },
+        "type": "expr"
       }
     },
     "custom.fieldsDirty": {
       "binding": {
-        "type": "expr",
         "config": {
-          "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.fieldsState.editDraft.rows}) != runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.fieldsState.selected.rows})"
-        }
+          "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.fieldsState.editDraft.rows}) !\u003d runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.fieldsState.selected.rows})"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.filter.areaLocationId": {
+      "persistent": true
+    },
+    "custom.filter.searchText": {
+      "persistent": true
+    },
+    "custom.rows": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.search\", 0, {view.custom.filter})"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.versions": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.getVersionsForCode\", 0, {view.custom.selectedTemplateCode}, {view.custom.showDeprecatedVersions})"
+        },
+        "type": "expr"
       }
     }
   },
   "props": {
-    "defaultSize": { "height": 1080, "width": 1920 }
+    "defaultSize": {
+      "height": 1080,
+      "width": 1920
+    }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": { "name": "root" },
-    "props": {
-      "direction": "column",
-      "style": { "classes": "canvas" }
-    },
-    "scripts": {
-      "customMethods": [
-        {
-          "name": "_loadTemplate",
-          "params": ["templateId"],
-          "script": "\tmeta = BlueRidge.Parts.OperationTemplate.getOne(templateId)\n\tif meta is None:\n\t\tBlueRidge.Common.Notify.toast('Template not found', 'Id ' + str(templateId) + ' no longer exists.', 'warning')\n\t\treturn\n\tself.view.custom.selected   = {'meta': dict(meta)}\n\tself.view.custom.editDraft  = {'meta': dict(meta)}\n\tself.view.custom.mode = 'update'\n\tself.view.custom.selectedTemplateCode = meta.get('Code') or ''\n\tself.view.custom.selectedVersionId    = meta.get('Id') or 0\n\tself.view.custom.selectedFieldDcfId   = None\n\tself.loadFields()"
-        },
-        {
-          "name": "_refreshDetail",
-          "params": [],
-          "script": "\tmeta = (self.view.custom.selected or {}).get('meta') or {}\n\ttemplateId = meta.get('Id')\n\tif templateId is None:\n\t\treturn\n\tself.loadFields()"
-        },
-        {
-          "name": "loadFields",
-          "params": [],
-          "script": "\tmeta = (self.view.custom.selected or {}).get('meta') or {}\n\ttemplateId = meta.get('Id')\n\tif templateId is None:\n\t\tempty = {'rows': []}\n\t\tself.view.custom.fieldsState = {'selected': dict(empty), 'editDraft': dict(empty)}\n\t\treturn\n\tinstances = BlueRidge.Parts.OperationTemplate.getFieldsForTemplate(templateId) or []\n\tloaded = []\n\tfor inst in instances:\n\t\tf = (inst or {}).get('field') or {}\n\t\tloaded.append({\n\t\t\t'id':                    f.get('Id'),\n\t\t\t'dataCollectionFieldId': f.get('DataCollectionFieldId'),\n\t\t\t'code':                  f.get('Code') or '',\n\t\t\t'name':                  f.get('Name') or '',\n\t\t\t'isRequired':            bool(f.get('IsRequired')),\n\t\t})\n\tself.view.custom.fieldsState = {'selected': {'rows': loaded}, 'editDraft': {'rows': [dict(r) for r in loaded]}}"
-        },
-        {
-          "name": "handleSaveFields",
-          "params": [],
-          "script": "\tmeta = (self.view.custom.selected or {}).get('meta') or {}\n\ttemplateId = meta.get('Id')\n\tif templateId is None:\n\t\tBlueRidge.Common.Notify.toast('No template selected', 'Pick a template before saving.', 'warning')\n\t\treturn\n\tdraft = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.editDraft) or {}\n\trows = draft.get('rows') or []\n\tresult = BlueRidge.Parts.OperationTemplate.saveFieldsAll(templateId, rows)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Fields saved')\n\tif result and result.get('Status'):\n\t\tself.loadFields()"
-        },
-        {
-          "name": "handleDiscardFields",
-          "params": [],
-          "script": "\tselected = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.selected) or {'rows': []}\n\tself.view.custom.fieldsState = {'selected': selected, 'editDraft': {'rows': [dict(r) for r in (selected.get('rows') or [])]}}"
-        },
-        {
-          "name": "addFieldRow",
-          "params": [],
-          "script": "\tdraft = dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.editDraft) or {'rows': []})\n\trows = list(draft.get('rows') or [])\n\trows.append({\n\t\t'id':                    None,\n\t\t'dataCollectionFieldId': None,\n\t\t'code':                  '',\n\t\t'name':                  '',\n\t\t'isRequired':            True,\n\t})\n\tdraft['rows'] = rows\n\tselected = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.selected) or {'rows': []}\n\tself.view.custom.fieldsState = {'selected': selected, 'editDraft': draft}"
-        },
-        {
-          "name": "_applyFieldChange",
-          "params": ["idx", "newFieldId"],
-          "script": "\tdraft = dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.editDraft) or {'rows': []})\n\trows = list(draft.get('rows') or [])\n\tif idx < 0 or idx >= len(rows):\n\t\treturn\n\trow = dict(rows[idx])\n\trow['dataCollectionFieldId'] = newFieldId\n\t# Derive code/name from the matching option label ('CODE - Name') when present.\n\topts = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldOptions) or []\n\tlabel = None\n\tfor o in opts:\n\t\tif o.get('value') == newFieldId:\n\t\t\tlabel = o.get('label')\n\t\t\tbreak\n\tif label and ' - ' in label:\n\t\tparts = label.split(' - ', 1)\n\t\trow['code'] = parts[0]\n\t\trow['name'] = parts[1]\n\telse:\n\t\trow['code'] = ''\n\t\trow['name'] = ''\n\trows[idx] = row\n\tdraft['rows'] = rows\n\tselected = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.selected) or {'rows': []}\n\tself.view.custom.fieldsState = {'selected': selected, 'editDraft': draft}"
-        },
-        {
-          "name": "_applyFieldRequiredChange",
-          "params": ["idx", "isRequired"],
-          "script": "\tdraft = dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.editDraft) or {'rows': []})\n\trows = list(draft.get('rows') or [])\n\tif idx < 0 or idx >= len(rows):\n\t\treturn\n\trow = dict(rows[idx])\n\trow['isRequired'] = bool(isRequired)\n\trows[idx] = row\n\tdraft['rows'] = rows\n\tselected = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.selected) or {'rows': []}\n\tself.view.custom.fieldsState = {'selected': selected, 'editDraft': draft}"
-        },
-        {
-          "name": "_removeFieldRow",
-          "params": ["idx"],
-          "script": "\tdraft = dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.editDraft) or {'rows': []})\n\trows = list(draft.get('rows') or [])\n\tif idx < 0 or idx >= len(rows):\n\t\treturn\n\tdel rows[idx]\n\tdraft['rows'] = rows\n\tselected = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.selected) or {'rows': []}\n\tself.view.custom.fieldsState = {'selected': selected, 'editDraft': draft}"
-        }
-      ],
-      "extensionFunctions": null,
-      "messageHandlers": [
-        {
-          "messageType": "templateRowClicked",
-          "pageScope": true,
-          "sessionScope": false,
-          "viewScope": false,
-          "script": "\tclickedId = (payload or {}).get('id')\n\tif clickedId is None:\n\t\treturn\n\tif self.view.custom.dirty or self.view.custom.fieldsDirty:\n\t\tself.view.custom.pendingNav = clickedId\n\t\tsystem.perspective.openPopup(\n\t\t\tid='mpp-confirm-unsaved',\n\t\t\tview='BlueRidge/Components/Popups/ConfirmUnsaved',\n\t\t\tmodal=True,\n\t\t\tshowCloseIcon=False,\n\t\t\tparams={\n\t\t\t\t'title':   'Unsaved changes',\n\t\t\t\t'message': 'Save changes before switching templates?'\n\t\t\t}\n\t\t)\n\t\treturn\n\tself._loadTemplate(clickedId)"
-        },
-        {
-          "messageType": "templateListRefresh",
-          "pageScope": true,
-          "sessionScope": false,
-          "viewScope": false,
-          "script": "\tself.view.custom.rows = BlueRidge.Parts.OperationTemplate.search(self.view.custom.filter)\n\tself._refreshDetail()"
-        },
-        {
-          "messageType": "templateSelectId",
-          "pageScope": true,
-          "sessionScope": false,
-          "viewScope": false,
-          "script": "\ttemplateId = (payload or {}).get('id')\n\tif templateId is None:\n\t\treturn\n\tself._loadTemplate(templateId)"
-        },
-        {
-          "messageType": "confirmUnsavedResult",
-          "pageScope": true,
-          "sessionScope": false,
-          "viewScope": false,
-          "script": "\taction = (payload or {}).get('action')\n\tpendingId = self.view.custom.pendingNav\n\tself.view.custom.pendingNav = None\n\tif pendingId is None:\n\t\treturn\n\tif action == 'cancel':\n\t\t# Revert the version dropdown to the currently-selected template.\n\t\tcurrentId = ((self.view.custom.selected or {}).get('meta') or {}).get('Id') or 0\n\t\tself.view.custom.selectedVersionId = currentId\n\t\treturn\n\tif action == 'save':\n\t\tdraft = self.view.custom.editDraft or {}\n\t\tmeta  = draft.get('meta') or {}\n\t\tif meta.get('Id') is not None:\n\t\t\tresult = BlueRidge.Parts.OperationTemplate.update(meta)\n\t\t\tBlueRidge.Common.Ui.notifyResult(result, 'Template saved')\n\t\tif self.view.custom.fieldsDirty:\n\t\t\tself.handleSaveFields()\n\tself._loadTemplate(pendingId)"
-        },
-        {
-          "messageType": "templateDeprecateConfirmed",
-          "pageScope": true,
-          "sessionScope": false,
-          "viewScope": false,
-          "script": "\taction = (payload or {}).get('action')\n\tif action != 'confirm':\n\t\treturn\n\tmeta = (self.view.custom.selected or {}).get('meta') or {}\n\ttemplateId = meta.get('Id')\n\tif templateId is None:\n\t\treturn\n\tresult = BlueRidge.Parts.OperationTemplate.deprecate(templateId)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Template deprecated')\n\tif result and result.get('Status'):\n\t\tself.view.custom.selected  = {'meta': None}\n\t\tself.view.custom.editDraft = {'meta': None}\n\t\tself.view.custom.mode = 'view'\n\t\tself.view.custom.selectedTemplateCode = ''\n\t\tself.view.custom.selectedVersionId    = 0\n\t\tself.view.custom.fieldsState = {\"selected\": {\"rows\": []}, \"editDraft\": {\"rows\": []}}\n\t\tsystem.perspective.sendMessage('templateListRefresh', scope='page')"
-        },
-        {
-          "messageType": "templateVersionClicked",
-          "pageScope": true,
-          "sessionScope": false,
-          "viewScope": false,
-          "script": "\tclickedId = (payload or {}).get('id')\n\tif clickedId is None:\n\t\treturn\n\tif self.view.custom.dirty or self.view.custom.fieldsDirty:\n\t\tself.view.custom.pendingNav = clickedId\n\t\tsystem.perspective.openPopup(\n\t\t\tid='mpp-confirm-unsaved',\n\t\t\tview='BlueRidge/Components/Popups/ConfirmUnsaved',\n\t\t\tmodal=True,\n\t\t\tshowCloseIcon=False,\n\t\t\tparams={\n\t\t\t\t'title':   'Unsaved changes',\n\t\t\t\t'message': 'Save changes before switching versions?'\n\t\t\t}\n\t\t)\n\t\treturn\n\tself._loadTemplate(clickedId)"
-        },
-        {
-          "messageType": "fieldRowFieldChanged",
-          "pageScope": true,
-          "sessionScope": false,
-          "viewScope": false,
-          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get('rowIndex', -1))\n\tself._applyFieldChange(idx, payload.get('newFieldId'))"
-        },
-        {
-          "messageType": "fieldRowRequiredChanged",
-          "pageScope": true,
-          "sessionScope": false,
-          "viewScope": false,
-          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get('rowIndex', -1))\n\tself._applyFieldRequiredChange(idx, payload.get('isRequired'))"
-        },
-        {
-          "messageType": "fieldRowRemove",
-          "pageScope": true,
-          "sessionScope": false,
-          "viewScope": false,
-          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get('rowIndex', -1))\n\tself._removeFieldRow(idx)"
-        }
-      ]
-    },
     "children": [
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "TitleBar" },
-        "position": { "shrink": 0 },
+        "children": [
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "BreadcrumbCategory"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "breadcrumb"
+                      },
+                      "text": "Parts"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "BreadcrumbSep"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "breadcrumb crumb-sep"
+                      },
+                      "text": "›"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "BreadcrumbActive"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "crumb-active"
+                      },
+                      "text": "Operation Templates"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "Breadcrumb"
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "classes": "breadcrumb"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "LabelTitle"
+                },
+                "props": {
+                  "style": {
+                    "classes": "title-row-h1"
+                  },
+                  "text": "Operation Templates"
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "TitleColumn"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "2px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "LabelDirty"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.dirty} || {view.custom.fieldsDirty}, \u0027● Unsaved changes\u0027, \u0027\u0027)"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-state-warn-fg)",
+                "fontSize": "12px",
+                "fontStyle": "italic"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "TitleSpacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\n\t\tid\u003d\u0027mpp-new-operation-template\u0027,\n\t\tview\u003d\u0027BlueRidge/Components/Popups/NewOperationTemplate\u0027,\n\t\tmodal\u003dTrue,\n\t\tshowCloseIcon\u003dFalse\n\t)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "BtnNewTemplate"
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-primary"
+              },
+              "text": "+ New Template"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "TitleBar"
+        },
+        "position": {
+          "shrink": 0
+        },
         "props": {
           "alignItems": "center",
           "style": {
@@ -217,105 +241,75 @@
             "padding": "8px 16px"
           }
         },
-        "children": [
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "TitleColumn" },
-            "position": { "basis": "auto" },
-            "props": { "direction": "column", "style": { "gap": "2px" } },
-            "children": [
-              {
-                "type": "ia.container.flex",
-                "meta": { "name": "Breadcrumb" },
-                "position": { "basis": "auto" },
-                "props": {
-                  "direction": "row",
-                  "alignItems": "center",
-                  "style": { "classes": "breadcrumb" }
-                },
-                "children": [
-                  { "type": "ia.display.label", "meta": { "name": "BreadcrumbCategory" }, "position": { "basis": "auto" }, "props": { "text": "Parts", "style": { "classes": "breadcrumb" } } },
-                  { "type": "ia.display.label", "meta": { "name": "BreadcrumbSep" },     "position": { "basis": "auto" }, "props": { "text": "›",     "style": { "classes": "breadcrumb crumb-sep" } } },
-                  { "type": "ia.display.label", "meta": { "name": "BreadcrumbActive" },  "position": { "basis": "auto" }, "props": { "text": "Operation Templates", "style": { "classes": "crumb-active" } } }
-                ]
-              },
-              {
-                "type": "ia.display.label",
-                "meta": { "name": "LabelTitle" },
-                "position": { "basis": "auto" },
-                "props": { "text": "Operation Templates", "style": { "classes": "title-row-h1" } }
-              }
-            ]
-          },
-          {
-            "type": "ia.display.label",
-            "meta": { "name": "LabelDirty" },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "expr",
-                  "config": { "expression": "if({view.custom.dirty} || {view.custom.fieldsDirty}, '● Unsaved changes', '')" }
-                }
-              }
-            },
-            "props": {
-              "text": "",
-              "style": {
-                "color": "var(--mpp-state-warn-fg)",
-                "fontSize": "12px",
-                "fontStyle": "italic"
-              }
-            }
-          },
-          { "type": "ia.container.flex", "meta": { "name": "TitleSpacer" }, "position": { "grow": 1 } },
-          {
-            "type": "ia.input.button",
-            "meta": { "name": "BtnNewTemplate" },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\tsystem.perspective.openPopup(\n\t\tid='mpp-new-operation-template',\n\t\tview='BlueRidge/Components/Popups/NewOperationTemplate',\n\t\tmodal=True,\n\t\tshowCloseIcon=False\n\t)"
-                  }
-                }
-              }
-            },
-            "props": {
-              "text": "+ New Template",
-              "style": { "classes": "btn btn-primary" }
-            }
-          }
-        ]
+        "type": "ia.container.flex"
       },
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "Main" },
-        "position": { "basis": "0", "grow": 1 },
-        "props": {
-          "style": {
-            "borderTop": "1px solid var(--mpp-border-subtle)",
-            "overflow": "hidden"
-          }
-        },
         "children": [
           {
-            "type": "ia.container.flex",
-            "meta": { "name": "LeftPanel" },
-            "position": { "basis": "240px", "shrink": 0 },
-            "props": {
-              "direction": "column",
-              "style": {
-                "background": "var(--mpp-surface-nav)",
-                "borderRight": "1px solid var(--mpp-border-subtle)"
-              }
-            },
             "children": [
               {
-                "type": "ia.container.flex",
-                "meta": { "name": "FilterBar" },
-                "position": { "shrink": 0 },
+                "children": [
+                  {
+                    "meta": {
+                      "name": "DropdownArea"
+                    },
+                    "propConfig": {
+                      "props.options": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.areaOptions"
+                          },
+                          "type": "property"
+                        }
+                      },
+                      "props.value": {
+                        "binding": {
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.filter.areaLocationId"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "noSelectionText": "All Areas",
+                      "style": {
+                        "classes": "select"
+                      }
+                    },
+                    "type": "ia.input.dropdown"
+                  },
+                  {
+                    "meta": {
+                      "name": "InputSearch"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.filter.searchText"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "placeholder": "🔍 Search templates…",
+                      "style": {
+                        "classes": "search-input"
+                      }
+                    },
+                    "type": "ia.input.text-field"
+                  }
+                ],
+                "meta": {
+                  "name": "FilterBar"
+                },
+                "position": {
+                  "shrink": 0
+                },
                 "props": {
                   "direction": "column",
                   "style": {
@@ -324,222 +318,247 @@
                     "padding": "8px 10px"
                   }
                 },
-                "children": [
-                  {
-                    "type": "ia.input.dropdown",
-                    "meta": { "name": "DropdownArea" },
-                    "propConfig": {
-                      "props.value": {
-                        "binding": {
-                          "type": "property",
-                          "config": { "bidirectional": true, "path": "view.custom.filter.areaLocationId" }
-                        }
-                      },
-                      "props.options": {
-                        "binding": {
-                          "type": "property",
-                          "config": { "path": "view.custom.areaOptions" }
-                        }
-                      }
-                    },
-                    "props": {
-                      "options": [],
-                      "noSelectionText": "All Areas",
-                      "style": { "classes": "select" }
-                    }
-                  },
-                  {
-                    "type": "ia.input.text-field",
-                    "meta": { "name": "InputSearch" },
-                    "propConfig": {
-                      "props.text": {
-                        "binding": {
-                          "type": "property",
-                          "config": { "bidirectional": true, "path": "view.custom.filter.searchText" }
-                        }
-                      }
-                    },
-                    "props": {
-                      "placeholder": "🔍 Search templates…",
-                      "style": { "classes": "search-input" }
-                    }
-                  }
-                ]
+                "type": "ia.container.flex"
               },
               {
-                "type": "ia.display.flex-repeater",
-                "meta": { "name": "TemplateList" },
-                "position": { "basis": "0", "grow": 1 },
+                "meta": {
+                  "name": "TemplateList"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
                 "propConfig": {
                   "props.instances": {
                     "binding": {
-                      "type": "property",
-                      "config": { "path": "view.custom.rows" }
+                      "config": {
+                        "path": "view.custom.rows"
+                      },
+                      "type": "property"
                     }
                   }
                 },
                 "props": {
                   "direction": "column",
-                  "elementPosition": { "basis": "44px", "shrink": 0 },
+                  "elementPosition": {
+                    "basis": "44px",
+                    "shrink": 0
+                  },
                   "path": "BlueRidge/Components/Parts/OperationTemplates/_OperationTemplates/TemplateRow",
-                  "style": { "overflowY": "auto", "padding": "4px 0" },
-                  "useDefaultViewHeight": true,
+                  "style": {
+                    "overflowY": "auto",
+                    "padding": "4px 0"
+                  },
                   "useDefaultViewWidth": false
-                }
+                },
+                "type": "ia.display.flex-repeater"
               }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "DetailArea" },
-            "position": { "basis": "0", "grow": 1 },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "type": "expr",
-                  "config": { "expression": "{view.custom.mode} != \"view\"" }
-                }
-              }
+            ],
+            "meta": {
+              "name": "LeftPanel"
+            },
+            "position": {
+              "basis": "240px",
+              "shrink": 0
             },
             "props": {
               "direction": "column",
-              "style": { "overflow": "hidden", "gap": "10px", "padding": "12px 14px" }
+              "style": {
+                "background": "var(--mpp-surface-nav)",
+                "borderRight": "1px solid var(--mpp-border-subtle)"
+              }
             },
+            "type": "ia.container.flex"
+          },
+          {
             "children": [
               {
-                "type": "ia.container.flex",
-                "meta": { "name": "DetailsPanel" },
-                "position": { "basis": "auto", "shrink": 0 },
-                "props": {
-                  "direction": "column",
-                  "style": {
-                    "classes": "detail-panel",
-                    "overflow": "hidden",
-                    "padding": "10px 14px",
-                    "gap": "10px"
-                  }
-                },
                 "children": [
                   {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "SummaryRow" },
-                    "props": {
-                      "alignItems": "center",
-                      "style": { "gap": "8px" }
-                    },
                     "children": [
                       {
-                        "type": "ia.display.label",
-                        "meta": { "name": "SummaryText" },
+                        "meta": {
+                          "name": "SummaryText"
+                        },
                         "propConfig": {
                           "props.text": {
                             "binding": {
-                              "type": "expr",
                               "config": {
-                                "expression": "if(isNull({view.custom.editDraft.meta.Code}), '', {view.custom.editDraft.meta.Code} + ' — ' + {view.custom.editDraft.meta.Name})"
-                              }
+                                "expression": "if(isNull({view.custom.editDraft.meta.Code}), \u0027\u0027, {view.custom.editDraft.meta.Code} + \u0027 — \u0027 + {view.custom.editDraft.meta.Name})"
+                              },
+                              "type": "expr"
                             }
                           }
                         },
-                        "props": { "style": { "fontSize": "13px", "fontWeight": "600" } }
+                        "props": {
+                          "style": {
+                            "fontSize": "13px",
+                            "fontWeight": "600"
+                          }
+                        },
+                        "type": "ia.display.label"
                       },
                       {
-                        "type": "ia.display.label",
-                        "meta": { "name": "SummaryBadgeVersion" },
+                        "meta": {
+                          "name": "SummaryBadgeVersion"
+                        },
                         "propConfig": {
                           "props.text": {
                             "binding": {
-                              "type": "expr",
-                              "config": { "expression": "'v' + {view.custom.editDraft.meta.VersionNumber}" }
+                              "config": {
+                                "expression": "\u0027v\u0027 + {view.custom.editDraft.meta.VersionNumber}"
+                              },
+                              "type": "expr"
                             }
                           }
                         },
-                        "props": { "style": { "classes": "badge badge-type" } }
+                        "props": {
+                          "style": {
+                            "classes": "badge badge-type"
+                          }
+                        },
+                        "type": "ia.display.label"
                       },
                       {
-                        "type": "ia.display.label",
-                        "meta": { "name": "SummaryBadgeDeprecated" },
+                        "meta": {
+                          "name": "SummaryBadgeDeprecated"
+                        },
                         "propConfig": {
                           "position.display": {
                             "binding": {
-                              "type": "expr",
-                              "config": { "expression": "{view.custom.editDraft.meta.DeprecatedAt} != null" }
+                              "config": {
+                                "expression": "{view.custom.editDraft.meta.DeprecatedAt} !\u003d null"
+                              },
+                              "type": "expr"
                             }
                           }
                         },
-                        "props": { "text": "Deprecated", "style": { "classes": "badge badge-deprecated" } }
+                        "props": {
+                          "style": {
+                            "classes": "badge badge-deprecated"
+                          },
+                          "text": "Deprecated"
+                        },
+                        "type": "ia.display.label"
                       },
-                      { "type": "ia.container.flex", "meta": { "name": "SummarySpacer" }, "position": { "grow": 1 } },
                       {
-                        "type": "ia.input.button",
-                        "meta": { "name": "BtnSave" },
+                        "meta": {
+                          "name": "SummarySpacer"
+                        },
+                        "position": {
+                          "grow": 1
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
                         "events": {
                           "component": {
                             "onActionPerformed": {
-                              "type": "script",
-                              "scope": "G",
                               "config": {
-                                "script": "\tdraft = self.view.custom.editDraft or {}\n\tmeta  = draft.get('meta') or {}\n\tif meta.get('Id') is None:\n\t\tBlueRidge.Common.Notify.toast('No template selected', 'Pick one from the list first.', 'warning')\n\t\treturn\n\tresult = BlueRidge.Parts.OperationTemplate.update(meta)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Template saved')\n\tif result and result.get('Status'):\n\t\trefreshed = BlueRidge.Parts.OperationTemplate.getOne(meta.get('Id'))\n\t\tif refreshed is not None:\n\t\t\tself.view.custom.selected  = {'meta': dict(refreshed)}\n\t\t\tself.view.custom.editDraft = {'meta': dict(refreshed)}\n\t\tsystem.perspective.sendMessage('templateListRefresh', scope='page')"
-                              }
+                                "script": "\tdraft \u003d self.view.custom.editDraft or {}\n\tmeta  \u003d draft.get(\u0027meta\u0027) or {}\n\tif meta.get(\u0027Id\u0027) is None:\n\t\tBlueRidge.Common.Notify.toast(\u0027No template selected\u0027, \u0027Pick one from the list first.\u0027, \u0027warning\u0027)\n\t\treturn\n\tresult \u003d BlueRidge.Parts.OperationTemplate.update(meta)\n\tBlueRidge.Common.Ui.notifyResult(result, \u0027Template saved\u0027)\n\tif result and result.get(\u0027Status\u0027):\n\t\trefreshed \u003d BlueRidge.Parts.OperationTemplate.getOne(meta.get(\u0027Id\u0027))\n\t\tif refreshed is not None:\n\t\t\tself.view.custom.selected  \u003d {\u0027meta\u0027: dict(refreshed)}\n\t\t\tself.view.custom.editDraft \u003d {\u0027meta\u0027: dict(refreshed)}\n\t\tsystem.perspective.sendMessage(\u0027templateListRefresh\u0027, scope\u003d\u0027page\u0027)"
+                              },
+                              "scope": "G",
+                              "type": "script"
                             }
                           }
                         },
-                        "props": { "text": "Save", "style": { "classes": "btn btn-primary btn-sm" } }
+                        "meta": {
+                          "name": "BtnSave"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "btn btn-primary btn-sm"
+                          },
+                          "text": "Save"
+                        },
+                        "type": "ia.input.button"
                       },
                       {
-                        "type": "ia.input.button",
-                        "meta": { "name": "BtnNewVersion" },
                         "events": {
                           "component": {
                             "onActionPerformed": {
-                              "type": "script",
-                              "scope": "G",
                               "config": {
-                                "script": "\tmeta = (self.view.custom.selected or {}).get('meta') or {}\n\ttemplateId = meta.get('Id')\n\tif templateId is None:\n\t\treturn\n\tresult = BlueRidge.Parts.OperationTemplate.createNewVersion(templateId)\n\tBlueRidge.Common.Ui.notifyResult(result, 'New version created')\n\tif result and result.get('Status'):\n\t\tnewId = result.get('NewId')\n\t\tsystem.perspective.sendMessage('templateListRefresh', scope='page')\n\t\tif newId:\n\t\t\tsystem.perspective.sendMessage('templateSelectId', payload={'id': newId}, scope='page')"
-                              }
+                                "script": "\tmeta \u003d (self.view.custom.selected or {}).get(\u0027meta\u0027) or {}\n\ttemplateId \u003d meta.get(\u0027Id\u0027)\n\tif templateId is None:\n\t\treturn\n\tresult \u003d BlueRidge.Parts.OperationTemplate.createNewVersion(templateId)\n\tBlueRidge.Common.Ui.notifyResult(result, \u0027New version created\u0027)\n\tif result and result.get(\u0027Status\u0027):\n\t\tnewId \u003d result.get(\u0027NewId\u0027)\n\t\tsystem.perspective.sendMessage(\u0027templateListRefresh\u0027, scope\u003d\u0027page\u0027)\n\t\tif newId:\n\t\t\tsystem.perspective.sendMessage(\u0027templateSelectId\u0027, payload\u003d{\u0027id\u0027: newId}, scope\u003d\u0027page\u0027)"
+                              },
+                              "scope": "G",
+                              "type": "script"
                             }
                           }
                         },
-                        "props": { "text": "New Version", "style": { "classes": "btn btn-sm" } }
+                        "meta": {
+                          "name": "BtnNewVersion"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "btn btn-sm"
+                          },
+                          "text": "New Version"
+                        },
+                        "type": "ia.input.button"
                       },
                       {
-                        "type": "ia.input.button",
-                        "meta": { "name": "BtnDeprecate" },
                         "events": {
                           "component": {
                             "onActionPerformed": {
-                              "type": "script",
-                              "scope": "G",
                               "config": {
-                                "script": "\tmeta = (self.view.custom.selected or {}).get('meta') or {}\n\ttemplateId = meta.get('Id')\n\tif templateId is None:\n\t\treturn\n\tlabel = (meta.get('Code') or '') + ' v' + str(meta.get('VersionNumber') or '')\n\tsystem.perspective.openPopup(\n\t\tid='mpp-confirm-destructive',\n\t\tview='BlueRidge/Components/Popups/ConfirmDestructive',\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t'title':        'Deprecate Template',\n\t\t\t'message':      'Deprecate ' + label + '? This retires the version from production.',\n\t\t\t'confirmLabel': 'Deprecate',\n\t\t\t'replyMessage': 'templateDeprecateConfirmed'\n\t\t}\n\t)"
-                              }
+                                "script": "\tmeta \u003d (self.view.custom.selected or {}).get(\u0027meta\u0027) or {}\n\ttemplateId \u003d meta.get(\u0027Id\u0027)\n\tif templateId is None:\n\t\treturn\n\tlabel \u003d (meta.get(\u0027Code\u0027) or \u0027\u0027) + \u0027 v\u0027 + str(meta.get(\u0027VersionNumber\u0027) or \u0027\u0027)\n\tsystem.perspective.openPopup(\n\t\tid\u003d\u0027mpp-confirm-destructive\u0027,\n\t\tview\u003d\u0027BlueRidge/Components/Popups/ConfirmDestructive\u0027,\n\t\tmodal\u003dTrue,\n\t\tshowCloseIcon\u003dFalse,\n\t\tparams\u003d{\n\t\t\t\u0027title\u0027:        \u0027Deprecate Template\u0027,\n\t\t\t\u0027message\u0027:      \u0027Deprecate \u0027 + label + \u0027? This retires the version from production.\u0027,\n\t\t\t\u0027confirmLabel\u0027: \u0027Deprecate\u0027,\n\t\t\t\u0027replyMessage\u0027: \u0027templateDeprecateConfirmed\u0027\n\t\t}\n\t)"
+                              },
+                              "scope": "G",
+                              "type": "script"
                             }
                           }
                         },
-                        "props": { "text": "Deprecate", "style": { "classes": "btn btn-danger btn-sm" } }
+                        "meta": {
+                          "name": "BtnDeprecate"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "btn btn-danger btn-sm"
+                          },
+                          "text": "Deprecate"
+                        },
+                        "type": "ia.input.button"
                       }
-                    ]
+                    ],
+                    "meta": {
+                      "name": "SummaryRow"
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "8px"
+                      }
+                    },
+                    "type": "ia.container.flex"
                   },
                   {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "FieldRow1" },
-                    "props": { "style": { "classes": "field-row", "gap": "12px" } },
                     "children": [
                       {
-                        "type": "ia.container.flex",
-                        "meta": { "name": "FieldCode" },
-                        "position": { "basis": "100px", "shrink": 0 },
-                        "props": { "direction": "column", "style": { "classes": "field", "gap": "2px" } },
                         "children": [
-                          { "type": "ia.display.label", "meta": { "name": "Label" }, "props": { "text": "Code", "style": { "classes": "field-label" } } },
                           {
-                            "type": "ia.input.text-field",
-                            "meta": { "name": "Input" },
+                            "meta": {
+                              "name": "Label"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "field-label"
+                              },
+                              "text": "Code"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "Input"
+                            },
                             "propConfig": {
                               "props.text": {
                                 "binding": {
-                                  "type": "property",
-                                  "config": { "bidirectional": true, "path": "view.custom.editDraft.meta.Code" }
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.meta.Code"
+                                  },
+                                  "type": "property"
                                 }
                               }
                             },
@@ -550,25 +569,52 @@
                                 "classes": "search-input",
                                 "color": "var(--mpp-text-muted)"
                               }
-                            }
+                            },
+                            "type": "ia.input.text-field"
                           }
-                        ]
+                        ],
+                        "meta": {
+                          "name": "FieldCode"
+                        },
+                        "position": {
+                          "basis": "100px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "field",
+                            "gap": "2px"
+                          }
+                        },
+                        "type": "ia.container.flex"
                       },
                       {
-                        "type": "ia.container.flex",
-                        "meta": { "name": "FieldVersion" },
-                        "position": { "basis": "60px", "shrink": 0 },
-                        "props": { "direction": "column", "style": { "classes": "field", "gap": "2px" } },
                         "children": [
-                          { "type": "ia.display.label", "meta": { "name": "Label" }, "props": { "text": "Version", "style": { "classes": "field-label" } } },
                           {
-                            "type": "ia.input.text-field",
-                            "meta": { "name": "Input" },
+                            "meta": {
+                              "name": "Label"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "field-label"
+                              },
+                              "text": "Version"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "Input"
+                            },
                             "propConfig": {
                               "props.text": {
                                 "binding": {
-                                  "type": "property",
-                                  "config": { "bidirectional": true, "path": "view.custom.editDraft.meta.VersionNumber" }
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.meta.VersionNumber"
+                                  },
+                                  "type": "property"
                                 }
                               }
                             },
@@ -580,99 +626,354 @@
                                 "color": "var(--mpp-text-muted)",
                                 "textAlign": "center"
                               }
-                            }
+                            },
+                            "type": "ia.input.text-field"
                           }
-                        ]
+                        ],
+                        "meta": {
+                          "name": "FieldVersion"
+                        },
+                        "position": {
+                          "basis": "60px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "field",
+                            "gap": "2px"
+                          }
+                        },
+                        "type": "ia.container.flex"
                       },
                       {
-                        "type": "ia.container.flex",
-                        "meta": { "name": "FieldName" },
-                        "position": { "basis": "200px", "grow": 2 },
-                        "props": { "direction": "column", "style": { "classes": "field", "gap": "2px" } },
                         "children": [
-                          { "type": "ia.display.label", "meta": { "name": "Label" }, "props": { "text": "Name", "style": { "classes": "field-label" } } },
                           {
-                            "type": "ia.input.text-field",
-                            "meta": { "name": "Input" },
+                            "meta": {
+                              "name": "Label"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "field-label"
+                              },
+                              "text": "Name"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "Input"
+                            },
                             "propConfig": {
                               "props.text": {
                                 "binding": {
-                                  "type": "property",
-                                  "config": { "bidirectional": true, "path": "view.custom.editDraft.meta.Name" }
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.meta.Name"
+                                  },
+                                  "type": "property"
                                 }
                               }
                             },
-                            "props": { "style": { "classes": "search-input", "width": "100%" } }
+                            "props": {
+                              "style": {
+                                "classes": "search-input",
+                                "width": "100%"
+                              }
+                            },
+                            "type": "ia.input.text-field"
                           }
-                        ]
+                        ],
+                        "meta": {
+                          "name": "FieldName"
+                        },
+                        "position": {
+                          "basis": "200px",
+                          "grow": 2
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "field",
+                            "gap": "2px"
+                          }
+                        },
+                        "type": "ia.container.flex"
                       },
                       {
-                        "type": "ia.container.flex",
-                        "meta": { "name": "FieldArea" },
-                        "position": { "basis": "180px", "grow": 1 },
-                        "props": { "direction": "column", "style": { "classes": "field", "gap": "2px" } },
                         "children": [
-                          { "type": "ia.display.label", "meta": { "name": "Label" }, "props": { "text": "Area", "style": { "classes": "field-label" } } },
                           {
-                            "type": "ia.input.dropdown",
-                            "meta": { "name": "Input" },
-                            "propConfig": {
-                              "props.value": {
-                                "binding": {
-                                  "type": "property",
-                                  "config": { "bidirectional": true, "path": "view.custom.editDraft.meta.AreaLocationId" }
-                                }
+                            "meta": {
+                              "name": "Label"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "field-label"
                               },
+                              "text": "Area"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "Input"
+                            },
+                            "propConfig": {
                               "props.options": {
                                 "binding": {
-                                  "type": "property",
-                                  "config": { "path": "view.custom.areaOptions" }
+                                  "config": {
+                                    "path": "view.custom.areaOptions"
+                                  },
+                                  "type": "property"
+                                }
+                              },
+                              "props.value": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.meta.AreaLocationId"
+                                  },
+                                  "type": "property"
                                 }
                               }
                             },
-                            "props": { "options": [], "style": { "classes": "select" } }
+                            "props": {
+                              "style": {
+                                "classes": "select"
+                              }
+                            },
+                            "type": "ia.input.dropdown"
                           }
-                        ]
+                        ],
+                        "meta": {
+                          "name": "FieldArea"
+                        },
+                        "position": {
+                          "basis": "180px",
+                          "grow": 1
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "field",
+                            "gap": "2px"
+                          }
+                        },
+                        "type": "ia.container.flex"
                       }
-                    ]
+                    ],
+                    "meta": {
+                      "name": "FieldRow1"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "field-row",
+                        "gap": "12px"
+                      }
+                    },
+                    "type": "ia.container.flex"
                   },
                   {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "FieldRowDescription" },
-                    "props": { "style": { "classes": "field-row", "gap": "12px" } },
                     "children": [
                       {
-                        "type": "ia.container.flex",
-                        "meta": { "name": "FieldDescription" },
-                        "position": { "basis": "0", "grow": 1 },
-                        "props": { "direction": "column", "style": { "classes": "field", "gap": "2px" } },
                         "children": [
-                          { "type": "ia.display.label", "meta": { "name": "Label" }, "props": { "text": "Description", "style": { "classes": "field-label" } } },
                           {
-                            "type": "ia.input.text-field",
-                            "meta": { "name": "Input" },
+                            "meta": {
+                              "name": "Label"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "field-label"
+                              },
+                              "text": "Description"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "Input"
+                            },
                             "propConfig": {
                               "props.text": {
                                 "binding": {
-                                  "type": "property",
-                                  "config": { "bidirectional": true, "path": "view.custom.editDraft.meta.Description" }
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.editDraft.meta.Description"
+                                  },
+                                  "type": "property"
                                 }
                               }
                             },
-                            "props": { "style": { "classes": "search-input", "width": "100%" } }
+                            "props": {
+                              "style": {
+                                "classes": "search-input",
+                                "width": "100%"
+                              }
+                            },
+                            "type": "ia.input.text-field"
                           }
-                        ]
+                        ],
+                        "meta": {
+                          "name": "FieldDescription"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "field",
+                            "gap": "2px"
+                          }
+                        },
+                        "type": "ia.container.flex"
                       }
-                    ]
+                    ],
+                    "meta": {
+                      "name": "FieldRowDescription"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "field-row",
+                        "gap": "12px"
+                      }
+                    },
+                    "type": "ia.container.flex"
                   }
-                ]
+                ],
+                "meta": {
+                  "name": "DetailsPanel"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "detail-panel",
+                    "gap": "10px",
+                    "overflow": "hidden",
+                    "padding": "10px 14px"
+                  }
+                },
+                "type": "ia.container.flex"
               },
               {
-                "type": "ia.container.flex",
-                "meta": { "name": "VersionSelectorPanel" },
-                "position": { "basis": "auto", "shrink": 0 },
+                "children": [
+                  {
+                    "meta": {
+                      "name": "VersionPanelLabel"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "color": "var(--mpp-text-secondary)",
+                        "fontSize": "12px",
+                        "fontWeight": "600",
+                        "letterSpacing": "0.05em",
+                        "textTransform": "uppercase"
+                      },
+                      "text": "Version"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "config": {
+                            "script": "\tnewId \u003d event.value\n\tcurrentId \u003d ((self.view.custom.selected or {}).get(\u0027meta\u0027) or {}).get(\u0027Id\u0027) or 0\n\tif newId is None or newId \u003d\u003d currentId:\n\t\treturn\n\tsystem.perspective.sendMessage(\u0027templateVersionClicked\u0027, payload\u003d{\u0027id\u0027: newId}, scope\u003d\u0027page\u0027)"
+                          },
+                          "scope": "G",
+                          "type": "script"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "name": "VersionDropdown"
+                    },
+                    "position": {
+                      "basis": "360px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.options": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.versions"
+                          },
+                          "transforms": [
+                            {
+                              "code": "\tout \u003d []\n\tfor v in (value or []):\n\t\tvnum \u003d v.get(\u0027VersionNumber\u0027, 0)\n\t\tname \u003d v.get(\u0027Name\u0027) or \u0027\u0027\n\t\tstate \u003d \u0027Deprecated\u0027 if v.get(\u0027Deprecated\u0027) else \u0027Active\u0027\n\t\tlabel \u003d \u0027v\u0027 + str(vnum) + \u0027 -- \u0027 + name + \u0027 (\u0027 + state + \u0027)\u0027\n\t\tout.append({\u0027label\u0027: label, \u0027value\u0027: v.get(\u0027Id\u0027)})\n\treturn out",
+                              "type": "script"
+                            }
+                          ],
+                          "type": "property"
+                        }
+                      },
+                      "props.value": {
+                        "binding": {
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.selectedVersionId"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "select"
+                      }
+                    },
+                    "type": "ia.input.dropdown"
+                  },
+                  {
+                    "meta": {
+                      "name": "ShowDeprecatedCheckbox"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.selected": {
+                        "binding": {
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.showDeprecatedVersions"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "fontSize": "12px"
+                      },
+                      "text": "Show deprecated"
+                    },
+                    "type": "ia.input.checkbox"
+                  },
+                  {
+                    "meta": {
+                      "name": "VersionPanelSpacer"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "VersionSelectorPanel"
+                },
+                "position": {
+                  "shrink": 0
+                },
                 "props": {
-                  "direction": "row",
                   "alignItems": "center",
                   "style": {
                     "classes": "detail-panel",
@@ -681,105 +982,142 @@
                     "padding": "8px 14px"
                   }
                 },
-                "children": [
-                  {
-                    "type": "ia.display.label",
-                    "meta": { "name": "VersionPanelLabel" },
-                    "position": { "shrink": 0 },
-                    "props": {
-                      "text": "Version",
-                      "style": {
-                        "color": "var(--mpp-text-secondary)",
-                        "fontSize": "12px",
-                        "fontWeight": "600",
-                        "letterSpacing": "0.05em",
-                        "textTransform": "uppercase"
-                      }
-                    }
-                  },
-                  {
-                    "type": "ia.input.dropdown",
-                    "meta": { "name": "VersionDropdown" },
-                    "position": { "basis": "360px", "shrink": 0 },
-                    "events": {
-                      "component": {
-                        "onActionPerformed": {
-                          "type": "script",
-                          "scope": "G",
-                          "config": {
-                            "script": "\tnewId = event.value\n\tcurrentId = ((self.view.custom.selected or {}).get('meta') or {}).get('Id') or 0\n\tif newId is None or newId == currentId:\n\t\treturn\n\tsystem.perspective.sendMessage('templateVersionClicked', payload={'id': newId}, scope='page')"
-                          }
-                        }
-                      }
-                    },
-                    "propConfig": {
-                      "props.options": {
-                        "binding": {
-                          "type": "property",
-                          "config": { "path": "view.custom.versions" },
-                          "transforms": [
-                            {
-                              "type": "script",
-                              "code": "\tout = []\n\tfor v in (value or []):\n\t\tvnum = v.get('VersionNumber', 0)\n\t\tname = v.get('Name') or ''\n\t\tstate = 'Deprecated' if v.get('Deprecated') else 'Active'\n\t\tlabel = 'v' + str(vnum) + ' -- ' + name + ' (' + state + ')'\n\t\tout.append({'label': label, 'value': v.get('Id')})\n\treturn out"
-                            }
-                          ]
-                        }
-                      },
-                      "props.value": {
-                        "binding": {
-                          "type": "property",
-                          "config": {
-                            "bidirectional": true,
-                            "path": "view.custom.selectedVersionId"
-                          }
-                        }
-                      }
-                    },
-                    "props": {
-                      "options": [],
-                      "style": { "classes": "select" }
-                    }
-                  },
-                  {
-                    "type": "ia.input.checkbox",
-                    "meta": { "name": "ShowDeprecatedCheckbox" },
-                    "position": { "shrink": 0 },
-                    "propConfig": {
-                      "props.selected": {
-                        "binding": {
-                          "type": "property",
-                          "config": {
-                            "bidirectional": true,
-                            "path": "view.custom.showDeprecatedVersions"
-                          }
-                        }
-                      }
-                    },
-                    "props": {
-                      "text": "Show deprecated",
-                      "style": { "fontSize": "12px" }
-                    }
-                  },
-                  { "type": "ia.container.flex", "meta": { "name": "VersionPanelSpacer" }, "position": { "grow": 1 } }
-                ]
+                "type": "ia.container.flex"
               },
               {
-                "type": "ia.container.flex",
-                "meta": { "name": "FieldsPanel" },
-                "position": { "basis": "0", "grow": 1 },
-                "props": {
-                  "direction": "column",
-                  "style": {
-                    "classes": "detail-panel",
-                    "overflow": "hidden",
-                    "padding": "0"
-                  }
-                },
                 "children": [
                   {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "FieldsPanelHeader" },
-                    "position": { "basis": "auto", "shrink": 0 },
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "Title"
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "12px",
+                            "fontWeight": "600",
+                            "letterSpacing": "0.05em",
+                            "textTransform": "uppercase"
+                          },
+                          "text": "Data Collection Fields"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "Spacer"
+                        },
+                        "position": {
+                          "grow": 1
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tself.view.rootContainer.addFieldRow()"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "BtnAddField"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "btn btn-sm"
+                          },
+                          "text": "+ Add field"
+                        },
+                        "type": "ia.input.button"
+                      },
+                      {
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tself.view.rootContainer.handleDiscardFields()"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "BtnDiscardFields"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "meta.visible": {
+                            "binding": {
+                              "config": {
+                                "expression": "if(isNull({view.custom.fieldsDirty}), false, {view.custom.fieldsDirty})"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "btn btn-sm"
+                          },
+                          "text": "Discard fields"
+                        },
+                        "type": "ia.input.button"
+                      },
+                      {
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tself.view.rootContainer.handleSaveFields()"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "BtnSaveFields"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.enabled": {
+                            "binding": {
+                              "config": {
+                                "expression": "if(isNull({view.custom.fieldsDirty}), false, {view.custom.fieldsDirty})"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "btn btn-primary btn-sm"
+                          },
+                          "text": "Save fields"
+                        },
+                        "type": "ia.input.button"
+                      }
+                    ],
+                    "meta": {
+                      "name": "FieldsPanelHeader"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
                     "props": {
                       "alignItems": "center",
                       "style": {
@@ -789,78 +1127,70 @@
                         "padding": "8px 14px"
                       }
                     },
-                    "children": [
-                      { "type": "ia.display.label", "meta": { "name": "Title" }, "props": { "text": "Data Collection Fields", "style": { "fontSize": "12px", "fontWeight": "600", "textTransform": "uppercase", "letterSpacing": "0.05em", "color": "var(--mpp-text-secondary)" } } },
-                      { "type": "ia.container.flex", "meta": { "name": "Spacer" }, "position": { "grow": 1 } },
-                      {
-                        "type": "ia.input.button",
-                        "meta": { "name": "BtnAddField" },
-                        "position": { "shrink": 0 },
-                        "events": {
-                          "component": {
-                            "onActionPerformed": {
-                              "type": "script",
-                              "scope": "G",
-                              "config": { "script": "\tself.view.rootContainer.addFieldRow()" }
-                            }
-                          }
-                        },
-                        "props": { "text": "+ Add field", "style": { "classes": "btn btn-sm" } }
-                      },
-                      {
-                        "type": "ia.input.button",
-                        "meta": { "name": "BtnDiscardFields" },
-                        "position": { "shrink": 0 },
-                        "propConfig": {
-                          "meta.visible": {
-                            "binding": {
-                              "type": "expr",
-                              "config": { "expression": "if(isNull({view.custom.fieldsDirty}), false, {view.custom.fieldsDirty})" }
-                            }
-                          }
-                        },
-                        "events": {
-                          "component": {
-                            "onActionPerformed": {
-                              "type": "script",
-                              "scope": "G",
-                              "config": { "script": "\tself.view.rootContainer.handleDiscardFields()" }
-                            }
-                          }
-                        },
-                        "props": { "text": "Discard fields", "style": { "classes": "btn btn-sm" } }
-                      },
-                      {
-                        "type": "ia.input.button",
-                        "meta": { "name": "BtnSaveFields" },
-                        "position": { "shrink": 0 },
-                        "propConfig": {
-                          "props.enabled": {
-                            "binding": {
-                              "type": "expr",
-                              "config": { "expression": "if(isNull({view.custom.fieldsDirty}), false, {view.custom.fieldsDirty})" }
-                            }
-                          }
-                        },
-                        "events": {
-                          "component": {
-                            "onActionPerformed": {
-                              "type": "script",
-                              "scope": "G",
-                              "config": { "script": "\tself.view.rootContainer.handleSaveFields()" }
-                            }
-                          }
-                        },
-                        "props": { "text": "Save fields", "style": { "classes": "btn btn-primary btn-sm" } }
-                      }
-                    ]
+                    "type": "ia.container.flex"
                   },
                   {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "FieldsTableHeader" },
-                    "position": { "basis": "auto", "shrink": 0 },
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "ColCode"
+                        },
+                        "position": {
+                          "basis": "160px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Code"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "ColName"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1
+                        },
+                        "props": {
+                          "text": "Name"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "ColRequired"
+                        },
+                        "position": {
+                          "basis": "100px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "style": {
+                            "textAlign": "center"
+                          },
+                          "text": "Required"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "ColRemove"
+                        },
+                        "position": {
+                          "basis": "36px",
+                          "shrink": 0
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "FieldsTableHeader"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
                     "props": {
-                      "direction": "row",
                       "alignItems": "center",
                       "style": {
                         "background": "var(--mpp-surface-card)",
@@ -868,59 +1198,127 @@
                         "color": "var(--mpp-text-secondary)",
                         "fontSize": "11px",
                         "fontWeight": "600",
+                        "gap": "8px",
                         "letterSpacing": "0.05em",
                         "padding": "8px 14px",
-                        "gap": "8px",
                         "textTransform": "uppercase"
                       }
                     },
-                    "children": [
-                      { "type": "ia.display.label", "meta": { "name": "ColCode" },     "position": { "basis": "160px", "shrink": 0 }, "props": { "text": "Code" } },
-                      { "type": "ia.display.label", "meta": { "name": "ColName" },     "position": { "basis": "0",     "grow": 1 },   "props": { "text": "Name" } },
-                      { "type": "ia.display.label", "meta": { "name": "ColRequired" }, "position": { "basis": "100px", "shrink": 0 }, "props": { "text": "Required", "style": { "textAlign": "center" } } },
-                      { "type": "ia.display.label", "meta": { "name": "ColRemove" },   "position": { "basis": "36px",  "shrink": 0 }, "props": { "text": "" } }
-                    ]
+                    "type": "ia.container.flex"
                   },
                   {
-                    "type": "ia.display.flex-repeater",
-                    "meta": { "name": "FieldList" },
-                    "position": { "basis": "0", "grow": 1 },
+                    "meta": {
+                      "name": "FieldList"
+                    },
+                    "position": {
+                      "basis": "0",
+                      "grow": 1
+                    },
                     "propConfig": {
                       "props.instances": {
                         "binding": {
-                          "type": "property",
-                          "config": { "path": "view.custom.fieldsState.editDraft.rows" },
+                          "config": {
+                            "path": "view.custom.fieldsState.editDraft.rows"
+                          },
                           "transforms": [
                             {
-                              "type": "script",
-                              "code": "\trows = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\topts = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldOptions) or []\n\tout = []\n\tfor i, r in enumerate(rows):\n\t\tr = dict(r or {})\n\t\tr['rowIndex'] = i\n\t\tout.append({'row': r, 'fieldOptions': opts})\n\treturn out"
+                              "code": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\topts \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldOptions) or []\n\tout \u003d []\n\tfor i, r in enumerate(rows):\n\t\tr \u003d dict(r or {})\n\t\tr[\u0027rowIndex\u0027] \u003d i\n\t\tout.append({\u0027row\u0027: r, \u0027fieldOptions\u0027: opts})\n\treturn out",
+                              "type": "script"
                             }
-                          ]
+                          ],
+                          "type": "property"
                         }
                       }
                     },
                     "props": {
                       "direction": "column",
-                      "elementPosition": { "basis": "44px", "shrink": 0 },
+                      "elementPosition": {
+                        "basis": "44px",
+                        "shrink": 0
+                      },
                       "path": "BlueRidge/Components/Parts/OperationTemplates/_OperationTemplates/FieldRow",
-                      "style": { "overflowY": "auto" },
-                      "useDefaultViewHeight": true,
+                      "style": {
+                        "overflowY": "auto"
+                      },
                       "useDefaultViewWidth": false
-                    }
+                    },
+                    "type": "ia.display.flex-repeater"
                   }
-                ]
+                ],
+                "meta": {
+                  "name": "FieldsPanel"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "detail-panel",
+                    "overflow": "hidden",
+                    "padding": "0"
+                  }
+                },
+                "type": "ia.container.flex"
               }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "EmptyState" },
-            "position": { "basis": "0", "grow": 1 },
+            ],
+            "meta": {
+              "name": "DetailArea"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
             "propConfig": {
               "position.display": {
                 "binding": {
-                  "type": "expr",
-                  "config": { "expression": "{view.custom.mode} = \"view\"" }
+                  "config": {
+                    "expression": "{view.custom.mode} !\u003d \"view\""
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "10px",
+                "overflow": "hidden",
+                "padding": "12px 14px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "EmptyStateLabel"
+                },
+                "props": {
+                  "style": {
+                    "fontSize": "13px"
+                  },
+                  "text": "Select a template from the list to view its details, or click + New Template to create one."
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "EmptyState"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.custom.mode} \u003d \"view\""
+                  },
+                  "type": "expr"
                 }
               }
             },
@@ -934,19 +1332,159 @@
                 "fontStyle": "italic"
               }
             },
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": { "name": "EmptyStateLabel" },
-                "props": {
-                  "text": "Select a template from the list to view its details, or click + New Template to create one.",
-                  "style": { "fontSize": "13px" }
-                }
-              }
-            ]
+            "type": "ia.container.flex"
           }
-        ]
+        ],
+        "meta": {
+          "name": "Main"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "style": {
+            "borderTop": "1px solid var(--mpp-border-subtle)",
+            "overflow": "hidden"
+          }
+        },
+        "type": "ia.container.flex"
       }
-    ]
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "canvas"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "_loadTemplate",
+          "params": [
+            "templateId"
+          ],
+          "script": "\tmeta \u003d BlueRidge.Parts.OperationTemplate.getOne(templateId)\n\tif meta is None:\n\t\tBlueRidge.Common.Notify.toast(\u0027Template not found\u0027, \u0027Id \u0027 + str(templateId) + \u0027 no longer exists.\u0027, \u0027warning\u0027)\n\t\treturn\n\tself.view.custom.selected   \u003d {\u0027meta\u0027: dict(meta)}\n\tself.view.custom.editDraft  \u003d {\u0027meta\u0027: dict(meta)}\n\tself.view.custom.mode \u003d \u0027update\u0027\n\tself.view.custom.selectedTemplateCode \u003d meta.get(\u0027Code\u0027) or \u0027\u0027\n\tself.view.custom.selectedVersionId    \u003d meta.get(\u0027Id\u0027) or 0\n\tself.view.custom.selectedFieldDcfId   \u003d None\n\tself.loadFields()"
+        },
+        {
+          "name": "_refreshDetail",
+          "params": [],
+          "script": "\tmeta \u003d (self.view.custom.selected or {}).get(\u0027meta\u0027) or {}\n\ttemplateId \u003d meta.get(\u0027Id\u0027)\n\tif templateId is None:\n\t\treturn\n\tself.loadFields()"
+        },
+        {
+          "name": "loadFields",
+          "params": [],
+          "script": "\tmeta \u003d (self.view.custom.selected or {}).get(\u0027meta\u0027) or {}\n\ttemplateId \u003d meta.get(\u0027Id\u0027)\n\tif templateId is None:\n\t\tempty \u003d {\u0027rows\u0027: []}\n\t\tself.view.custom.fieldsState \u003d {\u0027selected\u0027: dict(empty), \u0027editDraft\u0027: dict(empty)}\n\t\treturn\n\tinstances \u003d BlueRidge.Parts.OperationTemplate.getFieldsForTemplate(templateId) or []\n\tloaded \u003d []\n\tfor inst in instances:\n\t\tf \u003d (inst or {}).get(\u0027field\u0027) or {}\n\t\tloaded.append({\n\t\t\t\u0027id\u0027:                    f.get(\u0027Id\u0027),\n\t\t\t\u0027dataCollectionFieldId\u0027: f.get(\u0027DataCollectionFieldId\u0027),\n\t\t\t\u0027code\u0027:                  f.get(\u0027Code\u0027) or \u0027\u0027,\n\t\t\t\u0027name\u0027:                  f.get(\u0027Name\u0027) or \u0027\u0027,\n\t\t\t\u0027isRequired\u0027:            bool(f.get(\u0027IsRequired\u0027)),\n\t\t})\n\tself.view.custom.fieldsState \u003d {\u0027selected\u0027: {\u0027rows\u0027: loaded}, \u0027editDraft\u0027: {\u0027rows\u0027: [dict(r) for r in loaded]}}"
+        },
+        {
+          "name": "handleSaveFields",
+          "params": [],
+          "script": "\tmeta \u003d (self.view.custom.selected or {}).get(\u0027meta\u0027) or {}\n\ttemplateId \u003d meta.get(\u0027Id\u0027)\n\tif templateId is None:\n\t\tBlueRidge.Common.Notify.toast(\u0027No template selected\u0027, \u0027Pick a template before saving.\u0027, \u0027warning\u0027)\n\t\treturn\n\tdraft \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.editDraft) or {}\n\trows \u003d draft.get(\u0027rows\u0027) or []\n\tresult \u003d BlueRidge.Parts.OperationTemplate.saveFieldsAll(templateId, rows)\n\tBlueRidge.Common.Ui.notifyResult(result, \u0027Fields saved\u0027)\n\tif result and result.get(\u0027Status\u0027):\n\t\tself.loadFields()"
+        },
+        {
+          "name": "handleDiscardFields",
+          "params": [],
+          "script": "\tselected \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.selected) or {\u0027rows\u0027: []}\n\tself.view.custom.fieldsState \u003d {\u0027selected\u0027: selected, \u0027editDraft\u0027: {\u0027rows\u0027: [dict(r) for r in (selected.get(\u0027rows\u0027) or [])]}}"
+        },
+        {
+          "name": "addFieldRow",
+          "params": [],
+          "script": "\tdraft \u003d dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.editDraft) or {\u0027rows\u0027: []})\n\trows \u003d list(draft.get(\u0027rows\u0027) or [])\n\trows.append({\n\t\t\u0027id\u0027:                    None,\n\t\t\u0027dataCollectionFieldId\u0027: None,\n\t\t\u0027code\u0027:                  \u0027\u0027,\n\t\t\u0027name\u0027:                  \u0027\u0027,\n\t\t\u0027isRequired\u0027:            True,\n\t})\n\tdraft[\u0027rows\u0027] \u003d rows\n\tselected \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.selected) or {\u0027rows\u0027: []}\n\tself.view.custom.fieldsState \u003d {\u0027selected\u0027: selected, \u0027editDraft\u0027: draft}"
+        },
+        {
+          "name": "_applyFieldChange",
+          "params": [
+            "idx",
+            "newFieldId"
+          ],
+          "script": "\tdraft \u003d dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.editDraft) or {\u0027rows\u0027: []})\n\trows \u003d list(draft.get(\u0027rows\u0027) or [])\n\tif idx \u003c 0 or idx \u003e\u003d len(rows):\n\t\treturn\n\trow \u003d dict(rows[idx])\n\trow[\u0027dataCollectionFieldId\u0027] \u003d newFieldId\n\t# Derive code/name from the matching option label (\u0027CODE - Name\u0027) when present.\n\topts \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldOptions) or []\n\tlabel \u003d None\n\tfor o in opts:\n\t\tif o.get(\u0027value\u0027) \u003d\u003d newFieldId:\n\t\t\tlabel \u003d o.get(\u0027label\u0027)\n\t\t\tbreak\n\tif label and \u0027 - \u0027 in label:\n\t\tparts \u003d label.split(\u0027 - \u0027, 1)\n\t\trow[\u0027code\u0027] \u003d parts[0]\n\t\trow[\u0027name\u0027] \u003d parts[1]\n\telse:\n\t\trow[\u0027code\u0027] \u003d \u0027\u0027\n\t\trow[\u0027name\u0027] \u003d \u0027\u0027\n\trows[idx] \u003d row\n\tdraft[\u0027rows\u0027] \u003d rows\n\tselected \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.selected) or {\u0027rows\u0027: []}\n\tself.view.custom.fieldsState \u003d {\u0027selected\u0027: selected, \u0027editDraft\u0027: draft}"
+        },
+        {
+          "name": "_applyFieldRequiredChange",
+          "params": [
+            "idx",
+            "isRequired"
+          ],
+          "script": "\tdraft \u003d dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.editDraft) or {\u0027rows\u0027: []})\n\trows \u003d list(draft.get(\u0027rows\u0027) or [])\n\tif idx \u003c 0 or idx \u003e\u003d len(rows):\n\t\treturn\n\trow \u003d dict(rows[idx])\n\trow[\u0027isRequired\u0027] \u003d bool(isRequired)\n\trows[idx] \u003d row\n\tdraft[\u0027rows\u0027] \u003d rows\n\tselected \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.selected) or {\u0027rows\u0027: []}\n\tself.view.custom.fieldsState \u003d {\u0027selected\u0027: selected, \u0027editDraft\u0027: draft}"
+        },
+        {
+          "name": "_removeFieldRow",
+          "params": [
+            "idx"
+          ],
+          "script": "\tdraft \u003d dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.editDraft) or {\u0027rows\u0027: []})\n\trows \u003d list(draft.get(\u0027rows\u0027) or [])\n\tif idx \u003c 0 or idx \u003e\u003d len(rows):\n\t\treturn\n\tdel rows[idx]\n\tdraft[\u0027rows\u0027] \u003d rows\n\tselected \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fieldsState.selected) or {\u0027rows\u0027: []}\n\tself.view.custom.fieldsState \u003d {\u0027selected\u0027: selected, \u0027editDraft\u0027: draft}"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "templateRowClicked",
+          "pageScope": true,
+          "script": "\tclickedId \u003d (payload or {}).get(\u0027id\u0027)\n\tif clickedId is None:\n\t\treturn\n\tif self.view.custom.dirty or self.view.custom.fieldsDirty:\n\t\tself.view.custom.pendingNav \u003d clickedId\n\t\tsystem.perspective.openPopup(\n\t\t\tid\u003d\u0027mpp-confirm-unsaved\u0027,\n\t\t\tview\u003d\u0027BlueRidge/Components/Popups/ConfirmUnsaved\u0027,\n\t\t\tmodal\u003dTrue,\n\t\t\tshowCloseIcon\u003dFalse,\n\t\t\tparams\u003d{\n\t\t\t\t\u0027title\u0027:   \u0027Unsaved changes\u0027,\n\t\t\t\t\u0027message\u0027: \u0027Save changes before switching templates?\u0027\n\t\t\t}\n\t\t)\n\t\treturn\n\tself._loadTemplate(clickedId)",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "templateListRefresh",
+          "pageScope": true,
+          "script": "\tself.view.custom.rows \u003d BlueRidge.Parts.OperationTemplate.search(self.view.custom.filter)\n\tself._refreshDetail()",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "templateSelectId",
+          "pageScope": true,
+          "script": "\ttemplateId \u003d (payload or {}).get(\u0027id\u0027)\n\tif templateId is None:\n\t\treturn\n\tself._loadTemplate(templateId)",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "confirmUnsavedResult",
+          "pageScope": true,
+          "script": "\taction \u003d (payload or {}).get(\u0027action\u0027)\n\tpendingId \u003d self.view.custom.pendingNav\n\tself.view.custom.pendingNav \u003d None\n\tif pendingId is None:\n\t\treturn\n\tif action \u003d\u003d \u0027cancel\u0027:\n\t\t# Revert the version dropdown to the currently-selected template.\n\t\tcurrentId \u003d ((self.view.custom.selected or {}).get(\u0027meta\u0027) or {}).get(\u0027Id\u0027) or 0\n\t\tself.view.custom.selectedVersionId \u003d currentId\n\t\treturn\n\tif action \u003d\u003d \u0027save\u0027:\n\t\tdraft \u003d self.view.custom.editDraft or {}\n\t\tmeta  \u003d draft.get(\u0027meta\u0027) or {}\n\t\tif meta.get(\u0027Id\u0027) is not None:\n\t\t\tresult \u003d BlueRidge.Parts.OperationTemplate.update(meta)\n\t\t\tBlueRidge.Common.Ui.notifyResult(result, \u0027Template saved\u0027)\n\t\tif self.view.custom.fieldsDirty:\n\t\t\tself.handleSaveFields()\n\tself._loadTemplate(pendingId)",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "templateDeprecateConfirmed",
+          "pageScope": true,
+          "script": "\taction \u003d (payload or {}).get(\u0027action\u0027)\n\tif action !\u003d \u0027confirm\u0027:\n\t\treturn\n\tmeta \u003d (self.view.custom.selected or {}).get(\u0027meta\u0027) or {}\n\ttemplateId \u003d meta.get(\u0027Id\u0027)\n\tif templateId is None:\n\t\treturn\n\tresult \u003d BlueRidge.Parts.OperationTemplate.deprecate(templateId)\n\tBlueRidge.Common.Ui.notifyResult(result, \u0027Template deprecated\u0027)\n\tif result and result.get(\u0027Status\u0027):\n\t\tself.view.custom.selected  \u003d {\u0027meta\u0027: None}\n\t\tself.view.custom.editDraft \u003d {\u0027meta\u0027: None}\n\t\tself.view.custom.mode \u003d \u0027view\u0027\n\t\tself.view.custom.selectedTemplateCode \u003d \u0027\u0027\n\t\tself.view.custom.selectedVersionId    \u003d 0\n\t\tself.view.custom.fieldsState \u003d {\"selected\": {\"rows\": []}, \"editDraft\": {\"rows\": []}}\n\t\tsystem.perspective.sendMessage(\u0027templateListRefresh\u0027, scope\u003d\u0027page\u0027)",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "templateVersionClicked",
+          "pageScope": true,
+          "script": "\tclickedId \u003d (payload or {}).get(\u0027id\u0027)\n\tif clickedId is None:\n\t\treturn\n\tif self.view.custom.dirty or self.view.custom.fieldsDirty:\n\t\tself.view.custom.pendingNav \u003d clickedId\n\t\tsystem.perspective.openPopup(\n\t\t\tid\u003d\u0027mpp-confirm-unsaved\u0027,\n\t\t\tview\u003d\u0027BlueRidge/Components/Popups/ConfirmUnsaved\u0027,\n\t\t\tmodal\u003dTrue,\n\t\t\tshowCloseIcon\u003dFalse,\n\t\t\tparams\u003d{\n\t\t\t\t\u0027title\u0027:   \u0027Unsaved changes\u0027,\n\t\t\t\t\u0027message\u0027: \u0027Save changes before switching versions?\u0027\n\t\t\t}\n\t\t)\n\t\treturn\n\tself._loadTemplate(clickedId)",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "fieldRowFieldChanged",
+          "pageScope": true,
+          "script": "\tif not payload:\n\t\treturn\n\tidx \u003d int(payload.get(\u0027rowIndex\u0027, -1))\n\tself._applyFieldChange(idx, payload.get(\u0027newFieldId\u0027))",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "fieldRowRequiredChanged",
+          "pageScope": true,
+          "script": "\tif not payload:\n\t\treturn\n\tidx \u003d int(payload.get(\u0027rowIndex\u0027, -1))\n\tself._applyFieldRequiredChange(idx, payload.get(\u0027isRequired\u0027))",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "fieldRowRemove",
+          "pageScope": true,
+          "script": "\tif not payload:\n\t\treturn\n\tidx \u003d int(payload.get(\u0027rowIndex\u0027, -1))\n\tself._removeFieldRow(idx)",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
   }
 }
