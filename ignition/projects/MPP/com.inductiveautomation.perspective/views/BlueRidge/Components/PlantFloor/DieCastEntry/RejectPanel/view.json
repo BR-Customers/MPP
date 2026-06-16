@@ -1,0 +1,212 @@
+{
+  "custom": {
+    "draft": {
+      "defectCodeId": null,
+      "quantity": 0,
+      "chargeToArea": null,
+      "remarks": null
+    },
+    "defectOptions": []
+  },
+  "params": {
+    "lotId": null
+  },
+  "propConfig": {
+    "params.lotId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "custom.defectOptions": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Quality.DefectCode.getForDropdown\", 0)"
+        }
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 320,
+      "width": 320
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "pf-panel",
+        "gap": "12px",
+        "padding": "16px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "PanelHeader"
+        },
+        "props": {
+          "text": "Reject Entry",
+          "style": {
+            "classes": "pf-panel-header"
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "DefectField"
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "pf-field",
+            "gap": "4px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "DefectLabel"
+            },
+            "props": {
+              "text": "Defect Code",
+              "style": {
+                "classes": "pf-field-label"
+              }
+            }
+          },
+          {
+            "type": "ia.input.dropdown",
+            "version": 0,
+            "meta": {
+              "name": "DefectDropdown"
+            },
+            "props": {
+              "placeholder": "Select a defect code"
+            },
+            "propConfig": {
+              "props.options": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.defectOptions"
+                  }
+                }
+              },
+              "props.value": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.draft.defectCodeId"
+                  },
+                  "bidirectional": true
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "QuantityField"
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "pf-field",
+            "gap": "4px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "QuantityLabel"
+            },
+            "props": {
+              "text": "Quantity",
+              "style": {
+                "classes": "pf-field-label"
+              }
+            }
+          },
+          {
+            "type": "ia.input.numeric-entry-field",
+            "version": 0,
+            "meta": {
+              "name": "QuantityInput"
+            },
+            "props": {
+              "value": 0,
+              "style": {
+                "classes": "pf-field-input"
+              }
+            },
+            "propConfig": {
+              "props.value": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.draft.quantity"
+                  },
+                  "bidirectional": true
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.input.button",
+        "version": 0,
+        "meta": {
+          "name": "AddRejectButton"
+        },
+        "props": {
+          "text": "Add RejectEvent",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary"
+          }
+        },
+        "propConfig": {
+          "props.enabled": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "!isNull({view.params.lotId}) && !isNull({view.custom.draft.defectCodeId}) && {view.custom.draft.quantity} > 0"
+              }
+            }
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tself.view.rootContainer.submitReject()"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "submitReject",
+          "params": [],
+          "script": "\tlotId = self.view.params.lotId\n\tif lotId is None:\n\t\treturn\n\tdraft = dict(self.view.custom.draft)\n\tdraft[\"lotId\"] = lotId\n\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tresult = BlueRidge.Workorder.RejectEvent.record(draft, appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle=\"Reject recorded\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"defectCodeId\": None, \"quantity\": 0, \"chargeToArea\": None, \"remarks\": None}\n\t\tsystem.perspective.sendMessage(\"rejectRecorded\", {\"lotId\": lotId}, scope=\"page\")"
+        }
+      ]
+    }
+  }
+}

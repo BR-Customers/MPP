@@ -27,6 +27,18 @@
     "/shop-floor/genealogy": {
       "title": "Genealogy",
       "viewPath": "BlueRidge/Views/ShopFloor/GenealogyViewer"
+    },
+    "/shop-floor/die-cast": {
+      "title": "Die Cast Entry",
+      "viewPath": "BlueRidge/Views/ShopFloor/DieCastEntry"
+    },
+    "/shop-floor/die-cast/checkpoint/:lotId": {
+      "title": "Checkpoint",
+      "viewPath": "BlueRidge/Views/ShopFloor/DieCastEntry"
+    },
+    "/shop-floor/die-cast/reject/:lotId": {
+      "title": "Reject",
+      "viewPath": "BlueRidge/Views/ShopFloor/DieCastEntry"
     }
   },
   "sharedDocks": {}

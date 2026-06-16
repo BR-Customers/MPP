@@ -129,6 +129,35 @@
                   "text": "Operator Entry"
                 },
                 "type": "ia.input.button"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tsystem.perspective.navigate(\"/shop-floor/die-cast\")"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "TileDieCast"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-btn pf-btn-large pf-btn-secondary",
+                    "fontSize": "18px",
+                    "height": "62px",
+                    "minWidth": "220px"
+                  },
+                  "text": "Die Cast Entry"
+                },
+                "type": "ia.input.button"
               }
             ],
             "meta": {

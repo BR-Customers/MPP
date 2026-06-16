@@ -1,0 +1,282 @@
+{
+  "custom": {
+    "fields": [],
+    "templateId": null,
+    "dcValues": {},
+    "draft": {
+      "shotCount": null,
+      "scrapCount": null,
+      "weightValue": null
+    }
+  },
+  "params": {
+    "lotId": null
+  },
+  "propConfig": {
+    "params.lotId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "custom.fields": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.getDieCastShotFields\", 0)"
+        }
+      }
+    },
+    "custom.templateId": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.getActiveTemplateIdByCode\", 0, \"DieCastShot\")"
+        }
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 460,
+      "width": 360
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "pf-panel",
+        "gap": "12px",
+        "padding": "16px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "PanelHeader"
+        },
+        "props": {
+          "text": "Record Checkpoint",
+          "style": {
+            "classes": "pf-panel-header"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "CumulativeHint"
+        },
+        "props": {
+          "text": "Enter the running CUMULATIVE cavity counters, not a delta.",
+          "style": {
+            "classes": "pf-field-help"
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "CumulativeRow"
+        },
+        "props": {
+          "direction": "row",
+          "style": {
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "ShotField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "gap": "4px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "ShotLabel"
+                },
+                "props": {
+                  "text": "Cumulative shots",
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.numeric-entry-field",
+                "version": 0,
+                "meta": {
+                  "name": "ShotInput"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                },
+                "propConfig": {
+                  "props.value": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.draft.shotCount"
+                      },
+                      "bidirectional": true
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "ScrapField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "gap": "4px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "ScrapLabel"
+                },
+                "props": {
+                  "text": "Cumulative scrap",
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.numeric-entry-field",
+                "version": 0,
+                "meta": {
+                  "name": "ScrapInput"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                },
+                "propConfig": {
+                  "props.value": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.draft.scrapCount"
+                      },
+                      "bidirectional": true
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ia.display.flex-repeater",
+        "meta": {
+          "name": "FieldsRepeater"
+        },
+        "position": {
+          "grow": 1,
+          "basis": "0"
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.custom.fields"
+              }
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "elementPosition": {
+            "basis": "auto"
+          },
+          "path": "BlueRidge/Components/PlantFloor/DieCastEntry/FieldInputRow",
+          "style": {
+            "gap": "8px",
+            "overflowY": "auto"
+          },
+          "useDefaultViewHeight": false,
+          "useDefaultViewWidth": false
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "version": 0,
+        "meta": {
+          "name": "SubmitCheckpointButton"
+        },
+        "props": {
+          "text": "Submit Checkpoint",
+          "style": {
+            "classes": "pf-btn pf-btn-primary"
+          }
+        },
+        "propConfig": {
+          "props.enabled": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "!isNull({view.params.lotId})"
+              }
+            }
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tself.view.rootContainer.submitCheckpoint()"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "scripts": {
+      "messageHandlers": [
+        {
+          "messageType": "dcFieldChanged",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tp = payload or {}\n\tfid = p.get(\"fieldId\")\n\tif fid is None:\n\t\treturn\n\tdc = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.dcValues) or {}\n\tdc[str(fid)] = p.get(\"value\")\n\tself.view.custom.dcValues = dc"
+        }
+      ],
+      "customMethods": [
+        {
+          "name": "submitCheckpoint",
+          "params": [],
+          "script": "\tlotId = self.view.params.lotId\n\tif lotId is None:\n\t\treturn\n\tdraft = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.draft) or {}\n\tdcValues = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.dcValues) or {}\n\tdata = {\n\t\t\"lotId\": lotId,\n\t\t\"operationTemplateId\": self.view.custom.templateId,\n\t\t\"shotCount\": draft.get(\"shotCount\"),\n\t\t\"scrapCount\": draft.get(\"scrapCount\"),\n\t\t\"weightValue\": draft.get(\"weightValue\"),\n\t\t\"dcValues\": dcValues,\n\t}\n\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tresult = BlueRidge.Workorder.ProductionEvent.record(data, appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle=\"Checkpoint recorded\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"shotCount\": None, \"scrapCount\": None, \"weightValue\": None}\n\t\tself.view.custom.dcValues = {}\n\t\tsystem.perspective.sendMessage(\"checkpointRecorded\", {\"lotId\": lotId}, scope=\"page\")"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,100 @@
+{
+  "custom": {},
+  "params": {
+    "peer": {
+      "Cavity": "",
+      "LotName": "",
+      "PieceCount": 0
+    }
+  },
+  "propConfig": {
+    "params.peer": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 32,
+      "width": 300
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "gap": "10px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "CavityLabel"
+        },
+        "props": {
+          "style": {
+            "classes": "pf-kpi-sub"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "\"Cavity \" + toStr({view.params.peer.Cavity})"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "LotNameLabel"
+        },
+        "props": {
+          "style": {
+            "classes": "pf-field-mono"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.peer.LotName"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "CountLabel"
+        },
+        "props": {
+          "style": {
+            "classes": "pf-kpi-sub"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.params.peer.PieceCount}) + \" pcs\""
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}
