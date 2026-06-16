@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-15
 **Status:** Draft for review
-**Scope:** The **SQL foundation** for Phase 4 — migration `0023` (audit-lookup seeds), a location-dependent OperationTemplate seed file, **six net-new stored procedures**, and the `0023_PlantFloor_Movement_Trim` test suite. The Perspective views (Movement Scan component, Trim Station IN/OUT, Receiving Dock), the Core Named Queries / entity scripts, and the `LttZplDispatcher` gateway script are a **separate front-end + gateway spec** (the deferred follow-on), consistent with the Phase 1/2/3 SQL-first pattern.
+**Scope:** The **SQL foundation** for Phase 4 — migration `0024` (audit-lookup seeds), a location-dependent OperationTemplate seed file, **six net-new stored procedures**, and the `0024_PlantFloor_Movement_Trim` test suite. The Perspective views (Movement Scan component, Trim Station IN/OUT, Receiving Dock), the Core Named Queries / entity scripts, and the `LttZplDispatcher` gateway script are a **separate front-end + gateway spec** (the deferred follow-on), consistent with the Phase 1/2/3 SQL-first pattern.
 
 ## 1. Source of truth
 
@@ -19,9 +19,9 @@ Verified against the repo on disk (2026-06-15):
 - **`Lots.Lot_Create`** — already accepts `@VendorLotNumber`, `@MinSerialNumber`, `@MaxSerialNumber`, `@LotOriginTypeId`, NULL Tool/Cavity. **Receiving needs no net-new mutation proc** — it is a `Lot_Create` call with `LotOriginType='Received'`, audited as `LotCreated`.
 - **`Lots.Lot_Get`** (`@LotId` / `@LotName`), **`Parts.Item_Get` / `Item_GetByPartNumber`** (already surface `MaxParts`), **`Lots.Lot_AssertNotBlocked`**, **`Lots.Lot_Update`** (Phase 2 — piece-count correction with `LotAttributeChange`), **`Workorder.ProductionEvent_Record`** + **`Workorder.RejectEvent_Record`** (Phase 3). **Trim IN's checkpoint and reject reuse the Phase 3 procs unchanged** (§5).
 - **`Parts.v_EffectiveItemLocation`** (built in `0020`) — the Direct ∪ BomDerived eligibility view the new eligibility read wraps.
-- **Audit high-water (post-Phase-3 cleanup):** `Audit.LogEventType` max = **33**, `Audit.LogEntityType` max = **46**. `LotMoved` LogEventType already seeded (Phase 1, referenced by `Lot_MoveTo`). Next migration number is **`0023`**.
+- **Audit high-water (post-Phase-3 cleanup):** `Audit.LogEventType` max = **33**, `Audit.LogEntityType` max = **46**. `LotMoved` LogEventType already seeded (Phase 1, referenced by `Lot_MoveTo`). Next migration number is **`0024`** (Phase 3 SQL-deltas claims `0023`; this Phase 4 SQL foundation is `0024`).
 
-## 3. Migration `0023_arc2_phase4_movement_trim_receiving.sql` — audit lookups only
+## 3. Migration `0024_arc2_phase4_movement_trim_receiving.sql` — audit lookups only
 
 Versioned migration, `SchemaVersion` row + idempotent guards, **no tables, no ALTERs**. ASCII-only Name/Description (sqlcmd Windows-codepage mojibake guard).
 
@@ -33,7 +33,7 @@ Versioned migration, `SchemaVersion` row + idempotent guards, **no tables, no AL
 
 ### 3.1 Location-dependent OperationTemplate seed → a SEED file, not the migration
 
-`Parts.OperationTemplate.AreaLocationId` is a NOT-NULL FK to `Location.Location`, and the plant hierarchy is itself loaded by a **seed** (`011_seed_locations_mpp_plant.sql`) that runs **after** all versioned migrations (the exact constraint that pushed Phase 3's `DieCastShot` template into `sql/seeds/022`). Therefore the `TrimIn` / `TrimOut` OperationTemplates live in **`sql/seeds/023_seed_trim_operation_templates.sql`**, which runs after the location seed and binds `AreaLocationId` to the Trim Shop Area (resolve by Code, fall back to the first active Area-tier Location). Two-state versioned entity (`VersionNumber=1`, `DeprecatedAt IS NULL` = active/published — `OperationTemplate` carries no `PublishedAt`). Idempotent on `Code`. **Confirm C (§6): `TrimIn` / `TrimOut` seed with NO `OperationTemplateField` children** — Trim checkpoints use the promoted `ProductionEvent.ShotCount` / `ScrapCount` columns only (no weight capture at Trim unless MPP later elects it).
+`Parts.OperationTemplate.AreaLocationId` is a NOT-NULL FK to `Location.Location`, and the plant hierarchy is itself loaded by a **seed** (`011_seed_locations_mpp_plant.sql`) that runs **after** all versioned migrations (the exact constraint that pushed Phase 3's `DieCastShot` template into `sql/seeds/022`). Therefore the `TrimIn` / `TrimOut` OperationTemplates live in **`sql/seeds/024_seed_trim_operation_templates.sql`**, which runs after the location seed and binds `AreaLocationId` to the Trim Shop Area (resolve by Code, fall back to the first active Area-tier Location). Two-state versioned entity (`VersionNumber=1`, `DeprecatedAt IS NULL` = active/published — `OperationTemplate` carries no `PublishedAt`). Idempotent on `Code`. **Confirm C (§6): `TrimIn` / `TrimOut` seed with NO `OperationTemplateField` children** — Trim checkpoints use the promoted `ProductionEvent.ShotCount` / `ScrapCount` columns only (no weight capture at Trim unless MPP later elects it).
 
 ## 4. Stored procedures (net-new)
 
@@ -110,7 +110,7 @@ Single destination (scan or dropdown, FDS-02-009) → `TrimOut_Record` (§4.3). 
 - Append-only event/movement tables; no soft-delete. Validations before `BEGIN TRANSACTION`; `CATCH` is the only `ROLLBACK` site (INSERT-EXEC / Msg-3915 rule). Sub-mutations (move, closing checkpoint, not-blocked guard) **inlined**, never `EXEC`'d — each inline block commented as a mirror of its source-of-truth proc (`Lot_MoveTo`, `Lot_AssertNotBlocked`, `ProductionEvent_Record`).
 - Audit Description follows `SUBJECT · CATEGORY · ACTION` with resolved-FK JSON; `Lot`-entity audits route to `LotEventLog`, `Workorder`-entity audits to `OperationLog`.
 
-## 8. Test coverage — `sql/tests/0023_PlantFloor_Movement_Trim/`
+## 8. Test coverage — `sql/tests/0024_PlantFloor_Movement_Trim/`
 
 | File | Covers |
 |---|---|
@@ -126,9 +126,9 @@ Target **55–75 assertions**. INSERT-EXEC into temp tables matching each SELECT
 
 ## 9. Phase 4 SQL complete when
 
-- Migration `0023` applied (LogEventType 34/35); seed `023` loads the `TrimIn`/`TrimOut` OperationTemplates (no fields).
+- Migration `0024` applied (LogEventType 34/35); seed `024` loads the `TrimIn`/`TrimOut` OperationTemplates (no fields).
 - `ItemLocation_CheckEligibility`, `Item_GetMaxParts`, `Lot_GetCellLineQuantity`, `Lot_GetWipQueueByLocation`, `Lot_MoveToValidated`, `TrimOut_Record` delivered; `Lot_MoveTo` / `Lot_Create` confirmed reusable (untouched).
-- `0023_PlantFloor_Movement_Trim` suite passes (target 55–75); full suite green.
+- `0024_PlantFloor_Movement_Trim` suite passes (target 55–75); full suite green.
 
 ## 10. Out of scope (→ front-end + gateway spec)
 

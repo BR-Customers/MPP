@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-15
 **Status:** Draft for review
-**Scope:** The **gateway + Perspective + Named-Query + entity-script** layer for Phase 4 — the deferred follow-on to the Phase 4 SQL foundation (`docs/superpowers/specs/2026-06-15-arc2-phase4-movement-trim-sql-design.md`). Adds: the **LTT label-dispatch path** (synchronous ZPL-to-Zebra over raw TCP, resolved from session), a small label-dispatch SQL delta (migration `0024`), the `onStartup` printer-resolution extension, the reusable **Movement Scan** component, the tabbed **Trim Station** view (IN/OUT), the **Receiving Dock** view, the Core Named Queries fronting the six Phase 4 procs, the Core entity-script modules, and the page-config routes. **No movement/trim SQL is authored here** — the Phase 4 SQL procs are the contracts; this layer is a thin, business-logic-free caller (FDS-13-002 / `feedback_no_business_logic_in_python`).
+**Scope:** The **gateway + Perspective + Named-Query + entity-script** layer for Phase 4 — the deferred follow-on to the Phase 4 SQL foundation (`docs/superpowers/specs/2026-06-15-arc2-phase4-movement-trim-sql-design.md`). Adds: the **LTT label-dispatch path** (synchronous ZPL-to-Zebra over raw TCP, resolved from session), a small label-dispatch SQL delta (migration `0025`), the `onStartup` printer-resolution extension, the reusable **Movement Scan** component, the tabbed **Trim Station** view (IN/OUT), the **Receiving Dock** view, the Core Named Queries fronting the six Phase 4 procs, the Core entity-script modules, and the page-config routes. **No movement/trim SQL is authored here** — the Phase 4 SQL procs are the contracts; this layer is a thin, business-logic-free caller (FDS-13-002 / `feedback_no_business_logic_in_python`).
 
 ## 1. Source of truth
 
@@ -19,7 +19,7 @@
 - **Startup:** `ignition/projects/MPP/.../startup/onStartup.py` already resolves `Terminal_GetByIpAddress` → `session.custom.terminal.*` and declares the session shape — extended here (§5).
 - **Components:** `CellContextSelector`, `InitialsField`, `ElevationModal`, `PausedLotIndicator` embedded unchanged.
 
-Net-new: 1 small SQL migration (`0024`), 1 `onStartup` extension, 3 view trees (+ row sub-views), ~9 Core NQs, ~4 Core entity modules, page-config routes + HomeRouter tiles.
+Net-new: 1 small SQL migration (`0025`), 1 `onStartup` extension, 3 view trees (+ row sub-views), ~9 Core NQs, ~4 Core entity modules, page-config routes + HomeRouter tiles.
 
 ## 3. Label-dispatch architecture (synchronous — the design call)
 
@@ -35,16 +35,16 @@ The operator is **physically gated** on holding the printed LTT, so dispatch is 
 
 **UI consequence:** a print failure does **NOT** roll back the LOT (mint and print are separate steps). The screen holds on the failed-print state, toasts the reason, and offers **Reprint** (re-fires `LotLabel_Reprint` → the same dispatch path, also logged). "Cannot move forward without the print" is enforced at the UI, not by undoing data.
 
-## 4. Net-new SQL delta — migration `0024_arc2_phase4_label_dispatch.sql`
+## 4. Net-new SQL delta — migration `0025_arc2_phase4_label_dispatch.sql`
 
-Small, label-dispatch-coupled (kept out of the movement/trim `0023` per the Spec-1/Spec-2 split). Versioned, `SchemaVersion` row, idempotent, ASCII-only.
+Small, label-dispatch-coupled (kept out of the movement/trim `0024` per the Spec-1/Spec-2 split). Versioned, `SchemaVersion` row, idempotent, ASCII-only.
 
 1. **ALTER `Lots.LotLabel` ADD `DispatchedAt DATETIME2(3) NULL`** — the dispatch-ack timestamp (distinct from `PrintedAt`, which is set at render time).
 2. **`@PrinterName NVARCHAR(100) = NULL` param** added to `LotLabel_Print` **and** `LotLabel_Reprint` (the deferred param the proc headers already flag); persisted into the existing `LotLabel.PrinterName` column.
 3. **`Lots.LotLabel_RecordDispatch @LotLabelId BIGINT, @PrinterName NVARCHAR(100)`** → `Status, Message`. Sets `PrinterName` + `DispatchedAt = SYSUTCDATETIME()` on the row. Status-row proc; NQ `type:"Query"`.
-4. **Seed `Audit.LogEventType` `LabelDispatched`** (next free Id after Phase 4 `0023`'s 35 → **36**) for the `InterfaceLog` rows. (Endpoint resolution needs **no** new proc — it reads existing `LocationAttribute`s, §5.)
+4. **Seed `Audit.LogEventType` `LabelDispatched`** (next free Id after Phase 4 `0024`'s 35 → **36**) for the `InterfaceLog` rows. (Endpoint resolution needs **no** new proc — it reads existing `LocationAttribute`s, §5.)
 
-> ⚠️ **Migration-number coordination:** Spec 1 = `0023` (movement/trim); this = `0024`. The Phase 5 plan also earmarked `0024` for Machining — Phase 5 renumbers to `0025+` (it is later and unbuilt).
+> ⚠️ **Migration-number coordination (resolved 2026-06-16):** Phase 3 SQL-deltas = `0023`; Spec 1 (movement/trim) = `0024`; this (label dispatch) = `0025`. The Phase 5 plan also earmarked `0024` for Machining — Phase 5 renumbers to `0026+` (it is later and unbuilt).
 
 ### 4.2 The socket helper (`BlueRidge.Lots.LotLabel._dispatchZpl`, Core)
 Pure transport, no business logic: `Socket()` with `connect((host, port), timeout)`, `getOutputStream().write(zpl.getBytes("US-ASCII"))`, `flush()`, `close()`; returns `{ok, error}`. Parses `host:port` from the `Endpoint` string (default port 9100). **Assumption made explicit:** raw TCP only reaches **networked** printers (Ethernet/WiFi ZebraNet print server — the GX420d `GX42-202410-000` Ethernet variant). A USB-only printer on an operator tablet is unreachable from a server-side socket and is out of this model (would need client-side printing — not in scope).
@@ -106,7 +106,7 @@ Add under `/shop-floor/*` (each carries a `title`): `/shop-floor/trim` → `Trim
 
 ## 10. Test / smoke plan
 
-No front-end unit harness; the SQL suite (`0023` + the `0024` label-dispatch tests) is the automated gate. Add SQL tests for `LotLabel_RecordDispatch` (ack sets `DispatchedAt`/`PrinterName`) and the `@PrinterName` round-trip. **Smoke seed** `sql/scratch/smoke_seed_phase4.sql` (idempotent, prints LOT ids + URLs). Operator walkthrough:
+No front-end unit harness; the SQL suite (`0024` + the `0025` label-dispatch tests) is the automated gate. Add SQL tests for `LotLabel_RecordDispatch` (ack sets `DispatchedAt`/`PrinterName`) and the `@PrinterName` round-trip. **Smoke seed** `sql/scratch/smoke_seed_phase4.sql` (idempotent, prints LOT ids + URLs). Operator walkthrough:
 1. Trim terminal → `/shop-floor/trim`; IN tab: scan a Phase-3 die-cast LOT → eligibility + capacity shown → move to Trim Area + `TrimIn` checkpoint; record a scrap reject.
 2. OUT tab: pick a Machining-line destination → `TrimOut_Record` → LOT visible in that line's FIFO queue (Phase 2 `LOT Detail` / Phase 5 queue).
 3. Receiving → create a `Received` LOT (vendor lot + serial range) → **LTT prints** to the terminal's Zebra; pull the cable / point `Endpoint` at a dead host → failure toast + Reprint; confirm an `Audit.InterfaceLog` row per attempt (success + failure + retry).
@@ -119,7 +119,7 @@ No front-end unit harness; the SQL suite (`0023` + the `0024` label-dispatch tes
 - **Synchronous dispatch, not async** (deviates from the phased plan's "Gateway message handler"). The operator is gated on the physical LTT; fire-and-forget would let a silent failure pass. Inline socket write (gateway scope) + bounded timeout. FDS-01-014's async guidance targeted slow EDI/AIM calls; **logging intent is preserved** — every attempt logs to `Audit.InterfaceLog` synchronously.
 - **Printer resolved into `session.custom.printer` at startup** (not per-print). Fail-fast on empty (no-printer terminal); optional single DB re-resolve on dispatch failure.
 - **Print failure never rolls back the LOT.** Retry via the existing `LotLabel_Reprint`. UI holds + offers Reprint.
-- **Label SQL delta lives in Spec 2 / migration `0024`** (gateway-coupled). Endpoint resolution = existing `LocationAttribute` reads (no new endpoint proc).
+- **Label SQL delta lives in Spec 2 / migration `0025`** (gateway-coupled). Endpoint resolution = existing `LocationAttribute` reads (no new endpoint proc).
 - **One tabbed Trim Station view** (IN/OUT), not two routes.
 - **Raw TCP 9100 to networked printers only** — USB-attached client printers are out of scope.
 
