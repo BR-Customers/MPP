@@ -39,6 +39,10 @@
     "/quality-specs": {
       "title": "Quality Specs",
       "viewPath": "BlueRidge/Views/Quality/QualitySpecs"
+    },
+    "/users": {
+      "title": "Users",
+      "viewPath": "BlueRidge/Views/Audit/Users"
     }
   },
   "sharedDocks": {
