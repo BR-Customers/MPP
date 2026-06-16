@@ -164,6 +164,50 @@ def search(query=None, lotStatusId=None, lotOriginTypeId=None, limitRows=100):
     return BlueRidge.Common.Db.execList("lots/Lot_Search", params)
 
 
+def moveToValidated(lotId, toLocationId, appUserId=None, terminalLocationId=None):
+    """Arc 2 Phase 4. Server-authoritative validated inbound move (the Movement
+       Scan commit). The proc re-checks eligibility (FDS-02-012) + MaxParts (OI-12)
+       + not-blocked (B2) and performs the move atomically. Returns {Status, Message}."""
+    BlueRidge.Common.Util.log(
+        "lotId=%s toLocationId=%s appUserId=%s terminalLocationId=%s"
+        % (lotId, toLocationId, appUserId, terminalLocationId)
+    )
+    if appUserId is None:
+        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    params = {
+        "lotId":              _u(lotId),
+        "toLocationId":       _u(toLocationId),
+        "appUserId":          appUserId,
+        "terminalLocationId": terminalLocationId,
+    }
+    return BlueRidge.Common.Db.execMutation("lots/Lot_MoveToValidated", params)
+
+
+def getCellLineQuantity(locationId, itemId):
+    """Arc 2 Phase 4. Sum of open-LOT PieceCount for an Item at a location.
+       Returns {ExistingPieceCount} or None."""
+    BlueRidge.Common.Util.log("locationId=%s itemId=%s" % (locationId, itemId))
+    return BlueRidge.Common.Db.execOne(
+        "lots/Lot_GetCellLineQuantity",
+        {"locationId": _u(locationId), "itemId": _u(itemId)},
+    )
+
+
+def getWipQueueByLocation(locationId, includeDescendants=False):
+    """Arc 2 Phase 4 / Phase 5. The FIFO WIP queue at a location (open LOTs in
+       arrival order). Returns list[dict]."""
+    BlueRidge.Common.Util.log("locationId=%s includeDescendants=%s" % (locationId, includeDescendants))
+    return BlueRidge.Common.Db.execList(
+        "lots/Lot_GetWipQueueByLocation",
+        {"locationId": _u(locationId), "includeDescendants": bool(includeDescendants)},
+    )
+
+
+def getByName(lotName):
+    """Convenience alias: fetch one LOT by its LTT name. Returns a dict or None."""
+    return get(lotName=_u(lotName))
+
+
 def getStatusOptions():
     return [{"label": r["Name"], "value": r["Id"]} for r in BlueRidge.Common.Db.execList("lots/LotStatusCode_List")]
 

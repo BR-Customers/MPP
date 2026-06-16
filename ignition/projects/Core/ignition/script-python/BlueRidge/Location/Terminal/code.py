@@ -111,3 +111,23 @@ def getContextCellsForDropdown(terminalLocationId):
             "name":  name,
         })
     return out
+
+
+def getPrinter(terminalLocationId):
+    """Arc 2 Phase 4. Resolve the terminal's child Printer Location + its
+       Endpoint/Model attribute values for the onStartup session resolution +
+       the LTT dispatch path. Returns {locationId, code, endpoint, model} or {}
+       (empty when the terminal has no Printer child -- the fail-fast case)."""
+    tid = BlueRidge.Common.Util.extractQualifiedValues(terminalLocationId)
+    BlueRidge.Common.Util.log("terminalLocationId=%s" % tid)
+    if tid is None:
+        return {}
+    row = BlueRidge.Common.Db.execOne("location/Terminal_GetPrinter", {"terminalLocationId": tid})
+    if not row:
+        return {}
+    return {
+        "locationId": row.get("LocationId"),
+        "code":       row.get("Code") or "",
+        "endpoint":   row.get("Endpoint") or "",
+        "model":      row.get("Model") or "",
+    }
