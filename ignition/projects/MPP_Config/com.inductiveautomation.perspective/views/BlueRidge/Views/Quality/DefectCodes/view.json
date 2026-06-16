@@ -1,274 +1,548 @@
 {
   "custom": {
     "filter": {
-      "areaLocationId":    null,
-      "searchText":        "",
-      "includeDeprecated": false
-    },
-    "areaOptions": [],
-    "rows":        []
+      "areaLocationId": null,
+      "includeDeprecated": false,
+      "searchText": ""
+    }
   },
   "params": {},
   "propConfig": {
-    "custom.filter.areaLocationId":   { "persistent": true },
-    "custom.filter.searchText":       { "persistent": true },
-    "custom.filter.includeDeprecated":{ "persistent": true },
     "custom.areaOptions": {
       "binding": {
-        "type": "expr",
-        "config": { "expression": "runScript(\"BlueRidge.Location.Location.getAllAreas\", 0, true)" }
+        "config": {
+          "expression": "runScript(\"BlueRidge.Location.Location.getAllAreas\", 0, true)"
+        },
+        "type": "expr"
       }
+    },
+    "custom.filter.areaLocationId": {
+      "persistent": true
+    },
+    "custom.filter.includeDeprecated": {
+      "persistent": true
+    },
+    "custom.filter.searchText": {
+      "persistent": true
     },
     "custom.rows": {
       "binding": {
-        "type": "expr",
         "config": {
           "expression": "runScript(\"BlueRidge.Quality.DefectCode.search\", 0, {view.custom.filter})"
-        }
+        },
+        "type": "expr"
       }
     }
   },
   "props": {
-    "defaultSize": { "width": 1280, "height": 720 }
+    "defaultSize": {
+      "height": 720,
+      "width": 1280
+    }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": { "name": "root" },
+    "children": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "BreadcrumbCategory"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "breadcrumb"
+                      },
+                      "text": "Quality"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "BreadcrumbSep"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "breadcrumb crumb-sep"
+                      },
+                      "text": "›"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "BreadcrumbActive"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "crumb-active"
+                      },
+                      "text": "Defect Codes"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "Breadcrumb"
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "classes": "breadcrumb"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "Title"
+                },
+                "props": {
+                  "style": {
+                    "classes": "title-row-h1"
+                  },
+                  "text": "Defect Codes"
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "TitleColumn"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "2px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "TitleRowSpacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "style": {
+                "classes": "title-row-spacer"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\n\t\tid\u003d\"mpp-defect-code-editor\",\n\t\tview\u003d\"BlueRidge/Components/Popups/DefectCodeEditor\",\n\t\tmodal\u003dTrue,\n\t\tshowCloseIcon\u003dFalse,\n\t\tparams\u003d{\"mode\": \"create\", \"defectCodeId\": None})"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "AddCodeButton"
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-primary",
+                "marginRight": "12px"
+              },
+              "text": "+ Add Code"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "TitleRow"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "classes": "title-row",
+            "paddingBottom": "8px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "AreaLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "label-eyebrow"
+                          },
+                          "text": "Area"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "AreaDropdown"
+                        },
+                        "propConfig": {
+                          "props.options": {
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.areaOptions"
+                              },
+                              "type": "property"
+                            }
+                          },
+                          "props.value": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.filter.areaLocationId"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "select"
+                          }
+                        },
+                        "type": "ia.input.dropdown"
+                      }
+                    ],
+                    "meta": {
+                      "name": "AreaField"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "4px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "SearchLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "label-eyebrow"
+                          },
+                          "text": "Search"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "SearchInput"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.filter.searchText"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "placeholder": "Search…",
+                          "style": {
+                            "classes": "search-input"
+                          }
+                        },
+                        "type": "ia.input.text-field"
+                      }
+                    ],
+                    "meta": {
+                      "name": "SearchField"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "4px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "IncludeDeprecated"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.selected": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.filter.includeDeprecated"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "12px",
+                            "whiteSpace": "nowrap"
+                          },
+                          "text": "Include deprecated"
+                        },
+                        "type": "ia.input.checkbox"
+                      }
+                    ],
+                    "meta": {
+                      "name": "IncludeDeprecatedField"
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "8px",
+                        "paddingTop": "4px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "FilterPanel"
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "filter-panel"
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "FilterSidebar"
+            },
+            "position": {
+              "basis": "220px",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "filter-sidebar"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "ColCode"
+                        },
+                        "position": {
+                          "basis": "100px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Code"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "ColDescription"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1
+                        },
+                        "props": {
+                          "text": "Description"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "ColArea"
+                        },
+                        "position": {
+                          "basis": "140px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Area"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "ColExcused"
+                        },
+                        "position": {
+                          "basis": "80px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Excused"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "ColEdit"
+                        },
+                        "position": {
+                          "basis": "80px",
+                          "shrink": 0
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "TableHeader"
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "style": {
+                        "background": "var(--mpp-surface-card)",
+                        "borderBottom": "1px solid var(--mpp-border-subtle)",
+                        "color": "var(--mpp-text-secondary)",
+                        "fontSize": "11px",
+                        "fontWeight": "600",
+                        "letterSpacing": "0.05em",
+                        "padding": "8px 12px",
+                        "textTransform": "uppercase"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "meta": {
+                      "name": "Rows"
+                    },
+                    "propConfig": {
+                      "props.instances": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.rows"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "column",
+                      "elementPosition": {
+                        "basis": "48px",
+                        "shrink": 0
+                      },
+                      "path": "BlueRidge/Components/DefectCodeRow",
+                      "useDefaultViewHeight": false,
+                      "useDefaultViewWidth": false
+                    },
+                    "type": "ia.display.flex-repeater"
+                  }
+                ],
+                "meta": {
+                  "name": "DataPanel"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "detail-panel",
+                    "overflowX": "auto",
+                    "padding": "0"
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "ContentArea"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "background": "var(--mpp-surface-canvas)",
+                "overflowY": "auto",
+                "padding": "12px"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "MainSplit"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "style": {
+            "borderTop": "1px solid var(--mpp-border-subtle)",
+            "overflow": "hidden"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "screen-active"
+      }
+    },
     "scripts": {
+      "customMethods": null,
+      "extensionFunctions": null,
       "messageHandlers": [
         {
           "messageType": "defectCodeRefresh",
           "pageScope": true,
+          "script": "\tself.view.custom.rows \u003d BlueRidge.Quality.DefectCode.search(self.view.custom.filter)",
           "sessionScope": false,
-          "viewScope": false,
-          "script": "\tself.view.custom.rows = BlueRidge.Quality.DefectCode.search(self.view.custom.filter)"
+          "viewScope": false
         }
       ]
     },
-    "props": {
-      "direction": "column",
-      "style": { "classes": "screen-active" }
-    },
-    "children": [
-      {
-        "type": "ia.container.flex",
-        "meta": { "name": "TitleRow" },
-        "position": { "basis": "auto", "shrink": 0 },
-        "props": {
-          "direction": "row",
-          "alignItems": "center",
-          "style": {
-            "classes": "title-row",
-            "paddingBottom": "8px",
-            "borderBottom": "1px solid var(--mpp-border-subtle)",
-            "background": "var(--mpp-surface-raised)"
-          }
-        },
-        "children": [
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "TitleColumn" },
-            "position": { "basis": "auto" },
-            "props": { "direction": "column", "style": { "gap": "2px" } },
-            "children": [
-              {
-                "type": "ia.container.flex",
-                "meta": { "name": "Breadcrumb" },
-                "position": { "basis": "auto" },
-                "props": { "direction": "row", "alignItems": "center", "style": { "classes": "breadcrumb" } },
-                "children": [
-                  { "type": "ia.display.label", "meta": { "name": "BreadcrumbCategory" }, "position": { "basis": "auto" }, "props": { "text": "Quality", "style": { "classes": "breadcrumb" } } },
-                  { "type": "ia.display.label", "meta": { "name": "BreadcrumbSep" },      "position": { "basis": "auto" }, "props": { "text": "›", "style": { "classes": "breadcrumb crumb-sep" } } },
-                  { "type": "ia.display.label", "meta": { "name": "BreadcrumbActive" },   "position": { "basis": "auto" }, "props": { "text": "Defect Codes", "style": { "classes": "crumb-active" } } }
-                ]
-              },
-              { "type": "ia.display.label", "meta": { "name": "Title" }, "position": { "basis": "auto" }, "props": { "text": "Defect Codes", "style": { "classes": "title-row-h1" } } }
-            ]
-          },
-          { "type": "ia.display.label", "meta": { "name": "TitleRowSpacer" }, "position": { "grow": 1 }, "props": { "text": "", "style": { "classes": "title-row-spacer" } } },
-          {
-            "type": "ia.input.button",
-            "meta": { "name": "AddCodeButton" },
-            "position": { "basis": "auto" },
-            "props": { "text": "+ Add Code", "style": { "classes": "btn btn-primary", "marginRight": "12px" } },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script", "scope": "G",
-                  "config": {
-                    "script": "\tsystem.perspective.openPopup(\n\t\tid=\"mpp-defect-code-editor\",\n\t\tview=\"BlueRidge/Components/Popups/DefectCodeEditor\",\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\"mode\": \"create\", \"defectCodeId\": None})"
-                  }
-                }
-              }
-            }
-          }
-        ]
-      },
-      {
-        "type": "ia.container.flex",
-        "meta": { "name": "MainSplit" },
-        "position": { "grow": 1 },
-        "props": {
-          "direction": "row",
-          "style": { "overflow": "hidden", "borderTop": "1px solid var(--mpp-border-subtle)" }
-        },
-        "children": [
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "FilterSidebar" },
-            "position": { "basis": "220px", "shrink": 0 },
-            "props": {
-              "direction": "column",
-              "style": { "classes": "filter-sidebar" }
-            },
-            "children": [
-              {
-                "type": "ia.container.flex",
-                "meta": { "name": "FilterPanel" },
-                "position": { "basis": "auto" },
-                "props": {
-                  "direction": "column",
-                  "style": { "classes": "filter-panel" }
-                },
-                "children": [
-                  {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "AreaField" },
-                    "position": { "basis": "auto" },
-                    "props": { "direction": "column", "style": { "gap": "4px" } },
-                    "children": [
-                      { "type": "ia.display.label", "meta": { "name": "AreaLabel" }, "position": { "basis": "auto" }, "props": { "text": "Area", "style": { "classes": "label-eyebrow" } } },
-                      {
-                        "type": "ia.input.dropdown",
-                        "meta": { "name": "AreaDropdown" },
-                        "position": { "basis": "auto" },
-                        "propConfig": {
-                          "props.options": { "binding": { "type": "property", "config": { "path": "view.custom.areaOptions" } } },
-                          "props.value":   { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.filter.areaLocationId" } } }
-                        },
-                        "props": { "style": { "classes": "select" } }
-                      }
-                    ]
-                  },
-                  {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "SearchField" },
-                    "position": { "basis": "auto" },
-                    "props": { "direction": "column", "style": { "gap": "4px" } },
-                    "children": [
-                      { "type": "ia.display.label", "meta": { "name": "SearchLabel" }, "position": { "basis": "auto" }, "props": { "text": "Search", "style": { "classes": "label-eyebrow" } } },
-                      {
-                        "type": "ia.input.text-field",
-                        "meta": { "name": "SearchInput" },
-                        "position": { "basis": "auto" },
-                        "propConfig": {
-                          "props.text": { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.filter.searchText" } } }
-                        },
-                        "props": { "placeholder": "Search…", "style": { "classes": "search-input" } }
-                      }
-                    ]
-                  },
-                  {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "IncludeDeprecatedField" },
-                    "position": { "basis": "auto" },
-                    "props": {
-                      "alignItems": "center",
-                      "style": { "gap": "8px", "paddingTop": "4px" }
-                    },
-                    "children": [
-                      {
-                        "type": "ia.input.checkbox",
-                        "meta": { "name": "IncludeDeprecated" },
-                        "position": { "shrink": 0 },
-                        "propConfig": {
-                          "props.selected": { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.custom.filter.includeDeprecated" } } }
-                        },
-                        "props": {
-                          "text": "Include deprecated",
-                          "style": { "color": "var(--mpp-text-secondary)", "fontSize": "12px", "whiteSpace": "nowrap" }
-                        }
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "ContentArea" },
-            "position": { "grow": 1 },
-            "props": {
-              "direction": "column",
-              "style": {
-                "padding": "12px",
-                "background": "var(--mpp-surface-canvas)",
-                "overflowY": "auto"
-              }
-            },
-            "children": [
-              {
-                "type": "ia.container.flex",
-                "meta": { "name": "DataPanel" },
-                "position": { "grow": 1 },
-                "props": {
-                  "direction": "column",
-                  "style": { "classes": "detail-panel", "padding": "0", "overflowX": "auto" }
-                },
-                "children": [
-                  {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "TableHeader" },
-                    "position": { "basis": "auto" },
-                    "props": {
-                      "direction": "row",
-                      "alignItems": "center",
-                      "style": {
-                        "background": "var(--mpp-surface-card)",
-                        "color": "var(--mpp-text-secondary)",
-                        "fontSize": "11px",
-                        "fontWeight": "600",
-                        "textTransform": "uppercase",
-                        "letterSpacing": "0.05em",
-                        "borderBottom": "1px solid var(--mpp-border-subtle)",
-                        "padding": "8px 12px"
-                      }
-                    },
-                    "children": [
-                      { "type": "ia.display.label", "meta": { "name": "ColCode" },        "position": { "basis": "100px", "shrink": 0 }, "props": { "text": "Code" } },
-                      { "type": "ia.display.label", "meta": { "name": "ColDescription" }, "position": { "grow": 1, "basis": "0" },     "props": { "text": "Description" } },
-                      { "type": "ia.display.label", "meta": { "name": "ColArea" },        "position": { "basis": "140px", "shrink": 0 }, "props": { "text": "Area" } },
-                      { "type": "ia.display.label", "meta": { "name": "ColExcused" },     "position": { "basis": "80px", "shrink": 0 },  "props": { "text": "Excused" } },
-                      { "type": "ia.display.label", "meta": { "name": "ColEdit" },        "position": { "basis": "80px", "shrink": 0 },  "props": { "text": "" } }
-                    ]
-                  },
-                  {
-                    "type": "ia.display.flex-repeater",
-                    "meta": { "name": "Rows" },
-                    "position": { "basis": "auto" },
-                    "propConfig": {
-                      "props.instances": {
-                        "binding": {
-                          "type": "property",
-                          "config": { "path": "view.custom.rows" }
-                        }
-                      }
-                    },
-                    "props": {
-                      "path": "BlueRidge/Components/DefectCodeRow",
-                      "direction": "column",
-                      "useDefaultViewWidth": false,
-                      "useDefaultViewHeight": false,
-                      "elementPosition": { "basis": "48px", "shrink": 0 }
-                    }
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    ]
+    "type": "ia.container.flex"
   }
 }
