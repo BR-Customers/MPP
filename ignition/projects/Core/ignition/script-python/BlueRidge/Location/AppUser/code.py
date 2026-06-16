@@ -6,6 +6,91 @@ import BlueRidge.Common.Db
 import BlueRidge.Common.Util
 
 
+def getUserList(includeDeprecated=False):
+	"""
+    Gets a list of user data.
+
+    Args:
+    	includeDeprecated (bool):   Whether or not the list should include deprecated users
+
+    Returns:
+        A list of objects of user data.
+    """
+	BlueRidge.Common.Util.log("includeDeprecated=%s" % includeDeprecated)
+	return BlueRidge.Common.Db.execOne(
+		"location/AppUser_List",
+		{"includeDeprecated": includeDeprecated}
+	)
+	
+def getUser(chosenId):
+	"""
+    Gets data from a user based on a chosen Id number.
+
+    Args:
+    	chosenId (int): the id of the user to read the data from.
+
+    Returns:
+        An object of a single user's data.
+    """
+	BlueRidge.Common.Util.log("id=%s" % chosenId)
+	return BlueRidge.Common.Db.execOne(
+		"location/AppUser_Get", 
+		{"id": chosenId}
+	)
+	
+def createUser(attributes):
+	"""
+    Creates a new user with dict "attributes".
+
+    Args:
+    	attributes (dict):	The attributes to be passed into the new user.
+    	initials (string), displayName (string), adAccount (string),
+    	ignitionRole (string), appUserId (string).
+    	initials must be unique. If creating operator, then adAccount and
+    	ignition role must be set to None.
+
+    Returns:
+        A message of whether the query succeeded or not.
+    """
+	BlueRidge.Common.Util.log("initials=%s" % attributes.get("Initials"))
+	return BlueRidge.Common.Db.execOne("location/AppUser_Create", attributes)
+
+def deprecateUser(chosenId, appUserId):
+	"""
+    Deprecates a user (soft delete, can be access later if needed)
+
+    Args:
+    	chosenId (int): the id of the user,
+    	appUserId (int): the session id of the user (for audit logs)
+
+    Returns:
+        A message of whether the query succeeded or not.
+    """
+	BlueRidge.Common.Util.log("id=%s appUserId=%s" % (chosenId, appUserId))
+	return BlueRidge.Common.Db.execOne(
+		"location/AppUser_Deprecate", 
+		{"id": chosenId, "appUserId": appUserId}
+	)
+
+def updateUser(attributes):
+	"""
+    Updates a new user with dict "attributes" using an id
+
+    Args:
+    	attributes (dict):	The attributes to be passed into the new user.
+    	id (int),
+    	initials (string), displayName (string), adAccount (string),
+    	ignitionRole (string), appUserId (string).
+    	initials must be unique. If creating operator, then adAccount and
+    	ignition role must be set to None.
+
+    Returns:
+        A message of whether the query succeeded or not.
+    """
+	BlueRidge.Common.Util.log("initials=%s" % attributes.get("Initials"))
+	return BlueRidge.Common.Db.execOne("location/AppUser_Update", attributes)
+
+
 def getByInitials(initials):
     """Resolve an AppUser by shop-floor initials. Returns a dict or None."""
     BlueRidge.Common.Util.log("initials=%s" % initials)
