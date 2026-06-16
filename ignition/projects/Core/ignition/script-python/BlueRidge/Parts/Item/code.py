@@ -130,6 +130,31 @@ def getOneOrEmpty(itemId):
     return dict((k, None) for k in _ITEM_SHAPE_KEYS)
 
 
+def getEligibleForLocationDropdown(locationId):
+    """Items eligible at a Location, shaped for ia.input.dropdown:
+        [{label: '<PartNumber> - <Description>', value: Id}].
+    Always a list (never None). Empty if locationId is None or nothing is eligible.
+    Wraps Parts.Item_ListEligibleForLocation. Used by the die-cast entry screen's
+    eligibility-constrained Item dropdown."""
+    locationId = _u(locationId)
+    BlueRidge.Common.Util.log("getEligibleForLocationDropdown locationId=%s" % locationId)
+    if locationId is None:
+        return []
+    try:
+        rows = BlueRidge.Common.Db.execList(
+            "parts/Item_ListEligibleForLocation", {"locationId": locationId})
+    except Exception as e:
+        BlueRidge.Common.Util.log("getEligibleForLocationDropdown failed: %s" % str(e))
+        return []
+    out = []
+    for r in (rows or []):
+        pn = r.get("PartNumber") or ""
+        desc = r.get("Description") or ""
+        label = ("%s - %s" % (pn, desc)) if desc else pn
+        out.append({"label": label, "value": r.get("Id")})
+    return out
+
+
 def mapItemRowsForList(rows, typeFilter="All Types"):
     """Flex-repeater instances transform.
 

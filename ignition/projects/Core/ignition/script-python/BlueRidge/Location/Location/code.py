@@ -243,6 +243,50 @@ def getCellsForDropdown():
     return out
 
 
+def getCellsForAreaDropdown(areaId):
+    """The pickable equipment cells beneath an Area (excludes Terminal/Printer),
+    shaped for ia.input.dropdown + scan matching:
+        [{label: '<Code> - <Name>', value: LocationId, code, name}].
+    Always a list (never None). Empty if areaId is None or has no equipment cells.
+    Wraps Location.Location_ListCellsForArea. Used by the area-parameterized
+    die-cast entry screen's Cell dropdown."""
+    areaId = _u(areaId)
+    BlueRidge.Common.Util.log("getCellsForAreaDropdown areaId=%s" % areaId)
+    if areaId is None or areaId == "":
+        return []
+    try:
+        areaId = int(areaId)   # page-param arrives as a string from the URL
+    except (ValueError, TypeError):
+        return []
+    try:
+        rows = BlueRidge.Common.Db.execList(
+            "location/Location_ListCellsForArea", {"areaLocationId": areaId})
+    except Exception as e:
+        BlueRidge.Common.Util.log("getCellsForAreaDropdown failed: %s" % str(e))
+        return []
+    out = []
+    for r in (rows or []):
+        code = r.get("Code") or ""
+        name = r.get("Name") or ""
+        out.append({
+            "label": ("%s - %s" % (code, name)).strip(" -"),
+            "value": r.get("LocationId"),
+            "code":  code,
+            "name":  name,
+        })
+    return out
+
+
+def getCellsForAreaOrTerminal(areaId, terminalLocationId):
+    """Cell-dropdown source for the die-cast entry screen: area-scoped equipment
+    cells when an areaId page-param is supplied, else the terminal's context cells.
+    One query either way; always a list."""
+    areaId = _u(areaId)
+    if areaId is not None:
+        return getCellsForAreaDropdown(areaId)
+    return BlueRidge.Location.Terminal.getContextCellsForDropdown(_u(terminalLocationId))
+
+
 def findCellById(cells, cellId):
     """Resolve a Cell Id (dropdown `value`) to its option dict within an
        already-loaded options list (as getCellsForDropdown returns).

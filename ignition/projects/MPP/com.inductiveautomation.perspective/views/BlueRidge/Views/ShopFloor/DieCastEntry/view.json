@@ -23,6 +23,7 @@
     "cavityOptions": [],
     "cells": [],
     "selectedCellId": null,
+    "itemOptions": [],
     "manufacturedOriginId": null,
     "activeLotId": null,
     "latestCheckpoint": {
@@ -32,7 +33,9 @@
     },
     "peersThisSession": []
   },
-  "params": {},
+  "params": {
+    "areaId": null
+  },
   "propConfig": {
     "custom.activeTool": {
       "binding": {
@@ -54,7 +57,15 @@
       "binding": {
         "type": "expr",
         "config": {
-          "expression": "runScript(\"BlueRidge.Location.Terminal.getContextCellsForDropdown\", 0, {session.custom.terminal.terminalLocationId})"
+          "expression": "runScript(\"BlueRidge.Location.Location.getCellsForAreaOrTerminal\", 0, {view.params.areaId}, {session.custom.terminal.terminalLocationId})"
+        }
+      }
+    },
+    "custom.itemOptions": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Item.getEligibleForLocationDropdown\", 0, {session.custom.cell.locationId})"
         }
       }
     },
@@ -447,24 +458,33 @@
                       "name": "ItemLabel"
                     },
                     "props": {
-                      "text": "Item Id",
+                      "text": "Item",
                       "style": {
                         "classes": "pf-field-label"
                       }
                     }
                   },
                   {
-                    "type": "ia.input.numeric-entry-field",
+                    "type": "ia.input.dropdown",
                     "version": 0,
                     "meta": {
-                      "name": "ItemInput"
+                      "name": "ItemDropdown"
                     },
                     "props": {
-                      "style": {
-                        "classes": "pf-field-input"
+                      "placeholder": "Select an item",
+                      "search": {
+                        "enabled": true
                       }
                     },
                     "propConfig": {
+                      "props.options": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.itemOptions"
+                          }
+                        }
+                      },
                       "props.value": {
                         "binding": {
                           "type": "property",
@@ -482,7 +502,7 @@
                       "name": "ItemHelp"
                     },
                     "props": {
-                      "text": "TODO: replace with an eligibility-constrained Item dropdown (needs an Item_ListEligibleForLocation read). Proc validates eligibility regardless.",
+                      "text": "Eligible items for the active cell (FDS-02-012).",
                       "style": {
                         "classes": "pf-field-help"
                       }
@@ -531,25 +551,67 @@
                         }
                       },
                       {
-                        "type": "ia.display.label",
+                        "type": "ia.container.flex",
                         "meta": {
-                          "name": "ToolValue"
+                          "name": "ToolValueRow"
                         },
                         "props": {
+                          "direction": "row",
+                          "alignItems": "center",
                           "style": {
-                            "classes": "pf-field-input pf-field-mono"
+                            "gap": "8px"
                           }
                         },
-                        "propConfig": {
-                          "props.text": {
-                            "binding": {
-                              "type": "expr",
-                              "config": {
-                                "expression": "if(isNull({view.custom.activeTool.ToolCode}) || {view.custom.activeTool.ToolCode} = \"\", \"No die mounted\", {view.custom.activeTool.ToolCode})"
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "ToolValue"
+                            },
+                            "position": {
+                              "grow": 1
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-field-input pf-field-mono"
+                              }
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": {
+                                    "expression": "if(isNull({view.custom.activeTool.ToolCode}) || {view.custom.activeTool.ToolCode} = \"\", \"No die mounted\", {view.custom.activeTool.ToolCode})"
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.input.button",
+                            "version": 0,
+                            "meta": {
+                              "name": "ToolConfigButton"
+                            },
+                            "props": {
+                              "text": "Tool Config",
+                              "style": {
+                                "classes": "pf-btn pf-btn-secondary"
+                              }
+                            },
+                            "events": {
+                              "component": {
+                                "onActionPerformed": {
+                                  "type": "script",
+                                  "scope": "G",
+                                  "config": {
+                                    "script": "\t# Launch the Config app's Tools page (separate project; logs in on its own).\n\tsystem.perspective.navigate(url=\"/data/perspective/client/MPP_Config/parts/tools\", newTab=True)"
+                                  }
+                                }
                               }
                             }
                           }
-                        }
+                        ]
                       }
                     ]
                   },

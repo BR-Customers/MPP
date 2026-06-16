@@ -32,6 +32,10 @@
       "title": "Die Cast Entry",
       "viewPath": "BlueRidge/Views/ShopFloor/DieCastEntry"
     },
+    "/shop-floor/die-cast/area/:areaId": {
+      "title": "Die Cast Entry",
+      "viewPath": "BlueRidge/Views/ShopFloor/DieCastEntry"
+    },
     "/shop-floor/die-cast/checkpoint/:lotId": {
       "title": "Checkpoint",
       "viewPath": "BlueRidge/Views/ShopFloor/DieCastEntry"
