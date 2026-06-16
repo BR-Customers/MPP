@@ -13,7 +13,9 @@ EXEC test.BeginTestFile @FileName = N'0012_Oee_Reference/010_DowntimeReasonType_
 GO
 
 -- =============================================
--- Test: DowntimeReasonType_List returns exactly 6 rows
+-- Test: DowntimeReasonType_List returns exactly 7 rows
+--   (6 original seeds + 'Break' (Id 7) added by migration 0026 for Phase 8
+--    end-of-shift lunch/break events.)
 -- =============================================
 DECLARE @Count INT;
 CREATE TABLE #R (Id BIGINT, Code NVARCHAR(30), Name NVARCHAR(100));
@@ -21,8 +23,8 @@ INSERT INTO #R EXEC Oee.DowntimeReasonType_List;
 SELECT @Count = COUNT(*) FROM #R;
 DROP TABLE #R;
 EXEC test.Assert_RowCount
-    @TestName      = N'DowntimeReasonType_List: 6 rows returned by proc',
-    @ExpectedCount = 6,
+    @TestName      = N'DowntimeReasonType_List: 7 rows returned by proc',
+    @ExpectedCount = 7,
     @ActualCount   = @Count;
 GO
 
