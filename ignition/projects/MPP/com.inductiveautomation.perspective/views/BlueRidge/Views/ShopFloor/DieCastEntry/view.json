@@ -866,7 +866,7 @@
                           "type": "script",
                           "scope": "G",
                           "config": {
-                            "script": "\tself.view.rootContainer.submitCreate()"
+                            "script": "\tself.view.rootContainer.openCreateConfirm()"
                           }
                         }
                       }
@@ -1065,40 +1065,6 @@
                 },
                 "children": [
                   {
-                    "type": "ia.input.button",
-                    "version": 0,
-                    "meta": {
-                      "name": "CreatePeerButton"
-                    },
-                    "props": {
-                      "text": "Create LOT from another cavity",
-                      "style": {
-                        "classes": "pf-btn pf-btn-secondary"
-                      }
-                    },
-                    "propConfig": {
-                      "props.enabled": {
-                        "binding": {
-                          "type": "expr",
-                          "config": {
-                            "expression": "!isNull({view.custom.activeLotId})"
-                          }
-                        }
-                      }
-                    },
-                    "events": {
-                      "component": {
-                        "onActionPerformed": {
-                          "type": "script",
-                          "scope": "G",
-                          "config": {
-                            "script": "\tself.view.rootContainer.clearForPeer()"
-                          }
-                        }
-                      }
-                    }
-                  },
-                  {
                     "type": "ia.display.label",
                     "meta": {
                       "name": "PeerTallyHeader"
@@ -1173,18 +1139,20 @@
           "sessionScope": false,
           "viewScope": false,
           "script": "\tself.view.custom.latestCheckpoint = BlueRidge.Workorder.ProductionEvent.getLatestForLotOrEmpty(self.view.custom.activeLotId)"
+        },
+        {
+          "messageType": "confirmCreateLotResult",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\taction = payload.get(\"action\") if payload else None\n\tif action == \"cancel\":\n\t\treturn\n\tresult = self.submitCreate()\n\tif result and result.get(\"Status\"):\n\t\tif action == \"clear\":\n\t\t\tself.cancelDraft()\n\t\telif action == \"another\":\n\t\t\tself.clearForAnother()"
         }
       ],
       "customMethods": [
         {
           "name": "submitCreate",
           "params": [],
-          "script": "\tdraft = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft) or {}\n\ttool = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.activeTool) or {}\n\tcell = BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\t# Cavity: a numeric option value is a real ToolCavityId; a typed (custom) value is a manual cavity note (D2).\n\tcav = draft.get(\"toolCavityId\")\n\ttoolCavityId = None\n\tcavityNote = None\n\tif cav is not None and cav != \"\":\n\t\ttry:\n\t\t\ttoolCavityId = int(cav)\n\t\texcept (ValueError, TypeError):\n\t\t\tcavityNote = unicode(cav)\n\tdata = {\n\t\t\"itemId\": draft.get(\"itemId\"),\n\t\t\"lotOriginTypeId\": self.view.custom.manufacturedOriginId,\n\t\t\"currentLocationId\": cell.get(\"locationId\"),\n\t\t\"pieceCount\": BlueRidge.Common.Util.toIntOrNone(draft.get(\"pieceCount\")),\n\t\t\"weight\": BlueRidge.Common.Util.toDecimalOrNone(draft.get(\"weight\")),\n\t\t\"weightUomId\": draft.get(\"weightUomId\"),\n\t\t\"toolId\": tool.get(\"ToolId\"),\n\t\t\"toolCavityId\": toolCavityId,\n\t}\n\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tresult = BlueRidge.Lots.Lot.create(data, appUserId, termId, None, cavityNote)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle=\"LOT created\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.activeLotId = result.get(\"NewId\")\n\t\tminted = result.get(\"MintedLotName\")\n\t\tscanned = draft.get(\"scannedLtt\")\n\t\tif scanned and minted and scanned != minted:\n\t\t\tBlueRidge.Common.Notify.toast(\"LTT mismatch\", \"Scanned %s but minted %s\" % (scanned, minted), \"warning\")\n\t\tpeers = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.peersThisSession) or []\n\t\tpeers.append({\"peer\": {\"Cavity\": (toolCavityId if toolCavityId is not None else cavityNote), \"LotName\": minted, \"PieceCount\": data.get(\"pieceCount\")}})\n\t\tself.view.custom.peersThisSession = peers"
-        },
-        {
-          "name": "clearForPeer",
-          "params": [],
-          "script": "\t# Keep Cell/Tool/Item sticky; clear only the cavity-specific bits (D3).\n\t# Write each leaf directly - replacing the whole editDraft object does not\n\t# refresh bidirectionally-bound fields; per-leaf writes do.\n\tself.view.custom.editDraft.scannedLtt = \"\"\n\tself.view.custom.editDraft.toolCavityId = None\n\tself.view.custom.editDraft.cavityNote = None\n\tself.view.custom.editDraft.pieceCount = None\n\tself.view.custom.editDraft.weight = None"
+          "script": "\tdraft = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft) or {}\n\ttool = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.activeTool) or {}\n\tcell = BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\t# Cavity: a numeric option value is a real ToolCavityId; a typed (custom) value is a manual cavity note (D2).\n\tcav = draft.get(\"toolCavityId\")\n\ttoolCavityId = None\n\tcavityNote = None\n\tif cav is not None and cav != \"\":\n\t\ttry:\n\t\t\ttoolCavityId = int(cav)\n\t\texcept (ValueError, TypeError):\n\t\t\tcavityNote = unicode(cav)\n\tdata = {\n\t\t\"itemId\": draft.get(\"itemId\"),\n\t\t\"lotOriginTypeId\": self.view.custom.manufacturedOriginId,\n\t\t\"currentLocationId\": cell.get(\"locationId\"),\n\t\t\"pieceCount\": BlueRidge.Common.Util.toIntOrNone(draft.get(\"pieceCount\")),\n\t\t\"weight\": BlueRidge.Common.Util.toDecimalOrNone(draft.get(\"weight\")),\n\t\t\"weightUomId\": draft.get(\"weightUomId\"),\n\t\t\"toolId\": tool.get(\"ToolId\"),\n\t\t\"toolCavityId\": toolCavityId,\n\t}\n\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tresult = BlueRidge.Lots.Lot.create(data, appUserId, termId, None, cavityNote)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle=\"LOT created\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.activeLotId = result.get(\"NewId\")\n\t\tminted = result.get(\"MintedLotName\")\n\t\tscanned = draft.get(\"scannedLtt\")\n\t\tif scanned and minted and scanned != minted:\n\t\t\tBlueRidge.Common.Notify.toast(\"LTT mismatch\", \"Scanned %s but minted %s\" % (scanned, minted), \"warning\")\n\t\tpeers = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.peersThisSession) or []\n\t\tpeers.append({\"peer\": {\"Cavity\": (toolCavityId if toolCavityId is not None else cavityNote), \"LotName\": minted, \"PieceCount\": data.get(\"pieceCount\")}})\n\t\tself.view.custom.peersThisSession = peers\n\treturn result"
         },
         {
           "name": "cancelDraft",
@@ -1207,6 +1175,16 @@
           "name": "startup",
           "params": [],
           "script": "\t# Operator gate: no logged-in operator -> send them to the initials screen, then\n\t# return here (with the area param preserved) so the view populates on the way back.\n\tif not self.session.custom.appUserId:\n\t\tareaId = self.view.params.areaId\n\t\tif areaId:\n\t\t\tret = \"/shop-floor/die-cast/area/\" + str(areaId)\n\t\telse:\n\t\t\tret = \"/shop-floor/die-cast\"\n\t\tsystem.perspective.navigate(\"/shop-floor/initials\", params={\"returnTo\": ret})\n\t\treturn\n\tself.seedSelectedCell()"
+        },
+        {
+          "name": "openCreateConfirm",
+          "params": [],
+          "script": "\tsystem.perspective.openPopup(\"mpp-confirm-create-lot\",\n\t\t\"BlueRidge/Components/Popups/ConfirmCreateLot\",\n\t\tparams={\"replyMessage\": \"confirmCreateLotResult\", \"popupId\": \"mpp-confirm-create-lot\",\n\t\t\t\"title\": \"Create LOT\", \"message\": \"Confirm to create this LOT, then choose what to do with the form.\"},\n\t\tmodal=True, showCloseIcon=True)"
+        },
+        {
+          "name": "clearForAnother",
+          "params": [],
+          "script": "\t# Keep everything; clear only the cavity, then focus the LTT field for the next scan.\n\tself.view.custom.editDraft.toolCavityId = None\n\tself.view.custom.editDraft.cavityNote = None\n\ttry:\n\t\tself.getChild(\"Body\").getChild(\"NewLotForm\").getChild(\"LttField\").getChild(\"LttInput\").focus()\n\texcept:\n\t\tpass"
         }
       ]
     },
