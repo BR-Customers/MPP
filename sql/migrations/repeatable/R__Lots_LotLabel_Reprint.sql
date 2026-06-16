@@ -30,7 +30,8 @@ CREATE OR ALTER PROCEDURE Lots.LotLabel_Reprint
     @LotId              BIGINT,
     @PrintReasonCodeId  BIGINT,
     @AppUserId          BIGINT,
-    @TerminalLocationId BIGINT = NULL
+    @TerminalLocationId BIGINT = NULL,
+    @PrinterName        NVARCHAR(100) = NULL   -- Arc 2 Phase 4: persisted to LotLabel.PrinterName for the dispatcher
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -173,10 +174,10 @@ BEGIN
 
         INSERT INTO Lots.LotLabel
             (LotId, LabelTypeCodeId, PrintReasonCodeId, ParentLotId, ZplContent,
-             PrintedByUserId, TerminalLocationId, PrintedAt)
+             PrinterName, PrintedByUserId, TerminalLocationId, PrintedAt)
         VALUES
             (@LotId, @LabelTypeCodeId, @PrintReasonCodeId, @LabelParentLotId, @Zpl,
-             @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
+             @PrinterName, @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
 
         SET @NewId = SCOPE_IDENTITY();
 
