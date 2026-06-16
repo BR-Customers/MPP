@@ -1,27 +1,27 @@
 {
   "custom": {},
   "params": {
-    "createdAt": "",
-    "deprecated": false,
-    "displayName": "",
-    "id": null,
-    "initials": "",
+    "CreatedAt": "",
+    "DeprecatedAt": 0,
+    "DisplayName": "",
+    "Id": null,
+    "Initials": "",
     "selected": false
   },
   "propConfig": {
-    "params.createdAt": {
+    "params.CreatedAt": {
       "paramDirection": "input"
     },
-    "params.deprecated": {
+    "params.DeprecatedAt": {
       "paramDirection": "input"
     },
-    "params.displayName": {
+    "params.DisplayName": {
       "paramDirection": "input"
     },
-    "params.id": {
+    "params.Id": {
       "paramDirection": "input"
     },
-    "params.initials": {
+    "params.Initials": {
       "paramDirection": "input"
     },
     "params.selected": {
@@ -47,7 +47,7 @@
           "props.text": {
             "binding": {
               "config": {
-                "path": "view.params.initials"
+                "path": "view.params.Initials"
               },
               "type": "property"
             }
@@ -67,7 +67,7 @@
           "props.text": {
             "binding": {
               "config": {
-                "path": "view.params.displayName"
+                "path": "view.params.DisplayName"
               },
               "type": "property"
             }
@@ -87,9 +87,9 @@
           "props.text": {
             "binding": {
               "config": {
-                "path": "view.params.createdAt"
+                "expression": "dateFormat({view.params.CreatedAt}, \"MM/dd/YYYY hh:ss\")"
               },
-              "type": "property"
+              "type": "expr"
             }
           }
         },
@@ -100,14 +100,14 @@
           "name": "Deprecated"
         },
         "position": {
-          "basis": "80px",
+          "basis": "130px",
           "shrink": 0
         },
         "propConfig": {
           "props.path": {
             "binding": {
               "config": {
-                "expression": "if({view.params.deprecated}, \u0027material/check_box\u0027, \u0027material/check_box_outline_blank\u0027)"
+                "expression": "if(({view.params.DeprecatedAt} !\u003d None), \u0027material/check_box\u0027, \u0027material/check_box_outline_blank\u0027)"
               },
               "type": "expr"
             }
@@ -145,7 +145,7 @@
           "meta.visible": {
             "binding": {
               "config": {
-                "expression": "!{view.params.deprecated}"
+                "expression": "({view.params.DeprecatedAt} \u003d None)"
               },
               "type": "expr"
             }
@@ -183,7 +183,7 @@
       "props.style.opacity": {
         "binding": {
           "config": {
-            "expression": "if({view.params.deprecated}, 0.55, 1)"
+            "expression": "if(({view.params.DeprecatedAt} !\u003d None), 0.55, 1)"
           },
           "type": "expr"
         }

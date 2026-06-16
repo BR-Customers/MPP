@@ -17,7 +17,7 @@ def getUserList(includeDeprecated=False):
         A list of objects of user data.
     """
 	BlueRidge.Common.Util.log("includeDeprecated=%s" % includeDeprecated)
-	return BlueRidge.Common.Db.execOne(
+	return BlueRidge.Common.Db.execList(
 		"location/AppUser_List",
 		{"includeDeprecated": includeDeprecated}
 	)
