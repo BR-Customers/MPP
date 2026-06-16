@@ -1,0 +1,1 @@
+EXEC Location.AppUser_Get @Id = :id
