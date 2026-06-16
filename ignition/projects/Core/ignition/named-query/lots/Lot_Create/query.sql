@@ -11,4 +11,6 @@ EXEC Lots.Lot_Create
     @MinSerialNumber    = :minSerialNumber,
     @MaxSerialNumber    = :maxSerialNumber,
     @AppUserId          = :appUserId,
-    @TerminalLocationId = :terminalLocationId
+    @TerminalLocationId = :terminalLocationId,
+    @LotName            = :lotName,
+    @CavityNote         = :cavityNote

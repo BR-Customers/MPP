@@ -274,6 +274,52 @@ def getFieldsForTemplate(operationTemplateId):
     return out
 
 
+def getDieCastFieldsWithType(operationTemplateId):
+    """Like getFieldsForTemplate, but each field also carries its DataTypeCode so the
+    die-cast FieldInputRow can pick the widget (D5). The template fields (which fields
+    + IsRequired) come from OperationTemplateField_ListByTemplate; the per-field
+    DataType comes from DataCollectionField_List (the 0023 v3.0 proc). This is a
+    data-shaping join keyed on DataCollectionFieldId, not business logic.
+
+    Returns [{'field': {Id, DataCollectionFieldId, Code, Name, IsRequired,
+                        DataTypeCode}}]. DataTypeCode defaults to 'String' (safe
+    text-field) if a field has no type row."""
+    fields = getFieldsForTemplate(operationTemplateId)
+    try:
+        typeRows = BlueRidge.Common.Db.execList(
+            "parts/DataCollectionField_List", {"includeDeprecated": 0}) or []
+    except Exception as e:
+        BlueRidge.Common.Util.log("getDieCastFieldsWithType type load failed: %s" % str(e))
+        typeRows = []
+    typeById = {}
+    for r in typeRows:
+        typeById[r.get("Id")] = r.get("DataTypeCode")
+    for inst in fields:
+        f = inst.get("field") or {}
+        f["DataTypeCode"] = typeById.get(f.get("DataCollectionFieldId")) or "String"
+    return fields
+
+
+def getActiveTemplateIdByCode(code):
+    """Resolve the active (non-deprecated) OperationTemplate Id for a Code, or None.
+    Used by the die-cast checkpoint screen to find the DieCastShot template."""
+    rows = getAllForList(includeDeprecated=False) or []
+    for r in rows:
+        if r.get("Code") == code:
+            return r.get("Id")
+    return None
+
+
+def getDieCastShotFields():
+    """The typed data-collection fields for the active DieCastShot OperationTemplate
+    (the die-cast checkpoint screen, D5). Returns [{'field': {... DataTypeCode}}], or
+    [] if the template is not found."""
+    tid = getActiveTemplateIdByCode("DieCastShot")
+    if tid is None:
+        return []
+    return getDieCastFieldsWithType(tid)
+
+
 # -----------------------------------------------------------------------------
 # Dropdown lookups
 # -----------------------------------------------------------------------------
