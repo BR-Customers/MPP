@@ -4,22 +4,72 @@
       "includeDeprecated": false,
       "searchText": ""
     },
-    "rows": {
-      "AdAccount": "dev.user",
-      "CreatedAt": {
-        "$": [
-          "ts",
-          0,
-          1781630745778
-        ],
-        "$ts": 1781286373635
+    "rows": [
+      {
+        "AdAccount": "dev.user",
+        "CreatedAt": {
+          "$": [
+            "ts",
+            0,
+            1781637538340
+          ],
+          "$ts": 1781286373635
+        },
+        "DeprecatedAt": null,
+        "DisplayName": "Dev User",
+        "Id": 2,
+        "IgnitionRole": "Admin",
+        "Initials": "DEV"
       },
-      "DeprecatedAt": null,
-      "DisplayName": "Dev User",
-      "Id": 2,
-      "IgnitionRole": "Admin",
-      "Initials": "DEV"
-    }
+      {
+        "AdAccount": null,
+        "CreatedAt": {
+          "$": [
+            "ts",
+            0,
+            1781637538340
+          ],
+          "$ts": 1781637232618
+        },
+        "DeprecatedAt": null,
+        "DisplayName": "Jacques Potgieter",
+        "Id": 7,
+        "IgnitionRole": null,
+        "Initials": "JGP"
+      },
+      {
+        "AdAccount": null,
+        "CreatedAt": {
+          "$": [
+            "ts",
+            0,
+            1781637538340
+          ],
+          "$ts": 1781638272959
+        },
+        "DeprecatedAt": null,
+        "DisplayName": "Noah Nesbitt",
+        "Id": 8,
+        "IgnitionRole": null,
+        "Initials": "NEN"
+      },
+      {
+        "AdAccount": "system.bootstrap",
+        "CreatedAt": {
+          "$": [
+            "ts",
+            0,
+            1781637538340
+          ],
+          "$ts": 1781286348227
+        },
+        "DeprecatedAt": null,
+        "DisplayName": "System Bootstrap",
+        "Id": 1,
+        "IgnitionRole": "Admin",
+        "Initials": "SYS"
+      }
+    ]
   },
   "params": {},
   "propConfig": {
@@ -29,7 +79,7 @@
     "custom.rows": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Location.AppUser.getUserList\", 0)"
+          "expression": "runScript(\"BlueRidge.Location.AppUser.getUserList\",0, {view.custom.filter.includeDeprecated})"
         },
         "type": "expr"
       },
@@ -236,6 +286,17 @@
                   {
                     "children": [
                       {
+                        "events": {
+                          "dom": {
+                            "onClick": {
+                              "config": {
+                                "script": "\tsystem.perspective.sendMessage(\"rowRefresh\")"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
                         "meta": {
                           "name": "IncludeDeprecated"
                         },
@@ -395,15 +456,25 @@
                     "meta": {
                       "name": "FlexRepeater"
                     },
-                    "position": {
-                      "basis": "529px"
+                    "propConfig": {
+                      "props.instances": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.rows"
+                          },
+                          "type": "property"
+                        }
+                      }
                     },
                     "props": {
                       "direction": "column",
                       "elementPosition": {
-                        "basis": "auto"
+                        "basis": "48px",
+                        "shrink": 0
                       },
-                      "path": "BlueRidge/Components/UserRow"
+                      "path": "BlueRidge/Components/UserRow",
+                      "useDefaultViewHeight": false,
+                      "useDefaultViewWidth": false
                     },
                     "type": "ia.display.flex-repeater"
                   }
@@ -456,6 +527,19 @@
       "style": {
         "classes": "screen-active"
       }
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "refreshRows",
+          "pageScope": true,
+          "script": "\tself.view.refreshBinding(\"custom.rows\")",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
     },
     "type": "ia.container.flex"
   }
