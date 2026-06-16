@@ -89,7 +89,9 @@
               "name": "DefectDropdown"
             },
             "props": {
-              "placeholder": "Select a defect code"
+              "placeholder": {
+                "text": "Select a defect code"
+              }
             },
             "propConfig": {
               "props.options": {
