@@ -11,7 +11,7 @@
           "$": [
             "ts",
             0,
-            1781637538340
+            1781639914804
           ],
           "$ts": 1781286373635
         },
@@ -27,7 +27,7 @@
           "$": [
             "ts",
             0,
-            1781637538340
+            1781639914804
           ],
           "$ts": 1781637232618
         },
@@ -43,7 +43,7 @@
           "$": [
             "ts",
             0,
-            1781637538340
+            1781639914804
           ],
           "$ts": 1781638272959
         },
@@ -59,7 +59,7 @@
           "$": [
             "ts",
             0,
-            1781637538340
+            1781639914804
           ],
           "$ts": 1781286348227
         },
@@ -191,7 +191,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(id\u003d\"mpp-downtime-code-editor\", view\u003d\"BlueRidge/Components/Popups/DowntimeCodeEditor\", modal\u003dTrue, showCloseIcon\u003dFalse, params\u003d{\"mode\": \"create\", \"editId\": None})"
+                    "script": "\n\tsystem.perspective.openPopup(id\u003d\"mpp-user-editor\", view\u003d\"BlueRidge/Components/Popups/UserEditor\", modal\u003dTrue, showCloseIcon\u003dFalse, params\u003d{\"mode\": \"create\", \"editId\": None})"
                   },
                   "scope": "G",
                   "type": "script"
@@ -454,7 +454,7 @@
                   },
                   {
                     "meta": {
-                      "name": "FlexRepeater"
+                      "name": "Rows"
                     },
                     "propConfig": {
                       "props.instances": {
