@@ -1,7 +1,7 @@
 {
   "custom": {
-    "activeTab": "routes",
-    "activeTabIndex": 1,
+    "activeTab": "containerConfig",
+    "activeTabIndex": 0,
     "itemTypes": [
       "Raw Material",
       "Component",
