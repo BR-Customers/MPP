@@ -129,6 +129,18 @@ The Item Master design has been **reworked from bundled-editDraft + bidi-Object-
 
 ## ✅ Recently closed
 
+### Arc 2 Phase 3 — SQL deltas (migration 0023) built + tested (2026-06-16)
+
+Built the three die-cast front-end SQL dependencies + a concurrency fix, in-session TDD against a fresh `Reset-DevDatabase` baseline (DB had been at `0021` — Phase 3 `0022` was committed but never applied; reset brought it to `0022` then `0023` applied). **Full SQL suite 1535/1535 green** (30 net-new `0023_PlantFloor_DieCast_Deltas/` assertions). On `jacques/working`, commits `7f3da5a` (Phase 4 renumber) → `6f5b7b1`.
+
+- **Migration `0023`** — new `Parts.DataCollectionFieldDataType` FK code table (5 rows String/Integer/Decimal/Boolean/Date) + `Parts.DataCollectionField.DataTypeId` NOT NULL FK (nullable→backfill-by-Code→NOT NULL, DT-2). No audit-lookup rows. Idempotent (verified re-apply = no-op).
+- **`DataCollectionField_List` v3.0** — joins the new code table, returns `DataTypeId/Code/Name` (the FE typed-widget driver, D5).
+- **`Workorder.ProductionEvent_ListByLot`** (new, PE-1a) — header-only chronological checkpoint list, resolved-name joins, empty-safe; `EventAt` raw UTC (FE formats; OI-36 if ET wanted). Feeds the FE cumulative-cavity card + last-shot hint.
+- **`Lot_Create` `@LotName` (D4) + `@CavityNote` (D2)** — additive, backward-compatible (every existing caller/test passes NULL and behaves byte-for-byte as today; the `0021`/`0022` LOT tests pass unmodified). `@LotName` supplied = use verbatim, no `IdentifierSequence` burn; duplicate/blank rejected. `@CavityNote` = manual cavity stored in the legacy `Lot.CavityNumber` when `@ToolCavityId IS NULL` on a die-cast cell; validated cavity path unchanged.
+- **`RejectEvent_Record` TOCTOU fix (v1.1)** — the `@Quantity > @PieceCount` gate read `PieceCount` unlocked pre-transaction; added an in-transaction `IF @NewPieceCount < 0 RAISERROR` re-check under the existing UPDLOCK (routes to CATCH = clean Status 0) so concurrent over-rejects can't drive `PieceCount` negative. (Beyond the deltas-spec scope but a correctness bug; the project-status addendum flagged it.)
+- **Reconciliation folded in (verified vs as-built):** the FE-spec NQ for `ProductionEvent_Record` named `@EventAt` (proc has none — stamps `SYSUTCDATETIME()`) and `@DataCollectionValuesJson` (real param is **`@FieldValuesJson`**) — Part B authors the NQ/entity-script against the real signature (recorded in the plan's reconciliation section).
+- **Next: Part B front-end** (per the plan `docs/superpowers/plans/2026-06-16-arc2-phase3-die-cast-deltas-and-frontend.md`): 5 Core NQs + 4 entity modules + the no-tabs two-column DieCastEntry page + Checkpoint/Reject/row sub-views + 3 routes; gateway RESTART for the new NQs; visual smoke is the deferred manual Designer step. **Open dispositions (non-blocking):** D4 canonical-LOT-id MPP confirmation (server-mint default until then); `ProductionEvent_ListByLot.EventAt` UTC-vs-ET; Tool-reassign-from-plant-floor auth policy.
+
 ### Arc 2 Phase 2 — LOT Lifecycle SQL foundation built end-to-end (2026-06-11)
 
 Migration `0021` + **13 net-new procs** + test suite `0021_PlantFloor_Lot_Lifecycle/` (9 files), **SQL suite 1449/1449**. Brainstormed → spec'd (`docs/superpowers/specs/2026-06-11-arc2-phase2-lot-lifecycle-design.md`) → planned (`docs/superpowers/plans/2026-06-11-arc2-phase2-lot-lifecycle.md`) → built. Tasks 0–5 ran subagent-driven (fresh implementer + spec-review + code-review + fix per task); Tasks 6–7 + integration sign-off ran in normal in-session flow (faster/cheaper for well-specified pattern SQL where context is already held — see the 2026-06-11 process note). All on `jacques/working`, commits `56aefa1`..`6bae073`.
