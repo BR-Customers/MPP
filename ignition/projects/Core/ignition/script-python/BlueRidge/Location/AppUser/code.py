@@ -90,7 +90,14 @@ def updateUser(attributes):
 	BlueRidge.Common.Util.log("initials=%s" % attributes.get("Initials"))
 	return BlueRidge.Common.Db.execOne("location/AppUser_Update", attributes)
 
-
+def emptyMeta():
+    """Blank meta dict for editor create-mode initialization."""
+    return {
+        "id":                   None,
+        "initials":             "",
+        "displayName":          "",
+    }
+    
 def getByInitials(initials):
     """Resolve an AppUser by shop-floor initials. Returns a dict or None."""
     BlueRidge.Common.Util.log("initials=%s" % initials)
