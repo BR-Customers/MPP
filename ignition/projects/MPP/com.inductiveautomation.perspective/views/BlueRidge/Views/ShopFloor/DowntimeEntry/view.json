@@ -1,0 +1,224 @@
+{
+  "custom": {
+    "filter": {
+      "cellLocationId": null
+    },
+    "newReasonCodeId": null,
+    "reasonFilter": {
+      "areaLocationId": null,
+      "downtimeReasonTypeId": null,
+      "includeDeprecated": false,
+      "searchText": ""
+    }
+  },
+  "params": {},
+  "propConfig": {
+    "custom.cellOptions": {
+      "binding": {
+        "config": { "expression": "runScript(\"BlueRidge.Location.Location.listByTier\", 0, \"Cell\")" },
+        "transforms": [
+          {
+            "code": "\treturn [{\"value\": r.get(\"Id\"), \"label\": (r.get(\"Code\") or \"\") + \" - \" + (r.get(\"Name\") or \"\")} for r in (value or [])]",
+            "type": "script"
+          }
+        ],
+        "type": "expr"
+      }
+    },
+    "custom.reasonOptions": {
+      "binding": {
+        "config": { "expression": "runScript(\"BlueRidge.Oee.DowntimeReasonCode.search\", 0, {view.custom.reasonFilter})" },
+        "transforms": [
+          {
+            "code": "\treturn [{\"value\": r.get(\"Id\"), \"label\": (r.get(\"Code\") or \"\") + \" - \" + (r.get(\"Description\") or \"\")} for r in (value or [])]",
+            "type": "script"
+          }
+        ],
+        "type": "expr"
+      }
+    },
+    "custom.rows": {
+      "binding": {
+        "config": { "expression": "runScript(\"BlueRidge.Oee.DowntimeEvent.getOpenByLocation\", 0, {view.custom.filter.cellLocationId})" },
+        "type": "expr"
+      }
+    }
+  },
+  "props": {
+    "defaultSize": { "height": 1080, "width": 1920 }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": { "name": "Title" },
+            "position": { "grow": 1 },
+            "props": { "text": "Downtime Entry", "style": { "fontSize": "22px", "fontWeight": "700" } },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": { "name": "MachineLabel" },
+            "position": { "shrink": 0 },
+            "props": { "text": "Machine:", "style": { "color": "var(--mpp-text-secondary)" } },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": { "name": "CellSelect" },
+            "position": { "basis": "320px", "shrink": 0 },
+            "propConfig": {
+              "props.options": {
+                "binding": { "config": { "path": "view.custom.cellOptions" }, "type": "property" }
+              },
+              "props.value": {
+                "binding": { "config": { "path": "view.custom.filter.cellLocationId" }, "type": "property", "bidirectional": true }
+              }
+            },
+            "props": { "placeholder": "Select machine / cell" },
+            "type": "ia.input.dropdown"
+          }
+        ],
+        "meta": { "name": "Header" },
+        "position": { "shrink": 0 },
+        "props": {
+          "alignItems": "center",
+          "style": { "gap": "12px", "padding": "16px", "borderBottom": "1px solid var(--mpp-border-subtle)" }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": { "name": "OpenHeader" },
+            "position": { "shrink": 0 },
+            "props": { "text": "Open downtime events", "style": { "fontWeight": "600", "padding": "12px 16px 4px 16px" } },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": { "name": "EmptyState" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "meta.visible": {
+                "binding": { "config": { "expression": "len({view.custom.rows}) = 0" }, "type": "expr" }
+              }
+            },
+            "props": { "text": "No open downtime events at this machine.", "style": { "color": "var(--mpp-text-secondary)", "fontStyle": "italic", "padding": "8px 16px" } },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": { "name": "Rows" },
+            "position": { "grow": 1 },
+            "propConfig": {
+              "props.instances": {
+                "binding": {
+                  "config": { "path": "view.custom.rows" },
+                  "transforms": [
+                    {
+                      "code": "\treturn [\n\t\t{\n\t\t\t\"downtimeEventId\": r.get(\"DowntimeEventId\"),\n\t\t\t\"locationCode\":    r.get(\"LocationCode\"),\n\t\t\t\"sourceCode\":      r.get(\"SourceCode\"),\n\t\t\t\"reasonCode\":      r.get(\"ReasonCode\"),\n\t\t\t\"startedAt\":       str(r.get(\"StartedAtEt\")) if r.get(\"StartedAtEt\") is not None else \"\",\n\t\t\t\"hasReason\":       r.get(\"DowntimeReasonCodeId\") is not None\n\t\t}\n\t\tfor r in (value or [])\n\t]",
+                      "type": "script"
+                    }
+                  ],
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "elementPosition": { "basis": "48px", "shrink": 0 },
+              "path": "BlueRidge/Components/PlantFloor/DowntimeEntry/EventRow",
+              "useDefaultViewHeight": false,
+              "useDefaultViewWidth": false
+            },
+            "type": "ia.display.flex-repeater"
+          }
+        ],
+        "meta": { "name": "OpenPanel" },
+        "position": { "grow": 1 },
+        "props": {
+          "direction": "column",
+          "style": { "overflowY": "auto" }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": { "name": "StartLabel" },
+            "position": { "shrink": 0 },
+            "props": { "text": "Start downtime:", "style": { "fontWeight": "600" } },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": { "name": "ReasonSelect" },
+            "position": { "basis": "320px", "shrink": 0 },
+            "propConfig": {
+              "props.options": {
+                "binding": { "config": { "path": "view.custom.reasonOptions" }, "type": "property" }
+              },
+              "props.value": {
+                "binding": { "config": { "path": "view.custom.newReasonCodeId" }, "type": "property", "bidirectional": true }
+              }
+            },
+            "props": { "placeholder": "(reason optional - can assign later)" },
+            "type": "ia.input.dropdown"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tcellId = self.view.custom.filter.cellLocationId\n\tif cellId is None:\n\t\tsystem.perspective.sendMessage(\"downtimeNeedsCell\", scope=\"page\")\n\t\treturn\n\tBlueRidge.Oee.DowntimeEvent.start(cellId, downtimeReasonCodeId=self.view.custom.newReasonCodeId)\n\tself.view.custom.filter = dict(self.view.custom.filter)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": { "name": "StartButton" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "props.enabled": {
+                "binding": { "config": { "expression": "!isNull({view.custom.filter.cellLocationId})" }, "type": "expr" }
+              }
+            },
+            "props": { "style": { "classes": "btn btn-primary" }, "text": "Start Downtime" },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": { "name": "StartPanel" },
+        "position": { "shrink": 0 },
+        "props": {
+          "alignItems": "center",
+          "style": { "gap": "12px", "padding": "16px", "borderTop": "1px solid var(--mpp-border-subtle)" }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "column",
+      "style": { "classes": "screen-active" }
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "downtimeEndRequested",
+          "pageScope": true,
+          "script": "\tBlueRidge.Oee.DowntimeEvent.end(payload[\"downtimeEventId\"])\n\tself.view.custom.filter = dict(self.view.custom.filter)",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "downtimeAssignRequested",
+          "pageScope": true,
+          "script": "\trid = self.view.custom.newReasonCodeId\n\tif rid is not None:\n\t\tBlueRidge.Oee.DowntimeEvent.assignReason(payload[\"downtimeEventId\"], rid)\n\t\tself.view.custom.filter = dict(self.view.custom.filter)",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

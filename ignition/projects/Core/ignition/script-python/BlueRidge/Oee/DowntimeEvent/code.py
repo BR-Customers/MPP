@@ -3,8 +3,9 @@ import BlueRidge.Common.Db
 import BlueRidge.Common.Util
 
 
-def start(locationId, downtimeSourceCodeId, downtimeReasonCodeId=None, shotCount=None, appUserId=None, terminalLocationId=None):
-    """Open a downtime event at a machine/Cell. Returns {Status, Message, NewId}."""
+def start(locationId, downtimeSourceCodeId=None, downtimeReasonCodeId=None, shotCount=None, appUserId=None, terminalLocationId=None):
+    """Open a downtime event at a machine/Cell. downtimeSourceCodeId None => 'Operator'
+    (manual entry); the PLC watcher passes its 'PLC' code explicitly. Returns {Status, Message, NewId}."""
     if appUserId is None:
         appUserId = BlueRidge.Common.Util._currentAppUserId()
     params = {"locationId": locationId, "downtimeReasonCodeId": downtimeReasonCodeId,

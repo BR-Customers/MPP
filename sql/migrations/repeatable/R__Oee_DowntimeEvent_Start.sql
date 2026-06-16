@@ -15,7 +15,7 @@
 
 CREATE OR ALTER PROCEDURE Oee.DowntimeEvent_Start
     @LocationId           BIGINT,
-    @DowntimeSourceCodeId BIGINT,
+    @DowntimeSourceCodeId BIGINT = NULL,   -- NULL => defaults to 'Operator' (manual entry); PLC passes its code explicitly
     @DowntimeReasonCodeId  BIGINT = NULL,
     @ShotCount            INT    = NULL,
     @AppUserId            BIGINT = NULL,
@@ -39,10 +39,14 @@ BEGIN
     DECLARE @ShiftId BIGINT;
 
     BEGIN TRY
+        -- Manual entry defaults to the 'Operator' source (PLC passes its code explicitly).
+        IF @DowntimeSourceCodeId IS NULL
+            SET @DowntimeSourceCodeId = (SELECT Id FROM Oee.DowntimeSourceCode WHERE Code = N'Operator');
+
         -- ---- Tier 1: required-parameter validation ----
         IF @LocationId IS NULL OR @DowntimeSourceCodeId IS NULL
         BEGIN
-            SET @Message = N'Required parameter missing (LocationId, DowntimeSourceCodeId).';
+            SET @Message = N'Required parameter missing (LocationId).';
             IF @AppUserId IS NOT NULL
                 EXEC Audit.Audit_LogFailure
                     @AppUserId = @AppUserId, @LogEntityTypeCode = N'DowntimeEvent', @EntityId = NULL,
