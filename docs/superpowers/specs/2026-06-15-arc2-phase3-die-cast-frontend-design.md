@@ -144,7 +144,7 @@ Path params, not query-string dicts (project convention; mirrors `/shop-floor/lo
 
 ## 5. Named Queries (Core)
 
-**All NQs live in the `Core` project** (`ignition/projects/Core/ignition/named-query/...`). Siblings (MPP, MPP_Config) cannot see each other's NQs; the inherited-NQ registry needs a **gateway RESTART** to pick up new NQs (scan is insufficient — `project_mpp_nq_core_topology`). Two new groups: `tools/` and `workorder/`. Each `resource.json` clones the v2 shape from a Designer-saved sibling (e.g. `lots/Lot_Create/resource.json`), uses Designer's own `sqlType` enum (`3` = BIGINT/Id, `2` = INTEGER, `5` = FLOAT/DECIMAL, `7` = NVARCHAR, `6` = BIT, `8` = DateTime — `04` §"sqlType integer codes"), and sets `database: "MPP"`.
+**All NQs live in the `Core` project** (`ignition/projects/Core/ignition/named-query/...`). Siblings (MPP, MPP_Config) cannot see each other's NQs; **`scan.ps1` picks up new NQs — no gateway restart needed** (corrected 2026-06-12 — `project_mpp_nq_core_topology`). Two new groups (as built: tool NQs went under the existing `parts/` group, not a new `tools/`): `parts/` (the two ToolCavity/ToolAssignment reads) and `workorder/`. Each `resource.json` clones the v2 shape from a Designer-saved sibling (e.g. `lots/Lot_Create/resource.json`), uses Designer's own `sqlType` enum (`3` = BIGINT/Id, `2` = INTEGER, `5` = FLOAT/DECIMAL, `7` = NVARCHAR, `6` = BIT, `8` = DateTime — `04` §"sqlType integer codes"), and sets `database: "MPP"`.
 
 | NQ path | Proc | `attributes.type` | Consumed via |
 |---|---|---|---|
@@ -316,7 +316,7 @@ The five front-end decisions are settled and are now the design above (they repl
 - `onStartup` under `events.system`, not `events.component` (`feedback_ignition_onstartup_system_domain`); `system.perspective.*` from a DOM-event script needs `scope: "G"` (`feedback_ignition_popup_open_scope`); event-script bodies start with `\t`.
 - ASCII-only display strings; ≥ 44 px touch targets; no drag-and-drop (FDS-02-013, `07`).
 - `mpp/` icon paths verified against `ignition/icons/mpp/mpp.svg` before use (`mpp/qr_code_scanner` confirmed present in `CellContextSelector`; `mpp/add` does not exist — use `mpp/add_circle`).
-- New views authored as files + gateway scan; **but new NQs require a gateway RESTART** to register in the inherited registry (`project_mpp_nq_core_topology`).
+- New views + new NQs both register via `scan.ps1` — **no gateway restart needed** (`project_mpp_nq_core_topology`, corrected 2026-06-12).
 
 **Cross-spec dependencies on the sql-deltas spec (RESOLVED there, consumed here):**
 1. **`DataCollectionField.DataType` column** — the D5 widget driver. The sql-deltas spec adds the column and seeds it for the `DieCastShot` fields (`GoodCount`/`BadCount` → Integer, `Weight` → Decimal, `DieInfo`/`CavityInfo` → String). This front-end reads it via `OperationTemplateField_ListByTemplate` and maps it to widgets (§3.2). No code-from-`Code` heuristic remains (NULL → `String` default only). **Owned by the sql-deltas spec.**
@@ -349,7 +349,7 @@ Consistent with how Phase 2 views were smoked (`sql/scratch/smoke_seed_phase2.sq
 6. **Reject (D3):** in the right Reject card, reject < piece count (decrements); reject the remainder (closes the LOT, warning toast); confirm an over-quantity reject is rejected with the proc message.
 7. Verify `notifyResult` toasts fire on every success/failure; verify nothing writes to the DB except on explicit button click; verify the Edit-Tool elevated path opens `ElevationModal`.
 
-**Automated coverage** stays in the SQL suite (`0022_PlantFloor_DieCast`, SQL spec §7) — the front-end has no unit harness; the smoke walkthrough is the front-end verification gate. Run `.\scan.ps1` after writing the new views; **restart the gateway** after adding the new Core NQs.
+**Automated coverage** stays in the SQL suite (`0022_PlantFloor_DieCast`, SQL spec §7) — the front-end has no unit harness; the smoke walkthrough is the front-end verification gate. Run `.\scan.ps1` after writing the new views + NQs (no gateway restart needed).
 
 ## 11. Out of scope
 
@@ -365,7 +365,7 @@ Consistent with how Phase 2 views were smoked (`sql/scratch/smoke_seed_phase2.sq
 ## 12. Phase 3 front-end complete when
 
 - The single **no-tabs, two-column** `DieCastEntry` page (matching the mockup, D1) + the `CheckpointPanel` / `RejectPanel` embedded cards + `FieldInputRow` / `PeerTallyRow` row sub-views authored in MPP, scanned, rendering on a tablet-width viewport with ≥ 44 px targets, stacking correctly on narrow.
-- Core NQs (`workorder/ProductionEvent_Record`, `workorder/RejectEvent_Record`, `tools/ToolCavity_ListActiveByTool`, `tools/ToolAssignment_ListActiveByCell`, `workorder/ProductionEvent_ListByLot`) created with `type:"Query"` on the mutation pair; `lots/Lot_Create/query.sql` gains the `:lotName` line (D4); the gateway restarted so the new NQs register.
+- Core NQs (`workorder/ProductionEvent_Record`, `workorder/RejectEvent_Record`, `tools/ToolCavity_ListActiveByTool`, `tools/ToolAssignment_ListActiveByCell`, `workorder/ProductionEvent_ListByLot`) created with `type:"Query"` on the mutation pair; `lots/Lot_Create/query.sql` gains the `:lotName` line (D4); `scan.ps1` registers the new NQs (no gateway restart).
 - Core entity modules `BlueRidge.Workorder.ProductionEvent`, `BlueRidge.Workorder.RejectEvent`, `BlueRidge.Tools.ToolCavity`, `BlueRidge.Tools.ToolAssignment` delivered (thin wrappers, no business logic); `BlueRidge.Lots.Lot.create` forwards the optional `lotName` (D4).
 - Three `/shop-floor/die-cast*` routes + the HomeRouter Die Cast tile wired.
 - The smoke walkthrough (§10) passes end-to-end: minimal-tap create (D1), free-entry cavity (D2), cavity-peer create (D3, flat genealogy), data-driven checkpoint (D5) + unchanged inventory (D2), reject + close-at-zero (D3), all with `notifyResult` toasts.

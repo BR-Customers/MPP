@@ -881,7 +881,7 @@ git commit -m "docs(status): Phase 3 SQL deltas (0023) built + tested"
 
 # PART B — DIE CAST OPERATOR STATION (Ignition Perspective)
 
-> Execution mode: **parallel-view-authoring + convergence** for the NEW views (per `feedback_parallel_view_authoring_convergence`); the NQ + entity-script layers are authored serially first (the views bind to them). NQs live in **Core**; views in **MPP**. **New NQs need a gateway RESTART** to register in the inherited registry (`project_mpp_nq_core_topology`) — a `scan.ps1` is NOT enough for NQs.
+> Execution mode: **parallel-view-authoring + convergence** for the NEW views (per `feedback_parallel_view_authoring_convergence`); the NQ + entity-script layers are authored serially first (the views bind to them). NQs live in **Core**; views in **MPP**. **`scan.ps1` registers new NQs — no gateway restart needed** (corrected 2026-06-12; if an inherited NQ is "not found" after scan, the cause is topology — it's in a sibling, not Core — not a stale registry).
 
 > **Pre-flight (do once, before B1):** re-read `pull.ps1` + ALL `ignition-context-pack/*` + `git log --oneline -- ignition/` (session-start checks, `feedback_ignition_session_start_checks`). Confirm `mpp/qr_code_scanner` exists in `ignition/icons/mpp/mpp.svg` (`feedback_mpp_icon_paths_verify`).
 
@@ -946,8 +946,8 @@ param `cellLocationId` = 3. (Confirm the as-built proc's param name.) `attribute
 ```
 Add `lotName` (sqlType 7, nullable) + `cavityNote` (sqlType 7, nullable) to `lots/Lot_Create/resource.json` params.
 
-- [ ] **Step 7: `scan.ps1`** then **restart the gateway** so the new Core NQs register.
-Run: `./scan.ps1` then restart the Ignition gateway service.
+- [ ] **Step 7: `scan.ps1`** so the new Core NQs register (no gateway restart needed).
+Run: `./scan.ps1`.
 
 - [ ] **Step 8: Commit.**
 ```bash
