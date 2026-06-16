@@ -1,8 +1,11 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_RejectEvent_Record.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-06-15
--- Version:     1.0
+-- Modified:    2026-06-16
+-- Version:     1.1
+-- Change Log:  2026-06-16 - 1.1 - TOCTOU guard: re-check the decremented PieceCount
+--                                 under UPDLOCK; RAISERROR on negative (concurrent
+--                                 over-reject) routes to CATCH = clean Status 0.
 -- Description: Arc 2 Phase 3 (§4.2 + D3). Records ONE reject/scrap event against
 --              a LOT (Workorder.RejectEvent) and, per D3, decrements the LOT's
 --              materialized B5 quantities (Lot.PieceCount + Lot.InventoryAvailable)
@@ -215,6 +218,15 @@ BEGIN
             l.UpdatedByUserId   = @AppUserId
         FROM Lots.Lot l WITH (UPDLOCK, HOLDLOCK)
         WHERE l.Id = @LotId;
+
+        -- Concurrency guard (TOCTOU): the @Quantity > @PieceCount gate above read
+        -- PieceCount UNLOCKED, before BEGIN TRANSACTION. Re-check against the value
+        -- read under UPDLOCK; a concurrent reject that slipped between the gate and
+        -- this lock would drive PieceCount negative (and skip close-at-zero, since
+        -- @NewPieceCount would be < 0, not = 0). RAISERROR lands in the CATCH (the
+        -- only legal ROLLBACK site under INSERT-EXEC / Msg-3915) -> clean Status=0.
+        IF @NewPieceCount < 0
+            RAISERROR(N'Reject Quantity exceeds the LOT''s remaining pieces (concurrent update). Reload and retry.', 16, 1);
 
         -- ----- Reject audit (resolved-FK JSON + readable Description) -----
         DECLARE @LotName    NVARCHAR(50)  = (SELECT LotName FROM Lots.Lot WHERE Id = @LotId);
