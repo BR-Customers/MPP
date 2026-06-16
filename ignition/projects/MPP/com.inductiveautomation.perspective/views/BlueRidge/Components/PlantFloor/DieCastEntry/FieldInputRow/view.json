@@ -83,9 +83,9 @@
             "binding": {
               "type": "property",
               "config": {
-                "path": "view.custom.value"
-              },
-              "bidirectional": true
+                "path": "view.custom.value",
+                "bidirectional": true
+              }
             }
           }
         },
@@ -126,9 +126,9 @@
             "binding": {
               "type": "property",
               "config": {
-                "path": "view.custom.value"
-              },
-              "bidirectional": true
+                "path": "view.custom.value",
+                "bidirectional": true
+              }
             }
           }
         },
@@ -167,9 +167,9 @@
             "binding": {
               "type": "property",
               "config": {
-                "path": "view.custom.value"
-              },
-              "bidirectional": true
+                "path": "view.custom.value",
+                "bidirectional": true
+              }
             }
           }
         },
@@ -206,9 +206,9 @@
             "binding": {
               "type": "property",
               "config": {
-                "path": "view.custom.value"
-              },
-              "bidirectional": true
+                "path": "view.custom.value",
+                "bidirectional": true
+              }
             }
           }
         },

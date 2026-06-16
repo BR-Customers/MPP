@@ -131,9 +131,9 @@
                     "binding": {
                       "type": "property",
                       "config": {
-                        "path": "view.custom.draft.shotCount"
-                      },
-                      "bidirectional": true
+                        "path": "view.custom.draft.shotCount",
+                        "bidirectional": true
+                      }
                     }
                   }
                 }
@@ -181,9 +181,9 @@
                     "binding": {
                       "type": "property",
                       "config": {
-                        "path": "view.custom.draft.scrapCount"
-                      },
-                      "bidirectional": true
+                        "path": "view.custom.draft.scrapCount",
+                        "bidirectional": true
+                      }
                     }
                   }
                 }

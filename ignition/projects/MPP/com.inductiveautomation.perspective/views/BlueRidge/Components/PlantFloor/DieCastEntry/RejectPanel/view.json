@@ -106,9 +106,9 @@
                 "binding": {
                   "type": "property",
                   "config": {
-                    "path": "view.custom.draft.defectCodeId"
-                  },
-                  "bidirectional": true
+                    "path": "view.custom.draft.defectCodeId",
+                    "bidirectional": true
+                  }
                 }
               }
             }
@@ -157,9 +157,9 @@
                 "binding": {
                   "type": "property",
                   "config": {
-                    "path": "view.custom.draft.quantity"
-                  },
-                  "bidirectional": true
+                    "path": "view.custom.draft.quantity",
+                    "bidirectional": true
+                  }
                 }
               }
             }

@@ -296,9 +296,9 @@
                 "binding": {
                   "type": "property",
                   "config": {
-                    "path": "view.custom.selectedCellId"
-                  },
-                  "bidirectional": true
+                    "path": "view.custom.selectedCellId",
+                    "bidirectional": true
+                  }
                 }
               }
             },
@@ -437,9 +437,9 @@
                         "binding": {
                           "type": "property",
                           "config": {
-                            "path": "view.custom.editDraft.scannedLtt"
-                          },
-                          "bidirectional": true
+                            "path": "view.custom.editDraft.scannedLtt",
+                            "bidirectional": true
+                          }
                         }
                       }
                     }
@@ -510,9 +510,9 @@
                         "binding": {
                           "type": "property",
                           "config": {
-                            "path": "view.custom.editDraft.itemId"
-                          },
-                          "bidirectional": true
+                            "path": "view.custom.editDraft.itemId",
+                            "bidirectional": true
+                          }
                         }
                       }
                     }
@@ -692,9 +692,9 @@
                             "binding": {
                               "type": "property",
                               "config": {
-                                "path": "view.custom.editDraft.toolCavityId"
-                              },
-                              "bidirectional": true
+                                "path": "view.custom.editDraft.toolCavityId",
+                                "bidirectional": true
+                              }
                             }
                           }
                         }
@@ -771,9 +771,9 @@
                             "binding": {
                               "type": "property",
                               "config": {
-                                "path": "view.custom.editDraft.pieceCount"
-                              },
-                              "bidirectional": true
+                                "path": "view.custom.editDraft.pieceCount",
+                                "bidirectional": true
+                              }
                             }
                           }
                         }
@@ -824,9 +824,9 @@
                             "binding": {
                               "type": "property",
                               "config": {
-                                "path": "view.custom.editDraft.weight"
-                              },
-                              "bidirectional": true
+                                "path": "view.custom.editDraft.weight",
+                                "bidirectional": true
+                              }
                             }
                           }
                         }
@@ -1153,6 +1153,13 @@
     ],
     "scripts": {
       "messageHandlers": [
+        {
+          "messageType": "mpp-toast",
+          "pageScope": false,
+          "sessionScope": true,
+          "viewScope": false,
+          "script": "\tBlueRidge.Common.Notify._handle(self, payload)"
+        },
         {
           "messageType": "checkpointRecorded",
           "pageScope": true,
