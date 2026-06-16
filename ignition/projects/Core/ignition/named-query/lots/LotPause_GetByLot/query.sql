@@ -1,0 +1,1 @@
+EXEC Lots.LotPause_GetByLot @LotId = :lotId

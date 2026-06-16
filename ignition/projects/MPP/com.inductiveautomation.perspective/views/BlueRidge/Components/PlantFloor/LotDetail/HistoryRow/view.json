@@ -1,0 +1,169 @@
+{
+  "custom": {},
+  "params": {
+    "row": {
+      "EventAt": "",
+      "EventKind": "",
+      "Detail": "",
+      "ByUserName": ""
+    }
+  },
+  "propConfig": {
+    "params.row": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 44,
+      "width": 800
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "gap": "12px",
+        "minHeight": "44px",
+        "paddingLeft": "12px",
+        "paddingRight": "12px",
+        "paddingTop": "8px",
+        "paddingBottom": "8px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.icon",
+        "meta": {
+          "name": "KindIcon"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.path": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.row.EventKind}=\"Movement\",\"material/swap_horiz\",if({view.params.row.EventKind}=\"Status\",\"material/flag\",if({view.params.row.EventKind}=\"Attribute\",\"material/edit\",if({view.params.row.EventKind}=\"Pause\",\"material/pause\",if({view.params.row.EventKind}=\"Resume\",\"material/play_arrow\",if({view.params.row.EventKind}=\"Genealogy\",\"material/call_split\",if({view.params.row.EventKind}=\"Label\",\"material/label\",\"material/circle\")))))))"
+              }
+            }
+          },
+          "props.color": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.row.EventKind}=\"Movement\",\"#5b8def\",if({view.params.row.EventKind}=\"Status\",\"#3fb950\",if({view.params.row.EventKind}=\"Attribute\",\"#d29922\",if({view.params.row.EventKind}=\"Pause\",\"#db8b3a\",if({view.params.row.EventKind}=\"Resume\",\"#2dd4bf\",if({view.params.row.EventKind}=\"Genealogy\",\"#a371f7\",\"#8b949e\"))))))"
+              }
+            }
+          }
+        },
+        "props": {
+          "path": "material/circle",
+          "style": {
+            "width": "18px",
+            "height": "18px"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "EventKindBadge"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.row.EventKind"
+              }
+            }
+          },
+          "props.style.color": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.row.EventKind}=\"Movement\",\"#5b8def\",if({view.params.row.EventKind}=\"Status\",\"#3fb950\",if({view.params.row.EventKind}=\"Attribute\",\"#d29922\",if({view.params.row.EventKind}=\"Pause\",\"#db8b3a\",if({view.params.row.EventKind}=\"Resume\",\"#2dd4bf\",if({view.params.row.EventKind}=\"Genealogy\",\"#a371f7\",\"#8b949e\"))))))"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "background": "var(--mpp-surface-alt)",
+            "borderRadius": "4px",
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "11px",
+            "fontWeight": "600",
+            "letterSpacing": "0.05em",
+            "padding": "2px 8px",
+            "textTransform": "uppercase",
+            "width": "80px"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "DetailLabel"
+        },
+        "position": {
+          "grow": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.row.Detail"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-primary)",
+            "fontSize": "14px"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "MetaLabel"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if(dateDiff({view.params.row.EventAt}, now(60000), \"minute\") < 1, \"just now\", if(dateDiff({view.params.row.EventAt}, now(60000), \"minute\") < 60, toStr(dateDiff({view.params.row.EventAt}, now(60000), \"minute\")) + \"m ago\", if(dateDiff({view.params.row.EventAt}, now(60000), \"hour\") < 24, toStr(dateDiff({view.params.row.EventAt}, now(60000), \"hour\")) + \"h ago\", toStr(dateDiff({view.params.row.EventAt}, now(60000), \"day\")) + \"d ago\"))) + \"  ·  \" + toStr({view.params.row.ByUserName}) + \"  ·  \" + dateFormat({view.params.row.EventAt}, \"MM/dd HH:mm\")"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "12px"
+          }
+        }
+      }
+    ]
+  }
+}

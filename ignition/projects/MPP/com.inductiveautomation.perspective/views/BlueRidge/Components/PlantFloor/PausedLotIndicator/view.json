@@ -1,0 +1,156 @@
+{
+  "custom": {
+    "count": {"OpenPauseCount": 0}
+  },
+  "params": {
+    "locationId": null
+  },
+  "propConfig": {
+    "params.locationId": {
+      "paramDirection": "input",
+      "persistent": true,
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.view.rootContainer.load()"
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 44,
+      "width": 160
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "gap": "8px",
+        "padding": "8px 14px",
+        "background": "var(--pf-status-warn-bg)",
+        "border": "1px solid var(--pf-status-warn-fg)",
+        "borderRadius": "var(--radius-lg)",
+        "color": "var(--pf-status-warn-fg)",
+        "fontSize": "13px",
+        "fontWeight": "500",
+        "cursor": "pointer",
+        "display": "inline-flex"
+      }
+    },
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tself.load()"
+          }
+        }
+      },
+      "dom": {
+        "onClick": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tsystem.perspective.openPopup(id=\"mpp-paused-list\", view=\"BlueRidge/Components/Popups/PausedLotList\", params={\"locationId\": self.view.params.locationId}, modal=True)"
+          }
+        }
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "load",
+          "params": [],
+          "script": "\tresult = BlueRidge.Lots.LotPause.getCountByLocation(self.view.params.locationId)\n\tself.view.custom.count = result if result is not None else {\"OpenPauseCount\": 0}"
+        }
+      ],
+      "messageHandlers": [
+        {
+          "messageType": "pausedLotResumed",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tself.load()"
+        }
+      ]
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "PauseIcon"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "text": "⏸",
+          "style": {
+            "fontSize": "14px",
+            "lineHeight": "1"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "PausedLabel"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "text": "Paused",
+          "style": {
+            "fontSize": "13px",
+            "fontWeight": "500"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "CountChip"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.custom.count.OpenPauseCount})"
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "0",
+          "style": {
+            "display": "inline-flex",
+            "alignItems": "center",
+            "justifyContent": "center",
+            "minWidth": "32px",
+            "padding": "0 8px",
+            "height": "24px",
+            "borderRadius": "12px",
+            "background": "var(--pf-status-warn-fg)",
+            "color": "var(--bg-panel)",
+            "fontWeight": "700",
+            "fontSize": "13px"
+          }
+        }
+      }
+    ]
+  }
+}

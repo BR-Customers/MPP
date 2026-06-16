@@ -1,0 +1,479 @@
+{
+  "custom": {
+    "editDisplayName": "",
+    "editInitials": "",
+    "error": "",
+    "focusedField": "displayName"
+  },
+  "params": {
+    "initials": "",
+    "popupId": "mpp-register-operator",
+    "replyMessage": "registerOperatorResult"
+  },
+  "propConfig": {
+    "params.initials": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.popupId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.replyMessage": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 760,
+      "width": 880
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "modal"
+      }
+    },
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tself.view.custom.editInitials = self.view.params.initials or \"\"\n\tself.view.custom.editDisplayName = \"\"\n\tself.view.custom.focusedField = \"displayName\"\n\tself.view.custom.error = \"\""
+          }
+        }
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "appendToFocused",
+          "params": [
+            "ch"
+          ],
+          "script": "\tself.view.custom.error = \"\"\n\tif self.view.custom.focusedField == \"initials\":\n\t\tself.view.custom.editInitials = (self.view.custom.editInitials or \"\") + ch\n\telse:\n\t\tself.view.custom.editDisplayName = (self.view.custom.editDisplayName or \"\") + ch"
+        },
+        {
+          "name": "backspaceFocused",
+          "params": [],
+          "script": "\tself.view.custom.error = \"\"\n\tif self.view.custom.focusedField == \"initials\":\n\t\tself.view.custom.editInitials = (self.view.custom.editInitials or \"\")[:-1]\n\telse:\n\t\tself.view.custom.editDisplayName = (self.view.custom.editDisplayName or \"\")[:-1]"
+        },
+        {
+          "name": "clearFocused",
+          "params": [],
+          "script": "\tself.view.custom.error = \"\"\n\tif self.view.custom.focusedField == \"initials\":\n\t\tself.view.custom.editInitials = \"\"\n\telse:\n\t\tself.view.custom.editDisplayName = \"\""
+        },
+        {
+          "name": "saveOperator",
+          "params": [],
+          "script": "\tinitials = (self.view.custom.editInitials or \"\").strip()\n\tname = (self.view.custom.editDisplayName or \"\").strip()\n\tif not initials or not name:\n\t\tself.view.custom.error = \"Initials and display name are both required.\"\n\t\treturn\n\tres = BlueRidge.Location.AppUser.create({\"initials\": initials, \"displayName\": name})\n\tif res and res.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"action\": \"registered\", \"initials\": initials.upper(), \"appUserId\": res.get(\"NewId\"), \"displayName\": name}, scope=\"page\")\n\t\tsystem.perspective.closePopup(id=self.view.params.popupId)\n\telse:\n\t\tself.view.custom.error = (res.get(\"Message\") if res else None) or \"Could not create operator\""
+        }
+      ],
+      "messageHandlers": [
+        {
+          "messageType": "registerKeyPressed",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\ta = payload.get(\"action\") if payload else None\n\tif a == \"key\":\n\t\tself.appendToFocused(payload.get(\"key\"))\n\telif a == \"space\":\n\t\tself.appendToFocused(\" \")\n\telif a == \"backspace\":\n\t\tself.backspaceFocused()\n\telif a == \"clear\":\n\t\tself.clearFocused()\n\telif a == \"enter\":\n\t\tself.saveOperator()"
+        }
+      ]
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "classes": "modal-header",
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.icon",
+            "meta": {
+              "name": "AddUserIcon"
+            },
+            "position": {
+              "basis": "22px",
+              "shrink": 0
+            },
+            "props": {
+              "path": "material/person_add",
+              "style": {
+                "width": "22px",
+                "height": "22px",
+                "color": "var(--mpp-text-accent)"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "HeaderTitle"
+            },
+            "position": {
+              "basis": "auto",
+              "grow": 1
+            },
+            "props": {
+              "text": "Register New Operator"
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "modal-body",
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "FieldsRow"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "row",
+              "alignItems": "flex-start",
+              "style": {
+                "gap": "16px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "InitialsField"
+                },
+                "position": {
+                  "basis": "200px",
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-field"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "InitialsLabel"
+                    },
+                    "position": {
+                      "basis": "auto",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Initials",
+                      "style": {
+                        "classes": "pf-field-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.text-field",
+                    "meta": {
+                      "name": "InitialsInput"
+                    },
+                    "position": {
+                      "basis": "auto",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.editInitials"
+                          }
+                        }
+                      },
+                      "props.style.border": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "if({view.custom.focusedField} = \"initials\", \"2px solid var(--mpp-text-accent)\", \"1px solid var(--mpp-border-subtle)\")"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "placeholder": "AB",
+                      "style": {
+                        "classes": "pf-field-input",
+                        "textTransform": "uppercase"
+                      }
+                    },
+                    "events": {
+                      "dom": {
+                        "onFocus": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.custom.focusedField = \"initials\""
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "DisplayNameField"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-field"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "DisplayNameLabel"
+                    },
+                    "position": {
+                      "basis": "auto",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Display Name",
+                      "style": {
+                        "classes": "pf-field-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.text-field",
+                    "meta": {
+                      "name": "DisplayNameInput"
+                    },
+                    "position": {
+                      "basis": "auto",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.editDisplayName"
+                          }
+                        }
+                      },
+                      "props.style.border": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "if({view.custom.focusedField} = \"displayName\", \"2px solid var(--mpp-text-accent)\", \"1px solid var(--mpp-border-subtle)\")"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "placeholder": "Full name",
+                      "style": {
+                        "classes": "pf-field-input"
+                      }
+                    },
+                    "events": {
+                      "dom": {
+                        "onFocus": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.custom.focusedField = \"displayName\""
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "ia.display.view",
+            "meta": {
+              "name": "Keyboard"
+            },
+            "position": {
+              "basis": "280px",
+              "shrink": 0
+            },
+            "props": {
+              "params": {
+                "messageName": "registerKeyPressed"
+              },
+              "path": "BlueRidge/Components/PlantFloor/Keyboard",
+              "style": {
+                "width": "800px"
+              },
+              "useDefaultViewHeight": false,
+              "useDefaultViewWidth": false
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "ErrorLabel"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.custom.error} != \"\""
+                  }
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.error"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-state-bad-fg)",
+                "fontSize": "14px"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Footer"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "justify": "flex-end",
+          "style": {
+            "classes": "modal-footer",
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "CancelButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Cancel",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"action\": \"cancel\"}, scope=\"page\")\n\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "SaveButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.custom.editInitials} != \"\" && {view.custom.editDisplayName} != \"\""
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Save & Continue",
+              "style": {
+                "classes": "pf-btn pf-btn-primary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tself.view.rootContainer.saveOperator()"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

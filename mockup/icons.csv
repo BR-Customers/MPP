@@ -38,5 +38,6 @@ ops,Sections,"Operations / time",⏰,U+23F0,pending_actions
 user,Sections,"Users",👤,U+1F464,group
 trim,Sections,"Trim shop",✂,U+2702,content_cut
 qr,Sections,"Barcode / scan",⊞,U+229E,qr_code_scanner
+printer,Sections,"Printer / label printing",🖨,U+1F5A8,print
 warning,Status,"Warning",⚠,U+26A0,warning
 fire,Status,"Hot / urgent",🔥,U+1F525,local_fire_department

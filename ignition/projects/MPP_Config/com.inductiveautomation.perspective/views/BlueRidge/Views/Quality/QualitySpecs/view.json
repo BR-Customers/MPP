@@ -1939,7 +1939,7 @@
       }
     ],
     "events": {
-      "component": {
+      "system": {
         "onStartup": {
           "config": {
             "script": "\tself.rootContainer.initIncoming()"

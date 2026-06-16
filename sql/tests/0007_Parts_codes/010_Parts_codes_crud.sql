@@ -415,7 +415,8 @@ GO
 
 -- Test: DataCollectionField_List returns 7 active seeded rows
 DECLARE @Count INT;
-CREATE TABLE #R (Id BIGINT, Code NVARCHAR(50), Name NVARCHAR(100), Description NVARCHAR(500), CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3));
+-- v3.0 (migration 0023) widened the SELECT: + DataTypeId/DataTypeCode/DataTypeName.
+CREATE TABLE #R (Id BIGINT, Code NVARCHAR(50), Name NVARCHAR(100), Description NVARCHAR(500), DataTypeId BIGINT, DataTypeCode NVARCHAR(50), DataTypeName NVARCHAR(100), CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3));
 INSERT INTO #R EXEC Parts.DataCollectionField_List;
 SELECT @Count = COUNT(*) FROM #R;
 DROP TABLE #R;

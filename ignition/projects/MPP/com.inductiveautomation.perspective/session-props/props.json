@@ -6,12 +6,14 @@
       "locationId": null,
       "name": ""
     },
+    "presence": {
+      "policy": "strict"
+    },
     "terminal": {
       "defaultScreen": "",
       "isFallback": false,
       "terminalCode": "",
       "terminalLocationId": null,
-      "terminalMode": "",
       "terminalName": "",
       "zoneLocationId": null,
       "zoneName": ""

@@ -4,6 +4,10 @@
       "title": "MPP MES",
       "viewPath": "BlueRidge/Views/ShopFloor/HomeRouter"
     },
+    "/navigation-testing": {
+      "title": "",
+      "viewPath": "BlueRidge/Views/Navigation Testing"
+    },
     "/shop-floor/initials": {
       "title": "Operator Entry",
       "viewPath": "BlueRidge/Views/ShopFloor/InitialsEntry"
@@ -11,6 +15,35 @@
     "/shop-floor/terminal-selector": {
       "title": "Select Terminal",
       "viewPath": "BlueRidge/Views/ShopFloor/TerminalSelector"
+    },
+    "/shop-floor/lot-detail/:lotId": {
+      "title": "LOT Detail",
+      "viewPath": "BlueRidge/Views/ShopFloor/LotDetail"
+    },
+    "/shop-floor/lot-search": {
+      "title": "LOT Search",
+      "viewPath": "BlueRidge/Views/ShopFloor/LotSearch"
+    },
+    "/shop-floor/genealogy": {
+      "title": "Genealogy",
+      "viewPath": "BlueRidge/Views/ShopFloor/GenealogyViewer"
+    },
+    "/shop-floor/die-cast": {
+      "title": "Die Cast Entry",
+      "viewPath": "BlueRidge/Views/ShopFloor/DieCastEntry"
+    },
+    "/shop-floor/die-cast/area/:areaId": {
+      "title": "Die Cast Entry",
+      "viewPath": "BlueRidge/Views/ShopFloor/DieCastEntry"
+    },
+    "/shop-floor/die-cast/checkpoint/:lotId": {
+      "title": "Checkpoint",
+      "viewPath": "BlueRidge/Views/ShopFloor/DieCastEntry"
+    },
+    "/shop-floor/die-cast/reject/:lotId": {
+      "title": "Reject",
+      "viewPath": "BlueRidge/Views/ShopFloor/DieCastEntry"
     }
-  }
+  },
+  "sharedDocks": {}
 }

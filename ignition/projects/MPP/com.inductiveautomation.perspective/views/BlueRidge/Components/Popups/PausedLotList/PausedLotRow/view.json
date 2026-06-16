@@ -1,0 +1,201 @@
+{
+  "custom": {},
+  "params": {
+    "PauseEventId": null,
+    "LotId": null,
+    "LotName": "",
+    "ItemCode": "",
+    "PausedAt": null,
+    "PausedByUserId": null,
+    "PausedReason": ""
+  },
+  "propConfig": {
+    "params.PauseEventId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.LotId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.LotName": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.ItemCode": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.PausedAt": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.PausedByUserId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.PausedReason": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 64,
+      "width": 680
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "gap": "12px",
+        "padding": "12px 16px",
+        "borderBottom": "1px solid var(--border)"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "RowInfo"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "4px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "LotItemLine"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.LotName} + \" · \" + {view.params.ItemCode}"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "fontSize": "14px",
+                "fontWeight": "600",
+                "color": "var(--mpp-text-primary)"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "MetaLine"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\"Paused \" + dateFormat({view.params.PausedAt}, \"MM/dd HH:mm\") + \" · Op \" + toStr({view.params.PausedByUserId})"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "fontSize": "12px",
+                "color": "var(--mpp-text-secondary)"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "ReasonLine"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.PausedReason} != \"\""
+                  }
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.PausedReason"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "fontSize": "12px",
+                "color": "var(--mpp-text-secondary)",
+                "fontStyle": "italic"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "ResumeButton"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "text": "Resume",
+          "style": {
+            "classes": "pf-btn pf-btn-primary"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"resumePauseRequested\", {\"pauseEventId\": self.view.params.PauseEventId, \"lotId\": self.view.params.LotId}, scope=\"page\")"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

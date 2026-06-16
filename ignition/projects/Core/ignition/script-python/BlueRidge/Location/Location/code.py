@@ -210,10 +210,11 @@ def listByTier(tierCode):
 def getCellsForDropdown():
     """Cell-tier Locations shaped for ia.input.dropdown + scan matching.
 
-       Used by the Cell Context Selector (Shared terminals) so the operator
-       can pick the active Cell. Each option carries the dropdown contract
-       keys (label/value) plus code/name so the scan-match path can resolve
-       a scanned Cell.Code back to its row without a second DB round-trip.
+       SUPERSEDED for the Cell Context Selector by
+       BlueRidge.Location.Terminal.getContextCellsForDropdown (view-policy
+       model, 2026-06-10) which scopes to the terminal parent's descendant
+       equipment cells. This generic all-Cells variant remains for ad-hoc
+       dropdowns but note it includes Terminal/Printer kind cells.
 
        PHASE-1 SIMPLIFICATION: the Cell Context Selector currently scopes to
        "pick a Cell + persist + broadcast" only. The design's cascading
@@ -240,6 +241,50 @@ def getCellsForDropdown():
             "name":  name,
         })
     return out
+
+
+def getCellsForAreaDropdown(areaId):
+    """The pickable equipment cells beneath an Area (excludes Terminal/Printer),
+    shaped for ia.input.dropdown + scan matching:
+        [{label: '<Code> - <Name>', value: LocationId, code, name}].
+    Always a list (never None). Empty if areaId is None or has no equipment cells.
+    Wraps Location.Location_ListCellsForArea. Used by the area-parameterized
+    die-cast entry screen's Cell dropdown."""
+    areaId = _u(areaId)
+    BlueRidge.Common.Util.log("getCellsForAreaDropdown areaId=%s" % areaId)
+    if areaId is None or areaId == "":
+        return []
+    try:
+        areaId = int(areaId)   # page-param arrives as a string from the URL
+    except (ValueError, TypeError):
+        return []
+    try:
+        rows = BlueRidge.Common.Db.execList(
+            "location/Location_ListCellsForArea", {"areaLocationId": areaId})
+    except Exception as e:
+        BlueRidge.Common.Util.log("getCellsForAreaDropdown failed: %s" % str(e))
+        return []
+    out = []
+    for r in (rows or []):
+        code = r.get("Code") or ""
+        name = r.get("Name") or ""
+        out.append({
+            "label": ("%s - %s" % (code, name)).strip(" -"),
+            "value": r.get("LocationId"),
+            "code":  code,
+            "name":  name,
+        })
+    return out
+
+
+def getCellsForAreaOrTerminal(areaId, terminalLocationId):
+    """Cell-dropdown source for the die-cast entry screen: area-scoped equipment
+    cells when an areaId page-param is supplied, else the terminal's context cells.
+    One query either way; always a list."""
+    areaId = _u(areaId)
+    if areaId is not None:
+        return getCellsForAreaDropdown(areaId)
+    return BlueRidge.Location.Terminal.getContextCellsForDropdown(_u(terminalLocationId))
 
 
 def findCellById(cells, cellId):

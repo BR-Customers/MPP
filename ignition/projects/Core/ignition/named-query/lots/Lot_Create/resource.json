@@ -94,6 +94,16 @@
         "type": "Parameter",
         "identifier": "terminalLocationId",
         "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "lotName",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "cavityNote",
+        "sqlType": 7
       }
     ]
   }

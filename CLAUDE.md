@@ -88,6 +88,7 @@ Follow `sql_best_practices_mes.md` and `sql_version_control_guide.md`:
 - `BIGINT IDENTITY` surrogate `Id` PKs everywhere; `BIGINT` for FKs
 - `NVARCHAR` (never `VARCHAR`)
 - `DATETIME2(3)` everywhere; `DECIMAL` not `FLOAT`
+- **Timestamps stored UTC, displayed Eastern.** Persist event/audit times with `GETUTCDATETIME()`; every operator-facing read/display proc converts at the boundary via `CAST(<col> AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3))` (the Audit Browser + LOT history timeline already do). **All displayed timestamps are ET.** Refactor sweep of the remaining UTC-displaying reads is tracked as OI-36.
 - All enum/status columns code-table backed with FK — no magic integers, no free-text
 - User attribution via `BIGINT FK → AppUser.Id`
 - Append-only events; `DeprecatedAt` soft deletes
@@ -111,6 +112,7 @@ Stored procedures **SHALL NOT** use `OUTPUT` parameters — the Ignition JDBC dr
 - **Audit writers (`Audit.Audit_Log*`):** Emit no result set — they run inside mutation-proc transactions; emitting would break INSERT-EXEC + ROLLBACK.
 - **One result set per proc.** If two were returned in legacy design, drop the second and use the sibling List proc.
 - **Test pattern:** INSERT-EXEC into a temp table matching the SELECT shape, assert against the temp table.
+- **A proc captured via `INSERT … EXEC` must NOT `EXEC` another status-row proc, and must NOT `ROLLBACK` inside an open caller transaction.** A mutation proc that itself returns a status row (and is therefore captured via `INSERT-EXEC` by tests/callers) cannot `EXEC` a sibling status-row proc — the inner `SELECT` pollutes the caller's single result set, and nesting `INSERT-EXEC` is illegal. So orchestrating procs (`Lot_Split`, `Lot_Merge`) **INLINE** their sub-mutations (child create, parent reduce, source close) instead of calling `Lot_Create` / `Lot_UpdateStatus` / `Lot_UpdateAttribute` — comment each inline block as a mirror of its source-of-truth proc. Co-requirement: **all rejecting validations run BEFORE `BEGIN TRANSACTION`** (each rejection SELECTs the status row + `RETURN`s with no open txn), because a `ROLLBACK` inside a proc that was invoked via `INSERT-EXEC` throws **Msg 3915**; the `CATCH` is then the only legal `ROLLBACK` site, firing only on a doomed `XACT_ABORT` exception. Reference impls: `R__Lots_Lot_Split.sql`, `R__Lots_Lot_Merge.sql` (headers document the rationale).
 
 ### Ignition development reference (general)
 
@@ -129,7 +131,7 @@ Pack pattern is "read it when relevant, don't preload" — most tasks need only 
 
 ### MPP custom Perspective icon library
 
-The `mpp` icon library lives at `ignition/icons/mpp/` and is referenced from views as `mpp/<icon-name>` (e.g., `mpp/play_arrow`, `mpp/qr_code_scanner`). 34 unique sprites locked against Material Symbols Outlined / wght 300 / grade -25 / opsz 48; the locked set is in `mockup/icons.csv` and the realized library files (with `config.json` + `resource.json`) mirror the gateway path `data/config/resources/core/com.inductiveautomation.perspective/icons/mpp/`. Project-specific deploy + recolor recipe documented in `ignition/icons/README.md`. General 8.3 custom-icon-library mechanics (path layout, viewBox + no-fill rule, Material Symbols GitHub source URL pattern) are in `ignition-context-pack/08_custom_icon_libraries.md` — read that file when extending or troubleshooting any custom icon library.
+The `mpp` icon library lives at `ignition/icons/mpp/` and is referenced from views as `mpp/<icon-name>` (e.g., `mpp/play_arrow`, `mpp/qr_code_scanner`). 37 unique sprites (38 logical icons) locked against Material Symbols Outlined / wght 300 / grade -25 / opsz 48; the locked set is in `mockup/icons.csv` and the realized library files (with `config.json` + `resource.json`) mirror the gateway path `data/config/resources/core/com.inductiveautomation.perspective/icons/mpp/`. Project-specific deploy + recolor recipe documented in `ignition/icons/README.md`. General 8.3 custom-icon-library mechanics (path layout, viewBox + no-fill rule, Material Symbols GitHub source URL pattern) are in `ignition-context-pack/08_custom_icon_libraries.md` — read that file when extending or troubleshooting any custom icon library.
 
 ### Ignition file-edit boundary
 

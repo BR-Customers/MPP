@@ -1,104 +1,46 @@
 {
   "custom": {},
   "params": {},
-  "propConfig": {},
   "props": {
     "defaultSize": {
-      "height": 800,
       "width": 1280
     }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": {
-      "name": "root"
-    },
-    "props": {
-      "direction": "column",
-      "alignItems": "center",
-      "justify": "center",
-      "style": {
-        "classes": "canvas",
-        "padding": "40px",
-        "gap": "16px"
-      }
-    },
-    "scripts": {
-      "customMethods": [
-        {
-          "name": "route",
-          "params": [],
-          "script": "\tt = self.session.custom.terminal\n\tif (not t.terminalLocationId) or t.isFallback:\n\t\tsystem.perspective.navigate(\"/shop-floor/terminal-selector\")\n\t\treturn\n\tif t.terminalMode == \"Dedicated\" and self.session.custom.user.appUserId is None:\n\t\tsystem.perspective.navigate(\"/shop-floor/initials\")\n\t\treturn\n\tif t.defaultScreen:\n\t\tsystem.perspective.navigate(t.defaultScreen)\n\t\treturn"
-        }
-      ]
-    },
-    "events": {
-      "component": {
-        "onStartup": {
-          "type": "script",
-          "scope": "G",
-          "config": {
-            "script": "\tself.route()"
-          }
-        }
-      }
-    },
     "children": [
       {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "FallbackCard"
-        },
-        "position": {
-          "basis": "auto",
-          "shrink": 0
-        },
-        "props": {
-          "direction": "column",
-          "alignItems": "center",
-          "justify": "center",
-          "style": {
-            "classes": "surface-card",
-            "gap": "14px",
-            "maxWidth": "640px",
-            "padding": "40px"
-          }
-        },
         "children": [
           {
-            "type": "ia.display.label",
             "meta": {
               "name": "Heading"
             },
             "position": {
-              "basis": "auto",
               "shrink": 0
             },
             "props": {
-              "text": "MPP MES",
               "style": {
                 "color": "var(--mpp-text-primary)",
                 "fontSize": "40px",
                 "fontWeight": "600"
-              }
-            }
+              },
+              "text": "MPP MES"
+            },
+            "type": "ia.display.label"
           },
           {
-            "type": "ia.display.label",
             "meta": {
               "name": "TerminalName"
             },
             "position": {
-              "basis": "auto",
               "shrink": 0
             },
             "propConfig": {
               "props.text": {
                 "binding": {
-                  "type": "expr",
                   "config": {
                     "expression": "if(isNull({session.custom.terminal.terminalName}), \"\", {session.custom.terminal.terminalName} + if(isNull({session.custom.terminal.zoneName}), \"\", \"  -  \" + {session.custom.terminal.zoneName}))"
-                  }
+                  },
+                  "type": "expr"
                 }
               }
             },
@@ -107,113 +49,190 @@
                 "color": "var(--mpp-text-secondary)",
                 "fontSize": "18px"
               }
-            }
+            },
+            "type": "ia.display.label"
           },
           {
-            "type": "ia.display.label",
             "meta": {
               "name": "Message"
             },
             "position": {
-              "basis": "auto",
               "shrink": 0
             },
             "props": {
-              "text": "No default screen configured for this terminal - contact Engineering.",
               "style": {
                 "color": "var(--mpp-text-secondary)",
                 "fontSize": "15px",
-                "textAlign": "center",
-                "marginTop": "4px"
-              }
-            }
+                "marginTop": "4px",
+                "textAlign": "center"
+              },
+              "text": "No default screen configured for this terminal - contact Engineering."
+            },
+            "type": "ia.display.label"
           },
           {
-            "type": "ia.container.flex",
-            "meta": {
-              "name": "NavTiles"
-            },
-            "position": {
-              "basis": "auto",
-              "shrink": 0
-            },
-            "props": {
-              "direction": "row",
-              "wrap": "wrap",
-              "justify": "center",
-              "alignItems": "center",
-              "style": {
-                "gap": "12px",
-                "marginTop": "12px"
-              }
-            },
             "children": [
               {
-                "type": "ia.input.button",
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tsystem.perspective.navigate(\"/shop-floor/terminal-selector\")"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
                 "meta": {
                   "name": "TileTerminalSelector"
                 },
                 "position": {
-                  "basis": "auto",
-                  "grow": 0,
                   "shrink": 0
                 },
                 "props": {
-                  "text": "Select Terminal",
                   "style": {
                     "classes": "pf-btn pf-btn-large pf-btn-secondary",
                     "fontSize": "18px",
                     "height": "62px",
                     "minWidth": "220px"
-                  }
+                  },
+                  "text": "Select Terminal"
                 },
+                "type": "ia.input.button"
+              },
+              {
                 "events": {
                   "component": {
                     "onActionPerformed": {
-                      "type": "script",
-                      "scope": "G",
                       "config": {
-                        "script": "\tsystem.perspective.navigate(\"/shop-floor/terminal-selector\")"
-                      }
+                        "script": "\tsystem.perspective.navigate(\"/shop-floor/initials\")"
+                      },
+                      "scope": "G",
+                      "type": "script"
                     }
                   }
-                }
-              },
-              {
-                "type": "ia.input.button",
+                },
                 "meta": {
                   "name": "TileOperatorEntry"
                 },
                 "position": {
-                  "basis": "auto",
-                  "grow": 0,
                   "shrink": 0
                 },
                 "props": {
-                  "text": "Operator Entry",
                   "style": {
                     "classes": "pf-btn pf-btn-large pf-btn-secondary",
                     "fontSize": "18px",
                     "height": "62px",
                     "minWidth": "220px"
-                  }
+                  },
+                  "text": "Operator Entry"
                 },
+                "type": "ia.input.button"
+              },
+              {
                 "events": {
                   "component": {
                     "onActionPerformed": {
-                      "type": "script",
-                      "scope": "G",
                       "config": {
-                        "script": "\tsystem.perspective.navigate(\"/shop-floor/initials\")"
-                      }
+                        "script": "\tsystem.perspective.navigate(\"/shop-floor/die-cast\")"
+                      },
+                      "scope": "G",
+                      "type": "script"
                     }
                   }
-                }
+                },
+                "meta": {
+                  "name": "TileDieCast"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-btn pf-btn-large pf-btn-secondary",
+                    "fontSize": "18px",
+                    "height": "62px",
+                    "minWidth": "220px"
+                  },
+                  "text": "Die Cast Entry"
+                },
+                "type": "ia.input.button"
               }
-            ]
+            ],
+            "meta": {
+              "name": "NavTiles"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "alignItems": "center",
+              "justify": "center",
+              "style": {
+                "gap": "12px",
+                "marginTop": "12px"
+              },
+              "wrap": "wrap"
+            },
+            "type": "ia.container.flex"
           }
-        ]
+        ],
+        "meta": {
+          "name": "FallbackCard"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "direction": "column",
+          "justify": "center",
+          "style": {
+            "classes": "surface-card",
+            "gap": "14px",
+            "maxWidth": "640px",
+            "padding": "40px"
+          }
+        },
+        "type": "ia.container.flex"
       }
-    ]
+    ],
+    "events": {
+      "system": {
+        "onStartup": {
+          "config": {
+            "script": "\tself.route()"
+          },
+          "scope": "G",
+          "type": "script"
+        }
+      }
+    },
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "direction": "column",
+      "justify": "center",
+      "style": {
+        "classes": "canvas",
+        "gap": "16px",
+        "padding": "40px"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "route",
+          "params": [],
+          "script": "\tt \u003d self.session.custom.terminal\n\tif (not t.terminalLocationId) or t.isFallback:\n\t\tsystem.perspective.navigate(\"/shop-floor/terminal-selector\")\n\t\treturn\n\tif t.defaultScreen:\n\t\tsystem.perspective.navigate(t.defaultScreen)\n\t\treturn"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": null
+    },
+    "type": "ia.container.flex"
   }
 }

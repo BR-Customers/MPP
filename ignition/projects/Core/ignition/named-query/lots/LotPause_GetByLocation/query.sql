@@ -1,0 +1,1 @@
+EXEC Lots.LotPause_GetByLocation @LocationId = :locationId

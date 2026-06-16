@@ -1,0 +1,194 @@
+{
+  "custom": {},
+  "params": {
+    "messageName": "keyboardKeyPressed"
+  },
+  "propConfig": {
+    "params.messageName": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 280,
+      "width": 800
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "alignItems": "center",
+      "justify": "center",
+      "style": {
+        "gap": "8px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.flex-repeater",
+        "meta": {
+          "name": "Row1"
+        },
+        "position": {
+          "basis": "62px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.messageName"
+              },
+              "transforms": [
+                {
+                  "type": "script",
+                  "code": "\tmn = value or \"keyboardKeyPressed\"\n\treturn [{\"label\": c, \"key\": c, \"action\": \"key\", \"variant\": \"default\", \"messageName\": mn} for c in \"QWERTYUIOP\"]"
+                }
+              ]
+            }
+          }
+        },
+        "props": {
+          "direction": "row",
+          "elementPosition": {
+            "basis": "62px",
+            "grow": 0,
+            "shrink": 0
+          },
+          "path": "BlueRidge/Components/PlantFloor/_Keyboard/Key",
+          "style": {
+            "gap": "8px"
+          },
+          "useDefaultViewHeight": false,
+          "useDefaultViewWidth": false
+        }
+      },
+      {
+        "type": "ia.display.flex-repeater",
+        "meta": {
+          "name": "Row2"
+        },
+        "position": {
+          "basis": "62px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.messageName"
+              },
+              "transforms": [
+                {
+                  "type": "script",
+                  "code": "\tmn = value or \"keyboardKeyPressed\"\n\treturn [{\"label\": c, \"key\": c, \"action\": \"key\", \"variant\": \"default\", \"messageName\": mn} for c in \"ASDFGHJKL\"]"
+                }
+              ]
+            }
+          }
+        },
+        "props": {
+          "direction": "row",
+          "elementPosition": {
+            "basis": "62px",
+            "grow": 0,
+            "shrink": 0
+          },
+          "path": "BlueRidge/Components/PlantFloor/_Keyboard/Key",
+          "style": {
+            "gap": "8px"
+          },
+          "useDefaultViewHeight": false,
+          "useDefaultViewWidth": false
+        }
+      },
+      {
+        "type": "ia.display.flex-repeater",
+        "meta": {
+          "name": "Row3"
+        },
+        "position": {
+          "basis": "62px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.messageName"
+              },
+              "transforms": [
+                {
+                  "type": "script",
+                  "code": "\tmn = value or \"keyboardKeyPressed\"\n\twide = {\"basis\": \"130px\", \"grow\": 0, \"shrink\": 0}\n\trow = [{\"label\": \"Clear\", \"key\": \"\", \"action\": \"clear\", \"variant\": \"secondary\", \"messageName\": mn, \"instancePosition\": wide}]\n\trow += [{\"label\": c, \"key\": c, \"action\": \"key\", \"variant\": \"default\", \"messageName\": mn} for c in \"ZXCVBNM\"]\n\trow.append({\"label\": \"Enter\", \"key\": \"\", \"action\": \"enter\", \"variant\": \"primary\", \"messageName\": mn, \"instancePosition\": wide})\n\treturn row"
+                }
+              ]
+            }
+          }
+        },
+        "props": {
+          "direction": "row",
+          "elementPosition": {
+            "basis": "62px",
+            "grow": 0,
+            "shrink": 0
+          },
+          "path": "BlueRidge/Components/PlantFloor/_Keyboard/Key",
+          "style": {
+            "gap": "8px"
+          },
+          "useDefaultViewHeight": false,
+          "useDefaultViewWidth": false
+        }
+      },
+      {
+        "type": "ia.display.flex-repeater",
+        "meta": {
+          "name": "Row4"
+        },
+        "position": {
+          "basis": "62px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.instances": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.messageName"
+              },
+              "transforms": [
+                {
+                  "type": "script",
+                  "code": "\tmn = value or \"keyboardKeyPressed\"\n\treturn [{\"label\": \"Space\", \"key\": \" \", \"action\": \"space\", \"variant\": \"default\", \"messageName\": mn, \"instancePosition\": {\"basis\": \"620px\", \"grow\": 0, \"shrink\": 0}}, {\"label\": \"Backspace\", \"key\": \"\", \"action\": \"backspace\", \"variant\": \"secondary\", \"messageName\": mn, \"instancePosition\": {\"basis\": \"130px\", \"grow\": 0, \"shrink\": 0}}]"
+                }
+              ]
+            }
+          }
+        },
+        "props": {
+          "direction": "row",
+          "elementPosition": {
+            "basis": "62px",
+            "grow": 0,
+            "shrink": 0
+          },
+          "path": "BlueRidge/Components/PlantFloor/_Keyboard/Key",
+          "style": {
+            "gap": "8px"
+          },
+          "useDefaultViewHeight": false,
+          "useDefaultViewWidth": false
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,1 @@
+EXEC Lots.LotStatusCode_List

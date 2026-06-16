@@ -2,14 +2,16 @@
 -- Procedure:   Location.Terminal_List
 -- Author:      Blue Ridge Automation
 -- Created:     2026-06-09
--- Version:     1.0
+-- Version:     1.1
 --
 -- Description:
 --   Admin rowset of all active (non-deprecated) Terminal Locations
 --   (LocationTypeDefinition DefId 7), each with its parent ("Zone") names, its
---   IpAddress + DefaultScreen attribute values (NULL when unset), and the same
---   DERIVED TerminalMode as Terminal_GetByIpAddress ('Dedicated' for a Cell-tier
---   parent, 'Shared' otherwise). Backs the terminal-registry admin surface.
+--   IpAddress + DefaultScreen attribute values (NULL when unset),
+--   and a HasPrinter validation flag (1 when the Terminal has at least one
+--   active child Printer Location - every Terminal must carry >= 1 printer).
+--   TerminalMode was REMOVED in v1.1 (view-policy model; FDS-02-010 v1.4).
+--   Backs the terminal-registry admin surface.
 --
 --   The global FALLBACK Terminal (Code 'FALLBACK-TERMINAL') is INCLUDED - it is
 --   a real, active Location and admins manage it alongside the rest.
@@ -22,15 +24,15 @@
 -- Result set (zero or more rows, ordered by TerminalCode):
 --   TerminalId, TerminalCode, TerminalName,
 --   ZoneId, ZoneCode, ZoneName,
---   IpAddress, DefaultScreen, TerminalMode, IsFallback
+--   IpAddress, DefaultScreen, IsFallback, HasPrinter
 --
 -- Dependencies:
 --   Tables: Location.Location, Location.LocationAttribute,
---           Location.LocationAttributeDefinition, Location.LocationTypeDefinition,
---           Location.LocationType
+--           Location.LocationAttributeDefinition, Location.LocationTypeDefinition
 --
 -- Change Log:
 --   2026-06-09 - 1.0 - Initial version (Phase 1 Task C).
+--   2026-06-10 - 1.1 - Drop derived TerminalMode; add HasPrinter flag.
 -- =============================================
 CREATE OR ALTER PROCEDURE Location.Terminal_List
 AS
@@ -46,17 +48,20 @@ BEGIN
         p.Name                                              AS ZoneName,
         ip.AttributeValue                                   AS IpAddress,
         ds.AttributeValue                                   AS DefaultScreen,
-        CAST(CASE WHEN plt.Code = N'Cell' THEN N'Dedicated'
-                  ELSE N'Shared' END AS NVARCHAR(20))       AS TerminalMode,
         CAST(CASE WHEN t.Code = N'FALLBACK-TERMINAL' THEN 1
-                  ELSE 0 END AS BIT)                        AS IsFallback
+                  ELSE 0 END AS BIT)                        AS IsFallback,
+        CAST(CASE WHEN EXISTS (
+            SELECT 1
+            FROM Location.Location pr
+            INNER JOIN Location.LocationTypeDefinition prd
+                ON prd.Id = pr.LocationTypeDefinitionId
+               AND prd.Code = N'Printer'
+            WHERE pr.ParentLocationId = t.Id
+              AND pr.DeprecatedAt IS NULL
+        ) THEN 1 ELSE 0 END AS BIT)                         AS HasPrinter
     FROM Location.Location t
     LEFT JOIN Location.Location p
         ON p.Id = t.ParentLocationId
-    LEFT JOIN Location.LocationTypeDefinition pltd
-        ON pltd.Id = p.LocationTypeDefinitionId
-    LEFT JOIN Location.LocationType plt
-        ON plt.Id = pltd.LocationTypeId
     LEFT JOIN (
         SELECT ipla.LocationId, ipla.AttributeValue
         FROM Location.LocationAttribute ipla

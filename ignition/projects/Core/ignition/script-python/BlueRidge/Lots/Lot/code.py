@@ -12,14 +12,16 @@ def _u(value):
     return BlueRidge.Common.Util.extractQualifiedValues(value)
 
 
-def create(data, appUserId=None, terminalLocationId=None):
+def create(data, appUserId=None, terminalLocationId=None, lotName=None, cavityNote=None):
     """Mint a new LOT. data carries every Lot_Create field (itemId,
        lotOriginTypeId, currentLocationId, pieceCount, weight, weightUomId,
        toolId, toolCavityId, vendorLotNumber, minSerialNumber, maxSerialNumber).
+       lotName (D4): None = server mint (default); a value = use it verbatim (the
+       pre-printed LTT). cavityNote (D2): free-text cavity when no active ToolCavity.
        Returns {Status, Message, NewId, MintedLotName}."""
     BlueRidge.Common.Util.log(
-        "create data=%s appUserId=%s terminalLocationId=%s"
-        % (data, appUserId, terminalLocationId)
+        "create data=%s appUserId=%s terminalLocationId=%s lotName=%s cavityNote=%s"
+        % (data, appUserId, terminalLocationId, lotName, cavityNote)
     )
     d = _u(data) or {}
     if appUserId is None:
@@ -38,8 +40,25 @@ def create(data, appUserId=None, terminalLocationId=None):
         "maxSerialNumber":    d.get("maxSerialNumber"),
         "appUserId":          appUserId,
         "terminalLocationId": terminalLocationId,
+        "lotName":            _u(lotName),
+        "cavityNote":         _u(cavityNote),
     }
     return BlueRidge.Common.Db.execMutation("lots/Lot_Create", params)
+
+
+def getOriginTypeIdByCode(code):
+    """Resolve a Lots.LotOriginType Id by Code (e.g. 'Manufactured', 'Received'), or
+    None. Used by the die-cast entry screen to stamp the LOT origin. Wraps the
+    existing lots/LotOriginType_List read."""
+    try:
+        rows = BlueRidge.Common.Db.execList("lots/LotOriginType_List", {}) or []
+    except Exception as e:
+        BlueRidge.Common.Util.log("getOriginTypeIdByCode failed: %s" % str(e))
+        return None
+    for r in rows:
+        if r.get("Code") == code:
+            return r.get("Id")
+    return None
 
 
 def get(lotId=None, lotName=None):
@@ -112,3 +131,42 @@ def assertNotBlocked(lotId):
         "lots/Lot_AssertNotBlocked",
         {"lotId": lotId},
     )
+
+
+def getParents(lotId):
+    BlueRidge.Common.Util.log("lotId=%s" % lotId)
+    return BlueRidge.Common.Db.execList("lots/Lot_GetParents", {"lotId": lotId})
+
+
+def getChildren(lotId):
+    BlueRidge.Common.Util.log("lotId=%s" % lotId)
+    return BlueRidge.Common.Db.execList("lots/Lot_GetChildren", {"lotId": lotId})
+
+
+def getHistory(lotId):
+    BlueRidge.Common.Util.log("lotId=%s" % lotId)
+    return BlueRidge.Common.Db.execList("lots/Lot_GetAttributeHistory", {"lotId": lotId})
+
+
+def getPauses(lotId):
+    BlueRidge.Common.Util.log("lotId=%s" % lotId)
+    return BlueRidge.Common.Db.execList("lots/LotPause_GetByLot", {"lotId": lotId})
+
+
+def getGenealogyTree(lotId, direction="Both"):
+    BlueRidge.Common.Util.log("lotId=%s direction=%s" % (lotId, direction))
+    return BlueRidge.Common.Db.execList("lots/Lot_GetGenealogyTree", {"lotId": lotId, "direction": direction})
+
+
+def search(query=None, lotStatusId=None, lotOriginTypeId=None, limitRows=100):
+    BlueRidge.Common.Util.log("query=%s statusId=%s originId=%s limit=%s" % (query, lotStatusId, lotOriginTypeId, limitRows))
+    params = {"query": query, "lotStatusId": lotStatusId, "lotOriginTypeId": lotOriginTypeId, "limitRows": limitRows}
+    return BlueRidge.Common.Db.execList("lots/Lot_Search", params)
+
+
+def getStatusOptions():
+    return [{"label": r["Name"], "value": r["Id"]} for r in BlueRidge.Common.Db.execList("lots/LotStatusCode_List")]
+
+
+def getOriginOptions():
+    return [{"label": r["Name"], "value": r["Id"]} for r in BlueRidge.Common.Db.execList("lots/LotOriginType_List")]

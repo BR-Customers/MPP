@@ -14,7 +14,6 @@ def onStartup(session):
 			"zoneLocationId":     None,
 			"zoneName":           "",
 			"defaultScreen":      "",
-			"terminalMode":       "",
 			"isFallback":         True,
 		}
 		return
@@ -25,6 +24,5 @@ def onStartup(session):
 		"zoneLocationId":     term.get("ZoneLocationId"),
 		"zoneName":           term.get("ZoneName"),
 		"defaultScreen":      term.get("DefaultScreen"),
-		"terminalMode":       term.get("TerminalMode"),
 		"isFallback":         bool(term.get("IsFallback")),
 	}

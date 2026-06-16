@@ -98,6 +98,19 @@ def getAll(includeDeprecated=False, areaLocationId=None):
         return []
 
 
+def getForDropdown(areaLocationId=None):
+    """Active defect codes as [{label, value}] for the die-cast Reject panel
+    dropdown. label = 'CODE - Description', value = DefectCode.Id."""
+    rows = getAll(includeDeprecated=False, areaLocationId=areaLocationId) or []
+    out = []
+    for r in rows:
+        code = r.get("Code") or ""
+        desc = r.get("Description") or ""
+        label = ("%s - %s" % (code, desc)) if desc else code
+        out.append({"label": label, "value": r.get("Id")})
+    return out
+
+
 def getOne(defectCodeId):
     """Single-row lookup. Returns dict or None."""
     defectCodeId = _u(defectCodeId)
