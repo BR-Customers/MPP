@@ -33,6 +33,31 @@ def _u(value):
     return BlueRidge.Common.Util.extractQualifiedValues(value)
 
 
+def _labelTypeIdByCode(code):
+    """Resolve a Lots.LabelTypeCode Id by Code (default-resolution helper).
+       Returns Id or None."""
+    for r in (BlueRidge.Common.Db.execList("lots/LabelTypeCode_List") or []):
+        if r.get("Code") == code:
+            return r.get("Id")
+    return None
+
+
+def _printReasonIdByCode(code):
+    """Resolve a Lots.PrintReasonCode Id by Code. Returns Id or None."""
+    for r in (BlueRidge.Common.Db.execList("lots/PrintReasonCode_List") or []):
+        if r.get("Code") == code:
+            return r.get("Id")
+    return None
+
+
+def _firstNonInitialReasonId():
+    """First PrintReasonCode whose Code != 'Initial' (reprint default)."""
+    for r in (BlueRidge.Common.Db.execList("lots/PrintReasonCode_List") or []):
+        if (r.get("Code") or "") != "Initial":
+            return r.get("Id")
+    return None
+
+
 def _sessionPrinter():
     """Resolve session.custom.printer ({locationId, code, endpoint, model}).
        Empty dict when unset (no-printer / FALLBACK terminal)."""
@@ -150,10 +175,13 @@ def printLabel(data, appUserId=None, terminalLocationId=None):
     if appUserId is None:
         appUserId = BlueRidge.Common.Util._currentAppUserId()
     printer = _sessionPrinter()
+    # Default-resolve label type / reason when the caller (e.g. Receiving) omits them.
+    labelTypeCodeId = d.get("labelTypeCodeId") or _labelTypeIdByCode("Primary")
+    printReasonCodeId = d.get("printReasonCodeId") or _printReasonIdByCode("Initial")
     res = BlueRidge.Common.Db.execMutation("lots/LotLabel_Print", {
         "lotId":              d.get("lotId"),
-        "labelTypeCodeId":    d.get("labelTypeCodeId"),
-        "printReasonCodeId":  d.get("printReasonCodeId"),
+        "labelTypeCodeId":    labelTypeCodeId,
+        "printReasonCodeId":  printReasonCodeId,
         "appUserId":          appUserId,
         "terminalLocationId": terminalLocationId,
         "printerName":        printer.get("code") or None,
@@ -168,9 +196,10 @@ def reprint(lotId, printReasonCodeId, appUserId=None, terminalLocationId=None):
     if appUserId is None:
         appUserId = BlueRidge.Common.Util._currentAppUserId()
     printer = _sessionPrinter()
+    reasonId = _u(printReasonCodeId) or _firstNonInitialReasonId()
     res = BlueRidge.Common.Db.execMutation("lots/LotLabel_Reprint", {
         "lotId":              _u(lotId),
-        "printReasonCodeId":  _u(printReasonCodeId),
+        "printReasonCodeId":  reasonId,
         "appUserId":          appUserId,
         "terminalLocationId": terminalLocationId,
         "printerName":        printer.get("code") or None,

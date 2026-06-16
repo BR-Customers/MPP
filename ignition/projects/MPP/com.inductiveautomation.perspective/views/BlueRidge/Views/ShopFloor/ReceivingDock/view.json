@@ -1,0 +1,627 @@
+{
+  "custom": {
+    "partItemId": null,
+    "partOptions": [],
+    "draft": {
+      "vendorLotNumber": "",
+      "pieceCount": "",
+      "minSerialNumber": "",
+      "maxSerialNumber": ""
+    },
+    "lastLabelLotId": null,
+    "printFailed": false,
+    "receivedOriginId": null
+  },
+  "params": {},
+  "propConfig": {
+    "custom.partOptions": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Item.getForDropdown\", 0)"
+        }
+      }
+    },
+    "custom.receivedOriginId": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Lots.Lot.getOriginTypeIdByCode\", 0, \"Received\")"
+        }
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 800,
+      "width": 1280
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "canvas",
+        "gap": "16px",
+        "padding": "24px"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "createLot",
+          "params": [],
+          "script": "\tdraft = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.draft) or {}\n\tcell = BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\tpartValue = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.partItemId)\n\n\t# Resolve part: a numeric option value is a real Item.Id; a typed (custom)\n\t# value from allowCustomOptions arrives as a raw part-number string ->\n\t# resolve to an itemId via Item.getByPartNumber.\n\titemId = None\n\tif partValue is not None and partValue != \"\":\n\t\ttry:\n\t\t\titemId = int(partValue)\n\t\texcept (ValueError, TypeError):\n\t\t\trow = BlueRidge.Parts.Item.getByPartNumber(partValue)\n\t\t\tif row is None:\n\t\t\t\tBlueRidge.Common.Notify.toast(\"Unknown part\", \"No active item matches '%s'.\" % partValue, \"error\")\n\t\t\t\treturn\n\t\t\titemId = row.get(\"Id\")\n\tif itemId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Part required\", \"Scan or pick a part number.\", \"warning\")\n\t\treturn\n\n\t# Piece count: text-field + proc coercion (proc takes an int).\n\tpieceCount = None\n\tpc = draft.get(\"pieceCount\")\n\tif pc is not None and (\"%s\" % pc).strip() != \"\":\n\t\ttry:\n\t\t\tpieceCount = int((\"%s\" % pc).strip())\n\t\texcept (ValueError, TypeError):\n\t\t\tBlueRidge.Common.Notify.toast(\"Invalid piece count\", \"Enter a whole number.\", \"warning\")\n\t\t\treturn\n\n\t# Optional serial range -> int or None.\n\tdef _toIntOrNone(v):\n\t\tif v is None:\n\t\t\treturn None\n\t\ts = (\"%s\" % v).strip()\n\t\tif s == \"\":\n\t\t\treturn None\n\t\ttry:\n\t\t\treturn int(s)\n\t\texcept (ValueError, TypeError):\n\t\t\treturn None\n\tminSerial = _toIntOrNone(draft.get(\"minSerialNumber\"))\n\tmaxSerial = _toIntOrNone(draft.get(\"maxSerialNumber\"))\n\n\tvendorLot = draft.get(\"vendorLotNumber\") or None\n\n\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\n\tdata = {\n\t\t\"itemId\": itemId,\n\t\t\"lotOriginTypeId\": self.view.custom.receivedOriginId,\n\t\t\"currentLocationId\": cell.get(\"locationId\"),\n\t\t\"pieceCount\": pieceCount,\n\t\t\"vendorLotNumber\": vendorLot,\n\t\t\"minSerialNumber\": minSerial,\n\t\t\"maxSerialNumber\": maxSerial,\n\t}\n\tres = BlueRidge.Lots.Lot.create(data, appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(res, successTitle=\"LOT created\")\n\tif not (res and res.get(\"Status\")):\n\t\treturn\n\tnewId = res.get(\"NewId\")\n\n\t# Print the LTT. TODO(phase4): no resolver exists yet for the Primary label\n\t# type id or the Initial print-reason id (LotLabel has no getByCode helper and\n\t# the view must not call system.db / invent SQL). Passing None best-effort; the\n\t# proc/print may reject -> the UI holds on printFailed and offers Reprint.\n\tpr = BlueRidge.Lots.LotLabel.printLabel({\"lotId\": newId, \"labelTypeCodeId\": None, \"printReasonCodeId\": None}, appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(pr, successTitle=\"LTT printed\")\n\tif not (pr and pr.get(\"Status\")):\n\t\tself.view.custom.printFailed = True\n\t\tself.view.custom.lastLabelLotId = newId\n\telse:\n\t\tself.view.custom.printFailed = False\n\t\tself.view.custom.lastLabelLotId = newId\n\t\tself.resetForm()\n\t\tsystem.perspective.navigate(\"/shop-floor/lot-detail/\" + str(newId))"
+        },
+        {
+          "name": "reprintLast",
+          "params": [],
+          "script": "\tlotId = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.lastLabelLotId)\n\tif lotId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Nothing to reprint\", \"No recent LOT to reprint.\", \"warning\")\n\t\treturn\n\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\t# TODO(phase4): non-Initial print-reason id is not resolvable from the view\n\t# (no LotLabel.getReasonIdByCode helper; view must not call system.db).\n\t# Passing None best-effort.\n\tpr = BlueRidge.Lots.LotLabel.reprint(lotId, None, appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(pr, successTitle=\"LTT reprinted\")\n\tif pr and pr.get(\"Status\"):\n\t\tself.view.custom.printFailed = False"
+        },
+        {
+          "name": "resetForm",
+          "params": [],
+          "script": "\tself.view.custom.partItemId = None\n\tself.view.custom.draft = {\"vendorLotNumber\": \"\", \"pieceCount\": \"\", \"minSerialNumber\": \"\", \"maxSerialNumber\": \"\"}"
+        },
+        {
+          "name": "startup",
+          "params": [],
+          "script": "\t# Operator gate: no logged-in operator -> initials screen, then return here.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.navigate(\"/shop-floor/initials\", params={\"returnTo\": \"/shop-floor/receiving\"})\n\t\treturn"
+        }
+      ]
+    },
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tself.startup()"
+          }
+        }
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "HeaderBand"
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "gap": "16px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "TitleBlock"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "direction": "column"
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Title"
+                },
+                "props": {
+                  "text": "Receiving Dock",
+                  "style": {
+                    "fontSize": "22px",
+                    "fontWeight": 700
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Subtitle"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  }
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"No cell selected\", {session.custom.cell.name}) + \"  ·  Received LOT (pass-through)\""
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "OperatorLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "version": 0,
+            "meta": {
+              "name": "CloseButton"
+            },
+            "props": {
+              "text": "Close",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.navigate(\"/\")"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "NewLotForm"
+        },
+        "position": {
+          "basis": "560px",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "pf-panel",
+            "gap": "12px",
+            "padding": "16px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "FormHeader"
+            },
+            "props": {
+              "text": "Receive New LOT",
+              "style": {
+                "classes": "pf-panel-header"
+              }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "PartField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "gap": "4px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "PartLabel"
+                },
+                "props": {
+                  "text": "Part Number (scan or pick)",
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.dropdown",
+                "version": 0,
+                "meta": {
+                  "name": "PartNumberDropdown"
+                },
+                "props": {
+                  "placeholder": "Scan or select a part number",
+                  "allowCustomOptions": true,
+                  "search": {
+                    "enabled": true
+                  },
+                  "style": {
+                    "minHeight": "44px"
+                  }
+                },
+                "propConfig": {
+                  "props.options": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.partOptions"
+                      }
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.partItemId"
+                      },
+                      "bidirectional": true
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "VendorLotField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "gap": "4px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "VendorLotLabel"
+                },
+                "props": {
+                  "text": "Vendor LOT Number",
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "version": 0,
+                "meta": {
+                  "name": "VendorLotInput"
+                },
+                "props": {
+                  "placeholder": "Scan or enter vendor LOT",
+                  "style": {
+                    "classes": "pf-field-input pf-field-mono",
+                    "minHeight": "44px"
+                  }
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.draft.vendorLotNumber"
+                      },
+                      "bidirectional": true
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "PieceCountField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "gap": "4px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "PieceCountLabel"
+                },
+                "props": {
+                  "text": "Piece Count",
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "version": 0,
+                "meta": {
+                  "name": "PieceCountInput"
+                },
+                "props": {
+                  "placeholder": "Enter piece count",
+                  "inputType": "tel",
+                  "style": {
+                    "classes": "pf-field-input",
+                    "minHeight": "44px"
+                  }
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.draft.pieceCount"
+                      },
+                      "bidirectional": true
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "SerialRow"
+            },
+            "props": {
+              "direction": "row",
+              "style": {
+                "gap": "10px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "MinSerialField"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-field",
+                    "gap": "4px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "MinSerialLabel"
+                    },
+                    "props": {
+                      "text": "Min Serial (optional)",
+                      "style": {
+                        "classes": "pf-field-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.text-field",
+                    "version": 0,
+                    "meta": {
+                      "name": "MinSerialInput"
+                    },
+                    "props": {
+                      "placeholder": "Min serial",
+                      "inputType": "tel",
+                      "style": {
+                        "classes": "pf-field-input pf-field-mono",
+                        "minHeight": "44px"
+                      }
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.draft.minSerialNumber"
+                          },
+                          "bidirectional": true
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "MaxSerialField"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-field",
+                    "gap": "4px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "MaxSerialLabel"
+                    },
+                    "props": {
+                      "text": "Max Serial (optional)",
+                      "style": {
+                        "classes": "pf-field-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.text-field",
+                    "version": 0,
+                    "meta": {
+                      "name": "MaxSerialInput"
+                    },
+                    "props": {
+                      "placeholder": "Max serial",
+                      "inputType": "tel",
+                      "style": {
+                        "classes": "pf-field-input pf-field-mono",
+                        "minHeight": "44px"
+                      }
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.draft.maxSerialNumber"
+                          },
+                          "bidirectional": true
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "FormActions"
+            },
+            "props": {
+              "direction": "row",
+              "alignItems": "center",
+              "style": {
+                "gap": "10px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.input.button",
+                "version": 0,
+                "meta": {
+                  "name": "CreateButton"
+                },
+                "props": {
+                  "text": "Create LOT",
+                  "style": {
+                    "classes": "pf-btn pf-btn-primary pf-btn-large"
+                  }
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "script",
+                      "scope": "G",
+                      "config": {
+                        "script": "\tself.view.rootContainer.createLot()"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.input.button",
+                "version": 0,
+                "meta": {
+                  "name": "ReprintButton"
+                },
+                "position": {
+                  "display": true
+                },
+                "props": {
+                  "text": "Reprint LTT",
+                  "style": {
+                    "classes": "pf-btn pf-btn-secondary pf-btn-large"
+                  }
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.printFailed"
+                      }
+                    }
+                  }
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "script",
+                      "scope": "G",
+                      "config": {
+                        "script": "\tself.view.rootContainer.reprintLast()"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "PrintFailedHint"
+            },
+            "position": {
+              "display": false
+            },
+            "props": {
+              "text": "Last LTT did not print. Check the printer, then tap Reprint LTT.",
+              "style": {
+                "color": "var(--mpp-state-bad-fg)",
+                "fontSize": "14px"
+              }
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.printFailed"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
