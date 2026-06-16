@@ -1184,12 +1184,12 @@
         {
           "name": "clearForPeer",
           "params": [],
-          "script": "\t# Keep Cell/Tool/Item sticky; clear only the cavity-specific bits (D3).\n\td = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft) or {}\n\td[\"toolCavityId\"] = None\n\td[\"cavityNote\"] = None\n\td[\"pieceCount\"] = None\n\td[\"weight\"] = None\n\td[\"scannedLtt\"] = \"\"\n\tself.view.custom.editDraft = d"
+          "script": "\t# Keep Cell/Tool/Item sticky; clear only the cavity-specific bits (D3).\n\t# Write each leaf directly - replacing the whole editDraft object does not\n\t# refresh bidirectionally-bound fields; per-leaf writes do.\n\tself.view.custom.editDraft.scannedLtt = \"\"\n\tself.view.custom.editDraft.toolCavityId = None\n\tself.view.custom.editDraft.cavityNote = None\n\tself.view.custom.editDraft.pieceCount = None\n\tself.view.custom.editDraft.weight = None"
         },
         {
           "name": "cancelDraft",
           "params": [],
-          "script": "\tself.view.custom.editDraft = {\"scannedLtt\": \"\", \"itemId\": None, \"toolCavityId\": None, \"cavityNote\": None, \"pieceCount\": None, \"weight\": None, \"weightUomId\": None}"
+          "script": "\t# Reset the whole NEW LOT form (per-leaf writes for reliable bidi refresh).\n\tself.view.custom.editDraft.scannedLtt = \"\"\n\tself.view.custom.editDraft.itemId = None\n\tself.view.custom.editDraft.toolCavityId = None\n\tself.view.custom.editDraft.cavityNote = None\n\tself.view.custom.editDraft.pieceCount = None\n\tself.view.custom.editDraft.weight = None\n\tself.view.custom.editDraft.weightUomId = None"
         },
         {
           "name": "applyCell",
