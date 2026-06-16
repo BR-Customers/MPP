@@ -168,6 +168,27 @@
             ]
           },
           {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "OperatorLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
+                  }
+                }
+              }
+            }
+          },
+          {
             "type": "ia.display.view",
             "version": 0,
             "meta": {
@@ -428,16 +449,6 @@
                     }
                   }
                 ]
-              },
-              {
-                "type": "ia.display.view",
-                "version": 0,
-                "meta": {
-                  "name": "InitialsEmbed"
-                },
-                "props": {
-                  "path": "BlueRidge/Components/PlantFloor/InitialsField"
-                }
               },
               {
                 "type": "ia.container.flex",
@@ -1172,6 +1183,11 @@
           "name": "seedSelectedCell",
           "params": [],
           "script": "\tc = self.session.custom.cell\n\tif c and c.get(\"locationId\"):\n\t\tself.view.custom.selectedCellId = c.get(\"locationId\")"
+        },
+        {
+          "name": "startup",
+          "params": [],
+          "script": "\t# Operator gate: no logged-in operator -> send them to the initials screen, then\n\t# return here (with the area param preserved) so the view populates on the way back.\n\tif not self.session.custom.appUserId:\n\t\tareaId = self.view.params.areaId\n\t\tif areaId:\n\t\t\tret = \"/shop-floor/die-cast/area/\" + str(areaId)\n\t\telse:\n\t\t\tret = \"/shop-floor/die-cast\"\n\t\tsystem.perspective.navigate(\"/shop-floor/initials\", params={\"returnTo\": ret})\n\t\treturn\n\tself.seedSelectedCell()"
         }
       ]
     },
@@ -1181,7 +1197,7 @@
           "type": "script",
           "scope": "G",
           "config": {
-            "script": "\tself.seedSelectedCell()"
+            "script": "\tself.startup()"
           }
         }
       }

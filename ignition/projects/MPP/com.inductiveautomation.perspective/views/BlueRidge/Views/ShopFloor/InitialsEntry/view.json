@@ -4,7 +4,9 @@
     "error": "",
     "initials": ""
   },
-  "params": {},
+  "params": {
+    "returnTo": ""
+  },
   "propConfig": {},
   "props": {
     "defaultSize": {
@@ -54,7 +56,7 @@
             "displayName",
             "ignitionRole"
           ],
-          "script": "\tself.session.custom.user = {\"appUserId\": appUserId, \"initials\": initials, \"displayName\": displayName, \"ignitionRole\": ignitionRole}\n\tself.session.custom.appUserId = appUserId\n\tsystem.perspective.navigate(self.session.custom.terminal.defaultScreen or \"/\")"
+          "script": "\tself.session.custom.user = {\"appUserId\": appUserId, \"initials\": initials, \"displayName\": displayName, \"ignitionRole\": ignitionRole}\n\tself.session.custom.appUserId = appUserId\n\tdest = self.view.params.returnTo or self.session.custom.terminal.defaultScreen or \"/\"\n\tsystem.perspective.navigate(dest)"
         },
         {
           "name": "submitInitials",
