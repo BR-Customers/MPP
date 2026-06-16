@@ -21,6 +21,8 @@
       "Notes": null
     },
     "cavityOptions": [],
+    "cells": [],
+    "selectedCellId": null,
     "manufacturedOriginId": null,
     "activeLotId": null,
     "latestCheckpoint": {
@@ -45,6 +47,14 @@
         "type": "expr",
         "config": {
           "expression": "runScript(\"BlueRidge.Parts.Tool.getCavitiesForDropdown\", 0, {view.custom.activeTool.ToolId})"
+        }
+      }
+    },
+    "custom.cells": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Location.Terminal.getContextCellsForDropdown\", 0, {session.custom.terminal.terminalLocationId})"
         }
       }
     },
@@ -219,36 +229,37 @@
             }
           },
           {
-            "type": "ia.display.label",
+            "type": "ia.input.dropdown",
+            "version": 0,
             "meta": {
-              "name": "ActiveCellValue"
+              "name": "CellDropdown"
+            },
+            "position": {
+              "basis": "320px"
             },
             "props": {
-              "style": {
-                "classes": "pf-cell-context-value"
+              "placeholder": "Scan or pick a cell",
+              "search": {
+                "enabled": true
               }
             },
             "propConfig": {
-              "props.text": {
+              "props.options": {
                 "binding": {
-                  "type": "expr",
+                  "type": "property",
                   "config": {
-                    "expression": "if(isNull({session.custom.cell.code}) || {session.custom.cell.code} = \"\", \"(no cell)\", {session.custom.cell.code})"
+                    "path": "view.custom.cells"
                   }
                 }
-              }
-            }
-          },
-          {
-            "type": "ia.input.button",
-            "version": 0,
-            "meta": {
-              "name": "ChangeCellButton"
-            },
-            "props": {
-              "text": "Change (scan or pick)",
-              "style": {
-                "classes": "pf-btn pf-btn-secondary"
+              },
+              "props.value": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.selectedCellId"
+                  },
+                  "bidirectional": true
+                }
               }
             },
             "events": {
@@ -257,7 +268,7 @@
                   "type": "script",
                   "scope": "G",
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\"cellContext\", \"BlueRidge/Components/PlantFloor/CellContextSelector\", modal=True, showCloseIcon=True)"
+                    "script": "\tself.view.rootContainer.applyCell(event.value)"
                   }
                 }
               }
@@ -1087,8 +1098,31 @@
           "name": "cancelDraft",
           "params": [],
           "script": "\tself.view.custom.editDraft = {\"scannedLtt\": \"\", \"itemId\": None, \"toolCavityId\": None, \"cavityNote\": None, \"pieceCount\": None, \"weight\": None, \"weightUomId\": None}"
+        },
+        {
+          "name": "applyCell",
+          "params": [
+            "cellId"
+          ],
+          "script": "\tcellId = BlueRidge.Common.Util.extractQualifiedValues(cellId)\n\trow = BlueRidge.Location.Location.findCellById(self.view.custom.cells, cellId)\n\tif row is None:\n\t\treturn\n\tself.view.custom.selectedCellId = row.get(\"value\")\n\tself.session.custom.cell = {\"locationId\": row.get(\"value\"), \"code\": row.get(\"code\") or \"\", \"name\": row.get(\"name\") or \"\"}"
+        },
+        {
+          "name": "seedSelectedCell",
+          "params": [],
+          "script": "\tc = self.session.custom.cell\n\tif c and c.get(\"locationId\"):\n\t\tself.view.custom.selectedCellId = c.get(\"locationId\")"
         }
       ]
+    },
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tself.seedSelectedCell()"
+          }
+        }
+      }
     }
   }
 }
