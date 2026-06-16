@@ -3,11 +3,36 @@
     "filter": {
       "includeDeprecated": false,
       "searchText": ""
+    },
+    "rows": {
+      "AdAccount": "dev.user",
+      "CreatedAt": {
+        "$": [
+          "ts",
+          0,
+          1781630745778
+        ],
+        "$ts": 1781286373635
+      },
+      "DeprecatedAt": null,
+      "DisplayName": "Dev User",
+      "Id": 2,
+      "IgnitionRole": "Admin",
+      "Initials": "DEV"
     }
   },
   "params": {},
   "propConfig": {
     "custom.filter": {
+      "persistent": true
+    },
+    "custom.rows": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Location.AppUser.getUserList\", 0)"
+        },
+        "type": "expr"
+      },
       "persistent": true
     }
   },
@@ -336,6 +361,16 @@
                           "text": "Deprecated"
                         },
                         "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "ColEdit"
+                        },
+                        "position": {
+                          "basis": "80px",
+                          "shrink": 0
+                        },
+                        "type": "ia.display.label"
                       }
                     ],
                     "meta": {
@@ -355,6 +390,22 @@
                       }
                     },
                     "type": "ia.container.flex"
+                  },
+                  {
+                    "meta": {
+                      "name": "FlexRepeater"
+                    },
+                    "position": {
+                      "basis": "529px"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "elementPosition": {
+                        "basis": "auto"
+                      },
+                      "path": "BlueRidge/Components/UserRow"
+                    },
+                    "type": "ia.display.flex-repeater"
                   }
                 ],
                 "meta": {
