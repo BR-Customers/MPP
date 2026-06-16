@@ -11,6 +11,7 @@
 -- ============================================================
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
+SET QUOTED_IDENTIFIER ON;   -- required: Lots.* carry filtered indexes (else Msg 1934 on DELETE)
 
 -- ---- wipe prior smoke fixtures (FK-safe: LOTs before Tool/Cavity) ----
 DELETE FROM Workorder.ProductionEventValue WHERE ProductionEventId IN
