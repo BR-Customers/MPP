@@ -16,6 +16,18 @@
       "title": "Downtime Entry",
       "viewPath": "BlueRidge/Views/ShopFloor/DowntimeEntry"
     },
+    "/shop-floor/end-of-shift": {
+      "title": "End of Shift",
+      "viewPath": "BlueRidge/Views/ShopFloor/EndOfShiftEntry"
+    },
+    "/shop-floor/shift-summary": {
+      "title": "Shift-End Summary",
+      "viewPath": "BlueRidge/Views/ShopFloor/ShiftEndSummary"
+    },
+    "/shop-floor/supervisor": {
+      "title": "Supervisor Dashboard",
+      "viewPath": "BlueRidge/Views/ShopFloor/SupervisorDashboard"
+    },
     "/shop-floor/terminal-selector": {
       "title": "Select Terminal",
       "viewPath": "BlueRidge/Views/ShopFloor/TerminalSelector"

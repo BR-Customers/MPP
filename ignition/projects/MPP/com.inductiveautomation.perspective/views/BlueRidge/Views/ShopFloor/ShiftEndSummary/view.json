@@ -1,0 +1,115 @@
+{
+  "custom": {
+    "filter": { "cellLocationId": null }
+  },
+  "params": {},
+  "propConfig": {
+    "custom.cellOptions": {
+      "binding": {
+        "config": { "expression": "runScript(\"BlueRidge.Location.Location.listByTier\", 0, \"Cell\")" },
+        "transforms": [
+          { "code": "\treturn [{\"value\": r.get(\"Id\"), \"label\": (r.get(\"Code\") or \"\") + \" - \" + (r.get(\"Name\") or \"\")} for r in (value or [])]", "type": "script" }
+        ],
+        "type": "expr"
+      }
+    },
+    "custom.summary": {
+      "binding": {
+        "config": { "expression": "runScript(\"BlueRidge.Oee.DowntimeEvent.getEndOfShiftSummary\", 0, {view.custom.filter.cellLocationId})" },
+        "type": "expr"
+      }
+    }
+  },
+  "props": {
+    "defaultSize": { "height": 1080, "width": 1920 }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          { "meta": { "name": "Title" }, "position": { "grow": 1 }, "props": { "text": "Shift-End Summary", "style": { "fontSize": "22px", "fontWeight": "700" } }, "type": "ia.display.label" },
+          {
+            "children": [
+              { "meta": { "name": "MachineLabel" }, "props": { "text": "Cell", "style": { "classes": "pf-field-label" } }, "type": "ia.display.label" },
+              {
+                "meta": { "name": "CellSelect" },
+                "propConfig": {
+                  "props.options": { "binding": { "config": { "path": "view.custom.cellOptions" }, "type": "property" } },
+                  "props.value": { "binding": { "config": { "path": "view.custom.filter.cellLocationId", "bidirectional": true }, "type": "property" } }
+                },
+                "props": { "placeholder": "Select cell", "style": { "classes": "pf-field-input" } },
+                "type": "ia.input.dropdown"
+              }
+            ],
+            "meta": { "name": "MachineField" },
+            "position": { "basis": "320px", "shrink": 0 },
+            "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+            "type": "ia.container.flex"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tcellId = self.view.custom.filter.cellLocationId\n\tshift = BlueRidge.Oee.Shift.getOpen()\n\tif shift:\n\t\tresult = BlueRidge.Oee.Shift.acknowledgeHandover(shift[\"Id\"], cellId)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"Handover acknowledged\")\n\telse:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No open shift to acknowledge.\"}, \"Handover acknowledged\")"
+                  }
+                }
+              }
+            },
+            "meta": { "name": "AckButton" },
+            "position": { "shrink": 0 },
+            "props": { "style": { "classes": "pf-btn pf-btn-primary" }, "text": "Acknowledge Handover" },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": { "name": "Header" },
+        "position": { "shrink": 0 },
+        "props": { "alignItems": "flex-end", "style": { "gap": "16px", "padding": "16px", "borderBottom": "1px solid var(--mpp-border-subtle)" } },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              { "meta": { "name": "H" }, "position": { "shrink": 0 }, "props": { "text": "Open downtime events", "style": { "classes": "pf-panel-header" } }, "type": "ia.display.label" },
+              { "meta": { "name": "Tbl" }, "position": { "grow": 1 }, "propConfig": { "props.data": { "binding": { "config": { "path": "view.custom.summary.openDowntime" }, "type": "property" } } }, "props": { "columns": [] }, "type": "ia.display.table" }
+            ],
+            "meta": { "name": "DowntimePanel" },
+            "position": { "grow": 1, "basis": "0" },
+            "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "8px", "padding": "16px" } },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              { "meta": { "name": "H" }, "position": { "shrink": 0 }, "props": { "text": "Paused LOTs", "style": { "classes": "pf-panel-header" } }, "type": "ia.display.label" },
+              { "meta": { "name": "Tbl" }, "position": { "grow": 1 }, "propConfig": { "props.data": { "binding": { "config": { "path": "view.custom.summary.openPauses" }, "type": "property" } } }, "props": { "columns": [] }, "type": "ia.display.table" }
+            ],
+            "meta": { "name": "PausePanel" },
+            "position": { "grow": 1, "basis": "0" },
+            "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "8px", "padding": "16px" } },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              { "meta": { "name": "H" }, "position": { "shrink": 0 }, "props": { "text": "In-process LOTs", "style": { "classes": "pf-panel-header" } }, "type": "ia.display.label" },
+              { "meta": { "name": "Tbl" }, "position": { "grow": 1 }, "propConfig": { "props.data": { "binding": { "config": { "path": "view.custom.summary.inProcessLots" }, "type": "property" } } }, "props": { "columns": [] }, "type": "ia.display.table" }
+            ],
+            "meta": { "name": "LotPanel" },
+            "position": { "grow": 1, "basis": "0" },
+            "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "8px", "padding": "16px" } },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": { "name": "Body" },
+        "position": { "grow": 1 },
+        "props": { "direction": "column", "style": { "gap": "16px", "padding": "16px", "overflowY": "auto" } },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": { "name": "root" },
+    "props": { "direction": "column", "style": { "classes": "canvas" } },
+    "type": "ia.container.flex"
+  }
+}

@@ -1,0 +1,105 @@
+{
+  "custom": {},
+  "params": {},
+  "propConfig": {
+    "custom.openSummary": {
+      "binding": {
+        "config": { "expression": "runScript(\"BlueRidge.Oee.DowntimeEvent.getOpenSummary\", 0)" },
+        "type": "expr"
+      }
+    }
+  },
+  "props": {
+    "defaultSize": { "height": 1080, "width": 1920 }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": { "name": "Header" },
+        "position": { "shrink": 0 },
+        "props": {
+          "text": "Supervisor Dashboard",
+          "style": { "fontSize": "22px", "fontWeight": "700", "padding": "16px", "borderBottom": "1px solid var(--mpp-border-subtle)" }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              { "meta": { "name": "L" }, "props": { "text": "Open Downtime", "style": { "classes": "pf-kpi-label" } }, "type": "ia.display.label" },
+              { "meta": { "name": "V" }, "propConfig": { "props.text": { "binding": { "config": { "expression": "toStr(coalesce({view.custom.openSummary.TotalOpen}, 0))" }, "type": "expr" } } }, "props": { "style": { "classes": "pf-kpi-value" } }, "type": "ia.display.label" },
+              { "meta": { "name": "S" }, "propConfig": { "props.text": { "binding": { "config": { "expression": "toStr(coalesce({view.custom.openSummary.WithoutReason}, 0)) + \" need a reason\"" }, "type": "expr" } } }, "props": { "style": { "classes": "pf-kpi-sub" } }, "type": "ia.display.label" }
+            ],
+            "meta": { "name": "TileDowntime" },
+            "position": { "basis": "240px", "shrink": 0 },
+            "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "6px", "padding": "16px" } },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              { "meta": { "name": "L" }, "props": { "text": "Classified", "style": { "classes": "pf-kpi-label" } }, "type": "ia.display.label" },
+              { "meta": { "name": "V" }, "propConfig": { "props.text": { "binding": { "config": { "expression": "toStr(coalesce({view.custom.openSummary.WithReason}, 0))" }, "type": "expr" } } }, "props": { "style": { "classes": "pf-kpi-value" } }, "type": "ia.display.label" },
+              { "meta": { "name": "S" }, "props": { "text": "open events with a reason", "style": { "classes": "pf-kpi-sub" } }, "type": "ia.display.label" }
+            ],
+            "meta": { "name": "TileClassified" },
+            "position": { "basis": "240px", "shrink": 0 },
+            "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "6px", "padding": "16px" } },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              { "meta": { "name": "L" }, "props": { "text": "Paused LOTs", "style": { "classes": "pf-kpi-label" } }, "type": "ia.display.label" },
+              { "meta": { "name": "V" }, "props": { "text": "—", "style": { "classes": "pf-kpi-value" } }, "type": "ia.display.label" },
+              { "meta": { "name": "S" }, "props": { "text": "aggregate read pending", "style": { "classes": "pf-kpi-sub" } }, "type": "ia.display.label" }
+            ],
+            "meta": { "name": "TilePaused" },
+            "position": { "basis": "240px", "shrink": 0 },
+            "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "6px", "padding": "16px", "opacity": "0.6" } },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              { "meta": { "name": "L" }, "props": { "text": "Shift Availability", "style": { "classes": "pf-kpi-label" } }, "type": "ia.display.label" },
+              { "meta": { "name": "V" }, "props": { "text": "—", "style": { "classes": "pf-kpi-value" } }, "type": "ia.display.label" },
+              { "meta": { "name": "S" }, "props": { "text": "derived metric pending", "style": { "classes": "pf-kpi-sub" } }, "type": "ia.display.label" }
+            ],
+            "meta": { "name": "TileAvailability" },
+            "position": { "basis": "240px", "shrink": 0 },
+            "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "6px", "padding": "16px", "opacity": "0.6" } },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              { "meta": { "name": "L" }, "props": { "text": "AIM Pool", "style": { "classes": "pf-kpi-label" } }, "type": "ia.display.label" },
+              { "meta": { "name": "V" }, "props": { "text": "Phase 7", "style": { "classes": "pf-kpi-value" } }, "type": "ia.display.label" },
+              { "meta": { "name": "S" }, "props": { "text": "wired when Phase 7 lands", "style": { "classes": "pf-kpi-sub" } }, "type": "ia.display.label" }
+            ],
+            "meta": { "name": "TileAim" },
+            "position": { "basis": "240px", "shrink": 0 },
+            "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "6px", "padding": "16px", "opacity": "0.6" } },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              { "meta": { "name": "L" }, "props": { "text": "Print Failures", "style": { "classes": "pf-kpi-label" } }, "type": "ia.display.label" },
+              { "meta": { "name": "V" }, "props": { "text": "Phase 7", "style": { "classes": "pf-kpi-value" } }, "type": "ia.display.label" },
+              { "meta": { "name": "S" }, "props": { "text": "wired when Phase 7 lands", "style": { "classes": "pf-kpi-sub" } }, "type": "ia.display.label" }
+            ],
+            "meta": { "name": "TilePrint" },
+            "position": { "basis": "240px", "shrink": 0 },
+            "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "6px", "padding": "16px", "opacity": "0.6" } },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": { "name": "Tiles" },
+        "position": { "grow": 1 },
+        "props": { "wrap": "wrap", "style": { "gap": "16px", "padding": "16px", "overflowY": "auto" } },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": { "name": "root" },
+    "props": { "direction": "column", "style": { "classes": "canvas" } },
+    "type": "ia.container.flex"
+  }
+}
