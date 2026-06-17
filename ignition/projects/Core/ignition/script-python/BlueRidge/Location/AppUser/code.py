@@ -6,12 +6,13 @@ import BlueRidge.Common.Db
 import BlueRidge.Common.Util
 
 
-def getUserList(includeDeprecated=False):
+def getUserList(includeDeprecated=False, textFilter=None):
 	"""
     Gets a list of user data.
 
     Args:
     	includeDeprecated (bool):   Whether or not the list should include deprecated users
+    	textFilter (string): the text that the results must include
 
     Returns:
         A list of objects of user data.
@@ -19,7 +20,7 @@ def getUserList(includeDeprecated=False):
 	BlueRidge.Common.Util.log("includeDeprecated=%s" % includeDeprecated)
 	return BlueRidge.Common.Db.execList(
 		"location/AppUser_List",
-		{"includeDeprecated": includeDeprecated}
+		{"includeDeprecated": includeDeprecated, "filter": textFilter}
 	)
 	
 def getUser(chosenId):
