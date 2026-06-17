@@ -1,0 +1,24 @@
+{
+  "custom": {},
+  "params": { "c1": "", "c2": "", "c3": "", "c4": "" },
+  "propConfig": {
+    "params.c1": { "paramDirection": "input" },
+    "params.c2": { "paramDirection": "input" },
+    "params.c3": { "paramDirection": "input" },
+    "params.c4": { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "height": 52 }
+  },
+  "root": {
+    "children": [
+      { "meta": { "name": "C1" }, "position": { "basis": "160px", "shrink": 0 }, "propConfig": { "props.text": { "binding": { "config": { "path": "view.params.c1" }, "type": "property" } } }, "props": { "style": { "fontWeight": "600" } }, "type": "ia.display.label" },
+      { "meta": { "name": "C2" }, "position": { "basis": "150px", "shrink": 0 }, "propConfig": { "props.text": { "binding": { "config": { "path": "view.params.c2" }, "type": "property" } } }, "props": { "style": { "color": "var(--mpp-text-secondary)" } }, "type": "ia.display.label" },
+      { "meta": { "name": "C3" }, "position": { "basis": "0", "grow": 1 }, "propConfig": { "props.text": { "binding": { "config": { "path": "view.params.c3" }, "type": "property" } } }, "type": "ia.display.label" },
+      { "meta": { "name": "C4" }, "position": { "basis": "180px", "shrink": 0 }, "propConfig": { "props.text": { "binding": { "config": { "path": "view.params.c4" }, "type": "property" } } }, "props": { "style": { "color": "var(--mpp-text-secondary)" } }, "type": "ia.display.label" }
+    ],
+    "meta": { "name": "root" },
+    "props": { "alignItems": "center", "style": { "classes": "surface-card", "gap": "12px" } },
+    "type": "ia.container.flex"
+  }
+}

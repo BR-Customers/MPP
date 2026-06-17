@@ -74,7 +74,7 @@
           {
             "children": [
               { "meta": { "name": "H" }, "position": { "shrink": 0 }, "props": { "text": "Open downtime events", "style": { "classes": "pf-panel-header" } }, "type": "ia.display.label" },
-              { "meta": { "name": "Tbl" }, "position": { "grow": 1 }, "propConfig": { "props.data": { "binding": { "config": { "path": "view.custom.summary.openDowntime" }, "type": "property" } } }, "props": { "columns": [] }, "type": "ia.display.table" }
+              { "meta": { "name": "Rows" }, "position": { "grow": 1 }, "propConfig": { "props.instances": { "binding": { "config": { "path": "view.custom.summary.openDowntime" }, "transforms": [ { "type": "script", "code": "\treturn [{\"c1\": r.get(\"LocationCode\") or \"\", \"c2\": r.get(\"SourceCode\") or \"\", \"c3\": (r.get(\"ReasonCode\") or \"(no reason)\"), \"c4\": str(r.get(\"StartedAtEt\") or \"\")} for r in (value or [])]" } ], "type": "property" } } }, "props": { "direction": "column", "elementPosition": { "basis": "52px", "shrink": 0 }, "path": "BlueRidge/Components/PlantFloor/ShiftEndSummary/SummaryRow", "style": { "gap": "8px" }, "useDefaultViewHeight": false, "useDefaultViewWidth": false }, "type": "ia.display.flex-repeater" }
             ],
             "meta": { "name": "DowntimePanel" },
             "position": { "grow": 1, "basis": "0" },
@@ -84,7 +84,7 @@
           {
             "children": [
               { "meta": { "name": "H" }, "position": { "shrink": 0 }, "props": { "text": "Paused LOTs", "style": { "classes": "pf-panel-header" } }, "type": "ia.display.label" },
-              { "meta": { "name": "Tbl" }, "position": { "grow": 1 }, "propConfig": { "props.data": { "binding": { "config": { "path": "view.custom.summary.openPauses" }, "type": "property" } } }, "props": { "columns": [] }, "type": "ia.display.table" }
+              { "meta": { "name": "Rows" }, "position": { "grow": 1 }, "propConfig": { "props.instances": { "binding": { "config": { "path": "view.custom.summary.openPauses" }, "transforms": [ { "type": "script", "code": "\treturn [{\"c1\": r.get(\"LotName\") or \"\", \"c2\": r.get(\"ItemCode\") or \"\", \"c3\": (r.get(\"PausedReason\") or \"\"), \"c4\": str(r.get(\"PausedAt\") or \"\")} for r in (value or [])]" } ], "type": "property" } } }, "props": { "direction": "column", "elementPosition": { "basis": "52px", "shrink": 0 }, "path": "BlueRidge/Components/PlantFloor/ShiftEndSummary/SummaryRow", "style": { "gap": "8px" }, "useDefaultViewHeight": false, "useDefaultViewWidth": false }, "type": "ia.display.flex-repeater" }
             ],
             "meta": { "name": "PausePanel" },
             "position": { "grow": 1, "basis": "0" },
@@ -94,7 +94,7 @@
           {
             "children": [
               { "meta": { "name": "H" }, "position": { "shrink": 0 }, "props": { "text": "In-process LOTs", "style": { "classes": "pf-panel-header" } }, "type": "ia.display.label" },
-              { "meta": { "name": "Tbl" }, "position": { "grow": 1 }, "propConfig": { "props.data": { "binding": { "config": { "path": "view.custom.summary.inProcessLots" }, "type": "property" } } }, "props": { "columns": [] }, "type": "ia.display.table" }
+              { "meta": { "name": "Rows" }, "position": { "grow": 1 }, "propConfig": { "props.instances": { "binding": { "config": { "path": "view.custom.summary.inProcessLots" }, "transforms": [ { "type": "script", "code": "\treturn [{\"c1\": r.get(\"LotName\") or \"\", \"c2\": r.get(\"ItemCode\") or \"\", \"c3\": (str(r.get(\"InProcessPieceCount\") or \"\") + \" pcs\"), \"c4\": (r.get(\"LotStatus\") or \"\")} for r in (value or [])]" } ], "type": "property" } } }, "props": { "direction": "column", "elementPosition": { "basis": "52px", "shrink": 0 }, "path": "BlueRidge/Components/PlantFloor/ShiftEndSummary/SummaryRow", "style": { "gap": "8px" }, "useDefaultViewHeight": false, "useDefaultViewWidth": false }, "type": "ia.display.flex-repeater" }
             ],
             "meta": { "name": "LotPanel" },
             "position": { "grow": 1, "basis": "0" },
