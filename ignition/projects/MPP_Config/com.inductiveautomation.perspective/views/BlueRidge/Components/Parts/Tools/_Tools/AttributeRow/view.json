@@ -1,46 +1,47 @@
 {
   "custom": {},
   "params": {
+    "attributeOptions": [],
     "row": {
-      "rowIndex": 0,
-      "id": null,
-      "toolAttributeDefinitionId": null,
+      "dataType": "String",
       "definitionLabel": "",
-      "value": "",
-      "dataType": "String"
-    },
-    "attributeOptions": []
+      "id": null,
+      "rowIndex": 0,
+      "toolAttributeDefinitionId": null,
+      "value": ""
+    }
   },
   "propConfig": {
-    "params.row":              { "paramDirection": "input" },
-    "params.attributeOptions": { "paramDirection": "input" }
+    "params.attributeOptions": {
+      "paramDirection": "input"
+    },
+    "params.row": {
+      "paramDirection": "input"
+    }
   },
   "props": {
-    "defaultSize": { "height": 36, "width": 1200 }
+    "defaultSize": {
+      "height": 36,
+      "width": 1200
+    }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": { "name": "root" },
-    "props": {
-      "direction": "row",
-      "alignItems": "center",
-      "style": {
-        "borderBottom": "1px solid var(--mpp-border-subtle)",
-        "gap": "6px",
-        "padding": "2px 10px",
-        "height": "100%"
-      }
-    },
     "children": [
       {
-        "type": "ia.display.label",
-        "meta": { "name": "IndexLabel" },
-        "position": { "basis": "32px", "shrink": 0 },
+        "meta": {
+          "name": "IndexLabel"
+        },
+        "position": {
+          "basis": "32px",
+          "shrink": 0
+        },
         "propConfig": {
           "props.text": {
             "binding": {
-              "type": "expr",
-              "config": { "expression": "toStr({view.params.row.rowIndex} + 1)" }
+              "config": {
+                "expression": "toStr({view.params.row.rowIndex} + 1)"
+              },
+              "type": "expr"
             }
           }
         },
@@ -50,234 +51,328 @@
             "fontSize": "12px",
             "textAlign": "right"
           }
-        }
+        },
+        "type": "ia.display.label"
       },
       {
-        "type": "ia.input.dropdown",
-        "meta": { "name": "DefinitionDropdown" },
-        "position": { "grow": 1, "basis": "0" },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"attrRowDefinitionChanged\", payload\u003d{\"rowIndex\": self.view.params.row.rowIndex, \"newDefId\": self.props.value}, scope\u003d\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "DefinitionDropdown"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
         "propConfig": {
           "position.display": {
             "binding": {
-              "type": "expr",
-              "config": { "expression": "isNull({view.params.row.id})" }
+              "config": {
+                "expression": "isNull({view.params.row.id})"
+              },
+              "type": "expr"
             }
           },
           "props.options": {
             "binding": {
-              "type": "property",
-              "config": { "path": "view.params.attributeOptions" },
+              "config": {
+                "path": "view.params.attributeOptions"
+              },
               "transforms": [
                 {
-                  "type": "script",
-                  "code": "\tout = []\n\tfor it in (value or []):\n\t\tit = it or {}\n\t\tout.append({'label': it.get('label') or '', 'value': it.get('value')})\n\treturn out"
+                  "code": "\tout \u003d []\n\tfor it in (value or []):\n\t\tit \u003d it or {}\n\t\tout.append({\u0027label\u0027: it.get(\u0027label\u0027) or \u0027\u0027, \u0027value\u0027: it.get(\u0027value\u0027)})\n\treturn out",
+                  "type": "script"
                 }
-              ]
+              ],
+              "type": "property"
             }
           },
           "props.value": {
             "binding": {
-              "type": "property",
-              "config": { "path": "view.params.row.toolAttributeDefinitionId" }
+              "config": {
+                "path": "view.params.row.toolAttributeDefinitionId"
+              },
+              "type": "property"
             }
           }
         },
         "props": {
           "filterable": true,
           "noSelectionText": "Pick attribute...",
-          "style": { "classes": "select", "height": "30px" }
-        },
-        "events": {
-          "component": {
-            "onActionPerformed": {
-              "type": "script",
-              "scope": "G",
-              "config": {
-                "script": "\tsystem.perspective.sendMessage(\"attrRowDefinitionChanged\", payload={\"rowIndex\": self.view.params.row.rowIndex, \"newDefId\": self.props.value}, scope=\"page\")"
-              }
-            }
+          "style": {
+            "classes": "select",
+            "height": "30px"
           }
-        }
+        },
+        "type": "ia.input.dropdown"
       },
       {
-        "type": "ia.display.label",
-        "meta": { "name": "DefinitionLabel" },
-        "position": { "grow": 1, "basis": "0" },
+        "meta": {
+          "name": "DefinitionLabel"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
         "propConfig": {
           "position.display": {
             "binding": {
-              "type": "expr",
-              "config": { "expression": "!isNull({view.params.row.id})" }
+              "config": {
+                "expression": "!isNull({view.params.row.id})"
+              },
+              "type": "expr"
             }
           },
           "props.text": {
             "binding": {
-              "type": "property",
-              "config": { "path": "view.params.row.definitionLabel" }
+              "config": {
+                "path": "view.params.row.definitionLabel"
+              },
+              "type": "property"
             }
           }
         },
         "props": {
-          "text": "",
-          "style": { "fontSize": "12px" }
-        }
+          "style": {
+            "fontSize": "12px"
+          }
+        },
+        "type": "ia.display.label"
       },
       {
-        "type": "ia.input.text-field",
-        "meta": { "name": "ValueText" },
-        "position": { "basis": "260px", "shrink": 0 },
+        "events": {
+          "dom": {
+            "onBlur": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"attrRowValueChanged\", payload\u003d{\"rowIndex\": self.view.params.row.rowIndex, \"newValue\": self.props.text}, scope\u003d\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "ValueText"
+        },
+        "position": {
+          "basis": "260px",
+          "shrink": 0
+        },
         "propConfig": {
           "position.display": {
             "binding": {
-              "type": "expr",
-              "config": { "expression": "{view.params.row.dataType} = \"String\"" }
+              "config": {
+                "expression": "{view.params.row.dataType} \u003d \"String\""
+              },
+              "type": "expr"
             }
           },
           "props.text": {
             "binding": {
-              "type": "property",
-              "config": { "path": "view.params.row.value" }
+              "config": {
+                "path": "view.params.row.value"
+              },
+              "type": "property"
             }
           }
         },
         "props": {
           "placeholder": "Value",
-          "style": { "classes": "search-input", "height": "30px" }
+          "style": {
+            "classes": "search-input",
+            "height": "30px"
+          }
         },
+        "type": "ia.input.text-field"
+      },
+      {
         "events": {
           "dom": {
             "onBlur": {
-              "type": "script",
-              "scope": "G",
               "config": {
-                "script": "\tsystem.perspective.sendMessage(\"attrRowValueChanged\", payload={\"rowIndex\": self.view.params.row.rowIndex, \"newValue\": self.props.text}, scope=\"page\")"
-              }
+                "script": "\tv \u003d self.props.value\n\tnewValue \u003d \"\" if v is None else str(v)\n\tsystem.perspective.sendMessage(\"attrRowValueChanged\", payload\u003d{\"rowIndex\": self.view.params.row.rowIndex, \"newValue\": newValue}, scope\u003d\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
             }
           }
-        }
-      },
-      {
-        "type": "ia.input.numeric-entry-field",
-        "meta": { "name": "ValueNumeric" },
-        "position": { "basis": "260px", "shrink": 0 },
+        },
+        "meta": {
+          "name": "ValueNumeric"
+        },
+        "position": {
+          "basis": "260px",
+          "shrink": 0
+        },
         "propConfig": {
           "position.display": {
             "binding": {
-              "type": "expr",
-              "config": { "expression": "{view.params.row.dataType} = \"Integer\" || {view.params.row.dataType} = \"Decimal\"" }
+              "config": {
+                "expression": "{view.params.row.dataType} \u003d \"Integer\" || {view.params.row.dataType} \u003d \"Decimal\""
+              },
+              "type": "expr"
             }
           },
           "props.value": {
             "binding": {
-              "type": "expr",
-              "config": { "expression": "if(isNull({view.params.row.value}) || {view.params.row.value} = \"\", null, toFloat({view.params.row.value}))" }
+              "config": {
+                "expression": "if(isNull({view.params.row.value}) || {view.params.row.value} \u003d \"\", null, toFloat({view.params.row.value}))"
+              },
+              "type": "expr"
             }
           }
         },
         "props": {
           "placeholder": "Value",
-          "style": { "classes": "search-input", "height": "30px" }
-        },
-        "events": {
-          "dom": {
-            "onBlur": {
-              "type": "script",
-              "scope": "G",
-              "config": {
-                "script": "\tv = self.props.value\n\tnewValue = \"\" if v is None else str(v)\n\tsystem.perspective.sendMessage(\"attrRowValueChanged\", payload={\"rowIndex\": self.view.params.row.rowIndex, \"newValue\": newValue}, scope=\"page\")"
-              }
-            }
+          "style": {
+            "classes": "search-input",
+            "height": "30px"
           }
-        }
+        },
+        "type": "ia.input.numeric-entry-field"
       },
       {
-        "type": "ia.input.checkbox",
-        "meta": { "name": "ValueCheckbox" },
-        "position": { "basis": "260px", "shrink": 0 },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tnewValue \u003d \"true\" if self.props.selected else \"false\"\n\tsystem.perspective.sendMessage(\"attrRowValueChanged\", payload\u003d{\"rowIndex\": self.view.params.row.rowIndex, \"newValue\": newValue}, scope\u003d\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "ValueCheckbox"
+        },
+        "position": {
+          "basis": "260px",
+          "shrink": 0
+        },
         "propConfig": {
           "position.display": {
             "binding": {
-              "type": "expr",
-              "config": { "expression": "{view.params.row.dataType} = \"Boolean\"" }
+              "config": {
+                "expression": "{view.params.row.dataType} \u003d \"Boolean\""
+              },
+              "type": "expr"
             }
           },
           "props.selected": {
             "binding": {
-              "type": "expr",
-              "config": { "expression": "{view.params.row.value} = \"true\"" }
+              "config": {
+                "expression": "{view.params.row.value} \u003d \"true\""
+              },
+              "type": "expr"
             }
           }
         },
         "props": {
-          "text": "",
-          "style": { "height": "30px" }
+          "style": {
+            "height": "30px"
+          },
+          "text": ""
         },
-        "events": {
-          "component": {
-            "onActionPerformed": {
-              "type": "script",
-              "scope": "G",
-              "config": {
-                "script": "\tnewValue = \"true\" if self.props.selected else \"false\"\n\tsystem.perspective.sendMessage(\"attrRowValueChanged\", payload={\"rowIndex\": self.view.params.row.rowIndex, \"newValue\": newValue}, scope=\"page\")"
-              }
-            }
-          }
-        }
+        "type": "ia.input.checkbox"
       },
       {
-        "type": "ia.input.date-time-input",
-        "meta": { "name": "ValueDate" },
-        "position": { "basis": "260px", "shrink": 0 },
+        "events": {
+          "dom": {
+            "onBlur": {
+              "config": {
+                "script": "\tv \u003d self.props.value\n\tnewValue \u003d \"\" if v is None else system.date.format(v, \"yyyy-MM-dd\")\n\tsystem.perspective.sendMessage(\"attrRowValueChanged\", payload\u003d{\"rowIndex\": self.view.params.row.rowIndex, \"newValue\": newValue}, scope\u003d\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "ValueDate"
+        },
+        "position": {
+          "basis": "260px",
+          "shrink": 0
+        },
         "propConfig": {
           "position.display": {
             "binding": {
-              "type": "expr",
-              "config": { "expression": "{view.params.row.dataType} = \"Date\"" }
+              "config": {
+                "expression": "{view.params.row.dataType} \u003d \"Date\""
+              },
+              "type": "expr"
             }
           },
           "props.value": {
             "binding": {
-              "type": "expr",
-              "config": { "expression": "if(isNull({view.params.row.value}) || {view.params.row.value} = \"\", null, parseDate({view.params.row.value}, \"yyyy-MM-dd\"))" }
+              "config": {
+                "expression": "if(isNull({view.params.row.value}) || {view.params.row.value} \u003d \"\", null, parseDate({view.params.row.value}, \"yyyy-MM-dd\"))"
+              },
+              "type": "expr"
             }
           }
         },
         "props": {
           "format": "YYYY-MM-DD",
-          "style": { "classes": "search-input", "height": "30px" }
-        },
-        "events": {
-          "dom": {
-            "onBlur": {
-              "type": "script",
-              "scope": "G",
-              "config": {
-                "script": "\tv = self.props.value\n\tnewValue = \"\" if v is None else system.date.format(v, \"yyyy-MM-dd\")\n\tsystem.perspective.sendMessage(\"attrRowValueChanged\", payload={\"rowIndex\": self.view.params.row.rowIndex, \"newValue\": newValue}, scope=\"page\")"
-              }
-            }
+          "style": {
+            "classes": "search-input",
+            "height": "30px"
           }
-        }
+        },
+        "type": "ia.input.date-time-input"
       },
       {
-        "type": "ia.input.button",
-        "meta": { "name": "RemoveBtn" },
-        "position": { "basis": "40px", "shrink": 0 },
-        "props": {
-          "text": "×",
-          "style": { "classes": "btn btn-sm", "padding": "2px 6px", "height": "30px" }
-        },
         "events": {
           "component": {
             "onActionPerformed": {
-              "type": "script",
-              "scope": "G",
               "config": {
-                "script": "\tsystem.perspective.sendMessage(\"attrRowRemove\", payload={\"rowIndex\": self.view.params.row.rowIndex}, scope=\"page\")"
-              }
+                "script": "\tsystem.perspective.sendMessage(\"attrRowRemove\", payload\u003d{\"rowIndex\": self.view.params.row.rowIndex}, scope\u003d\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
             }
           }
-        }
+        },
+        "meta": {
+          "name": "RemoveBtn"
+        },
+        "position": {
+          "basis": "40px",
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "classes": "btn btn-sm",
+            "height": "30px",
+            "padding": "2px 6px"
+          },
+          "text": "×"
+        },
+        "type": "ia.input.button"
       }
-    ]
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "gap": "6px",
+        "height": "100%",
+        "padding": "2px 10px"
+      }
+    },
+    "type": "ia.container.flex"
   }
 }
