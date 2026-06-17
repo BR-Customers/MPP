@@ -275,7 +275,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tresult \u003d BlueRidge.Location.AppUser.deprecateUser(self.view.params.editId, self.session.custom.appUserId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Operator deprecated\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"UsersRefresh\", scope\u003d\"page\")\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-operator-editor\")"
+                    "script": "\tresult \u003d BlueRidge.Location.AppUser.deprecateUser(self.view.params.editId, self.session.custom.appUserId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Operator deprecated\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"usersRefresh\", scope\u003d\"page\")\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-operator-editor\")"
                   },
                   "scope": "G",
                   "type": "script"
@@ -339,7 +339,7 @@
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\tmode \u003d self.view.params.mode\n\tdraft \u003d self.view.custom.editDraft.get(\"meta\", {}) if self.view.custom.editDraft else {}\n\tif mode \u003d\u003d \"create\":\n\t\tresult \u003d BlueRidge.Oee.DowntimeReasonCode.add(draft)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"New operator created\")\n\telse:\n\t\tresult \u003d BlueRidge.Oee.DowntimeReasonCode.update(draft)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"Operator updated\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"usersRefresh\", scope\u003d\"page\")\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-operator-editor\")"
+                        "script": "\tmode \u003d self.view.params.mode\n\tdraft \u003d self.view.custom.editDraft.get(\"meta\", {}) if self.view.custom.editDraft else {}\n\tif mode \u003d\u003d \"create\":\n\t\tresult \u003d BlueRidge.Location.AppUser.createOperator(draft, self.session.custom.appUserId)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"New operator created\")\n\telse:\n\t\tresult \u003d BlueRidge.Location.AppUser.updateOperator(self.view.params.editId, draft, self.session.custom.appUserId)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"Operator updated\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"usersRefresh\", scope\u003d\"page\")\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-operator-editor\")"
                       },
                       "scope": "G",
                       "type": "script"
