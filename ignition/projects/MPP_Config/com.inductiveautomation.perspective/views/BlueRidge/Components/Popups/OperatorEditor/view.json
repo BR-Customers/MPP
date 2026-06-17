@@ -103,7 +103,7 @@
               "dom": {
                 "onClick": {
                   "config": {
-                    "script": "\tif self.view.custom.editDraft \u003d\u003d self.view.custom.selected:\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-downtime-code-editor\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid\u003d\"mpp-confirm-unsaved\",\n\t\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal\u003dTrue,\n\t\t\tshowCloseIcon\u003dFalse,\n\t\t\tparams\u003d{\n\t\t\t\t\"title\": \"Unsaved Changes\",\n\t\t\t\t\"message\": \"You have unsaved changes to this downtime code. Save before closing?\"\n\t\t\t}\n\t\t)"
+                    "script": "\tif self.view.custom.editDraft \u003d\u003d self.view.custom.selected:\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-operator-editor\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid\u003d\"mpp-confirm-unsaved\",\n\t\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal\u003dTrue,\n\t\t\tshowCloseIcon\u003dFalse,\n\t\t\tparams\u003d{\n\t\t\t\t\"title\": \"Unsaved Changes\",\n\t\t\t\t\"message\": \"You have unsaved changes to this downtime code. Save before closing?\"\n\t\t\t}\n\t\t)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -275,7 +275,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tresult \u003d BlueRidge.Oee.DowntimeReasonCode.deprecate(self.view.params.editId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Downtime code deprecated\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"downtimeCodesRefresh\", scope\u003d\"page\")\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-downtime-code-editor\")"
+                    "script": "\tresult \u003d BlueRidge.Location.AppUser.deprecateUser(self.view.params.editId, self.session.custom.appUserId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Operator deprecated\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"UsersRefresh\", scope\u003d\"page\")\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-operator-editor\")"
                   },
                   "scope": "G",
                   "type": "script"
@@ -313,7 +313,7 @@
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\tif self.view.custom.editDraft \u003d\u003d self.view.custom.selected:\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-downtime-code-editor\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid\u003d\"mpp-confirm-unsaved\",\n\t\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal\u003dTrue,\n\t\t\tshowCloseIcon\u003dFalse,\n\t\t\tparams\u003d{\n\t\t\t\t\"title\": \"Unsaved Changes\",\n\t\t\t\t\"message\": \"You have unsaved changes to this downtime code. Save before closing?\"\n\t\t\t}\n\t\t)"
+                        "script": "\tif self.view.custom.editDraft \u003d\u003d self.view.custom.selected:\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-operator-editor\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid\u003d\"mpp-confirm-unsaved\",\n\t\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal\u003dTrue,\n\t\t\tshowCloseIcon\u003dFalse,\n\t\t\tparams\u003d{\n\t\t\t\t\"title\": \"Unsaved Changes\",\n\t\t\t\t\"message\": \"You have unsaved changes to this downtime code. Save before closing?\"\n\t\t\t}\n\t\t)"
                       },
                       "scope": "G",
                       "type": "script"
@@ -339,7 +339,7 @@
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\tmode \u003d self.view.params.mode\n\tdraft \u003d self.view.custom.editDraft.get(\"meta\", {}) if self.view.custom.editDraft else {}\n\tif mode \u003d\u003d \"create\":\n\t\tresult \u003d BlueRidge.Oee.DowntimeReasonCode.add(draft)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"Downtime code created\")\n\telse:\n\t\tresult \u003d BlueRidge.Oee.DowntimeReasonCode.update(draft)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"Downtime code updated\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"downtimeCodesRefresh\", scope\u003d\"page\")\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-downtime-code-editor\")"
+                        "script": "\tmode \u003d self.view.params.mode\n\tdraft \u003d self.view.custom.editDraft.get(\"meta\", {}) if self.view.custom.editDraft else {}\n\tif mode \u003d\u003d \"create\":\n\t\tresult \u003d BlueRidge.Oee.DowntimeReasonCode.add(draft)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"New operator created\")\n\telse:\n\t\tresult \u003d BlueRidge.Oee.DowntimeReasonCode.update(draft)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"Operator updated\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"usersRefresh\", scope\u003d\"page\")\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-operator-editor\")"
                       },
                       "scope": "G",
                       "type": "script"
@@ -414,7 +414,7 @@
         {
           "messageType": "confirmUnsavedResult",
           "pageScope": true,
-          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tif action \u003d\u003d \"save\":\n\t\tmode \u003d self.view.params.mode\n\t\tdraft \u003d self.view.custom.editDraft.get(\"meta\", {}) if self.view.custom.editDraft else {}\n\t\tif mode \u003d\u003d \"create\":\n\t\t\tresult \u003d BlueRidge.Oee.DowntimeReasonCode.add(draft)\n\t\telse:\n\t\t\tresult \u003d BlueRidge.Oee.DowntimeReasonCode.update(draft)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"New user saved\")\n\t\tif result and result.get(\"Status\"):\n\t\t\tsystem.perspective.sendMessage(\"RowRefresh\", scope\u003d\"page\")\n\t\t\tsystem.perspective.closePopup(id\u003d\"mpp-user-editor\")\n\telif action \u003d\u003d \"discard\":\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-user-editor\")",
+          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tif action \u003d\u003d \"save\":\n\t\tmode \u003d self.view.params.mode\n\t\tdraft \u003d self.view.custom.editDraft.get(\"meta\", {}) if self.view.custom.editDraft else {}\n\t\tif mode \u003d\u003d \"create\":\n\t\t\tresult \u003d BlueRidge.Oee.DowntimeReasonCode.add(draft)\n\t\telse:\n\t\t\tresult \u003d BlueRidge.Oee.DowntimeReasonCode.update(draft)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"Operator saved\")\n\t\tif result and result.get(\"Status\"):\n\t\t\tsystem.perspective.sendMessage(\"UsersRefresh\", scope\u003d\"page\")\n\t\t\tsystem.perspective.closePopup(id\u003d\"mpp-operator-editor\")\n\telif action \u003d\u003d \"discard\":\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-operator-editor\")",
           "sessionScope": false,
           "viewScope": false
         }

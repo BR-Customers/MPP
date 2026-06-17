@@ -37,7 +37,28 @@ def getUser(chosenId):
 		"location/AppUser_Get", 
 		{"id": chosenId}
 	)
-	
+
+def createOperator(initials, displayName, appUserId):
+	"""
+    Creates a new operator with initials, displayName, and appUserId.
+
+    Args:
+    	initials (string): the initials of the new operator (used as login).
+    	displayName (string): the display name of the new operator.
+    	appUserId (int): the session custom property that is unique to a user and is used for audit logs.
+
+    Returns:
+        A message of whether the query succeeded or not.
+    """
+	attributes = {
+		"initials": initials,
+		"displayName": displayName,
+		"adAccount": None,
+		"ignitionRole": None,
+		"appUserId": appUserId
+	}
+	return createUser(attributes)
+
 def createUser(attributes):
 	"""
     Creates a new user with dict "attributes".
@@ -71,6 +92,29 @@ def deprecateUser(chosenId, appUserId):
 		"location/AppUser_Deprecate", 
 		{"id": chosenId, "appUserId": appUserId}
 	)
+
+def updateOperator(chosenId, initials, displayName, appUserId):
+	"""
+    Updates an operator with the id of chosenId with initials, displayName, and appUserId.
+
+    Args:
+    	chosenId (int): the id of the operator to be updated
+    	initials (string): the initials of the new operator (used as login).
+    	displayName (string): the display name of the new operator.
+    	appUserId (int): the session custom property that is unique to a user and is used for audit logs.
+
+    Returns:
+        A message of whether the query succeeded or not.
+    """
+	attributes = {
+		"id": chosenId,
+		"initials": initials,
+		"displayName": displayName,
+		"adAccount": None,
+		"ignitionRole": None,
+		"appUserId": appUserId
+	}
+	return updateUser(attributes)
 
 def updateUser(attributes):
 	"""
