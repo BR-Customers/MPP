@@ -56,3 +56,9 @@ def getEndOfShiftSummary(cellLocationId):
         "openPauses":    BlueRidge.Common.Db.execList("lots/LotPause_GetByLocation", {"locationId": cellLocationId}),
         "inProcessLots": BlueRidge.Common.Db.execList("oee/Lot_GetInProcessByLocation", {"locationId": cellLocationId}),
     }
+
+
+def getOpenSummary():
+    """Plant-wide open-downtime counts for the Supervisor Dashboard:
+    {TotalOpen, WithReason, WithoutReason}. Returns {} if the read yields nothing."""
+    return BlueRidge.Common.Db.execOne("oee/DowntimeEvent_GetOpenSummary") or {}

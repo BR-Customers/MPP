@@ -61,6 +61,21 @@ def getOpen():
     return BlueRidge.Common.Db.execOne("oee/Shift_GetOpen")
 
 
+def acknowledgeHandover(shiftId, cellLocationId=None, appUserId=None, terminalLocationId=None):
+    """Record that the operator reviewed the shift-end summary (FDS-09-015).
+       Audit-only; the shift-time data is already committed. Returns {Status, Message}."""
+    BlueRidge.Common.Util.log("shiftId=%s cellLocationId=%s" % (shiftId, cellLocationId))
+    if appUserId is None:
+        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    params = {
+        "shiftId":            shiftId,
+        "cellLocationId":     cellLocationId,
+        "appUserId":          appUserId,
+        "terminalLocationId": terminalLocationId,
+    }
+    return BlueRidge.Common.Db.execMutation("oee/ShiftHandover_Acknowledge", params)
+
+
 def tickShiftBoundary(nowUtc=None):
     """Called every 60s by the ShiftBoundaryTicker gateway timer.
 
