@@ -17,13 +17,13 @@
     "params.hasReason": { "paramDirection": "input" }
   },
   "props": {
-    "defaultSize": { "height": 48 }
+    "defaultSize": { "height": 56 }
   },
   "root": {
     "children": [
       {
         "meta": { "name": "Machine" },
-        "position": { "basis": "130px", "shrink": 0 },
+        "position": { "basis": "140px", "shrink": 0 },
         "propConfig": {
           "props.text": {
             "binding": { "config": { "path": "view.params.locationCode" }, "type": "property" }
@@ -34,7 +34,7 @@
       },
       {
         "meta": { "name": "Source" },
-        "position": { "basis": "90px", "shrink": 0 },
+        "position": { "basis": "100px", "shrink": 0 },
         "propConfig": {
           "props.text": {
             "binding": { "config": { "path": "view.params.sourceCode" }, "type": "property" }
@@ -49,13 +49,13 @@
         "propConfig": {
           "props.text": {
             "binding": {
-              "config": { "expression": "if(isNull({view.params.reasonCode}), '(no reason)', {view.params.reasonCode})" },
+              "config": { "expression": "if(isNull({view.params.reasonCode}), 'No reason — assign', {view.params.reasonCode})" },
               "type": "expr"
             }
           },
           "props.style.color": {
             "binding": {
-              "config": { "expression": "if({view.params.hasReason}, 'var(--mpp-text-primary)', 'var(--mpp-warn, #b8860b)')" },
+              "config": { "expression": "if({view.params.hasReason}, 'var(--mpp-text-primary)', 'var(--pf-status-warn-fg)')" },
               "type": "expr"
             }
           }
@@ -86,13 +86,13 @@
           }
         },
         "meta": { "name": "AssignButton" },
-        "position": { "basis": "92px", "shrink": 0 },
+        "position": { "basis": "120px", "shrink": 0 },
         "propConfig": {
           "meta.visible": {
             "binding": { "config": { "expression": "!{view.params.hasReason}" }, "type": "expr" }
           }
         },
-        "props": { "style": { "classes": "btn btn-sm" }, "text": "Assign" },
+        "props": { "style": { "classes": "pf-btn pf-btn-secondary" }, "text": "Assign" },
         "type": "ia.input.button"
       },
       {
@@ -108,8 +108,8 @@
           }
         },
         "meta": { "name": "EndButton" },
-        "position": { "basis": "84px", "shrink": 0 },
-        "props": { "style": { "classes": "btn btn-sm btn-primary" }, "text": "End" },
+        "position": { "basis": "100px", "shrink": 0 },
+        "props": { "style": { "classes": "pf-btn pf-btn-primary" }, "text": "End" },
         "type": "ia.input.button"
       }
     ],
@@ -118,8 +118,8 @@
       "alignItems": "center",
       "style": {
         "borderBottom": "1px solid var(--mpp-border-subtle)",
-        "gap": "8px",
-        "padding": "8px 12px"
+        "gap": "12px",
+        "padding": "8px 16px"
       }
     },
     "type": "ia.container.flex"
