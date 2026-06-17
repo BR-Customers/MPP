@@ -632,6 +632,7 @@
                 "props": {
                   "style": {
                     "classes": "select",
+                    "height": "30px",
                     "width": "120px"
                   }
                 },

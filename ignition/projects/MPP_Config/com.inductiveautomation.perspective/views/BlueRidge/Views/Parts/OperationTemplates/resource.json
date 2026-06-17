@@ -6,14 +6,12 @@
   "files": [
     "view.json",
     "thumbnail.png"
-    "view.json",
-    "thumbnail.png"
   ],
   "attributes": {
-    "lastModificationSignature": "e23ed94b107d952bc675e5beb659b9203ab1325f4dac46fff61446fb3a2fd346",
+    "lastModificationSignature": "fdd3ae8c656b9182c1520437d19c77f439e6d8d33046592b7ec24a9e81f76040",
     "lastModification": {
       "actor": "admin",
-      "timestamp": "2026-06-12T19:25:08Z"
+      "timestamp": "2026-06-12T13:14:56Z"
     }
   }
 }

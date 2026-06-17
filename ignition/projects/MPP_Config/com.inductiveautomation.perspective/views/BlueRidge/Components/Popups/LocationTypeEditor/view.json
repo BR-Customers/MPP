@@ -1,67 +1,30 @@
 {
   "custom": {
     "editDraft": {
-      "attributes": [
-        {
-          "AttributeName": "",
-          "DataType": "NVARCHAR",
-          "DefaultValue": "",
-          "Description": "",
-          "Id": null,
-          "IsRequired": false,
-          "Uom": ""
-        },
-        {
-          "AttributeName": "",
-          "DataType": "NVARCHAR",
-          "DefaultValue": "",
-          "Description": "",
-          "Id": null,
-          "IsRequired": false,
-          "Uom": ""
-        },
-        {
-          "AttributeName": "",
-          "DataType": "NVARCHAR",
-          "DefaultValue": "",
-          "Description": "",
-          "Id": null,
-          "IsRequired": false,
-          "Uom": ""
-        },
-        {
-          "AttributeName": "",
-          "DataType": "NVARCHAR",
-          "DefaultValue": "",
-          "Description": "",
-          "Id": null,
-          "IsRequired": false,
-          "Uom": ""
-        }
-      ],
+      "attributes": [],
       "meta": {
-        "Code": "",
+        "Code": "ProductionArea",
         "Description": "",
-        "Icon": "",
-        "Id": "",
-        "LocationTypeId": "",
-        "Name": ""
+        "Icon": "mpp/workspaces",
+        "Id": 3,
+        "LocationTypeId": 3,
+        "Name": "Production Area"
       }
     },
     "mode": "update",
     "selected": {
       "attributes": [],
       "meta": {
-        "Code": "",
+        "Code": "ProductionArea",
         "Description": "",
-        "Icon": "",
-        "Id": "",
-        "LocationTypeId": "",
-        "Name": ""
+        "Icon": "mpp/workspaces",
+        "Id": 3,
+        "LocationTypeId": 3,
+        "Name": "Production Area"
       }
     },
-    "selectedDefId": "",
-    "tierId": ""
+    "selectedDefId": 3,
+    "tierId": 3
   },
   "params": {},
   "propConfig": {
