@@ -515,7 +515,7 @@
                       }
                     },
                     "props": {
-                      "placeholder": "🔍 Search dies…",
+                      "placeholder": "Search dies…",
                       "style": {
                         "classes": "search-input"
                       }

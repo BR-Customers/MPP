@@ -168,7 +168,7 @@
                       }
                     },
                     "props": {
-                      "placeholder": "🔍 Search items…",
+                      "placeholder": "Search items…",
                       "style": {
                         "classes": "search-input"
                       }
