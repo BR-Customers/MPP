@@ -23,7 +23,7 @@ BEGIN
            i.PartNumber            AS ItemCode,
            dq.TotalInProcess       AS InProcessPieceCount,
            sc.Code                 AS LotStatus,
-           m.MovedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS ArrivedAtEt
+           CAST(m.MovedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS ArrivedAtEt
     FROM Lots.Lot l
     INNER JOIN Parts.Item i          ON i.Id  = l.ItemId
     INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId

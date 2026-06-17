@@ -25,7 +25,7 @@ BEGIN
            rc.Code                AS ReasonCode,
            de.DowntimeSourceCodeId AS DowntimeSourceCodeId,
            src.Code               AS SourceCode,
-           de.StartedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS StartedAtEt,
+           CAST(de.StartedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS StartedAtEt,
            de.AppUserId           AS AppUserId,
            de.ShotCount           AS ShotCount
     FROM Oee.DowntimeEvent de

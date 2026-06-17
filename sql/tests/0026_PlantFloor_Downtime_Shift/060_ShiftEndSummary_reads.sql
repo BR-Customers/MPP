@@ -46,7 +46,7 @@ GO
 DECLARE @Cell BIGINT = (SELECT Val FROM #SumFix WHERE Tag = N'CELL');
 DECLARE @dt TABLE (DowntimeEventId BIGINT, LocationId BIGINT, LocationCode NVARCHAR(50),
     DowntimeReasonCodeId BIGINT, ReasonCode NVARCHAR(20), DowntimeSourceCodeId BIGINT,
-    SourceCode NVARCHAR(20), StartedAtEt DATETIMEOFFSET, AppUserId BIGINT, ShotCount INT);
+    SourceCode NVARCHAR(20), StartedAtEt DATETIME2(3), AppUserId BIGINT, ShotCount INT);
 INSERT INTO @dt EXEC Oee.DowntimeEvent_GetOpenByLocation @LocationId = @Cell;
 DECLARE @dtCnt INT = (SELECT COUNT(*) FROM @dt);
 EXEC test.Assert_RowCount @TestName = N'[Summary] open-downtime read returns the open event',
@@ -64,7 +64,7 @@ GO
 DECLARE @Cell BIGINT = (SELECT Val FROM #SumFix WHERE Tag = N'CELL');
 DECLARE @LotId BIGINT = (SELECT Val FROM #SumFix WHERE Tag = N'LOT');
 DECLARE @ip TABLE (LotId BIGINT, LotName NVARCHAR(50), ItemCode NVARCHAR(50),
-    InProcessPieceCount DECIMAL(18,3), LotStatus NVARCHAR(20), ArrivedAtEt DATETIMEOFFSET);
+    InProcessPieceCount DECIMAL(18,3), LotStatus NVARCHAR(20), ArrivedAtEt DATETIME2(3));
 INSERT INTO @ip EXEC Oee.Lot_GetInProcessByLocation @LocationId = @Cell;
 DECLARE @ipCnt INT = (SELECT COUNT(*) FROM @ip WHERE LotId = @LotId);
 EXEC test.Assert_RowCount @TestName = N'[Summary] in-process read returns the LOT at the cell',
