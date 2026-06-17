@@ -11,7 +11,7 @@
           "$": [
             "ts",
             0,
-            1781699780367
+            1781704874898
           ],
           "$ts": 1781286373635
         },
@@ -27,7 +27,7 @@
           "$": [
             "ts",
             0,
-            1781699780367
+            1781704874898
           ],
           "$ts": 1781637232618
         },
@@ -43,15 +43,15 @@
           "$": [
             "ts",
             0,
-            1781699780367
+            1781704874898
           ],
-          "$ts": 1781638272959
+          "$ts": 1781716258530
         },
         "DeprecatedAt": null,
-        "DisplayName": "Noah Nesbitt",
-        "Id": 8,
+        "DisplayName": "Noah E Nesbitt",
+        "Id": 10,
         "IgnitionRole": null,
-        "Initials": "NEN"
+        "Initials": "NRM"
       },
       {
         "AdAccount": "system.bootstrap",
@@ -59,7 +59,7 @@
           "$": [
             "ts",
             0,
-            1781699780367
+            1781704874898
           ],
           "$ts": 1781286348227
         },
@@ -79,7 +79,7 @@
     "custom.rows": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Location.AppUser.getUserList\",0, {view.custom.filter.includeDeprecated})"
+          "expression": "runScript(\"BlueRidge.Location.AppUser.getUserList\",0, {view.custom.filter.includeDeprecated}, {view.custom.filter.searchText})"
         },
         "type": "expr"
       },
@@ -290,7 +290,7 @@
                           "dom": {
                             "onClick": {
                               "config": {
-                                "script": "\tsystem.perspective.sendMessage(\"rowRefresh\")"
+                                "script": "\tsystem.perspective.sendMessage(\"usersRefresh\")"
                               },
                               "scope": "G",
                               "type": "script"

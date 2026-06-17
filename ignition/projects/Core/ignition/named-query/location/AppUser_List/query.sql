@@ -1,1 +1,3 @@
-EXEC Location.AppUser_List @IncludeDeprecated = :includeDeprecated
+EXEC Location.AppUser_List 
+	@IncludeDeprecated = :includeDeprecated, 
+	@Filter = :filter

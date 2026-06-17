@@ -18,7 +18,7 @@
     "cacheEnabled": false,
     "database": "MPP",
     "fallbackEnabled": false,
-    "lastModificationSignature": "f58f5300dc544ef95a88c1b423cc2065459df914b25baabe9868842d9b9744d5",
+    "lastModificationSignature": "dd5b7e627c0740272776af89223ee8c7ca9602f6d6f23b204eb45e6e65ebba1f",
     "permissions": [
       {
         "zone": "",
@@ -27,13 +27,18 @@
     ],
     "lastModification": {
       "actor": "admin",
-      "timestamp": "2026-06-16T14:33:56Z"
+      "timestamp": "2026-06-17T13:47:32Z"
     },
     "parameters": [
       {
         "type": "Parameter",
         "identifier": "includeDeprecated",
         "sqlType": 0
+      },
+      {
+        "type": "Parameter",
+        "identifier": "filter",
+        "sqlType": 7
       }
     ]
   }
