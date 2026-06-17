@@ -421,6 +421,13 @@
           "script": "\tif not payload:\n\t\treturn\n\tidx \u003d int(payload.get(\"rowIndex\", -1))\n\tself._removeRow(idx)",
           "sessionScope": false,
           "viewScope": false
+        },
+        {
+          "messageType": "refreshAttrOptions",
+          "pageScope": true,
+          "script": "\tself.view.refreshBinding(\"custom.attributeOptions\")\n\trowInstances \u003d self.getChild(\"RowsRepeater\").props.instances\n\t\n\tself.getChild(\"RowsRepeater\").refreshBinding(\u0027props.instances\u0027)\n\t#if not row:\n\t#\treturn\t\n\t#for row in rowInstances:\n\t#\trow.params.attributeOptions \u003d self.view.custom.attributeOptions",
+          "sessionScope": false,
+          "viewScope": false
         }
       ]
     },
