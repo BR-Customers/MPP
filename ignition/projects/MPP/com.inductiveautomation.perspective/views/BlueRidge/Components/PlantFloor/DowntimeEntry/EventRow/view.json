@@ -17,7 +17,7 @@
     "params.hasReason": { "paramDirection": "input" }
   },
   "props": {
-    "defaultSize": { "height": 56 }
+    "defaultSize": { "height": 68 }
   },
   "root": {
     "children": [
@@ -117,9 +117,8 @@
     "props": {
       "alignItems": "center",
       "style": {
-        "borderBottom": "1px solid var(--mpp-border-subtle)",
-        "gap": "12px",
-        "padding": "8px 16px"
+        "classes": "surface-card",
+        "gap": "12px"
       }
     },
     "type": "ia.container.flex"

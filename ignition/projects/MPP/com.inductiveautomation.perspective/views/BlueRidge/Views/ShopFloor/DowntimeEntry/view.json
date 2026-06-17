@@ -132,8 +132,9 @@
                 },
                 "props": {
                   "direction": "column",
-                  "elementPosition": { "basis": "56px", "shrink": 0 },
+                  "elementPosition": { "basis": "68px", "shrink": 0 },
                   "path": "BlueRidge/Components/PlantFloor/DowntimeEntry/EventRow",
+                  "style": { "gap": "8px" },
                   "useDefaultViewHeight": false,
                   "useDefaultViewWidth": false
                 },
