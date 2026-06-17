@@ -94,7 +94,7 @@
                   "type": "script",
                   "scope": "G",
                   "config": {
-                    "script": "\tshift = self.view.custom.shift\n\tcellId = self.view.custom.filter.cellLocationId\n\tif not shift:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No active shift to submit against.\"}, \"End of shift\")\n\t\treturn\n\tif cellId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Select a cell first.\"}, \"End of shift\")\n\t\treturn\n\tresult = BlueRidge.Oee.DowntimeEvent.submitEndOfShift(shift[\"Id\"], cellId, system.util.jsonEncode(self.view.custom.selectedBreaks or []))\n\tBlueRidge.Common.Ui.notifyResult(result, \"End-of-shift submitted\")"
+                    "script": "\tshift = self.view.custom.shift\n\tcellId = self.view.custom.filter.cellLocationId\n\tif not shift:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No active shift to submit against.\"}, \"End of shift\")\n\t\treturn\n\tif cellId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Select a cell first.\"}, \"End of shift\")\n\t\treturn\n\tresult = BlueRidge.Oee.DowntimeEvent.submitEndOfShift(shift[\"Id\"], cellId, system.util.jsonEncode(self.view.custom.selectedBreaks or []))\n\tBlueRidge.Common.Ui.notifyResult(result, \"End-of-shift submitted\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.selectedBreaks = []\n\t\tsystem.perspective.sendMessage(\"breakReset\", scope=\"page\")"
                   }
                 }
               }

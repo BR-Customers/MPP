@@ -29,6 +29,13 @@
         "binding": { "config": { "expression": "if({view.custom.on}, 'pf-btn pf-btn-primary pf-btn-large', 'pf-btn pf-btn-secondary pf-btn-large')" }, "type": "expr" }
       }
     },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        { "messageType": "breakReset", "pageScope": true, "sessionScope": false, "viewScope": false, "script": "\tself.view.custom.on = False" }
+      ]
+    },
     "props": { "text": "Break" },
     "type": "ia.input.button"
   }

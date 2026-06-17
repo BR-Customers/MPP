@@ -94,7 +94,7 @@
         ],
         "meta": { "name": "Tiles" },
         "position": { "grow": 1 },
-        "props": { "wrap": "wrap", "style": { "gap": "16px", "padding": "16px", "overflowY": "auto" } },
+        "props": { "direction": "row", "wrap": "wrap", "alignItems": "flex-start", "alignContent": "flex-start", "style": { "gap": "16px", "padding": "16px", "overflowY": "auto" } },
         "type": "ia.container.flex"
       }
     ],
