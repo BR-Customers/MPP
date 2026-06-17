@@ -61,5 +61,22 @@
       "viewPath": "BlueRidge/Views/ShopFloor/DieCastEntry"
     }
   },
-  "sharedDocks": {}
+  "sharedDocks": {
+    "bottom": [
+      {
+        "anchor": "fixed",
+        "autoBreakpoint": 0,
+        "content": "overlay",
+        "handle": "hide",
+        "iconUrl": "",
+        "id": "notify-host",
+        "modal": false,
+        "resizable": false,
+        "show": "visible",
+        "size": 1,
+        "viewParams": {},
+        "viewPath": "BlueRidge/Components/NotifyHost"
+      }
+    ]
+  }
 }
