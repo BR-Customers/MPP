@@ -71,18 +71,7 @@
                     "binding": { "config": { "path": "view.custom.cellOptions" }, "type": "property" }
                   },
                   "props.value": {
-                    "binding": { "config": { "path": "view.custom.filter.cellLocationId" }, "type": "property", "bidirectional": true }
-                  }
-                },
-                "events": {
-                  "component": {
-                    "onActionPerformed": {
-                      "type": "script",
-                      "scope": "G",
-                      "config": {
-                        "script": "\tf = dict(self.view.custom.filter)\n\tf[\"cellLocationId\"] = event.value\n\tself.view.custom.filter = f"
-                      }
-                    }
+                    "binding": { "config": { "path": "view.custom.filter.cellLocationId", "bidirectional": true }, "type": "property" }
                   }
                 },
                 "props": { "placeholder": "Select machine / cell", "style": { "classes": "pf-field-input" } },
@@ -180,18 +169,7 @@
                             "binding": { "config": { "path": "view.custom.reasonOptions" }, "type": "property" }
                           },
                           "props.value": {
-                            "binding": { "config": { "path": "view.custom.newReasonCodeId" }, "type": "property", "bidirectional": true }
-                          }
-                        },
-                        "events": {
-                          "component": {
-                            "onActionPerformed": {
-                              "type": "script",
-                              "scope": "G",
-                              "config": {
-                                "script": "\tself.view.custom.newReasonCodeId = event.value"
-                              }
-                            }
+                            "binding": { "config": { "path": "view.custom.newReasonCodeId", "bidirectional": true }, "type": "property" }
                           }
                         },
                         "props": { "placeholder": "(none)", "style": { "classes": "pf-field-input" } },
@@ -208,7 +186,7 @@
                       "component": {
                         "onActionPerformed": {
                           "config": {
-                            "script": "\tcellId = self.view.custom.filter.cellLocationId\n\tif cellId is None:\n\t\tsystem.perspective.sendMessage(\"downtimeNeedsCell\", scope=\"page\")\n\t\treturn\n\tBlueRidge.Oee.DowntimeEvent.start(cellId, downtimeReasonCodeId=self.view.custom.newReasonCodeId)\n\tself.view.custom.filter = dict(self.view.custom.filter)"
+                            "script": "\tcellId = self.view.custom.filter.cellLocationId\n\tif cellId is None:\n\t\treturn\n\tresult = BlueRidge.Oee.DowntimeEvent.start(cellId, downtimeReasonCodeId=self.view.custom.newReasonCodeId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Downtime started\")\n\tself.view.custom.filter = dict(self.view.custom.filter)"
                           },
                           "scope": "G",
                           "type": "script"
