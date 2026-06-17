@@ -74,6 +74,17 @@
                     "binding": { "config": { "path": "view.custom.filter.cellLocationId" }, "type": "property", "bidirectional": true }
                   }
                 },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "script",
+                      "scope": "G",
+                      "config": {
+                        "script": "\tf = dict(self.view.custom.filter)\n\tf[\"cellLocationId\"] = event.value\n\tself.view.custom.filter = f"
+                      }
+                    }
+                  }
+                },
                 "props": { "placeholder": "Select machine / cell", "style": { "classes": "pf-field-input" } },
                 "type": "ia.input.dropdown"
               }
@@ -170,6 +181,17 @@
                           },
                           "props.value": {
                             "binding": { "config": { "path": "view.custom.newReasonCodeId" }, "type": "property", "bidirectional": true }
+                          }
+                        },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "type": "script",
+                              "scope": "G",
+                              "config": {
+                                "script": "\tself.view.custom.newReasonCodeId = event.value"
+                              }
+                            }
                           }
                         },
                         "props": { "placeholder": "(none)", "style": { "classes": "pf-field-input" } },
