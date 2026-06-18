@@ -206,21 +206,6 @@ def listByTier(tierCode):
         BlueRidge.Common.Notify.toast("Could not load locations", str(e), "error")
         return []
 
-def getFilteredList(nameFilter):
-	"""
-    Gets a list of all locations filtered by their names
-
-    Args:
-    	nameFilter (string): the text that the results must include
-
-    Returns:
-        A list of objects of location data.
-    """
-	BlueRidge.Common.Util.log("nameFilter=%s" % nameFilter)
-	return BlueRidge.Common.Db.execList(
-		"location/Location_List",
-		{"filter": nameFilter}
-	)
 
 def getCellsForDropdown():
     """Cell-tier Locations shaped for ia.input.dropdown + scan matching.

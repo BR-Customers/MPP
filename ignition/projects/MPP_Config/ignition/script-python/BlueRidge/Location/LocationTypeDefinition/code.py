@@ -163,6 +163,22 @@ def getAll(locationTypeId):
         return []
 
 
+def getFilteredList(nameFilter):
+	"""
+    Gets a list of all locations filtered by their names
+
+    Args:
+    	nameFilter (string): the text that the results must include
+
+    Returns:
+        A list of objects of location data.
+    """
+	BlueRidge.Common.Util.log("nameFilter=%s" % nameFilter)
+	return BlueRidge.Common.Db.execList(
+		"location/Location_List",
+		{"filter": nameFilter}
+	)
+
 def handleSaveAll(meta, attributes, userId=None):
     """
     Bundled save: persist the LocationTypeDefinition meta AND its full
