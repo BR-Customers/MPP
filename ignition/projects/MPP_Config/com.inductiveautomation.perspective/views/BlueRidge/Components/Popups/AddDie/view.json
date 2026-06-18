@@ -463,11 +463,19 @@
         {
           "name": "handleClose",
           "params": [],
-          "script": "\t# Reset the draft so the next open lands on a clean form.\n\tself.view.custom.editDraft \u003d {\u0027meta\u0027: dict(self.view.custom.selected[\u0027meta\u0027])}\n\tsystem.perspective.closePopup(id\u003d\u0027mpp-add-die\u0027)"
+          "script": "\t# Reset the draft so the next open lands on a clean form.\n\t#self.view.custom.editDraft \u003d {\u0027meta\u0027: dict(self.view.custom.selected[\u0027meta\u0027])}\n\t#system.perspective.closePopup(id\u003d\u0027mpp-add-die\u0027)\n\t\n\tif str(self.view.custom.editDraft) \u003d\u003d str(self.view.custom.selected):\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-add-die\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid\u003d\"mpp-confirm-unsaved\",\n\t\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal\u003dTrue,\n\t\t\tshowCloseIcon\u003dFalse,\n\t\t\tparams\u003d{\n\t\t\t\t\"title\":   \"Discard Die?\",\n\t\t\t\t\"message\": \"You have started filling out this form. Discard before closing?\",\n\t\t\t},\n\t\t)"
         }
       ],
       "extensionFunctions": null,
-      "messageHandlers": []
+      "messageHandlers": [
+        {
+          "messageType": "confirmUnsavedResult",
+          "pageScope": true,
+          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tif action \u003d\u003d \"save\":\n\t\tself.handleCreate()\n\telif action \u003d\u003d \"discard\":\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-add-die\")",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
     },
     "type": "ia.container.flex"
   }

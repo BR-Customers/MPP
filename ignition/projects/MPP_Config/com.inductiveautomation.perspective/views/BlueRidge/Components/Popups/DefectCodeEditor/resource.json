@@ -3,8 +3,15 @@
   "version": 1,
   "restricted": false,
   "overridable": true,
-  "files": ["view.json", "thumbnail.png"],
+  "files": [
+    "view.json",
+    "thumbnail.png"
+  ],
   "attributes": {
-    "lastModification": { "actor": "claude", "timestamp": "2026-05-19T00:00:00Z" }
+    "lastModificationSignature": "a18e9728715d70ba36e19f2ba93fe67308acaf8e157882f8bc6c885272857fb4",
+    "lastModification": {
+      "actor": "admin",
+      "timestamp": "2026-06-18T14:37:32Z"
+    }
   }
 }

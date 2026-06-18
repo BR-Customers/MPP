@@ -111,7 +111,7 @@
               "dom": {
                 "onClick": {
                   "config": {
-                    "script": "\tif self.view.custom.editDraft \u003d\u003d self.view.custom.selected:\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-downtime-code-editor\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid\u003d\"mpp-confirm-unsaved\",\n\t\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal\u003dTrue,\n\t\t\tshowCloseIcon\u003dFalse,\n\t\t\tparams\u003d{\n\t\t\t\t\"title\": \"Unsaved Changes\",\n\t\t\t\t\"message\": \"You have unsaved changes to this downtime code. Save before closing?\"\n\t\t\t}\n\t\t)"
+                    "script": "\tself.view.rootContainer.handleClose()"
                   },
                   "scope": "G",
                   "type": "script"
@@ -489,7 +489,7 @@
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\tif self.view.custom.editDraft \u003d\u003d self.view.custom.selected:\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-downtime-code-editor\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid\u003d\"mpp-confirm-unsaved\",\n\t\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal\u003dTrue,\n\t\t\tshowCloseIcon\u003dFalse,\n\t\t\tparams\u003d{\n\t\t\t\t\"title\": \"Unsaved Changes\",\n\t\t\t\t\"message\": \"You have unsaved changes to this downtime code. Save before closing?\"\n\t\t\t}\n\t\t)"
+                        "script": "\tself.view.rootContainer.handleClose()"
                       },
                       "scope": "G",
                       "type": "script"
@@ -584,7 +584,13 @@
       }
     },
     "scripts": {
-      "customMethods": [],
+      "customMethods": [
+        {
+          "name": "handleClose",
+          "params": [],
+          "script": "\tif str(self.view.custom.editDraft) \u003d\u003d str(self.view.custom.selected):\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-downtime-code-editor\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid\u003d\"mpp-confirm-unsaved\",\n\t\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal\u003dTrue,\n\t\t\tshowCloseIcon\u003dFalse,\n\t\t\tparams\u003d{\n\t\t\t\t\"title\": \"Unsaved Changes\",\n\t\t\t\t\"message\": \"You have unsaved changes to this downtime code. Save before closing?\"\n\t\t\t}\n\t\t)"
+        }
+      ],
       "extensionFunctions": null,
       "messageHandlers": [
         {

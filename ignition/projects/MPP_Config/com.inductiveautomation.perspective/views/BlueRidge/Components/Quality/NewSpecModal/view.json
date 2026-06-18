@@ -1,47 +1,110 @@
 {
   "custom": {
     "draft": {
-      "name": "",
-      "itemId": null,
-      "operationTemplateId": null,
       "description": "",
-      "effectiveFrom": null
+      "effectiveFrom": null,
+      "itemId": null,
+      "name": "",
+      "operationTemplateId": null
     },
-    "itemRows": []
+    "selected": {
+      "description": "",
+      "effectiveFrom": null,
+      "itemId": null,
+      "name": "",
+      "operationTemplateId": null
+    }
   },
   "params": {
     "popupId": "mpp-new-quality-spec"
   },
   "propConfig": {
-    "params.popupId": { "paramDirection": "input", "persistent": true },
     "custom.itemRows": {
       "binding": {
-        "type": "expr",
-        "config": { "expression": "runScript(\"BlueRidge.Parts.Item.getAllForList\", 0)" }
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Item.getAllForList\", 0)"
+        },
+        "type": "expr"
       }
+    },
+    "custom.selected": {
+      "persistent": true
+    },
+    "params.popupId": {
+      "paramDirection": "input",
+      "persistent": true
     }
   },
   "props": {
-    "defaultSize": { "width": 520, "height": 460 }
+    "defaultSize": {
+      "height": 460,
+      "width": 520
+    }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": { "name": "root" },
-    "props": {
-      "direction": "column",
-      "style": {
-        "background": "var(--mpp-surface-canvas)",
-        "borderRadius": "var(--mpp-radius-md, 8px)",
-        "height": "100%",
-        "overflow": "hidden",
-        "width": "100%"
-      }
-    },
     "children": [
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "HeaderBar" },
-        "position": { "basis": "50px", "shrink": 0 },
+        "children": [
+          {
+            "meta": {
+              "name": "TitleLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "modal-title",
+                "fontSize": "14px",
+                "fontWeight": "600"
+              },
+              "text": "New Quality Spec"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "Spacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleClose()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseIcon",
+              "tooltip": {
+                "text": "Close"
+              }
+            },
+            "props": {
+              "path": "mpp/cancel",
+              "style": {
+                "classes": "modal-close",
+                "cursor": "pointer",
+                "height": "18px",
+                "width": "18px"
+              }
+            },
+            "type": "ia.display.icon"
+          }
+        ],
+        "meta": {
+          "name": "HeaderBar"
+        },
+        "position": {
+          "basis": "50px",
+          "shrink": 0
+        },
         "props": {
           "alignItems": "center",
           "style": {
@@ -51,53 +114,39 @@
             "padding": "0 16px"
           }
         },
-        "children": [
-          {
-            "type": "ia.display.label",
-            "meta": { "name": "TitleLabel" },
-            "props": {
-              "text": "New Quality Spec",
-              "style": {
-                "classes": "modal-title",
-                "fontSize": "14px",
-                "fontWeight": "600"
-              }
-            }
-          }
-        ]
+        "type": "ia.container.flex"
       },
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "FormBody" },
-        "position": { "grow": 1 },
-        "props": {
-          "direction": "column",
-          "style": {
-            "gap": "12px",
-            "overflowY": "auto",
-            "padding": "16px"
-          }
-        },
         "children": [
           {
-            "type": "ia.container.flex",
-            "meta": { "name": "NameField" },
-            "props": {
-              "direction": "column",
-              "style": { "gap": "4px" }
-            },
             "children": [
               {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
+                "meta": {
+                  "name": "Label"
+                },
                 "props": {
-                  "style": { "classes": "field-label" },
+                  "style": {
+                    "classes": "field-label"
+                  },
                   "text": "Name (required)"
-                }
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.text-field",
-                "meta": { "name": "Input" },
+                "meta": {
+                  "name": "Input"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.draft.name"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
                 "props": {
                   "placeholder": "e.g. Final Dimensional Inspection",
                   "style": {
@@ -106,36 +155,63 @@
                     "width": "100%"
                   }
                 },
-                "propConfig": {
-                  "props.text": {
-                    "binding": {
-                      "type": "property",
-                      "config": { "bidirectional": true, "path": "view.custom.draft.name" }
-                    }
-                  }
-                }
+                "type": "ia.input.text-field"
               }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "ItemField" },
+            ],
+            "meta": {
+              "name": "NameField"
+            },
             "props": {
               "direction": "column",
-              "style": { "gap": "4px" }
+              "style": {
+                "gap": "4px"
+              }
             },
+            "type": "ia.container.flex"
+          },
+          {
             "children": [
               {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
+                "meta": {
+                  "name": "Label"
+                },
                 "props": {
-                  "style": { "classes": "field-label" },
+                  "style": {
+                    "classes": "field-label"
+                  },
                   "text": "Linked Item (optional)"
-                }
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.dropdown",
-                "meta": { "name": "Input" },
+                "meta": {
+                  "name": "Input"
+                },
+                "propConfig": {
+                  "props.options": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.itemRows"
+                      },
+                      "transforms": [
+                        {
+                          "code": "\tout \u003d [{\"label\": u\"\\u2014 none \\u2014\", \"value\": None}]\n\tfor r in (value or []):\n\t\tpn \u003d r.get(\"partNumber\") or \"\"\n\t\tdesc \u003d r.get(\"description\") or \"\"\n\t\tlabel \u003d pn if not desc else (pn + \" - \" + desc)\n\t\tout.append({\"label\": label, \"value\": r.get(\"id\")})\n\treturn out",
+                          "type": "script"
+                        }
+                      ],
+                      "type": "property"
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.draft.itemId"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
                 "props": {
                   "style": {
                     "boxSizing": "border-box",
@@ -143,48 +219,49 @@
                     "width": "100%"
                   }
                 },
-                "propConfig": {
-                  "props.options": {
-                    "binding": {
-                      "type": "property",
-                      "config": { "path": "view.custom.itemRows" },
-                      "transforms": [
-                        {
-                          "type": "script",
-                          "code": "\tout = [{\"label\": u\"\\u2014 none \\u2014\", \"value\": None}]\n\tfor r in (value or []):\n\t\tpn = r.get(\"partNumber\") or \"\"\n\t\tdesc = r.get(\"description\") or \"\"\n\t\tlabel = pn if not desc else (pn + \" - \" + desc)\n\t\tout.append({\"label\": label, \"value\": r.get(\"id\")})\n\treturn out"
-                        }
-                      ]
-                    }
-                  },
-                  "props.value": {
-                    "binding": {
-                      "type": "property",
-                      "config": { "bidirectional": true, "path": "view.custom.draft.itemId" }
-                    }
-                  }
-                }
+                "type": "ia.input.dropdown"
               }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "DescriptionField" },
+            ],
+            "meta": {
+              "name": "ItemField"
+            },
             "props": {
               "direction": "column",
-              "style": { "gap": "4px" }
+              "style": {
+                "gap": "4px"
+              }
             },
+            "type": "ia.container.flex"
+          },
+          {
             "children": [
               {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
+                "meta": {
+                  "name": "Label"
+                },
                 "props": {
-                  "style": { "classes": "field-label" },
+                  "style": {
+                    "classes": "field-label"
+                  },
                   "text": "Description (optional)"
-                }
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.text-field",
-                "meta": { "name": "Input" },
+                "meta": {
+                  "name": "Input"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.draft.description"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
                 "props": {
                   "placeholder": "Brief description of this quality spec",
                   "style": {
@@ -193,36 +270,49 @@
                     "width": "100%"
                   }
                 },
-                "propConfig": {
-                  "props.text": {
-                    "binding": {
-                      "type": "property",
-                      "config": { "bidirectional": true, "path": "view.custom.draft.description" }
-                    }
-                  }
-                }
+                "type": "ia.input.text-field"
               }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "EffectiveFromField" },
+            ],
+            "meta": {
+              "name": "DescriptionField"
+            },
             "props": {
               "direction": "column",
-              "style": { "gap": "4px" }
+              "style": {
+                "gap": "4px"
+              }
             },
+            "type": "ia.container.flex"
+          },
+          {
             "children": [
               {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
+                "meta": {
+                  "name": "Label"
+                },
                 "props": {
-                  "style": { "classes": "field-label" },
+                  "style": {
+                    "classes": "field-label"
+                  },
                   "text": "Initial Effective Date (optional)"
-                }
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.date-time-input",
-                "meta": { "name": "Input" },
+                "meta": {
+                  "name": "Input"
+                },
+                "propConfig": {
+                  "props.value": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.draft.effectiveFrom"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
                 "props": {
                   "format": "YYYY-MM-DD",
                   "style": {
@@ -231,23 +321,99 @@
                     "width": "100%"
                   }
                 },
-                "propConfig": {
-                  "props.value": {
-                    "binding": {
-                      "type": "property",
-                      "config": { "bidirectional": true, "path": "view.custom.draft.effectiveFrom" }
-                    }
-                  }
-                }
+                "type": "ia.input.date-time-input"
               }
-            ]
+            ],
+            "meta": {
+              "name": "EffectiveFromField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
           }
-        ]
+        ],
+        "meta": {
+          "name": "FormBody"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "12px",
+            "overflowY": "auto",
+            "padding": "16px"
+          }
+        },
+        "type": "ia.container.flex"
       },
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "FooterBar" },
-        "position": { "basis": "50px", "shrink": 0 },
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleClose()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CancelButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-sm"
+              },
+              "text": "Cancel"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleCreate()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CreateButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-primary btn-sm"
+              },
+              "text": "Create"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "FooterBar"
+        },
+        "position": {
+          "basis": "50px",
+          "shrink": 0
+        },
         "props": {
           "alignItems": "center",
           "justify": "flex-end",
@@ -258,60 +424,45 @@
             "padding": "12px 16px"
           }
         },
-        "children": [
-          {
-            "type": "ia.input.button",
-            "meta": { "name": "CancelButton" },
-            "position": { "shrink": 0 },
-            "props": {
-              "style": { "classes": "btn btn-sm" },
-              "text": "Cancel"
-            },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\tsystem.perspective.closePopup(id=self.view.params.popupId)"
-                  }
-                }
-              }
-            }
-          },
-          {
-            "type": "ia.input.button",
-            "meta": { "name": "CreateButton" },
-            "position": { "shrink": 0 },
-            "props": {
-              "style": { "classes": "btn btn-primary btn-sm" },
-              "text": "Create"
-            },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\tself.view.rootContainer.handleCreate()"
-                  }
-                }
-              }
-            }
-          }
-        ]
+        "type": "ia.container.flex"
       }
     ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "background": "var(--mpp-surface-canvas)",
+        "borderRadius": "var(--mpp-radius-md, 8px)",
+        "height": "100%",
+        "overflow": "hidden",
+        "width": "100%"
+      }
+    },
     "scripts": {
       "customMethods": [
         {
           "name": "handleCreate",
           "params": [],
-          "script": "\tdraft = self.view.custom.draft or {}\n\tname = (draft.get(\"name\") or \"\").strip()\n\tif not name:\n\t\tBlueRidge.Common.Notify.toast(\"Name required\", \"Enter a spec name before creating.\", \"warning\")\n\t\treturn\n\tres = BlueRidge.Quality.QualitySpec.createSpec(self.view.custom.draft)\n\tBlueRidge.Common.Ui.notifyResult(res, successTitle=\"Spec created\")\n\tif res.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"qsSpecCreated\", {\"specId\": res.get(\"NewId\")}, scope=\"page\")\n\t\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+          "script": "\tdraft \u003d self.view.custom.draft or {}\n\tname \u003d (draft.get(\"name\") or \"\").strip()\n\tif not name:\n\t\tBlueRidge.Common.Notify.toast(\"Name required\", \"Enter a spec name before creating.\", \"warning\")\n\t\treturn\n\tres \u003d BlueRidge.Quality.QualitySpec.createSpec(self.view.custom.draft)\n\tBlueRidge.Common.Ui.notifyResult(res, successTitle\u003d\"Spec created\")\n\tif res.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"qsSpecCreated\", {\"specId\": res.get(\"NewId\")}, scope\u003d\"page\")\n\t\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)"
+        },
+        {
+          "name": "handleClose",
+          "params": [],
+          "script": "\tif str(self.view.custom.draft) \u003d\u003d str(self.view.custom.selected):\n\t\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid\u003d\"mpp-confirm-unsaved\",\n\t\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal\u003dTrue,\n\t\t\tshowCloseIcon\u003dFalse,\n\t\t\tparams\u003d{\n\t\t\t\t\"title\": \"Unsaved Changes\",\n\t\t\t\t\"message\": \"You have unsaved changes to this Quality Spec. Save before closing?\"\n\t\t\t}\n\t\t)"
         }
       ],
       "extensionFunctions": null,
-      "messageHandlers": []
+      "messageHandlers": [
+        {
+          "messageType": "confirmUnsavedResult",
+          "pageScope": true,
+          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tif action \u003d\u003d \"save\":\n\t\tself.handleCreate()\n\telif action \u003d\u003d \"discard\":\n\t\tsystem.perspective.closePopup(id\u003dself.view.params.popupId)",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
     },
     "type": "ia.container.flex"
   }

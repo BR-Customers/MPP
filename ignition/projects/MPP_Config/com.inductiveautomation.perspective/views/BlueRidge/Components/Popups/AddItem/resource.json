@@ -3,11 +3,15 @@
   "version": 1,
   "restricted": false,
   "overridable": true,
-  "files": ["view.json"],
+  "files": [
+    "view.json",
+    "thumbnail.png"
+  ],
   "attributes": {
+    "lastModificationSignature": "8e513a3d19efd872b062349e56ec89f3c17f97f118f7ef7be63c0cc1ecd432a5",
     "lastModification": {
-      "actor": "Jacques Potgieter",
-      "timestamp": "2026-05-19T12:00:00Z"
+      "actor": "admin",
+      "timestamp": "2026-06-18T14:37:05Z"
     }
   }
 }

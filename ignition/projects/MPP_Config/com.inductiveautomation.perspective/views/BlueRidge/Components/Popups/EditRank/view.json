@@ -444,7 +444,7 @@
         {
           "name": "handleClose",
           "params": [],
-          "script": "\t# Reset draft to selected so the next open lands clean. No nested\n\t# confirm popup -- matches the AddDie / dirty-on-list-switch policy.\n\tself.view.custom.editDraft \u003d {\u0027meta\u0027: dict(self.view.custom.selected[\u0027meta\u0027])}\n\tsystem.perspective.closePopup(id\u003d\u0027mpp-edit-rank\u0027)"
+          "script": "\tif str(self.view.custom.editDraft) \u003d\u003d str(self.view.custom.selected):\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-edit-rank\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid\u003d\"mpp-confirm-unsaved\",\n\t\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal\u003dTrue,\n\t\t\tshowCloseIcon\u003dFalse,\n\t\t\tparams\u003d{\n\t\t\t\t\"title\": \"Unsaved Changes\",\n\t\t\t\t\"message\": \"You have unsaved changes to this rank. Save before closing?\"\n\t\t\t}\n\t\t)"
         }
       ],
       "extensionFunctions": null,
@@ -453,6 +453,13 @@
           "messageType": "editRankDeleteConfirmed",
           "pageScope": true,
           "script": "\taction \u003d payload.get(\u0027action\u0027) if payload else None\n\tif action !\u003d \u0027confirm\u0027:\n\t\treturn\n\tdraft \u003d self.view.custom.editDraft or {}\n\tmeta  \u003d draft.get(\u0027meta\u0027) or {}\n\trankId \u003d meta.get(\u0027Id\u0027)\n\tif rankId is None:\n\t\treturn\n\tresult \u003d BlueRidge.Parts.DieRank.deprecate(rankId)\n\tBlueRidge.Common.Ui.notifyResult(result, \u0027Die rank removed\u0027)\n\tif result and result.get(\u0027Status\u0027):\n\t\tsystem.perspective.sendMessage(\u0027dieRankRefresh\u0027, scope\u003d\u0027page\u0027)\n\t\tsystem.perspective.closePopup(id\u003d\u0027mpp-edit-rank\u0027)",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "confirmUnsavedResult",
+          "pageScope": true,
+          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tif action \u003d\u003d \"save\":\n\t\tself.view.rootContainer.handleSave()\n\telif action \u003d\u003d \"discard\":\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-edit-rank\")",
           "sessionScope": false,
           "viewScope": false
         }
