@@ -1,14 +1,14 @@
 {
   "custom": {},
   "params": {
-    "tool": {},
-    "selectedId": 0
+    "selectedId": 0,
+    "tool": {}
   },
   "propConfig": {
-    "params.tool": {
+    "params.selectedId": {
       "paramDirection": "input"
     },
-    "params.selectedId": {
+    "params.tool": {
       "paramDirection": "input"
     }
   },
@@ -19,51 +19,57 @@
     }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": {
-      "name": "root"
-    },
-    "events": {
-      "dom": {
-        "onClick": {
-          "type": "script",
-          "scope": "G",
-          "config": {
-            "script": "\tsystem.perspective.sendMessage('toolRowClicked', payload={'id': self.view.params.tool.get('id')}, scope='page')"
-          }
-        }
-      }
-    },
-    "propConfig": {
-      "props.style.classes": {
-        "binding": {
-          "type": "expr",
-          "config": {
-            "expression": "if({view.params.tool.id} = {view.params.selectedId}, 'tree-item tree-item-selected', 'tree-item')"
-          }
-        }
-      },
-      "props.style.opacity": {
-        "binding": {
-          "type": "expr",
-          "config": {
-            "expression": "if({view.params.tool.deprecated}, 0.55, 1)"
-          }
-        }
-      }
-    },
-    "props": {
-      "alignItems": "center",
-      "justify": "space-between",
-      "style": {
-        "borderBottom": "1px solid var(--mpp-border-subtle)",
-        "cursor": "pointer",
-        "padding": "4px 10px"
-      }
-    },
     "children": [
       {
-        "type": "ia.container.flex",
+        "children": [
+          {
+            "meta": {
+              "name": "LabelCode"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.tool.code"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontSize": "12px",
+                "fontWeight": "600"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "LabelName"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.tool.name"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-muted)",
+                "fontSize": "11px",
+                "overflow": "hidden",
+                "textOverflow": "ellipsis",
+                "whiteSpace": "nowrap"
+              }
+            },
+            "type": "ia.display.label"
+          }
+        ],
         "meta": {
           "name": "RowText"
         },
@@ -78,84 +84,35 @@
             "overflow": "hidden"
           }
         },
-        "children": [
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "LabelCode"
-            },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "property",
-                  "config": {
-                    "path": "view.params.tool.code"
-                  }
-                }
-              }
-            },
-            "props": {
-              "style": {
-                "fontSize": "12px",
-                "fontWeight": "600"
-              }
-            }
-          },
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "LabelName"
-            },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "property",
-                  "config": {
-                    "path": "view.params.tool.name"
-                  }
-                }
-              }
-            },
-            "props": {
-              "style": {
-                "color": "var(--mpp-text-muted)",
-                "fontSize": "11px",
-                "overflow": "hidden",
-                "textOverflow": "ellipsis",
-                "whiteSpace": "nowrap"
-              }
-            }
-          }
-        ]
+        "type": "ia.container.flex"
       },
       {
-        "type": "ia.display.label",
         "meta": {
           "name": "BadgeRank"
         },
         "propConfig": {
           "position.display": {
             "binding": {
-              "type": "expr",
               "config": {
                 "expression": "!isNull({view.params.tool.rank})"
-              }
-            }
-          },
-          "props.text": {
-            "binding": {
-              "type": "property",
-              "config": {
-                "path": "view.params.tool.rank"
-              }
+              },
+              "type": "expr"
             }
           },
           "props.style.classes": {
             "binding": {
-              "type": "expr",
               "config": {
-                "expression": "if({view.params.tool.rank} = 'A', 'badge badge-purple', 'badge badge-muted')"
-              }
+                "expression": "if({view.params.tool.rank} \u003d \u0027A\u0027, \u0027badge badge-purple\u0027, \u0027badge badge-muted\u0027)"
+              },
+              "type": "expr"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.tool.rank"
+              },
+              "type": "property"
             }
           }
         },
@@ -164,8 +121,51 @@
             "fontSize": "10px",
             "padding": "1px 5px"
           }
+        },
+        "type": "ia.display.label"
+      }
+    ],
+    "events": {
+      "dom": {
+        "onClick": {
+          "config": {
+            "script": "\tsystem.perspective.sendMessage(\u0027toolRowClicked\u0027, payload\u003d{\u0027id\u0027: self.view.params.tool.get(\u0027id\u0027)}, scope\u003d\u0027page\u0027)"
+          },
+          "scope": "G",
+          "type": "script"
         }
       }
-    ]
+    },
+    "meta": {
+      "name": "root"
+    },
+    "propConfig": {
+      "props.style.classes": {
+        "binding": {
+          "config": {
+            "expression": "if({view.params.tool.id} \u003d {view.params.selectedId}, \u0027tree-item tree-item-selected\u0027, \u0027tree-item\u0027)"
+          },
+          "type": "expr"
+        }
+      },
+      "props.style.opacity": {
+        "binding": {
+          "config": {
+            "expression": "if({view.params.tool.deprecated}, 0.55, 1)"
+          },
+          "type": "expr"
+        }
+      }
+    },
+    "props": {
+      "alignItems": "center",
+      "justify": "space-between",
+      "style": {
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "cursor": "pointer",
+        "padding": "4px 10px"
+      }
+    },
+    "type": "ia.container.flex"
   }
 }

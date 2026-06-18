@@ -1,7 +1,7 @@
 {
   "custom": {
-    "activeTab": "attributes",
-    "activeTabIndex": 0,
+    "activeTab": "assignments",
+    "activeTabIndex": 2,
     "editDraft": {
       "meta": {
         "Code": "jkhbj",
@@ -603,6 +603,16 @@
                         "meta": {
                           "name": "BtnSave"
                         },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "config": {
+                                "expression": "!{view.custom.selected.meta.deprecated}"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
                         "props": {
                           "style": {
                             "classes": "btn btn-primary btn-sm"
@@ -733,6 +743,14 @@
                               "name": "InputName"
                             },
                             "propConfig": {
+                              "props.enabled": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "!{view.custom.selected.meta.deprecated}"
+                                  },
+                                  "type": "expr"
+                                }
+                              },
                               "props.text": {
                                 "binding": {
                                   "config": {
@@ -843,6 +861,14 @@
                               "name": "DropdownDieRank"
                             },
                             "propConfig": {
+                              "props.enabled": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "!{view.custom.selected.meta.deprecated}"
+                                  },
+                                  "type": "expr"
+                                }
+                              },
                               "props.options": {
                                 "binding": {
                                   "config": {
@@ -904,6 +930,14 @@
                               "name": "DropdownStatus"
                             },
                             "propConfig": {
+                              "props.enabled": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "!{view.custom.selected.meta.deprecated}"
+                                  },
+                                  "type": "expr"
+                                }
+                              },
                               "props.options": {
                                 "binding": {
                                   "config": {
@@ -979,6 +1013,14 @@
                               "name": "InputDescription"
                             },
                             "propConfig": {
+                              "props.enabled": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "!{view.custom.selected.meta.deprecated}"
+                                  },
+                                  "type": "expr"
+                                }
+                              },
                               "props.text": {
                                 "binding": {
                                   "config": {
@@ -1051,6 +1093,14 @@
                       "name": "Attributes"
                     },
                     "propConfig": {
+                      "props.params.deprecated": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.selected.meta.deprecated"
+                          },
+                          "type": "property"
+                        }
+                      },
                       "props.params.toolTypeId": {
                         "binding": {
                           "config": {
@@ -1081,6 +1131,14 @@
                       "tabIndex": 1
                     },
                     "propConfig": {
+                      "props.params.deprecated": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.selected.meta.deprecated"
+                          },
+                          "type": "property"
+                        }
+                      },
                       "props.params.value": {
                         "binding": {
                           "config": {
@@ -1103,6 +1161,14 @@
                       "tabIndex": 2
                     },
                     "propConfig": {
+                      "props.params.deprecated": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.selected.meta.deprecated"
+                          },
+                          "type": "property"
+                        }
+                      },
                       "props.params.value": {
                         "binding": {
                           "config": {
