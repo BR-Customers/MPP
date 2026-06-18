@@ -10,6 +10,7 @@
     }
   },
   "params": {
+    "deprecated": false,
     "value": null
   },
   "propConfig": {
@@ -24,6 +25,10 @@
         "enabled": true,
         "script": "\tsystem.perspective.sendMessage(\"sectionDirtyChanged\", payload\u003d{\"section\": \"cavities\", \"isDirty\": bool(currentValue.value)}, scope\u003d\"page\")"
       }
+    },
+    "params.deprecated": {
+      "paramDirection": "input",
+      "persistent": true
     },
     "params.value": {
       "onChange": {
@@ -301,6 +306,16 @@
         },
         "position": {
           "shrink": 0
+        },
+        "propConfig": {
+          "props.enabled": {
+            "binding": {
+              "config": {
+                "expression": "!{view.params.deprecated}"
+              },
+              "type": "expr"
+            }
+          }
         },
         "props": {
           "style": {

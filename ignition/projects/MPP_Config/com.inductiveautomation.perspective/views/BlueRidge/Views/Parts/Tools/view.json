@@ -1,7 +1,7 @@
 {
   "custom": {
-    "activeTab": "attributes",
-    "activeTabIndex": 0,
+    "activeTab": "assignments",
+    "activeTabIndex": 2,
     "editDraft": {
       "meta": {
         "Code": "jkhbj",
@@ -761,6 +761,19 @@
                             }
                           }
                         },
+                        "meta": {
+                          "name": "BtnSave"
+                        },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "config": {
+                                "expression": "!{view.custom.selected.meta.deprecated}"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
                         "props": {
                           "text": "Save",
                           "style": {
@@ -909,6 +922,14 @@
                               "name": "InputName"
                             },
                             "propConfig": {
+                              "props.enabled": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "!{view.custom.selected.meta.deprecated}"
+                                  },
+                                  "type": "expr"
+                                }
+                              },
                               "props.text": {
                                 "binding": {
                                   "type": "property",
@@ -1019,6 +1040,22 @@
                               "name": "DropdownDieRank"
                             },
                             "propConfig": {
+                              "props.enabled": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "!{view.custom.selected.meta.deprecated}"
+                                  },
+                                  "type": "expr"
+                                }
+                              },
+                              "props.options": {
+                                "binding": {
+                                  "config": {
+                                    "path": "view.custom.rankOptions"
+                                  },
+                                  "type": "property"
+                                }
+                              },
                               "props.value": {
                                 "binding": {
                                   "type": "property",
@@ -1079,6 +1116,22 @@
                               "name": "DropdownStatus"
                             },
                             "propConfig": {
+                              "props.enabled": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "!{view.custom.selected.meta.deprecated}"
+                                  },
+                                  "type": "expr"
+                                }
+                              },
+                              "props.options": {
+                                "binding": {
+                                  "config": {
+                                    "path": "view.custom.statusOptions"
+                                  },
+                                  "type": "property"
+                                }
+                              },
                               "props.value": {
                                 "binding": {
                                   "type": "property",
@@ -1153,6 +1206,14 @@
                               "name": "InputDescription"
                             },
                             "propConfig": {
+                              "props.enabled": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "!{view.custom.selected.meta.deprecated}"
+                                  },
+                                  "type": "expr"
+                                }
+                              },
                               "props.text": {
                                 "binding": {
                                   "type": "property",
@@ -1234,7 +1295,15 @@
                       "tabIndex": 0
                     },
                     "propConfig": {
-                      "props.params.value": {
+                      "props.params.deprecated": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.selected.meta.deprecated"
+                          },
+                          "type": "property"
+                        }
+                      },
+                      "props.params.toolTypeId": {
                         "binding": {
                           "type": "property",
                           "config": {
@@ -1270,26 +1339,29 @@
                       "tabIndex": 1
                     },
                     "propConfig": {
+                      "props.params.deprecated": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.selected.meta.deprecated"
+                          },
+                          "type": "property"
+                        }
+                      },
                       "props.params.value": {
                         "binding": {
-                          "type": "property",
                           "config": {
                             "path": "view.custom.editDraft.meta.Id"
-                          }
+                          },
+                          "type": "property"
                         }
                       }
                     },
                     "props": {
-                      "path": "BlueRidge/Components/Parts/Tools/Cavities",
-                      "useDefaultViewWidth": false,
-                      "useDefaultViewHeight": false,
-                      "params": {
-                        "value": 0
-                      }
-                    }
+                      "path": "BlueRidge/Components/Parts/Tools/Cavities"
+                    },
+                    "type": "ia.display.view"
                   },
                   {
-                    "type": "ia.display.view",
                     "meta": {
                       "name": "Assignments"
                     },
@@ -1297,30 +1369,124 @@
                       "tabIndex": 2
                     },
                     "propConfig": {
+                      "props.params.deprecated": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.selected.meta.deprecated"
+                          },
+                          "type": "property"
+                        }
+                      },
                       "props.params.value": {
                         "binding": {
                           "type": "property",
                           "config": {
                             "path": "view.custom.editDraft.meta.Id"
-                          }
+                          },
+                          "type": "property"
                         }
                       }
                     },
                     "props": {
-                      "path": "BlueRidge/Components/Parts/Tools/Assignments",
-                      "useDefaultViewWidth": false,
-                      "useDefaultViewHeight": false,
-                      "params": {
-                        "value": 0
-                      }
+                      "path": "BlueRidge/Components/Parts/Tools/Assignments"
+                    },
+                    "type": "ia.display.view"
+                  }
+                ],
+                "meta": {
+                  "name": "TabContainer"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "propConfig": {
+                  "props.currentTabIndex": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.activeTabIndex"
+                      },
+                      "type": "property"
+                    }
+                  },
+                  "props.tabs": {
+                    "binding": {
+                      "config": {
+                        "expression": "runScript(\"BlueRidge.Parts.Tool.toolTabObjects\", 0, {view.custom.sectionDirty}, {view.custom.activeTab})"
+                      },
+                      "type": "expr"
                     }
                   }
-                ]
+                },
+                "props": {
+                  "contentStyle": {
+                    "classes": "tab-content-fill"
+                  },
+                  "menuStyle": {
+                    "classes": "tab-strip"
+                  },
+                  "menuType": "modern",
+                  "style": {
+                    "classes": "tab-host"
+                  },
+                  "tabSize": {
+                    "width": 120
+                  },
+                  "tabStyle": {
+                    "active": {
+                      "classes": "tab-item tab-item-active"
+                    },
+                    "disabled": {
+                      "classes": "tab-item"
+                    },
+                    "inactive": {
+                      "classes": "tab-item"
+                    }
+                  }
+                },
+                "type": "ia.container.tab"
               }
-            ]
+            ],
+            "meta": {
+              "name": "DetailArea"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.custom.mode} !\u003d \"view\""
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "overflow": "hidden"
+              }
+            },
+            "type": "ia.container.flex"
           },
           {
-            "type": "ia.container.flex",
+            "children": [
+              {
+                "meta": {
+                  "name": "EmptyStateLabel"
+                },
+                "props": {
+                  "style": {
+                    "fontSize": "13px"
+                  },
+                  "text": "Select a tool from the list to view its details, or click + Add Die to create a new one."
+                },
+                "type": "ia.display.label"
+              }
+            ],
             "meta": {
               "name": "EmptyState"
             },
