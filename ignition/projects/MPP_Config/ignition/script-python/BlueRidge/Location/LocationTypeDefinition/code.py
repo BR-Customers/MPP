@@ -203,7 +203,7 @@ def handleSaveAll(meta, attributes, userId=None):
     attrsJson    = BlueRidge.Common.Util.convertWrapperObjectToJson(cleanedAttrs)
     successTitle = "Created definition" if isCreate else "Saved definition"
     successMsg   = meta.get("Name") or ""
-
+	
     result = BlueRidge.Common.Db.execMutation(
         "location/LocationTypeDefinition_SaveAll",
         {
