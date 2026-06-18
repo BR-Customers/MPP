@@ -1302,7 +1302,7 @@
         {
           "messageType": "confirmUnsavedResult",
           "pageScope": true,
-          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tif action \u003d\u003d \"save\":\n\t\tdraft \u003d self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\t\tresult \u003d BlueRidge.Location.LocationTypeDefinition.handleSaveAll(draft.get(\"meta\"), draft.get(\"attributes\"))\n\t\t\n\t\tif result and result.get(\"Status\"):\n\t\t\tsystem.perspective.closePopup(id\u003d\"mpp-loc-type-editor\")\n\telif action \u003d\u003d \"discard\":\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-loc-type-editor\")",
+          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tif action \u003d\u003d \"save\":\n\t\tdraft \u003d self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\t\tresult \u003d BlueRidge.Location.LocationTypeDefinition.handleSaveAll(draft.get(\"meta\"), draft.get(\"attributes\"))\n\t\tsystem.perspective.print(str(result))\n\t\tif result and result.get(\"Status\"):\n\t\t\tsystem.perspective.closePopup(id\u003d\"mpp-loc-type-editor\")\n\telif action \u003d\u003d \"discard\":\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-loc-type-editor\")",
           "sessionScope": false,
           "viewScope": false
         },

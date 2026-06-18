@@ -3,14 +3,14 @@
   "params": {
     "locationOptions": [],
     "row": {
-      "defaultQuantity": null,
+      "defaultQuantity": "",
       "id": null,
       "isConsumptionPoint": false,
       "locationId": null,
       "locationLabel": "",
       "locationTierOrdinal": null,
-      "maxQuantity": null,
-      "minQuantity": null
+      "maxQuantity": "",
+      "minQuantity": ""
     },
     "rowIndex": 0
   },
