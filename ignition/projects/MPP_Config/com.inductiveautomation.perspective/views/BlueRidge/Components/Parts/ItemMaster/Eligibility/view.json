@@ -387,7 +387,7 @@
         {
           "name": "addRow",
           "params": [],
-          "script": "\tdraft \u003d dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {\"rows\": []})\n\trows \u003d list(draft.get(\"rows\") or [])\n\trows.append({\n\t\t\"id\":                  None,\n\t\t\"locationId\":          None,\n\t\t\"locationLabel\":       \"\",\n\t\t\"locationTierOrdinal\": None,\n\t\t\"isConsumptionPoint\":  False,\n\t\t\"minQuantity\":         None,\n\t\t\"maxQuantity\":         None,\n\t\t\"defaultQuantity\":     None,\n\t})\n\tdraft[\"rows\"] \u003d rows\n\tselected \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\tself.view.custom.state \u003d {\"selected\": selected, \"editDraft\": draft}"
+          "script": "\tdraft \u003d dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {\"rows\": []})\n\trows \u003d list(draft.get(\"rows\") or [])\n\trows.append({\n\t\t\"id\":                  None,\n\t\t\"locationId\":          None,\n\t\t\"locationLabel\":       \"\",\n\t\t\"locationTierOrdinal\": None,\n\t\t\"isConsumptionPoint\":  False,\n\t\t\"minQuantity\":         1,\n\t\t\"maxQuantity\":         3,\n\t\t\"defaultQuantity\":     2,\n\t})\n\tdraft[\"rows\"] \u003d rows\n\tselected \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\tself.view.custom.state \u003d {\"selected\": selected, \"editDraft\": draft}"
         },
         {
           "name": "_applyLocationChange",
