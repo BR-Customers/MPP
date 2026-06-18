@@ -203,6 +203,31 @@ def listByTier(tierCode):
         return []
 
 
+def getFilteredList(nameFilter):
+	"""
+    Gets a list of all locations filtered by their names
+
+    Args:
+    	nameFilter (string): the text that the results must include
+
+    Returns:
+        A list of objects of location data.
+    """
+	BlueRidge.Common.Util.log("nameFilter=%s" % nameFilter)
+	rows = BlueRidge.Common.Db.execList(
+		"location/Location_List",
+		{"filter": nameFilter}
+	)
+	
+	nodes = []
+	for r in rows:
+		node = {"label": r.get("Name"), "icon": {"path":  r.get("Icon") or "mpp/factory", "color": "--mpp-text-primary", "style": {} } }
+		nodes.append(node)
+            
+	return nodes
+
+
+
 def _u(value):
     """Local shorthand for extractQualifiedValues. View-side bidirectional
        writebacks (Tree.props.selectionData[0].value especially) hand us

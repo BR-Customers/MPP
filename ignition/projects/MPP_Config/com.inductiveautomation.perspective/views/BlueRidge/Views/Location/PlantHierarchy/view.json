@@ -8,11 +8,16 @@
     },
     "mode": "view",
     "pendingNav": null,
+    "searchFilter": "a",
     "selected": null,
-    "selectedPath": "0"
+    "selectedPath": 0,
+    "sortedTree": null
   },
   "params": {},
   "propConfig": {
+    "custom.searchFilter": {
+      "persistent": true
+    },
     "custom.selected": {
       "onChange": {
         "enabled": true,
@@ -20,6 +25,15 @@
       }
     },
     "custom.selectedPath": {
+      "persistent": true
+    },
+    "custom.sortedTree": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Location.Location.getFilteredList\", 0, {view.custom.searchFilter})"
+        },
+        "type": "expr"
+      },
       "persistent": true
     },
     "custom.tree": {
@@ -233,6 +247,17 @@
                     "meta": {
                       "name": "TreeSearchInput"
                     },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.searchFilter"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
                     "props": {
                       "placeholder": "Search locations…",
                       "style": {
@@ -264,6 +289,14 @@
                   "grow": 1
                 },
                 "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.searchFilter} \u003d \"\""
+                      },
+                      "type": "expr"
+                    }
+                  },
                   "props.items": {
                     "binding": {
                       "config": {
@@ -319,6 +352,66 @@
                   "selectionData": [
                     {
                       "itemPath": "0"
+                    }
+                  ]
+                },
+                "type": "ia.display.tree"
+              },
+              {
+                "meta": {
+                  "name": "Tree_0"
+                },
+                "position": {
+                  "basis": "200px",
+                  "grow": 1
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.searchFilter} !\u003d \"\""
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.items": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.sortedTree"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "appearance": {
+                    "defaultNodeIcons": {
+                      "collapsed": {
+                        "path": "material/folder"
+                      },
+                      "empty": {
+                        "path": "material/stop"
+                      },
+                      "expanded": {
+                        "path": "material/folder_open"
+                      }
+                    },
+                    "expandIcons": {
+                      "collapsed": {
+                        "path": "material/arrow_right"
+                      },
+                      "expanded": {
+                        "path": "material/arrow_drop_down"
+                      }
+                    }
+                  },
+                  "selection": [
+                    "2"
+                  ],
+                  "selectionData": [
+                    {
+                      "itemPath": "2",
+                      "value": ""
                     }
                   ]
                 },
