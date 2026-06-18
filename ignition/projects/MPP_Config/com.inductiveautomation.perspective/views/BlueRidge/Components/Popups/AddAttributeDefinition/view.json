@@ -5,12 +5,21 @@
       "DataType": "String",
       "IsRequired": false,
       "Name": ""
+    },
+    "selected": {
+      "Cose": "",
+      "DateType": "String",
+      "IsRequired": false,
+      "Name": ""
     }
   },
   "params": {
     "toolTypeId": 0
   },
   "propConfig": {
+    "custom.selected": {
+      "persistent": true
+    },
     "params.toolTypeId": {
       "paramDirection": "input"
     }
@@ -53,7 +62,7 @@
               "dom": {
                 "onClick": {
                   "config": {
-                    "script": "\tsystem.perspective.closePopup(id\u003d\u0027mpp-add-attr-def\u0027)"
+                    "script": "\tself.view.rootContainer.handleClose()"
                   },
                   "scope": "G",
                   "type": "script"
@@ -340,7 +349,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tsystem.perspective.closePopup(id\u003d\u0027mpp-add-attr-def\u0027)"
+                    "script": "\tself.view.rootContainer.handleClose()"
                   },
                   "scope": "G",
                   "type": "script"
@@ -428,10 +437,23 @@
           "name": "handleCreate",
           "params": [],
           "script": "\ttoolTypeId \u003d self.view.params.toolTypeId\n\tif not toolTypeId:\n\t\tBlueRidge.Common.Notify.toast(\u0027Tool type required\u0027, \u0027Pick a tool first so the definition can be scoped.\u0027, \u0027warning\u0027)\n\t\treturn\n\tdraft \u003d self.view.custom.editDraft or {}\n\tresult \u003d BlueRidge.Parts.Tool.addAttributeDefinition(\n\t\ttoolTypeId,\n\t\tdraft.get(\u0027Code\u0027),\n\t\tdraft.get(\u0027Name\u0027),\n\t\tdraft.get(\u0027DataType\u0027),\n\t\tdraft.get(\u0027IsRequired\u0027),\n\t)\n\tBlueRidge.Common.Ui.notifyResult(result, \u0027Attribute definition created\u0027)\n\tif result and result.get(\u0027Status\u0027):\n\t\t#system.perspective.sendMessage(\u0027attributeDefinitionsChanged\u0027, payload\u003d{\u0027newId\u0027: result.get(\u0027NewId\u0027)}, scope\u003d\u0027page\u0027)\n\t\tsystem.perspective.sendMessage(\u0027refreshAttrOptions\u0027)\n\t\tsystem.perspective.closePopup(id\u003d\u0027mpp-add-attr-def\u0027)"
+        },
+        {
+          "name": "handleClose",
+          "params": [],
+          "script": "\tif str(self.view.custom.editDraft) \u003d\u003d str(self.view.custom.selected):\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-add-attr-def\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid\u003d\"mpp-confirm-unsaved\",\n\t\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal\u003dTrue,\n\t\t\tshowCloseIcon\u003dFalse,\n\t\t\tparams\u003d{\n\t\t\t\t\"title\": \"Unsaved Changes\",\n\t\t\t\t\"message\": \"You have unsaved changes to this Attribute Definition. Save before closing?\"\n\t\t\t}\n\t\t)"
         }
       ],
       "extensionFunctions": null,
-      "messageHandlers": []
+      "messageHandlers": [
+        {
+          "messageType": "confirmUnsavedResult",
+          "pageScope": true,
+          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tif action \u003d\u003d \"save\":\n\t\tself.handleCreate()\n\telif action \u003d\u003d \"discard\":\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-add-attr-def\")",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
     },
     "type": "ia.container.flex"
   }

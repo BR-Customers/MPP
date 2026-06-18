@@ -13,7 +13,6 @@
       "uomId": null,
       "weightUomId": null
     },
-    "isDirty": false,
     "selected": {
       "countryOfOrigin": "",
       "defaultSubLotQty": null,
@@ -33,7 +32,7 @@
     "custom.isDirty": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.draft}) != runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.selected})"
+          "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.draft}) !\u003d runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.selected})"
         },
         "type": "expr"
       }
@@ -53,9 +52,6 @@
             "meta": {
               "name": "HeaderTitle"
             },
-            "position": {
-              "basis": "auto"
-            },
             "props": {
               "text": "Add Item"
             },
@@ -66,7 +62,7 @@
               "dom": {
                 "onClick": {
                   "config": {
-                    "script": "\tif self.view.custom.draft == self.view.custom.selected:\n\t\tsystem.perspective.closePopup(id=\"mpp-add-item\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid=\"mpp-confirm-unsaved\",\n\t\t\tview=\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal=True,\n\t\t\tshowCloseIcon=False,\n\t\t\tparams={\n\t\t\t\t\"title\":   \"Discard New Item?\",\n\t\t\t\t\"message\": \"You have started filling out this form. Discard before closing?\",\n\t\t\t},\n\t\t)"
+                    "script": "\tself.view.rootContainer.handleClose()"
                   },
                   "scope": "G",
                   "type": "script"
@@ -75,9 +71,6 @@
             },
             "meta": {
               "name": "CloseIcon"
-            },
-            "position": {
-              "basis": "auto"
             },
             "props": {
               "style": {
@@ -96,12 +89,10 @@
           "name": "ModalHeader"
         },
         "position": {
-          "basis": "auto",
           "shrink": 0
         },
         "props": {
           "alignItems": "center",
-          "direction": "row",
           "justify": "space-between",
           "style": {
             "classes": "modal-header"
@@ -116,9 +107,6 @@
               {
                 "meta": {
                   "name": "SectionLabelIdentity"
-                },
-                "position": {
-                  "basis": "auto"
                 },
                 "props": {
                   "style": {
@@ -140,9 +128,6 @@
                         "meta": {
                           "name": "LabelPartNumber"
                         },
-                        "position": {
-                          "basis": "auto"
-                        },
                         "props": {
                           "style": {
                             "classes": "field-label"
@@ -154,9 +139,6 @@
                       {
                         "meta": {
                           "name": "InputPartNumber"
-                        },
-                        "position": {
-                          "basis": "auto"
                         },
                         "propConfig": {
                           "props.text": {
@@ -201,9 +183,6 @@
                         "meta": {
                           "name": "LabelItemType"
                         },
-                        "position": {
-                          "basis": "auto"
-                        },
                         "props": {
                           "style": {
                             "classes": "field-label"
@@ -215,9 +194,6 @@
                       {
                         "meta": {
                           "name": "DropdownItemType"
-                        },
-                        "position": {
-                          "basis": "auto"
                         },
                         "propConfig": {
                           "props.options": {
@@ -268,9 +244,6 @@
                         "meta": {
                           "name": "LabelUom"
                         },
-                        "position": {
-                          "basis": "auto"
-                        },
                         "props": {
                           "style": {
                             "classes": "field-label"
@@ -282,9 +255,6 @@
                       {
                         "meta": {
                           "name": "DropdownUom"
-                        },
-                        "position": {
-                          "basis": "auto"
                         },
                         "propConfig": {
                           "props.options": {
@@ -333,11 +303,7 @@
                 "meta": {
                   "name": "IdentityRow"
                 },
-                "position": {
-                  "basis": "auto"
-                },
                 "props": {
-                  "direction": "row",
                   "style": {
                     "classes": "field-row",
                     "gap": "10px"
@@ -351,9 +317,6 @@
                     "meta": {
                       "name": "LabelDescription"
                     },
-                    "position": {
-                      "basis": "auto"
-                    },
                     "props": {
                       "style": {
                         "classes": "field-label"
@@ -365,9 +328,6 @@
                   {
                     "meta": {
                       "name": "InputDescription"
-                    },
-                    "position": {
-                      "basis": "auto"
                     },
                     "propConfig": {
                       "props.text": {
@@ -393,9 +353,6 @@
                 "meta": {
                   "name": "FieldDescription"
                 },
-                "position": {
-                  "basis": "auto"
-                },
                 "props": {
                   "direction": "column",
                   "style": {
@@ -411,9 +368,6 @@
                     "meta": {
                       "name": "LabelCountryOfOrigin"
                     },
-                    "position": {
-                      "basis": "auto"
-                    },
                     "props": {
                       "style": {
                         "classes": "field-label"
@@ -425,9 +379,6 @@
                   {
                     "meta": {
                       "name": "InputCountryOfOrigin"
-                    },
-                    "position": {
-                      "basis": "auto"
                     },
                     "propConfig": {
                       "props.text": {
@@ -453,9 +404,6 @@
                 "meta": {
                   "name": "FieldCountryOfOrigin"
                 },
-                "position": {
-                  "basis": "auto"
-                },
                 "props": {
                   "direction": "column",
                   "style": {
@@ -468,9 +416,6 @@
             ],
             "meta": {
               "name": "SectionIdentity"
-            },
-            "position": {
-              "basis": "auto"
             },
             "props": {
               "direction": "column",
@@ -485,9 +430,6 @@
               {
                 "meta": {
                   "name": "SectionLabelWeight"
-                },
-                "position": {
-                  "basis": "auto"
                 },
                 "props": {
                   "style": {
@@ -509,9 +451,6 @@
                         "meta": {
                           "name": "LabelUnitWeight"
                         },
-                        "position": {
-                          "basis": "auto"
-                        },
                         "props": {
                           "style": {
                             "classes": "field-label"
@@ -523,9 +462,6 @@
                       {
                         "meta": {
                           "name": "InputUnitWeight"
-                        },
-                        "position": {
-                          "basis": "auto"
                         },
                         "propConfig": {
                           "props.text": {
@@ -570,9 +506,6 @@
                         "meta": {
                           "name": "LabelWeightUom"
                         },
-                        "position": {
-                          "basis": "auto"
-                        },
                         "props": {
                           "style": {
                             "classes": "field-label"
@@ -584,9 +517,6 @@
                       {
                         "meta": {
                           "name": "DropdownWeightUom"
-                        },
-                        "position": {
-                          "basis": "auto"
                         },
                         "propConfig": {
                           "props.options": {
@@ -635,11 +565,7 @@
                 "meta": {
                   "name": "WeightRow"
                 },
-                "position": {
-                  "basis": "auto"
-                },
                 "props": {
-                  "direction": "row",
                   "style": {
                     "classes": "field-row",
                     "gap": "10px"
@@ -650,9 +576,6 @@
             ],
             "meta": {
               "name": "SectionWeight"
-            },
-            "position": {
-              "basis": "auto"
             },
             "props": {
               "direction": "column",
@@ -667,9 +590,6 @@
               {
                 "meta": {
                   "name": "SectionLabelLotConfig"
-                },
-                "position": {
-                  "basis": "auto"
                 },
                 "props": {
                   "style": {
@@ -691,9 +611,6 @@
                         "meta": {
                           "name": "LabelDefaultSubLot"
                         },
-                        "position": {
-                          "basis": "auto"
-                        },
                         "props": {
                           "style": {
                             "classes": "field-label"
@@ -705,9 +622,6 @@
                       {
                         "meta": {
                           "name": "InputDefaultSubLot"
-                        },
-                        "position": {
-                          "basis": "auto"
                         },
                         "propConfig": {
                           "props.text": {
@@ -752,9 +666,6 @@
                         "meta": {
                           "name": "LabelPartsPerBasket"
                         },
-                        "position": {
-                          "basis": "auto"
-                        },
                         "props": {
                           "style": {
                             "classes": "field-label"
@@ -766,9 +677,6 @@
                       {
                         "meta": {
                           "name": "InputPartsPerBasket"
-                        },
-                        "position": {
-                          "basis": "auto"
                         },
                         "propConfig": {
                           "props.text": {
@@ -813,9 +721,6 @@
                         "meta": {
                           "name": "LabelMaxParts"
                         },
-                        "position": {
-                          "basis": "auto"
-                        },
                         "props": {
                           "style": {
                             "classes": "field-label"
@@ -827,9 +732,6 @@
                       {
                         "meta": {
                           "name": "InputMaxParts"
-                        },
-                        "position": {
-                          "basis": "auto"
                         },
                         "propConfig": {
                           "props.text": {
@@ -872,11 +774,7 @@
                 "meta": {
                   "name": "LotConfigRow"
                 },
-                "position": {
-                  "basis": "auto"
-                },
                 "props": {
-                  "direction": "row",
                   "style": {
                     "classes": "field-row",
                     "gap": "10px"
@@ -887,9 +785,6 @@
             ],
             "meta": {
               "name": "SectionLotConfig"
-            },
-            "position": {
-              "basis": "auto"
             },
             "props": {
               "direction": "column",
@@ -904,9 +799,6 @@
               {
                 "meta": {
                   "name": "SectionLabelErp"
-                },
-                "position": {
-                  "basis": "auto"
                 },
                 "props": {
                   "style": {
@@ -926,9 +818,6 @@
                     "meta": {
                       "name": "LabelMacola"
                     },
-                    "position": {
-                      "basis": "auto"
-                    },
                     "props": {
                       "style": {
                         "classes": "field-label"
@@ -940,9 +829,6 @@
                   {
                     "meta": {
                       "name": "InputMacola"
-                    },
-                    "position": {
-                      "basis": "auto"
                     },
                     "propConfig": {
                       "props.text": {
@@ -968,9 +854,6 @@
                 "meta": {
                   "name": "FieldMacola"
                 },
-                "position": {
-                  "basis": "auto"
-                },
                 "props": {
                   "direction": "column",
                   "style": {
@@ -983,9 +866,6 @@
             ],
             "meta": {
               "name": "SectionErp"
-            },
-            "position": {
-              "basis": "auto"
             },
             "props": {
               "direction": "column",
@@ -1020,7 +900,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tif self.view.custom.draft == self.view.custom.selected:\n\t\tsystem.perspective.closePopup(id=\"mpp-add-item\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid=\"mpp-confirm-unsaved\",\n\t\t\tview=\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal=True,\n\t\t\tshowCloseIcon=False,\n\t\t\tparams={\n\t\t\t\t\"title\":   \"Discard New Item?\",\n\t\t\t\t\"message\": \"You have started filling out this form. Discard before closing?\",\n\t\t\t},\n\t\t)"
+                    "script": "\tself.view.rootContainer.handleClose()"
                   },
                   "scope": "G",
                   "type": "script"
@@ -1029,9 +909,6 @@
             },
             "meta": {
               "name": "BtnCancel"
-            },
-            "position": {
-              "basis": "auto"
             },
             "props": {
               "style": {
@@ -1046,7 +923,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tdraft = self.view.custom.draft\n\tresult = BlueRidge.Parts.Item.add(draft)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Item created\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"itemsRefresh\", scope=\"page\")\n\t\tsystem.perspective.closePopup(id=\"mpp-add-item\")"
+                    "script": "\tdraft \u003d self.view.custom.draft\n\tresult \u003d BlueRidge.Parts.Item.add(draft)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Item created\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"itemsRefresh\", scope\u003d\"page\")\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-add-item\")"
                   },
                   "scope": "G",
                   "type": "script"
@@ -1055,9 +932,6 @@
             },
             "meta": {
               "name": "BtnCreate"
-            },
-            "position": {
-              "basis": "auto"
             },
             "props": {
               "style": {
@@ -1072,12 +946,10 @@
           "name": "ModalFooter"
         },
         "position": {
-          "basis": "auto",
           "shrink": 0
         },
         "props": {
           "alignItems": "center",
-          "direction": "row",
           "justify": "flex-end",
           "style": {
             "classes": "modal-footer",
@@ -1098,11 +970,19 @@
       }
     },
     "scripts": {
+      "customMethods": [
+        {
+          "name": "handleClose",
+          "params": [],
+          "script": "\tif str(self.view.custom.draft) \u003d\u003d str(self.view.custom.selected):\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-add-item\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid\u003d\"mpp-confirm-unsaved\",\n\t\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal\u003dTrue,\n\t\t\tshowCloseIcon\u003dFalse,\n\t\t\tparams\u003d{\n\t\t\t\t\"title\":   \"Discard New Item?\",\n\t\t\t\t\"message\": \"You have started filling out this form. Discard before closing?\",\n\t\t\t},\n\t\t)"
+        }
+      ],
+      "extensionFunctions": null,
       "messageHandlers": [
         {
           "messageType": "confirmUnsavedResult",
           "pageScope": true,
-          "script": "\taction = payload.get(\"action\") if payload else None\n\tif action == \"save\":\n\t\tresult = BlueRidge.Parts.Item.add(self.view.custom.draft)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"Item created\")\n\t\tif result and result.get(\"Status\"):\n\t\t\tsystem.perspective.sendMessage(\"itemsRefresh\", scope=\"page\")\n\t\t\tsystem.perspective.closePopup(id=\"mpp-add-item\")\n\telif action == \"discard\":\n\t\tsystem.perspective.closePopup(id=\"mpp-add-item\")",
+          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tif action \u003d\u003d \"save\":\n\t\tresult \u003d BlueRidge.Parts.Item.add(self.view.custom.draft)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"Item created\")\n\t\tif result and result.get(\"Status\"):\n\t\t\tsystem.perspective.sendMessage(\"itemsRefresh\", scope\u003d\"page\")\n\t\t\tsystem.perspective.closePopup(id\u003d\"mpp-add-item\")\n\telif action \u003d\u003d \"discard\":\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-add-item\")",
           "sessionScope": false,
           "viewScope": false
         }

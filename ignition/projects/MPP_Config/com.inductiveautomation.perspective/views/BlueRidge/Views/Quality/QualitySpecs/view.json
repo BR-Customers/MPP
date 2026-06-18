@@ -409,7 +409,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(id\u003d\"mpp-new-quality-spec\", view\u003d\"BlueRidge/Components/Quality/NewSpecModal\", params\u003d{\"popupId\": \"mpp-new-quality-spec\"}, modal\u003dTrue, showCloseIcon\u003dTrue)"
+                    "script": "\tsystem.perspective.openPopup(id\u003d\"mpp-new-quality-spec\", view\u003d\"BlueRidge/Components/Quality/NewSpecModal\", params\u003d{\"popupId\": \"mpp-new-quality-spec\"}, modal\u003dTrue, showCloseIcon\u003dFalse)"
                   },
                   "scope": "G",
                   "type": "script"

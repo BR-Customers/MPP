@@ -1,45 +1,627 @@
 {
-  "custom": {
-    "ranks": [],
-    "headerCells": [],
-    "bodyRows": []
-  },
+  "custom": {},
   "params": {},
   "propConfig": {
-    "custom.ranks": {
+    "custom.bodyRows": {
       "binding": {
-        "type": "expr",
         "config": {
-          "expression": "runScript(\"BlueRidge.Parts.DieRank.getInstancesForFlexRepeater\", 0)"
-        }
+          "expression": "runScript(\"BlueRidge.Parts.DieRank.getMatrixRowInstances\", 0)"
+        },
+        "type": "expr"
       }
     },
     "custom.headerCells": {
       "binding": {
-        "type": "expr",
         "config": {
           "expression": "runScript(\"BlueRidge.Parts.DieRank.getMatrixHeaderInstances\", 0)"
-        }
+        },
+        "type": "expr"
       }
     },
-    "custom.bodyRows": {
+    "custom.ranks": {
       "binding": {
-        "type": "expr",
         "config": {
-          "expression": "runScript(\"BlueRidge.Parts.DieRank.getMatrixRowInstances\", 0)"
-        }
+          "expression": "runScript(\"BlueRidge.Parts.DieRank.getInstancesForFlexRepeater\", 0)"
+        },
+        "type": "expr"
       }
     }
   },
   "props": {
     "defaultSize": {
-      "width": 1000,
-      "height": 640
+      "height": 640,
+      "width": 1000
     }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": { "name": "root" },
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "TitleLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "modal-title",
+                "fontSize": "14px",
+                "fontWeight": "600"
+              },
+              "text": "Die Ranks"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "Spacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(id\u003d\u0027mpp-die-ranks\u0027)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseIcon",
+              "tooltip": {
+                "text": "Close"
+              }
+            },
+            "props": {
+              "path": "mpp/cancel",
+              "style": {
+                "classes": "modal-close",
+                "cursor": "pointer",
+                "height": "18px",
+                "width": "18px"
+              }
+            },
+            "type": "ia.display.icon"
+          }
+        ],
+        "meta": {
+          "name": "HeaderBar"
+        },
+        "position": {
+          "basis": "50px",
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "gap": "12px",
+            "overflow": "hidden",
+            "padding": "0 16px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "RankListHeader"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "borderBottom": "1px solid var(--mpp-border-subtle)",
+                    "color": "var(--mpp-text-muted)",
+                    "fontSize": "11px",
+                    "fontWeight": "600",
+                    "letterSpacing": "0.04em",
+                    "padding": "10px 12px 8px",
+                    "textTransform": "uppercase"
+                  },
+                  "text": "RANKS"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "RankList"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "propConfig": {
+                  "props.instances": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.ranks"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "elementPosition": {
+                    "basis": "auto"
+                  },
+                  "path": "BlueRidge/Components/Popups/_DieRanks/RankRow",
+                  "style": {
+                    "overflowY": "auto"
+                  },
+                  "useDefaultViewHeight": false,
+                  "useDefaultViewWidth": false
+                },
+                "type": "ia.display.flex-repeater"
+              },
+              {
+                "children": [
+                  {
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "config": {
+                            "id": "mpp-edit-rank",
+                            "modal": true,
+                            "overlayDismiss": false,
+                            "showCloseIcon": false,
+                            "type": "open",
+                            "viewParams": {
+                              "dieRankId": null,
+                              "mode": "create"
+                            },
+                            "viewPath": "BlueRidge/Components/Popups/EditRank",
+                            "viewportBound": true
+                          },
+                          "scope": "C",
+                          "type": "popup"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "name": "BtnAddRank"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "btn btn-primary",
+                        "width": "100%"
+                      },
+                      "text": "+ Add Rank"
+                    },
+                    "type": "ia.input.button"
+                  }
+                ],
+                "meta": {
+                  "name": "AddRankWrapper"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "borderTop": "1px solid var(--mpp-border-subtle)",
+                    "padding": "8px 12px"
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "RankListPanel"
+            },
+            "position": {
+              "basis": "200px",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "background": "var(--mpp-surface-nav)",
+                "borderRight": "1px solid var(--mpp-border-subtle)"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "MatrixTitle"
+                    },
+                    "props": {
+                      "style": {
+                        "fontSize": "13px",
+                        "fontWeight": "600"
+                      },
+                      "text": "Merge Compatibility"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "MatrixSubtitle"
+                    },
+                    "props": {
+                      "style": {
+                        "color": "var(--mpp-text-muted)",
+                        "fontSize": "11px"
+                      },
+                      "text": "Click a cell to toggle. Green \u003d can merge. Red \u003d blocked. Lower triangle mirrors the upper."
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "IntroBlock"
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "gap": "3px"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "CornerCell"
+                        },
+                        "position": {
+                          "basis": "100px",
+                          "shrink": 0
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "meta": {
+                          "name": "HeaderRepeater"
+                        },
+                        "position": {
+                          "grow": 1
+                        },
+                        "propConfig": {
+                          "props.instances": {
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.headerCells"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "elementPosition": {
+                            "basis": "90px",
+                            "shrink": 0
+                          },
+                          "path": "BlueRidge/Components/Popups/_DieRanks/MatrixHeaderCell",
+                          "style": {
+                            "gap": "5px"
+                          },
+                          "useDefaultViewHeight": false,
+                          "useDefaultViewWidth": false
+                        },
+                        "type": "ia.display.flex-repeater"
+                      }
+                    ],
+                    "meta": {
+                      "name": "HeaderRow"
+                    },
+                    "props": {
+                      "style": {
+                        "gap": "5px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "meta": {
+                      "name": "BodyRepeater"
+                    },
+                    "propConfig": {
+                      "props.instances": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.bodyRows"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "column",
+                      "elementPosition": {
+                        "basis": "auto"
+                      },
+                      "path": "BlueRidge/Components/Popups/_DieRanks/MatrixRow",
+                      "style": {
+                        "gap": "5px"
+                      },
+                      "useDefaultViewHeight": false,
+                      "useDefaultViewWidth": false
+                    },
+                    "type": "ia.display.flex-repeater"
+                  }
+                ],
+                "meta": {
+                  "name": "MatrixGrid"
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "gap": "5px"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "Swatch"
+                        },
+                        "position": {
+                          "basis": "14px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "style": {
+                            "background": "var(--mpp-state-good-bg)",
+                            "border": "1px solid var(--mpp-state-good-border)",
+                            "borderRadius": "3px",
+                            "height": "14px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "meta": {
+                          "name": "Label"
+                        },
+                        "props": {
+                          "text": "Can merge"
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "LegendYes"
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "4px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "Swatch"
+                        },
+                        "position": {
+                          "basis": "14px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "style": {
+                            "background": "var(--mpp-state-bad-bg)",
+                            "border": "1px solid var(--mpp-state-bad-border)",
+                            "borderRadius": "3px",
+                            "height": "14px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "meta": {
+                          "name": "Label"
+                        },
+                        "props": {
+                          "text": "Blocked"
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "LegendNo"
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "4px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "Swatch"
+                        },
+                        "position": {
+                          "basis": "14px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "style": {
+                            "background": "var(--mpp-surface-card)",
+                            "border": "1px solid var(--mpp-border-subtle)",
+                            "borderRadius": "3px",
+                            "height": "14px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "meta": {
+                          "name": "Label"
+                        },
+                        "props": {
+                          "text": "Mirror"
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "LegendMirror"
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "4px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "Legend"
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "color": "var(--mpp-text-muted)",
+                    "fontSize": "11px",
+                    "gap": "16px",
+                    "paddingTop": "4px"
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "MatrixPanel"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "12px",
+                "padding": "16px"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "style": {
+            "overflow": "hidden"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(id\u003d\u0027mpp-die-ranks\u0027)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-sm"
+              },
+              "text": "Close"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tBlueRidge.Common.Notify.toast(\u0027Saved (stub)\u0027, \u0027Die rank save lands in populate pass.\u0027, \u0027success\u0027, 4)\n\tsystem.perspective.closePopup(id\u003d\u0027mpp-die-ranks\u0027)"
+                  },
+                  "scope": "C",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "SaveButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-primary btn-sm"
+              },
+              "text": "Save"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "FooterBar"
+        },
+        "position": {
+          "basis": "50px",
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "justify": "flex-end",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderTop": "1px solid var(--mpp-border-subtle)",
+            "gap": "8px",
+            "overflow": "hidden",
+            "padding": "12px 16px"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
     "props": {
       "direction": "column",
       "style": {
@@ -54,8 +636,11 @@
       "customMethods": [
         {
           "name": "handleToggle",
-          "params": ["fromCode", "toCode"],
-          "script": "\t# Flip the (fromCode, toCode) cell and its mirror (toCode, fromCode)\n\t# directly in the bodyRows custom prop. Assign a new top-level list\n\t# so Perspective re-renders the BodyRepeater + each affected cell.\n\tnewBodyRows = []\n\tfor rowInst in (self.view.custom.bodyRows or []):\n\t\trowDict = dict((rowInst or {}).get('row') or {})\n\t\tnewCells = []\n\t\tfor cellInst in (rowDict.get('cells') or []):\n\t\t\tc = dict((cellInst or {}).get('cell') or {})\n\t\t\tcfrom = c.get('fromCode')\n\t\t\tcto   = c.get('toCode')\n\t\t\tif (cfrom == fromCode and cto == toCode) or (cfrom == toCode and cto == fromCode):\n\t\t\t\tc['compatible'] = not bool(c.get('compatible'))\n\t\t\tnewCells.append({'cell': c})\n\t\trowDict['cells'] = newCells\n\t\tnewBodyRows.append({'row': rowDict})\n\tself.view.custom.bodyRows = newBodyRows"
+          "params": [
+            "fromCode",
+            "toCode"
+          ],
+          "script": "\t# Flip the (fromCode, toCode) cell and its mirror (toCode, fromCode)\n\t# directly in the bodyRows custom prop. Assign a new top-level list\n\t# so Perspective re-renders the BodyRepeater + each affected cell.\n\tnewBodyRows \u003d []\n\tfor rowInst in (self.view.custom.bodyRows or []):\n\t\trowDict \u003d dict((rowInst or {}).get(\u0027row\u0027) or {})\n\t\tnewCells \u003d []\n\t\tfor cellInst in (rowDict.get(\u0027cells\u0027) or []):\n\t\t\tc \u003d dict((cellInst or {}).get(\u0027cell\u0027) or {})\n\t\t\tcfrom \u003d c.get(\u0027fromCode\u0027)\n\t\t\tcto   \u003d c.get(\u0027toCode\u0027)\n\t\t\tif (cfrom \u003d\u003d fromCode and cto \u003d\u003d toCode) or (cfrom \u003d\u003d toCode and cto \u003d\u003d fromCode):\n\t\t\t\tc[\u0027compatible\u0027] \u003d not bool(c.get(\u0027compatible\u0027))\n\t\t\tnewCells.append({\u0027cell\u0027: c})\n\t\trowDict[\u0027cells\u0027] \u003d newCells\n\t\tnewBodyRows.append({\u0027row\u0027: rowDict})\n\tself.view.custom.bodyRows \u003d newBodyRows"
         }
       ],
       "extensionFunctions": null,
@@ -63,406 +648,19 @@
         {
           "messageType": "matrixCellToggle",
           "pageScope": true,
+          "script": "\tif payload is None:\n\t\treturn\n\tfromCode \u003d payload.get(\u0027fromCode\u0027)\n\ttoCode   \u003d payload.get(\u0027toCode\u0027)\n\tif fromCode is None or toCode is None:\n\t\treturn\n\tself.handleToggle(fromCode, toCode)",
           "sessionScope": false,
-          "viewScope": false,
-          "script": "\tif payload is None:\n\t\treturn\n\tfromCode = payload.get('fromCode')\n\ttoCode   = payload.get('toCode')\n\tif fromCode is None or toCode is None:\n\t\treturn\n\tself.handleToggle(fromCode, toCode)"
+          "viewScope": false
         },
         {
           "messageType": "dieRankRefresh",
           "pageScope": true,
+          "script": "\tself.view.custom.ranks       \u003d BlueRidge.Parts.DieRank.getInstancesForFlexRepeater()\n\tself.view.custom.headerCells \u003d BlueRidge.Parts.DieRank.getMatrixHeaderInstances()\n\tself.view.custom.bodyRows    \u003d BlueRidge.Parts.DieRank.getMatrixRowInstances()",
           "sessionScope": false,
-          "viewScope": false,
-          "script": "\tself.view.custom.ranks       = BlueRidge.Parts.DieRank.getInstancesForFlexRepeater()\n\tself.view.custom.headerCells = BlueRidge.Parts.DieRank.getMatrixHeaderInstances()\n\tself.view.custom.bodyRows    = BlueRidge.Parts.DieRank.getMatrixRowInstances()"
+          "viewScope": false
         }
       ]
     },
-    "children": [
-      {
-        "type": "ia.container.flex",
-        "meta": { "name": "HeaderBar" },
-        "position": { "basis": "50px", "shrink": 0 },
-        "props": {
-          "alignItems": "center",
-          "style": {
-            "background": "var(--mpp-surface-raised)",
-            "borderBottom": "1px solid var(--mpp-border-subtle)",
-            "gap": "12px",
-            "overflow": "hidden",
-            "padding": "0 16px"
-          }
-        },
-        "children": [
-          {
-            "type": "ia.display.label",
-            "meta": { "name": "TitleLabel" },
-            "props": {
-              "text": "Die Ranks",
-              "style": {
-                "classes": "modal-title",
-                "fontSize": "14px",
-                "fontWeight": "600"
-              }
-            }
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "Spacer" },
-            "position": { "grow": 1 }
-          },
-          {
-            "type": "ia.display.icon",
-            "meta": {
-              "name": "CloseIcon",
-              "tooltip": { "text": "Close" }
-            },
-            "events": {
-              "dom": {
-                "onClick": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\tsystem.perspective.closePopup(id='mpp-die-ranks')"
-                  }
-                }
-              }
-            },
-            "props": {
-              "path": "mpp/cancel",
-              "style": {
-                "classes": "modal-close",
-                "cursor": "pointer",
-                "height": "18px",
-                "width": "18px"
-              }
-            }
-          }
-        ]
-      },
-      {
-        "type": "ia.container.flex",
-        "meta": { "name": "Body" },
-        "position": { "grow": 1 },
-        "props": {
-          "direction": "row",
-          "style": {
-            "overflow": "hidden"
-          }
-        },
-        "children": [
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "RankListPanel" },
-            "position": { "basis": "200px", "shrink": 0 },
-            "props": {
-              "direction": "column",
-              "style": {
-                "background": "var(--mpp-surface-nav)",
-                "borderRight": "1px solid var(--mpp-border-subtle)"
-              }
-            },
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": { "name": "RankListHeader" },
-                "position": { "basis": "auto", "shrink": 0 },
-                "props": {
-                  "text": "RANKS",
-                  "style": {
-                    "borderBottom": "1px solid var(--mpp-border-subtle)",
-                    "color": "var(--mpp-text-muted)",
-                    "fontSize": "11px",
-                    "fontWeight": "600",
-                    "letterSpacing": "0.04em",
-                    "padding": "10px 12px 8px",
-                    "textTransform": "uppercase"
-                  }
-                }
-              },
-              {
-                "type": "ia.display.flex-repeater",
-                "meta": { "name": "RankList" },
-                "position": { "basis": "0", "grow": 1 },
-                "propConfig": {
-                  "props.instances": {
-                    "binding": {
-                      "type": "property",
-                      "config": { "path": "view.custom.ranks" }
-                    }
-                  }
-                },
-                "props": {
-                  "direction": "column",
-                  "elementPosition": { "basis": "auto" },
-                  "path": "BlueRidge/Components/Popups/_DieRanks/RankRow",
-                  "style": {
-                    "overflowY": "auto"
-                  },
-                  "useDefaultViewHeight": false,
-                  "useDefaultViewWidth": false
-                }
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": { "name": "AddRankWrapper" },
-                "position": { "basis": "auto", "shrink": 0 },
-                "props": {
-                  "style": {
-                    "borderTop": "1px solid var(--mpp-border-subtle)",
-                    "padding": "8px 12px"
-                  }
-                },
-                "children": [
-                  {
-                    "type": "ia.input.button",
-                    "meta": { "name": "BtnAddRank" },
-                    "events": {
-                      "component": {
-                        "onActionPerformed": {
-                          "type": "popup",
-                          "scope": "C",
-                          "config": {
-                            "type": "open",
-                            "id": "mpp-edit-rank",
-                            "viewPath": "BlueRidge/Components/Popups/EditRank",
-                            "modal": true,
-                            "overlayDismiss": false,
-                            "showCloseIcon": false,
-                            "viewportBound": true,
-                            "viewParams": {
-                              "mode": "create",
-                              "dieRankId": null
-                            }
-                          }
-                        }
-                      }
-                    },
-                    "props": {
-                      "text": "+ Add Rank",
-                      "style": {
-                        "classes": "btn btn-primary",
-                        "width": "100%"
-                      }
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "MatrixPanel" },
-            "position": { "basis": "0", "grow": 1 },
-            "props": {
-              "direction": "column",
-              "style": {
-                "padding": "16px",
-                "gap": "12px"
-              }
-            },
-            "children": [
-              {
-                "type": "ia.container.flex",
-                "meta": { "name": "IntroBlock" },
-                "position": { "basis": "auto" },
-                "props": {
-                  "direction": "column",
-                  "style": { "gap": "3px" }
-                },
-                "children": [
-                  {
-                    "type": "ia.display.label",
-                    "meta": { "name": "MatrixTitle" },
-                    "props": {
-                      "text": "Merge Compatibility",
-                      "style": {
-                        "fontSize": "13px",
-                        "fontWeight": "600"
-                      }
-                    }
-                  },
-                  {
-                    "type": "ia.display.label",
-                    "meta": { "name": "MatrixSubtitle" },
-                    "props": {
-                      "text": "Click a cell to toggle. Green = can merge. Red = blocked. Lower triangle mirrors the upper.",
-                      "style": {
-                        "color": "var(--mpp-text-muted)",
-                        "fontSize": "11px"
-                      }
-                    }
-                  }
-                ]
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": { "name": "MatrixGrid" },
-                "position": { "basis": "auto" },
-                "props": {
-                  "direction": "column",
-                  "style": { "gap": "5px" }
-                },
-                "children": [
-                  {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "HeaderRow" },
-                    "props": {
-                      "direction": "row",
-                      "style": { "gap": "5px" }
-                    },
-                    "children": [
-                      {
-                        "type": "ia.container.flex",
-                        "meta": { "name": "CornerCell" },
-                        "position": { "basis": "100px", "shrink": 0 }
-                      },
-                      {
-                        "type": "ia.display.flex-repeater",
-                        "meta": { "name": "HeaderRepeater" },
-                        "position": { "grow": 1 },
-                        "propConfig": {
-                          "props.instances": {
-                            "binding": {
-                              "type": "property",
-                              "config": { "path": "view.custom.headerCells" }
-                            }
-                          }
-                        },
-                        "props": {
-                          "direction": "row",
-                          "elementPosition": { "basis": "90px", "shrink": 0 },
-                          "path": "BlueRidge/Components/Popups/_DieRanks/MatrixHeaderCell",
-                          "style": { "gap": "5px" },
-                          "useDefaultViewHeight": false,
-                          "useDefaultViewWidth": false
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "type": "ia.display.flex-repeater",
-                    "meta": { "name": "BodyRepeater" },
-                    "position": { "basis": "auto" },
-                    "propConfig": {
-                      "props.instances": {
-                        "binding": {
-                          "type": "property",
-                          "config": { "path": "view.custom.bodyRows" }
-                        }
-                      }
-                    },
-                    "props": {
-                      "direction": "column",
-                      "elementPosition": { "basis": "auto" },
-                      "path": "BlueRidge/Components/Popups/_DieRanks/MatrixRow",
-                      "style": { "gap": "5px" },
-                      "useDefaultViewHeight": false,
-                      "useDefaultViewWidth": false
-                    }
-                  }
-                ]
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": { "name": "Legend" },
-                "position": { "basis": "auto" },
-                "props": {
-                  "direction": "row",
-                  "alignItems": "center",
-                  "style": {
-                    "color": "var(--mpp-text-muted)",
-                    "fontSize": "11px",
-                    "gap": "16px",
-                    "paddingTop": "4px"
-                  }
-                },
-                "children": [
-                  {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "LegendYes" },
-                    "props": { "direction": "row", "alignItems": "center", "style": { "gap": "4px" } },
-                    "children": [
-                      { "type": "ia.container.flex", "meta": { "name": "Swatch" }, "position": { "basis": "14px", "shrink": 0 }, "props": { "style": { "background": "var(--mpp-state-good-bg)", "border": "1px solid var(--mpp-state-good-border)", "borderRadius": "3px", "height": "14px" } } },
-                      { "type": "ia.display.label",  "meta": { "name": "Label" },  "props": { "text": "Can merge" } }
-                    ]
-                  },
-                  {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "LegendNo" },
-                    "props": { "direction": "row", "alignItems": "center", "style": { "gap": "4px" } },
-                    "children": [
-                      { "type": "ia.container.flex", "meta": { "name": "Swatch" }, "position": { "basis": "14px", "shrink": 0 }, "props": { "style": { "background": "var(--mpp-state-bad-bg)", "border": "1px solid var(--mpp-state-bad-border)", "borderRadius": "3px", "height": "14px" } } },
-                      { "type": "ia.display.label",  "meta": { "name": "Label" },  "props": { "text": "Blocked" } }
-                    ]
-                  },
-                  {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "LegendMirror" },
-                    "props": { "direction": "row", "alignItems": "center", "style": { "gap": "4px" } },
-                    "children": [
-                      { "type": "ia.container.flex", "meta": { "name": "Swatch" }, "position": { "basis": "14px", "shrink": 0 }, "props": { "style": { "background": "var(--mpp-surface-card)", "border": "1px solid var(--mpp-border-subtle)", "borderRadius": "3px", "height": "14px" } } },
-                      { "type": "ia.display.label",  "meta": { "name": "Label" },  "props": { "text": "Mirror" } }
-                    ]
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "ia.container.flex",
-        "meta": { "name": "FooterBar" },
-        "position": { "basis": "50px", "shrink": 0 },
-        "props": {
-          "alignItems": "center",
-          "justify": "flex-end",
-          "style": {
-            "background": "var(--mpp-surface-raised)",
-            "borderTop": "1px solid var(--mpp-border-subtle)",
-            "gap": "8px",
-            "overflow": "hidden",
-            "padding": "12px 16px"
-          }
-        },
-        "children": [
-          {
-            "type": "ia.input.button",
-            "meta": { "name": "CloseButton" },
-            "position": { "shrink": 0 },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": { "script": "\tsystem.perspective.closePopup(id='mpp-die-ranks')" }
-                }
-              }
-            },
-            "props": {
-              "text": "Close",
-              "style": { "classes": "btn btn-sm" }
-            }
-          },
-          {
-            "type": "ia.input.button",
-            "meta": { "name": "SaveButton" },
-            "position": { "shrink": 0 },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "C",
-                  "config": { "script": "\tBlueRidge.Common.Notify.toast('Saved (stub)', 'Die rank save lands in populate pass.', 'success', 4)\n\tsystem.perspective.closePopup(id='mpp-die-ranks')" }
-                }
-              }
-            },
-            "props": {
-              "text": "Save",
-              "style": { "classes": "btn btn-primary btn-sm" }
-            }
-          }
-        ]
-      }
-    ]
+    "type": "ia.container.flex"
   }
 }

@@ -264,7 +264,6 @@
               "markdown": {
                 "escapeHtml": false
               },
-              "source": "",
               "style": {
                 "background": "var(--mpp-surface-card)",
                 "border": "1px solid var(--mpp-border-subtle)",
