@@ -8,10 +8,451 @@
     },
     "mode": "view",
     "pendingNav": null,
-    "searchFilter": "a",
+    "searchFilter": "mach",
     "selected": null,
     "selectedPath": 0,
-    "sortedTree": null
+    "sortedTree": [
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machine 01"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machine 01"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machine 01"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining In"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining In"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining In"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machine 01"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining In"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining In"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining In"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining In - Side A"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining In - Side A"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining In"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining In 1"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining In"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining In"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining Out"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining Out"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining In"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining In"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining In"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining In"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining In 2"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining Out"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining In - Side B"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining In - Side B"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining Out"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining Out"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining Out"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machine 02"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining Out"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machine 02"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machine 02"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machine 02"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machine 03"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machine 03"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machine 03"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machine 03"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining Out - Side A"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining Out - Side A"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining In 3"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining Out - Side B"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining Out - Side B"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machine 04"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machine 04"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machine 05"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machine 05"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining \u0026 Assembly 1"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machine 06"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machine 07"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machining \u0026 Assembly 2"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machine 08"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machine 09"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machine 10"
+      },
+      {
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "label": "Machine 11"
+      }
+    ]
   },
   "params": {},
   "propConfig": {
