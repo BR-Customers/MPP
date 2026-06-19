@@ -221,7 +221,25 @@ def getFilteredList(nameFilter):
 	
 	nodes = []
 	for r in rows:
-		node = {"label": r.get("Name"), "icon": {"path":  r.get("Icon") or "mpp/factory", "color": "--mpp-text-primary", "style": {} } }
+		node = {
+			"label": r.get("Name"), 
+			"icon": {"path":  r.get("Icon") or "mpp/factory", "color": "--mpp-text-primary", "style": {} },
+			"expanded": False,
+			"data": {
+				"id":              r.get("Id"), #
+				"code":            r.get("Code"), #
+				"name":            r.get("Name"), #
+				"definitionName":  r.get("LocationTypeDefinitionName"), #
+				"definitionId":    r.get("LocationTypeDefinitionId"), #
+				"typeName":        r.get("LocationTypeName"), #
+				#"hierarchyLevel":  r.get("HierarchyLevel"),
+				#"depth":           r.get("Depth"),
+				"description":     r.get("Description"), #
+				"sortOrder":       r.get("SortOrder"), #
+			},
+			"items": [],
+
+		}
 		nodes.append(node)
             
 	return nodes
