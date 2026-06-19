@@ -173,20 +173,10 @@
                       "component": {
                         "onActionPerformed": {
                           "config": {
-                            "id": "mpp-edit-rank",
-                            "modal": true,
-                            "overlayDismiss": false,
-                            "showCloseIcon": false,
-                            "type": "open",
-                            "viewParams": {
-                              "dieRankId": null,
-                              "mode": "create"
-                            },
-                            "viewPath": "BlueRidge/Components/Popups/EditRank",
-                            "viewportBound": true
+                            "script": "\tsystem.perspective.openPopup(\n\t\tid\u003d\u0027mpp-edit-rank\u0027,\n\t\tview\u003d\u0027BlueRidge/Components/Popups/EditRank\u0027,\n\t\tmodal\u003dTrue,\n\t\tshowCloseIcon\u003dFalse,\n\t\tdraggable\u003dFalse\n\t)"
                           },
-                          "scope": "C",
-                          "type": "popup"
+                          "scope": "G",
+                          "type": "script"
                         }
                       }
                     },

@@ -6,9 +6,9 @@
         "$": [
           "ts",
           192,
-          1781547114800
+          1781896294577
         ],
-        "$ts": 1781547114799
+        "$ts": 1781896294577
       },
       "entityTypeCode": null,
       "logSeverityCode": null,
@@ -17,12 +17,4356 @@
         "$": [
           "ts",
           192,
-          1781547114800
+          1781896294577
         ],
-        "$ts": 1780942314799
+        "$ts": 1781291494577
       }
     },
     "rows": [
+      {
+        "ChangesSummary": "",
+        "Description": "OperationTemplate deprecated.",
+        "EntityId": 13,
+        "Id": 209,
+        "LogEntityTypeCode": "OperationTemplate",
+        "LogEntityTypeName": "Operation Template",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781895902886
+        },
+        "NewValue": "{\"Id\":13}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ ParentOperationTemplateId",
+        "Description": "OperationTemplate cloned from parent as new version.",
+        "EntityId": 13,
+        "Id": 208,
+        "LogEntityTypeCode": "OperationTemplate",
+        "LogEntityTypeName": "Operation Template",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781895899085
+        },
+        "NewValue": "{\"ParentOperationTemplateId\":12}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ ParentOperationTemplateId",
+        "Description": "OperationTemplate cloned from parent as new version.",
+        "EntityId": 12,
+        "Id": 207,
+        "LogEntityTypeCode": "OperationTemplate",
+        "LogEntityTypeName": "Operation Template",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781895898918
+        },
+        "NewValue": "{\"ParentOperationTemplateId\":11}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ ParentOperationTemplateId",
+        "Description": "OperationTemplate cloned from parent as new version.",
+        "EntityId": 11,
+        "Id": 206,
+        "LogEntityTypeCode": "OperationTemplate",
+        "LogEntityTypeName": "Operation Template",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781895897885
+        },
+        "NewValue": "{\"ParentOperationTemplateId\":10}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ ParentOperationTemplateId",
+        "Description": "OperationTemplate cloned from parent as new version.",
+        "EntityId": 10,
+        "Id": 205,
+        "LogEntityTypeCode": "OperationTemplate",
+        "LogEntityTypeName": "Operation Template",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781895895945
+        },
+        "NewValue": "{\"ParentOperationTemplateId\":1}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "OperationTemplate deprecated.",
+        "EntityId": 9,
+        "Id": 204,
+        "LogEntityTypeCode": "OperationTemplate",
+        "LogEntityTypeName": "Operation Template",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781895889876
+        },
+        "NewValue": "{\"Id\":9}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ ParentOperationTemplateId",
+        "Description": "OperationTemplate cloned from parent as new version.",
+        "EntityId": 9,
+        "Id": 203,
+        "LogEntityTypeCode": "OperationTemplate",
+        "LogEntityTypeName": "Operation Template",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781895878791
+        },
+        "NewValue": "{\"ParentOperationTemplateId\":8}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ ParentOperationTemplateId",
+        "Description": "OperationTemplate cloned from parent as new version.",
+        "EntityId": 8,
+        "Id": 202,
+        "LogEntityTypeCode": "OperationTemplate",
+        "LogEntityTypeName": "Operation Template",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781895877429
+        },
+        "NewValue": "{\"ParentOperationTemplateId\":7}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ AreaLocationId, Description, Code +1 more",
+        "Description": "OperationTemplate created (v1).",
+        "EntityId": 7,
+        "Id": 201,
+        "LogEntityTypeCode": "OperationTemplate",
+        "LogEntityTypeName": "Operation Template",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781895860941
+        },
+        "NewValue": "{\"Code\":\"sfdsdf\",\"Name\":\"sdfdsf\",\"AreaLocationId\":43,\"Description\":\"\"}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location updated with attribute reconciliation.",
+        "EntityId": 25,
+        "Id": 199,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781894582051
+        },
+        "NewValue": "{\"Location\":\"{\\\"Id\\\":25,\\\"ParentLocationId\\\":23,\\\"LocationTypeDefinitionId\\\":8,\\\"Code\\\":\\\"DC3-M02\\\",\\\"Name\\\":\\\"Machine 02\\\",\\\"Description\\\":\\\"Die cast machine\\\",\\\"SortOrder\\\":2}\"}",
+        "OldValue": "{\"Location\":\"{\\\"Id\\\":25,\\\"ParentLocationId\\\":23,\\\"LocationTypeDefinitionId\\\":8,\\\"Code\\\":\\\"DC3-M02\\\",\\\"Name\\\":\\\"Machine 02\\\",\\\"Description\\\":\\\"Die cast machine\\\",\\\"SortOrder\\\":2}\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Definition: {u\u0027Code\u0027: \u0027ProductionArea\u0027, u… → {u\u0027Description\u0027: \u0027vxcxv\u0027, u\u0027C…",
+        "Description": "Location Type Definition \"\" · Updated (no attribute changes)",
+        "EntityId": 3,
+        "Id": 200,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781894582051
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"\",\"Icon\":\"mpp\\/workspaces\",\"Description\":\"vxcxv\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"\",\"Icon\":\"mpp\\/workspaces\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Attributes, Code, Name +1 more",
+        "Description": "Location Type Definition \"\" (Area tier) · Created; +Attribute ",
+        "EntityId": 17,
+        "Id": 198,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781894427069
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Code\":\"\",\"Name\":\"\",\"Attributes\":[{\"AttributeName\":\"\",\"DataType\":\"NVARCHAR\",\"IsRequired\":false,\"SortOrder\":1}]}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location updated with attribute reconciliation.",
+        "EntityId": 25,
+        "Id": 197,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781894427038
+        },
+        "NewValue": "{\"Location\":\"{\\\"Id\\\":25,\\\"ParentLocationId\\\":23,\\\"LocationTypeDefinitionId\\\":8,\\\"Code\\\":\\\"DC3-M02\\\",\\\"Name\\\":\\\"Machine 02\\\",\\\"Description\\\":\\\"Die cast machine\\\",\\\"SortOrder\\\":2}\"}",
+        "OldValue": "{\"Location\":\"{\\\"Id\\\":25,\\\"ParentLocationId\\\":23,\\\"LocationTypeDefinitionId\\\":8,\\\"Code\\\":\\\"DC3-M02\\\",\\\"Name\\\":\\\"Machine 02\\\",\\\"Description\\\":\\\"Die cast machine\\\",\\\"SortOrder\\\":2}\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Definition: {u\u0027Description\u0027: \u0027asdasdsa\u0027, … → {u\u0027Code\u0027: \u0027ProductionArea\u0027, u…",
+        "Description": "Location Type Definition \"\" · Updated (no attribute changes)",
+        "EntityId": 3,
+        "Id": 196,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781894415734
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"\",\"Icon\":\"mpp\\/workspaces\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\",\"Description\":\"asdasdsa\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location updated with attribute reconciliation.",
+        "EntityId": 25,
+        "Id": 195,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781894415732
+        },
+        "NewValue": "{\"Location\":\"{\\\"Id\\\":25,\\\"ParentLocationId\\\":23,\\\"LocationTypeDefinitionId\\\":8,\\\"Code\\\":\\\"DC3-M02\\\",\\\"Name\\\":\\\"Machine 02\\\",\\\"Description\\\":\\\"Die cast machine\\\",\\\"SortOrder\\\":2}\"}",
+        "OldValue": "{\"Location\":\"{\\\"Id\\\":25,\\\"ParentLocationId\\\":23,\\\"LocationTypeDefinitionId\\\":8,\\\"Code\\\":\\\"DC3-M02\\\",\\\"Name\\\":\\\"Machine 02\\\",\\\"Description\\\":\\\"Die cast machine\\\",\\\"SortOrder\\\":2}\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Definition: {u\u0027Description\u0027: \u0027cvbcvbvcvcb… → {u\u0027Description\u0027: \u0027asdasdsa\u0027, …",
+        "Description": "Location Type Definition \"Production Area\" · Updated (no attribute changes)",
+        "EntityId": 3,
+        "Id": 194,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781894379101
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\",\"Description\":\"asdasdsa\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\",\"Description\":\"cvbcvbvcvcbsdsa\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location updated with attribute reconciliation.",
+        "EntityId": 25,
+        "Id": 193,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781894379098
+        },
+        "NewValue": "{\"Location\":\"{\\\"Id\\\":25,\\\"ParentLocationId\\\":23,\\\"LocationTypeDefinitionId\\\":8,\\\"Code\\\":\\\"DC3-M02\\\",\\\"Name\\\":\\\"Machine 02\\\",\\\"Description\\\":\\\"Die cast machine\\\",\\\"SortOrder\\\":2}\"}",
+        "OldValue": "{\"Location\":\"{\\\"Id\\\":25,\\\"ParentLocationId\\\":23,\\\"LocationTypeDefinitionId\\\":8,\\\"Code\\\":\\\"DC3-M02\\\",\\\"Name\\\":\\\"Machine 02\\\",\\\"Description\\\":\\\"Die cast machine\\\",\\\"SortOrder\\\":2}\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location updated with attribute reconciliation.",
+        "EntityId": 25,
+        "Id": 192,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781894372956
+        },
+        "NewValue": "{\"Location\":\"{\\\"Id\\\":25,\\\"ParentLocationId\\\":23,\\\"LocationTypeDefinitionId\\\":8,\\\"Code\\\":\\\"DC3-M02\\\",\\\"Name\\\":\\\"Machine 02\\\",\\\"Description\\\":\\\"Die cast machine\\\",\\\"SortOrder\\\":2}\"}",
+        "OldValue": "{\"Location\":\"{\\\"Id\\\":25,\\\"ParentLocationId\\\":23,\\\"LocationTypeDefinitionId\\\":8,\\\"Code\\\":\\\"DC3-M02\\\",\\\"Name\\\":\\\"Machine 02\\\",\\\"Description\\\":\\\"Die cast machine\\\",\\\"SortOrder\\\":2}\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Definition: {u\u0027Description\u0027: \u0027cvbcvbvcvcb… → {u\u0027Description\u0027: \u0027cvbcvbvcvcb…",
+        "Description": "Location Type Definition \"Production Area\" · Updated (no attribute changes)",
+        "EntityId": 3,
+        "Id": 191,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781894232127
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\",\"Description\":\"cvbcvbvcvcbsdsa\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\",\"Description\":\"cvbcvbvcvcb\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location updated with attribute reconciliation.",
+        "EntityId": 25,
+        "Id": 190,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781894232125
+        },
+        "NewValue": "{\"Location\":\"{\\\"Id\\\":25,\\\"ParentLocationId\\\":23,\\\"LocationTypeDefinitionId\\\":8,\\\"Code\\\":\\\"DC3-M02\\\",\\\"Name\\\":\\\"Machine 02\\\",\\\"Description\\\":\\\"Die cast machine\\\",\\\"SortOrder\\\":2}\"}",
+        "OldValue": "{\"Location\":\"{\\\"Id\\\":25,\\\"ParentLocationId\\\":23,\\\"LocationTypeDefinitionId\\\":8,\\\"Code\\\":\\\"DC3-M02\\\",\\\"Name\\\":\\\"Machine 02\\\",\\\"Description\\\":\\\"Die cast machine\\\",\\\"SortOrder\\\":2}\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location updated with attribute reconciliation.",
+        "EntityId": 25,
+        "Id": 189,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781894079193
+        },
+        "NewValue": "{\"Location\":\"{\\\"Id\\\":25,\\\"ParentLocationId\\\":23,\\\"LocationTypeDefinitionId\\\":8,\\\"Code\\\":\\\"DC3-M02\\\",\\\"Name\\\":\\\"Machine 02\\\",\\\"Description\\\":\\\"Die cast machine\\\",\\\"SortOrder\\\":2}\"}",
+        "OldValue": "{\"Location\":\"{\\\"Id\\\":25,\\\"ParentLocationId\\\":23,\\\"LocationTypeDefinitionId\\\":8,\\\"Code\\\":\\\"DC3-M02\\\",\\\"Name\\\":\\\"Machine 02\\\",\\\"Description\\\":\\\"Die cast machine\\\",\\\"SortOrder\\\":2}\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location Type Definition \"Support Area\" · Updated (no attribute changes)",
+        "EntityId": 4,
+        "Id": 188,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781894079189
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":4,\"Code\":\"SupportArea\",\"Name\":\"Support Area\",\"Icon\":\"mpp\\/engineering\",\"Description\":\"fgdgfdg\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":4,\"Code\":\"SupportArea\",\"Name\":\"Support Area\",\"Icon\":\"mpp\\/engineering\",\"Description\":\"fgdgfdg\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location updated with attribute reconciliation.",
+        "EntityId": 25,
+        "Id": 187,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781894073302
+        },
+        "NewValue": "{\"Location\":\"{\\\"Id\\\":25,\\\"ParentLocationId\\\":23,\\\"LocationTypeDefinitionId\\\":8,\\\"Code\\\":\\\"DC3-M02\\\",\\\"Name\\\":\\\"Machine 02\\\",\\\"Description\\\":\\\"Die cast machine\\\",\\\"SortOrder\\\":2}\"}",
+        "OldValue": "{\"Location\":\"{\\\"Id\\\":25,\\\"ParentLocationId\\\":23,\\\"LocationTypeDefinitionId\\\":8,\\\"Code\\\":\\\"DC3-M02\\\",\\\"Name\\\":\\\"Machine 02\\\",\\\"Description\\\":\\\"Die cast machine\\\",\\\"SortOrder\\\":2}\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Definition: {u\u0027Code\u0027: \u0027SupportArea\u0027, u\u0027Na… → {u\u0027Description\u0027: \u0027fgdgfdg\u0027, u…",
+        "Description": "Location Type Definition \"Support Area\" · Updated (no attribute changes)",
+        "EntityId": 4,
+        "Id": 186,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781894073300
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":4,\"Code\":\"SupportArea\",\"Name\":\"Support Area\",\"Icon\":\"mpp\\/engineering\",\"Description\":\"fgdgfdg\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":4,\"Code\":\"SupportArea\",\"Name\":\"Support Area\",\"Icon\":\"mpp\\/engineering\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Definition: {u\u0027Description\u0027: \u0027cbvcvbcb\u0027, … → {u\u0027Description\u0027: \u0027cvbcvbvcvcb…",
+        "Description": "Location Type Definition \"Production Area\" · Updated (no attribute changes)",
+        "EntityId": 3,
+        "Id": 185,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781894052500
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\",\"Description\":\"cvbcvbvcvcb\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\",\"Description\":\"cbvcvbcb\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Definition: {u\u0027Description\u0027: \u0027fvcbvcbvc\u0027,… → {u\u0027Description\u0027: \u0027cbvcvbcb\u0027, …",
+        "Description": "Location Type Definition \"Production Area\" · Updated (no attribute changes)",
+        "EntityId": 3,
+        "Id": 184,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781894042304
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\",\"Description\":\"cbvcvbcb\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\",\"Description\":\"fvcbvcbvc\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location updated with attribute reconciliation.",
+        "EntityId": 25,
+        "Id": 183,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781894030722
+        },
+        "NewValue": "{\"Location\":\"{\\\"Id\\\":25,\\\"ParentLocationId\\\":23,\\\"LocationTypeDefinitionId\\\":8,\\\"Code\\\":\\\"DC3-M02\\\",\\\"Name\\\":\\\"Machine 02\\\",\\\"Description\\\":\\\"Die cast machine\\\",\\\"SortOrder\\\":2}\"}",
+        "OldValue": "{\"Location\":\"{\\\"Id\\\":25,\\\"ParentLocationId\\\":23,\\\"LocationTypeDefinitionId\\\":8,\\\"Code\\\":\\\"DC3-M02\\\",\\\"Name\\\":\\\"Machine 02\\\",\\\"Description\\\":\\\"Die cast machine\\\",\\\"SortOrder\\\":2}\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Definition: {u\u0027Description\u0027: \u0027fdgdfg\u0027, u\u0027… → {u\u0027Description\u0027: \u0027fvcbvcbvc\u0027,…",
+        "Description": "Location Type Definition \"Production Area\" · Updated (no attribute changes)",
+        "EntityId": 3,
+        "Id": 182,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781894030710
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\",\"Description\":\"fvcbvcbvc\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\",\"Description\":\"fdgdfg\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location updated with attribute reconciliation.",
+        "EntityId": 25,
+        "Id": 181,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781893448248
+        },
+        "NewValue": "{\"Location\":\"{\\\"Id\\\":25,\\\"ParentLocationId\\\":23,\\\"LocationTypeDefinitionId\\\":8,\\\"Code\\\":\\\"DC3-M02\\\",\\\"Name\\\":\\\"Machine 02\\\",\\\"Description\\\":\\\"Die cast machine\\\",\\\"SortOrder\\\":2}\"}",
+        "OldValue": "{\"Location\":\"{\\\"Id\\\":25,\\\"ParentLocationId\\\":23,\\\"LocationTypeDefinitionId\\\":8,\\\"Code\\\":\\\"DC3-M02\\\",\\\"Name\\\":\\\"Machine 02\\\",\\\"Description\\\":\\\"Die cast machine\\\",\\\"SortOrder\\\":2}\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location Type Definition \"Production Area\" · Updated (no attribute changes)",
+        "EntityId": 3,
+        "Id": 180,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781893448247
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\",\"Description\":\"fdgdfg\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\",\"Description\":\"fdgdfg\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location updated with attribute reconciliation.",
+        "EntityId": 25,
+        "Id": 179,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781893445232
+        },
+        "NewValue": "{\"Location\":\"{\\\"Id\\\":25,\\\"ParentLocationId\\\":23,\\\"LocationTypeDefinitionId\\\":8,\\\"Code\\\":\\\"DC3-M02\\\",\\\"Name\\\":\\\"Machine 02\\\",\\\"Description\\\":\\\"Die cast machine\\\",\\\"SortOrder\\\":2}\"}",
+        "OldValue": "{\"Location\":\"{\\\"Id\\\":25,\\\"ParentLocationId\\\":23,\\\"LocationTypeDefinitionId\\\":8,\\\"Code\\\":\\\"DC3-M02\\\",\\\"Name\\\":\\\"Machine 02\\\",\\\"Description\\\":\\\"Die cast machine\\\",\\\"SortOrder\\\":2}\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location Type Definition \"Production Area\" · Updated (no attribute changes)",
+        "EntityId": 3,
+        "Id": 178,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781893445229
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\",\"Description\":\"fdgdfg\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\",\"Description\":\"fdgdfg\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Definition: {u\u0027Code\u0027: \u0027ProductionArea\u0027, u… → {u\u0027Description\u0027: \u0027fdgdfg\u0027, u\u0027…",
+        "Description": "Location Type Definition \"Production Area\" · Updated (no attribute changes)",
+        "EntityId": 3,
+        "Id": 177,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781893442237
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\",\"Description\":\"fdgdfg\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Areadfd\",\"Icon\":\"mpp\\/workspaces\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location updated with attribute reconciliation.",
+        "EntityId": 25,
+        "Id": 176,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781893442236
+        },
+        "NewValue": "{\"Location\":\"{\\\"Id\\\":25,\\\"ParentLocationId\\\":23,\\\"LocationTypeDefinitionId\\\":8,\\\"Code\\\":\\\"DC3-M02\\\",\\\"Name\\\":\\\"Machine 02\\\",\\\"Description\\\":\\\"Die cast machine\\\",\\\"SortOrder\\\":2}\"}",
+        "OldValue": "{\"Location\":\"{\\\"Id\\\":25,\\\"ParentLocationId\\\":23,\\\"LocationTypeDefinitionId\\\":8,\\\"Code\\\":\\\"DC3-M02\\\",\\\"Name\\\":\\\"Machine 02\\\",\\\"Description\\\":\\\"Die cast machine\\\",\\\"SortOrder\\\":2}\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Initials: \"GXL\" → \"DGDF\"",
+        "Description": "AppUser updated.",
+        "EntityId": 12,
+        "Id": 175,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781892968333
+        },
+        "NewValue": "{\"Initials\":\"DGDF\",\"DisplayName\":\"slkfsdlkgdshf\"}",
+        "OldValue": "{\"Initials\":\"GXL\",\"DisplayName\":\"slkfsdlkgdshf\"}",
+        "UserDisplayName": null,
+        "UserId": 30
+      },
+      {
+        "ChangesSummary": "+ Initials, DisplayName",
+        "Description": "AppUser created.",
+        "EntityId": 12,
+        "Id": 174,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781892960385
+        },
+        "NewValue": "{\"Initials\":\"GXL\",\"DisplayName\":\"slkfsdlkgdshf\"}",
+        "OldValue": null,
+        "UserDisplayName": null,
+        "UserId": 30
+      },
+      {
+        "ChangesSummary": "+ Code, Name, ToolTypeId +2 more",
+        "Description": "ToolAttributeDefinition created.",
+        "EntityId": 10,
+        "Id": 173,
+        "LogEntityTypeCode": "ToolAttributeDefinition",
+        "LogEntityTypeName": "Tool Attribute Def",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781892113983
+        },
+        "NewValue": "{\"ToolTypeId\":1,\"Code\":\"0000\",\"Name\":\"00oo\",\"DataType\":\"String\",\"IsRequired\":false}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Code, Name, ToolTypeId +2 more",
+        "Description": "ToolAttributeDefinition created.",
+        "EntityId": 9,
+        "Id": 172,
+        "LogEntityTypeCode": "ToolAttributeDefinition",
+        "LogEntityTypeName": "Tool Attribute Def",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781890941154
+        },
+        "NewValue": "{\"ToolTypeId\":1,\"Code\":\"fnfdzhgx\",\"Name\":\"fxvxfvx\",\"DataType\":\"String\",\"IsRequired\":false}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Code, Name, ToolTypeId +2 more",
+        "Description": "ToolAttributeDefinition created.",
+        "EntityId": 8,
+        "Id": 171,
+        "LogEntityTypeCode": "ToolAttributeDefinition",
+        "LogEntityTypeName": "Tool Attribute Def",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781883764712
+        },
+        "NewValue": "{\"ToolTypeId\":1,\"Code\":\"test 2\",\"Name\":\"test 2\",\"DataType\":\"String\",\"IsRequired\":false}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Code, Name, ToolTypeId +2 more",
+        "Description": "ToolAttributeDefinition created.",
+        "EntityId": 7,
+        "Id": 170,
+        "LogEntityTypeCode": "ToolAttributeDefinition",
+        "LogEntityTypeName": "Tool Attribute Def",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781882435634
+        },
+        "NewValue": "{\"ToolTypeId\":1,\"Code\":\"test\",\"Name\":\"test\",\"DataType\":\"String\",\"IsRequired\":false}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 10 → 11",
+        "Description": "Location DC4 · Reordered from #10 to #11 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 169,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781881165003
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":11,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":10,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 9 → 10",
+        "Description": "Location DC4 · Reordered from #9 to #10 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 168,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781881164642
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":10,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":9,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 7 → 9",
+        "Description": "Location DC4 · Reordered from #7 to #9 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 167,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781881164139
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":9,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":7,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 6 → 7",
+        "Description": "Location DC4 · Reordered from #6 to #7 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 166,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781881163952
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":7,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":6,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 4 → 6",
+        "Description": "Location DC4 · Reordered from #4 to #6 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 165,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781881163773
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":6,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":4,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 3 → 4",
+        "Description": "Location DC4 · Reordered from #3 to #4 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 164,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781881163601
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":4,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":3,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 1 → 3",
+        "Description": "Location DC4 · Reordered from #1 to #3 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 163,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781881163060
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":3,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":1,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: -1 → 1",
+        "Description": "Location DC4 · Reordered from #-1 to #1 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 162,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781881162258
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":1,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":-1,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 1 → -1",
+        "Description": "Location DC4 · Reordered from #1 to #-1 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 161,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781881161729
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":-1,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":1,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Location: \"{\"Id\":31,\"ParentLocationId\":2…\" → \"{\"Id\":31,\"ParentLocationId\":2…\"",
+        "Description": "Location updated with attribute reconciliation.",
+        "EntityId": 31,
+        "Id": 160,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781881157651
+        },
+        "NewValue": "{\"Location\":\"{\\\"Id\\\":31,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC4\\\",\\\"Name\\\":\\\"Die Cast 4\\\",\\\"Description\\\":\\\"Die casting area - 3 machines\\\",\\\"SortOrder\\\":1}\"}",
+        "OldValue": "{\"Location\":\"{\\\"Id\\\":31,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC4\\\",\\\"Name\\\":\\\"Die Cast 4\\\",\\\"Description\\\":\\\"Die casting area - 3 machines\\\",\\\"SortOrder\\\":2}\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 3 → 2",
+        "Description": "Location DC4 · Reordered from #3 to #2 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 159,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781881148334
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":2,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":3,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 4 → 3",
+        "Description": "Location DC4 · Reordered from #4 to #3 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 158,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781881147883
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":3,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":4,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 6 → 4",
+        "Description": "Location DC4 · Reordered from #6 to #4 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 157,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781881145699
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":4,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":6,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 4 → 6",
+        "Description": "Location DC4 · Reordered from #4 to #6 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 156,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781881143979
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":6,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":4,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 3 → 4",
+        "Description": "Location DC4 · Reordered from #3 to #4 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 155,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781881143435
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":4,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":3,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 2 → 3",
+        "Description": "Location DC4 · Reordered from #2 to #3 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 154,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781881142802
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":3,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":2,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 1 → 2",
+        "Description": "Location DC4 · Reordered from #1 to #2 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 153,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781881142224
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":2,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":1,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: -1 → 1",
+        "Description": "Location DC4 · Reordered from #-1 to #1 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 152,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781881141044
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":1,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":-1,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 1 → -1",
+        "Description": "Location DC4 · Reordered from #1 to #-1 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 151,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781881120388
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":-1,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":1,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 1 → -1",
+        "Description": "Location DC3 · Reordered from #1 to #-1 within MPP-MAD",
+        "EntityId": 23,
+        "Id": 150,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781881094071
+        },
+        "NewValue": "{\"Id\":23,\"Code\":\"DC3\",\"Name\":\"Die Cast 3\",\"SortOrder\":-1,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "OldValue": "{\"Id\":23,\"Code\":\"DC3\",\"Name\":\"Die Cast 3\",\"SortOrder\":1,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Areadfd\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Location: \"{\"Id\":50,\"ParentLocationId\":4…\" → \"{\"Id\":50,\"ParentLocationId\":4…\", +Attributes: [{u\u0027AttributeValue\u0027: \u00271\u0027, u\u0027L…",
+        "Description": "Location updated with attribute reconciliation.",
+        "EntityId": 50,
+        "Id": 149,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781879707485
+        },
+        "NewValue": "{\"Location\":\"{\\\"Id\\\":50,\\\"ParentLocationId\\\":49,\\\"LocationTypeDefinitionId\\\":7,\\\"Code\\\":\\\"MA1-6MD-MIN\\\",\\\"Name\\\":\\\"Machining In test\\\",\\\"Description\\\":\\\"Machining In\\\",\\\"SortOrder\\\":1}\",\"Attributes\":[{\"LocationAttributeDefinitionId\":3,\"AttributeValue\":\"1\"}]}",
+        "OldValue": "{\"Location\":\"{\\\"Id\\\":50,\\\"ParentLocationId\\\":49,\\\"LocationTypeDefinitionId\\\":7,\\\"Code\\\":\\\"MA1-6MD-MIN\\\",\\\"Name\\\":\\\"Machining In\\\",\\\"Description\\\":\\\"Machining In\\\",\\\"SortOrder\\\":1}\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Bom: {u\u0027ParentItem\u0027: {u\u0027Descriptio… → {u\u0027ParentItem\u0027: {u\u0027Descriptio…",
+        "Description": "5G0 — 5G0 Front Cover Assembly · BOM v2 · Published (deprecated v1); 1 lines; effective 2026-06-19",
+        "EntityId": 3,
+        "Id": 148,
+        "LogEntityTypeCode": "Bom",
+        "LogEntityTypeName": "BOM",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781874208000
+        },
+        "NewValue": "{\"Bom\":{\"Id\":3,\"VersionNumber\":2,\"EffectiveFrom\":\"2026-06-19T00:00:00\",\"PublishedAt\":\"2026-06-19T13:03:27.996\",\"ParentItem\":{\"Id\":1,\"PartNumber\":\"5G0\",\"Description\":\"5G0 Front Cover Assembly\"}},\"Lines\":[{\"Id\":4,\"QtyPer\":2.0000,\"SortOrder\":1,\"ChildItem\":{\"Id\":3,\"PartNumber\":\"PNA\",\"Description\":\"Mounting Pin\"},\"Uom\":{\"Id\":1,\"Code\":\"EA\",\"Name\":\"Each\"}}]}",
+        "OldValue": "{\"Bom\":{\"Id\":3,\"VersionNumber\":2,\"EffectiveFrom\":\"2026-06-19T00:00:00\",\"ParentItem\":{\"Id\":1,\"PartNumber\":\"5G0\",\"Description\":\"5G0 Front Cover Assembly\"}},\"Lines\":[{\"Id\":4,\"QtyPer\":2.0000,\"SortOrder\":1,\"ChildItem\":{\"Id\":3,\"PartNumber\":\"PNA\",\"Description\":\"Mounting Pin\"},\"Uom\":{\"Id\":1,\"Code\":\"EA\",\"Name\":\"Each\"}}]}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Bom: {u\u0027ParentItem\u0027: {u\u0027Descriptio… → {u\u0027ParentItem\u0027: {u\u0027Descriptio…, Lines: [{u\u0027SortOrder\u0027: 1, u\u0027ChildIte… → [{u\u0027SortOrder\u0027: 1, u\u0027ChildIte…",
+        "Description": "5G0 — 5G0 Front Cover Assembly · BOM v2 (Draft) · -Line 5G0-C; 1 lines",
+        "EntityId": 3,
+        "Id": 147,
+        "LogEntityTypeCode": "Bom",
+        "LogEntityTypeName": "BOM",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781874203258
+        },
+        "NewValue": "{\"Bom\":{\"Id\":3,\"VersionNumber\":2,\"EffectiveFrom\":\"2026-06-19T00:00:00\",\"ParentItem\":{\"Id\":1,\"PartNumber\":\"5G0\",\"Description\":\"5G0 Front Cover Assembly\"}},\"Lines\":[{\"Id\":4,\"QtyPer\":2.0000,\"SortOrder\":1,\"ChildItem\":{\"Id\":3,\"PartNumber\":\"PNA\",\"Description\":\"Mounting Pin\"},\"Uom\":{\"Id\":1,\"Code\":\"EA\",\"Name\":\"Each\"}}]}",
+        "OldValue": "{\"Bom\":{\"Id\":3,\"VersionNumber\":2,\"EffectiveFrom\":\"2026-06-19T13:03:16.782\",\"ParentItem\":{\"Id\":1,\"PartNumber\":\"5G0\",\"Description\":\"5G0 Front Cover Assembly\"}},\"Lines\":[{\"Id\":3,\"QtyPer\":1.0000,\"SortOrder\":1,\"ChildItem\":{\"Id\":2,\"PartNumber\":\"5G0-C\",\"Description\":\"5G0 Front Cover Casting\"},\"Uom\":{\"Id\":1,\"Code\":\"EA\",\"Name\":\"Each\"}},{\"Id\":4,\"QtyPer\":2.0000,\"SortOrder\":2,\"ChildItem\":{\"Id\":3,\"PartNumber\":\"PNA\",\"Description\":\"Mounting Pin\"},\"Uom\":{\"Id\":1,\"Code\":\"EA\",\"Name\":\"Each\"}}]}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "VersionNumber: 1 → 2, -PublishedAt, EffectiveFrom: \"2026-01-15T00:00:00\" → \"2026-06-19T13:03:16.782\" +1 more",
+        "Description": "5G0 — 5G0 Front Cover Assembly · BOM v2 (Draft) · Created from v1; 2 lines",
+        "EntityId": 3,
+        "Id": 146,
+        "LogEntityTypeCode": "Bom",
+        "LogEntityTypeName": "BOM",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781874196786
+        },
+        "NewValue": "{\"Id\":3,\"VersionNumber\":2,\"EffectiveFrom\":\"2026-06-19T13:03:16.782\",\"ParentItem\":{\"Id\":1,\"PartNumber\":\"5G0\",\"Description\":\"5G0 Front Cover Assembly\"},\"Lines\":[{\"Id\":3,\"QtyPer\":1.0000,\"SortOrder\":1,\"ChildItem\":{\"Id\":2,\"PartNumber\":\"5G0-C\",\"Description\":\"5G0 Front Cover Casting\"},\"Uom\":{\"Id\":1,\"Code\":\"EA\",\"Name\":\"Each\"}},{\"Id\":4,\"QtyPer\":2.0000,\"SortOrder\":2,\"ChildItem\":{\"Id\":3,\"PartNumber\":\"PNA\",\"Description\":\"Mounting Pin\"},\"Uom\":{\"Id\":1,\"Code\":\"EA\",\"Name\":\"Each\"}}]}",
+        "OldValue": "{\"Id\":1,\"VersionNumber\":1,\"EffectiveFrom\":\"2026-01-15T00:00:00\",\"PublishedAt\":\"2026-01-14T00:00:00\",\"ParentItem\":{\"Id\":1,\"PartNumber\":\"5G0\",\"Description\":\"5G0 Front Cover Assembly\"},\"Lines\":[{\"Id\":1,\"QtyPer\":1.0000,\"SortOrder\":1,\"ChildItem\":{\"Id\":2,\"PartNumber\":\"5G0-C\",\"Description\":\"5G0 Front Cover Casting\"},\"Uom\":{\"Id\":1,\"Code\":\"EA\",\"Name\":\"Each\"}},{\"Id\":2,\"QtyPer\":2.0000,\"SortOrder\":2,\"ChildItem\":{\"Id\":3,\"PartNumber\":\"PNA\",\"Description\":\"Mounting Pin\"},\"Uom\":{\"Id\":1,\"Code\":\"EA\",\"Name\":\"Each\"}}]}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "WeightUom: {u\u0027Code\u0027: \u0027LB\u0027, u\u0027Name\u0027: \u0027Pou… → {u\u0027Code\u0027: \u0027EA\u0027, u\u0027Name\u0027: \u0027Eac…",
+        "Description": "5G0-C · Identity · Updated WeightUom LB→EA",
+        "EntityId": 2,
+        "Id": 145,
+        "LogEntityTypeCode": "Item",
+        "LogEntityTypeName": "Item",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781874028879
+        },
+        "NewValue": "{\"Description\":\"5G0 Front Cover Casting\",\"MacolaPartNumber\":\"5G0-CST-001\",\"DefaultSubLotQty\":48,\"Uom\":{\"Id\":4,\"Code\":\"IN\",\"Name\":\"Inch\"},\"UnitWeight\":2.8000,\"WeightUom\":{\"Id\":1,\"Code\":\"EA\",\"Name\":\"Each\"},\"CountryOfOrigin\":\"US\"}",
+        "OldValue": "{\"Description\":\"5G0 Front Cover Casting\",\"MacolaPartNumber\":\"5G0-CST-001\",\"DefaultSubLotQty\":48,\"Uom\":{\"Id\":4,\"Code\":\"IN\",\"Name\":\"Inch\"},\"UnitWeight\":2.8000,\"WeightUom\":{\"Id\":2,\"Code\":\"LB\",\"Name\":\"Pound\"},\"CountryOfOrigin\":\"US\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Uom: {u\u0027Code\u0027: \u0027EA\u0027, u\u0027Name\u0027: \u0027Eac… → {u\u0027Code\u0027: \u0027IN\u0027, u\u0027Name\u0027: \u0027Inc…",
+        "Description": "5G0-C · Identity · Updated Uom EA→IN",
+        "EntityId": 2,
+        "Id": 144,
+        "LogEntityTypeCode": "Item",
+        "LogEntityTypeName": "Item",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781874024212
+        },
+        "NewValue": "{\"Description\":\"5G0 Front Cover Casting\",\"MacolaPartNumber\":\"5G0-CST-001\",\"DefaultSubLotQty\":48,\"Uom\":{\"Id\":4,\"Code\":\"IN\",\"Name\":\"Inch\"},\"UnitWeight\":2.8000,\"WeightUom\":{\"Id\":2,\"Code\":\"LB\",\"Name\":\"Pound\"},\"CountryOfOrigin\":\"US\"}",
+        "OldValue": "{\"Description\":\"5G0 Front Cover Casting\",\"MacolaPartNumber\":\"5G0-CST-001\",\"DefaultSubLotQty\":48,\"Uom\":{\"Id\":1,\"Code\":\"EA\",\"Name\":\"Each\"},\"UnitWeight\":2.8000,\"WeightUom\":{\"Id\":2,\"Code\":\"LB\",\"Name\":\"Pound\"},\"CountryOfOrigin\":\"US\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "- Name",
+        "Description": "Quality Spec \"asdasd\" · Deprecated",
+        "EntityId": 5,
+        "Id": 143,
+        "LogEntityTypeCode": "QualitySpec",
+        "LogEntityTypeName": "Quality Spec",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781873297117
+        },
+        "NewValue": null,
+        "OldValue": "{\"Id\":5,\"Name\":\"asdasd\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Description: \"\" → \"fdgfdgdfdg\"",
+        "Description": "Quality Spec \"asdsad\" · Updated Description \"\"→\"fdgfdgdfdg\"",
+        "EntityId": 6,
+        "Id": 142,
+        "LogEntityTypeCode": "QualitySpec",
+        "LogEntityTypeName": "Quality Spec",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781873272776
+        },
+        "NewValue": "{\"Name\":\"asdsad\",\"Description\":\"fdgfdgdfdg\"}",
+        "OldValue": "{\"Name\":\"asdsad\",\"Description\":\"\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "- Name",
+        "Description": "Quality Spec \"asdsad\" · Deprecated",
+        "EntityId": 6,
+        "Id": 141,
+        "LogEntityTypeCode": "QualitySpec",
+        "LogEntityTypeName": "Quality Spec",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781873253162
+        },
+        "NewValue": null,
+        "OldValue": "{\"Id\":6,\"Name\":\"asdsad\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "- Name",
+        "Description": "Quality Spec \"fdgdfg\" · Deprecated",
+        "EntityId": 3,
+        "Id": 140,
+        "LogEntityTypeCode": "QualitySpec",
+        "LogEntityTypeName": "Quality Spec",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781873243082
+        },
+        "NewValue": null,
+        "OldValue": "{\"Id\":3,\"Name\":\"fdgdfg\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Code, Name",
+        "Description": "DieRank created.",
+        "EntityId": 12,
+        "Id": 139,
+        "LogEntityTypeCode": "DieRank",
+        "LogEntityTypeName": "Die Rank",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781873058311
+        },
+        "NewValue": "{\"Code\":\"sdf\",\"Name\":\"\"}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Code, Name",
+        "Description": "DieRank created.",
+        "EntityId": 11,
+        "Id": 138,
+        "LogEntityTypeCode": "DieRank",
+        "LogEntityTypeName": "Die Rank",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781873055393
+        },
+        "NewValue": "{\"Code\":\"fasd\",\"Name\":\"\"}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Code, Name",
+        "Description": "DieRank created.",
+        "EntityId": 10,
+        "Id": 137,
+        "LogEntityTypeCode": "DieRank",
+        "LogEntityTypeName": "Die Rank",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781873049300
+        },
+        "NewValue": "{\"Code\":\"d\",\"Name\":\"\"}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Code, Name",
+        "Description": "DieRank created.",
+        "EntityId": 9,
+        "Id": 136,
+        "LogEntityTypeCode": "DieRank",
+        "LogEntityTypeName": "Die Rank",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781873045815
+        },
+        "NewValue": "{\"Code\":\"a\",\"Name\":\"\"}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "DieRank deprecated.",
+        "EntityId": 6,
+        "Id": 135,
+        "LogEntityTypeCode": "DieRank",
+        "LogEntityTypeName": "Die Rank",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781872992519
+        },
+        "NewValue": "{\"Id\":6}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "DieRank deprecated.",
+        "EntityId": 7,
+        "Id": 134,
+        "LogEntityTypeCode": "DieRank",
+        "LogEntityTypeName": "Die Rank",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781872955431
+        },
+        "NewValue": "{\"Id\":7}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "DieRank deprecated.",
+        "EntityId": 8,
+        "Id": 133,
+        "LogEntityTypeCode": "DieRank",
+        "LogEntityTypeName": "Die Rank",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781872940255
+        },
+        "NewValue": "{\"Id\":8}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Code, Name",
+        "Description": "DieRank created.",
+        "EntityId": 8,
+        "Id": 132,
+        "LogEntityTypeCode": "DieRank",
+        "LogEntityTypeName": "Die Rank",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781872473351
+        },
+        "NewValue": "{\"Code\":\"nk\",\"Name\":\"\"}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Code, Name",
+        "Description": "DieRank created.",
+        "EntityId": 7,
+        "Id": 131,
+        "LogEntityTypeCode": "DieRank",
+        "LogEntityTypeName": "Die Rank",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781872462108
+        },
+        "NewValue": "{\"Code\":\"n\",\"Name\":\"\"}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Code, Name",
+        "Description": "DieRank created.",
+        "EntityId": 6,
+        "Id": 130,
+        "LogEntityTypeCode": "DieRank",
+        "LogEntityTypeName": "Die Rank",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781872457294
+        },
+        "NewValue": "{\"Code\":\"m\",\"Name\":\"\"}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Definition: {u\u0027Code\u0027: \u0027ProductionArea\u0027, u… → {u\u0027Code\u0027: \u0027ProductionArea\u0027, u…",
+        "Description": "Location Type Definition \"Production Areadfd\" · Updated (no attribute changes)",
+        "EntityId": 3,
+        "Id": 129,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781807049379
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Areadfd\",\"Icon\":\"mpp\\/workspaces\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Arealkmlkm\",\"Icon\":\"mpp\\/workspaces\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Definition: {u\u0027Code\u0027: \u0027ProductionArea\u0027, u… → {u\u0027Code\u0027: \u0027ProductionArea\u0027, u…, -Attributes",
+        "Description": "Location Type Definition \"Production Arealkmlkm\" · -Attribute dfgdg",
+        "EntityId": 3,
+        "Id": 128,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294625
+          ],
+          "$ts": 1781806742548
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Arealkmlkm\",\"Icon\":\"mpp\\/workspaces\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\"},\"Attributes\":[{\"Id\":20,\"AttributeName\":\"dfgdg\",\"DataType\":\"NVARCHAR\",\"IsRequired\":false,\"DefaultValue\":\"1\",\"SortOrder\":1,\"Description\":\"sfdsg\"}]}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Code, Name",
+        "Description": "DieRank created.",
+        "EntityId": 5,
+        "Id": 127,
+        "LogEntityTypeCode": "DieRank",
+        "LogEntityTypeName": "Die Rank",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781805119197
+        },
+        "NewValue": "{\"Code\":\"ads\",\"Name\":\"asd\"}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "StatusCode: \"Active\" → \"Retired\"",
+        "Description": "Tool retired (deprecated; status set to Retired).",
+        "EntityId": 1,
+        "Id": 126,
+        "LogEntityTypeCode": "Tool",
+        "LogEntityTypeName": "Tool",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781797982670
+        },
+        "NewValue": "{\"Id\":1,\"StatusCode\":\"Retired\"}",
+        "OldValue": "{\"StatusCode\":\"Active\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "StatusCode: \"Retired\" → \"Active\"",
+        "Description": "Tool status changed.",
+        "EntityId": 1,
+        "Id": 125,
+        "LogEntityTypeCode": "Tool",
+        "LogEntityTypeName": "Tool",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781797978659
+        },
+        "NewValue": "{\"Id\":1,\"StatusCode\":\"Active\"}",
+        "OldValue": "{\"StatusCode\":\"Retired\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Tool updated.",
+        "EntityId": 1,
+        "Id": 124,
+        "LogEntityTypeCode": "Tool",
+        "LogEntityTypeName": "Tool",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781797978653
+        },
+        "NewValue": "{\"Id\":1,\"Name\":\"efsdfs\"}",
+        "OldValue": "{\"Name\":\"efsdfs\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "StatusCode: \"Active\" → \"Retired\"",
+        "Description": "Tool status changed.",
+        "EntityId": 1,
+        "Id": 123,
+        "LogEntityTypeCode": "Tool",
+        "LogEntityTypeName": "Tool",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781797975365
+        },
+        "NewValue": "{\"Id\":1,\"StatusCode\":\"Retired\"}",
+        "OldValue": "{\"StatusCode\":\"Active\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Tool updated.",
+        "EntityId": 1,
+        "Id": 122,
+        "LogEntityTypeCode": "Tool",
+        "LogEntityTypeName": "Tool",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781797975323
+        },
+        "NewValue": "{\"Id\":1,\"Name\":\"efsdfs\"}",
+        "OldValue": "{\"Name\":\"efsdfs\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "dsgdgq — efsdfs · Cavities · +#23 (Active); 1 rows",
+        "EntityId": 1,
+        "Id": 121,
+        "LogEntityTypeCode": "ToolCavity",
+        "LogEntityTypeName": "Tool Cavity",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781796778563
+        },
+        "NewValue": "[{\"CavityNumber\":23,\"Status\":\"Active\",\"Description\":\"sfddsf\"}]",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "5G0-C — 5G0 Front Cover Casting · Eligibility · +DC1 (Production Area); 1 rows",
+        "EntityId": 2,
+        "Id": 120,
+        "LogEntityTypeCode": "ItemLocation",
+        "LogEntityTypeName": "Item-Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781796288084
+        },
+        "NewValue": "[{\"Location\":{\"Id\":3,\"Code\":\"DC1\",\"Name\":\"Die Cast 1\"},\"IsConsumptionPoint\":false}]",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "sgdggg — dgrdgf · Eligibility · +DC1 (Production Area); 1 rows",
+        "EntityId": 6,
+        "Id": 119,
+        "LogEntityTypeCode": "ItemLocation",
+        "LogEntityTypeName": "Item-Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781796123435
+        },
+        "NewValue": "[{\"Location\":{\"Id\":3,\"Code\":\"DC1\",\"Name\":\"Die Cast 1\"},\"IsConsumptionPoint\":true,\"MinQuantity\":3,\"MaxQuantity\":4,\"DefaultQuantity\":3}]",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Definition: {u\u0027Description\u0027: \u0027asds\u0027, u\u0027Co… → {u\u0027Code\u0027: \u0027ProductionArea\u0027, u…, +Attributes: [{u\u0027Description\u0027: \u0027sfdsg\u0027, u\u0027…",
+        "Description": "Location Type Definition \"Production Area\" · +Attribute dfgdg",
+        "EntityId": 3,
+        "Id": 118,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781795581241
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\"},\"Attributes\":[{\"Id\":20,\"AttributeName\":\"dfgdg\",\"DataType\":\"NVARCHAR\",\"IsRequired\":false,\"DefaultValue\":\"1\",\"SortOrder\":1,\"Description\":\"sfdsg\"}]}",
+        "OldValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\",\"Description\":\"asds\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Definition: {u\u0027Description\u0027: \u0027asdsa\u0027, u\u0027C… → {u\u0027Description\u0027: \u0027asds\u0027, u\u0027Co…",
+        "Description": "Location Type Definition \"Production Area\" · Updated (no attribute changes)",
+        "EntityId": 3,
+        "Id": 117,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781795182565
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\",\"Description\":\"asds\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\",\"Description\":\"asdsa\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Definition: {u\u0027Description\u0027: \u0027adssadsdfds… → {u\u0027Description\u0027: \u0027asdsa\u0027, u\u0027C…",
+        "Description": "Location Type Definition \"Production Area\" · Updated (no attribute changes)",
+        "EntityId": 3,
+        "Id": 116,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781795144487
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\",\"Description\":\"asdsa\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\",\"Description\":\"adssadsdfds\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location Type Definition \"Production Area\" · Updated (no attribute changes)",
+        "EntityId": 3,
+        "Id": 115,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781795104633
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\",\"Description\":\"adssadsdfds\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\",\"Description\":\"adssadsdfds\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Definition: {u\u0027Description\u0027: \u0027adssad\u0027, u\u0027… → {u\u0027Description\u0027: \u0027adssadsdfds…",
+        "Description": "Location Type Definition \"Production Area\" · Updated (no attribute changes)",
+        "EntityId": 3,
+        "Id": 114,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781794779486
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\",\"Description\":\"adssadsdfds\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\",\"Description\":\"adssad\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Definition: {u\u0027Code\u0027: \u0027ProductionArea\u0027, u… → {u\u0027Description\u0027: \u0027adssad\u0027, u\u0027…",
+        "Description": "Location Type Definition \"Production Area\" · Updated (no attribute changes)",
+        "EntityId": 3,
+        "Id": 113,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781794568121
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\",\"Description\":\"adssad\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Code, Name",
+        "Description": "DieRank created.",
+        "EntityId": 4,
+        "Id": 112,
+        "LogEntityTypeCode": "DieRank",
+        "LogEntityTypeName": "Die Rank",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781794488947
+        },
+        "NewValue": "{\"Code\":\"\",\"Name\":\"dsf\"}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Code, Name",
+        "Description": "DieRank created.",
+        "EntityId": 3,
+        "Id": 111,
+        "LogEntityTypeCode": "DieRank",
+        "LogEntityTypeName": "Die Rank",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781794016296
+        },
+        "NewValue": "{\"Code\":\"dfgdgdf\",\"Name\":\"fdgfdg\"}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Name: \"\" → \"sdfsdfds\"",
+        "Description": "DieRank updated.",
+        "EntityId": 1,
+        "Id": 110,
+        "LogEntityTypeCode": "DieRank",
+        "LogEntityTypeName": "Die Rank",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781793995798
+        },
+        "NewValue": "{\"Id\":1,\"Name\":\"sdfsdfds\"}",
+        "OldValue": "{\"Name\":\"\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Code, Name",
+        "Description": "DieRank created.",
+        "EntityId": 2,
+        "Id": 109,
+        "LogEntityTypeCode": "DieRank",
+        "LogEntityTypeName": "Die Rank",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781793988192
+        },
+        "NewValue": "{\"Code\":\"f\",\"Name\":\"\"}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Code, Name",
+        "Description": "DieRank created.",
+        "EntityId": 1,
+        "Id": 108,
+        "LogEntityTypeCode": "DieRank",
+        "LogEntityTypeName": "Die Rank",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781793983641
+        },
+        "NewValue": "{\"Code\":\"sdfsf\",\"Name\":\"\"}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Description, Name",
+        "Description": "Quality Spec \"asdsad\" · Created",
+        "EntityId": 6,
+        "Id": 107,
+        "LogEntityTypeCode": "QualitySpec",
+        "LogEntityTypeName": "Quality Spec",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781793066980
+        },
+        "NewValue": "{\"Id\":6,\"Name\":\"asdsad\",\"Description\":\"\"}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Quality Spec \"asdasd\" · Updated no header field changes",
+        "EntityId": 5,
+        "Id": 106,
+        "LogEntityTypeCode": "QualitySpec",
+        "LogEntityTypeName": "Quality Spec",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781793066979
+        },
+        "NewValue": "{\"Name\":\"asdasd\",\"Description\":\"\"}",
+        "OldValue": "{\"Name\":\"asdasd\",\"Description\":\"\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Description, Name",
+        "Description": "Quality Spec \"asdasd\" · Created",
+        "EntityId": 5,
+        "Id": 105,
+        "LogEntityTypeCode": "QualitySpec",
+        "LogEntityTypeName": "Quality Spec",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781793061190
+        },
+        "NewValue": "{\"Id\":5,\"Name\":\"asdasd\",\"Description\":\"\"}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Description, Name",
+        "Description": "Quality Spec \"adsasd\" · Created",
+        "EntityId": 4,
+        "Id": 104,
+        "LogEntityTypeCode": "QualitySpec",
+        "LogEntityTypeName": "Quality Spec",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781793039069
+        },
+        "NewValue": "{\"Id\":4,\"Name\":\"adsasd\",\"Description\":\"\"}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Description, Name",
+        "Description": "Quality Spec \"fdgdfg\" · Created",
+        "EntityId": 3,
+        "Id": 103,
+        "LogEntityTypeCode": "QualitySpec",
+        "LogEntityTypeName": "Quality Spec",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781793019088
+        },
+        "NewValue": "{\"Id\":3,\"Name\":\"fdgdfg\",\"Description\":\"\"}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "- Bom",
+        "Description": "5G0-C — 5G0 Front Cover Casting · BOM v1 (Draft) · Discarded; 0 lines discarded",
+        "EntityId": 2,
+        "Id": 102,
+        "LogEntityTypeCode": "Bom",
+        "LogEntityTypeName": "BOM",
+        "LogEventTypeCode": "Deleted",
+        "LogEventTypeId": 21,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781792596764
+        },
+        "NewValue": null,
+        "OldValue": "{\"Bom\":{\"Id\":2,\"VersionNumber\":1,\"EffectiveFrom\":\"2026-06-18T14:23:13.714\",\"ParentItem\":{\"Id\":2,\"PartNumber\":\"5G0-C\",\"Description\":\"5G0 Front Cover Casting\"}}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ ParentItem, VersionNumber, EffectiveFrom",
+        "Description": "5G0-C — 5G0 Front Cover Casting · BOM v1 (Draft) · Created",
+        "EntityId": 2,
+        "Id": 101,
+        "LogEntityTypeCode": "Bom",
+        "LogEntityTypeName": "BOM",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781792593717
+        },
+        "NewValue": "{\"Id\":2,\"VersionNumber\":1,\"EffectiveFrom\":\"2026-06-18T14:23:13.714\",\"ParentItem\":{\"Id\":2,\"PartNumber\":\"5G0-C\",\"Description\":\"5G0 Front Cover Casting\"}}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Code, Name, ToolTypeId +1 more",
+        "Description": "Tool created.",
+        "EntityId": 3,
+        "Id": 100,
+        "LogEntityTypeCode": "Tool",
+        "LogEntityTypeName": "Tool",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781791494180
+        },
+        "NewValue": "{\"ToolTypeId\":1,\"Code\":\"sdfs\",\"Name\":\"sdfsdf\",\"StatusCodeId\":1}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location updated with attribute reconciliation.",
+        "EntityId": 31,
+        "Id": 99,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781788331752
+        },
+        "NewValue": "{\"Location\":\"{\\\"Id\\\":31,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC4\\\",\\\"Name\\\":\\\"Die Cast 4\\\",\\\"Description\\\":\\\"Die casting area - 3 machines\\\",\\\"SortOrder\\\":1}\"}",
+        "OldValue": "{\"Location\":\"{\\\"Id\\\":31,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC4\\\",\\\"Name\\\":\\\"Die Cast 4\\\",\\\"Description\\\":\\\"Die casting area - 3 machines\\\",\\\"SortOrder\\\":1}\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "- ActiveChildren, Definition, LocationType",
+        "Description": "Location Type Definition \"Trim Press\" · Deprecated (cascade: 2 attributes deprecated)",
+        "EntityId": 10,
+        "Id": 98,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781788326985
+        },
+        "NewValue": null,
+        "OldValue": "{\"LocationType\":{\"Id\":5,\"Name\":\"Cell\"},\"Definition\":{\"Id\":10,\"Code\":\"TrimPress\",\"Name\":\"Trim Press\",\"Icon\":\"mpp\\/content_cut\"},\"ActiveChildren\":[{\"Id\":10,\"AttributeName\":\"RefCycleTimeSec\",\"SortOrder\":1},{\"Id\":11,\"AttributeName\":\"OeeTarget\",\"SortOrder\":2}]}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location Type Definition \"Production Area\" · Updated (no attribute changes)",
+        "EntityId": 3,
+        "Id": 97,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781717424707
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Code, Name, ToolTypeId +2 more",
+        "Description": "ToolAttributeDefinition created.",
+        "EntityId": 6,
+        "Id": 96,
+        "LogEntityTypeCode": "ToolAttributeDefinition",
+        "LogEntityTypeName": "Tool Attribute Def",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781716061018
+        },
+        "NewValue": "{\"ToolTypeId\":1,\"Code\":\"test et\",\"Name\":\"tesdggdf\",\"DataType\":\"String\",\"IsRequired\":false}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Code, Name, ToolTypeId +2 more",
+        "Description": "ToolAttributeDefinition created.",
+        "EntityId": 5,
+        "Id": 95,
+        "LogEntityTypeCode": "ToolAttributeDefinition",
+        "LogEntityTypeName": "Tool Attribute Def",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781715949554
+        },
+        "NewValue": "{\"ToolTypeId\":1,\"Code\":\"gchgch\",\"Name\":\"dfgfdg\",\"DataType\":\"String\",\"IsRequired\":false}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Code, Name, ToolTypeId +2 more",
+        "Description": "ToolAttributeDefinition created.",
+        "EntityId": 4,
+        "Id": 94,
+        "LogEntityTypeCode": "ToolAttributeDefinition",
+        "LogEntityTypeName": "Tool Attribute Def",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781715715965
+        },
+        "NewValue": "{\"ToolTypeId\":1,\"Code\":\"dhfhf\",\"Name\":\"fhfgh\",\"DataType\":\"String\",\"IsRequired\":false}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Code, Name, ToolTypeId +2 more",
+        "Description": "ToolAttributeDefinition created.",
+        "EntityId": 3,
+        "Id": 93,
+        "LogEntityTypeCode": "ToolAttributeDefinition",
+        "LogEntityTypeName": "Tool Attribute Def",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781715449237
+        },
+        "NewValue": "{\"ToolTypeId\":1,\"Code\":\"dfgfdg\",\"Name\":\"dfbgd\",\"DataType\":\"String\",\"IsRequired\":false}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Code, Name, ToolTypeId +2 more",
+        "Description": "ToolAttributeDefinition created.",
+        "EntityId": 2,
+        "Id": 92,
+        "LogEntityTypeCode": "ToolAttributeDefinition",
+        "LogEntityTypeName": "Tool Attribute Def",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781715381055
+        },
+        "NewValue": "{\"ToolTypeId\":1,\"Code\":\"fsdfdsf\",\"Name\":\"dsfdsfs\",\"DataType\":\"String\",\"IsRequired\":false}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Code, Name, ToolTypeId +2 more",
+        "Description": "ToolAttributeDefinition created.",
+        "EntityId": 1,
+        "Id": 91,
+        "LogEntityTypeCode": "ToolAttributeDefinition",
+        "LogEntityTypeName": "Tool Attribute Def",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781711405145
+        },
+        "NewValue": "{\"ToolTypeId\":1,\"Code\":\"n, ,m\",\"Name\":\",nn,n\",\"DataType\":\"String\",\"IsRequired\":false}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ WeightUom, Description, PartNumber +4 more",
+        "Description": "sgdggg — dgrdgf (Component) · Created",
+        "EntityId": 6,
+        "Id": 90,
+        "LogEntityTypeCode": "Item",
+        "LogEntityTypeName": "Item",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781709106202
+        },
+        "NewValue": "{\"Id\":6,\"PartNumber\":\"sgdggg\",\"Description\":\"dgrdgf\",\"ItemType\":{\"Id\":2,\"Name\":\"Component\"},\"MacolaPartNumber\":\"dfgfdgd\",\"Uom\":{\"Id\":4,\"Code\":\"IN\",\"Name\":\"Inch\"},\"WeightUom\":{\"Id\":4,\"Code\":\"IN\",\"Name\":\"Inch\"},\"CountryOfOrigin\":\"dg\"}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location Type Definition \"Production Area\" · Updated (no attribute changes)",
+        "EntityId": 3,
+        "Id": 89,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781707546847
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":3,\"Code\":\"ProductionArea\",\"Name\":\"Production Area\",\"Icon\":\"mpp\\/workspaces\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location Type Definition \"Support Area\" · Updated (no attribute changes)",
+        "EntityId": 4,
+        "Id": 88,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781707472731
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":4,\"Code\":\"SupportArea\",\"Name\":\"Support Area\",\"Icon\":\"mpp\\/engineering\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":3,\"Name\":\"Area\"},\"Definition\":{\"Id\":4,\"Code\":\"SupportArea\",\"Name\":\"Support Area\",\"Icon\":\"mpp\\/engineering\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Location Type Definition \"Assembly Station\" · Updated (no attribute changes)",
+        "EntityId": 11,
+        "Id": 87,
+        "LogEntityTypeCode": "LocationTypeDef",
+        "LogEntityTypeName": "Location Type Def",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781707382416
+        },
+        "NewValue": "{\"LocationType\":{\"Id\":5,\"Name\":\"Cell\"},\"Definition\":{\"Id\":11,\"Code\":\"AssemblyStation\",\"Name\":\"Assembly Station\",\"Icon\":\"mpp\\/handyman\"}}",
+        "OldValue": "{\"LocationType\":{\"Id\":5,\"Name\":\"Cell\"},\"Definition\":{\"Id\":11,\"Code\":\"AssemblyStation\",\"Name\":\"Assembly Station\",\"Icon\":\"mpp\\/handyman\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Initials: \"NRM\" → \"NLM\"",
+        "Description": "AppUser updated.",
+        "EntityId": 10,
+        "Id": 86,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781705076723
+        },
+        "NewValue": "{\"Initials\":\"NLM\",\"DisplayName\":\"Noah E Nesbitt\"}",
+        "OldValue": "{\"Initials\":\"NRM\",\"DisplayName\":\"Noah E Nesbitt\"}",
+        "UserDisplayName": null,
+        "UserId": 30
+      },
+      {
+        "ChangesSummary": "+DeprecatedAt: \"2026-06-17T13:27:31.016\"",
+        "Description": "AppUser deprecated.",
+        "EntityId": 11,
+        "Id": 85,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781702851016
+        },
+        "NewValue": "{\"Initials\":\"AAA\",\"DisplayName\":\"A a a a \",\"DeprecatedAt\":\"2026-06-17T13:27:31.016\"}",
+        "OldValue": "{\"Initials\":\"AAA\",\"DisplayName\":\"A a a a \"}",
+        "UserDisplayName": null,
+        "UserId": 30
+      },
+      {
+        "ChangesSummary": "DisplayName: \"A a a\" → \"A a a a \"",
+        "Description": "AppUser updated.",
+        "EntityId": 11,
+        "Id": 84,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781702846486
+        },
+        "NewValue": "{\"Initials\":\"AAA\",\"DisplayName\":\"A a a a \"}",
+        "OldValue": "{\"Initials\":\"AAA\",\"DisplayName\":\"A a a\"}",
+        "UserDisplayName": null,
+        "UserId": 30
+      },
+      {
+        "ChangesSummary": "DisplayName: \"A\" → \"A a a\"",
+        "Description": "AppUser updated.",
+        "EntityId": 11,
+        "Id": 83,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781702831874
+        },
+        "NewValue": "{\"Initials\":\"AAA\",\"DisplayName\":\"A a a\"}",
+        "OldValue": "{\"Initials\":\"AAA\",\"DisplayName\":\"A\"}",
+        "UserDisplayName": null,
+        "UserId": 30
+      },
+      {
+        "ChangesSummary": "+ Initials, DisplayName",
+        "Description": "AppUser created.",
+        "EntityId": 11,
+        "Id": 82,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781702822194
+        },
+        "NewValue": "{\"Initials\":\"AAA\",\"DisplayName\":\"A\"}",
+        "OldValue": null,
+        "UserDisplayName": null,
+        "UserId": 30
+      },
+      {
+        "ChangesSummary": "-IgnitionRole, -AdAccount, Initials: \"NEM\" → \"NRM\"",
+        "Description": "AppUser updated.",
+        "EntityId": 10,
+        "Id": 81,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781701906071
+        },
+        "NewValue": "{\"Initials\":\"NRM\",\"DisplayName\":\"Noah E Nesbitt\"}",
+        "OldValue": "{\"Initials\":\"NEM\",\"DisplayName\":\"Noah E Nesbitt\",\"AdAccount\":\"\",\"IgnitionRole\":\"\"}",
+        "UserDisplayName": null,
+        "UserId": 30
+      },
+      {
+        "ChangesSummary": "+ IgnitionRole, AdAccount, Initials +1 more",
+        "Description": "AppUser created.",
+        "EntityId": 10,
+        "Id": 80,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781701858531
+        },
+        "NewValue": "{\"Initials\":\"NEM\",\"DisplayName\":\"Noah E Nesbitt\",\"AdAccount\":\"\",\"IgnitionRole\":\"\"}",
+        "OldValue": null,
+        "UserDisplayName": null,
+        "UserId": 30
+      },
+      {
+        "ChangesSummary": "- Description, IsExcused, Code +2 more",
+        "Description": "Downtime Code yrdyq · Deprecated",
+        "EntityId": 2,
+        "Id": 79,
+        "LogEntityTypeCode": "DowntimeReasonCode",
+        "LogEntityTypeName": "Downtime Reason Code",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "LogSeverityCode": "Warning",
+        "LogSeverityId": 2,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781700785552
+        },
+        "NewValue": null,
+        "OldValue": "{\"Code\":\"yrdyq\",\"Description\":\"test\",\"Area\":{\"Id\":37,\"Code\":\"TRIM1\",\"Name\":\"Trim Shop 1\"},\"ReasonType\":{\"Id\":2,\"Code\":\"Miscellaneous\",\"Name\":\"Miscellaneous\"},\"IsExcused\":false}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+DeprecatedAt: \"2026-06-17T12:52:47.941\"",
+        "Description": "AppUser deprecated.",
+        "EntityId": 8,
+        "Id": 78,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781700767952
+        },
+        "NewValue": "{\"Initials\":\"NEN\",\"DisplayName\":\"Noah Nesbitt\",\"DeprecatedAt\":\"2026-06-17T12:52:47.941\"}",
+        "OldValue": "{\"Initials\":\"NEN\",\"DisplayName\":\"Noah Nesbitt\"}",
+        "UserDisplayName": null,
+        "UserId": 30
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Downtime Code yrdyq · Updated no changes",
+        "EntityId": 2,
+        "Id": 77,
+        "LogEntityTypeCode": "DowntimeReasonCode",
+        "LogEntityTypeName": "Downtime Reason Code",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781637860552
+        },
+        "NewValue": "{\"Description\":\"test\",\"Area\":{\"Id\":37,\"Code\":\"TRIM1\",\"Name\":\"Trim Shop 1\"},\"ReasonType\":{\"Id\":2,\"Code\":\"Miscellaneous\",\"Name\":\"Miscellaneous\"},\"IsExcused\":false}",
+        "OldValue": "{\"Description\":\"test\",\"Area\":{\"Id\":37,\"Code\":\"TRIM1\",\"Name\":\"Trim Shop 1\"},\"ReasonType\":{\"Id\":2,\"Code\":\"Miscellaneous\",\"Name\":\"Miscellaneous\"},\"IsExcused\":false}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "- Description, Parent, SortOrder +3 more",
+        "Description": "Location MA2-6MACH-AOUT2 — Assembly Out 2 · Deprecated",
+        "EntityId": 171,
+        "Id": 76,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781631222320
+        },
+        "NewValue": null,
+        "OldValue": "{\"Name\":\"Assembly Out 2\",\"Code\":\"MA2-6MACH-AOUT2\",\"Description\":\"Assembly Out 2\",\"SortOrder\":3,\"Parent\":{\"Id\":166,\"Code\":\"MA2-6MACH\",\"Name\":\"6MA CH\"},\"LocationTypeDefinition\":{\"Id\":7,\"Name\":\"Terminal\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "- Description, Parent, SortOrder +3 more",
+        "Description": "Location MA2-6MACH-AOUT2-P1 — P - 061 · Deprecated",
+        "EntityId": 172,
+        "Id": 75,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781631221837
+        },
+        "NewValue": null,
+        "OldValue": "{\"Name\":\"P - 061\",\"Code\":\"MA2-6MACH-AOUT2-P1\",\"Description\":\"Label printer for MA2-6MACH-AOUT2\",\"SortOrder\":1,\"Parent\":{\"Id\":171,\"Code\":\"MA2-6MACH-AOUT2\",\"Name\":\"Assembly Out 2\"},\"LocationTypeDefinition\":{\"Id\":16,\"Name\":\"Printer\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "- Parent, SortOrder, Code +2 more",
+        "Description": "Location yrdy — yrdy · Deprecated",
+        "EntityId": 178,
+        "Id": 74,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781631213239
+        },
+        "NewValue": null,
+        "OldValue": "{\"Name\":\"yrdy\",\"Code\":\"yrdy\",\"SortOrder\":4,\"Parent\":{\"Id\":166,\"Code\":\"MA2-6MACH\",\"Name\":\"6MA CH\"},\"LocationTypeDefinition\":{\"Id\":11,\"Name\":\"Assembly Station\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "- Parent, SortOrder, Code +2 more",
+        "Description": "Location  — rdydrt · Deprecated",
+        "EntityId": 179,
+        "Id": 73,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781631212969
+        },
+        "NewValue": null,
+        "OldValue": "{\"Name\":\"rdydrt\",\"Code\":\"\",\"SortOrder\":1,\"Parent\":{\"Id\":178,\"Code\":\"yrdy\",\"Name\":\"yrdy\"},\"LocationTypeDefinition\":{\"Id\":11,\"Name\":\"Assembly Station\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ ParentLocationId, Code, Name +2 more",
+        "Description": "Location created with attribute values.",
+        "EntityId": 179,
+        "Id": 72,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781631196892
+        },
+        "NewValue": "{\"ParentLocationId\":178,\"LocationTypeDefinitionId\":11,\"Code\":\"\",\"Name\":\"rdydrt\",\"AttributeValues\":[]}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Location: \"{\"Id\":178,\"ParentLocationId\":…\" → \"{\"Id\":178,\"ParentLocationId\":…\"",
+        "Description": "Location updated with attribute reconciliation.",
+        "EntityId": 178,
+        "Id": 71,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781631188010
+        },
+        "NewValue": "{\"Location\":\"{\\\"Id\\\":178,\\\"ParentLocationId\\\":166,\\\"LocationTypeDefinitionId\\\":11,\\\"Code\\\":\\\"yrdy\\\",\\\"Name\\\":\\\"yrdy\\\",\\\"SortOrder\\\":4}\"}",
+        "OldValue": "{\"Location\":\"{\\\"Id\\\":178,\\\"ParentLocationId\\\":166,\\\"LocationTypeDefinitionId\\\":11,\\\"Code\\\":\\\"\\\",\\\"Name\\\":\\\"yrdy\\\",\\\"SortOrder\\\":4}\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ ParentLocationId, Code, Name +2 more",
+        "Description": "Location created with attribute values.",
+        "EntityId": 178,
+        "Id": 70,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781631180558
+        },
+        "NewValue": "{\"ParentLocationId\":166,\"LocationTypeDefinitionId\":11,\"Code\":\"\",\"Name\":\"yrdy\",\"AttributeValues\":[]}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "- Description, Parent, SortOrder +3 more",
+        "Description": "Location MA2-6MACH-AOUT3 — Assembly Out 3 · Deprecated",
+        "EntityId": 173,
+        "Id": 69,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781631154317
+        },
+        "NewValue": null,
+        "OldValue": "{\"Name\":\"Assembly Out 3\",\"Code\":\"MA2-6MACH-AOUT3\",\"Description\":\"Assembly Out 3\",\"SortOrder\":4,\"Parent\":{\"Id\":166,\"Code\":\"MA2-6MACH\",\"Name\":\"6MA CH\"},\"LocationTypeDefinition\":{\"Id\":7,\"Name\":\"Terminal\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "- Description, Parent, SortOrder +3 more",
+        "Description": "Location MA2-6MACH-AOUT3-P1 — P - 062 · Deprecated",
+        "EntityId": 174,
+        "Id": 68,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781631148513
+        },
+        "NewValue": null,
+        "OldValue": "{\"Name\":\"P - 062\",\"Code\":\"MA2-6MACH-AOUT3-P1\",\"Description\":\"Label printer for MA2-6MACH-AOUT3\",\"SortOrder\":1,\"Parent\":{\"Id\":173,\"Code\":\"MA2-6MACH-AOUT3\",\"Name\":\"Assembly Out 3\"},\"LocationTypeDefinition\":{\"Id\":16,\"Name\":\"Printer\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Description, IsExcused, Code +2 more",
+        "Description": "Downtime Code yrdyq — test (Trim Shop 1) · Created",
+        "EntityId": 2,
+        "Id": 67,
+        "LogEntityTypeCode": "DowntimeReasonCode",
+        "LogEntityTypeName": "Downtime Reason Code",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781630073955
+        },
+        "NewValue": "{\"Code\":\"yrdyq\",\"Description\":\"test\",\"Area\":{\"Id\":37,\"Code\":\"TRIM1\",\"Name\":\"Trim Shop 1\"},\"ReasonType\":{\"Id\":2,\"Code\":\"Miscellaneous\",\"Name\":\"Miscellaneous\"},\"IsExcused\":false}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "- Description, IsExcused, Code +2 more",
+        "Description": "Downtime Code fxjfxhgs · Deprecated",
+        "EntityId": 1,
+        "Id": 66,
+        "LogEntityTypeCode": "DowntimeReasonCode",
+        "LogEntityTypeName": "Downtime Reason Code",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "LogSeverityCode": "Warning",
+        "LogSeverityId": 2,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781629172190
+        },
+        "NewValue": null,
+        "OldValue": "{\"Code\":\"fxjfxhgs\",\"Description\":\"grsergdg\",\"Area\":{\"Id\":37,\"Code\":\"TRIM1\",\"Name\":\"Trim Shop 1\"},\"ReasonType\":{\"Id\":3,\"Code\":\"Mold\",\"Name\":\"Mold\"},\"IsExcused\":false}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Downtime Code fxjfxhgs · Updated no changes",
+        "EntityId": 1,
+        "Id": 65,
+        "LogEntityTypeCode": "DowntimeReasonCode",
+        "LogEntityTypeName": "Downtime Reason Code",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781628756613
+        },
+        "NewValue": "{\"Description\":\"grsergdg\",\"Area\":{\"Id\":37,\"Code\":\"TRIM1\",\"Name\":\"Trim Shop 1\"},\"ReasonType\":{\"Id\":3,\"Code\":\"Mold\",\"Name\":\"Mold\"},\"IsExcused\":false}",
+        "OldValue": "{\"Description\":\"grsergdg\",\"Area\":{\"Id\":37,\"Code\":\"TRIM1\",\"Name\":\"Trim Shop 1\"},\"ReasonType\":{\"Id\":3,\"Code\":\"Mold\",\"Name\":\"Mold\"},\"IsExcused\":false}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Description, IsExcused, Code +2 more",
+        "Description": "Downtime Code fxjfxhgs — grsergdg (Trim Shop 1) · Created",
+        "EntityId": 1,
+        "Id": 64,
+        "LogEntityTypeCode": "DowntimeReasonCode",
+        "LogEntityTypeName": "Downtime Reason Code",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781628744424
+        },
+        "NewValue": "{\"Code\":\"fxjfxhgs\",\"Description\":\"grsergdg\",\"Area\":{\"Id\":37,\"Code\":\"TRIM1\",\"Name\":\"Trim Shop 1\"},\"ReasonType\":{\"Id\":3,\"Code\":\"Mold\",\"Name\":\"Mold\"},\"IsExcused\":false}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Initials: \"NEM\" → \"NEN\", DisplayName: \"Noah Mesbitt\" → \"Noah Nesbitt\"",
+        "Description": "AppUser updated.",
+        "EntityId": 8,
+        "Id": 63,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781625434394
+        },
+        "NewValue": "{\"Initials\":\"NEN\",\"DisplayName\":\"Noah Nesbitt\"}",
+        "OldValue": "{\"Initials\":\"NEM\",\"DisplayName\":\"Noah Mesbitt\"}",
+        "UserDisplayName": null,
+        "UserId": 30
+      },
+      {
+        "ChangesSummary": "Initials: \"NEN\" → \"NEM\", DisplayName: \"Noah Nesbitt\" → \"Noah Mesbitt\"",
+        "Description": "AppUser updated.",
+        "EntityId": 8,
+        "Id": 62,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781625410255
+        },
+        "NewValue": "{\"Initials\":\"NEM\",\"DisplayName\":\"Noah Mesbitt\"}",
+        "OldValue": "{\"Initials\":\"NEN\",\"DisplayName\":\"Noah Nesbitt\"}",
+        "UserDisplayName": null,
+        "UserId": 30
+      },
+      {
+        "ChangesSummary": "+DeprecatedAt: \"2026-06-16T15:50:27.539\"",
+        "Description": "AppUser deprecated.",
+        "EntityId": 9,
+        "Id": 61,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781625027539
+        },
+        "NewValue": "{\"Initials\":\"NNN\",\"DisplayName\":\"Noah Nesbitt\",\"DeprecatedAt\":\"2026-06-16T15:50:27.539\"}",
+        "OldValue": "{\"Initials\":\"NNN\",\"DisplayName\":\"Noah Nesbitt\"}",
+        "UserDisplayName": null,
+        "UserId": 30
+      },
+      {
+        "ChangesSummary": "+ Initials, DisplayName",
+        "Description": "AppUser created.",
+        "EntityId": 9,
+        "Id": 60,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781624237956
+        },
+        "NewValue": "{\"Initials\":\"NNN\",\"DisplayName\":\"Noah Nesbitt\"}",
+        "OldValue": null,
+        "UserDisplayName": null,
+        "UserId": 30
+      },
+      {
+        "ChangesSummary": "+ Initials, DisplayName",
+        "Description": "AppUser created.",
+        "EntityId": 8,
+        "Id": 59,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781623872965
+        },
+        "NewValue": "{\"Initials\":\"NEN\",\"DisplayName\":\"Noah Nesbitt\"}",
+        "OldValue": null,
+        "UserDisplayName": null,
+        "UserId": 30
+      },
+      {
+        "ChangesSummary": "+ Initials, DisplayName",
+        "Description": "AppUser created.",
+        "EntityId": 7,
+        "Id": 58,
+        "LogEntityTypeCode": "AppUser",
+        "LogEntityTypeName": "Application User",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781622832624
+        },
+        "NewValue": "{\"Initials\":\"JGP\",\"DisplayName\":\"Jacques Potgieter\"}",
+        "OldValue": null,
+        "UserDisplayName": null,
+        "UserId": 30
+      },
+      {
+        "ChangesSummary": "IsExcused: True → False",
+        "Description": "Defect Code wesgrhq · Updated Excused true → false",
+        "EntityId": 2,
+        "Id": 53,
+        "LogEntityTypeCode": "DefectCode",
+        "LogEntityTypeName": "Defect Code",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781554893519
+        },
+        "NewValue": "{\"Description\":\"yygrsd\",\"Area\":{\"Id\":3,\"Code\":\"DC1\",\"Name\":\"Die Cast 1\"},\"IsExcused\":false}",
+        "OldValue": "{\"Description\":\"yygrsd\",\"Area\":{\"Id\":3,\"Code\":\"DC1\",\"Name\":\"Die Cast 1\"},\"IsExcused\":true}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "IsExcused: False → True",
+        "Description": "Defect Code wesgrhq · Updated Excused false → true",
+        "EntityId": 2,
+        "Id": 52,
+        "LogEntityTypeCode": "DefectCode",
+        "LogEntityTypeName": "Defect Code",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781554889494
+        },
+        "NewValue": "{\"Description\":\"yygrsd\",\"Area\":{\"Id\":3,\"Code\":\"DC1\",\"Name\":\"Die Cast 1\"},\"IsExcused\":true}",
+        "OldValue": "{\"Description\":\"yygrsd\",\"Area\":{\"Id\":3,\"Code\":\"DC1\",\"Name\":\"Die Cast 1\"},\"IsExcused\":false}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Description, IsExcused, Code +1 more",
+        "Description": "Defect Code wesgrhq — yygrsd (Die Cast 1) · Created",
+        "EntityId": 2,
+        "Id": 51,
+        "LogEntityTypeCode": "DefectCode",
+        "LogEntityTypeName": "Defect Code",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781554874823
+        },
+        "NewValue": "{\"Code\":\"wesgrhq\",\"Description\":\"yygrsd\",\"Area\":{\"Id\":3,\"Code\":\"DC1\",\"Name\":\"Die Cast 1\"},\"IsExcused\":false}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "- Description, IsExcused, Code +1 more",
+        "Description": "Defect Code dfbdf · Deprecated",
+        "EntityId": 1,
+        "Id": 50,
+        "LogEntityTypeCode": "DefectCode",
+        "LogEntityTypeName": "Defect Code",
+        "LogEventTypeCode": "Deprecated",
+        "LogEventTypeId": 3,
+        "LogSeverityCode": "Warning",
+        "LogSeverityId": 2,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781554858993
+        },
+        "NewValue": null,
+        "OldValue": "{\"Code\":\"dfbdf\",\"Description\":\"qwesfds\",\"Area\":{\"Id\":17,\"Code\":\"DC2\",\"Name\":\"Die Cast 2\"},\"IsExcused\":true}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Description, IsExcused, Code +1 more",
+        "Description": "Defect Code dfbdf — qwesfds (Die Cast 2) · Created",
+        "EntityId": 1,
+        "Id": 49,
+        "LogEntityTypeCode": "DefectCode",
+        "LogEntityTypeName": "Defect Code",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781554846897
+        },
+        "NewValue": "{\"Code\":\"dfbdf\",\"Description\":\"qwesfds\",\"Area\":{\"Id\":17,\"Code\":\"DC2\",\"Name\":\"Die Cast 2\"},\"IsExcused\":true}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 2 → 3",
+        "Description": "Location DC2 · Reordered from #2 to #3 within MPP-MAD",
+        "EntityId": 17,
+        "Id": 48,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781552735039
+        },
+        "NewValue": "{\"Id\":17,\"Code\":\"DC2\",\"Name\":\"Die Cast 2\",\"SortOrder\":3,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "OldValue": "{\"Id\":17,\"Code\":\"DC2\",\"Name\":\"Die Cast 2\",\"SortOrder\":2,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 1 → 2",
+        "Description": "Location DC2 · Reordered from #1 to #2 within MPP-MAD",
+        "EntityId": 17,
+        "Id": 47,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781552727860
+        },
+        "NewValue": "{\"Id\":17,\"Code\":\"DC2\",\"Name\":\"Die Cast 2\",\"SortOrder\":2,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "OldValue": "{\"Id\":17,\"Code\":\"DC2\",\"Name\":\"Die Cast 2\",\"SortOrder\":1,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 2 → 1",
+        "Description": "Location DC2 · Reordered from #2 to #1 within MPP-MAD",
+        "EntityId": 17,
+        "Id": 46,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781552726560
+        },
+        "NewValue": "{\"Id\":17,\"Code\":\"DC2\",\"Name\":\"Die Cast 2\",\"SortOrder\":1,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "OldValue": "{\"Id\":17,\"Code\":\"DC2\",\"Name\":\"Die Cast 2\",\"SortOrder\":2,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 1 → 2",
+        "Description": "Location DC2 · Reordered from #1 to #2 within MPP-MAD",
+        "EntityId": 17,
+        "Id": 45,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781552725716
+        },
+        "NewValue": "{\"Id\":17,\"Code\":\"DC2\",\"Name\":\"Die Cast 2\",\"SortOrder\":2,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "OldValue": "{\"Id\":17,\"Code\":\"DC2\",\"Name\":\"Die Cast 2\",\"SortOrder\":1,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 1 → 2",
+        "Description": "Location DC4 · Reordered from #1 to #2 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 44,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781552553401
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":2,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":1,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Location: \"{\"Id\":31,\"ParentLocationId\":2…\" → \"{\"Id\":31,\"ParentLocationId\":2…\"",
+        "Description": "Location updated with attribute reconciliation.",
+        "EntityId": 31,
+        "Id": 43,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781552445657
+        },
+        "NewValue": "{\"Location\":\"{\\\"Id\\\":31,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC4\\\",\\\"Name\\\":\\\"Die Cast 4\\\",\\\"Description\\\":\\\"Die casting area - 3 machines\\\",\\\"SortOrder\\\":1}\"}",
+        "OldValue": "{\"Location\":\"{\\\"Id\\\":31,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC4\\\",\\\"Name\\\":\\\"Die Cast 4\\\",\\\"Description\\\":\\\"Die casting area - 3 machines\\\",\\\"SortOrder\\\":5}\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 4 → 5",
+        "Description": "Location DC4 · Reordered from #4 to #5 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 42,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781552436942
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":5,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":4,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 3 → 4",
+        "Description": "Location DC4 · Reordered from #3 to #4 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 41,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781552436440
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":4,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":3,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 2 → 3",
+        "Description": "Location DC4 · Reordered from #2 to #3 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 40,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781552435973
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":3,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":2,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 1 → 2",
+        "Description": "Location DC4 · Reordered from #1 to #2 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 39,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781552435381
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":2,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":1,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: -1 → 1",
+        "Description": "Location DC4 · Reordered from #-1 to #1 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 38,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781552434922
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":1,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":-1,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Location: \"{\"Id\":31,\"ParentLocationId\":2…\" → \"{\"Id\":31,\"ParentLocationId\":2…\"",
+        "Description": "Location updated with attribute reconciliation.",
+        "EntityId": 31,
+        "Id": 37,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781552429911
+        },
+        "NewValue": "{\"Location\":\"{\\\"Id\\\":31,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC4\\\",\\\"Name\\\":\\\"Die Cast 4\\\",\\\"Description\\\":\\\"Die casting area - 3 machines\\\",\\\"SortOrder\\\":-1}\"}",
+        "OldValue": "{\"Location\":\"{\\\"Id\\\":31,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC4\\\",\\\"Name\\\":\\\"Die Cast 4\\\",\\\"Description\\\":\\\"Die casting area - 3 machines\\\",\\\"SortOrder\\\":1}\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Location: \"{\"Id\":31,\"ParentLocationId\":2…\" → \"{\"Id\":31,\"ParentLocationId\":2…\"",
+        "Description": "Location updated with attribute reconciliation.",
+        "EntityId": 31,
+        "Id": 36,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781552426111
+        },
+        "NewValue": "{\"Location\":\"{\\\"Id\\\":31,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC4\\\",\\\"Name\\\":\\\"Die Cast 4\\\",\\\"Description\\\":\\\"Die casting area - 3 machines\\\",\\\"SortOrder\\\":1}\"}",
+        "OldValue": "{\"Location\":\"{\\\"Id\\\":31,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC4\\\",\\\"Name\\\":\\\"Die Cast 4\\\",\\\"Description\\\":\\\"Die casting area - 3 machines\\\",\\\"SortOrder\\\":2}\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "Location: \"{\"Id\":31,\"ParentLocationId\":2…\" → \"{\"Id\":31,\"ParentLocationId\":2…\"",
+        "Description": "Location updated with attribute reconciliation.",
+        "EntityId": 31,
+        "Id": 35,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781552421634
+        },
+        "NewValue": "{\"Location\":\"{\\\"Id\\\":31,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC4\\\",\\\"Name\\\":\\\"Die Cast 4\\\",\\\"Description\\\":\\\"Die casting area - 3 machines\\\",\\\"SortOrder\\\":2}\"}",
+        "OldValue": "{\"Location\":\"{\\\"Id\\\":31,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC4\\\",\\\"Name\\\":\\\"Die Cast 4\\\",\\\"Description\\\":\\\"Die casting area - 3 machines\\\",\\\"SortOrder\\\":8}\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 7 → 8",
+        "Description": "Location DC4 · Reordered from #7 to #8 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 34,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781552409467
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":8,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":7,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 6 → 7",
+        "Description": "Location DC4 · Reordered from #6 to #7 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 33,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781552409137
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":7,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":6,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 5 → 6",
+        "Description": "Location DC4 · Reordered from #5 to #6 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 32,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781552408783
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":6,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":5,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 4 → 5",
+        "Description": "Location DC4 · Reordered from #4 to #5 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 31,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781552408469
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":5,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":4,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 3 → 4",
+        "Description": "Location DC4 · Reordered from #3 to #4 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 30,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781552408140
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":4,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":3,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 2 → 3",
+        "Description": "Location DC4 · Reordered from #2 to #3 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 29,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781552407785
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":3,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":2,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 1 → 2",
+        "Description": "Location DC4 · Reordered from #1 to #2 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 28,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781552407611
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":2,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":1,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 2 → 1",
+        "Description": "Location DC4 · Reordered from #2 to #1 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 27,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781552403445
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":1,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":2,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "SortOrder: 3 → 2",
+        "Description": "Location DC4 · Reordered from #3 to #2 within MPP-MAD",
+        "EntityId": 31,
+        "Id": 26,
+        "LogEntityTypeCode": "Location",
+        "LogEntityTypeName": "Location",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781552399344
+        },
+        "NewValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":2,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "OldValue": "{\"Id\":31,\"Code\":\"DC4\",\"Name\":\"Die Cast 4\",\"SortOrder\":3,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ AreaLocationId, Description, Code +1 more",
+        "Description": "OperationTemplate created (v1).",
+        "EntityId": 6,
+        "Id": 25,
+        "LogEntityTypeCode": "OperationTemplate",
+        "LogEntityTypeName": "Operation Template",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1781896294626
+          ],
+          "$ts": 1781552217378
+        },
+        "NewValue": "{\"Code\":\"dddd\",\"Name\":\"dddddddddddddddddddddddddddddddddhsfhjfdfdfddgdgf\",\"AreaLocationId\":175,\"Description\":\"d\"}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
       {
         "ChangesSummary": "Header: {u\u0027ItemId\u0027: 2, u\u0027VersionNumbe… → {u\u0027ItemId\u0027: 2, u\u0027VersionNumbe…",
         "Description": "5G0-C · Route v1 (Draft) · No-op save; 0 steps",
@@ -38,7 +4382,7 @@
           "$": [
             "ts",
             192,
-            1781547120019
+            1781896294626
           ],
           "$ts": 1781544027225
         },
@@ -62,7 +4406,7 @@
           "$": [
             "ts",
             192,
-            1781547120019
+            1781896294626
           ],
           "$ts": 1781541561549
         },
@@ -86,7 +4430,7 @@
           "$": [
             "ts",
             192,
-            1781547120019
+            1781896294626
           ],
           "$ts": 1781541179874
         },
@@ -110,7 +4454,7 @@
           "$": [
             "ts",
             192,
-            1781547120019
+            1781896294626
           ],
           "$ts": 1781541168843
         },
@@ -134,7 +4478,7 @@
           "$": [
             "ts",
             192,
-            1781547120019
+            1781896294626
           ],
           "$ts": 1781541145408
         },
@@ -158,7 +4502,7 @@
           "$": [
             "ts",
             192,
-            1781547120019
+            1781896294626
           ],
           "$ts": 1781539269695
         },
@@ -182,7 +4526,7 @@
           "$": [
             "ts",
             192,
-            1781547120019
+            1781896294626
           ],
           "$ts": 1781539264009
         },
@@ -206,7 +4550,7 @@
           "$": [
             "ts",
             192,
-            1781547120019
+            1781896294626
           ],
           "$ts": 1781539249122
         },
@@ -230,7 +4574,7 @@
           "$": [
             "ts",
             192,
-            1781547120019
+            1781896294626
           ],
           "$ts": 1781539158808
         },
@@ -254,7 +4598,7 @@
           "$": [
             "ts",
             192,
-            1781547120019
+            1781896294626
           ],
           "$ts": 1781538328987
         },
@@ -278,7 +4622,7 @@
           "$": [
             "ts",
             192,
-            1781547120019
+            1781896294626
           ],
           "$ts": 1781538117140
         },
@@ -302,7 +4646,7 @@
           "$": [
             "ts",
             192,
-            1781547120019
+            1781896294626
           ],
           "$ts": 1781536883043
         },
@@ -326,7 +4670,7 @@
           "$": [
             "ts",
             192,
-            1781547120019
+            1781896294626
           ],
           "$ts": 1781536881073
         },
@@ -350,7 +4694,7 @@
           "$": [
             "ts",
             192,
-            1781547120019
+            1781896294626
           ],
           "$ts": 1781533895282
         },
@@ -374,7 +4718,7 @@
           "$": [
             "ts",
             192,
-            1781547120019
+            1781896294626
           ],
           "$ts": 1781533094029
         },
@@ -398,7 +4742,7 @@
           "$": [
             "ts",
             192,
-            1781547120019
+            1781896294626
           ],
           "$ts": 1781533093503
         },
@@ -422,7 +4766,7 @@
           "$": [
             "ts",
             192,
-            1781547120019
+            1781896294626
           ],
           "$ts": 1781533092184
         },
@@ -446,7 +4790,7 @@
           "$": [
             "ts",
             192,
-            1781547120019
+            1781896294626
           ],
           "$ts": 1781529831073
         },
@@ -470,7 +4814,7 @@
           "$": [
             "ts",
             192,
-            1781547120019
+            1781896294626
           ],
           "$ts": 1781529826438
         },
@@ -494,7 +4838,7 @@
           "$": [
             "ts",
             192,
-            1781547120019
+            1781896294626
           ],
           "$ts": 1781291936767
         },
@@ -518,7 +4862,7 @@
           "$": [
             "ts",
             192,
-            1781547120019
+            1781896294626
           ],
           "$ts": 1781288446416
         },
@@ -542,7 +4886,7 @@
           "$": [
             "ts",
             192,
-            1781547120019
+            1781896294626
           ],
           "$ts": 1781287689310
         },
@@ -566,7 +4910,7 @@
           "$": [
             "ts",
             192,
-            1781547120019
+            1781896294626
           ],
           "$ts": 1781287073863
         },
@@ -590,7 +4934,7 @@
           "$": [
             "ts",
             192,
-            1781547120019
+            1781896294626
           ],
           "$ts": 1781284806115
         },
@@ -600,7 +4944,7 @@
         "UserId": 2
       }
     ],
-    "totalCount": 24
+    "totalCount": 205
   },
   "params": {},
   "propConfig": {
@@ -820,7 +5164,7 @@
                         },
                         "props": {
                           "format": "YYYY-MM-DD",
-                          "formattedValue": "2026-06-08",
+                          "formattedValue": "2026-06-12",
                           "pickerType": "date"
                         },
                         "type": "ia.input.date-time-input"
@@ -868,7 +5212,7 @@
                         },
                         "props": {
                           "format": "YYYY-MM-DD",
-                          "formattedValue": "2026-06-15",
+                          "formattedValue": "2026-06-19",
                           "pickerType": "date"
                         },
                         "type": "ia.input.date-time-input"
@@ -1167,21 +5511,6 @@
                               "enabled": true,
                               "selectionMode": "single"
                             }
-                          },
-                          "selection": {
-                            "data": [
-                              {
-                                "ChangesSummary": "Header: {u\u0027ItemId\u0027: 2, u\u0027VersionNumbe… → {u\u0027ItemId\u0027: 2, u\u0027VersionNumbe…",
-                                "Description": "5G0-C · Route v1 (Draft) · No-op save; 0 steps",
-                                "LogEntityTypeName": "Route",
-                                "LogEventTypeCode": "Updated",
-                                "LogSeverityCode": "Info",
-                                "LoggedAt": "Mon Jun 15 2026 13:20:27 GMT-0400 (Eastern Daylight Time)",
-                                "UserDisplayName": "Dev User"
-                              }
-                            ],
-                            "selectedColumn": "LogEntityTypeName",
-                            "selectedRow": 0
                           },
                           "style": {
                             "classes": "data-table audit-log-table"

@@ -104,16 +104,10 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "id": "mpp-add-item",
-                    "modal": true,
-                    "overlayDismiss": false,
-                    "showCloseIcon": false,
-                    "type": "open",
-                    "viewPath": "BlueRidge/Components/Popups/AddItem",
-                    "viewportBound": true
+                    "script": "\tsystem.perspective.openPopup(\n\t\tid\u003d\u0027mpp-add-item\u0027,\n\t\tview\u003d\u0027BlueRidge/Components/Popups/AddItem\u0027,\n\t\tmodal\u003dTrue,\n\t\tshowCloseIcon\u003dFalse,\n\t\tdraggable\u003dFalse\n\t)"
                   },
-                  "scope": "C",
-                  "type": "popup"
+                  "scope": "G",
+                  "type": "script"
                 }
               }
             },

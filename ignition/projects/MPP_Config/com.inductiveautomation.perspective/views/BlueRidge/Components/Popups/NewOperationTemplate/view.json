@@ -5,6 +5,12 @@
       "Code": "",
       "Description": "",
       "Name": ""
+    },
+    "selected": {
+      "AreaLocationId": null,
+      "Code": "",
+      "Description": "",
+      "Name": ""
     }
   },
   "params": {},
@@ -16,6 +22,9 @@
         },
         "type": "expr"
       }
+    },
+    "custom.selected": {
+      "persistent": true
     }
   },
   "props": {
@@ -56,7 +65,7 @@
               "dom": {
                 "onClick": {
                   "config": {
-                    "script": "\tsystem.perspective.closePopup(id\u003d\u0027mpp-new-operation-template\u0027)"
+                    "script": "\tself.view.rootContainer.handleClose()"
                   },
                   "scope": "G",
                   "type": "script"
@@ -337,7 +346,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tsystem.perspective.closePopup(id\u003d\u0027mpp-new-operation-template\u0027)"
+                    "script": "\tself.view.rootContainer.handleClose()"
                   },
                   "scope": "G",
                   "type": "script"
@@ -425,10 +434,23 @@
           "name": "handleCreate",
           "params": [],
           "script": "\tdraft \u003d self.view.custom.editDraft or {}\n\tif not (draft.get(\u0027Code\u0027) or \u0027\u0027).strip():\n\t\tBlueRidge.Common.Notify.toast(\u0027Code required\u0027, \u0027Enter a code before creating.\u0027, \u0027warning\u0027)\n\t\treturn\n\tif not (draft.get(\u0027Name\u0027) or \u0027\u0027).strip():\n\t\tBlueRidge.Common.Notify.toast(\u0027Name required\u0027, \u0027Enter a name before creating.\u0027, \u0027warning\u0027)\n\t\treturn\n\tif draft.get(\u0027AreaLocationId\u0027) is None:\n\t\tBlueRidge.Common.Notify.toast(\u0027Area required\u0027, \u0027Pick an area before creating.\u0027, \u0027warning\u0027)\n\t\treturn\n\tresult \u003d BlueRidge.Parts.OperationTemplate.add(draft)\n\tBlueRidge.Common.Ui.notifyResult(result, \u0027Template created\u0027)\n\tif result and result.get(\u0027Status\u0027):\n\t\tnewId \u003d result.get(\u0027NewId\u0027)\n\t\tsystem.perspective.sendMessage(\u0027templateListRefresh\u0027, scope\u003d\u0027page\u0027)\n\t\tif newId:\n\t\t\tsystem.perspective.sendMessage(\u0027templateSelectId\u0027, payload\u003d{\u0027id\u0027: newId}, scope\u003d\u0027page\u0027)\n\t\tsystem.perspective.closePopup(id\u003d\u0027mpp-new-operation-template\u0027)"
+        },
+        {
+          "name": "handleClose",
+          "params": [],
+          "script": "\tif str(self.view.custom.editDraft) \u003d\u003d str(self.view.custom.selected):\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-new-operation-template\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid\u003d\"mpp-confirm-unsaved\",\n\t\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal\u003dTrue,\n\t\t\tshowCloseIcon\u003dFalse,\n\t\t\tparams\u003d{\n\t\t\t\t\"title\": \"Unsaved Changes\",\n\t\t\t\t\"message\": \"You have unsaved changes to this downtime code. Save before closing?\"\n\t\t\t}\n\t\t)"
         }
       ],
       "extensionFunctions": null,
-      "messageHandlers": []
+      "messageHandlers": [
+        {
+          "messageType": "confirmUnsavedResult",
+          "pageScope": true,
+          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tif action \u003d\u003d \"save\":\n\t\tself.handleCreate()\n\telif action \u003d\u003d \"discard\":\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-new-operation-template\")",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
     },
     "type": "ia.container.flex"
   }
