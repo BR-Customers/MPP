@@ -2,7 +2,9 @@
   "custom": {
     "state": {
       "editDraft": {
-        "rows": []
+        "rows": [
+          ""
+        ]
       },
       "selected": {
         "rows": []

@@ -8,7 +8,9 @@
         "effectiveFrom": null,
         "effectiveFromDisplay": "",
         "id": null,
-        "lines": [],
+        "lines": [
+          ""
+        ],
         "parentItemId": null,
         "publishedAt": null,
         "status": null,
