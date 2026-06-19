@@ -273,9 +273,11 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
+                    "draggable": false,
                     "id": "mpp-die-ranks",
                     "modal": true,
                     "overlayDismiss": false,
+                    "resizable": false,
                     "showCloseIcon": false,
                     "type": "open",
                     "viewPath": "BlueRidge/Components/Popups/DieRanks",
@@ -302,16 +304,10 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "id": "mpp-add-die",
-                    "modal": true,
-                    "overlayDismiss": false,
-                    "showCloseIcon": false,
-                    "type": "open",
-                    "viewPath": "BlueRidge/Components/Popups/AddDie",
-                    "viewportBound": true
+                    "script": "\tsystem.perspective.openPopup(\n\t\tid\u003d\u0027mpp-add-die\u0027,\n\t\tview\u003d\u0027BlueRidge/Components/Popups/AddDie\u0027,\n\t\tmodal\u003dTrue,\n\t\tshowCloseIcon\u003dFalse,\n\t\tdraggable\u003dFalse\n\t)"
                   },
-                  "scope": "C",
-                  "type": "popup"
+                  "scope": "G",
+                  "type": "script"
                 }
               }
             },

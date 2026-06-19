@@ -135,7 +135,7 @@
           "component": {
             "onActionPerformed": {
               "config": {
-                "script": "\tsystem.perspective.openPopup(\n\t\tid\u003d\"mpp-defect-code-editor\",\n\t\tview\u003d\"BlueRidge/Components/Popups/DefectCodeEditor\",\n\t\tmodal\u003dTrue,\n\t\tshowCloseIcon\u003dFalse,\n\t\tparams\u003d{\"mode\": \"update\", \"defectCodeId\": self.view.params.id})"
+                "script": "\tsystem.perspective.openPopup(\n\t\tid\u003d\"mpp-defect-code-editor\",\n\t\tview\u003d\"BlueRidge/Components/Popups/DefectCodeEditor\",\n\t\tmodal\u003dTrue,\n\t\tshowCloseIcon\u003dFalse,\n\t\tdraggable\u003dFalse,\n\t\tparams\u003d{\"mode\": \"update\", \"defectCodeId\": self.view.params.id})"
               },
               "scope": "G",
               "type": "script"
