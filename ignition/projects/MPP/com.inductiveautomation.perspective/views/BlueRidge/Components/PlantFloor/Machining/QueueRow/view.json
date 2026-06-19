@@ -1,0 +1,78 @@
+{
+  "custom": {},
+  "params": {
+    "sourceLotId": null,
+    "lotName": "",
+    "sourceItem": "",
+    "pieceCount": 0,
+    "arrival": ""
+  },
+  "propConfig": {
+    "params.sourceLotId": { "paramDirection": "input" },
+    "params.lotName": { "paramDirection": "input" },
+    "params.sourceItem": { "paramDirection": "input" },
+    "params.pieceCount": { "paramDirection": "input" },
+    "params.arrival": { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "height": 76, "width": 640 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": { "classes": "surface-card", "gap": "16px", "padding": "12px 16px" }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "Info" },
+        "position": { "grow": 1 },
+        "props": { "direction": "column", "style": { "gap": "2px" } },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "LotName" },
+            "props": { "style": { "fontWeight": 700, "fontSize": "16px" } },
+            "propConfig": {
+              "props.text": { "binding": { "type": "property", "config": { "path": "view.params.lotName" } } }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "Item" },
+            "props": { "style": { "classes": "pf-kpi-sub" } },
+            "propConfig": {
+              "props.text": { "binding": { "type": "expr", "config": { "expression": "{view.params.sourceItem} + '  |  ' + toStr({view.params.pieceCount}) + ' pcs'" } } }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Arrival" },
+        "position": { "shrink": 0 },
+        "props": { "style": { "classes": "pf-kpi-sub" } },
+        "propConfig": {
+          "props.text": { "binding": { "type": "property", "config": { "path": "view.params.arrival" } } }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": { "name": "PickButton" },
+        "position": { "shrink": 0 },
+        "props": { "text": "Pick", "style": { "classes": "pf-btn pf-btn-primary pf-btn-large" } },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script", "scope": "G",
+              "config": { "script": "\tsystem.perspective.sendMessage(\"machiningPick\", payload={\"sourceLotId\": self.view.params.sourceLotId, \"lotName\": self.view.params.lotName, \"sourceItem\": self.view.params.sourceItem}, scope=\"page\")" }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

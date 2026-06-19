@@ -28,6 +28,10 @@
       "title": "Supervisor Dashboard",
       "viewPath": "BlueRidge/Views/ShopFloor/SupervisorDashboard"
     },
+    "/shop-floor/machining-in": {
+      "title": "Machining IN",
+      "viewPath": "BlueRidge/Views/ShopFloor/MachiningIn"
+    },
     "/shop-floor/terminal-selector": {
       "title": "Select Terminal",
       "viewPath": "BlueRidge/Views/ShopFloor/TerminalSelector"

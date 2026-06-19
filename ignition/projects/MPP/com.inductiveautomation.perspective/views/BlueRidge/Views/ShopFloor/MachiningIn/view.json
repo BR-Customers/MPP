@@ -1,0 +1,119 @@
+{
+  "custom": {
+    "filter": { "cellLocationId": null },
+    "cellOptions": [],
+    "queue": [],
+    "refreshToken": 0,
+    "pending": { "sourceLotId": null, "lotName": "", "sourceItem": "" }
+  },
+  "params": {},
+  "propConfig": {
+    "custom.cellOptions": {
+      "binding": {
+        "config": { "expression": "runScript(\"BlueRidge.Location.Location.listByTier\", 0, \"Cell\")" },
+        "transforms": [
+          { "code": "\treturn [{\"value\": r.get(\"Id\"), \"label\": (r.get(\"Code\") or \"\") + \" - \" + (r.get(\"Name\") or \"\")} for r in (value or [])]", "type": "script" }
+        ],
+        "type": "expr"
+      }
+    },
+    "custom.queue": {
+      "binding": {
+        "config": { "expression": "if({view.custom.refreshToken} >= 0 && !isNull({view.custom.filter.cellLocationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {view.custom.filter.cellLocationId}), [])" },
+        "transforms": [
+          { "code": "\treturn [{\"sourceLotId\": r.get(\"Id\"), \"lotName\": r.get(\"LotName\") or \"\", \"sourceItem\": r.get(\"ItemPartNumber\") or \"\", \"pieceCount\": r.get(\"PieceCount\") or 0, \"arrival\": str(r.get(\"LastMovementAt\") or \"\")} for r in (value or [])]", "type": "script" }
+        ],
+        "type": "expr"
+      }
+    }
+  },
+  "props": {
+    "defaultSize": { "height": 1080, "width": 1920 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": { "direction": "column", "style": { "classes": "canvas" } },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Header" },
+        "position": { "shrink": 0 },
+        "props": { "text": "Machining IN", "style": { "fontSize": "22px", "fontWeight": "700", "padding": "16px", "borderBottom": "1px solid var(--mpp-border-subtle)" } }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "Body" },
+        "position": { "grow": 1 },
+        "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "16px", "margin": "16px", "padding": "16px" } },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "MachineField" },
+            "position": { "basis": "320px", "shrink": 0 },
+            "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+            "children": [
+              { "type": "ia.display.label", "meta": { "name": "MachineLabel" }, "props": { "text": "Machining Cell", "style": { "classes": "pf-field-label" } } },
+              {
+                "type": "ia.input.dropdown",
+                "meta": { "name": "CellSelect" },
+                "propConfig": {
+                  "props.options": { "binding": { "config": { "path": "view.custom.cellOptions" }, "type": "property" } },
+                  "props.value": { "binding": { "config": { "path": "view.custom.filter.cellLocationId", "bidirectional": true }, "type": "property" } }
+                },
+                "props": { "placeholder": "Select cell", "style": { "classes": "pf-field-input" } }
+              }
+            ]
+          },
+          { "type": "ia.display.label", "meta": { "name": "QueueLabel" }, "position": { "shrink": 0 }, "props": { "text": "FIFO queue - pick the next LOT:", "style": { "classes": "pf-field-label" } } },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "EmptyHint" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "props.text": { "binding": { "type": "expr", "config": { "expression": "if(isNull({view.custom.filter.cellLocationId}), 'Select a Machining cell to see its queue.', 'This cell has no LOTs queued.')" } } },
+              "position.display": { "binding": { "type": "expr", "config": { "expression": "len({view.custom.queue}) = 0" } } }
+            },
+            "props": { "style": { "classes": "pf-kpi-sub" } }
+          },
+          {
+            "type": "ia.display.flex-repeater",
+            "meta": { "name": "QueueRepeater" },
+            "position": { "grow": 1 },
+            "propConfig": {
+              "props.instances": { "binding": { "config": { "path": "view.custom.queue" }, "type": "property" } }
+            },
+            "props": {
+              "direction": "column",
+              "elementPosition": { "basis": "76px", "shrink": 0 },
+              "path": "BlueRidge/Components/PlantFloor/Machining/QueueRow",
+              "style": { "gap": "10px", "overflowY": "auto" },
+              "useDefaultViewHeight": true,
+              "useDefaultViewWidth": false
+            }
+          }
+        ]
+      }
+    ],
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "machiningPick",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tself.view.custom.pending = {\"sourceLotId\": payload.get(\"sourceLotId\"), \"lotName\": payload.get(\"lotName\") or \"\", \"sourceItem\": payload.get(\"sourceItem\") or \"\"}\n\tmsg = \"Pick LOT \" + (payload.get(\"lotName\") or \"\") + \" (\" + (payload.get(\"sourceItem\") or \"\") + \") and rename via its machining BOM?\"\n\tsystem.perspective.openPopup(\"mpp-bom-rename\", \"BlueRidge/Components/Popups/BomRenameConfirm\", params={\"title\": \"Machining IN - Pick & Rename\", \"message\": msg, \"replyMessage\": \"bomRenameResult\", \"popupId\": \"mpp-bom-rename\"}, modal=True)"
+        },
+        {
+          "messageType": "bomRenameResult",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tif payload.get(\"action\") != \"confirm\":\n\t\treturn\n\tp = self.view.custom.pending\n\tcellId = self.view.custom.filter.cellLocationId\n\tif not p or p.get(\"sourceLotId\") is None or cellId is None:\n\t\treturn\n\tresult = BlueRidge.Workorder.Machining.pickAndConsume(p.get(\"sourceLotId\"), cellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining IN\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.pending = {\"sourceLotId\": None, \"lotName\": \"\", \"sourceItem\": \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+        }
+      ]
+    }
+  }
+}
