@@ -2,15 +2,7 @@
   "custom": {
     "state": {
       "editDraft": {
-        "rows": [
-          {
-            "dataType": "String",
-            "definitionLabel": "",
-            "id": null,
-            "toolAttributeDefinitionId": null,
-            "value": ""
-          }
-        ]
+        "rows": []
       },
       "selected": {
         "rows": []

@@ -489,7 +489,7 @@
                   },
                   "transforms": [
                     {
-                      "code": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\tout \u003d []\n\tfor inst in rows:\n\t\tinst \u003d inst or {}\n\t\tout.append({\"assignment\": inst.get(\"assignment\") or {}})\n\treturn out",
+                      "code": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\tout \u003d []\n\tif len(rows) \u003d\u003d 0:\n\t\treturn []\n\t\n\tfor inst in rows:\n\t\tinst \u003d inst or {}\n\t\tout.append({\"assignment\": inst.get(\"assignment\") or {}})\n\treturn out",
                       "type": "script"
                     }
                   ],
