@@ -1,0 +1,157 @@
+{
+  "custom": {
+    "filter": { "cellLocationId": null },
+    "cellOptions": [],
+    "destOptions": [],
+    "parentLot": { "Id": null, "LotName": "", "PieceCount": 0, "ItemPartNumber": "" },
+    "opTemplateId": null,
+    "draft": { "qty1": "", "dest1": null, "qty2": "", "dest2": null },
+    "refreshToken": 0
+  },
+  "params": {},
+  "propConfig": {
+    "custom.cellOptions": {
+      "binding": {
+        "config": { "expression": "runScript(\"BlueRidge.Location.Location.listByTier\", 0, \"Cell\")" },
+        "transforms": [ { "code": "\treturn [{\"value\": r.get(\"Id\"), \"label\": (r.get(\"Code\") or \"\") + \" - \" + (r.get(\"Name\") or \"\")} for r in (value or [])]", "type": "script" } ],
+        "type": "expr"
+      }
+    },
+    "custom.destOptions": {
+      "binding": {
+        "config": { "expression": "runScript(\"BlueRidge.Location.Location.listByTier\", 0, \"Cell\")" },
+        "transforms": [ { "code": "\treturn [{\"value\": r.get(\"Id\"), \"label\": (r.get(\"Code\") or \"\") + \" - \" + (r.get(\"Name\") or \"\")} for r in (value or [])]", "type": "script" } ],
+        "type": "expr"
+      }
+    },
+    "custom.opTemplateId": {
+      "binding": { "config": { "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.getActiveTemplateIdByCode\", 0, \"MachiningOut\")" }, "type": "expr" }
+    },
+    "custom.parentLot": {
+      "binding": {
+        "config": { "expression": "if({view.custom.refreshToken} >= 0 && !isNull({view.custom.filter.cellLocationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {view.custom.filter.cellLocationId}), [])" },
+        "transforms": [ { "code": "\trows = value or []\n\tr = rows[0] if rows else {}\n\treturn {\"Id\": r.get(\"Id\"), \"LotName\": r.get(\"LotName\") or \"\", \"PieceCount\": r.get(\"PieceCount\") or 0, \"ItemPartNumber\": r.get(\"ItemPartNumber\") or \"\"}", "type": "script" } ],
+        "type": "expr"
+      }
+    }
+  },
+  "props": {
+    "defaultSize": { "height": 1080, "width": 1920 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": { "direction": "column", "style": { "classes": "canvas" } },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Header" },
+        "position": { "shrink": 0 },
+        "props": { "text": "Machining OUT - Split", "style": { "fontSize": "22px", "fontWeight": "700", "padding": "16px", "borderBottom": "1px solid var(--mpp-border-subtle)" } }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "Body" },
+        "position": { "grow": 1 },
+        "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "16px", "margin": "16px", "padding": "16px" } },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "MachineField" },
+            "position": { "basis": "320px", "shrink": 0 },
+            "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+            "children": [
+              { "type": "ia.display.label", "meta": { "name": "MachineLabel" }, "props": { "text": "Machining Cell (sublotting line)", "style": { "classes": "pf-field-label" } } },
+              {
+                "type": "ia.input.dropdown",
+                "meta": { "name": "CellSelect" },
+                "propConfig": {
+                  "props.options": { "binding": { "config": { "path": "view.custom.cellOptions" }, "type": "property" } },
+                  "props.value": { "binding": { "config": { "path": "view.custom.filter.cellLocationId", "bidirectional": true }, "type": "property" } }
+                },
+                "props": { "placeholder": "Select cell", "style": { "classes": "pf-field-input" } }
+              }
+            ]
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "ParentLot" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "props.text": { "binding": { "type": "expr", "config": { "expression": "if(isNull({view.custom.parentLot.Id}), 'No machined LOT at this cell.', 'Parent LOT: ' + {view.custom.parentLot.LotName} + '  (' + {view.custom.parentLot.ItemPartNumber} + ')  -  ' + toStr({view.custom.parentLot.PieceCount}) + ' pcs')" } } }
+            },
+            "props": { "style": { "fontWeight": "600" } }
+          },
+          { "type": "ia.display.label", "meta": { "name": "SplitLabel" }, "position": { "shrink": 0 }, "props": { "text": "Split into two sub-LOTs (piece counts must sum to the parent):", "style": { "classes": "pf-field-label" } } },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "Child1" },
+            "position": { "shrink": 0 },
+            "props": { "direction": "row", "alignItems": "flex-end", "wrap": "wrap", "style": { "gap": "12px" } },
+            "children": [
+              {
+                "type": "ia.container.flex", "meta": { "name": "Qty1Field" }, "position": { "basis": "160px", "shrink": 0 }, "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Sub-LOT 1 qty", "style": { "classes": "pf-field-label" } } },
+                  { "type": "ia.input.text-field", "meta": { "name": "Qty1" }, "propConfig": { "props.text": { "binding": { "config": { "path": "view.custom.draft.qty1", "bidirectional": true }, "type": "property" } } }, "props": { "style": { "classes": "pf-field-input" } } }
+                ]
+              },
+              {
+                "type": "ia.container.flex", "meta": { "name": "Dest1Field" }, "position": { "basis": "320px", "shrink": 0 }, "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Sub-LOT 1 destination", "style": { "classes": "pf-field-label" } } },
+                  { "type": "ia.input.dropdown", "meta": { "name": "Dest1" }, "propConfig": { "props.options": { "binding": { "config": { "path": "view.custom.destOptions" }, "type": "property" } }, "props.value": { "binding": { "config": { "path": "view.custom.draft.dest1", "bidirectional": true }, "type": "property" } } }, "props": { "placeholder": "Select destination", "style": { "classes": "pf-field-input" } } }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "Child2" },
+            "position": { "shrink": 0 },
+            "props": { "direction": "row", "alignItems": "flex-end", "wrap": "wrap", "style": { "gap": "12px" } },
+            "children": [
+              {
+                "type": "ia.container.flex", "meta": { "name": "Qty2Field" }, "position": { "basis": "160px", "shrink": 0 }, "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Sub-LOT 2 qty", "style": { "classes": "pf-field-label" } } },
+                  { "type": "ia.input.text-field", "meta": { "name": "Qty2" }, "propConfig": { "props.text": { "binding": { "config": { "path": "view.custom.draft.qty2", "bidirectional": true }, "type": "property" } } }, "props": { "style": { "classes": "pf-field-input" } } }
+                ]
+              },
+              {
+                "type": "ia.container.flex", "meta": { "name": "Dest2Field" }, "position": { "basis": "320px", "shrink": 0 }, "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Sub-LOT 2 destination", "style": { "classes": "pf-field-label" } } },
+                  { "type": "ia.input.dropdown", "meta": { "name": "Dest2" }, "propConfig": { "props.options": { "binding": { "config": { "path": "view.custom.destOptions" }, "type": "property" } }, "props.value": { "binding": { "config": { "path": "view.custom.draft.dest2", "bidirectional": true }, "type": "property" } } }, "props": { "placeholder": "Select destination", "style": { "classes": "pf-field-input" } } }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "AllocHint" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "props.text": { "binding": { "type": "expr", "config": { "expression": "'Allocated: ' + toStr(toInt({view.custom.draft.qty1}, 0) + toInt({view.custom.draft.qty2}, 0)) + ' / ' + toStr({view.custom.parentLot.PieceCount}) + ' pcs'" } } }
+            },
+            "props": { "style": { "classes": "pf-kpi-sub" } }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "SubmitButton" },
+            "position": { "shrink": 0 },
+            "props": { "text": "Submit Split", "style": { "classes": "pf-btn pf-btn-primary pf-btn-large" } },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script", "scope": "G",
+                  "config": { "script": "\tparent = self.view.custom.parentLot\n\totId = self.view.custom.opTemplateId\n\tcellId = self.view.custom.filter.cellLocationId\n\td = self.view.custom.draft\n\tif cellId is None or not parent or parent.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Select a cell that has a machined LOT.\"}, \"Machining OUT\")\n\t\treturn\n\tif otId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"MachiningOut operation template not found.\"}, \"Machining OUT\")\n\t\treturn\n\tq1 = BlueRidge.Common.Util.toIntOrNone(d.get(\"qty1\"))\n\tq2 = BlueRidge.Common.Util.toIntOrNone(d.get(\"qty2\"))\n\tdest1 = d.get(\"dest1\")\n\tdest2 = d.get(\"dest2\")\n\tif q1 is None or q2 is None or q1 <= 0 or q2 <= 0 or dest1 is None or dest2 is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a positive piece count and a destination for both sub-LOTs.\"}, \"Machining OUT\")\n\t\treturn\n\tchildren = [{\"pieceCount\": q1, \"destinationLocationId\": dest1}, {\"pieceCount\": q2, \"destinationLocationId\": dest2}]\n\tresult = BlueRidge.Workorder.Machining.recordSplit(parent.get(\"Id\"), otId, system.util.jsonEncode(children))\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining OUT - Split\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"qty1\": \"\", \"dest1\": None, \"qty2\": \"\", \"dest2\": None}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1" }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
