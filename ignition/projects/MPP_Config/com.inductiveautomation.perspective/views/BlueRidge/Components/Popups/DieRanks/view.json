@@ -310,11 +310,13 @@
                         "props": {
                           "elementPosition": {
                             "basis": "90px",
+                            "grow": 0,
                             "shrink": 0
                           },
                           "path": "BlueRidge/Components/Popups/_DieRanks/MatrixHeaderCell",
                           "style": {
-                            "gap": "5px"
+                            "gap": "5px",
+                            "overflow": "visible"
                           },
                           "useDefaultViewHeight": false,
                           "useDefaultViewWidth": false
@@ -327,7 +329,8 @@
                     },
                     "props": {
                       "style": {
-                        "gap": "5px"
+                        "gap": "5px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -347,13 +350,16 @@
                       }
                     },
                     "props": {
+                      "alignContent": "flex-start",
+                      "alignItems": "flex-start",
                       "direction": "column",
                       "elementPosition": {
                         "basis": "auto"
                       },
                       "path": "BlueRidge/Components/Popups/_DieRanks/MatrixRow",
                       "style": {
-                        "gap": "5px"
+                        "gap": "5px",
+                        "overflow": "visible"
                       },
                       "useDefaultViewHeight": false,
                       "useDefaultViewWidth": false
