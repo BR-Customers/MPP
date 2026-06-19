@@ -15,7 +15,7 @@
 $ErrorActionPreference = "Stop"
 
 $gw   = "C:\Program Files\Inductive Automation\Ignition\data\projects"
-$repo = "C:\Users\JacquesPotgieter\Documents\Dev\MPP\ignition\projects"
+$repo = "C:\Users\NoahNesbitt\Documents\Dev\MPP\ignition\projects"
 $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
 
 # Elevation check
@@ -27,7 +27,7 @@ if (-not $isAdmin) {
     exit 1
 }
 
-foreach ($name in @("Core", "MPP")) {
+foreach ($name in @("Core", "MPP", "MPP_Config")) {
     $link   = Join-Path $gw   $name
     $target = Join-Path $repo $name
 
