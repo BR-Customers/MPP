@@ -1,124 +1,106 @@
 {
   "custom": {
+    "editDraft": {
+      "meta": {
+        "Code": "",
+        "Description": "",
+        "DieRankCode": "B",
+        "Name": ""
+      }
+    },
     "mode": "create",
     "selected": {
       "meta": {
         "Code": "",
-        "Name": "",
+        "Description": "",
         "DieRankCode": "B",
-        "Description": ""
+        "Name": ""
       }
-    },
-    "editDraft": {
-      "meta": {
-        "Code": "",
-        "Name": "",
-        "DieRankCode": "B",
-        "Description": ""
-      }
-    },
-    "rankOptions": []
+    }
   },
   "params": {},
   "propConfig": {
     "custom.rankOptions": {
       "binding": {
-        "type": "expr",
         "config": {
           "expression": "runScript(\"BlueRidge.Parts.DieRank.getForDropdown\", 0)"
-        }
+        },
+        "type": "expr"
       }
     }
   },
   "props": {
     "defaultSize": {
-      "width": 480,
-      "height": 380
+      "height": 380,
+      "width": 480
     }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": { "name": "root" },
-    "props": {
-      "direction": "column",
-      "style": {
-        "background": "var(--mpp-surface-canvas)",
-        "borderRadius": "var(--mpp-radius-md, 8px)",
-        "height": "100%",
-        "overflow": "hidden",
-        "width": "100%"
-      }
-    },
     "children": [
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "HeaderBar" },
-        "position": { "basis": "50px", "shrink": 0 },
-        "props": {
-          "alignItems": "center",
-          "style": {
-            "background": "var(--mpp-surface-raised)",
-            "borderBottom": "1px solid var(--mpp-border-subtle)",
-            "gap": "12px",
-            "overflow": "hidden",
-            "padding": "0 16px"
-          }
-        },
         "children": [
           {
-            "type": "ia.display.label",
-            "meta": { "name": "TitleLabel" },
+            "meta": {
+              "name": "TitleLabel"
+            },
             "props": {
-              "text": "Add Die",
               "style": {
                 "classes": "modal-title",
                 "fontSize": "14px",
                 "fontWeight": "600"
-              }
-            }
+              },
+              "text": "Add Die"
+            },
+            "type": "ia.display.label"
           },
           {
-            "type": "ia.container.flex",
-            "meta": { "name": "Spacer" },
-            "position": { "grow": 1 }
+            "meta": {
+              "name": "Spacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.container.flex"
           },
           {
-            "type": "ia.display.label",
-            "meta": { "name": "DirtyIndicator" },
+            "meta": {
+              "name": "DirtyIndicator"
+            },
             "propConfig": {
               "props.text": {
                 "binding": {
-                  "type": "expr",
                   "config": {
-                    "expression": "if({view.custom.editDraft} != {view.custom.selected}, '● Unsaved changes', '')"
-                  }
+                    "expression": "if({view.custom.editDraft} !\u003d {view.custom.selected}, \u0027● Unsaved changes\u0027, \u0027\u0027)"
+                  },
+                  "type": "expr"
                 }
               }
             },
             "props": {
-              "text": "",
               "style": {
                 "color": "var(--mpp-accent)",
                 "fontSize": "11px",
                 "fontStyle": "italic"
               }
-            }
+            },
+            "type": "ia.display.label"
           },
           {
-            "type": "ia.display.icon",
-            "meta": {
-              "name": "CloseIcon",
-              "tooltip": { "text": "Close" }
-            },
             "events": {
               "dom": {
                 "onClick": {
-                  "type": "script",
-                  "scope": "G",
                   "config": {
                     "script": "\tself.view.rootContainer.handleClose()"
-                  }
+                  },
+                  "scope": "G",
+                  "type": "script"
                 }
+              }
+            },
+            "meta": {
+              "name": "CloseIcon",
+              "tooltip": {
+                "text": "Close"
               }
             },
             "props": {
@@ -129,50 +111,57 @@
                 "height": "18px",
                 "width": "18px"
               }
-            }
+            },
+            "type": "ia.display.icon"
           }
-        ]
-      },
-      {
-        "type": "ia.container.flex",
-        "meta": { "name": "FormBody" },
-        "position": { "grow": 1 },
+        ],
+        "meta": {
+          "name": "HeaderBar"
+        },
+        "position": {
+          "basis": "50px",
+          "shrink": 0
+        },
         "props": {
-          "direction": "column",
+          "alignItems": "center",
           "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
             "gap": "12px",
-            "overflowY": "auto",
-            "padding": "16px"
+            "overflow": "hidden",
+            "padding": "0 16px"
           }
         },
+        "type": "ia.container.flex"
+      },
+      {
         "children": [
           {
-            "type": "ia.container.flex",
-            "meta": { "name": "CodeField" },
-            "props": {
-              "direction": "column",
-              "style": { "gap": "4px" }
-            },
             "children": [
               {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
+                "meta": {
+                  "name": "Label"
+                },
                 "props": {
-                  "text": "Code",
-                  "style": { "classes": "field-label" }
-                }
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Code"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.text-field",
-                "meta": { "name": "Input" },
+                "meta": {
+                  "name": "Input"
+                },
                 "propConfig": {
                   "props.text": {
                     "binding": {
-                      "type": "property",
                       "config": {
                         "bidirectional": true,
                         "path": "view.custom.editDraft.meta.Code"
-                      }
+                      },
+                      "type": "property"
                     }
                   }
                 },
@@ -183,37 +172,47 @@
                     "classes": "search-input",
                     "width": "100%"
                   }
-                }
+                },
+                "type": "ia.input.text-field"
               }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "NameField" },
+            ],
+            "meta": {
+              "name": "CodeField"
+            },
             "props": {
               "direction": "column",
-              "style": { "gap": "4px" }
+              "style": {
+                "gap": "4px"
+              }
             },
+            "type": "ia.container.flex"
+          },
+          {
             "children": [
               {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
+                "meta": {
+                  "name": "Label"
+                },
                 "props": {
-                  "text": "Name",
-                  "style": { "classes": "field-label" }
-                }
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Name"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.text-field",
-                "meta": { "name": "Input" },
+                "meta": {
+                  "name": "Input"
+                },
                 "propConfig": {
                   "props.text": {
                     "binding": {
-                      "type": "property",
                       "config": {
                         "bidirectional": true,
                         "path": "view.custom.editDraft.meta.Name"
-                      }
+                      },
+                      "type": "property"
                     }
                   }
                 },
@@ -224,43 +223,55 @@
                     "classes": "search-input",
                     "width": "100%"
                   }
-                }
+                },
+                "type": "ia.input.text-field"
               }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "DieRankField" },
+            ],
+            "meta": {
+              "name": "NameField"
+            },
             "props": {
               "direction": "column",
-              "style": { "gap": "4px" }
+              "style": {
+                "gap": "4px"
+              }
             },
+            "type": "ia.container.flex"
+          },
+          {
             "children": [
               {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
+                "meta": {
+                  "name": "Label"
+                },
                 "props": {
-                  "text": "Die Rank",
-                  "style": { "classes": "field-label" }
-                }
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Die Rank"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.dropdown",
-                "meta": { "name": "Input" },
+                "meta": {
+                  "name": "Input"
+                },
                 "propConfig": {
                   "props.options": {
                     "binding": {
-                      "type": "property",
-                      "config": { "path": "view.custom.rankOptions" }
+                      "config": {
+                        "path": "view.custom.rankOptions"
+                      },
+                      "type": "property"
                     }
                   },
                   "props.value": {
                     "binding": {
-                      "type": "property",
                       "config": {
                         "bidirectional": true,
                         "path": "view.custom.editDraft.meta.DieRankCode"
-                      }
+                      },
+                      "type": "property"
                     }
                   }
                 },
@@ -270,37 +281,47 @@
                     "classes": "select",
                     "width": "100%"
                   }
-                }
+                },
+                "type": "ia.input.dropdown"
               }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "DescriptionField" },
+            ],
+            "meta": {
+              "name": "DieRankField"
+            },
             "props": {
               "direction": "column",
-              "style": { "gap": "4px" }
+              "style": {
+                "gap": "4px"
+              }
             },
+            "type": "ia.container.flex"
+          },
+          {
             "children": [
               {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
+                "meta": {
+                  "name": "Label"
+                },
                 "props": {
-                  "text": "Description",
-                  "style": { "classes": "field-label" }
-                }
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Description"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.text-field",
-                "meta": { "name": "Input" },
+                "meta": {
+                  "name": "Input"
+                },
                 "propConfig": {
                   "props.text": {
                     "binding": {
-                      "type": "property",
                       "config": {
                         "bidirectional": true,
                         "path": "view.custom.editDraft.meta.Description"
-                      }
+                      },
+                      "type": "property"
                     }
                   }
                 },
@@ -311,16 +332,100 @@
                     "classes": "search-input",
                     "width": "100%"
                   }
-                }
+                },
+                "type": "ia.input.text-field"
               }
-            ]
+            ],
+            "meta": {
+              "name": "DescriptionField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
           }
-        ]
+        ],
+        "meta": {
+          "name": "FormBody"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "12px",
+            "overflowY": "auto",
+            "padding": "16px"
+          }
+        },
+        "type": "ia.container.flex"
       },
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "FooterBar" },
-        "position": { "basis": "50px", "shrink": 0 },
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleClose()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CancelButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-sm"
+              },
+              "text": "Cancel"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleCreate()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CreateButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-primary btn-sm"
+              },
+              "text": "Create Die"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "FooterBar"
+        },
+        "position": {
+          "basis": "50px",
+          "shrink": 0
+        },
         "props": {
           "alignItems": "center",
           "justify": "flex-end",
@@ -332,65 +437,46 @@
             "padding": "12px 16px"
           }
         },
-        "children": [
-          {
-            "type": "ia.input.button",
-            "meta": { "name": "CancelButton" },
-            "position": { "shrink": 0 },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\tself.view.rootContainer.handleClose()"
-                  }
-                }
-              }
-            },
-            "props": {
-              "text": "Cancel",
-              "style": { "classes": "btn btn-sm" }
-            }
-          },
-          {
-            "type": "ia.input.button",
-            "meta": { "name": "CreateButton" },
-            "position": { "shrink": 0 },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\tself.view.rootContainer.handleCreate()"
-                  }
-                }
-              }
-            },
-            "props": {
-              "text": "Create Die",
-              "style": { "classes": "btn btn-primary btn-sm" }
-            }
-          }
-        ]
+        "type": "ia.container.flex"
       }
     ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "background": "var(--mpp-surface-canvas)",
+        "borderRadius": "var(--mpp-radius-md, 8px)",
+        "height": "100%",
+        "overflow": "hidden",
+        "width": "100%"
+      }
+    },
     "scripts": {
       "customMethods": [
         {
           "name": "handleCreate",
           "params": [],
-          "script": "\tdraft = self.view.custom.editDraft or {}\n\tmeta  = draft.get('meta') or {}\n\tif not (meta.get('Code') or '').strip():\n\t\tBlueRidge.Common.Notify.toast('Code required', 'Enter a code before creating the die.', 'warning')\n\t\treturn\n\tif not (meta.get('Name') or '').strip():\n\t\tBlueRidge.Common.Notify.toast('Name required', 'Enter a name before creating the die.', 'warning')\n\t\treturn\n\tresult = BlueRidge.Parts.Tool.add(meta)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Die created')\n\tif result and result.get('Status'):\n\t\tnewId = result.get('NewId')\n\t\tsystem.perspective.sendMessage('toolRefresh', scope='page')\n\t\tif newId:\n\t\t\tsystem.perspective.sendMessage('toolSelectId', payload={'id': newId}, scope='page')\n\t\tsystem.perspective.closePopup(id='mpp-add-die')"
+          "script": "\tdraft \u003d self.view.custom.editDraft or {}\n\tmeta  \u003d draft.get(\u0027meta\u0027) or {}\n\tif not (meta.get(\u0027Code\u0027) or \u0027\u0027).strip():\n\t\tBlueRidge.Common.Notify.toast(\u0027Code required\u0027, \u0027Enter a code before creating the die.\u0027, \u0027warning\u0027)\n\t\treturn\n\tif not (meta.get(\u0027Name\u0027) or \u0027\u0027).strip():\n\t\tBlueRidge.Common.Notify.toast(\u0027Name required\u0027, \u0027Enter a name before creating the die.\u0027, \u0027warning\u0027)\n\t\treturn\n\tresult \u003d BlueRidge.Parts.Tool.add(meta)\n\tBlueRidge.Common.Ui.notifyResult(result, \u0027Die created\u0027)\n\tif result and result.get(\u0027Status\u0027):\n\t\tnewId \u003d result.get(\u0027NewId\u0027)\n\t\tsystem.perspective.sendMessage(\u0027toolRefresh\u0027, scope\u003d\u0027page\u0027)\n\t\tif newId:\n\t\t\tsystem.perspective.sendMessage(\u0027toolSelectId\u0027, payload\u003d{\u0027id\u0027: newId}, scope\u003d\u0027page\u0027)\n\t\tsystem.perspective.closePopup(id\u003d\u0027mpp-add-die\u0027)"
         },
         {
           "name": "handleClose",
           "params": [],
-          "script": "\t# Reset the draft so the next open lands on a clean form.\n\tself.view.custom.editDraft = {'meta': dict(self.view.custom.selected['meta'])}\n\tsystem.perspective.closePopup(id='mpp-add-die')"
+          "script": "\t# Reset the draft so the next open lands on a clean form.\n\t#self.view.custom.editDraft \u003d {\u0027meta\u0027: dict(self.view.custom.selected[\u0027meta\u0027])}\n\t#system.perspective.closePopup(id\u003d\u0027mpp-add-die\u0027)\n\t\n\tif str(self.view.custom.editDraft) \u003d\u003d str(self.view.custom.selected):\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-add-die\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid\u003d\"mpp-confirm-unsaved\",\n\t\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal\u003dTrue,\n\t\t\tshowCloseIcon\u003dFalse,\n\t\t\tparams\u003d{\n\t\t\t\t\"title\":   \"Discard Die?\",\n\t\t\t\t\"message\": \"You have started filling out this form. Discard before closing?\",\n\t\t\t},\n\t\t)"
         }
       ],
       "extensionFunctions": null,
-      "messageHandlers": []
-    }
+      "messageHandlers": [
+        {
+          "messageType": "confirmUnsavedResult",
+          "pageScope": true,
+          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tif action \u003d\u003d \"save\":\n\t\tself.handleCreate()\n\telif action \u003d\u003d \"discard\":\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-add-die\")",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
   }
 }

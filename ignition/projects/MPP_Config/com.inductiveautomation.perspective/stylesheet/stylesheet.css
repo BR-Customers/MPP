@@ -884,6 +884,7 @@ button {
     padding: 5px var(--mpp-space-2);
     color: var(--mpp-text-primary);
     font-size: var(--mpp-fs-sm);
+    height: 30px;
 }
 
 .psc-checkbox {
