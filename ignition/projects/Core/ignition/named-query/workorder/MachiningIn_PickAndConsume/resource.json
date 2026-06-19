@@ -32,7 +32,7 @@
     "parameters": [
       { "type": "Parameter", "identifier": "sourceLotId", "sqlType": 3 },
       { "type": "Parameter", "identifier": "cellLocationId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "queueOverrideReason", "sqlType": 12 },
+      { "type": "Parameter", "identifier": "queueOverrideReason", "sqlType": 7 },
       { "type": "Parameter", "identifier": "appUserId", "sqlType": 3 },
       { "type": "Parameter", "identifier": "terminalLocationId", "sqlType": 3 }
     ]

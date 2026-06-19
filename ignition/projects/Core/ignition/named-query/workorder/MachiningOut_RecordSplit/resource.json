@@ -32,7 +32,7 @@
     "parameters": [
       { "type": "Parameter", "identifier": "parentLotId", "sqlType": 3 },
       { "type": "Parameter", "identifier": "operationTemplateId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "splitChildrenJson", "sqlType": 12 },
+      { "type": "Parameter", "identifier": "splitChildrenJson", "sqlType": 7 },
       { "type": "Parameter", "identifier": "appUserId", "sqlType": 3 },
       { "type": "Parameter", "identifier": "terminalLocationId", "sqlType": 3 }
     ]
