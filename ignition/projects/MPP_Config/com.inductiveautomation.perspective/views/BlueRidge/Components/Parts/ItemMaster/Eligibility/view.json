@@ -2,9 +2,7 @@
   "custom": {
     "state": {
       "editDraft": {
-        "rows": [
-          ""
-        ]
+        "rows": []
       },
       "selected": {
         "rows": []
@@ -306,7 +304,7 @@
               },
               "transforms": [
                 {
-                  "code": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\topts \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.locationOptions) or []\n\tout \u003d []\n\tfor i, r in enumerate(rows):\n\t\tr \u003d r or {}\n\t\tout.append({\u0027rowIndex\u0027: i, \u0027row\u0027: r, \u0027locationOptions\u0027: opts})\n\treturn out",
+                  "code": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\t\n\tif len(rows) \u003d\u003d 0:\n\t\treturn []\n\t\n\topts \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.locationOptions) or []\n\tout \u003d []\n\tfor i, r in enumerate(rows):\n\t\tr \u003d r or {}\n\t\tout.append({\u0027rowIndex\u0027: i, \u0027row\u0027: r, \u0027locationOptions\u0027: opts})\n\treturn out",
                   "type": "script"
                 }
               ],

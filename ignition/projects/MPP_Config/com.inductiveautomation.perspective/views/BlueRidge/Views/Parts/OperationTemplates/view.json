@@ -296,7 +296,7 @@
                       }
                     },
                     "props": {
-                      "placeholder": "🔍 Search templates…",
+                      "placeholder": "Search templates…",
                       "style": {
                         "classes": "search-input"
                       }

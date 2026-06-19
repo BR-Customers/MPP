@@ -241,7 +241,8 @@ def handleSaveAll(meta, attributes, userId=None):
     )
     if not result.get("Status"):
         return None
-
+	
+	return result
     newId = result.get("NewId")
     return {
         "NewId":       newId,
