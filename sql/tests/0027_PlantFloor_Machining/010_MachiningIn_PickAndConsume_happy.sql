@@ -79,6 +79,7 @@ DELETE h FROM Lots.LotStatusHistory h
 DELETE ac FROM Lots.LotAttributeChange ac
     INNER JOIN Lots.Lot l ON l.Id = ac.LotId
     WHERE l.ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P5-CAST-TEST', N'P5-MACH-TEST'));
+DELETE eg FROM Lots.LotEventLog eg INNER JOIN Lots.Lot l ON l.Id = eg.LotId WHERE l.ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P5-CAST-TEST', N'P5-MACH-TEST'));
 DELETE FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber IN (N'P5-CAST-TEST', N'P5-MACH-TEST'));
 GO
 
