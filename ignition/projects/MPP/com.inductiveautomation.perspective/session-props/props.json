@@ -9,6 +9,12 @@
     "presence": {
       "policy": "strict"
     },
+    "printer": {
+      "code": "",
+      "endpoint": "",
+      "locationId": null,
+      "model": ""
+    },
     "terminal": {
       "defaultScreen": "",
       "isFallback": false,

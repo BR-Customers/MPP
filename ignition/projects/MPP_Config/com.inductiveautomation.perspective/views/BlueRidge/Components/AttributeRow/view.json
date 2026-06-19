@@ -1,146 +1,272 @@
 {
   "custom": {},
   "params": {
-    "index": 0,
-    "totalRows": 1,
-    "name": "",
-    "value": "",
     "dataType": "",
+    "index": 0,
+    "name": "",
+    "required": false,
+    "totalRows": 1,
     "uom": "",
-    "required": false
+    "value": ""
   },
   "propConfig": {
-    "params.index":     { "paramDirection": "input" },
-    "params.totalRows": { "paramDirection": "input" },
-    "params.name":      { "paramDirection": "input" },
-    "params.value":     { "paramDirection": "input" },
-    "params.dataType":  { "paramDirection": "input" },
-    "params.uom":       { "paramDirection": "input" },
-    "params.required":  { "paramDirection": "input" }
+    "params.dataType": {
+      "paramDirection": "input"
+    },
+    "params.index": {
+      "paramDirection": "input"
+    },
+    "params.name": {
+      "paramDirection": "input"
+    },
+    "params.required": {
+      "paramDirection": "input"
+    },
+    "params.totalRows": {
+      "paramDirection": "input"
+    },
+    "params.uom": {
+      "paramDirection": "input"
+    },
+    "params.value": {
+      "paramDirection": "input"
+    }
   },
   "props": {
-    "defaultSize": { "width": 800, "height": 56 }
+    "defaultSize": {
+      "height": 56
+    }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": { "name": "root" },
-    "props": {
-      "direction": "row",
-      "alignItems": "center",
-      "style": {
-        "padding": "8px 12px",
-        "borderBottom": "1px solid var(--mpp-border-subtle)",
-        "color": "var(--mpp-text-primary)"
-      }
-    },
     "children": [
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "Arrows" },
-        "position": { "basis": "46px", "shrink": 0 },
-        "props": { "direction": "column", "alignItems": "center", "style": { "classes": "arrows", "gap": "1px" } },
         "children": [
           {
-            "type": "ia.display.icon",
-            "meta": { "name": "Up", "tooltip": { "text": "Move Up" } },
-            "position": { "basis": "auto" },
             "events": {
               "dom": {
                 "onClick": {
-                  "config": { "script": "\tif self.view.params.index > 0:\n\t\tsystem.perspective.sendMessage('attributeMove', payload={'index': self.view.params.index, 'direction': 'up'}, scope='view')" },
+                  "config": {
+                    "script": "\tif self.view.params.index \u003e 0:\n\t\tsystem.perspective.sendMessage(\u0027attributeMove\u0027, payload\u003d{\u0027index\u0027: self.view.params.index, \u0027direction\u0027: \u0027up\u0027}, scope\u003d\u0027view\u0027)"
+                  },
                   "scope": "G",
                   "type": "script"
                 }
               }
             },
+            "meta": {
+              "name": "Up",
+              "tooltip": {
+                "text": "Move Up"
+              }
+            },
             "propConfig": {
               "props.style.classes": {
                 "binding": {
-                  "type": "expr",
-                  "config": { "expression": "if({view.params.index} = 0, 'arrow-btn arrow-btn-disabled', 'arrow-btn')" }
+                  "config": {
+                    "expression": "if({view.params.index} \u003d 0, \u0027arrow-btn arrow-btn-disabled\u0027, \u0027arrow-btn\u0027)"
+                  },
+                  "type": "expr"
                 }
               }
             },
-            "props": { "path": "material/arrow_drop_up" }
+            "props": {
+              "path": "material/arrow_drop_up"
+            },
+            "type": "ia.display.icon"
           },
           {
-            "type": "ia.display.icon",
-            "meta": { "name": "Down", "tooltip": { "text": "Move Down" } },
-            "position": { "basis": "auto" },
             "events": {
               "dom": {
                 "onClick": {
-                  "config": { "script": "\tif self.view.params.index < self.view.params.totalRows - 1:\n\t\tsystem.perspective.sendMessage('attributeMove', payload={'index': self.view.params.index, 'direction': 'down'}, scope='view')" },
+                  "config": {
+                    "script": "\tif self.view.params.index \u003c self.view.params.totalRows - 1:\n\t\tsystem.perspective.sendMessage(\u0027attributeMove\u0027, payload\u003d{\u0027index\u0027: self.view.params.index, \u0027direction\u0027: \u0027down\u0027}, scope\u003d\u0027view\u0027)"
+                  },
                   "scope": "G",
                   "type": "script"
                 }
               }
             },
+            "meta": {
+              "name": "Down",
+              "tooltip": {
+                "text": "Move Down"
+              }
+            },
             "propConfig": {
               "props.style.classes": {
                 "binding": {
-                  "type": "expr",
-                  "config": { "expression": "if({view.params.index} = {view.params.totalRows} - 1, 'arrow-btn arrow-btn-disabled', 'arrow-btn')" }
+                  "config": {
+                    "expression": "if({view.params.index} \u003d {view.params.totalRows} - 1, \u0027arrow-btn arrow-btn-disabled\u0027, \u0027arrow-btn\u0027)"
+                  },
+                  "type": "expr"
                 }
               }
             },
-            "props": { "path": "material/arrow_drop_down" }
+            "props": {
+              "path": "material/arrow_drop_down"
+            },
+            "type": "ia.display.icon"
           }
-        ]
-      },
-      {
-        "type": "ia.display.label",
-        "meta": { "name": "AttrName" },
-        "position": { "grow": 1, "basis": "0" },
-        "propConfig": {
-          "props.text": { "binding": { "type": "property", "config": { "path": "view.params.name" } } }
+        ],
+        "meta": {
+          "name": "Arrows"
         },
-        "props": {}
+        "position": {
+          "basis": "46px",
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "direction": "column",
+          "style": {
+            "classes": "arrows",
+            "gap": "1px"
+          }
+        },
+        "type": "ia.container.flex"
       },
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "ValueCell" },
-        "position": { "grow": 1, "basis": "0" },
-        "props": { "direction": "row", "alignItems": "center", "style": { "gap": "6px" } },
+        "meta": {
+          "name": "AttrName"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.name"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
         "children": [
           {
-            "type": "ia.input.text-field",
-            "meta": { "name": "Value" },
-            "position": { "basis": "auto" },
-            "propConfig": {
-              "props.text": { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.params.value" } } }
+            "meta": {
+              "name": "Value"
             },
-            "props": { "style": { "classes": "search-input", "width": "70px", "height": "32px", "boxSizing": "border-box" } }
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.params.value"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "boxSizing": "border-box",
+                "classes": "search-input",
+                "height": "32px",
+                "width": "70px"
+              }
+            },
+            "type": "ia.input.text-field"
           },
           {
-            "type": "ia.display.label",
-            "meta": { "name": "DataType" },
-            "position": { "basis": "auto" },
-            "propConfig": {
-              "props.text": { "binding": { "type": "property", "config": { "path": "view.params.dataType" } } }
+            "meta": {
+              "name": "DataType"
             },
-            "props": { "style": { "fontSize": "9px", "color": "var(--mpp-text-tertiary)", "whiteSpace": "nowrap" } }
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.dataType"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-tertiary)",
+                "fontSize": "9px",
+                "whiteSpace": "nowrap"
+              }
+            },
+            "type": "ia.display.label"
           }
-        ]
+        ],
+        "meta": {
+          "name": "ValueCell"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "gap": "6px"
+          }
+        },
+        "type": "ia.container.flex"
       },
       {
-        "type": "ia.display.label",
-        "meta": { "name": "Uom" },
-        "position": { "basis": "70px", "shrink": 0 },
-        "propConfig": {
-          "props.text": { "binding": { "type": "property", "config": { "path": "view.params.uom" } } }
+        "meta": {
+          "name": "Uom"
         },
-        "props": {}
+        "position": {
+          "basis": "70px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.uom"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "type": "ia.display.label"
       },
       {
-        "type": "ia.input.checkbox",
-        "meta": { "name": "Required" },
-        "position": { "basis": "60px", "shrink": 0 },
-        "propConfig": {
-          "props.selected": { "binding": { "type": "property", "config": { "bidirectional": true, "path": "view.params.required" } } }
+        "meta": {
+          "name": "Required"
         },
-        "props": { "text": "" }
+        "position": {
+          "basis": "60px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.selected": {
+            "binding": {
+              "config": {
+                "bidirectional": true,
+                "path": "view.params.required"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "text": ""
+        },
+        "type": "ia.input.checkbox"
       }
-    ]
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "color": "var(--mpp-text-primary)",
+        "padding": "8px 12px"
+      }
+    },
+    "type": "ia.container.flex"
   }
 }

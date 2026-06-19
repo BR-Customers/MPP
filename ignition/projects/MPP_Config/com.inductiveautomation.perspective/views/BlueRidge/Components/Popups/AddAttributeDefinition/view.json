@@ -2,41 +2,98 @@
   "custom": {
     "editDraft": {
       "Code": "",
-      "Name": "",
       "DataType": "String",
-      "IsRequired": false
+      "IsRequired": false,
+      "Name": ""
+    },
+    "selected": {
+      "Cose": "",
+      "DateType": "String",
+      "IsRequired": false,
+      "Name": ""
     }
   },
   "params": {
     "toolTypeId": 0
   },
   "propConfig": {
-    "params.toolTypeId": { "paramDirection": "input" }
+    "custom.selected": {
+      "persistent": true
+    },
+    "params.toolTypeId": {
+      "paramDirection": "input"
+    }
   },
   "props": {
     "defaultSize": {
-      "width": 480,
-      "height": 380
+      "height": 380,
+      "width": 480
     }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": { "name": "root" },
-    "props": {
-      "direction": "column",
-      "style": {
-        "background": "var(--mpp-surface-canvas)",
-        "borderRadius": "var(--mpp-radius-md, 8px)",
-        "height": "100%",
-        "overflow": "hidden",
-        "width": "100%"
-      }
-    },
     "children": [
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "HeaderBar" },
-        "position": { "basis": "50px", "shrink": 0 },
+        "children": [
+          {
+            "meta": {
+              "name": "TitleLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "modal-title",
+                "fontSize": "14px",
+                "fontWeight": "600"
+              },
+              "text": "New Attribute Definition"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "Spacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleClose()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseIcon",
+              "tooltip": {
+                "text": "Close"
+              }
+            },
+            "props": {
+              "path": "mpp/cancel",
+              "style": {
+                "classes": "modal-close",
+                "cursor": "pointer",
+                "height": "18px",
+                "width": "18px"
+              }
+            },
+            "type": "ia.display.icon"
+          }
+        ],
+        "meta": {
+          "name": "HeaderBar"
+        },
+        "position": {
+          "basis": "50px",
+          "shrink": 0
+        },
         "props": {
           "alignItems": "center",
           "style": {
@@ -47,169 +104,306 @@
             "padding": "0 16px"
           }
         },
-        "children": [
-          {
-            "type": "ia.display.label",
-            "meta": { "name": "TitleLabel" },
-            "props": {
-              "text": "New Attribute Definition",
-              "style": { "classes": "modal-title", "fontSize": "14px", "fontWeight": "600" }
-            }
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "Spacer" },
-            "position": { "grow": 1 }
-          },
-          {
-            "type": "ia.display.icon",
-            "meta": { "name": "CloseIcon", "tooltip": { "text": "Close" } },
-            "events": {
-              "dom": {
-                "onClick": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": { "script": "\tsystem.perspective.closePopup(id='mpp-add-attr-def')" }
-                }
-              }
-            },
-            "props": {
-              "path": "mpp/cancel",
-              "style": { "classes": "modal-close", "cursor": "pointer", "height": "18px", "width": "18px" }
-            }
-          }
-        ]
+        "type": "ia.container.flex"
       },
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "FormBody" },
-        "position": { "grow": 1 },
-        "props": {
-          "direction": "column",
-          "style": { "gap": "12px", "overflowY": "auto", "padding": "16px" }
-        },
         "children": [
           {
-            "type": "ia.container.flex",
-            "meta": { "name": "CodeField" },
-            "props": { "direction": "column", "style": { "gap": "4px" } },
             "children": [
               {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
-                "props": { "text": "Code", "style": { "classes": "field-label" } }
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Code"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.text-field",
-                "meta": { "name": "Input" },
+                "meta": {
+                  "name": "Input"
+                },
                 "propConfig": {
                   "props.text": {
                     "binding": {
-                      "type": "property",
-                      "config": { "bidirectional": true, "path": "view.custom.editDraft.Code" }
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.Code"
+                      },
+                      "type": "property"
                     }
                   }
                 },
                 "props": {
                   "placeholder": "e.g. CYCLE_TIME",
-                  "style": { "boxSizing": "border-box", "classes": "search-input", "width": "100%" }
-                }
+                  "style": {
+                    "boxSizing": "border-box",
+                    "classes": "search-input",
+                    "width": "100%"
+                  }
+                },
+                "type": "ia.input.text-field"
               }
-            ]
+            ],
+            "meta": {
+              "name": "CodeField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
           },
           {
-            "type": "ia.container.flex",
-            "meta": { "name": "NameField" },
-            "props": { "direction": "column", "style": { "gap": "4px" } },
             "children": [
               {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
-                "props": { "text": "Name", "style": { "classes": "field-label" } }
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Name"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.text-field",
-                "meta": { "name": "Input" },
+                "meta": {
+                  "name": "Input"
+                },
                 "propConfig": {
                   "props.text": {
                     "binding": {
-                      "type": "property",
-                      "config": { "bidirectional": true, "path": "view.custom.editDraft.Name" }
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.Name"
+                      },
+                      "type": "property"
                     }
                   }
                 },
                 "props": {
                   "placeholder": "e.g. Cycle Time",
-                  "style": { "boxSizing": "border-box", "classes": "search-input", "width": "100%" }
-                }
+                  "style": {
+                    "boxSizing": "border-box",
+                    "classes": "search-input",
+                    "width": "100%"
+                  }
+                },
+                "type": "ia.input.text-field"
               }
-            ]
+            ],
+            "meta": {
+              "name": "NameField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
           },
           {
-            "type": "ia.container.flex",
-            "meta": { "name": "DataTypeField" },
-            "props": { "direction": "column", "style": { "gap": "4px" } },
             "children": [
               {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
-                "props": { "text": "Data Type", "style": { "classes": "field-label" } }
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Data Type"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.dropdown",
-                "meta": { "name": "Input" },
+                "meta": {
+                  "name": "Input"
+                },
                 "propConfig": {
                   "props.value": {
                     "binding": {
-                      "type": "property",
-                      "config": { "bidirectional": true, "path": "view.custom.editDraft.DataType" }
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.DataType"
+                      },
+                      "type": "property"
                     }
                   }
                 },
                 "props": {
                   "options": [
-                    { "label": "String",  "value": "String" },
-                    { "label": "Integer", "value": "Integer" },
-                    { "label": "Decimal", "value": "Decimal" },
-                    { "label": "Boolean", "value": "Boolean" },
-                    { "label": "Date",    "value": "Date" }
+                    {
+                      "label": "String",
+                      "value": "String"
+                    },
+                    {
+                      "label": "Integer",
+                      "value": "Integer"
+                    },
+                    {
+                      "label": "Decimal",
+                      "value": "Decimal"
+                    },
+                    {
+                      "label": "Boolean",
+                      "value": "Boolean"
+                    },
+                    {
+                      "label": "Date",
+                      "value": "Date"
+                    }
                   ],
-                  "style": { "boxSizing": "border-box", "classes": "select", "width": "100%" }
-                }
+                  "style": {
+                    "boxSizing": "border-box",
+                    "classes": "select",
+                    "width": "100%"
+                  }
+                },
+                "type": "ia.input.dropdown"
               }
-            ]
+            ],
+            "meta": {
+              "name": "DataTypeField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
           },
           {
-            "type": "ia.container.flex",
-            "meta": { "name": "RequiredField" },
-            "props": { "direction": "row", "alignItems": "center", "style": { "gap": "8px" } },
             "children": [
               {
-                "type": "ia.input.checkbox",
-                "meta": { "name": "Input" },
+                "meta": {
+                  "name": "Input"
+                },
                 "propConfig": {
                   "props.selected": {
                     "binding": {
-                      "type": "property",
-                      "config": { "bidirectional": true, "path": "view.custom.editDraft.IsRequired" }
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.IsRequired"
+                      },
+                      "type": "property"
                     }
                   }
                 },
-                "props": {}
+                "type": "ia.input.checkbox"
               },
               {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
-                "props": { "text": "Required", "style": { "classes": "field-label" } }
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Required"
+                },
+                "type": "ia.display.label"
               }
-            ]
+            ],
+            "meta": {
+              "name": "RequiredField"
+            },
+            "props": {
+              "alignItems": "center",
+              "style": {
+                "gap": "8px"
+              }
+            },
+            "type": "ia.container.flex"
           }
-        ]
+        ],
+        "meta": {
+          "name": "FormBody"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "12px",
+            "overflowY": "auto",
+            "padding": "16px"
+          }
+        },
+        "type": "ia.container.flex"
       },
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "FooterBar" },
-        "position": { "basis": "50px", "shrink": 0 },
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleClose()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CancelButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-sm"
+              },
+              "text": "Cancel"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleCreate()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CreateButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-primary btn-sm"
+              },
+              "text": "Create"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "FooterBar"
+        },
+        "position": {
+          "basis": "50px",
+          "shrink": 0
+        },
         "props": {
           "alignItems": "center",
           "justify": "flex-end",
@@ -221,50 +415,46 @@
             "padding": "12px 16px"
           }
         },
-        "children": [
-          {
-            "type": "ia.input.button",
-            "meta": { "name": "CancelButton" },
-            "position": { "shrink": 0 },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": { "script": "\tsystem.perspective.closePopup(id='mpp-add-attr-def')" }
-                }
-              }
-            },
-            "props": { "text": "Cancel", "style": { "classes": "btn btn-sm" } }
-          },
-          {
-            "type": "ia.input.button",
-            "meta": { "name": "CreateButton" },
-            "position": { "shrink": 0 },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": { "script": "\tself.view.rootContainer.handleCreate()" }
-                }
-              }
-            },
-            "props": { "text": "Create", "style": { "classes": "btn btn-primary btn-sm" } }
-          }
-        ]
+        "type": "ia.container.flex"
       }
     ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "background": "var(--mpp-surface-canvas)",
+        "borderRadius": "var(--mpp-radius-md, 8px)",
+        "height": "100%",
+        "overflow": "hidden",
+        "width": "100%"
+      }
+    },
     "scripts": {
       "customMethods": [
         {
           "name": "handleCreate",
           "params": [],
-          "script": "\ttoolTypeId = self.view.params.toolTypeId\n\tif not toolTypeId:\n\t\tBlueRidge.Common.Notify.toast('Tool type required', 'Pick a tool first so the definition can be scoped.', 'warning')\n\t\treturn\n\tdraft = self.view.custom.editDraft or {}\n\tresult = BlueRidge.Parts.Tool.addAttributeDefinition(\n\t\ttoolTypeId,\n\t\tdraft.get('Code'),\n\t\tdraft.get('Name'),\n\t\tdraft.get('DataType'),\n\t\tdraft.get('IsRequired'),\n\t)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Attribute definition created')\n\tif result and result.get('Status'):\n\t\tsystem.perspective.sendMessage('attributeDefinitionsChanged', payload={'newId': result.get('NewId')}, scope='page')\n\t\tsystem.perspective.closePopup(id='mpp-add-attr-def')"
+          "script": "\ttoolTypeId \u003d self.view.params.toolTypeId\n\tif not toolTypeId:\n\t\tBlueRidge.Common.Notify.toast(\u0027Tool type required\u0027, \u0027Pick a tool first so the definition can be scoped.\u0027, \u0027warning\u0027)\n\t\treturn\n\tdraft \u003d self.view.custom.editDraft or {}\n\tresult \u003d BlueRidge.Parts.Tool.addAttributeDefinition(\n\t\ttoolTypeId,\n\t\tdraft.get(\u0027Code\u0027),\n\t\tdraft.get(\u0027Name\u0027),\n\t\tdraft.get(\u0027DataType\u0027),\n\t\tdraft.get(\u0027IsRequired\u0027),\n\t)\n\tBlueRidge.Common.Ui.notifyResult(result, \u0027Attribute definition created\u0027)\n\tif result and result.get(\u0027Status\u0027):\n\t\t#system.perspective.sendMessage(\u0027attributeDefinitionsChanged\u0027, payload\u003d{\u0027newId\u0027: result.get(\u0027NewId\u0027)}, scope\u003d\u0027page\u0027)\n\t\tsystem.perspective.sendMessage(\u0027refreshAttrOptions\u0027)\n\t\tsystem.perspective.closePopup(id\u003d\u0027mpp-add-attr-def\u0027)"
+        },
+        {
+          "name": "handleClose",
+          "params": [],
+          "script": "\tif str(self.view.custom.editDraft) \u003d\u003d str(self.view.custom.selected):\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-add-attr-def\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid\u003d\"mpp-confirm-unsaved\",\n\t\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal\u003dTrue,\n\t\t\tshowCloseIcon\u003dFalse,\n\t\t\tparams\u003d{\n\t\t\t\t\"title\": \"Unsaved Changes\",\n\t\t\t\t\"message\": \"You have unsaved changes to this Attribute Definition. Save before closing?\"\n\t\t\t}\n\t\t)"
         }
       ],
       "extensionFunctions": null,
-      "messageHandlers": []
-    }
+      "messageHandlers": [
+        {
+          "messageType": "confirmUnsavedResult",
+          "pageScope": true,
+          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tif action \u003d\u003d \"save\":\n\t\tself.handleCreate()\n\telif action \u003d\u003d \"discard\":\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-add-attr-def\")",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
   }
 }

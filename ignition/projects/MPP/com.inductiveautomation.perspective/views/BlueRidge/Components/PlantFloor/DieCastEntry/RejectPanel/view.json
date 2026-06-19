@@ -89,7 +89,9 @@
               "name": "DefectDropdown"
             },
             "props": {
-              "placeholder": "Select a defect code"
+              "placeholder": {
+                "text": "Select a defect code"
+              }
             },
             "propConfig": {
               "props.options": {
@@ -104,9 +106,9 @@
                 "binding": {
                   "type": "property",
                   "config": {
-                    "path": "view.custom.draft.defectCodeId"
-                  },
-                  "bidirectional": true
+                    "path": "view.custom.draft.defectCodeId",
+                    "bidirectional": true
+                  }
                 }
               }
             }
@@ -139,25 +141,24 @@
             }
           },
           {
-            "type": "ia.input.numeric-entry-field",
+            "type": "ia.input.text-field",
             "version": 0,
             "meta": {
               "name": "QuantityInput"
             },
             "props": {
-              "value": 0,
               "style": {
                 "classes": "pf-field-input"
               }
             },
             "propConfig": {
-              "props.value": {
+              "props.text": {
                 "binding": {
                   "type": "property",
                   "config": {
-                    "path": "view.custom.draft.quantity"
-                  },
-                  "bidirectional": true
+                    "path": "view.custom.draft.quantity",
+                    "bidirectional": true
+                  }
                 }
               }
             }
@@ -204,7 +205,7 @@
         {
           "name": "submitReject",
           "params": [],
-          "script": "\tlotId = self.view.params.lotId\n\tif lotId is None:\n\t\treturn\n\tdraft = dict(self.view.custom.draft)\n\tdraft[\"lotId\"] = lotId\n\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tresult = BlueRidge.Workorder.RejectEvent.record(draft, appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle=\"Reject recorded\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"defectCodeId\": None, \"quantity\": 0, \"chargeToArea\": None, \"remarks\": None}\n\t\tsystem.perspective.sendMessage(\"rejectRecorded\", {\"lotId\": lotId}, scope=\"page\")"
+          "script": "\tlotId = self.view.params.lotId\n\tif lotId is None:\n\t\treturn\n\tdraft = dict(self.view.custom.draft)\n\tdraft[\"lotId\"] = lotId\n\tdraft[\"quantity\"] = BlueRidge.Common.Util.toIntOrNone(draft.get(\"quantity\"))\n\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tresult = BlueRidge.Workorder.RejectEvent.record(draft, appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle=\"Reject recorded\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"defectCodeId\": None, \"quantity\": 0, \"chargeToArea\": None, \"remarks\": None}\n\t\tsystem.perspective.sendMessage(\"rejectRecorded\", {\"lotId\": lotId}, scope=\"page\")"
         }
       ]
     }

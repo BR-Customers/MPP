@@ -173,7 +173,7 @@
                   "type": "script",
                   "scope": "G",
                   "config": {
-                    "script": "\tself.session.custom.user = {\"appUserId\": None, \"initials\": \"\", \"displayName\": \"\", \"ignitionRole\": \"\"}\n\tself.session.custom.appUserId = None\n\tsystem.perspective.closePopup(self.view.params.popupId)\n\tsystem.perspective.navigate(\"/shop-floor/initials\")"
+                    "script": "\tself.session.custom.user = {\"appUserId\": None, \"initials\": \"\", \"displayName\": \"\", \"ignitionRole\": \"\"}\n\tself.session.custom.appUserId = None\n\tsystem.perspective.closePopup(self.view.params.popupId)\n\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
                   }
                 }
               }

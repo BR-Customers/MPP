@@ -16,6 +16,7 @@ def onStartup(session):
 			"defaultScreen":      "",
 			"isFallback":         True,
 		}
+		session.custom.printer = {"locationId": None, "code": "", "endpoint": "", "model": ""}
 		return
 	session.custom.terminal = {
 		"terminalLocationId": term.get("TerminalLocationId"),
@@ -25,4 +26,14 @@ def onStartup(session):
 		"zoneName":           term.get("ZoneName"),
 		"defaultScreen":      term.get("DefaultScreen"),
 		"isFallback":         bool(term.get("IsFallback")),
+	}
+	# Arc 2 Phase 4: resolve the terminal's child Printer into session.custom.printer
+	# (one DB round-trip per session; the LTT dispatch path reads it). Empty dict
+	# when the terminal has no Printer child (HasPrinter false / FALLBACK terminal).
+	prn = BlueRidge.Location.Terminal.getPrinter(term.get("TerminalLocationId")) or {}
+	session.custom.printer = {
+		"locationId": prn.get("locationId"),
+		"code":       prn.get("code") or "",
+		"endpoint":   prn.get("endpoint") or "",
+		"model":      prn.get("model") or "",
 	}

@@ -396,3 +396,34 @@ def emptyMeta():
         "countryOfOrigin":  "",
         "maxParts":         None,
     }
+
+
+def getMaxParts(itemId):
+    """Arc 2 Phase 4. Thin read of the OI-12 per-Item lineside cap.
+       Returns {MaxParts} (MaxParts None = uncapped) or None. The cap is
+       enforced server-side in Lots.Lot_MoveToValidated; this drives the
+       Movement Scan capacity hint only."""
+    BlueRidge.Common.Util.log("itemId=%s" % itemId)
+    return BlueRidge.Common.Db.execOne("parts/Item_GetMaxParts", {"itemId": itemId})
+
+
+def getForDropdown():
+    """[{label: PartNumber, value: Id}] for the Receiving PartNumber dropdown
+       (allowCustomOptions). Built off getAll()."""
+    return [{"label": r.get("PartNumber"), "value": r.get("Id")} for r in (getAll() or [])]
+
+
+def getByPartNumber(partNumber):
+    """Resolve an active Item by exact PartNumber (case-insensitive). Returns a
+       dict or None. Used by the Receiving Dock scan-or-pick field to turn a
+       scanned/typed part number into an itemId. Scans getAll() (modest list)
+       rather than a dedicated NQ."""
+    BlueRidge.Common.Util.log("partNumber=%s" % partNumber)
+    target = (BlueRidge.Common.Util.extractQualifiedValues(partNumber) or "")
+    target = ("%s" % target).strip().upper()
+    if not target:
+        return None
+    for r in (getAll() or []):
+        if ("%s" % (r.get("PartNumber") or "")).strip().upper() == target:
+            return r
+    return None

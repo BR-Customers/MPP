@@ -1,324 +1,523 @@
 {
   "custom": {
-    "active": {
-      "Id": null,
-      "CellName": "",
-      "AssignedAt": null,
-      "AssignedByInitials": "",
-      "ReleasedByInitials": "",
-      "Notes": "",
-      "ReleasedAt": null,
-      "IsActive": false
-    },
-    "rows": [],
-    "cellOptions": [],
-    "selectedCellId": null,
-    "mountNotes": ""
+    "mountNotes": "",
+    "selectedCellId": null
   },
   "params": {
+    "deprecated": false,
     "value": null
   },
   "propConfig": {
-    "params.value": {
-      "paramDirection": "input",
-      "onChange": {
-        "enabled": true,
-        "script": "\tself.rootContainer.refresh()"
-      }
-    },
-    "custom.rows": {
-      "binding": {
-        "type": "expr",
-        "config": {
-          "expression": "runScript(\"BlueRidge.Parts.Tool.getAssignmentInstancesForTool\", 0, {view.params.value})"
-        }
-      }
-    },
     "custom.active": {
       "binding": {
-        "type": "expr",
         "config": {
           "expression": "runScript(\"BlueRidge.Parts.Tool.getActiveAssignmentForToolOrEmpty\", 0, {view.params.value})"
-        }
+        },
+        "type": "expr"
       }
     },
     "custom.cellOptions": {
       "binding": {
-        "type": "expr",
         "config": {
           "expression": "runScript(\"BlueRidge.Parts.Tool.getCellsForDropdown\", 0, {view.params.value})"
-        }
+        },
+        "type": "expr"
       }
+    },
+    "custom.rows": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Tool.getAssignmentInstancesForTool\", 0, {view.params.value})"
+        },
+        "type": "expr"
+      }
+    },
+    "params.deprecated": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.value": {
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.rootContainer.refresh()"
+      },
+      "paramDirection": "input"
     }
   },
   "props": {
-    "defaultSize": { "height": 360, "width": 800 }
+    "defaultSize": {
+      "height": 360
+    }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": { "name": "root" },
-    "scripts": {
-      "customMethods": [
-        {
-          "name": "refresh",
-          "params": [],
-          "script": "\ttoolId = self.view.params.value\n\tself.view.custom.rows        = BlueRidge.Parts.Tool.getAssignmentInstancesForTool(toolId)\n\tself.view.custom.active      = BlueRidge.Parts.Tool.getActiveAssignmentForToolOrEmpty(toolId)\n\tself.view.custom.cellOptions = BlueRidge.Parts.Tool.getCellsForDropdown(toolId)"
-        },
-        {
-          "name": "handleMount",
-          "params": [],
-          "script": "\ttoolId = self.view.params.value\n\tif not toolId:\n\t\tBlueRidge.Common.Notify.toast(\"No tool selected\", \"Pick a tool first.\", \"warning\")\n\t\treturn\n\tcellId = self.view.custom.selectedCellId\n\tif cellId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No cell selected\", \"Pick a cell to mount on.\", \"warning\")\n\t\treturn\n\tnotes = self.view.custom.mountNotes\n\tresult = BlueRidge.Parts.Tool.assignToCell(toolId, cellId, notes)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tool mounted\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.selectedCellId = None\n\t\tself.view.custom.mountNotes = \"\"\n\t\tself.refresh()"
-        },
-        {
-          "name": "handleRelease",
-          "params": [],
-          "script": "\ttoolId = self.view.params.value\n\tif not toolId:\n\t\treturn\n\tresult = BlueRidge.Parts.Tool.releaseAssignment(toolId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tool released\")\n\tif result and result.get(\"Status\"):\n\t\tself.refresh()"
-        }
-      ],
-      "extensionFunctions": null,
-      "messageHandlers": [
-        {
-          "messageType": "toolDataChanged",
-          "pageScope": true,
-          "sessionScope": false,
-          "viewScope": false,
-          "script": "\tsection = (payload or {}).get('section')\n\tif section and section != 'assignments':\n\t\treturn\n\tself.refresh()"
-        }
-      ]
-    },
-    "props": {
-      "direction": "column",
-      "style": {
-        "gap": "10px",
-        "height": "100%"
-      }
-    },
     "children": [
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "ActiveMountBanner" },
-        "position": { "basis": "auto", "shrink": 0 },
-        "propConfig": {
-          "position.display": {
-            "binding": {
-              "type": "expr",
-              "config": {
-                "expression": "!isNull({view.custom.active.Id})"
-              }
-            }
-          }
-        },
-        "props": {
-          "direction": "row",
-          "alignItems": "center",
-          "style": {
-            "gap": "10px",
-            "padding": "10px 12px",
-            "background": "var(--mpp-state-good-bg)",
-            "border": "1px solid var(--mpp-state-good-border)",
-            "borderRadius": "var(--mpp-radius-sm)"
-          }
-        },
         "children": [
           {
-            "type": "ia.container.flex",
-            "meta": { "name": "BannerTextStack" },
-            "position": { "grow": 1 },
-            "props": { "direction": "column" },
             "children": [
               {
-                "type": "ia.display.label",
-                "meta": { "name": "LabelCurrentMount" },
+                "meta": {
+                  "name": "LabelCurrentMount"
+                },
                 "propConfig": {
                   "props.text": {
                     "binding": {
-                      "type": "expr",
                       "config": {
-                        "expression": "'Mounted on ' + if(isNull({view.custom.active.CellName}), '-', toStr({view.custom.active.CellName}))"
-                      }
+                        "expression": "\u0027Mounted on \u0027 + if(isNull({view.custom.active.CellName}), \u0027-\u0027, toStr({view.custom.active.CellName}))"
+                      },
+                      "type": "expr"
                     }
                   }
                 },
                 "props": {
-                  "text": "",
                   "style": {
+                    "color": "var(--mpp-state-good-fg)",
                     "fontSize": "13px",
-                    "fontWeight": "600",
-                    "color": "var(--mpp-state-good-fg)"
+                    "fontWeight": "600"
                   }
-                }
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.display.label",
-                "meta": { "name": "LabelAssignedAt" },
+                "meta": {
+                  "name": "LabelAssignedAt"
+                },
                 "propConfig": {
                   "props.text": {
                     "binding": {
-                      "type": "expr",
                       "config": {
-                        "expression": "'Assigned ' + if(isNull({view.custom.active.AssignedAt}), '-', toStr({view.custom.active.AssignedAt})) + ' by ' + if(isNull({view.custom.active.AssignedByInitials}), '-', toStr({view.custom.active.AssignedByInitials}))"
-                      }
+                        "expression": "\u0027Assigned \u0027 + if(isNull({view.custom.active.AssignedAt}), \u0027-\u0027, toStr({view.custom.active.AssignedAt})) + \u0027 by \u0027 + if(isNull({view.custom.active.AssignedByInitials}), \u0027-\u0027, toStr({view.custom.active.AssignedByInitials}))"
+                      },
+                      "type": "expr"
                     }
                   }
                 },
                 "props": {
-                  "text": "",
                   "style": {
-                    "fontSize": "11px",
-                    "color": "var(--mpp-text-muted)"
+                    "color": "var(--mpp-text-muted)",
+                    "fontSize": "11px"
                   }
-                }
+                },
+                "type": "ia.display.label"
               }
-            ]
+            ],
+            "meta": {
+              "name": "BannerTextStack"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "direction": "column"
+            },
+            "type": "ia.container.flex"
           },
           {
-            "type": "ia.input.button",
-            "meta": { "name": "BtnRelease" },
-            "position": { "shrink": 0 },
             "events": {
               "component": {
                 "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
                   "config": {
                     "script": "\tself.view.rootContainer.handleRelease()"
-                  }
+                  },
+                  "scope": "G",
+                  "type": "script"
                 }
               }
             },
+            "meta": {
+              "name": "BtnRelease"
+            },
+            "position": {
+              "shrink": 0
+            },
             "props": {
-              "text": "Release",
-              "style": { "classes": "btn btn-sm btn-danger" }
-            }
+              "style": {
+                "classes": "btn btn-sm btn-danger"
+              },
+              "text": "Release"
+            },
+            "type": "ia.input.button"
           }
-        ]
-      },
-      {
-        "type": "ia.container.flex",
-        "meta": { "name": "MountZone" },
-        "position": { "basis": "auto", "shrink": 0 },
+        ],
+        "meta": {
+          "name": "ActiveMountBanner"
+        },
+        "position": {
+          "shrink": 0
+        },
         "propConfig": {
           "position.display": {
             "binding": {
-              "type": "expr",
               "config": {
-                "expression": "isNull({view.custom.active.Id})"
-              }
+                "expression": "!isNull({view.custom.active.Id})"
+              },
+              "type": "expr"
             }
           }
         },
         "props": {
-          "direction": "row",
-          "alignItems": "flex-end",
+          "alignItems": "center",
           "style": {
+            "background": "var(--mpp-state-good-bg)",
+            "border": "1px solid var(--mpp-state-good-border)",
+            "borderRadius": "var(--mpp-radius-sm)",
             "gap": "10px",
-            "padding": "10px 12px",
-            "background": "var(--mpp-surface-card)",
-            "border": "1px solid var(--mpp-border-subtle)",
-            "borderRadius": "var(--mpp-radius-sm)"
+            "padding": "10px 12px"
           }
         },
+        "type": "ia.container.flex"
+      },
+      {
         "children": [
           {
-            "type": "ia.container.flex",
-            "meta": { "name": "CellField" },
-            "position": { "grow": 1, "basis": "0" },
-            "props": { "direction": "column", "style": { "gap": "4px" } },
             "children": [
               {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
-                "props": { "text": "Cell", "style": { "classes": "field-label" } }
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Cell"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.dropdown",
-                "meta": { "name": "CellDropdown" },
+                "meta": {
+                  "name": "CellDropdown"
+                },
                 "propConfig": {
+                  "props.enabled": {
+                    "binding": {
+                      "config": {
+                        "expression": "!{view.params.deprecated}"
+                      },
+                      "type": "expr"
+                    }
+                  },
                   "props.options": {
                     "binding": {
-                      "type": "property",
-                      "config": { "path": "view.custom.cellOptions" }
+                      "config": {
+                        "path": "view.custom.cellOptions"
+                      },
+                      "type": "property"
                     }
                   },
                   "props.value": {
                     "binding": {
-                      "type": "property",
-                      "config": { "bidirectional": true, "path": "view.custom.selectedCellId" }
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.selectedCellId"
+                      },
+                      "type": "property"
                     }
                   }
                 },
                 "props": {
                   "placeholder": "Select a cell",
-                  "style": { "boxSizing": "border-box", "classes": "select", "width": "100%" }
-                }
+                  "style": {
+                    "boxSizing": "border-box",
+                    "classes": "select",
+                    "width": "100%"
+                  }
+                },
+                "type": "ia.input.dropdown"
               }
-            ]
+            ],
+            "meta": {
+              "name": "CellField"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
           },
           {
-            "type": "ia.container.flex",
-            "meta": { "name": "NotesField" },
-            "position": { "grow": 1, "basis": "0" },
-            "props": { "direction": "column", "style": { "gap": "4px" } },
             "children": [
               {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
-                "props": { "text": "Notes", "style": { "classes": "field-label" } }
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Notes"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.text-field",
-                "meta": { "name": "NotesInput" },
+                "meta": {
+                  "name": "NotesInput"
+                },
                 "propConfig": {
+                  "props.enabled": {
+                    "binding": {
+                      "config": {
+                        "expression": "!{view.params.deprecated}"
+                      },
+                      "type": "expr"
+                    }
+                  },
                   "props.text": {
                     "binding": {
-                      "type": "property",
-                      "config": { "bidirectional": true, "path": "view.custom.mountNotes" }
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.mountNotes"
+                      },
+                      "type": "property"
                     }
                   }
                 },
                 "props": {
                   "placeholder": "Optional",
-                  "style": { "boxSizing": "border-box", "classes": "search-input", "width": "100%" }
-                }
-              }
-            ]
-          },
-          {
-            "type": "ia.input.button",
-            "meta": { "name": "BtnMount" },
-            "position": { "shrink": 0 },
-            "propConfig": {
-              "props.enabled": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "!isNull({view.custom.selectedCellId})"
+                  "style": {
+                    "boxSizing": "border-box",
+                    "classes": "search-input",
+                    "width": "100%"
                   }
-                }
+                },
+                "type": "ia.input.text-field"
+              }
+            ],
+            "meta": {
+              "name": "NotesField"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px"
               }
             },
+            "type": "ia.container.flex"
+          },
+          {
             "events": {
               "component": {
                 "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
                   "config": {
                     "script": "\tself.view.rootContainer.handleMount()"
-                  }
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "BtnMount"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "config": {
+                    "expression": "!isNull({view.custom.selectedCellId})"
+                  },
+                  "type": "expr"
                 }
               }
             },
             "props": {
-              "text": "Mount",
-              "style": { "classes": "btn btn-primary btn-sm" }
+              "style": {
+                "classes": "btn btn-primary btn-sm"
+              },
+              "text": "Mount"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "MountZone"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "isNull({view.custom.active.Id})"
+              },
+              "type": "expr"
             }
           }
-        ]
+        },
+        "props": {
+          "alignItems": "flex-end",
+          "style": {
+            "background": "var(--mpp-surface-card)",
+            "border": "1px solid var(--mpp-border-subtle)",
+            "borderRadius": "var(--mpp-radius-sm)",
+            "gap": "10px",
+            "padding": "10px 12px"
+          }
+        },
+        "type": "ia.container.flex"
       },
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "DataPanel" },
-        "position": { "grow": 1 },
+        "children": [
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "ColCell"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "text": "Cell"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "ColAssignedAt"
+                },
+                "position": {
+                  "basis": "140px",
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "Assigned"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "ColReleasedAt"
+                },
+                "position": {
+                  "basis": "140px",
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "Released / Active"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "ColAssignedBy"
+                },
+                "position": {
+                  "basis": "90px",
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "By"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "ColReleasedBy"
+                },
+                "position": {
+                  "basis": "90px",
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "Released By"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "ColNotes"
+                },
+                "position": {
+                  "basis": "160px",
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "Notes"
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "TableHeader"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "alignItems": "center",
+              "style": {
+                "background": "var(--mpp-surface-card)",
+                "borderBottom": "1px solid var(--mpp-border-subtle)",
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "11px",
+                "fontWeight": "600",
+                "gap": "8px",
+                "letterSpacing": "0.05em",
+                "padding": "8px 12px",
+                "textTransform": "uppercase"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "Rows"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "propConfig": {
+              "props.instances": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.rows"
+                  },
+                  "transforms": [
+                    {
+                      "code": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\tout \u003d []\n\tfor inst in rows:\n\t\tinst \u003d inst or {}\n\t\tout.append({\"assignment\": inst.get(\"assignment\") or {}})\n\treturn out",
+                      "type": "script"
+                    }
+                  ],
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "elementPosition": {
+                "basis": "48px",
+                "shrink": 0
+              },
+              "path": "BlueRidge/Components/Parts/Tools/_Tools/AssignmentRow",
+              "style": {
+                "overflowY": "auto"
+              },
+              "useDefaultViewWidth": false
+            },
+            "type": "ia.display.flex-repeater"
+          }
+        ],
+        "meta": {
+          "name": "DataPanel"
+        },
+        "position": {
+          "grow": 1
+        },
         "props": {
           "direction": "column",
           "style": {
@@ -327,64 +526,48 @@
             "padding": "0"
           }
         },
-        "children": [
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "TableHeader" },
-            "position": { "basis": "auto", "shrink": 0 },
-            "props": {
-              "direction": "row",
-              "alignItems": "center",
-              "style": {
-                "background": "var(--mpp-surface-card)",
-                "borderBottom": "1px solid var(--mpp-border-subtle)",
-                "color": "var(--mpp-text-secondary)",
-                "fontSize": "11px",
-                "fontWeight": "600",
-                "textTransform": "uppercase",
-                "letterSpacing": "0.05em",
-                "padding": "8px 12px",
-                "gap": "8px"
-              }
-            },
-            "children": [
-              { "type": "ia.display.label", "meta": { "name": "ColCell" },       "position": { "basis": "0", "grow": 1 },        "props": { "text": "Cell" } },
-              { "type": "ia.display.label", "meta": { "name": "ColAssignedAt" }, "position": { "basis": "140px", "shrink": 0 }, "props": { "text": "Assigned" } },
-              { "type": "ia.display.label", "meta": { "name": "ColReleasedAt" }, "position": { "basis": "140px", "shrink": 0 }, "props": { "text": "Released / Active" } },
-              { "type": "ia.display.label", "meta": { "name": "ColAssignedBy" }, "position": { "basis": "90px",  "shrink": 0 }, "props": { "text": "By" } },
-              { "type": "ia.display.label", "meta": { "name": "ColReleasedBy" }, "position": { "basis": "90px",  "shrink": 0 }, "props": { "text": "Released By" } },
-              { "type": "ia.display.label", "meta": { "name": "ColNotes" },      "position": { "basis": "160px", "shrink": 0 }, "props": { "text": "Notes" } }
-            ]
-          },
-          {
-            "type": "ia.display.flex-repeater",
-            "meta": { "name": "Rows" },
-            "position": { "basis": "0", "grow": 1 },
-            "propConfig": {
-              "props.instances": {
-                "binding": {
-                  "type": "property",
-                  "config": { "path": "view.custom.rows" },
-                  "transforms": [
-                    {
-                      "type": "script",
-                      "code": "\trows = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\tout = []\n\tfor inst in rows:\n\t\tinst = inst or {}\n\t\tout.append({\"assignment\": inst.get(\"assignment\") or {}})\n\treturn out"
-                    }
-                  ]
-                }
-              }
-            },
-            "props": {
-              "direction": "column",
-              "elementPosition": { "basis": "48px", "shrink": 0 },
-              "path": "BlueRidge/Components/Parts/Tools/_Tools/AssignmentRow",
-              "style": { "overflowY": "auto" },
-              "useDefaultViewHeight": true,
-              "useDefaultViewWidth": false
-            }
-          }
-        ]
+        "type": "ia.container.flex"
       }
-    ]
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "gap": "10px",
+        "height": "100%"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "refresh",
+          "params": [],
+          "script": "\ttoolId \u003d self.view.params.value\n\tself.view.custom.rows        \u003d BlueRidge.Parts.Tool.getAssignmentInstancesForTool(toolId)\n\tself.view.custom.active      \u003d BlueRidge.Parts.Tool.getActiveAssignmentForToolOrEmpty(toolId)\n\tself.view.custom.cellOptions \u003d BlueRidge.Parts.Tool.getCellsForDropdown(toolId)"
+        },
+        {
+          "name": "handleMount",
+          "params": [],
+          "script": "\ttoolId \u003d self.view.params.value\n\tif not toolId:\n\t\tBlueRidge.Common.Notify.toast(\"No tool selected\", \"Pick a tool first.\", \"warning\")\n\t\treturn\n\tcellId \u003d self.view.custom.selectedCellId\n\tif cellId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No cell selected\", \"Pick a cell to mount on.\", \"warning\")\n\t\treturn\n\tnotes \u003d self.view.custom.mountNotes\n\tresult \u003d BlueRidge.Parts.Tool.assignToCell(toolId, cellId, notes)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tool mounted\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.selectedCellId \u003d None\n\t\tself.view.custom.mountNotes \u003d \"\"\n\t\tself.refresh()"
+        },
+        {
+          "name": "handleRelease",
+          "params": [],
+          "script": "\ttoolId \u003d self.view.params.value\n\tif not toolId:\n\t\treturn\n\tresult \u003d BlueRidge.Parts.Tool.releaseAssignment(toolId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tool released\")\n\tif result and result.get(\"Status\"):\n\t\tself.refresh()"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "toolDataChanged",
+          "pageScope": true,
+          "script": "\tsection \u003d (payload or {}).get(\u0027section\u0027)\n\tif section and section !\u003d \u0027assignments\u0027:\n\t\treturn\n\tself.refresh()",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
   }
 }

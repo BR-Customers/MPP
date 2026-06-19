@@ -17,6 +17,34 @@
 
 ---
 
+## 🔖 2026-06-16 — Phase 4 (Movement + Trim + Receiving) BUILT end-to-end (SQL green; Ignition file-authored, Designer-smoke owed)
+
+Plan: `docs/superpowers/plans/2026-06-16-arc2-phase4-movement-trim.md` (writing-plans from the two 2026-06-15 specs). Executed hybrid: SQL inline TDD; the 3 views via parallel subagents; convergence (routes/scan/commit) in-session. All on `jacques/working`.
+
+**SQL — complete + green (full suite passes; both Phase 4 suites green):**
+- Migration `0024` (audit LogEventType 34 `TrimCheckpointRecorded` reserved / 35 `TrimOutRecorded`) + seed `024` (Trim IN/OUT OperationTemplates, no fields, bound to Area `TRIM1`).
+- **6 net-new procs:** `Parts.ItemLocation_CheckEligibility`, `Parts.Item_GetMaxParts`, `Lots.Lot_GetCellLineQuantity`, `Lots.Lot_GetWipQueueByLocation` (Phase 5 FIFO consumer), `Lots.Lot_MoveToValidated` (eligibility FDS-02-012 + MaxParts OI-12 + B2, inline move), `Workorder.TrimOut_Record` (closing checkpoint + whole-LOT move, no split). `Lot_MoveTo`/`Lot_Create` reused untouched. Suite `0024` = 39 assertions.
+- Migration `0025` (label dispatch): `LotLabel.DispatchedAt` + LogEventType 36 `LabelDispatched`; `@PrinterName` added to `LotLabel_Print`/`_Reprint`; new `LotLabel_RecordDispatch`; new `Location.Terminal_GetPrinter` read. Suite `0025`.
+- **Migration numbers consumed: `0024` + `0025`.** Phase 5 (Machining) renumbers to **`0026`+**.
+
+**Ignition — file-authored + scanned (NOT Designer-smoked):**
+- **13 Core NQs** (the 6 movement/trim + `LotLabel_Print`/`_Reprint`/`_RecordDispatch` + `Terminal_GetPrinter` + `Audit_LogInterfaceCall` + `LabelTypeCode_List`/`PrintReasonCode_List`).
+- **Entity scripts:** new `Parts.ItemLocation`, `Workorder.TrimOut`, `Lots.LotLabel` (synchronous raw-TCP 9100 ZPL dispatcher + InterfaceLog-every-attempt + fail-fast + default Primary/Initial id resolution); extended `Parts.Item` (getMaxParts/getForDropdown/getByPartNumber), `Lots.Lot` (moveToValidated/getCellLineQuantity/getWipQueueByLocation/getByName), `Location.Terminal` (getPrinter).
+- **`onStartup`** resolves the terminal's child Printer into a declared `session.custom.printer`.
+- **3 views:** `Components/PlantFloor/MovementScan`, `Views/ShopFloor/TrimStation` (tabbed IN/OUT), `Views/ShopFloor/ReceivingDock` (parallel-subagent authored). Routes `/shop-floor/trim` + `/shop-floor/receiving` added.
+
+**⚠️ Owed / carry-over:**
+1. **Designer smoke** (the one CLI-impossible step) — exercise all 3 views in a Perspective session. **Gateway RESTART required first** (new Core NQs need it to register for inherited visibility — scan insufficient).
+2. **HomeRouter tiles** for Trim/Receiving — deferred (editing the existing HomeRouter `view.json` is the file-edit boundary → do in Designer). Routes are directly navigable now.
+3. **Hardware-gated:** real Zebra LTT print is a deployment gate (raw TCP to networked printers only). Dispatch verifiable via a local socket listener / Labelary.
+4. **TrimStation IN-tab checkpoint** (`ProductionEvent.record` for `TrimIn`) is TODO'd (no counter inputs wired yet); "Record scrap"/"Correct piece count" buttons present but disabled. The IN-tab MOVE works.
+5. **TrimStation OUT destination dropdown** uses the generic all-cells list (`getCellsForDropdown`) — includes terminal/printer-kind cells; a Machining-line-scoped read would be tighter.
+6. **Smoke seed** `sql/scratch/smoke_seed_phase4.sql` not yet written (owed with the Designer smoke).
+
+**🚩 Pre-existing branch blocker (NOT Phase 4 — for the Phase 3-deltas owner):** `Parts.DataCollectionField_Create` (still v2.0) doesn't supply `DataTypeId`, but deltas migration `0023` made `DataCollectionField.DataTypeId` NOT NULL → every DataCollectionField create throws (surfaces as Msg 3915 under INSERT-EXEC in `0007_Parts_codes/010`). Needs a `@DataTypeId` path on Create (+ likely Update) + a required-vs-default decision. I fixed the companion stale-temp-table (Msg 213) in that test, but did not touch the Create proc. Until resolved, the full suite shows one throwing file (all 1602 assertions still pass).
+
+---
+
 ## 🔖 2026-06-15 — Phase 3 SQL cleaned up; Phase 4 fully specced (next: writing-plans on Spec 1)
 
 **Phase 3 (die cast) — SQL cleaned up, front-end spec in.** Reviewed the Phase 3 die-cast SQL (built by a parallel agent in a worktree): caught that it was authored on a **stale base** (branched before Phase 2's `0021`), giving a hard **audit-Id collision** (`0022` reused LogEventType 29/30 + LogEntityType 42/43 already taken by `0021`). The original agent rebased + re-reconciled; the cleaned build is committed (`f619326`) — post-cleanup `0022` uses LogEventType **32/33**, LogEntityType **45/46**. The Phase 3 front-end design spec is committed (`2276bbf`). Secondary review findings still worth folding into the Phase 3 front-end build: the dropped `@EventAt` param vs the NQ that passes it; the TOCTOU race on the reject quantity check; `ProductionEvent_ListByLot` / `DataCollectionField.DataType` gaps. Phase 3 front-end is the *other* agent's to wrap.

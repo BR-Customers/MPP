@@ -6,9 +6,9 @@
         "$": [
           "ts",
           192,
-          1780017942491
+          1781547114800
         ],
-        "$ts": 1780017942491
+        "$ts": 1781547114799
       },
       "entityTypeCode": null,
       "logSeverityCode": null,
@@ -17,26 +17,26 @@
         "$": [
           "ts",
           192,
-          1780017942491
+          1781547114800
         ],
-        "$ts": 1779413142491
+        "$ts": 1780942314799
       }
     },
     "rows": [],
-    "totalCount": 412
+    "totalCount": 24
   },
   "params": {},
   "propConfig": {
     "custom._initFired": {
       "binding": {
         "config": {
-          "expression": "now(0) !\u003d null"
+          "expression": "now(0) != null"
         },
         "type": "expr"
       },
       "onChange": {
         "enabled": null,
-        "script": "\t# Fires once on view-load (now(0) is single-eval -\u003e binding evaluates true).\n\t# Calls resetFilter which seeds dates + runs Apply.\n\tif previousValue and previousValue.value !\u003d currentValue.value:\n\t\tself.rootContainer.resetFilter()"
+        "script": "\t# Fires once on view-load (now(0) is single-eval -> binding evaluates true).\n\t# Calls resetFilter which seeds dates + runs Apply.\n\tif previousValue and previousValue.value != currentValue.value:\n\t\tself.rootContainer.resetFilter()"
       }
     },
     "custom.filter.appUserId": {
@@ -88,102 +88,6 @@
             "children": [
               {
                 "children": [
-                  {
-                    "children": [
-                      {
-                        "meta": {
-                          "name": "StartDateLabel"
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "label-eyebrow"
-                          },
-                          "text": "Start Date"
-                        },
-                        "type": "ia.display.label"
-                      },
-                      {
-                        "meta": {
-                          "name": "StartDateInput"
-                        },
-                        "propConfig": {
-                          "props.value": {
-                            "binding": {
-                              "config": {
-                                "bidirectional": true,
-                                "path": "view.custom.filter.startDate"
-                              },
-                              "type": "property"
-                            }
-                          }
-                        },
-                        "props": {
-                          "format": "YYYY-MM-DD",
-                          "formattedValue": "2026-05-21",
-                          "pickerType": "date"
-                        },
-                        "type": "ia.input.date-time-input"
-                      }
-                    ],
-                    "meta": {
-                      "name": "StartDateField"
-                    },
-                    "props": {
-                      "direction": "column",
-                      "style": {
-                        "gap": "4px"
-                      }
-                    },
-                    "type": "ia.container.flex"
-                  },
-                  {
-                    "children": [
-                      {
-                        "meta": {
-                          "name": "EndDateLabel"
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "label-eyebrow"
-                          },
-                          "text": "End Date"
-                        },
-                        "type": "ia.display.label"
-                      },
-                      {
-                        "meta": {
-                          "name": "EndDateInput"
-                        },
-                        "propConfig": {
-                          "props.value": {
-                            "binding": {
-                              "config": {
-                                "bidirectional": true,
-                                "path": "view.custom.filter.endDate"
-                              },
-                              "type": "property"
-                            }
-                          }
-                        },
-                        "props": {
-                          "format": "YYYY-MM-DD",
-                          "formattedValue": "2026-05-28",
-                          "pickerType": "date"
-                        },
-                        "type": "ia.input.date-time-input"
-                      }
-                    ],
-                    "meta": {
-                      "name": "EndDateField"
-                    },
-                    "props": {
-                      "direction": "column",
-                      "style": {
-                        "gap": "4px"
-                      }
-                    },
-                    "type": "ia.container.flex"
-                  },
                   {
                     "children": [
                       {
@@ -299,6 +203,102 @@
                     ],
                     "meta": {
                       "name": "SeverityField"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "4px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "StartDateLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "label-eyebrow"
+                          },
+                          "text": "Start Date"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "StartDateInput"
+                        },
+                        "propConfig": {
+                          "props.value": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.filter.startDate"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "format": "YYYY-MM-DD",
+                          "formattedValue": "2026-06-08",
+                          "pickerType": "date"
+                        },
+                        "type": "ia.input.date-time-input"
+                      }
+                    ],
+                    "meta": {
+                      "name": "StartDateField"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "4px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "EndDateLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "label-eyebrow"
+                          },
+                          "text": "End Date"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "EndDateInput"
+                        },
+                        "propConfig": {
+                          "props.value": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.filter.endDate"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "format": "YYYY-MM-DD",
+                          "formattedValue": "2026-06-15",
+                          "pickerType": "date"
+                        },
+                        "type": "ia.input.date-time-input"
+                      }
+                    ],
+                    "meta": {
+                      "name": "EndDateField"
                     },
                     "props": {
                       "direction": "column",
@@ -474,7 +474,7 @@
                           "props.text": {
                             "binding": {
                               "config": {
-                                "expression": "if({view.custom.totalCount} \u003c 1000, \"Showing \" + {view.custom.totalCount} + \" rows\", \"Showing first 1000 of \" + {view.custom.totalCount} + \" — narrow your filter\")"
+                                "expression": "if({view.custom.totalCount} < 1000, \"Showing \" + {view.custom.totalCount} + \" rows\", \"Showing first 1000 of \" + {view.custom.totalCount} + \" — narrow your filter\")"
                               },
                               "type": "expr"
                             }
@@ -492,9 +492,9 @@
                       {
                         "events": {
                           "component": {
-                            "onSelectionChange": {
+                            "onRowDoubleClick": {
                               "config": {
-                                "script": "\tsel \u003d event.get(\"selectedRow\") if event else None\n\tif sel is None:\n\t\treturn\n\tidx \u003d sel\n\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(self.props.data) or []\n\tif idx \u003c 0 or idx \u003e\u003d len(rows):\n\t\treturn\n\tdata \u003d rows[idx] or {}\n\tsystem.perspective.openPopup(\n\t\tid\u003d\"mpp-config-change-detail\",\n\t\tview\u003d\"BlueRidge/Components/Popups/ConfigChangeDetail\",\n\t\tmodal\u003dTrue,\n\t\tdraggable\u003dFalse,\n\t\tshowCloseIcon\u003dFalse,\n\t\tparams\u003d{\n\t\t\t\"id\":                data.get(\"Id\"),\n\t\t\t\"loggedAt\":          data.get(\"LoggedAt\"),\n\t\t\t\"userDisplayName\":   data.get(\"UserDisplayName\"),\n\t\t\t\"logEntityTypeName\": data.get(\"LogEntityTypeName\"),\n\t\t\t\"entityId\":          data.get(\"EntityId\"),\n\t\t\t\"logEventTypeCode\":  data.get(\"LogEventTypeCode\"),\n\t\t\t\"logSeverityCode\":   data.get(\"LogSeverityCode\"),\n\t\t\t\"description\":       data.get(\"Description\"),\n\t\t\t\"oldValue\":          data.get(\"OldValue\"),\n\t\t\t\"newValue\":          data.get(\"NewValue\"),\n\t\t\t\"popupId\":           \"mpp-config-change-detail\"\n\t\t}\n\t)"
+                                "script": "\t#if self.view.custom.sortingApplied:\n\t#\tself.view.custom.sortingApplied = False\n\t#\treturn\n\t\t\n\tsel = self.props.selection.selectedRow\n\tif sel is None:\n\t\treturn\n\tidx = sel\n\trows = BlueRidge.Common.Util.extractQualifiedValues(self.props.data) or []\n\tif idx < 0 or idx >= len(rows):\n\t\treturn\n\tdata = rows[idx] or {}\n\tsystem.perspective.openPopup(\n\t\tid=\"mpp-config-change-detail\",\n\t\tview=\"BlueRidge/Components/Popups/ConfigChangeDetail\",\n\t\tmodal=True,\n\t\tdraggable=False,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t\"id\":                data.get(\"Id\"),\n\t\t\t\"loggedAt\":          data.get(\"LoggedAt\"),\n\t\t\t\"userDisplayName\":   data.get(\"UserDisplayName\"),\n\t\t\t\"logEntityTypeName\": data.get(\"LogEntityTypeName\"),\n\t\t\t\"entityId\":          data.get(\"EntityId\"),\n\t\t\t\"logEventTypeCode\":  data.get(\"LogEventTypeCode\"),\n\t\t\t\"logSeverityCode\":   data.get(\"LogSeverityCode\"),\n\t\t\t\"description\":       data.get(\"Description\"),\n\t\t\t\"oldValue\":          data.get(\"OldValue\"),\n\t\t\t\"newValue\":          data.get(\"NewValue\"),\n\t\t\t\"popupId\":           \"mpp-config-change-detail\"\n\t\t}\n\t)"
                               },
                               "scope": "G",
                               "type": "script"
@@ -526,7 +526,7 @@
                                 "title": "Timestamp"
                               },
                               "render": "date",
-                              "sort": "desc",
+                              "sort": "none",
                               "sortable": true,
                               "visible": true
                             },
@@ -535,6 +535,7 @@
                               "header": {
                                 "title": "User"
                               },
+                              "sort": "none",
                               "sortable": true,
                               "visible": true
                             },
@@ -543,6 +544,7 @@
                               "header": {
                                 "title": "Entity Type"
                               },
+                              "sort": "none",
                               "sortable": true,
                               "visible": true
                             },
@@ -551,6 +553,7 @@
                               "header": {
                                 "title": "Event"
                               },
+                              "sort": "none",
                               "sortable": true,
                               "visible": true
                             },
@@ -559,6 +562,7 @@
                               "header": {
                                 "title": "Severity"
                               },
+                              "sort": "none",
                               "sortable": true,
                               "visible": true
                             },
@@ -567,6 +571,7 @@
                               "header": {
                                 "title": "Changes"
                               },
+                              "sort": "none",
                               "sortable": false,
                               "visible": true
                             },
@@ -575,6 +580,7 @@
                               "header": {
                                 "title": "Activity"
                               },
+                              "sort": "none",
                               "sortable": true,
                               "visible": true
                             }
@@ -584,6 +590,11 @@
                               "enabled": true,
                               "selectionMode": "single"
                             }
+                          },
+                          "selection": {
+                            "data": [],
+                            "selectedColumn": null,
+                            "selectedRow": null
                           },
                           "style": {
                             "classes": "data-table audit-log-table"
@@ -668,16 +679,16 @@
         {
           "name": "applySearch",
           "params": [],
-          "script": "\tresult \u003d BlueRidge.Audit.ConfigLog.search(self.view.custom.filter)\n\tself.view.custom.rows       \u003d result[\"rows\"]\n\tself.view.custom.totalCount \u003d result[\"totalCount\"]"
+          "script": "\toldSelection = self.getChild(\"MainSplit\").getChild(\"ContentArea\").getChild(\"AuditPanelWrapper\").getChild(\"AuditPanel\").getChild(\"AuditTable\").props.selection.selectedRow\n\tresult = BlueRidge.Audit.ConfigLog.search(self.view.custom.filter)\n\tself.view.custom.rows       = result[\"rows\"]\n\tself.view.custom.totalCount = result[\"totalCount\"]\n\t\n\tnewSelection = self.getChild(\"MainSplit\").getChild(\"ContentArea\").getChild(\"AuditPanelWrapper\").getChild(\"AuditPanel\").getChild(\"AuditTable\").props.selection.selectedRow\n\t#if oldSelection != newSelection:\n\t#self.view.custom.sortingApplied = True"
         },
         {
           "name": "resetFilter",
           "params": [],
-          "script": "\timport system\n\tnow \u003d system.date.now()\n\tself.view.custom.filter \u003d {\n\t\t\"startDate\":      system.date.addDays(now, -7),\n\t\t\"endDate\":        now,\n\t\t\"entityTypeCode\": None,\n\t\t\"logSeverityCode\": None,\n\t\t\"appUserId\":      None,\n\t\t\"searchText\":     \"\"\n\t}\n\tself.applySearch()"
+          "script": "\timport system\n\tnow = system.date.now()\n\tself.view.custom.filter = {\n\t\t\"startDate\":      system.date.addDays(now, -7),\n\t\t\"endDate\":        now,\n\t\t\"entityTypeCode\": None,\n\t\t\"logSeverityCode\": None,\n\t\t\"appUserId\":      None,\n\t\t\"searchText\":     \"\"\n\t}\n\tself.applySearch()"
         }
       ],
       "extensionFunctions": null,
-      "messageHandlers": null
+      "messageHandlers": []
     },
     "type": "ia.container.flex"
   }

@@ -1,48 +1,93 @@
 {
   "custom": {
     "editDraft": {
-      "Code": "",
-      "Name": "",
       "AreaLocationId": null,
-      "Description": ""
-    },
-    "areaOptions": []
+      "Code": "",
+      "Description": "",
+      "Name": ""
+    }
   },
   "params": {},
   "propConfig": {
     "custom.areaOptions": {
       "binding": {
-        "type": "expr",
         "config": {
           "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.getAreasForDropdown\", 0)"
-        }
+        },
+        "type": "expr"
       }
     }
   },
   "props": {
     "defaultSize": {
-      "width": 520,
-      "height": 400
+      "height": 400,
+      "width": 520
     }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": { "name": "root" },
-    "props": {
-      "direction": "column",
-      "style": {
-        "background": "var(--mpp-surface-canvas)",
-        "borderRadius": "var(--mpp-radius-md, 8px)",
-        "height": "100%",
-        "overflow": "hidden",
-        "width": "100%"
-      }
-    },
     "children": [
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "HeaderBar" },
-        "position": { "basis": "50px", "shrink": 0 },
+        "children": [
+          {
+            "meta": {
+              "name": "TitleLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "modal-title",
+                "fontSize": "14px",
+                "fontWeight": "600"
+              },
+              "text": "New Operation Template"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "Spacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(id\u003d\u0027mpp-new-operation-template\u0027)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseIcon",
+              "tooltip": {
+                "text": "Close"
+              }
+            },
+            "props": {
+              "path": "mpp/cancel",
+              "style": {
+                "classes": "modal-close",
+                "cursor": "pointer",
+                "height": "18px",
+                "width": "18px"
+              }
+            },
+            "type": "ia.display.icon"
+          }
+        ],
+        "meta": {
+          "name": "HeaderBar"
+        },
+        "position": {
+          "basis": "50px",
+          "shrink": 0
+        },
         "props": {
           "alignItems": "center",
           "style": {
@@ -53,151 +98,300 @@
             "padding": "0 16px"
           }
         },
-        "children": [
-          {
-            "type": "ia.display.label",
-            "meta": { "name": "TitleLabel" },
-            "props": {
-              "text": "New Operation Template",
-              "style": { "classes": "modal-title", "fontSize": "14px", "fontWeight": "600" }
-            }
-          },
-          { "type": "ia.container.flex", "meta": { "name": "Spacer" }, "position": { "grow": 1 } },
-          {
-            "type": "ia.display.icon",
-            "meta": { "name": "CloseIcon", "tooltip": { "text": "Close" } },
-            "events": {
-              "dom": {
-                "onClick": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": { "script": "\tsystem.perspective.closePopup(id='mpp-new-operation-template')" }
-                }
-              }
-            },
-            "props": {
-              "path": "mpp/cancel",
-              "style": { "classes": "modal-close", "cursor": "pointer", "height": "18px", "width": "18px" }
-            }
-          }
-        ]
+        "type": "ia.container.flex"
       },
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "FormBody" },
-        "position": { "grow": 1 },
-        "props": {
-          "direction": "column",
-          "style": { "gap": "12px", "overflowY": "auto", "padding": "16px" }
-        },
         "children": [
           {
-            "type": "ia.container.flex",
-            "meta": { "name": "CodeField" },
-            "props": { "direction": "column", "style": { "gap": "4px" } },
             "children": [
-              { "type": "ia.display.label", "meta": { "name": "Label" }, "props": { "text": "Code", "style": { "classes": "field-label" } } },
               {
-                "type": "ia.input.text-field",
-                "meta": { "name": "Input" },
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Code"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Input"
+                },
                 "propConfig": {
                   "props.text": {
                     "binding": {
-                      "type": "property",
-                      "config": { "bidirectional": true, "path": "view.custom.editDraft.Code" }
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.Code"
+                      },
+                      "type": "property"
                     }
                   }
                 },
                 "props": {
                   "placeholder": "e.g. DC-5G0",
-                  "style": { "boxSizing": "border-box", "classes": "search-input", "width": "100%" }
-                }
+                  "style": {
+                    "boxSizing": "border-box",
+                    "classes": "search-input",
+                    "width": "100%"
+                  }
+                },
+                "type": "ia.input.text-field"
               }
-            ]
+            ],
+            "meta": {
+              "name": "CodeField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
           },
           {
-            "type": "ia.container.flex",
-            "meta": { "name": "NameField" },
-            "props": { "direction": "column", "style": { "gap": "4px" } },
             "children": [
-              { "type": "ia.display.label", "meta": { "name": "Label" }, "props": { "text": "Name", "style": { "classes": "field-label" } } },
               {
-                "type": "ia.input.text-field",
-                "meta": { "name": "Input" },
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Name"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Input"
+                },
                 "propConfig": {
                   "props.text": {
                     "binding": {
-                      "type": "property",
-                      "config": { "bidirectional": true, "path": "view.custom.editDraft.Name" }
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.Name"
+                      },
+                      "type": "property"
                     }
                   }
                 },
                 "props": {
                   "placeholder": "e.g. Die Cast 5G0 Front Cover",
-                  "style": { "boxSizing": "border-box", "classes": "search-input", "width": "100%" }
-                }
+                  "style": {
+                    "boxSizing": "border-box",
+                    "classes": "search-input",
+                    "width": "100%"
+                  }
+                },
+                "type": "ia.input.text-field"
               }
-            ]
+            ],
+            "meta": {
+              "name": "NameField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
           },
           {
-            "type": "ia.container.flex",
-            "meta": { "name": "AreaField" },
-            "props": { "direction": "column", "style": { "gap": "4px" } },
             "children": [
-              { "type": "ia.display.label", "meta": { "name": "Label" }, "props": { "text": "Area", "style": { "classes": "field-label" } } },
               {
-                "type": "ia.input.dropdown",
-                "meta": { "name": "Input" },
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Area"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Input"
+                },
                 "propConfig": {
                   "props.options": {
                     "binding": {
-                      "type": "property",
-                      "config": { "path": "view.custom.areaOptions" }
+                      "config": {
+                        "path": "view.custom.areaOptions"
+                      },
+                      "type": "property"
                     }
                   },
                   "props.value": {
                     "binding": {
-                      "type": "property",
-                      "config": { "bidirectional": true, "path": "view.custom.editDraft.AreaLocationId" }
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.AreaLocationId"
+                      },
+                      "type": "property"
                     }
                   }
                 },
                 "props": {
-                  "style": { "boxSizing": "border-box", "classes": "select", "width": "100%" }
-                }
+                  "style": {
+                    "boxSizing": "border-box",
+                    "classes": "select",
+                    "width": "100%"
+                  }
+                },
+                "type": "ia.input.dropdown"
               }
-            ]
+            ],
+            "meta": {
+              "name": "AreaField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
           },
           {
-            "type": "ia.container.flex",
-            "meta": { "name": "DescriptionField" },
-            "props": { "direction": "column", "style": { "gap": "4px" } },
             "children": [
-              { "type": "ia.display.label", "meta": { "name": "Label" }, "props": { "text": "Description", "style": { "classes": "field-label" } } },
               {
-                "type": "ia.input.text-field",
-                "meta": { "name": "Input" },
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Description"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Input"
+                },
                 "propConfig": {
                   "props.text": {
                     "binding": {
-                      "type": "property",
-                      "config": { "bidirectional": true, "path": "view.custom.editDraft.Description" }
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.Description"
+                      },
+                      "type": "property"
                     }
                   }
                 },
                 "props": {
                   "placeholder": "Optional description",
-                  "style": { "boxSizing": "border-box", "classes": "search-input", "width": "100%" }
-                }
+                  "style": {
+                    "boxSizing": "border-box",
+                    "classes": "search-input",
+                    "width": "100%"
+                  }
+                },
+                "type": "ia.input.text-field"
               }
-            ]
+            ],
+            "meta": {
+              "name": "DescriptionField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
           }
-        ]
+        ],
+        "meta": {
+          "name": "FormBody"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "12px",
+            "overflowY": "auto",
+            "padding": "16px"
+          }
+        },
+        "type": "ia.container.flex"
       },
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "FooterBar" },
-        "position": { "basis": "50px", "shrink": 0 },
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.closePopup(id\u003d\u0027mpp-new-operation-template\u0027)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CancelButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-sm"
+              },
+              "text": "Cancel"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleCreate()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CreateButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-primary btn-sm"
+              },
+              "text": "Create Template"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "FooterBar"
+        },
+        "position": {
+          "basis": "50px",
+          "shrink": 0
+        },
         "props": {
           "alignItems": "center",
           "justify": "flex-end",
@@ -209,50 +403,33 @@
             "padding": "12px 16px"
           }
         },
-        "children": [
-          {
-            "type": "ia.input.button",
-            "meta": { "name": "CancelButton" },
-            "position": { "shrink": 0 },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": { "script": "\tsystem.perspective.closePopup(id='mpp-new-operation-template')" }
-                }
-              }
-            },
-            "props": { "text": "Cancel", "style": { "classes": "btn btn-sm" } }
-          },
-          {
-            "type": "ia.input.button",
-            "meta": { "name": "CreateButton" },
-            "position": { "shrink": 0 },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": { "script": "\tself.view.rootContainer.handleCreate()" }
-                }
-              }
-            },
-            "props": { "text": "Create Template", "style": { "classes": "btn btn-primary btn-sm" } }
-          }
-        ]
+        "type": "ia.container.flex"
       }
     ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "background": "var(--mpp-surface-canvas)",
+        "borderRadius": "var(--mpp-radius-md, 8px)",
+        "height": "100%",
+        "overflow": "hidden",
+        "width": "100%"
+      }
+    },
     "scripts": {
       "customMethods": [
         {
           "name": "handleCreate",
           "params": [],
-          "script": "\tdraft = self.view.custom.editDraft or {}\n\tif not (draft.get('Code') or '').strip():\n\t\tBlueRidge.Common.Notify.toast('Code required', 'Enter a code before creating.', 'warning')\n\t\treturn\n\tif not (draft.get('Name') or '').strip():\n\t\tBlueRidge.Common.Notify.toast('Name required', 'Enter a name before creating.', 'warning')\n\t\treturn\n\tif draft.get('AreaLocationId') is None:\n\t\tBlueRidge.Common.Notify.toast('Area required', 'Pick an area before creating.', 'warning')\n\t\treturn\n\tresult = BlueRidge.Parts.OperationTemplate.add(draft)\n\tBlueRidge.Common.Ui.notifyResult(result, 'Template created')\n\tif result and result.get('Status'):\n\t\tnewId = result.get('NewId')\n\t\tsystem.perspective.sendMessage('templateListRefresh', scope='page')\n\t\tif newId:\n\t\t\tsystem.perspective.sendMessage('templateSelectId', payload={'id': newId}, scope='page')\n\t\tsystem.perspective.closePopup(id='mpp-new-operation-template')"
+          "script": "\tdraft \u003d self.view.custom.editDraft or {}\n\tif not (draft.get(\u0027Code\u0027) or \u0027\u0027).strip():\n\t\tBlueRidge.Common.Notify.toast(\u0027Code required\u0027, \u0027Enter a code before creating.\u0027, \u0027warning\u0027)\n\t\treturn\n\tif not (draft.get(\u0027Name\u0027) or \u0027\u0027).strip():\n\t\tBlueRidge.Common.Notify.toast(\u0027Name required\u0027, \u0027Enter a name before creating.\u0027, \u0027warning\u0027)\n\t\treturn\n\tif draft.get(\u0027AreaLocationId\u0027) is None:\n\t\tBlueRidge.Common.Notify.toast(\u0027Area required\u0027, \u0027Pick an area before creating.\u0027, \u0027warning\u0027)\n\t\treturn\n\tresult \u003d BlueRidge.Parts.OperationTemplate.add(draft)\n\tBlueRidge.Common.Ui.notifyResult(result, \u0027Template created\u0027)\n\tif result and result.get(\u0027Status\u0027):\n\t\tnewId \u003d result.get(\u0027NewId\u0027)\n\t\tsystem.perspective.sendMessage(\u0027templateListRefresh\u0027, scope\u003d\u0027page\u0027)\n\t\tif newId:\n\t\t\tsystem.perspective.sendMessage(\u0027templateSelectId\u0027, payload\u003d{\u0027id\u0027: newId}, scope\u003d\u0027page\u0027)\n\t\tsystem.perspective.closePopup(id\u003d\u0027mpp-new-operation-template\u0027)"
         }
       ],
       "extensionFunctions": null,
       "messageHandlers": []
-    }
+    },
+    "type": "ia.container.flex"
   }
 }

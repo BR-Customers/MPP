@@ -106,7 +106,7 @@
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\tsystem.perspective.navigate(\"/shop-floor/initials\")"
+                        "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=True, overlayDismiss=True)"
                       },
                       "scope": "G",
                       "type": "script"

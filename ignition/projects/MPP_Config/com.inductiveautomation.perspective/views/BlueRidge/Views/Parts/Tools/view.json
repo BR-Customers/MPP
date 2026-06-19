@@ -1,5 +1,15 @@
 {
   "custom": {
+    "activeMount": {
+      "AssignedAt": null,
+      "AssignedByInitials": "",
+      "CellName": "",
+      "Id": null,
+      "IsActive": false,
+      "Notes": "",
+      "ReleasedAt": null,
+      "ReleasedByInitials": ""
+    },
     "selected": {
       "meta": null
     },
@@ -25,6 +35,14 @@
   },
   "params": {},
   "propConfig": {
+    "custom.activeMount": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Tool.getActiveAssignmentForToolOrEmpty\", 0, {view.custom.selected.meta.Id})"
+        },
+        "type": "expr"
+      }
+    },
     "custom.activeTabIndex": {
       "onChange": {
         "enabled": true,
@@ -655,6 +673,35 @@
                             "classes": "badge badge-muted"
                           }
                         }
+                      },
+                      {
+                        "meta": {
+                          "name": "SummaryBadgeMount"
+                        },
+                        "propConfig": {
+                          "props.style.classes": {
+                            "binding": {
+                              "config": {
+                                "expression": "if({view.custom.activeMount.IsActive}, \"badge badge-published\", \"badge badge-muted\")"
+                              },
+                              "type": "expr"
+                            }
+                          },
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "if({view.custom.activeMount.IsActive}, \"Mounted · \" + {view.custom.activeMount.CellName}, \"Not mounted\")"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "badge badge-muted"
+                          }
+                        },
+                        "type": "ia.display.label"
                       },
                       {
                         "type": "ia.container.flex",

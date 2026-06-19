@@ -1,86 +1,83 @@
 {
   "custom": {
-    "mode":      "create",
-    "selected":  {
-      "meta": {
-        "Id":             null,
-        "Code":           "",
-        "Description":    "",
-        "AreaLocationId": null,
-        "IsExcused":      false
-      }
-    },
     "editDraft": {
       "meta": {
-        "Id":             null,
-        "Code":           "",
-        "Description":    "",
         "AreaLocationId": null,
-        "IsExcused":      false
+        "Code": "",
+        "Description": "",
+        "Id": null,
+        "IsExcused": false
       }
     },
-    "areas":     [],
-    "_initFired": false
+    "mode": "create",
+    "selected": {
+      "meta": {
+        "AreaLocationId": null,
+        "Code": "",
+        "Description": "",
+        "Id": null,
+        "IsExcused": false
+      }
+    }
   },
   "params": {
-    "mode":          "create",
-    "defectCodeId":  null
+    "defectCodeId": null,
+    "mode": "create"
   },
   "propConfig": {
-    "params.mode":         { "paramDirection": "input", "persistent": true },
-    "params.defectCodeId": { "paramDirection": "input", "persistent": true },
-    "custom.areas": {
-      "binding": {
-        "type": "expr",
-        "config": { "expression": "runScript(\"BlueRidge.Location.Location.getAllAreas\", 0)" }
-      }
-    },
     "custom._initFired": {
       "binding": {
-        "type": "expr",
-        "config": { "expression": "true" }
+        "config": {
+          "expression": "true"
+        },
+        "type": "expr"
       },
       "onChange": {
         "enabled": true,
         "script": "\tself.rootContainer.loadIfUpdateMode()"
       }
+    },
+    "custom.areas": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Location.Location.getAllAreas\", 0)"
+        },
+        "type": "expr"
+      }
+    },
+    "params.defectCodeId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.mode": {
+      "paramDirection": "input",
+      "persistent": true
     }
   },
   "props": {
-    "defaultSize": { "width": 520, "height": 460 }
+    "defaultSize": {
+      "height": 460,
+      "width": 520
+    }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": { "name": "root" },
-    "props": {
-      "direction": "column",
-      "style": {
-        "background": "var(--mpp-surface-canvas)",
-        "borderRadius": "var(--mpp-radius-md, 8px)",
-        "height": "100%",
-        "overflow": "hidden",
-        "width": "100%"
-      }
-    },
     "children": [
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "HeaderBar" },
-        "position": { "basis": "50px", "shrink": 0 },
-        "props": {
-          "alignItems": "center",
-          "style": {
-            "background": "var(--mpp-surface-raised)",
-            "borderBottom": "1px solid var(--mpp-border-subtle)",
-            "gap": "12px",
-            "overflow": "hidden",
-            "padding": "0 16px"
-          }
-        },
         "children": [
           {
-            "type": "ia.display.label",
-            "meta": { "name": "TitleLabel" },
+            "meta": {
+              "name": "TitleLabel"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.params.mode} \u003d \"create\", \"Add Defect Code\", \"Edit Defect Code\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
             "props": {
               "style": {
                 "classes": "modal-title",
@@ -88,23 +85,31 @@
                 "fontWeight": "600"
               }
             },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "Spacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "DirtyIndicator"
+            },
             "propConfig": {
               "props.text": {
                 "binding": {
-                  "type": "expr",
-                  "config": { "expression": "if({view.params.mode} = \"create\", \"Add Defect Code\", \"Edit Defect Code\")" }
+                  "config": {
+                    "expression": "if({view.custom.editDraft} !\u003d {view.custom.selected}, \"● Unsaved changes\", \"\")"
+                  },
+                  "type": "expr"
                 }
               }
-            }
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "Spacer" },
-            "position": { "grow": 1 }
-          },
-          {
-            "type": "ia.display.label",
-            "meta": { "name": "DirtyIndicator" },
+            },
             "props": {
               "style": {
                 "color": "var(--mpp-accent)",
@@ -112,20 +117,25 @@
                 "fontStyle": "italic"
               }
             },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "expr",
-                  "config": { "expression": "if({view.custom.editDraft} != {view.custom.selected}, \"● Unsaved changes\", \"\")" }
-                }
-              }
-            }
+            "type": "ia.display.label"
           },
           {
-            "type": "ia.display.icon",
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleClose()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
             "meta": {
               "name": "CloseIcon",
-              "tooltip": { "text": "Close" }
+              "tooltip": {
+                "text": "Close"
+              }
             },
             "props": {
               "path": "mpp/cancel",
@@ -136,52 +146,67 @@
                 "width": "18px"
               }
             },
-            "events": {
-              "dom": {
-                "onClick": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\tself.view.rootContainer.handleClose()"
-                  }
-                }
-              }
-            }
+            "type": "ia.display.icon"
           }
-        ]
-      },
-      {
-        "type": "ia.container.flex",
-        "meta": { "name": "FormBody" },
-        "position": { "grow": 1 },
+        ],
+        "meta": {
+          "name": "HeaderBar"
+        },
+        "position": {
+          "basis": "50px",
+          "shrink": 0
+        },
         "props": {
-          "direction": "column",
+          "alignItems": "center",
           "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
             "gap": "12px",
-            "overflowY": "auto",
-            "padding": "16px"
+            "overflow": "hidden",
+            "padding": "0 16px"
           }
         },
+        "type": "ia.container.flex"
+      },
+      {
         "children": [
           {
-            "type": "ia.container.flex",
-            "meta": { "name": "CodeField" },
-            "props": {
-              "direction": "column",
-              "style": { "gap": "4px" }
-            },
             "children": [
               {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
+                "meta": {
+                  "name": "Label"
+                },
                 "props": {
-                  "style": { "classes": "field-label" },
+                  "style": {
+                    "classes": "field-label"
+                  },
                   "text": "Code"
-                }
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.text-field",
-                "meta": { "name": "Input" },
+                "meta": {
+                  "name": "Input"
+                },
+                "propConfig": {
+                  "props.enabled": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.params.mode} \u003d \"create\""
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.meta.Code"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
                 "props": {
                   "placeholder": "e.g. DC-0050",
                   "style": {
@@ -190,42 +215,49 @@
                     "width": "100%"
                   }
                 },
+                "type": "ia.input.text-field"
+              }
+            ],
+            "meta": {
+              "name": "CodeField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Description"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Input"
+                },
                 "propConfig": {
                   "props.text": {
                     "binding": {
-                      "type": "property",
-                      "config": { "bidirectional": true, "path": "view.custom.editDraft.meta.Code" }
-                    }
-                  },
-                  "props.enabled": {
-                    "binding": {
-                      "type": "expr",
-                      "config": { "expression": "{view.params.mode} = \"create\"" }
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.meta.Description"
+                      },
+                      "type": "property"
                     }
                   }
-                }
-              }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "DescriptionField" },
-            "props": {
-              "direction": "column",
-              "style": { "gap": "4px" }
-            },
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
-                "props": {
-                  "style": { "classes": "field-label" },
-                  "text": "Description"
-                }
-              },
-              {
-                "type": "ia.input.text-field",
-                "meta": { "name": "Input" },
+                },
                 "props": {
                   "placeholder": "Brief description of this defect type",
                   "style": {
@@ -234,36 +266,61 @@
                     "width": "100%"
                   }
                 },
-                "propConfig": {
-                  "props.text": {
-                    "binding": {
-                      "type": "property",
-                      "config": { "bidirectional": true, "path": "view.custom.editDraft.meta.Description" }
-                    }
-                  }
-                }
+                "type": "ia.input.text-field"
               }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "AreaField" },
+            ],
+            "meta": {
+              "name": "DescriptionField"
+            },
             "props": {
               "direction": "column",
-              "style": { "gap": "4px" }
+              "style": {
+                "gap": "4px"
+              }
             },
+            "type": "ia.container.flex"
+          },
+          {
             "children": [
               {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
+                "meta": {
+                  "name": "Label"
+                },
                 "props": {
-                  "style": { "classes": "field-label" },
+                  "style": {
+                    "classes": "field-label"
+                  },
                   "text": "Area"
-                }
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.input.dropdown",
-                "meta": { "name": "AreaDropdown" },
+                "meta": {
+                  "name": "AreaDropdown"
+                },
+                "propConfig": {
+                  "props.options": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.areas"
+                      },
+                      "type": "property"
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.meta.AreaLocationId"
+                      },
+                      "type": "property"
+                    },
+                    "onChange": {
+                      "enabled": true,
+                      "script": "\tself.view.rootContainer.handleAreaChange(previousValue, currentValue)"
+                    }
+                  }
+                },
                 "props": {
                   "style": {
                     "boxSizing": "border-box",
@@ -271,64 +328,196 @@
                     "width": "100%"
                   }
                 },
-                "propConfig": {
-                  "props.options": {
-                    "binding": {
-                      "type": "property",
-                      "config": { "path": "view.custom.areas" }
-                    }
-                  },
-                  "props.value": {
-                    "binding": {
-                      "type": "property",
-                      "config": { "bidirectional": true, "path": "view.custom.editDraft.meta.AreaLocationId" }
-                    },
-                    "onChange": {
-                      "enabled": true,
-                      "script": "\tself.view.rootContainer.handleAreaChange(previousValue, currentValue)"
-                    }
-                  }
-                }
+                "type": "ia.input.dropdown"
               }
-            ]
+            ],
+            "meta": {
+              "name": "AreaField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
           },
           {
-            "type": "ia.container.flex",
-            "meta": { "name": "ExcusedField" },
-            "props": {
-              "alignItems": "center",
-              "style": { "gap": "8px", "paddingTop": "4px" }
-            },
             "children": [
               {
-                "type": "ia.input.checkbox",
-                "meta": { "name": "Input" },
+                "meta": {
+                  "name": "Input"
+                },
                 "propConfig": {
                   "props.selected": {
                     "binding": {
-                      "type": "property",
-                      "config": { "bidirectional": true, "path": "view.custom.editDraft.meta.IsExcused" }
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.meta.IsExcused"
+                      },
+                      "type": "property"
                     }
                   }
                 },
-                "props": { "text": "" }
+                "props": {
+                  "text": ""
+                },
+                "type": "ia.input.checkbox"
               },
               {
-                "type": "ia.display.label",
-                "meta": { "name": "Label" },
+                "meta": {
+                  "name": "Label"
+                },
                 "props": {
-                  "style": { "classes": "field-label" },
+                  "style": {
+                    "classes": "field-label"
+                  },
                   "text": "Excused (excluded from defect rate)"
-                }
+                },
+                "type": "ia.display.label"
               }
-            ]
+            ],
+            "meta": {
+              "name": "ExcusedField"
+            },
+            "props": {
+              "alignItems": "center",
+              "style": {
+                "gap": "8px",
+                "paddingTop": "4px"
+              }
+            },
+            "type": "ia.container.flex"
           }
-        ]
+        ],
+        "meta": {
+          "name": "FormBody"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "12px",
+            "overflowY": "auto",
+            "padding": "16px"
+          }
+        },
+        "type": "ia.container.flex"
       },
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "FooterBar" },
-        "position": { "basis": "50px", "shrink": 0 },
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleDeprecate()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "DeprecateButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.params.mode} \u003d \"update\""
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-danger btn-sm"
+              },
+              "text": "Deprecate"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "children": [
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.handleClose()"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "CancelButton"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "btn btn-sm"
+                  },
+                  "text": "Cancel"
+                },
+                "type": "ia.input.button"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.handleSave()"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "SaveButton"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "btn btn-primary btn-sm"
+                  },
+                  "text": "Save"
+                },
+                "type": "ia.input.button"
+              }
+            ],
+            "meta": {
+              "name": "RightCluster"
+            },
+            "props": {
+              "alignItems": "center",
+              "style": {
+                "gap": "8px"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "FooterBar"
+        },
+        "position": {
+          "basis": "50px",
+          "shrink": 0
+        },
         "props": {
           "alignItems": "center",
           "justify": "space-between",
@@ -340,114 +529,51 @@
             "padding": "12px 16px"
           }
         },
-        "children": [
-          {
-            "type": "ia.input.button",
-            "meta": { "name": "DeprecateButton" },
-            "position": { "shrink": 0 },
-            "props": {
-              "style": { "classes": "btn btn-danger btn-sm" },
-              "text": "Deprecate"
-            },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "type": "expr",
-                  "config": { "expression": "{view.params.mode} = \"update\"" }
-                }
-              }
-            },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\tself.view.rootContainer.handleDeprecate()"
-                  }
-                }
-              }
-            }
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": { "name": "RightCluster" },
-            "props": {
-              "alignItems": "center",
-              "style": { "gap": "8px" }
-            },
-            "children": [
-              {
-                "type": "ia.input.button",
-                "meta": { "name": "CancelButton" },
-                "position": { "shrink": 0 },
-                "props": {
-                  "style": { "classes": "btn btn-sm" },
-                  "text": "Cancel"
-                },
-                "events": {
-                  "component": {
-                    "onActionPerformed": {
-                      "type": "script",
-                      "scope": "G",
-                      "config": {
-                        "script": "\tself.view.rootContainer.handleClose()"
-                      }
-                    }
-                  }
-                }
-              },
-              {
-                "type": "ia.input.button",
-                "meta": { "name": "SaveButton" },
-                "position": { "shrink": 0 },
-                "props": {
-                  "style": { "classes": "btn btn-primary btn-sm" },
-                  "text": "Save"
-                },
-                "events": {
-                  "component": {
-                    "onActionPerformed": {
-                      "type": "script",
-                      "scope": "G",
-                      "config": {
-                        "script": "\tself.view.rootContainer.handleSave()"
-                      }
-                    }
-                  }
-                }
-              }
-            ]
-          }
-        ]
+        "type": "ia.container.flex"
       }
     ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "background": "var(--mpp-surface-canvas)",
+        "borderRadius": "var(--mpp-radius-md, 8px)",
+        "height": "100%",
+        "overflow": "hidden",
+        "width": "100%"
+      }
+    },
     "scripts": {
       "customMethods": [
         {
           "name": "loadIfUpdateMode",
           "params": [],
-          "script": "\tmode = self.view.params.mode\n\tself.view.custom.mode = mode\n\tif mode != \"update\":\n\t\temptyMeta = {\n\t\t\t\"Id\":            None,\n\t\t\t\"Code\":          \"\",\n\t\t\t\"Description\":   \"\",\n\t\t\t\"AreaLocationId\": None,\n\t\t\t\"IsExcused\":     False\n\t\t}\n\t\tself.view.custom.selected  = {\"meta\": emptyMeta}\n\t\tself.view.custom.editDraft = {\"meta\": dict(emptyMeta)}\n\t\treturn\n\tdefectCodeId = self.view.params.defectCodeId\n\trow = BlueRidge.Quality.DefectCode.getOne(defectCodeId)\n\tif not row:\n\t\tBlueRidge.Common.Notify.toast(\"Not found\", \"Defect code \" + str(defectCodeId) + \" could not be loaded.\", \"error\")\n\t\tsystem.perspective.closePopup(id=\"mpp-defect-code-editor\")\n\t\treturn\n\tmeta = {\n\t\t\"Id\":            row.get(\"Id\"),\n\t\t\"Code\":          row.get(\"Code\") or \"\",\n\t\t\"Description\":   row.get(\"Description\") or \"\",\n\t\t\"AreaLocationId\": row.get(\"AreaLocationId\"),\n\t\t\"IsExcused\":     bool(row.get(\"IsExcused\"))\n\t}\n\tself.view.custom.selected  = {\"meta\": meta}\n\tself.view.custom.editDraft = {\"meta\": dict(meta)}"
+          "script": "\tmode \u003d self.view.params.mode\n\tself.view.custom.mode \u003d mode\n\tif mode !\u003d \"update\":\n\t\temptyMeta \u003d {\n\t\t\t\"Id\":            None,\n\t\t\t\"Code\":          \"\",\n\t\t\t\"Description\":   \"\",\n\t\t\t\"AreaLocationId\": None,\n\t\t\t\"IsExcused\":     False\n\t\t}\n\t\tself.view.custom.selected  \u003d {\"meta\": emptyMeta}\n\t\tself.view.custom.editDraft \u003d {\"meta\": dict(emptyMeta)}\n\t\treturn\n\tdefectCodeId \u003d self.view.params.defectCodeId\n\trow \u003d BlueRidge.Quality.DefectCode.getOne(defectCodeId)\n\tif not row:\n\t\tBlueRidge.Common.Notify.toast(\"Not found\", \"Defect code \" + str(defectCodeId) + \" could not be loaded.\", \"error\")\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-defect-code-editor\")\n\t\treturn\n\tmeta \u003d {\n\t\t\"Id\":            row.get(\"Id\"),\n\t\t\"Code\":          row.get(\"Code\") or \"\",\n\t\t\"Description\":   row.get(\"Description\") or \"\",\n\t\t\"AreaLocationId\": row.get(\"AreaLocationId\"),\n\t\t\"IsExcused\":     bool(row.get(\"IsExcused\"))\n\t}\n\tself.view.custom.selected  \u003d {\"meta\": meta}\n\tself.view.custom.editDraft \u003d {\"meta\": dict(meta)}"
         },
         {
           "name": "handleAreaChange",
-          "params": ["previousValue", "currentValue"],
-          "script": "\tpreviousValue = BlueRidge.Common.Util.extractQualifiedValues(previousValue)\n\tcurrentValue  = BlueRidge.Common.Util.extractQualifiedValues(currentValue)\n\tif self.view.custom.mode != \"create\":\n\t\treturn\n\tareas = self.view.custom.areas or []\n\tprevName = None\n\tnewName  = None\n\tfor a in areas:\n\t\tif a.get(\"value\") == previousValue:\n\t\t\tprevName = a.get(\"label\")\n\t\tif a.get(\"value\") == currentValue:\n\t\t\tnewName = a.get(\"label\")\n\tnewPrefix  = BlueRidge.Quality.DefectCode.derivePrefix(newName)\n\tprevPrefix = BlueRidge.Quality.DefectCode.derivePrefix(prevName)\n\tdraft = self.view.custom.editDraft or {}\n\tmeta  = dict(draft.get(\"meta\") or {})\n\tcurrentCode = meta.get(\"Code\") or \"\"\n\tif not currentCode or currentCode == prevPrefix:\n\t\tmeta[\"Code\"] = newPrefix\n\t\tself.view.custom.editDraft = {\"meta\": meta}"
+          "params": [
+            "previousValue",
+            "currentValue"
+          ],
+          "script": "\tpreviousValue \u003d BlueRidge.Common.Util.extractQualifiedValues(previousValue)\n\tcurrentValue  \u003d BlueRidge.Common.Util.extractQualifiedValues(currentValue)\n\tif self.view.custom.mode !\u003d \"create\":\n\t\treturn\n\tareas \u003d self.view.custom.areas or []\n\tprevName \u003d None\n\tnewName  \u003d None\n\tfor a in areas:\n\t\tif a.get(\"value\") \u003d\u003d previousValue:\n\t\t\tprevName \u003d a.get(\"label\")\n\t\tif a.get(\"value\") \u003d\u003d currentValue:\n\t\t\tnewName \u003d a.get(\"label\")\n\tnewPrefix  \u003d BlueRidge.Quality.DefectCode.derivePrefix(newName)\n\tprevPrefix \u003d BlueRidge.Quality.DefectCode.derivePrefix(prevName)\n\tdraft \u003d self.view.custom.editDraft or {}\n\tmeta  \u003d dict(draft.get(\"meta\") or {})\n\tcurrentCode \u003d meta.get(\"Code\") or \"\"\n\tif not currentCode or currentCode \u003d\u003d prevPrefix:\n\t\tmeta[\"Code\"] \u003d newPrefix\n\t\tself.view.custom.editDraft \u003d {\"meta\": meta}"
         },
         {
           "name": "handleSave",
           "params": [],
-          "script": "\tmode  = self.view.custom.mode\n\tdraft = self.view.custom.editDraft or {}\n\tmeta  = draft.get(\"meta\") or {}\n\tif meta.get(\"AreaLocationId\") is None:\n\t\tBlueRidge.Common.Notify.toast(\"Area required\", \"Pick an area before saving.\", \"warning\")\n\t\treturn\n\tif mode == \"create\":\n\t\tresult = BlueRidge.Quality.DefectCode.add(meta)\n\t\tsuccessTitle = \"Defect code created\"\n\telse:\n\t\tresult = BlueRidge.Quality.DefectCode.update(meta)\n\t\tsuccessTitle = \"Defect code updated\"\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle)\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.selected = {\"meta\": dict(meta)}\n\t\tsystem.perspective.sendMessage(\"defectCodeRefresh\", scope=\"page\")\n\t\tsystem.perspective.closePopup(id=\"mpp-defect-code-editor\")"
+          "script": "\tmode  \u003d self.view.custom.mode\n\tdraft \u003d self.view.custom.editDraft or {}\n\tmeta  \u003d draft.get(\"meta\") or {}\n\tif meta.get(\"AreaLocationId\") is None:\n\t\tBlueRidge.Common.Notify.toast(\"Area required\", \"Pick an area before saving.\", \"warning\")\n\t\treturn\n\tif mode \u003d\u003d \"create\":\n\t\tresult \u003d BlueRidge.Quality.DefectCode.add(meta)\n\t\tsuccessTitle \u003d \"Defect code created\"\n\telse:\n\t\tresult \u003d BlueRidge.Quality.DefectCode.update(meta)\n\t\tsuccessTitle \u003d \"Defect code updated\"\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle)\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.selected \u003d {\"meta\": dict(meta)}\n\t\tsystem.perspective.sendMessage(\"defectCodeRefresh\", scope\u003d\"page\")\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-defect-code-editor\")"
         },
         {
           "name": "handleDeprecate",
           "params": [],
-          "script": "\tdraft = self.view.custom.editDraft or {}\n\tmeta  = draft.get(\"meta\") or {}\n\trowId = meta.get(\"Id\")\n\tif rowId is None:\n\t\treturn\n\tresult = BlueRidge.Quality.DefectCode.deprecate(rowId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Defect code deprecated\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"defectCodeRefresh\", scope=\"page\")\n\t\tsystem.perspective.closePopup(id=\"mpp-defect-code-editor\")"
+          "script": "\tdraft \u003d self.view.custom.editDraft or {}\n\tmeta  \u003d draft.get(\"meta\") or {}\n\trowId \u003d meta.get(\"Id\")\n\tif rowId is None:\n\t\treturn\n\tresult \u003d BlueRidge.Quality.DefectCode.deprecate(rowId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Defect code deprecated\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"defectCodeRefresh\", scope\u003d\"page\")\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-defect-code-editor\")"
         },
         {
           "name": "handleClose",
           "params": [],
-          "script": "\tif self.view.custom.editDraft == self.view.custom.selected:\n\t\tsystem.perspective.closePopup(id=\"mpp-defect-code-editor\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid=\"mpp-confirm-unsaved\",\n\t\t\tview=\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal=True,\n\t\t\tshowCloseIcon=False,\n\t\t\tparams={\n\t\t\t\t\"title\":   \"Unsaved Changes\",\n\t\t\t\t\"message\": \"You have unsaved changes to this defect code. Save before closing?\"\n\t\t\t}\n\t\t)"
+          "script": "\tif str(self.view.custom.editDraft) \u003d\u003d str(self.view.custom.selected):\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-defect-code-editor\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid\u003d\"mpp-confirm-unsaved\",\n\t\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal\u003dTrue,\n\t\t\tshowCloseIcon\u003dFalse,\n\t\t\tparams\u003d{\n\t\t\t\t\"title\":   \"Unsaved Changes\",\n\t\t\t\t\"message\": \"You have unsaved changes to this defect code. Save before closing?\"\n\t\t\t}\n\t\t)"
         }
       ],
       "extensionFunctions": null,
@@ -455,9 +581,9 @@
         {
           "messageType": "confirmUnsavedResult",
           "pageScope": true,
+          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tif action \u003d\u003d \"save\":\n\t\tself.handleSave()\n\telif action \u003d\u003d \"discard\":\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-defect-code-editor\")",
           "sessionScope": false,
-          "viewScope": false,
-          "script": "\taction = payload.get(\"action\") if payload else None\n\tif action == \"save\":\n\t\tself.handleSave()\n\telif action == \"discard\":\n\t\tsystem.perspective.closePopup(id=\"mpp-defect-code-editor\")"
+          "viewScope": false
         }
       ]
     },

@@ -116,7 +116,7 @@
                 }
               },
               {
-                "type": "ia.input.numeric-entry-field",
+                "type": "ia.input.text-field",
                 "version": 0,
                 "meta": {
                   "name": "ShotInput"
@@ -127,13 +127,13 @@
                   }
                 },
                 "propConfig": {
-                  "props.value": {
+                  "props.text": {
                     "binding": {
                       "type": "property",
                       "config": {
-                        "path": "view.custom.draft.shotCount"
-                      },
-                      "bidirectional": true
+                        "path": "view.custom.draft.shotCount",
+                        "bidirectional": true
+                      }
                     }
                   }
                 }
@@ -166,7 +166,7 @@
                 }
               },
               {
-                "type": "ia.input.numeric-entry-field",
+                "type": "ia.input.text-field",
                 "version": 0,
                 "meta": {
                   "name": "ScrapInput"
@@ -177,13 +177,13 @@
                   }
                 },
                 "propConfig": {
-                  "props.value": {
+                  "props.text": {
                     "binding": {
                       "type": "property",
                       "config": {
-                        "path": "view.custom.draft.scrapCount"
-                      },
-                      "bidirectional": true
+                        "path": "view.custom.draft.scrapCount",
+                        "bidirectional": true
+                      }
                     }
                   }
                 }
@@ -274,7 +274,7 @@
         {
           "name": "submitCheckpoint",
           "params": [],
-          "script": "\tlotId = self.view.params.lotId\n\tif lotId is None:\n\t\treturn\n\tdraft = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.draft) or {}\n\tdcValues = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.dcValues) or {}\n\tdata = {\n\t\t\"lotId\": lotId,\n\t\t\"operationTemplateId\": self.view.custom.templateId,\n\t\t\"shotCount\": draft.get(\"shotCount\"),\n\t\t\"scrapCount\": draft.get(\"scrapCount\"),\n\t\t\"weightValue\": draft.get(\"weightValue\"),\n\t\t\"dcValues\": dcValues,\n\t}\n\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tresult = BlueRidge.Workorder.ProductionEvent.record(data, appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle=\"Checkpoint recorded\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"shotCount\": None, \"scrapCount\": None, \"weightValue\": None}\n\t\tself.view.custom.dcValues = {}\n\t\tsystem.perspective.sendMessage(\"checkpointRecorded\", {\"lotId\": lotId}, scope=\"page\")"
+          "script": "\tlotId = self.view.params.lotId\n\tif lotId is None:\n\t\treturn\n\tdraft = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.draft) or {}\n\tdcValues = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.dcValues) or {}\n\tdata = {\n\t\t\"lotId\": lotId,\n\t\t\"operationTemplateId\": self.view.custom.templateId,\n\t\t\"shotCount\": BlueRidge.Common.Util.toIntOrNone(draft.get(\"shotCount\")),\n\t\t\"scrapCount\": BlueRidge.Common.Util.toIntOrNone(draft.get(\"scrapCount\")),\n\t\t\"weightValue\": BlueRidge.Common.Util.toDecimalOrNone(draft.get(\"weightValue\")),\n\t\t\"dcValues\": dcValues,\n\t}\n\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tresult = BlueRidge.Workorder.ProductionEvent.record(data, appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle=\"Checkpoint recorded\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"shotCount\": None, \"scrapCount\": None, \"weightValue\": None}\n\t\tself.view.custom.dcValues = {}\n\t\tsystem.perspective.sendMessage(\"checkpointRecorded\", {\"lotId\": lotId}, scope=\"page\")"
         }
       ]
     }

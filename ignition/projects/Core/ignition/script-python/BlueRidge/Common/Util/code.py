@@ -141,6 +141,30 @@ def _currentAppUserId():
     return _DEV_APP_USER_ID
 
 
+def toIntOrNone(v):
+    """Coerce a (possibly string) numeric input to int, or None for blank/non-numeric.
+    Plant-floor number fields are text-fields (numeric-entry-field shrinks on focus),
+    so values arrive as strings; this hands typed NQ params a clean int or NULL."""
+    v = extractQualifiedValues(v)
+    try:
+        if v is None or unicode(v).strip() == "":
+            return None
+        return int(float(v))
+    except (ValueError, TypeError):
+        return None
+
+
+def toDecimalOrNone(v):
+    """Coerce a (possibly string) numeric input to float, or None for blank/non-numeric."""
+    v = extractQualifiedValues(v)
+    try:
+        if v is None or unicode(v).strip() == "":
+            return None
+        return float(v)
+    except (ValueError, TypeError):
+        return None
+
+
 def extractQualifiedValues(data):
     """
     Recursively unwrap QualifiedValue (from tag / property bindings) through
