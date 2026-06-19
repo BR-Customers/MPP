@@ -1,0 +1,55 @@
+{
+  "custom": { "alert": { "visible": false, "text": "" } },
+  "params": {},
+  "props": {
+    "defaultSize": { "height": 52, "width": 700 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": { "direction": "column", "style": {} },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "Banner" },
+        "propConfig": {
+          "position.display": { "binding": { "type": "expr", "config": { "expression": "{view.custom.alert.visible}" } } }
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": { "gap": "12px", "padding": "10px 16px", "backgroundColor": "var(--pf-status-warn-bg, #fde68a)", "borderRadius": "6px" }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "Msg" },
+            "position": { "grow": 1 },
+            "props": { "style": { "fontWeight": "600", "color": "var(--pf-status-warn-fg, #7c2d12)" } },
+            "propConfig": { "props.text": { "binding": { "type": "property", "config": { "path": "view.custom.alert.text" } } } }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "Ack" },
+            "props": { "text": "Acknowledge", "style": { "classes": "pf-btn pf-btn-secondary" } },
+            "events": { "component": { "onActionPerformed": { "type": "script", "scope": "G",
+              "config": { "script": "\tself.view.custom.alert = {\"visible\": False, \"text\": \"\"}" } } } }
+          }
+        ]
+      }
+    ],
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "print-failure-alert",
+          "pageScope": false,
+          "sessionScope": true,
+          "viewScope": false,
+          "script": "\tmsg = (payload.get(\"message\") if payload else None) or \"A shipping label failed to print.\"\n\tself.view.custom.alert = {\"visible\": True, \"text\": msg}"
+        }
+      ]
+    }
+  }
+}

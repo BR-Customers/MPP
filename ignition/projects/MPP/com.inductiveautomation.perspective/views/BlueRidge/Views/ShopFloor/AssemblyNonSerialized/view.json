@@ -1,0 +1,144 @@
+{
+  "custom": {
+    "filter": { "cellLocationId": null },
+    "cellOptions": [],
+    "container": { "Id": null, "ItemPartNumber": "", "ItemDescription": "", "AccumulatedParts": 0, "TargetParts": 0, "ClosedTrays": 0, "IsSerialized": false },
+    "draft": { "trayPosition": "", "partsCount": "", "closureMethod": null },
+    "refreshToken": 0
+  },
+  "params": {},
+  "propConfig": {
+    "custom.cellOptions": {
+      "binding": {
+        "config": { "expression": "runScript(\"BlueRidge.Location.Location.listByTier\", 0, \"Cell\")" },
+        "transforms": [ { "code": "\treturn [{\"value\": r.get(\"Id\"), \"label\": (r.get(\"Code\") or \"\") + \" - \" + (r.get(\"Name\") or \"\")} for r in (value or [])]", "type": "script" } ],
+        "type": "expr"
+      }
+    },
+    "custom.container": {
+      "binding": {
+        "config": { "expression": "if({view.custom.refreshToken} >= 0 && !isNull({view.custom.filter.cellLocationId}), runScript(\"BlueRidge.Lots.Container.getOpenByCell\", 0, {view.custom.filter.cellLocationId}), [])" },
+        "transforms": [ { "code": "\trows = value or []\n\tr = rows[0] if rows else {}\n\treturn {\"Id\": r.get(\"Id\"), \"ItemPartNumber\": r.get(\"ItemPartNumber\") or \"\", \"ItemDescription\": r.get(\"ItemDescription\") or \"\", \"AccumulatedParts\": r.get(\"AccumulatedParts\") or 0, \"TargetParts\": r.get(\"TargetParts\") or 0, \"ClosedTrays\": r.get(\"ClosedTrays\") or 0, \"IsSerialized\": r.get(\"IsSerialized\") or False}", "type": "script" } ],
+        "type": "expr"
+      }
+    }
+  },
+  "props": { "defaultSize": { "height": 1080, "width": 1920 } },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": { "direction": "column", "style": { "classes": "canvas" } },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Header" },
+        "position": { "shrink": 0 },
+        "props": { "text": "Assembly (Non-Serialized)", "style": { "fontSize": "22px", "fontWeight": "700", "padding": "16px", "borderBottom": "1px solid var(--mpp-border-subtle)" } }
+      },
+      {
+        "type": "ia.display.view",
+        "meta": { "name": "PrintBanner" },
+        "position": { "shrink": 0 },
+        "props": { "path": "BlueRidge/Components/PlantFloor/PrintFailureBanner", "style": { "margin": "8px 16px 0 16px" } }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "Body" },
+        "position": { "grow": 1 },
+        "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "16px", "margin": "16px", "padding": "16px" } },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "MachineField" },
+            "position": { "basis": "320px", "shrink": 0 },
+            "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+            "children": [
+              { "type": "ia.display.label", "meta": { "name": "MachineLabel" }, "props": { "text": "Assembly Cell", "style": { "classes": "pf-field-label" } } },
+              {
+                "type": "ia.input.dropdown",
+                "meta": { "name": "CellSelect" },
+                "propConfig": {
+                  "props.options": { "binding": { "config": { "path": "view.custom.cellOptions" }, "type": "property" } },
+                  "props.value": { "binding": { "config": { "path": "view.custom.filter.cellLocationId", "bidirectional": true }, "type": "property" } }
+                },
+                "props": { "placeholder": "Select cell", "style": { "classes": "pf-field-input" } }
+              }
+            ]
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "EmptyHint" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "props.text": { "binding": { "type": "expr", "config": { "expression": "if(isNull({view.custom.filter.cellLocationId}), 'Select a cell to see its open container.', 'No open container at this cell.')" } } },
+              "position.display": { "binding": { "type": "expr", "config": { "expression": "isNull({view.custom.container.Id})" } } }
+            },
+            "props": { "style": { "classes": "pf-kpi-sub" } }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "ContainerCard" },
+            "position": { "shrink": 0 },
+            "propConfig": { "position.display": { "binding": { "type": "expr", "config": { "expression": "!isNull({view.custom.container.Id})" } } } },
+            "props": { "direction": "column", "style": { "classes": "surface-card", "gap": "8px", "padding": "16px" } },
+            "children": [
+              { "type": "ia.display.label", "meta": { "name": "CItem" }, "propConfig": { "props.text": { "binding": { "type": "expr", "config": { "expression": "'Open container: ' + {view.custom.container.ItemPartNumber} + '  (' + {view.custom.container.ItemDescription} + ')'" } } } }, "props": { "style": { "fontWeight": "700", "fontSize": "18px" } } },
+              { "type": "ia.display.label", "meta": { "name": "CFill" }, "propConfig": { "props.text": { "binding": { "type": "expr", "config": { "expression": "'Filled ' + toStr({view.custom.container.AccumulatedParts}) + ' / ' + toStr({view.custom.container.TargetParts}) + ' parts  ·  ' + toStr({view.custom.container.ClosedTrays}) + ' trays closed'" } } } }, "props": { "style": { "classes": "pf-kpi-sub" } } }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "TrayForm" },
+            "position": { "shrink": 0 },
+            "propConfig": { "position.display": { "binding": { "type": "expr", "config": { "expression": "!isNull({view.custom.container.Id})" } } } },
+            "props": { "direction": "row", "alignItems": "flex-end", "wrap": "wrap", "style": { "gap": "12px" } },
+            "children": [
+              {
+                "type": "ia.container.flex", "meta": { "name": "PosField" }, "position": { "basis": "140px", "shrink": 0 }, "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Tray position", "style": { "classes": "pf-field-label" } } },
+                  { "type": "ia.input.text-field", "meta": { "name": "Pos" }, "propConfig": { "props.text": { "binding": { "config": { "path": "view.custom.draft.trayPosition", "bidirectional": true }, "type": "property" } } }, "props": { "style": { "classes": "pf-field-input" } } }
+                ]
+              },
+              {
+                "type": "ia.container.flex", "meta": { "name": "CntField" }, "position": { "basis": "140px", "shrink": 0 }, "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Parts in tray", "style": { "classes": "pf-field-label" } } },
+                  { "type": "ia.input.text-field", "meta": { "name": "Cnt" }, "propConfig": { "props.text": { "binding": { "config": { "path": "view.custom.draft.partsCount", "bidirectional": true }, "type": "property" } } }, "props": { "style": { "classes": "pf-field-input" } } }
+                ]
+              },
+              {
+                "type": "ia.container.flex", "meta": { "name": "CmField" }, "position": { "basis": "220px", "shrink": 0 }, "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Closure method", "style": { "classes": "pf-field-label" } } },
+                  { "type": "ia.input.dropdown", "meta": { "name": "Cm" }, "propConfig": { "props.value": { "binding": { "config": { "path": "view.custom.draft.closureMethod", "bidirectional": true }, "type": "property" } } }, "props": { "placeholder": "Method", "options": [ { "value": "ByCount", "label": "By Count" }, { "value": "ByWeight", "label": "By Weight" }, { "value": "ByVision", "label": "By Vision" } ], "style": { "classes": "pf-field-input" } } }
+                ]
+              },
+              {
+                "type": "ia.input.button", "meta": { "name": "CloseTrayButton" }, "position": { "shrink": 0 },
+                "props": { "text": "Close Tray", "style": { "classes": "pf-btn pf-btn-secondary pf-btn-large" } },
+                "events": { "component": { "onActionPerformed": { "type": "script", "scope": "G",
+                  "config": { "script": "\tc = self.view.custom.container\n\tcellId = self.view.custom.filter.cellLocationId\n\td = self.view.custom.draft\n\tif not c or c.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No open container at this cell.\"}, \"Tray close\")\n\t\treturn\n\tpos = BlueRidge.Common.Util.toIntOrNone(d.get(\"trayPosition\"))\n\tcnt = BlueRidge.Common.Util.toIntOrNone(d.get(\"partsCount\"))\n\tcm = d.get(\"closureMethod\")\n\tif pos is None or cnt is None or not cm:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter tray position, parts count, and closure method.\"}, \"Tray close\")\n\t\treturn\n\tresult = BlueRidge.Lots.Container.trayClose(c.get(\"Id\"), pos, cnt, cm, terminalLocationId=cellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tray closed\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"trayPosition\": \"\", \"partsCount\": \"\", \"closureMethod\": None}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1" } } } }
+              }
+            ]
+          },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "ConfirmButton" },
+            "position": { "shrink": 0 },
+            "propConfig": { "position.display": { "binding": { "type": "expr", "config": { "expression": "!isNull({view.custom.container.Id})" } } } },
+            "props": { "text": "Confirm Completion", "style": { "classes": "pf-btn pf-btn-primary pf-btn-large" } },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script", "scope": "G",
+                  "config": { "script": "\tc = self.view.custom.container\n\tcellId = self.view.custom.filter.cellLocationId\n\tif not c or c.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No open container at this cell.\"}, \"Assembly\")\n\t\treturn\n\tresult = BlueRidge.Lots.Container.complete(c.get(\"Id\"), operatorConfirmed=True, terminalLocationId=cellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Container complete\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1" }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
