@@ -1,0 +1,517 @@
+{
+  "custom": {
+    "context": {
+      "IsMountTarget": false,
+      "ToolAssignmentId": null,
+      "ToolId": null,
+      "ToolCode": "",
+      "ToolName": "",
+      "ToolTypeCode": "",
+      "AssignedAt": null,
+      "AssignedBy": ""
+    },
+    "mountable": [],
+    "selectedToolId": null,
+    "mountNotes": ""
+  },
+  "params": {
+    "cellLocationId": null
+  },
+  "propConfig": {
+    "params.cellLocationId": {
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.rootContainer.refresh()"
+      }
+    },
+    "custom.context": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Tool.getCellMountContextOrEmpty\", 0, {view.params.cellLocationId})"
+        }
+      }
+    },
+    "custom.mountable": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Tool.getMountableToolsForCell\", 0, {view.params.cellLocationId})"
+        }
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 150,
+      "width": 480
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "gap": "10px",
+        "height": "100%"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "refresh",
+          "params": [],
+          "script": "\tcellId = self.view.params.cellLocationId\n\tself.view.custom.context   = BlueRidge.Parts.Tool.getCellMountContextOrEmpty(cellId)\n\tself.view.custom.mountable = BlueRidge.Parts.Tool.getMountableToolsForCell(cellId)"
+        },
+        {
+          "name": "handleMount",
+          "params": [],
+          "script": "\tcellId = self.view.params.cellLocationId\n\tif not cellId:\n\t\tBlueRidge.Common.Notify.toast(\"No cell\", \"No cell selected.\", \"warning\")\n\t\treturn\n\ttoolId = self.view.custom.selectedToolId\n\tif toolId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No tool\", \"Pick a tool to mount.\", \"warning\")\n\t\treturn\n\tnotes = self.view.custom.mountNotes\n\tresult = BlueRidge.Parts.Tool.assignToCell(toolId, cellId, notes)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tool mounted\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.selectedToolId = None\n\t\tself.view.custom.mountNotes = \"\"\n\t\tself.refresh()"
+        },
+        {
+          "name": "handleRelease",
+          "params": [],
+          "script": "\tcellId = self.view.params.cellLocationId\n\tif not cellId:\n\t\treturn\n\tctx = BlueRidge.Parts.Tool.getCellMountContextOrEmpty(cellId)\n\ttoolId = ctx.get(\"ToolId\")\n\tif toolId is None:\n\t\treturn\n\tresult = BlueRidge.Parts.Tool.releaseAssignment(toolId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tool released\")\n\tif result and result.get(\"Status\"):\n\t\tself.refresh()"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": []
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Header"
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "classes": "detail-header",
+            "gap": "12px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Title"
+            },
+            "props": {
+              "text": "Mounted Tool",
+              "style": {
+                "classes": "detail-header-h2"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Spacer"
+            },
+            "position": {
+              "grow": 1
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "BtnToolConfig"
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "nav",
+                  "scope": "C",
+                  "config": {
+                    "page": "/parts/tools"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Tool Config",
+              "style": {
+                "classes": "btn btn-sm"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "OccupiedState"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "!isNull({view.custom.context.ToolId})"
+              }
+            }
+          }
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "gap": "10px",
+            "padding": "10px 12px",
+            "background": "var(--mpp-state-good-bg)",
+            "border": "1px solid var(--mpp-state-good-border)",
+            "borderRadius": "var(--mpp-radius-sm)"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "MountTextStack"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "2px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "ToolLine"
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "gap": "8px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "ToolLabel"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "coalesce({view.custom.context.ToolCode}, \"\") + \" — \" + coalesce({view.custom.context.ToolName}, \"\")"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "fontSize": "14px",
+                        "fontWeight": "600",
+                        "color": "var(--mpp-state-good-fg)"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "TypeBadge"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.context.ToolTypeCode"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "badge badge-purple"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "AssignedLine"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "\"Assigned \" + if(isNull({view.custom.context.AssignedAt}), \"-\", toStr({view.custom.context.AssignedAt})) + \" by \" + if(isNull({view.custom.context.AssignedBy}), \"-\", toStr({view.custom.context.AssignedBy}))"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "fontSize": "11px",
+                    "color": "var(--mpp-text-muted)"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "BtnRelease"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleRelease()"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Release",
+              "style": {
+                "classes": "btn btn-sm btn-danger"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "EmptyState"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "isNull({view.custom.context.ToolId})"
+              }
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "8px",
+            "padding": "10px 12px",
+            "background": "var(--mpp-surface-card)",
+            "border": "1px solid var(--mpp-border-subtle)",
+            "borderRadius": "var(--mpp-radius-sm)"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "EmptyLabel"
+            },
+            "props": {
+              "text": "No tool mounted",
+              "style": {
+                "fontSize": "12px",
+                "fontStyle": "italic",
+                "color": "var(--mpp-text-muted)"
+              }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "MountRow"
+            },
+            "props": {
+              "direction": "row",
+              "alignItems": "flex-end",
+              "style": {
+                "gap": "10px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "ToolField"
+                },
+                "position": {
+                  "grow": 1,
+                  "basis": "0"
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "gap": "4px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "props": {
+                      "text": "Tool",
+                      "style": {
+                        "classes": "field-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.dropdown",
+                    "meta": {
+                      "name": "ToolDropdown"
+                    },
+                    "propConfig": {
+                      "props.options": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.mountable"
+                          }
+                        }
+                      },
+                      "props.value": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.selectedToolId",
+                            "bidirectional": true
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "placeholder": "Select a tool",
+                      "style": {
+                        "boxSizing": "border-box",
+                        "classes": "select",
+                        "width": "100%"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "NotesField"
+                },
+                "position": {
+                  "grow": 1,
+                  "basis": "0"
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "gap": "4px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Label"
+                    },
+                    "props": {
+                      "text": "Notes",
+                      "style": {
+                        "classes": "field-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.text-field",
+                    "meta": {
+                      "name": "NotesInput"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.mountNotes",
+                            "bidirectional": true
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "placeholder": "Optional",
+                      "style": {
+                        "boxSizing": "border-box",
+                        "classes": "search-input",
+                        "width": "100%"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "BtnMount"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.enabled": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "!isNull({view.custom.selectedToolId})"
+                      }
+                    }
+                  }
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "script",
+                      "scope": "G",
+                      "config": {
+                        "script": "\tself.view.rootContainer.handleMount()"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "text": "Mount",
+                  "style": {
+                    "classes": "btn btn-primary btn-sm"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

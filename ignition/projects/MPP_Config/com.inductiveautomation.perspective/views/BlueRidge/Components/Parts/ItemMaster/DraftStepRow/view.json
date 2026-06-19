@@ -24,15 +24,9 @@
     "custom.areaOptions": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.params.areas})"
+          "path": "view.params.areas"
         },
-        "transforms": [
-          {
-            "code": "\timport json\n\ttry:\n\t\tareas \u003d json.loads(value) if isinstance(value, basestring) else (value or [])\n\texcept Exception:\n\t\tareas \u003d value or []\n\treturn [{\u0027label\u0027: a.get(\u0027Name\u0027), \u0027value\u0027: a.get(\u0027Id\u0027)} for a in (areas or [])]",
-            "type": "script"
-          }
-        ],
-        "type": "expr"
+        "type": "property"
       }
     },
     "custom.opTemplateOptions": {

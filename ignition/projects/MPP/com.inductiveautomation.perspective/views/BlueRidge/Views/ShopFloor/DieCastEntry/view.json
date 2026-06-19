@@ -28,11 +28,8 @@
     "activeLotId": null,
     "peersThisSession": [],
     "selectedLotId": null,
-    "cavityCumulative": {
-      "Shots": 0,
-      "Lots": 0,
-      "Cavity": null
-    }
+    "shiftTally": [],
+    "tallyCavityId": null
   },
   "params": {
     "areaId": null
@@ -78,18 +75,16 @@
         }
       }
     },
-    "custom.cavityCumulative": {
+    "custom.shiftTally": {
       "binding": {
-        "type": "property",
+        "type": "expr",
         "config": {
-          "path": "view.custom.selectedLotId"
-        },
-        "transforms": [
-          {
-            "type": "script",
-            "code": "\tlotId = value\n\tpeers = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.peersThisSession) or []\n\tsel = None\n\tfor p in peers:\n\t\tpr = (p or {}).get(\"peer\") or {}\n\t\tif pr.get(\"LotId\") == lotId:\n\t\t\tsel = pr\n\t\t\tbreak\n\tif sel is None:\n\t\treturn {\"Shots\": 0, \"Lots\": 0, \"Cavity\": None}\n\tcav = sel.get(\"Cavity\")\n\tshots = 0\n\tlots = 0\n\tfor p in peers:\n\t\tpr = (p or {}).get(\"peer\") or {}\n\t\tif pr.get(\"Cavity\") == cav:\n\t\t\tshots += (pr.get(\"PieceCount\") or 0)\n\t\t\tlots += 1\n\treturn {\"Shots\": shots, \"Lots\": lots, \"Cavity\": cav}"
-          }
-        ]
+          "expression": "runScript(\"BlueRidge.Lots.Lot.getShiftCavityTally\", 0, {view.custom.activeTool.ToolId})"
+        }
+      },
+      "onChange": {
+        "enabled": true,
+        "script": "\trows = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.shiftTally) or []\n\tids = [r.get(\"ToolCavityId\") for r in rows]\n\tcur = self.view.custom.tallyCavityId\n\tif cur is None or cur not in ids:\n\t\tself.view.custom.tallyCavityId = BlueRidge.Lots.Lot.defaultShiftCavityId(rows)"
       }
     }
   },
@@ -177,11 +172,26 @@
           {
             "type": "ia.display.label",
             "meta": {
-              "name": "OperatorLabel"
+              "name": "OperatorLabel",
+              "tooltip": {
+                "text": "Switch operator"
+              }
+            },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=True, overlayDismiss=True)"
+                  }
+                }
+              }
             },
             "props": {
               "style": {
-                "classes": "pf-kpi-sub"
+                "classes": "pf-kpi-sub",
+                "cursor": "pointer"
               }
             },
             "propConfig": {
@@ -200,6 +210,9 @@
             "version": 0,
             "meta": {
               "name": "PausedIndicator"
+            },
+            "position": {
+              "display": false
             },
             "props": {
               "path": "BlueRidge/Components/PlantFloor/PausedLotIndicator"
@@ -942,7 +955,7 @@
                       "name": "ActiveCavityLabel"
                     },
                     "props": {
-                      "text": "Active cavity LOT",
+                      "text": "Cavity (this shift)",
                       "style": {
                         "classes": "pf-field-label"
                       }
@@ -956,7 +969,7 @@
                     },
                     "props": {
                       "placeholder": {
-                        "text": "Select a cavity LOT"
+                        "text": "Select a cavity"
                       }
                     },
                     "propConfig": {
@@ -964,12 +977,12 @@
                         "binding": {
                           "type": "property",
                           "config": {
-                            "path": "view.custom.peersThisSession"
+                            "path": "view.custom.shiftTally"
                           },
                           "transforms": [
                             {
                               "type": "script",
-                              "code": "\tpeers = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\tout = []\n\tfor p in peers:\n\t\tpr = (p or {}).get(\"peer\") or {}\n\t\tout.append({\"label\": \"Cavity %s - %s\" % (pr.get(\"Cavity\"), pr.get(\"LotName\")), \"value\": pr.get(\"LotId\")})\n\treturn out"
+                              "code": "\treturn BlueRidge.Lots.Lot.shiftCavityOptions(value)"
                             }
                           ]
                         }
@@ -978,7 +991,7 @@
                         "binding": {
                           "type": "property",
                           "config": {
-                            "path": "view.custom.selectedLotId",
+                            "path": "view.custom.tallyCavityId",
                             "bidirectional": true
                           }
                         }
@@ -1016,7 +1029,7 @@
                         "binding": {
                           "type": "expr",
                           "config": {
-                            "expression": "if(isNull({view.custom.cavityCumulative.Cavity}), \"Cavity (cumulative)\", \"Cavity \" + toStr({view.custom.cavityCumulative.Cavity}) + \" (cumulative)\")"
+                            "expression": "\"Shots this shift\""
                           }
                         }
                       }
@@ -1028,7 +1041,7 @@
                       "name": "ShotKpiLabel"
                     },
                     "props": {
-                      "text": "Cumulative shots (this run)",
+                      "text": "Pieces this shift (selected cavity)",
                       "style": {
                         "classes": "pf-kpi-label"
                       }
@@ -1049,40 +1062,7 @@
                         "binding": {
                           "type": "expr",
                           "config": {
-                            "expression": "toStr({view.custom.cavityCumulative.Shots})"
-                          }
-                        }
-                      }
-                    }
-                  },
-                  {
-                    "type": "ia.display.label",
-                    "meta": {
-                      "name": "LotsKpiLabel"
-                    },
-                    "props": {
-                      "text": "From LOTs",
-                      "style": {
-                        "classes": "pf-kpi-label"
-                      }
-                    }
-                  },
-                  {
-                    "type": "ia.display.label",
-                    "meta": {
-                      "name": "LotsKpiValue"
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "pf-kpi-sub"
-                      }
-                    },
-                    "propConfig": {
-                      "props.text": {
-                        "binding": {
-                          "type": "expr",
-                          "config": {
-                            "expression": "toStr({view.custom.cavityCumulative.Lots})"
+                            "expression": "toStr(runScript(\"BlueRidge.Lots.Lot.shiftSumForCavity\", 0, {view.custom.shiftTally}, {view.custom.tallyCavityId}))"
                           }
                         }
                       }
@@ -1094,7 +1074,7 @@
                       "name": "DerivedNote"
                     },
                     "props": {
-                      "text": "Derived from LOT piece counts on this cavity.",
+                      "text": "Sum of as-cast piece counts on the selected cavity, this shift.",
                       "style": {
                         "classes": "pf-field-help"
                       }
@@ -1116,7 +1096,7 @@
                     "binding": {
                       "type": "property",
                       "config": {
-                        "path": "view.custom.selectedLotId"
+                        "path": "view.custom.activeLotId"
                       }
                     }
                   }
@@ -1210,7 +1190,7 @@
         {
           "name": "submitCreate",
           "params": [],
-          "script": "\tdraft = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft) or {}\n\ttool = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.activeTool) or {}\n\tcell = BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\t# Cavity: a numeric option value is a real ToolCavityId; a typed (custom) value is a manual cavity note (D2).\n\tcav = draft.get(\"toolCavityId\")\n\ttoolCavityId = None\n\tcavityNote = None\n\tif cav is not None and cav != \"\":\n\t\ttry:\n\t\t\ttoolCavityId = int(cav)\n\t\texcept (ValueError, TypeError):\n\t\t\tcavityNote = unicode(cav)\n\tdata = {\n\t\t\"itemId\": draft.get(\"itemId\"),\n\t\t\"lotOriginTypeId\": self.view.custom.manufacturedOriginId,\n\t\t\"currentLocationId\": cell.get(\"locationId\"),\n\t\t\"pieceCount\": BlueRidge.Common.Util.toIntOrNone(draft.get(\"pieceCount\")),\n\t\t\"weight\": BlueRidge.Common.Util.toDecimalOrNone(draft.get(\"weight\")),\n\t\t\"weightUomId\": draft.get(\"weightUomId\"),\n\t\t\"toolId\": tool.get(\"ToolId\"),\n\t\t\"toolCavityId\": toolCavityId,\n\t}\n\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tresult = BlueRidge.Lots.Lot.create(data, appUserId, termId, None, cavityNote)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle=\"LOT created\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.activeLotId = result.get(\"NewId\")\n\t\tminted = result.get(\"MintedLotName\")\n\t\tscanned = draft.get(\"scannedLtt\")\n\t\tif scanned and minted and scanned != minted:\n\t\t\tBlueRidge.Common.Notify.toast(\"LTT mismatch\", \"Scanned %s but minted %s\" % (scanned, minted), \"warning\")\n\t\tpeers = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.peersThisSession) or []\n\t\tpeers.append({\"peer\": {\"Cavity\": (toolCavityId if toolCavityId is not None else cavityNote), \"LotName\": minted, \"PieceCount\": data.get(\"pieceCount\"), \"LotId\": result.get(\"NewId\")}})\n\t\tself.view.custom.peersThisSession = peers\n\t\tself.view.custom.selectedLotId = result.get(\"NewId\")\n\treturn result"
+          "script": "\tdraft = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft) or {}\n\ttool = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.activeTool) or {}\n\tcell = BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\t# Cavity: a numeric option value is a real ToolCavityId; a typed (custom) value is a manual cavity note (D2).\n\tcav = draft.get(\"toolCavityId\")\n\ttoolCavityId = None\n\tcavityNote = None\n\tif cav is not None and cav != \"\":\n\t\ttry:\n\t\t\ttoolCavityId = int(cav)\n\t\texcept (ValueError, TypeError):\n\t\t\tcavityNote = unicode(cav)\n\tdata = {\n\t\t\"itemId\": draft.get(\"itemId\"),\n\t\t\"lotOriginTypeId\": self.view.custom.manufacturedOriginId,\n\t\t\"currentLocationId\": cell.get(\"locationId\"),\n\t\t\"pieceCount\": BlueRidge.Common.Util.toIntOrNone(draft.get(\"pieceCount\")),\n\t\t\"weight\": BlueRidge.Common.Util.toDecimalOrNone(draft.get(\"weight\")),\n\t\t\"weightUomId\": draft.get(\"weightUomId\"),\n\t\t\"toolId\": tool.get(\"ToolId\"),\n\t\t\"toolCavityId\": toolCavityId,\n\t}\n\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tresult = BlueRidge.Lots.Lot.create(data, appUserId, termId, None, cavityNote)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle=\"LOT created\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.activeLotId = result.get(\"NewId\")\n\t\tminted = result.get(\"MintedLotName\")\n\t\tscanned = draft.get(\"scannedLtt\")\n\t\tif scanned and minted and scanned != minted:\n\t\t\tBlueRidge.Common.Notify.toast(\"LTT mismatch\", \"Scanned %s but minted %s\" % (scanned, minted), \"warning\")\n\t\tpeers = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.peersThisSession) or []\n\t\tpeers.append({\"peer\": {\"Cavity\": (toolCavityId if toolCavityId is not None else cavityNote), \"LotName\": minted, \"PieceCount\": data.get(\"pieceCount\"), \"LotId\": result.get(\"NewId\")}})\n\t\tself.view.custom.peersThisSession = peers\n\t\tself.view.custom.selectedLotId = result.get(\"NewId\")\n\t\tself.view.custom.shiftTally = BlueRidge.Lots.Lot.getShiftCavityTally(tool.get(\"ToolId\"))\n\treturn result"
         },
         {
           "name": "cancelDraft",
@@ -1232,7 +1212,7 @@
         {
           "name": "startup",
           "params": [],
-          "script": "\t# Operator gate: no logged-in operator -> send them to the initials screen, then\n\t# return here (with the area param preserved) so the view populates on the way back.\n\tif not self.session.custom.appUserId:\n\t\tareaId = self.view.params.areaId\n\t\tif areaId:\n\t\t\tret = \"/shop-floor/die-cast/area/\" + str(areaId)\n\t\telse:\n\t\t\tret = \"/shop-floor/die-cast\"\n\t\tsystem.perspective.navigate(\"/shop-floor/initials\", params={\"returnTo\": ret})\n\t\treturn\n\tself.seedSelectedCell()"
+          "script": "\t# Operator gate: no logged-in operator -> open the initials popup OVER this screen.\n\t# Non-blocking: the page still populates behind the modal, and session.custom is\n\t# reactive, so the operator label/mutations pick up the user with no re-populate.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)\n\tself.seedSelectedCell()"
         },
         {
           "name": "openCreateConfirm",

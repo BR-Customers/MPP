@@ -70,7 +70,7 @@
         {
           "name": "startup",
           "params": [],
-          "script": "\t# Operator gate: no logged-in operator -> initials screen, then return here.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.navigate(\"/shop-floor/initials\", params={\"returnTo\": \"/shop-floor/receiving\"})\n\t\treturn"
+          "script": "\t# Operator gate: no logged-in operator -> open the initials popup OVER this screen.\n\t# Non-blocking: the page populates behind the modal; session.custom is reactive.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
         }
       ]
     },

@@ -214,3 +214,48 @@ def getStatusOptions():
 
 def getOriginOptions():
     return [{"label": r["Name"], "value": r["Id"]} for r in BlueRidge.Common.Db.execList("lots/LotOriginType_List")]
+
+
+def getShiftCavityTally(toolId):
+    """Arc 2 Phase 3 die-cast right rail. One row per active (configured) cavity of
+       the mounted die: PieceSum = sum of as-cast PieceCount for LOTs Created this
+       OEE shift on that tool+cavity, and ShiftShots = max(PieceSum) across cavities
+       (both computed in SQL). Returns list[dict]; [] when no die is mounted."""
+    toolId = _u(toolId)
+    BlueRidge.Common.Util.log("toolId=%s" % toolId)
+    if toolId is None or toolId == "":
+        return []
+    return BlueRidge.Common.Db.execList("lots/Lot_GetShiftCavityTally", {"toolId": toolId})
+
+
+def shiftCavityOptions(tally):
+    """[{label, value}] for the right-rail cavity dropdown, built from a tally list
+       so every configured cavity appears (value = ToolCavityId). Presentation only."""
+    rows = _u(tally) or []
+    return [{"label": r.get("CavityLabel") or ("Cavity %s" % r.get("CavityNumber")),
+             "value": r.get("ToolCavityId")} for r in rows]
+
+
+def shiftSumForCavity(tally, toolCavityId):
+    """The selected cavity's shift piece sum from a tally list. Int (0 if absent)."""
+    rows = _u(tally) or []
+    cid = _u(toolCavityId)
+    for r in rows:
+        if r.get("ToolCavityId") == cid:
+            return r.get("PieceSum") or 0
+    return 0
+
+
+def defaultShiftCavityId(tally):
+    """ToolCavityId of the busiest cavity this shift (highest PieceSum) -> the
+       default right-rail selection so the card opens on the most accurate shot
+       count. None when the tally is empty."""
+    rows = _u(tally) or []
+    best = None
+    bestSum = -1
+    for r in rows:
+        s = r.get("PieceSum") or 0
+        if s > bestSum:
+            bestSum = s
+            best = r.get("ToolCavityId")
+    return best
