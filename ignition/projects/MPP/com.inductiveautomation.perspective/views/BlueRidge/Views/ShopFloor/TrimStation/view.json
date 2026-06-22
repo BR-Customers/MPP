@@ -15,7 +15,7 @@
       "binding": {
         "type": "expr",
         "config": {
-          "expression": "runScript(\"BlueRidge.Location.Location.getCellsForDropdown\", 0)"
+          "expression": "runScript(\"BlueRidge.Location.Location.getMachiningDestinationsForDropdown\", 0)"
         }
       }
     }

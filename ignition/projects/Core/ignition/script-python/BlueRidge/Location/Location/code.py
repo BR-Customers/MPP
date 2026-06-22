@@ -243,6 +243,43 @@ def getCellsForDropdown():
     return out
 
 
+def getMachiningDestinationsForDropdown():
+    """Machining-IN receiving Cells shaped for ia.input.dropdown -- the valid
+    whole-LOT destinations for Trim OUT (and Machining-line routing). Filters to
+    Cell-tier Locations named 'Machining In%' (EXCLUDES Printers, Assembly /
+    Machining-OUT terminals, Die Cast terminals, and machines). Wraps
+    Location.Location_ListMachiningDestinations.
+
+    Returns:
+        list[dict]: [{label: '<Code> - <Name>', value: Id, code: Code,
+                      name: Name, areaCode, areaName}]. Always a list (never
+                      None) so a runScript-bound dropdown default ([]) is never
+                      overwritten with null. Empty if none exist.
+    """
+    BlueRidge.Common.Util.log("loading machining destinations for dropdown")
+    try:
+        rows = BlueRidge.Common.Db.execList(
+            "location/Location_ListMachiningDestinations", {}
+        ) or []
+    except Exception as e:
+        BlueRidge.Common.Util.log("getMachiningDestinationsForDropdown failed: %s" % str(e))
+        BlueRidge.Common.Notify.toast("Could not load machining destinations", str(e), "error")
+        return []
+    out = []
+    for r in rows:
+        code = r.get("Code") or ""
+        name = r.get("Name") or ""
+        out.append({
+            "label": ("%s - %s" % (code, name)).strip(" -"),
+            "value": r.get("Id"),
+            "code":  code,
+            "name":  name,
+            "areaCode": r.get("AreaCode"),
+            "areaName": r.get("AreaName"),
+        })
+    return out
+
+
 def getCellsForAreaDropdown(areaId):
     """The pickable equipment cells beneath an Area (excludes Terminal/Printer),
     shaped for ia.input.dropdown + scan matching:
