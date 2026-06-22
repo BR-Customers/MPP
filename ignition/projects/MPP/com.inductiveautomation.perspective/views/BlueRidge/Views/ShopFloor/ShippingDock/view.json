@@ -9,54 +9,260 @@
   "root": {
     "type": "ia.container.flex",
     "meta": { "name": "root" },
-    "props": { "direction": "column", "style": { "classes": "canvas" } },
+    "props": { "direction": "column", "style": { "classes": "canvas pf-terminal" } },
     "children": [
       {
-        "type": "ia.display.label",
-        "meta": { "name": "Header" },
+        "type": "ia.container.flex",
+        "meta": { "name": "TerminalHeader" },
         "position": { "shrink": 0 },
-        "props": { "text": "Shipping Dock", "style": { "fontSize": "22px", "fontWeight": "700", "padding": "16px", "borderBottom": "1px solid var(--mpp-border-subtle)" } }
+        "props": { "direction": "column", "style": { "classes": "pf-terminal-header", "gap": "12px", "padding": "16px", "borderBottom": "1px solid var(--mpp-border-subtle)" } },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "TitleRow" },
+            "position": { "shrink": 0 },
+            "props": { "direction": "row", "alignItems": "center", "style": { "gap": "16px" } },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "TitleBlock" },
+                "position": { "grow": 1 },
+                "props": { "direction": "column", "style": { "classes": "pf-terminal-title", "gap": "2px" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "Title" }, "props": { "text": "Shipping Dock", "style": { "fontSize": "22px", "fontWeight": "700" } } },
+                  { "type": "ia.display.label", "meta": { "name": "Subtitle" }, "props": { "text": "Scan-to-ship - validates container is complete, not on hold, and has a valid shipping label", "style": { "classes": "pf-terminal-title-meta pf-kpi-sub" } } }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "CellContext" },
+            "position": { "shrink": 0 },
+            "props": { "direction": "row", "alignItems": "center", "wrap": "wrap", "style": { "classes": "pf-terminal-cell-context", "gap": "12px" } },
+            "children": [
+              { "type": "ia.display.label", "meta": { "name": "CtxLabel" }, "props": { "text": "Active Location", "style": { "classes": "pf-cell-context-label" } } },
+              { "type": "ia.display.label", "meta": { "name": "CtxValue" }, "props": { "text": "Shipping Dock A", "style": { "classes": "pf-cell-context-value" } } },
+              { "type": "ia.display.label", "meta": { "name": "Spacer" }, "position": { "grow": 1 }, "props": { "text": "" } },
+              { "type": "ia.display.label", "meta": { "name": "CtxHint" }, "props": { "text": "Loaded containers move CurrentLocationId to Shipping Dock; audit ContainerShipped.", "style": { "classes": "pf-kpi-sub" } } }
+            ]
+          }
+        ]
       },
       {
         "type": "ia.container.flex",
         "meta": { "name": "Body" },
         "position": { "grow": 1 },
-        "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "16px", "margin": "16px", "padding": "16px" } },
+        "props": { "direction": "row", "wrap": "wrap", "alignItems": "stretch", "style": { "gap": "16px", "margin": "16px", "padding": "0", "overflowY": "auto" } },
         "children": [
-          { "type": "ia.display.label", "meta": { "name": "Hint" }, "position": { "shrink": 0 }, "props": { "text": "Scan the container's shipping label, then press Ship Container.", "style": { "classes": "pf-kpi-sub" } } },
           {
             "type": "ia.container.flex",
-            "meta": { "name": "LabelField" },
-            "position": { "basis": "360px", "shrink": 0 },
-            "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+            "meta": { "name": "ManifestPanel" },
+            "position": { "grow": 1, "basis": "640px" },
+            "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "16px", "padding": "16px" } },
             "children": [
-              { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Shipping Label Id", "style": { "classes": "pf-field-label" } } },
-              { "type": "ia.input.text-field", "meta": { "name": "ShippingLabelId" }, "propConfig": { "props.text": { "binding": { "config": { "path": "view.custom.draft.shippingLabelId", "bidirectional": true }, "type": "property" } } }, "props": { "placeholder": "Scan shipping label", "style": { "classes": "pf-field-input" } } }
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "ManifestHeader" },
+                "position": { "shrink": 0 },
+                "props": { "direction": "column", "style": { "classes": "pf-panel-header", "gap": "2px" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "H" }, "props": { "text": "Active Manifest", "style": { "fontSize": "18px", "fontWeight": "700" } } },
+                  { "type": "ia.display.label", "meta": { "name": "Sub" }, "props": { "text": "Manifest read pending - no manifest read proc in dev", "style": { "classes": "pf-kpi-sub" } } }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "ManifestKpis" },
+                "position": { "shrink": 0 },
+                "props": { "direction": "row", "wrap": "wrap", "style": { "classes": "pf-kpis", "gap": "12px" } },
+                "children": [
+                  {
+                    "type": "ia.container.flex", "meta": { "name": "KpiLoaded" }, "position": { "grow": 1, "basis": "120px" }, "props": { "direction": "column", "style": { "classes": "pf-kpi", "gap": "2px" } },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Loaded", "style": { "classes": "pf-kpi-label" } } },
+                      { "type": "ia.display.label", "meta": { "name": "V" }, "props": { "text": "-", "style": { "classes": "pf-kpi-value" } } },
+                      { "type": "ia.display.label", "meta": { "name": "S" }, "props": { "text": "no manifest read", "style": { "classes": "pf-kpi-sub" } } }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex", "meta": { "name": "KpiA" }, "position": { "grow": 1, "basis": "120px" }, "props": { "direction": "column", "style": { "classes": "pf-kpi", "gap": "2px" } },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "By Item", "style": { "classes": "pf-kpi-label" } } },
+                      { "type": "ia.display.label", "meta": { "name": "V" }, "props": { "text": "-", "style": { "classes": "pf-kpi-value" } } },
+                      { "type": "ia.display.label", "meta": { "name": "S" }, "props": { "text": "queue read pending", "style": { "classes": "pf-kpi-sub" } } }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex", "meta": { "name": "KpiRemaining" }, "position": { "grow": 1, "basis": "120px" }, "props": { "direction": "column", "style": { "classes": "pf-kpi", "gap": "2px" } },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Remaining", "style": { "classes": "pf-kpi-label" } } },
+                      { "type": "ia.display.label", "meta": { "name": "V" }, "props": { "text": "-", "style": { "classes": "pf-kpi-value" } } },
+                      { "type": "ia.display.label", "meta": { "name": "S" }, "props": { "text": "queue read pending", "style": { "classes": "pf-kpi-sub" } } }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "LabelField" },
+                "position": { "shrink": 0 },
+                "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Scan Container Shipping Label", "style": { "classes": "pf-field-label" } } },
+                  { "type": "ia.input.text-field", "meta": { "name": "ShippingLabelId" }, "propConfig": { "props.text": { "binding": { "config": { "path": "view.custom.draft.shippingLabelId", "bidirectional": true }, "type": "property" } } }, "props": { "placeholder": "Scan shipping label", "style": { "classes": "pf-field-input pf-field-mono", "minHeight": "44px" } } },
+                  { "type": "ia.display.label", "meta": { "name": "Help" }, "props": { "text": "Per-scan: validates the container is complete, not on hold, and has a valid shipping label.", "style": { "classes": "pf-field-help pf-kpi-sub" } } }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "ActionRow" },
+                "position": { "shrink": 0 },
+                "props": { "direction": "row", "alignItems": "center", "wrap": "wrap", "style": { "gap": "10px" } },
+                "children": [
+                  {
+                    "type": "ia.input.button",
+                    "meta": { "name": "ShipButton" },
+                    "props": { "text": "Ship Container", "style": { "classes": "pf-btn pf-btn-primary pf-btn-large" } },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script", "scope": "G",
+                          "config": { "script": "\td = self.view.custom.draft\n\tlabelId = BlueRidge.Common.Util.toIntOrNone(d.get(\"shippingLabelId\"))\n\tif labelId is None:\n\t\tself.view.custom.lastResult = {\"Status\": False, \"Message\": \"Enter or scan a Shipping Label Id.\"}\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter or scan a Shipping Label Id.\"}, \"Ship Container\")\n\t\treturn\n\tresult = BlueRidge.Lots.Shipping.ship(labelId)\n\tself.view.custom.lastResult = {\"Status\": bool(result and result.get(\"Status\")), \"Message\": (result.get(\"Message\") if result else \"\") or \"\"}\n\tBlueRidge.Common.Ui.notifyResult(result, \"Container shipped\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"shippingLabelId\": \"\"}" }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": { "name": "ReprintButton" },
+                    "props": { "text": "Reprint Label", "style": { "classes": "pf-btn pf-btn-secondary pf-btn-large" } },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script", "scope": "G",
+                          "config": { "script": "\td = self.view.custom.draft\n\tlabelId = BlueRidge.Common.Util.toIntOrNone(d.get(\"shippingLabelId\"))\n\tif labelId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter or scan a Shipping Label Id to reprint.\"}, \"Reprint Label\")\n\t\treturn\n\tresult = BlueRidge.Lots.Shipping.reprintLabel(labelId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Label reprinted\")" }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "ResultCard" },
+                "position": { "shrink": 0 },
+                "propConfig": { "position.display": { "binding": { "type": "expr", "config": { "expression": "!isNull({view.custom.lastResult.Status})" } } } },
+                "props": { "direction": "column", "style": { "classes": "surface-card", "gap": "8px", "padding": "16px" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "ResultTitle" }, "propConfig": { "props.text": { "binding": { "type": "expr", "config": { "expression": "if({view.custom.lastResult.Status}, 'Shipped', 'Not shipped')" } } } }, "props": { "style": { "fontWeight": "700", "fontSize": "20px" } } },
+                  { "type": "ia.display.label", "meta": { "name": "ResultMsg" }, "propConfig": { "props.text": { "binding": { "type": "property", "config": { "path": "view.custom.lastResult.Message" } } } }, "props": { "style": { "classes": "pf-kpi-sub" } } }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "RecentScans" },
+                "position": { "shrink": 0 },
+                "props": { "direction": "column", "style": { "classes": "pf-queue", "gap": "8px" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "QueueTitle" }, "props": { "text": "Recent Scans", "style": { "classes": "pf-kpi-label" } } },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": { "name": "RowPlaceholder" },
+                    "props": { "direction": "row", "alignItems": "center", "style": { "classes": "pf-queue-row", "gap": "12px", "padding": "8px" } },
+                    "children": [
+                      {
+                        "type": "ia.container.flex", "meta": { "name": "RowInfo" }, "position": { "grow": 1 }, "props": { "direction": "column", "style": { "gap": "2px" } },
+                        "children": [
+                          { "type": "ia.display.label", "meta": { "name": "Name" }, "props": { "text": "Recent scan log", "style": { "classes": "pf-queue-name" } } },
+                          { "type": "ia.display.label", "meta": { "name": "Detail" }, "props": { "text": "Per-scan results (Loaded / On Hold / Void Label) render here - queue read pending in dev.", "style": { "classes": "pf-queue-detail pf-kpi-sub" } } }
+                        ]
+                      },
+                      { "type": "ia.display.label", "meta": { "name": "VoidPill" }, "position": { "shrink": 0 }, "props": { "text": "Void Label", "style": { "classes": "pf-pill pf-pill-hold" } } }
+                    ]
+                  }
+                ]
+              }
             ]
           },
           {
-            "type": "ia.input.button",
-            "meta": { "name": "ShipButton" },
-            "position": { "shrink": 0 },
-            "props": { "text": "Ship Container", "style": { "classes": "pf-btn pf-btn-primary pf-btn-large" } },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script", "scope": "G",
-                  "config": { "script": "\td = self.view.custom.draft\n\tlabelId = BlueRidge.Common.Util.toIntOrNone(d.get(\"shippingLabelId\"))\n\tif labelId is None:\n\t\tself.view.custom.lastResult = {\"Status\": False, \"Message\": \"Enter or scan a Shipping Label Id.\"}\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter or scan a Shipping Label Id.\"}, \"Ship Container\")\n\t\treturn\n\tresult = BlueRidge.Lots.Shipping.ship(labelId)\n\tself.view.custom.lastResult = {\"Status\": bool(result and result.get(\"Status\")), \"Message\": (result.get(\"Message\") if result else \"\") or \"\"}\n\tBlueRidge.Common.Ui.notifyResult(result, \"Container shipped\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"shippingLabelId\": \"\"}" }
-                }
-              }
-            }
-          },
-          {
             "type": "ia.container.flex",
-            "meta": { "name": "ResultCard" },
-            "position": { "shrink": 0 },
-            "propConfig": { "position.display": { "binding": { "type": "expr", "config": { "expression": "!isNull({view.custom.lastResult.Status})" } } } },
-            "props": { "direction": "column", "style": { "classes": "surface-card", "gap": "8px", "padding": "16px" } },
+            "meta": { "name": "RightRail" },
+            "position": { "shrink": 0, "basis": "360px" },
+            "props": { "direction": "column", "style": { "gap": "16px" } },
             "children": [
-              { "type": "ia.display.label", "meta": { "name": "ResultTitle" }, "propConfig": { "props.text": { "binding": { "type": "expr", "config": { "expression": "if({view.custom.lastResult.Status}, 'Shipped', 'Not shipped')" } } } }, "props": { "style": { "fontWeight": "700", "fontSize": "20px" } } },
-              { "type": "ia.display.label", "meta": { "name": "ResultMsg" }, "propConfig": { "props.text": { "binding": { "type": "property", "config": { "path": "view.custom.lastResult.Message" } } } }, "props": { "style": { "classes": "pf-kpi-sub" } } }
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "PendingPanel" },
+                "position": { "shrink": 0 },
+                "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "12px", "padding": "16px" } },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": { "name": "PendingHeader" },
+                    "position": { "shrink": 0 },
+                    "props": { "direction": "column", "style": { "classes": "pf-panel-header", "gap": "2px" } },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "H" }, "props": { "text": "Pending Containers", "style": { "fontSize": "18px", "fontWeight": "700" } } },
+                      { "type": "ia.display.label", "meta": { "name": "Sub" }, "props": { "text": "at Shipping Dock - ready to load", "style": { "classes": "pf-kpi-sub" } } }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": { "name": "PendingQueue" },
+                    "position": { "shrink": 0 },
+                    "props": { "direction": "column", "style": { "classes": "pf-queue", "gap": "8px" } },
+                    "children": [
+                      {
+                        "type": "ia.container.flex",
+                        "meta": { "name": "PendingPlaceholder" },
+                        "props": { "direction": "row", "alignItems": "center", "style": { "classes": "pf-queue-row", "gap": "12px", "padding": "8px" } },
+                        "children": [
+                          {
+                            "type": "ia.container.flex", "meta": { "name": "Info" }, "position": { "grow": 1 }, "props": { "direction": "column", "style": { "gap": "2px" } },
+                            "children": [
+                              { "type": "ia.display.label", "meta": { "name": "Name" }, "props": { "text": "Loaded containers", "style": { "classes": "pf-queue-name" } } },
+                              { "type": "ia.display.label", "meta": { "name": "Detail" }, "props": { "text": "Queue read pending in dev - ready-to-load containers list here.", "style": { "classes": "pf-queue-detail pf-kpi-sub" } } }
+                            ]
+                          },
+                          { "type": "ia.display.label", "meta": { "name": "Pill" }, "position": { "shrink": 0 }, "props": { "text": "Ready", "style": { "classes": "pf-pill pf-pill-good" } } }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "StatsPanel" },
+                "position": { "shrink": 0 },
+                "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "8px", "padding": "16px" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "H" }, "position": { "shrink": 0 }, "props": { "text": "Today's Stats", "style": { "classes": "pf-panel-header", "fontSize": "18px", "fontWeight": "700" } } },
+                  {
+                    "type": "ia.container.flex", "meta": { "name": "StatShipped" }, "props": { "direction": "row", "alignItems": "center", "style": { "gap": "8px" } },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "L" }, "position": { "grow": 1 }, "props": { "text": "Containers Shipped", "style": { "classes": "pf-kpi-sub" } } },
+                      { "type": "ia.display.label", "meta": { "name": "V" }, "props": { "text": "-", "style": { "fontWeight": "600" } } }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex", "meta": { "name": "StatManifests" }, "props": { "direction": "row", "alignItems": "center", "style": { "gap": "8px" } },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "L" }, "position": { "grow": 1 }, "props": { "text": "Manifests Completed", "style": { "classes": "pf-kpi-sub" } } },
+                      { "type": "ia.display.label", "meta": { "name": "V" }, "props": { "text": "-", "style": { "fontWeight": "600" } } }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex", "meta": { "name": "StatRejected" }, "props": { "direction": "row", "alignItems": "center", "style": { "gap": "8px" } },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "L" }, "position": { "grow": 1 }, "props": { "text": "Rejected Scans", "style": { "classes": "pf-kpi-sub" } } },
+                      { "type": "ia.display.label", "meta": { "name": "V" }, "props": { "text": "-", "style": { "fontWeight": "600" } } }
+                    ]
+                  },
+                  { "type": "ia.display.label", "meta": { "name": "StatsNote" }, "props": { "text": "Stats read pending in dev.", "style": { "classes": "pf-kpi-sub" } } }
+                ]
+              }
             ]
           }
         ]

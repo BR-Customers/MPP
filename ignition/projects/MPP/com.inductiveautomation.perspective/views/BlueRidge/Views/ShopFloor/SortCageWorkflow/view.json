@@ -8,63 +8,175 @@
   "root": {
     "type": "ia.container.flex",
     "meta": { "name": "root" },
-    "props": { "direction": "column", "style": { "classes": "canvas" } },
+    "props": { "direction": "column", "style": { "classes": "canvas pf-terminal" } },
     "children": [
       {
-        "type": "ia.display.label",
-        "meta": { "name": "Header" },
+        "type": "ia.container.flex",
+        "meta": { "name": "TerminalHeader" },
         "position": { "shrink": 0 },
-        "props": { "text": "Sort Cage - Migrate Serial", "style": { "fontSize": "22px", "fontWeight": "700", "padding": "16px", "borderBottom": "1px solid var(--mpp-border-subtle)" } }
+        "props": { "direction": "row", "alignItems": "center", "style": { "classes": "pf-terminal-header", "gap": "16px", "padding": "16px", "borderBottom": "1px solid var(--mpp-border-subtle)" } },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "TitleBlock" },
+            "position": { "grow": 1 },
+            "props": { "direction": "column", "style": { "classes": "pf-terminal-title", "gap": "2px" } },
+            "children": [
+              { "type": "ia.display.label", "meta": { "name": "Title" }, "props": { "text": "Sort Cage Workflow", "style": { "fontSize": "22px", "fontWeight": "700" } } },
+              { "type": "ia.display.label", "meta": { "name": "Subtitle" }, "props": { "text": "Re-containerization - per-Serial migration (UJ-05 update-in-place)", "style": { "classes": "pf-terminal-title-meta pf-kpi-sub" } } }
+            ]
+          },
+          { "type": "ia.display.label", "meta": { "name": "HoldPill" }, "position": { "shrink": 0 }, "props": { "text": "Container on Hold", "style": { "classes": "pf-pill pf-pill-hold" } } }
+        ]
       },
       {
         "type": "ia.container.flex",
         "meta": { "name": "Body" },
         "position": { "grow": 1 },
-        "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "16px", "margin": "16px", "padding": "16px" } },
+        "props": { "direction": "column", "style": { "gap": "16px", "margin": "16px", "padding": "0", "overflowY": "auto" } },
         "children": [
-          { "type": "ia.display.label", "meta": { "name": "Hint" }, "position": { "shrink": 0 }, "props": { "text": "Re-containerize a serialized part: scan its serial, the destination container, and the new tray position.", "style": { "classes": "pf-kpi-sub" } } },
           {
             "type": "ia.container.flex",
-            "meta": { "name": "FieldRow" },
+            "meta": { "name": "SourcePanel" },
             "position": { "shrink": 0 },
-            "props": { "direction": "row", "alignItems": "flex-end", "wrap": "wrap", "style": { "gap": "12px" } },
+            "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "12px", "padding": "16px" } },
             "children": [
               {
-                "type": "ia.container.flex", "meta": { "name": "SerialField" }, "position": { "basis": "240px", "shrink": 0 }, "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                "type": "ia.container.flex",
+                "meta": { "name": "SourceHeader" },
+                "position": { "shrink": 0 },
+                "props": { "direction": "row", "alignItems": "baseline", "style": { "classes": "pf-panel-header", "gap": "12px" } },
                 "children": [
-                  { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Container Serial Id", "style": { "classes": "pf-field-label" } } },
-                  { "type": "ia.input.text-field", "meta": { "name": "ContainerSerialId" }, "propConfig": { "props.text": { "binding": { "config": { "path": "view.custom.draft.containerSerialId", "bidirectional": true }, "type": "property" } } }, "props": { "placeholder": "Serial Id", "style": { "classes": "pf-field-input" } } }
+                  { "type": "ia.display.label", "meta": { "name": "H" }, "position": { "grow": 1 }, "props": { "text": "Source Container", "style": { "fontSize": "18px", "fontWeight": "700" } } },
+                  { "type": "ia.display.label", "meta": { "name": "Meta" }, "props": { "text": "Source container summary - no read proc in dev", "style": { "classes": "pf-kpi-sub" } } }
                 ]
               },
               {
-                "type": "ia.container.flex", "meta": { "name": "NewContainerField" }, "position": { "basis": "240px", "shrink": 0 }, "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                "type": "ia.container.flex",
+                "meta": { "name": "SourceKpis" },
+                "position": { "shrink": 0 },
+                "props": { "direction": "row", "wrap": "wrap", "style": { "gap": "24px" } },
                 "children": [
-                  { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "New Container Id", "style": { "classes": "pf-field-label" } } },
-                  { "type": "ia.input.text-field", "meta": { "name": "NewContainerId" }, "propConfig": { "props.text": { "binding": { "config": { "path": "view.custom.draft.newContainerId", "bidirectional": true }, "type": "property" } } }, "props": { "placeholder": "Destination container", "style": { "classes": "pf-field-input" } } }
-                ]
-              },
-              {
-                "type": "ia.container.flex", "meta": { "name": "TrayField" }, "position": { "basis": "200px", "shrink": 0 }, "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
-                "children": [
-                  { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "New Tray Position", "style": { "classes": "pf-field-label" } } },
-                  { "type": "ia.input.text-field", "meta": { "name": "NewTrayPosition" }, "propConfig": { "props.text": { "binding": { "config": { "path": "view.custom.draft.newTrayPosition", "bidirectional": true }, "type": "property" } } }, "props": { "placeholder": "Tray position", "style": { "classes": "pf-field-input" } } }
+                  {
+                    "type": "ia.container.flex", "meta": { "name": "KpiContainer" }, "props": { "direction": "column", "style": { "classes": "pf-kpi", "gap": "2px" } },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Container", "style": { "classes": "pf-kpi-label" } } },
+                      { "type": "ia.display.label", "meta": { "name": "V" }, "props": { "text": "-", "style": { "classes": "pf-kpi-value pf-kpi-mono" } } }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex", "meta": { "name": "KpiShipper" }, "props": { "direction": "column", "style": { "classes": "pf-kpi", "gap": "2px" } },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "AIM Shipper ID", "style": { "classes": "pf-kpi-label" } } },
+                      { "type": "ia.display.label", "meta": { "name": "V" }, "props": { "text": "-", "style": { "classes": "pf-kpi-value pf-kpi-mono" } } }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex", "meta": { "name": "KpiItem" }, "props": { "direction": "column", "style": { "classes": "pf-kpi", "gap": "2px" } },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Item", "style": { "classes": "pf-kpi-label" } } },
+                      { "type": "ia.display.label", "meta": { "name": "V" }, "props": { "text": "-", "style": { "classes": "pf-kpi-value pf-kpi-mono" } } }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex", "meta": { "name": "KpiSerials" }, "props": { "direction": "column", "style": { "classes": "pf-kpi", "gap": "2px" } },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Total Serials", "style": { "classes": "pf-kpi-label" } } },
+                      { "type": "ia.display.label", "meta": { "name": "V" }, "props": { "text": "-", "style": { "classes": "pf-kpi-value" } } }
+                    ]
+                  }
                 ]
               }
             ]
           },
           {
-            "type": "ia.input.button",
-            "meta": { "name": "MigrateButton" },
+            "type": "ia.container.flex",
+            "meta": { "name": "MigrationPanel" },
             "position": { "shrink": 0 },
-            "props": { "text": "Migrate Serial", "style": { "classes": "pf-btn pf-btn-primary pf-btn-large" } },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script", "scope": "G",
-                  "config": { "script": "\td = self.view.custom.draft\n\tserialId = BlueRidge.Common.Util.toIntOrNone(d.get(\"containerSerialId\"))\n\tnewContainerId = BlueRidge.Common.Util.toIntOrNone(d.get(\"newContainerId\"))\n\tnewTrayPosition = BlueRidge.Common.Util.toIntOrNone(d.get(\"newTrayPosition\"))\n\tif serialId is None or newContainerId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a Container Serial Id and a New Container Id.\"}, \"Migrate Serial\")\n\t\treturn\n\tresult = BlueRidge.Lots.SortCage.migrateSerial(serialId, newContainerId, newTrayPosition=newTrayPosition)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Serial migrated\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"containerSerialId\": \"\", \"newContainerId\": \"\", \"newTrayPosition\": \"\"}" }
+            "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "16px", "padding": "16px" } },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "MigrationHeader" },
+                "position": { "shrink": 0 },
+                "props": { "direction": "row", "alignItems": "baseline", "style": { "classes": "pf-panel-header", "gap": "12px" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "H" }, "position": { "grow": 1 }, "props": { "text": "Migrate Serial", "style": { "fontSize": "18px", "fontWeight": "700" } } }
+                ]
+              },
+              { "type": "ia.display.label", "meta": { "name": "Hint" }, "position": { "shrink": 0 }, "props": { "text": "Re-containerize a serialized part: scan its serial, the destination container, and the new tray position.", "style": { "classes": "pf-kpi-sub" } } },
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "FieldRow" },
+                "position": { "shrink": 0 },
+                "props": { "direction": "row", "alignItems": "flex-end", "wrap": "wrap", "style": { "gap": "12px" } },
+                "children": [
+                  {
+                    "type": "ia.container.flex", "meta": { "name": "SerialField" }, "position": { "basis": "240px", "shrink": 0 }, "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Container Serial Id", "style": { "classes": "pf-field-label" } } },
+                      { "type": "ia.input.text-field", "meta": { "name": "ContainerSerialId" }, "propConfig": { "props.text": { "binding": { "config": { "path": "view.custom.draft.containerSerialId", "bidirectional": true }, "type": "property" } } }, "props": { "placeholder": "Serial Id", "style": { "classes": "pf-field-input" } } }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex", "meta": { "name": "NewContainerField" }, "position": { "basis": "240px", "shrink": 0 }, "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "New Container Id", "style": { "classes": "pf-field-label" } } },
+                      { "type": "ia.input.text-field", "meta": { "name": "NewContainerId" }, "propConfig": { "props.text": { "binding": { "config": { "path": "view.custom.draft.newContainerId", "bidirectional": true }, "type": "property" } } }, "props": { "placeholder": "Destination container", "style": { "classes": "pf-field-input" } } }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex", "meta": { "name": "TrayField" }, "position": { "basis": "200px", "shrink": 0 }, "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "New Tray Position", "style": { "classes": "pf-field-label" } } },
+                      { "type": "ia.input.text-field", "meta": { "name": "NewTrayPosition" }, "propConfig": { "props.text": { "binding": { "config": { "path": "view.custom.draft.newTrayPosition", "bidirectional": true }, "type": "property" } } }, "props": { "placeholder": "Tray position", "style": { "classes": "pf-field-input" } } }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "ia.input.button",
+                "meta": { "name": "MigrateButton" },
+                "position": { "shrink": 0 },
+                "props": { "text": "Migrate Serial", "style": { "classes": "pf-btn pf-btn-primary pf-btn-large" } },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "script", "scope": "G",
+                      "config": { "script": "\td = self.view.custom.draft\n\tserialId = BlueRidge.Common.Util.toIntOrNone(d.get(\"containerSerialId\"))\n\tnewContainerId = BlueRidge.Common.Util.toIntOrNone(d.get(\"newContainerId\"))\n\tnewTrayPosition = BlueRidge.Common.Util.toIntOrNone(d.get(\"newTrayPosition\"))\n\tif serialId is None or newContainerId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a Container Serial Id and a New Container Id.\"}, \"Migrate Serial\")\n\t\treturn\n\tresult = BlueRidge.Lots.SortCage.migrateSerial(serialId, newContainerId, newTrayPosition=newTrayPosition)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Serial migrated\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"containerSerialId\": \"\", \"newContainerId\": \"\", \"newTrayPosition\": \"\"}" }
+                    }
+                  }
                 }
               }
-            }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "CameraPanel" },
+            "position": { "shrink": 0 },
+            "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "12px", "padding": "16px" } },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "CameraHeader" },
+                "position": { "shrink": 0 },
+                "props": { "direction": "row", "alignItems": "center", "style": { "classes": "pf-panel-header", "gap": "12px" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "H" }, "position": { "grow": 1 }, "props": { "text": "Sort Cage Camera - Live", "style": { "fontSize": "18px", "fontWeight": "700" } } },
+                  { "type": "ia.display.label", "meta": { "name": "Status" }, "props": { "text": "Live feed", "style": { "classes": "pf-pill pf-pill-hold" } } }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "CameraStage" },
+                "position": { "shrink": 0 },
+                "props": { "direction": "column", "alignItems": "center", "justify": "center", "style": { "minHeight": "240px", "borderRadius": "8px", "border": "2px solid var(--mpp-border-subtle)", "background": "linear-gradient(180deg, #0a1322 0%, #0f1d33 60%, #1a2a44 100%)", "gap": "6px", "padding": "24px" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "Placeholder" }, "props": { "text": "No live feed in dev", "style": { "fontSize": "20px", "fontWeight": "700", "color": "var(--mpp-neutral-90)" } } },
+                  { "type": "ia.display.label", "meta": { "name": "PlaceholderSub" }, "props": { "text": "Camera Pass/Fail overlay renders here when the ByVision feed is wired (no backing read in dev).", "style": { "classes": "pf-kpi-sub", "textAlign": "center", "color": "var(--mpp-neutral-80)" } } }
+                ]
+              }
+            ]
           }
         ]
       }
