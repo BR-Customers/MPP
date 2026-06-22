@@ -5,14 +5,18 @@
     "lotName": "",
     "sourceItem": "",
     "pieceCount": 0,
-    "arrival": ""
+    "arrival": "",
+    "position": 0,
+    "lotStatusCode": ""
   },
   "propConfig": {
     "params.sourceLotId": { "paramDirection": "input" },
     "params.lotName": { "paramDirection": "input" },
     "params.sourceItem": { "paramDirection": "input" },
     "params.pieceCount": { "paramDirection": "input" },
-    "params.arrival": { "paramDirection": "input" }
+    "params.arrival": { "paramDirection": "input" },
+    "params.position": { "paramDirection": "input" },
+    "params.lotStatusCode": { "paramDirection": "input" }
   },
   "props": {
     "defaultSize": { "height": 76, "width": 640 }
@@ -23,46 +27,83 @@
     "props": {
       "direction": "row",
       "alignItems": "center",
-      "style": { "classes": "surface-card", "gap": "16px", "padding": "12px 16px" }
+      "style": { "classes": "pf-queue-row", "gap": "16px", "padding": "12px 16px" }
     },
     "children": [
       {
         "type": "ia.container.flex",
         "meta": { "name": "Info" },
-        "position": { "grow": 1 },
+        "position": { "grow": 1, "basis": "0" },
         "props": { "direction": "column", "style": { "gap": "2px" } },
         "children": [
           {
             "type": "ia.display.label",
+            "meta": { "name": "Position" },
+            "props": { "style": { "classes": "pf-queue-position" } },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "if({view.params.position} = 1, 'Position 1 - oldest', 'Position ' + toStr({view.params.position}))" }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
             "meta": { "name": "LotName" },
-            "props": { "style": { "fontWeight": 700, "fontSize": "16px" } },
+            "props": { "style": { "classes": "pf-queue-name" } },
             "propConfig": {
               "props.text": { "binding": { "type": "property", "config": { "path": "view.params.lotName" } } }
             }
           },
           {
             "type": "ia.display.label",
-            "meta": { "name": "Item" },
-            "props": { "style": { "classes": "pf-kpi-sub" } },
+            "meta": { "name": "Detail" },
+            "props": { "style": { "classes": "pf-queue-detail" } },
             "propConfig": {
-              "props.text": { "binding": { "type": "expr", "config": { "expression": "{view.params.sourceItem} + '  |  ' + toStr({view.params.pieceCount}) + ' pcs'" } } }
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": { "expression": "{view.params.sourceItem} + ' | ' + toStr({view.params.pieceCount}) + ' pcs | whole LOT' + if({view.params.arrival} = '', '', ' | arrived ' + {view.params.arrival})" }
+                }
+              }
             }
           }
         ]
       },
       {
         "type": "ia.display.label",
-        "meta": { "name": "Arrival" },
+        "meta": { "name": "StatusPill" },
         "position": { "shrink": 0 },
-        "props": { "style": { "classes": "pf-kpi-sub" } },
         "propConfig": {
-          "props.text": { "binding": { "type": "property", "config": { "path": "view.params.arrival" } } }
-        }
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "if({view.params.lotStatusCode} = 'Good', 'Good', 'Hold')" }
+            }
+          },
+          "props.style.classes": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "if({view.params.lotStatusCode} = 'Good', 'pf-pill pf-pill-good', 'pf-pill pf-pill-hold')" }
+            }
+          }
+        },
+        "props": { "style": { "classes": "pf-pill pf-pill-good" } }
       },
       {
         "type": "ia.input.button",
         "meta": { "name": "PickButton" },
         "position": { "shrink": 0 },
+        "propConfig": {
+          "props.enabled": {
+            "binding": {
+              "type": "expr",
+              "config": { "expression": "{view.params.lotStatusCode} = 'Good'" }
+            }
+          }
+        },
         "props": { "text": "Pick", "style": { "classes": "pf-btn pf-btn-primary pf-btn-large" } },
         "events": {
           "component": {
