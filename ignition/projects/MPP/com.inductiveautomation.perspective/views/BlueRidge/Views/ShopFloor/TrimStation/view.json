@@ -2,6 +2,7 @@
   "custom": {
     "activeLotId": null,
     "outScan": "",
+    "inScan": "",
     "destCells": [],
     "destValue": null,
     "shotCount": 0,
@@ -33,8 +34,8 @@
       "direction": "column",
       "alignItems": "stretch",
       "style": {
-        "classes": "canvas",
-        "gap": "0px",
+        "classes": "canvas pf-terminal",
+        "gap": "16px",
         "padding": "0px",
         "overflowY": "auto"
       }
@@ -74,72 +75,730 @@
           "shrink": 0
         },
         "props": {
-          "direction": "row",
-          "alignItems": "center",
+          "direction": "column",
+          "alignItems": "stretch",
           "style": {
             "classes": "pf-terminal-header",
-            "gap": "16px",
+            "gap": "12px",
             "padding": "20px 24px",
             "flexShrink": 0
           }
         },
         "children": [
           {
-            "type": "ia.display.label",
+            "type": "ia.container.flex",
             "meta": {
-              "name": "Title"
+              "name": "HeaderTopRow"
             },
             "position": {
-              "grow": 1,
-              "basis": "0"
+              "basis": "auto",
+              "shrink": 0
             },
             "props": {
-              "text": "Trim Station",
+              "direction": "row",
+              "alignItems": "center",
               "style": {
-                "color": "var(--mpp-text-primary)",
-                "fontSize": "28px",
-                "fontWeight": "600"
+                "gap": "16px"
               }
-            }
-          },
-          {
-            "type": "ia.display.view",
-            "meta": {
-              "name": "InitialsField"
             },
-            "position": {
-              "basis": "auto",
-              "shrink": 0
-            },
-            "props": {
-              "path": "BlueRidge/Components/PlantFloor/InitialsField"
-            }
-          },
-          {
-            "type": "ia.display.view",
-            "meta": {
-              "name": "PausedLotIndicator"
-            },
-            "position": {
-              "basis": "auto",
-              "shrink": 0
-            },
-            "propConfig": {
-              "props.params.locationId": {
-                "binding": {
-                  "type": "property",
-                  "config": {
-                    "path": "session.custom.terminal.zoneLocationId"
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "TitleBlock"
+                },
+                "position": {
+                  "grow": 1,
+                  "basis": "0"
+                },
+                "props": {
+                  "direction": "column",
+                  "alignItems": "start",
+                  "style": {
+                    "gap": "4px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Title"
+                    },
+                    "props": {
+                      "text": "Trim Station",
+                      "style": {
+                        "color": "var(--mpp-text-primary)",
+                        "fontSize": "28px",
+                        "fontWeight": "600"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "TitleMeta"
+                    },
+                    "props": {
+                      "text": "Shared Terminal - Trim Shop Area",
+                      "style": {
+                        "classes": "pf-terminal-title-meta"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.display.view",
+                "meta": {
+                  "name": "InitialsField"
+                },
+                "position": {
+                  "basis": "auto",
+                  "shrink": 0
+                },
+                "props": {
+                  "path": "BlueRidge/Components/PlantFloor/InitialsField"
+                }
+              },
+              {
+                "type": "ia.display.view",
+                "meta": {
+                  "name": "PausedLotIndicator"
+                },
+                "position": {
+                  "basis": "auto",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.params.locationId": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "session.custom.terminal.zoneLocationId"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "path": "BlueRidge/Components/PlantFloor/PausedLotIndicator",
+                  "params": {
+                    "locationId": null
                   }
                 }
               }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "CellContextRow"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
             },
             "props": {
-              "path": "BlueRidge/Components/PlantFloor/PausedLotIndicator",
-              "params": {
-                "locationId": null
+              "direction": "row",
+              "alignItems": "center",
+              "style": {
+                "classes": "pf-terminal-cell-context",
+                "gap": "12px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "ActiveCellLabel"
+                },
+                "position": {
+                  "basis": "auto",
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "Active Cell",
+                  "style": {
+                    "classes": "pf-cell-context-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "ActiveCellValue"
+                },
+                "position": {
+                  "basis": "auto",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"No cell selected\", {session.custom.cell.name})"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-cell-context-value"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.button",
+                "meta": {
+                  "name": "BtnChangeCell"
+                },
+                "position": {
+                  "basis": "auto",
+                  "shrink": 0
+                },
+                "props": {
+                  "text": "Change (scan or pick)",
+                  "style": {
+                    "classes": "pf-btn pf-btn-secondary",
+                    "minHeight": "44px"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "CellContextSpacer"
+                },
+                "position": {
+                  "grow": 1,
+                  "basis": "0"
+                },
+                "props": {
+                  "text": ""
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "TrimNote"
+                },
+                "position": {
+                  "basis": "auto",
+                  "shrink": 1
+                },
+                "props": {
+                  "text": "Trim is yield loss only - LOT keeps its cast-part identity through Trim OUT.",
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "ActiveLotsPanel"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "alignItems": "stretch",
+          "style": {
+            "classes": "pf-panel",
+            "margin": "0px 24px",
+            "gap": "12px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "ActiveLotsHeader"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "row",
+              "alignItems": "center",
+              "style": {
+                "classes": "pf-panel-header"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "ActiveLotsTitle"
+                },
+                "position": {
+                  "basis": "auto",
+                  "shrink": 1
+                },
+                "props": {
+                  "text": "Active LOTs at Trim Cell",
+                  "style": {
+                    "fontSize": "16px",
+                    "fontWeight": "600",
+                    "color": "var(--mpp-text-primary)"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "ActiveLotsSub"
+                },
+                "position": {
+                  "basis": "auto",
+                  "shrink": 1
+                },
+                "props": {
+                  "text": "Currently checked-in here - awaiting close - Resume jumps to OUT for that LOT",
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "ActiveLotsQueue"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "stretch",
+              "style": {
+                "classes": "pf-queue"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "ActiveLotRow"
+                },
+                "position": {
+                  "basis": "auto",
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "row",
+                  "alignItems": "center",
+                  "style": {
+                    "classes": "pf-queue-row"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "ActiveLotInfo"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "alignItems": "start",
+                      "style": {
+                        "gap": "2px"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "ActiveLotPosition"
+                        },
+                        "props": {
+                          "text": "Awaiting live WIP-queue read",
+                          "style": {
+                            "classes": "pf-queue-position"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "ActiveLotName"
+                        },
+                        "props": {
+                          "text": "No active LOT",
+                          "style": {
+                            "classes": "pf-queue-name"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "ActiveLotDetail"
+                        },
+                        "props": {
+                          "text": "Empty when no LOT is currently active at this Cell.",
+                          "style": {
+                            "classes": "pf-queue-detail"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "ActiveLotPill"
+                    },
+                    "props": {
+                      "text": "Good",
+                      "style": {
+                        "classes": "pf-pill pf-pill-good"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "BtnResumeOut"
+                    },
+                    "props": {
+                      "text": "Resume -> OUT",
+                      "enabled": false,
+                      "style": {
+                        "classes": "pf-btn pf-btn-primary",
+                        "minHeight": "44px"
+                      },
+                      "toolTipText": "Placeholder row - wire BlueRidge.Lots.Lot.getWipQueueByLocation(<cell id>) to populate active LOTs and enable Resume."
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "ActiveLotsHelp"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Empty when no LOT is currently active at this Cell.",
+              "style": {
+                "classes": "pf-field-help"
               }
             }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "PickPanel"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "alignItems": "stretch",
+          "style": {
+            "classes": "pf-panel",
+            "margin": "0px 24px",
+            "gap": "12px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "PickHeader"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "row",
+              "alignItems": "center",
+              "style": {
+                "classes": "pf-panel-header"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "PickTitle"
+                },
+                "position": {
+                  "basis": "auto",
+                  "shrink": 1
+                },
+                "props": {
+                  "text": "Pick a LOT - scan or select from storage",
+                  "style": {
+                    "fontSize": "16px",
+                    "fontWeight": "600",
+                    "color": "var(--mpp-text-primary)"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "PickSub"
+                },
+                "position": {
+                  "basis": "auto",
+                  "shrink": 1
+                },
+                "props": {
+                  "text": "Scan disambiguates -> IN if in storage, OUT if active here, Error otherwise",
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "PickScanField"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "stretch",
+              "style": {
+                "classes": "pf-field",
+                "gap": "6px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "PickScanLabel"
+                },
+                "props": {
+                  "text": "Scan LTT Barcode",
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                }
+              },
+              {
+                "type": "ia.input.text-field",
+                "meta": {
+                  "name": "PickScanInput"
+                },
+                "position": {
+                  "basis": "auto",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.inScan"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "Scan LOT...",
+                  "style": {
+                    "classes": "pf-field-input-mono",
+                    "textTransform": "uppercase",
+                    "minHeight": "44px"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "PickScanHelp"
+                },
+                "props": {
+                  "text": "Path B (rapid in/out): scan -> IN form auto-fires -> submit -> OUT form opens for same LOT -> submit. Same gesture, two events, no tab switching.",
+                  "style": {
+                    "classes": "pf-field-help"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "LinesideHeader"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Lineside Inventory",
+              "style": {
+                "fontSize": "14px",
+                "fontWeight": "600",
+                "color": "var(--mpp-text-primary)",
+                "borderTop": "1px solid var(--mpp-border-subtle)",
+                "paddingTop": "12px"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "LinesideSub"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Auto-arrived from Die Cast OUT - Lot.LocationId = Trim Shop Area (no Cell yet)",
+              "style": {
+                "classes": "pf-kpi-sub"
+              }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "LinesideQueue"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "stretch",
+              "style": {
+                "classes": "pf-queue pf-repeater-scroll"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "LinesideRowPlaceholder"
+                },
+                "position": {
+                  "basis": "auto",
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "row",
+                  "alignItems": "start",
+                  "style": {
+                    "classes": "pf-queue-row"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "LinesideInfo"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "alignItems": "start",
+                      "style": {
+                        "gap": "2px"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "LinesidePosition"
+                        },
+                        "props": {
+                          "text": "Awaiting live storage-queue read",
+                          "style": {
+                            "classes": "pf-queue-position"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "LinesideName"
+                        },
+                        "props": {
+                          "text": "No lineside LOTs",
+                          "style": {
+                            "classes": "pf-queue-name"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "LinesideDetail"
+                        },
+                        "props": {
+                          "text": "Pickable LOTs appear here once the storage-queue read is wired.",
+                          "style": {
+                            "classes": "pf-queue-detail"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "LinesidePill"
+                    },
+                    "props": {
+                      "text": "Good",
+                      "style": {
+                        "classes": "pf-pill pf-pill-good"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "BtnPickIn"
+                    },
+                    "props": {
+                      "text": "Pick -> IN",
+                      "enabled": false,
+                      "style": {
+                        "classes": "pf-btn pf-btn-primary",
+                        "minHeight": "44px"
+                      },
+                      "toolTipText": "Placeholder row - populate from the Trim Shop Area storage queue read, then enable Pick -> IN."
+                    }
+                  }
+                ]
+              }
+            ]
           }
         ]
       },
@@ -157,7 +816,7 @@
           "alignItems": "stretch",
           "style": {
             "classes": "pf-panel",
-            "margin": "16px 24px",
+            "margin": "0px 24px 16px 24px",
             "padding": "0px",
             "gap": "0px",
             "overflow": "hidden"
@@ -178,12 +837,12 @@
               "menuType": "modern",
               "tabs": [
                 {
-                  "text": "IN",
+                  "text": "IN - Receive",
                   "runWhileHidden": true,
                   "disabled": false
                 },
                 {
-                  "text": "OUT",
+                  "text": "OUT - Close + Route",
                   "runWhileHidden": true,
                   "disabled": false
                 }
@@ -226,24 +885,57 @@
                 },
                 "children": [
                   {
-                    "type": "ia.display.label",
+                    "type": "ia.container.flex",
                     "meta": {
-                      "name": "InHeading"
+                      "name": "InPanelHeader"
                     },
                     "position": {
                       "basis": "auto",
                       "shrink": 0
                     },
                     "props": {
-                      "text": "Receive into Trim",
+                      "direction": "row",
+                      "alignItems": "center",
                       "style": {
-                        "color": "var(--mpp-text-muted)",
-                        "fontSize": "11px",
-                        "fontWeight": "600",
-                        "textTransform": "uppercase",
-                        "letterSpacing": "0.08em"
+                        "classes": "pf-panel-header"
                       }
-                    }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "InTitle"
+                        },
+                        "position": {
+                          "basis": "auto",
+                          "shrink": 1
+                        },
+                        "props": {
+                          "text": "Movement Scan - Receive at Trim Cell",
+                          "style": {
+                            "fontSize": "16px",
+                            "fontWeight": "600",
+                            "color": "var(--mpp-text-primary)"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "InSub"
+                        },
+                        "position": {
+                          "basis": "auto",
+                          "shrink": 1
+                        },
+                        "props": {
+                          "text": "Validates eligibility (v_EffectiveItemLocation) + MaxParts cap on scan-in",
+                          "style": {
+                            "classes": "pf-kpi-sub"
+                          }
+                        }
+                      }
+                    ]
                   },
                   {
                     "type": "ia.display.view",
@@ -275,6 +967,293 @@
                   {
                     "type": "ia.container.flex",
                     "meta": {
+                      "name": "InLotPreview"
+                    },
+                    "position": {
+                      "basis": "auto",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "row",
+                      "alignItems": "stretch",
+                      "style": {
+                        "gap": "12px",
+                        "padding": "12px 0px"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "KpiLot"
+                        },
+                        "position": {
+                          "grow": 1,
+                          "basis": "0"
+                        },
+                        "props": {
+                          "direction": "column",
+                          "alignItems": "start",
+                          "style": {
+                            "gap": "2px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "KpiLotLabel"
+                            },
+                            "props": {
+                              "text": "LOT",
+                              "style": {
+                                "classes": "pf-kpi-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "KpiLotValue"
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": {
+                                    "expression": "if(isNull({view.custom.activeLotId}), \"-\", \"LOT #\" + toStr({view.custom.activeLotId}))"
+                                  }
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-kpi-value pf-kpi-value-mono",
+                                "fontSize": "16px"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "KpiItem"
+                        },
+                        "position": {
+                          "grow": 1,
+                          "basis": "0"
+                        },
+                        "props": {
+                          "direction": "column",
+                          "alignItems": "start",
+                          "style": {
+                            "gap": "2px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "KpiItemLabel"
+                            },
+                            "props": {
+                              "text": "Item",
+                              "style": {
+                                "classes": "pf-kpi-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "KpiItemValue"
+                            },
+                            "props": {
+                              "text": "-",
+                              "style": {
+                                "classes": "pf-kpi-value pf-kpi-value-mono",
+                                "fontSize": "16px"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "KpiFrom"
+                        },
+                        "position": {
+                          "grow": 1,
+                          "basis": "0"
+                        },
+                        "props": {
+                          "direction": "column",
+                          "alignItems": "start",
+                          "style": {
+                            "gap": "2px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "KpiFromLabel"
+                            },
+                            "props": {
+                              "text": "From Location",
+                              "style": {
+                                "classes": "pf-kpi-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "KpiFromValue"
+                            },
+                            "props": {
+                              "text": "Trim Shop Area - storage",
+                              "style": {
+                                "classes": "pf-kpi-value",
+                                "fontSize": "16px"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "KpiPieces"
+                        },
+                        "position": {
+                          "grow": 1,
+                          "basis": "0"
+                        },
+                        "props": {
+                          "direction": "column",
+                          "alignItems": "start",
+                          "style": {
+                            "gap": "2px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "KpiPiecesLabel"
+                            },
+                            "props": {
+                              "text": "Pieces",
+                              "style": {
+                                "classes": "pf-kpi-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "KpiPiecesValue"
+                            },
+                            "props": {
+                              "text": "-",
+                              "style": {
+                                "classes": "pf-kpi-value",
+                                "fontSize": "16px"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "EligibilityCard"
+                    },
+                    "position": {
+                      "basis": "auto",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "alignItems": "start",
+                      "style": {
+                        "gap": "6px",
+                        "background": "var(--mpp-state-good-bg)",
+                        "border": "1px solid var(--pf-status-good-fg)",
+                        "borderRadius": "var(--mpp-radius-lg)",
+                        "padding": "12px 16px"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "EligibilityTitle"
+                        },
+                        "props": {
+                          "text": "Eligible at Trim Cell",
+                          "style": {
+                            "color": "var(--pf-status-good-fg)",
+                            "fontWeight": "600"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "EligibilityLine1"
+                        },
+                        "props": {
+                          "text": "Eligibility (Parts.ItemLocation cascade to Cell) and MaxParts cap are validated by MovementScan on scan-in.",
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "12px"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "InInitialsRow"
+                    },
+                    "position": {
+                      "basis": "auto",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "row",
+                      "alignItems": "center",
+                      "style": {
+                        "classes": "pf-field-row",
+                        "gap": "10px"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.view",
+                        "meta": {
+                          "name": "InInitialsField"
+                        },
+                        "position": {
+                          "basis": "auto",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "path": "BlueRidge/Components/PlantFloor/InitialsField"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
                       "name": "InActions"
                     },
                     "position": {
@@ -285,6 +1264,7 @@
                       "direction": "row",
                       "alignItems": "center",
                       "style": {
+                        "classes": "pf-actions",
                         "gap": "12px"
                       }
                     },
@@ -350,24 +1330,138 @@
                 },
                 "children": [
                   {
-                    "type": "ia.display.label",
+                    "type": "ia.container.flex",
                     "meta": {
-                      "name": "OutHeading"
+                      "name": "OutOpContext"
                     },
                     "position": {
                       "basis": "auto",
                       "shrink": 0
                     },
                     "props": {
-                      "text": "Trim OUT - whole-LOT move to Machining",
+                      "direction": "row",
+                      "alignItems": "center",
                       "style": {
-                        "color": "var(--mpp-text-muted)",
-                        "fontSize": "11px",
-                        "fontWeight": "600",
-                        "textTransform": "uppercase",
-                        "letterSpacing": "0.08em"
+                        "classes": "pf-terminal-cell-context",
+                        "gap": "12px"
                       }
-                    }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "OpContextLabel"
+                        },
+                        "position": {
+                          "basis": "auto",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "OperationTemplate",
+                          "style": {
+                            "classes": "pf-cell-context-label"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "OpContextValue"
+                        },
+                        "position": {
+                          "basis": "auto",
+                          "shrink": 1
+                        },
+                        "props": {
+                          "text": "TrimOut (active version)",
+                          "style": {
+                            "classes": "pf-cell-context-value"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "OpContextSpacer"
+                        },
+                        "position": {
+                          "grow": 1,
+                          "basis": "0"
+                        },
+                        "props": {
+                          "text": ""
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "OpContextNote"
+                        },
+                        "position": {
+                          "basis": "auto",
+                          "shrink": 1
+                        },
+                        "props": {
+                          "text": "Whole-LOT move - no split at Trim (sub-LOT split moved to Machining OUT - FDS-05-009)",
+                          "style": {
+                            "classes": "pf-kpi-sub"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "OutFormHeader"
+                    },
+                    "position": {
+                      "basis": "auto",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "row",
+                      "alignItems": "center",
+                      "style": {
+                        "classes": "pf-panel-header"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "OutTitle"
+                        },
+                        "position": {
+                          "basis": "auto",
+                          "shrink": 1
+                        },
+                        "props": {
+                          "text": "Trim OUT",
+                          "style": {
+                            "fontSize": "16px",
+                            "fontWeight": "600",
+                            "color": "var(--mpp-text-primary)"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "OutSub"
+                        },
+                        "position": {
+                          "basis": "auto",
+                          "shrink": 1
+                        },
+                        "props": {
+                          "text": "Trim is yield loss - whole-LOT move to Machining. Scan or pick destination, then Trim OUT.",
+                          "style": {
+                            "classes": "pf-kpi-sub"
+                          }
+                        }
+                      }
+                    ]
                   },
                   {
                     "type": "ia.container.flex",
@@ -673,8 +1767,8 @@
                       "direction": "row",
                       "alignItems": "center",
                       "style": {
-                        "gap": "12px",
-                        "marginTop": "8px"
+                        "classes": "pf-actions",
+                        "gap": "12px"
                       }
                     },
                     "children": [
@@ -690,7 +1784,7 @@
                         "props": {
                           "text": "Trim OUT",
                           "style": {
-                            "classes": "pf-btn pf-btn-primary",
+                            "classes": "pf-btn pf-btn-primary pf-btn-large",
                             "minHeight": "44px",
                             "minWidth": "160px"
                           }
@@ -706,6 +1800,135 @@
                             }
                           }
                         }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": {
+                      "name": "RejectPanel"
+                    },
+                    "position": {
+                      "basis": "auto",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "alignItems": "stretch",
+                      "style": {
+                        "classes": "pf-panel",
+                        "gap": "12px",
+                        "marginTop": "8px"
+                      }
+                    },
+                    "children": [
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "RejectHeader"
+                        },
+                        "position": {
+                          "basis": "auto",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "row",
+                          "alignItems": "center",
+                          "style": {
+                            "classes": "pf-panel-header"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "RejectTitle"
+                            },
+                            "position": {
+                              "basis": "auto",
+                              "shrink": 1
+                            },
+                            "props": {
+                              "text": "Reject Entry - Trim yield loss",
+                              "style": {
+                                "fontSize": "16px",
+                                "fontWeight": "600",
+                                "color": "var(--mpp-text-primary)"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "RejectSub"
+                            },
+                            "position": {
+                              "basis": "auto",
+                              "shrink": 1
+                            },
+                            "props": {
+                              "text": "Records RejectEvent against this LOT - no rename, no new LOT",
+                              "style": {
+                                "classes": "pf-kpi-sub"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "ia.container.flex",
+                        "meta": {
+                          "name": "RejectFieldRow"
+                        },
+                        "position": {
+                          "basis": "auto",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "direction": "row",
+                          "alignItems": "end",
+                          "style": {
+                            "classes": "pf-field-row",
+                            "gap": "12px"
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "RejectHelp"
+                            },
+                            "position": {
+                              "grow": 1,
+                              "basis": "0"
+                            },
+                            "props": {
+                              "text": "Defect code + quantity capture for Trim-area RejectEvent - placeholder pending the close-time reject read/write wiring.",
+                              "style": {
+                                "classes": "pf-field-help"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.input.button",
+                            "meta": {
+                              "name": "BtnAddReject"
+                            },
+                            "position": {
+                              "basis": "auto",
+                              "shrink": 0
+                            },
+                            "props": {
+                              "text": "Add RejectEvent",
+                              "enabled": false,
+                              "style": {
+                                "classes": "pf-btn pf-btn-secondary",
+                                "minHeight": "44px"
+                              },
+                              "toolTipText": "Placeholder - wire RejectEvent.record (defect code + quantity) for close-time Trim yield-loss capture."
+                            }
+                          }
+                        ]
                       }
                     ]
                   }
