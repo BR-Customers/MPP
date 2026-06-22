@@ -1,0 +1,148 @@
+{
+  "custom": {
+    "holdTypeOptions": [
+      { "value": 1, "label": "QualityHold" },
+      { "value": 2, "label": "EngineeringHold" },
+      { "value": 3, "label": "CustomerHold" }
+    ],
+    "placeDraft": { "lotName": "", "containerId": "", "holdTypeCodeId": null, "reason": "" },
+    "releaseDraft": { "holdEventId": "", "releaseRemarks": "" }
+  },
+  "params": {},
+  "propConfig": {},
+  "props": { "defaultSize": { "height": 1080, "width": 1920 } },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": { "direction": "column", "style": { "classes": "canvas" } },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Header" },
+        "position": { "shrink": 0 },
+        "props": { "text": "Hold Management", "style": { "fontSize": "22px", "fontWeight": "700", "padding": "16px", "borderBottom": "1px solid var(--mpp-border-subtle)" } }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "Body" },
+        "position": { "grow": 1 },
+        "props": { "direction": "column", "style": { "gap": "16px", "margin": "16px", "padding": "0", "overflowY": "auto" } },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "PlacePanel" },
+            "position": { "shrink": 0 },
+            "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "16px", "padding": "16px" } },
+            "children": [
+              { "type": "ia.display.label", "meta": { "name": "PlaceTitle" }, "position": { "shrink": 0 }, "props": { "text": "Place Hold", "style": { "fontSize": "18px", "fontWeight": "700" } } },
+              { "type": "ia.display.label", "meta": { "name": "PlaceHint" }, "position": { "shrink": 0 }, "props": { "text": "Enter a LOT name OR a Container Id (one of the two), choose a hold type, and a reason.", "style": { "classes": "pf-kpi-sub" } } },
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "TargetRow" },
+                "position": { "shrink": 0 },
+                "props": { "direction": "row", "alignItems": "flex-end", "wrap": "wrap", "style": { "gap": "12px" } },
+                "children": [
+                  {
+                    "type": "ia.container.flex", "meta": { "name": "LotField" }, "position": { "basis": "320px", "shrink": 0 }, "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "LOT name", "style": { "classes": "pf-field-label" } } },
+                      { "type": "ia.input.text-field", "meta": { "name": "LotName" }, "propConfig": { "props.text": { "binding": { "config": { "path": "view.custom.placeDraft.lotName", "bidirectional": true }, "type": "property" } } }, "props": { "placeholder": "Scan or type LTT", "style": { "classes": "pf-field-input" } } }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex", "meta": { "name": "ContainerField" }, "position": { "basis": "240px", "shrink": 0 }, "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Container Id", "style": { "classes": "pf-field-label" } } },
+                      { "type": "ia.input.text-field", "meta": { "name": "ContainerId" }, "propConfig": { "props.text": { "binding": { "config": { "path": "view.custom.placeDraft.containerId", "bidirectional": true }, "type": "property" } } }, "props": { "placeholder": "Container Id", "style": { "classes": "pf-field-input" } } }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "TypeRow" },
+                "position": { "shrink": 0 },
+                "props": { "direction": "row", "alignItems": "flex-end", "wrap": "wrap", "style": { "gap": "12px" } },
+                "children": [
+                  {
+                    "type": "ia.container.flex", "meta": { "name": "HoldTypeField" }, "position": { "basis": "320px", "shrink": 0 }, "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Hold type", "style": { "classes": "pf-field-label" } } },
+                      { "type": "ia.input.dropdown", "meta": { "name": "HoldType" }, "propConfig": { "props.options": { "binding": { "config": { "path": "view.custom.holdTypeOptions" }, "type": "property" } }, "props.value": { "binding": { "config": { "path": "view.custom.placeDraft.holdTypeCodeId", "bidirectional": true }, "type": "property" } } }, "props": { "placeholder": "Select hold type", "style": { "classes": "pf-field-input" } } }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex", "meta": { "name": "ReasonField" }, "position": { "basis": "0", "grow": 1 }, "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Reason", "style": { "classes": "pf-field-label" } } },
+                      { "type": "ia.input.text-field", "meta": { "name": "Reason" }, "propConfig": { "props.text": { "binding": { "config": { "path": "view.custom.placeDraft.reason", "bidirectional": true }, "type": "property" } } }, "props": { "placeholder": "Reason for hold", "style": { "classes": "pf-field-input" } } }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "ia.input.button",
+                "meta": { "name": "PlaceButton" },
+                "position": { "shrink": 0 },
+                "props": { "text": "Place Hold", "style": { "classes": "pf-btn pf-btn-primary pf-btn-large" } },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "script", "scope": "G",
+                      "config": { "script": "\td = self.view.custom.placeDraft\n\tlotName = (d.get(\"lotName\") or \"\").strip()\n\tcontainerId = BlueRidge.Common.Util.toIntOrNone(d.get(\"containerId\"))\n\tholdTypeCodeId = d.get(\"holdTypeCodeId\")\n\treason = (d.get(\"reason\") or \"\").strip() or None\n\tif holdTypeCodeId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Select a hold type.\"}, \"Place Hold\")\n\t\treturn\n\tif not lotName and containerId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a LOT name or a Container Id.\"}, \"Place Hold\")\n\t\treturn\n\tif lotName and containerId is not None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter only one of LOT name or Container Id, not both.\"}, \"Place Hold\")\n\t\treturn\n\tlotId = None\n\tif lotName:\n\t\tlot = BlueRidge.Lots.Lot.getByName(lotName)\n\t\tif not lot or lot.get(\"Id\") is None:\n\t\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No LOT found named '\" + lotName + \"'.\"}, \"Place Hold\")\n\t\t\treturn\n\t\tlotId = lot.get(\"Id\")\n\tresult = BlueRidge.Quality.Hold.place(holdTypeCodeId, lotId=lotId, containerId=containerId, reason=reason)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Hold placed\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.placeDraft = {\"lotName\": \"\", \"containerId\": \"\", \"holdTypeCodeId\": None, \"reason\": \"\"}" }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "ReleasePanel" },
+            "position": { "shrink": 0 },
+            "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "16px", "padding": "16px" } },
+            "children": [
+              { "type": "ia.display.label", "meta": { "name": "ReleaseTitle" }, "position": { "shrink": 0 }, "props": { "text": "Release Hold", "style": { "fontSize": "18px", "fontWeight": "700" } } },
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "ReleaseRow" },
+                "position": { "shrink": 0 },
+                "props": { "direction": "row", "alignItems": "flex-end", "wrap": "wrap", "style": { "gap": "12px" } },
+                "children": [
+                  {
+                    "type": "ia.container.flex", "meta": { "name": "HoldEventField" }, "position": { "basis": "240px", "shrink": 0 }, "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Hold Event Id", "style": { "classes": "pf-field-label" } } },
+                      { "type": "ia.input.text-field", "meta": { "name": "HoldEventId" }, "propConfig": { "props.text": { "binding": { "config": { "path": "view.custom.releaseDraft.holdEventId", "bidirectional": true }, "type": "property" } } }, "props": { "placeholder": "Hold Event Id", "style": { "classes": "pf-field-input" } } }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex", "meta": { "name": "RemarksField" }, "position": { "basis": "0", "grow": 1 }, "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Release remarks", "style": { "classes": "pf-field-label" } } },
+                      { "type": "ia.input.text-field", "meta": { "name": "ReleaseRemarks" }, "propConfig": { "props.text": { "binding": { "config": { "path": "view.custom.releaseDraft.releaseRemarks", "bidirectional": true }, "type": "property" } } }, "props": { "placeholder": "Reason for release", "style": { "classes": "pf-field-input" } } }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "ia.input.button",
+                "meta": { "name": "ReleaseButton" },
+                "position": { "shrink": 0 },
+                "props": { "text": "Release Hold", "style": { "classes": "pf-btn pf-btn-secondary pf-btn-large" } },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "script", "scope": "G",
+                      "config": { "script": "\td = self.view.custom.releaseDraft\n\theId = BlueRidge.Common.Util.toIntOrNone(d.get(\"holdEventId\"))\n\tremarks = (d.get(\"releaseRemarks\") or \"\").strip() or None\n\tif heId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a Hold Event Id.\"}, \"Release Hold\")\n\t\treturn\n\tresult = BlueRidge.Quality.Hold.release(heId, releaseRemarks=remarks)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Hold released\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.releaseDraft = {\"holdEventId\": \"\", \"releaseRemarks\": \"\"}" }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "custom": {
+    "draft": { "shippingLabelId": "" },
+    "lastResult": { "Status": null, "Message": "" }
+  },
+  "params": {},
+  "propConfig": {},
+  "props": { "defaultSize": { "height": 1080, "width": 1920 } },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": { "direction": "column", "style": { "classes": "canvas" } },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Header" },
+        "position": { "shrink": 0 },
+        "props": { "text": "Shipping Dock", "style": { "fontSize": "22px", "fontWeight": "700", "padding": "16px", "borderBottom": "1px solid var(--mpp-border-subtle)" } }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "Body" },
+        "position": { "grow": 1 },
+        "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "16px", "margin": "16px", "padding": "16px" } },
+        "children": [
+          { "type": "ia.display.label", "meta": { "name": "Hint" }, "position": { "shrink": 0 }, "props": { "text": "Scan the container's shipping label, then press Ship Container.", "style": { "classes": "pf-kpi-sub" } } },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "LabelField" },
+            "position": { "basis": "360px", "shrink": 0 },
+            "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+            "children": [
+              { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Shipping Label Id", "style": { "classes": "pf-field-label" } } },
+              { "type": "ia.input.text-field", "meta": { "name": "ShippingLabelId" }, "propConfig": { "props.text": { "binding": { "config": { "path": "view.custom.draft.shippingLabelId", "bidirectional": true }, "type": "property" } } }, "props": { "placeholder": "Scan shipping label", "style": { "classes": "pf-field-input" } } }
+            ]
+          },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "ShipButton" },
+            "position": { "shrink": 0 },
+            "props": { "text": "Ship Container", "style": { "classes": "pf-btn pf-btn-primary pf-btn-large" } },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script", "scope": "G",
+                  "config": { "script": "\td = self.view.custom.draft\n\tlabelId = BlueRidge.Common.Util.toIntOrNone(d.get(\"shippingLabelId\"))\n\tif labelId is None:\n\t\tself.view.custom.lastResult = {\"Status\": False, \"Message\": \"Enter or scan a Shipping Label Id.\"}\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter or scan a Shipping Label Id.\"}, \"Ship Container\")\n\t\treturn\n\tresult = BlueRidge.Lots.Shipping.ship(labelId)\n\tself.view.custom.lastResult = {\"Status\": bool(result and result.get(\"Status\")), \"Message\": (result.get(\"Message\") if result else \"\") or \"\"}\n\tBlueRidge.Common.Ui.notifyResult(result, \"Container shipped\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"shippingLabelId\": \"\"}" }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "ResultCard" },
+            "position": { "shrink": 0 },
+            "propConfig": { "position.display": { "binding": { "type": "expr", "config": { "expression": "!isNull({view.custom.lastResult.Status})" } } } },
+            "props": { "direction": "column", "style": { "classes": "surface-card", "gap": "8px", "padding": "16px" } },
+            "children": [
+              { "type": "ia.display.label", "meta": { "name": "ResultTitle" }, "propConfig": { "props.text": { "binding": { "type": "expr", "config": { "expression": "if({view.custom.lastResult.Status}, 'Shipped', 'Not shipped')" } } } }, "props": { "style": { "fontWeight": "700", "fontSize": "20px" } } },
+              { "type": "ia.display.label", "meta": { "name": "ResultMsg" }, "propConfig": { "props.text": { "binding": { "type": "property", "config": { "path": "view.custom.lastResult.Message" } } } }, "props": { "style": { "classes": "pf-kpi-sub" } } }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

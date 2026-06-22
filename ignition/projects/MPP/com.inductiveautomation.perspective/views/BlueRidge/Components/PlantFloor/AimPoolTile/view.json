@@ -1,0 +1,42 @@
+{
+  "custom": {
+    "depths": [],
+    "total": 0,
+    "perPartText": ""
+  },
+  "params": {},
+  "propConfig": {
+    "custom.depths": {
+      "binding": {
+        "config": { "expression": "runScript(\"BlueRidge.Lots.AimPool.getDepth\")" },
+        "transforms": [ { "code": "\treturn [{\"PartNumber\": r.get(\"PartNumber\") or \"\", \"Depth\": r.get(\"Depth\") or 0} for r in (value or [])]", "type": "script" } ],
+        "type": "expr"
+      }
+    },
+    "custom.total": {
+      "binding": {
+        "config": { "path": "view.custom.depths" },
+        "transforms": [ { "code": "\treturn sum([(r.get(\"Depth\") or 0) for r in (value or [])])", "type": "script" } ],
+        "type": "property"
+      }
+    },
+    "custom.perPartText": {
+      "binding": {
+        "config": { "path": "view.custom.depths" },
+        "transforms": [ { "code": "\trows = value or []\n\tif not rows:\n\t\treturn \"No available IDs\"\n\treturn \"  |  \".join([((r.get(\"PartNumber\") or \"?\") + \": \" + str(r.get(\"Depth\") or 0)) for r in rows])", "type": "script" } ],
+        "type": "property"
+      }
+    }
+  },
+  "props": { "defaultSize": { "height": 220, "width": 360 } },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "8px", "padding": "16px" } },
+    "children": [
+      { "type": "ia.display.label", "meta": { "name": "Label" }, "position": { "shrink": 0 }, "props": { "text": "AIM Shipper Pool", "style": { "classes": "pf-kpi-label" } } },
+      { "type": "ia.display.label", "meta": { "name": "Total" }, "position": { "shrink": 0 }, "propConfig": { "props.text": { "binding": { "type": "expr", "config": { "expression": "toStr({view.custom.total})" } } } }, "props": { "style": { "classes": "pf-kpi-value" } } },
+      { "type": "ia.display.label", "meta": { "name": "PerPart" }, "position": { "grow": 1 }, "propConfig": { "props.text": { "binding": { "type": "property", "config": { "path": "view.custom.perPartText" } } } }, "props": { "style": { "classes": "pf-kpi-sub" } } }
+    ]
+  }
+}

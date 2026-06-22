@@ -44,6 +44,22 @@
       "title": "Assembly (Non-Serialized)",
       "viewPath": "BlueRidge/Views/ShopFloor/AssemblyNonSerialized"
     },
+    "/shop-floor/hold-management": {
+      "title": "Hold Management",
+      "viewPath": "BlueRidge/Views/ShopFloor/HoldManagement"
+    },
+    "/shop-floor/sort-cage": {
+      "title": "Sort Cage",
+      "viewPath": "BlueRidge/Views/ShopFloor/SortCageWorkflow"
+    },
+    "/shop-floor/shipping": {
+      "title": "Shipping Dock",
+      "viewPath": "BlueRidge/Views/ShopFloor/ShippingDock"
+    },
+    "/shop-floor/aim-pool-config": {
+      "title": "AIM Pool Config",
+      "viewPath": "BlueRidge/Views/ShopFloor/AimPoolConfig"
+    },
     "/shop-floor/terminal-selector": {
       "title": "Select Terminal",
       "viewPath": "BlueRidge/Views/ShopFloor/TerminalSelector"

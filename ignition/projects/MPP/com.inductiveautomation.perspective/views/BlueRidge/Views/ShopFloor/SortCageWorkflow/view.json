@@ -1,0 +1,73 @@
+{
+  "custom": {
+    "draft": { "containerSerialId": "", "newContainerId": "", "newTrayPosition": "" }
+  },
+  "params": {},
+  "propConfig": {},
+  "props": { "defaultSize": { "height": 1080, "width": 1920 } },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": { "direction": "column", "style": { "classes": "canvas" } },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Header" },
+        "position": { "shrink": 0 },
+        "props": { "text": "Sort Cage - Migrate Serial", "style": { "fontSize": "22px", "fontWeight": "700", "padding": "16px", "borderBottom": "1px solid var(--mpp-border-subtle)" } }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "Body" },
+        "position": { "grow": 1 },
+        "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "16px", "margin": "16px", "padding": "16px" } },
+        "children": [
+          { "type": "ia.display.label", "meta": { "name": "Hint" }, "position": { "shrink": 0 }, "props": { "text": "Re-containerize a serialized part: scan its serial, the destination container, and the new tray position.", "style": { "classes": "pf-kpi-sub" } } },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "FieldRow" },
+            "position": { "shrink": 0 },
+            "props": { "direction": "row", "alignItems": "flex-end", "wrap": "wrap", "style": { "gap": "12px" } },
+            "children": [
+              {
+                "type": "ia.container.flex", "meta": { "name": "SerialField" }, "position": { "basis": "240px", "shrink": 0 }, "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Container Serial Id", "style": { "classes": "pf-field-label" } } },
+                  { "type": "ia.input.text-field", "meta": { "name": "ContainerSerialId" }, "propConfig": { "props.text": { "binding": { "config": { "path": "view.custom.draft.containerSerialId", "bidirectional": true }, "type": "property" } } }, "props": { "placeholder": "Serial Id", "style": { "classes": "pf-field-input" } } }
+                ]
+              },
+              {
+                "type": "ia.container.flex", "meta": { "name": "NewContainerField" }, "position": { "basis": "240px", "shrink": 0 }, "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "New Container Id", "style": { "classes": "pf-field-label" } } },
+                  { "type": "ia.input.text-field", "meta": { "name": "NewContainerId" }, "propConfig": { "props.text": { "binding": { "config": { "path": "view.custom.draft.newContainerId", "bidirectional": true }, "type": "property" } } }, "props": { "placeholder": "Destination container", "style": { "classes": "pf-field-input" } } }
+                ]
+              },
+              {
+                "type": "ia.container.flex", "meta": { "name": "TrayField" }, "position": { "basis": "200px", "shrink": 0 }, "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "New Tray Position", "style": { "classes": "pf-field-label" } } },
+                  { "type": "ia.input.text-field", "meta": { "name": "NewTrayPosition" }, "propConfig": { "props.text": { "binding": { "config": { "path": "view.custom.draft.newTrayPosition", "bidirectional": true }, "type": "property" } } }, "props": { "placeholder": "Tray position", "style": { "classes": "pf-field-input" } } }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "MigrateButton" },
+            "position": { "shrink": 0 },
+            "props": { "text": "Migrate Serial", "style": { "classes": "pf-btn pf-btn-primary pf-btn-large" } },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script", "scope": "G",
+                  "config": { "script": "\td = self.view.custom.draft\n\tserialId = BlueRidge.Common.Util.toIntOrNone(d.get(\"containerSerialId\"))\n\tnewContainerId = BlueRidge.Common.Util.toIntOrNone(d.get(\"newContainerId\"))\n\tnewTrayPosition = BlueRidge.Common.Util.toIntOrNone(d.get(\"newTrayPosition\"))\n\tif serialId is None or newContainerId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a Container Serial Id and a New Container Id.\"}, \"Migrate Serial\")\n\t\treturn\n\tresult = BlueRidge.Lots.SortCage.migrateSerial(serialId, newContainerId, newTrayPosition=newTrayPosition)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Serial migrated\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"containerSerialId\": \"\", \"newContainerId\": \"\", \"newTrayPosition\": \"\"}" }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
