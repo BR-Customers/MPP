@@ -175,6 +175,19 @@ def getCompatibilityMatrix():
     return matrix
 
 
+def saveCompatibilityMatrix(bodyRows):
+	inputData = list(bodyRows)
+	saveData = []
+	
+	for row in inputData:
+		for rowData in row.values():
+			for cells in rowData.values()[1]:
+				for cell in cells.values():
+					saveData.append(cell)
+	
+	
+	return str(saveData)
+
 def add(data):
     """Insert. data: {Code, Name, Description}.
     Returns {Status, Message, NewId}."""
