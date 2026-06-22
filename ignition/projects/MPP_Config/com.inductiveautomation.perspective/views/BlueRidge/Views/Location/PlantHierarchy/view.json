@@ -84,7 +84,7 @@
         "data": {
           "code": "DC1",
           "definitionId": 3,
-          "definitionName": "Production Areadfd",
+          "definitionName": "",
           "description": "Die casting area - 11 machines",
           "id": 3,
           "name": "Die Cast 1",
@@ -107,6 +107,126 @@
           "definitionName": "Die Cast Machine",
           "description": "Die cast machine",
           "id": 4,
+          "name": "Machine 01",
+          "sortOrder": 1,
+          "typeName": "Cell"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/local_fire_department",
+          "style": {}
+        },
+        "items": [],
+        "label": "Machine 01"
+      },
+      {
+        "data": {
+          "code": "DC2-T1-P1",
+          "definitionId": 16,
+          "definitionName": "Printer",
+          "description": "Label printer for DC2-T1",
+          "id": 22,
+          "name": "P - 002",
+          "sortOrder": 1,
+          "typeName": "Cell"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "items": [],
+        "label": "P - 002"
+      },
+      {
+        "data": {
+          "code": "DC3",
+          "definitionId": 3,
+          "definitionName": "",
+          "description": "Die casting area - 5 machines",
+          "id": 23,
+          "name": "Die Cast 3",
+          "sortOrder": 1,
+          "typeName": "Area"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/workspaces",
+          "style": {}
+        },
+        "items": [],
+        "label": "Die Cast 3"
+      },
+      {
+        "data": {
+          "code": "DC3-M01",
+          "definitionId": 8,
+          "definitionName": "Die Cast Machine",
+          "description": "Die cast machine",
+          "id": 24,
+          "name": "Machine 01",
+          "sortOrder": 1,
+          "typeName": "Cell"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/local_fire_department",
+          "style": {}
+        },
+        "items": [],
+        "label": "Machine 01"
+      },
+      {
+        "data": {
+          "code": "DC1-T1-P1",
+          "definitionId": 16,
+          "definitionName": "Printer",
+          "description": "Label printer for DC1-T1",
+          "id": 16,
+          "name": "P - 001",
+          "sortOrder": 1,
+          "typeName": "Cell"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "items": [],
+        "label": "P - 001"
+      },
+      {
+        "data": {
+          "code": "DC2",
+          "definitionId": 3,
+          "definitionName": "",
+          "description": "Die casting area - 3 machines",
+          "id": 17,
+          "name": "Die Cast 2",
+          "sortOrder": 1,
+          "typeName": "Area"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/workspaces",
+          "style": {}
+        },
+        "items": [],
+        "label": "Die Cast 2"
+      },
+      {
+        "data": {
+          "code": "DC2-M01",
+          "definitionId": 8,
+          "definitionName": "Die Cast Machine",
+          "description": "Die cast machine",
+          "id": 18,
           "name": "Machine 01",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -162,106 +282,6 @@
       },
       {
         "data": {
-          "code": "DC1-T1-P1",
-          "definitionId": 16,
-          "definitionName": "Printer",
-          "description": "Label printer for DC1-T1",
-          "id": 16,
-          "name": "P - 001",
-          "sortOrder": 1,
-          "typeName": "Cell"
-        },
-        "expanded": false,
-        "icon": {
-          "color": "--mpp-text-primary",
-          "path": "mpp/factory",
-          "style": {}
-        },
-        "items": [],
-        "label": "P - 001"
-      },
-      {
-        "data": {
-          "code": "DC2-M01",
-          "definitionId": 8,
-          "definitionName": "Die Cast Machine",
-          "description": "Die cast machine",
-          "id": 18,
-          "name": "Machine 01",
-          "sortOrder": 1,
-          "typeName": "Cell"
-        },
-        "expanded": false,
-        "icon": {
-          "color": "--mpp-text-primary",
-          "path": "mpp/local_fire_department",
-          "style": {}
-        },
-        "items": [],
-        "label": "Machine 01"
-      },
-      {
-        "data": {
-          "code": "DC2-T1-P1",
-          "definitionId": 16,
-          "definitionName": "Printer",
-          "description": "Label printer for DC2-T1",
-          "id": 22,
-          "name": "P - 002",
-          "sortOrder": 1,
-          "typeName": "Cell"
-        },
-        "expanded": false,
-        "icon": {
-          "color": "--mpp-text-primary",
-          "path": "mpp/factory",
-          "style": {}
-        },
-        "items": [],
-        "label": "P - 002"
-      },
-      {
-        "data": {
-          "code": "DC3",
-          "definitionId": 3,
-          "definitionName": "Production Areadfd",
-          "description": "Die casting area - 5 machines",
-          "id": 23,
-          "name": "Die Cast 3",
-          "sortOrder": 1,
-          "typeName": "Area"
-        },
-        "expanded": false,
-        "icon": {
-          "color": "--mpp-text-primary",
-          "path": "mpp/workspaces",
-          "style": {}
-        },
-        "items": [],
-        "label": "Die Cast 3"
-      },
-      {
-        "data": {
-          "code": "DC3-M01",
-          "definitionId": 8,
-          "definitionName": "Die Cast Machine",
-          "description": "Die cast machine",
-          "id": 24,
-          "name": "Machine 01",
-          "sortOrder": 1,
-          "typeName": "Cell"
-        },
-        "expanded": false,
-        "icon": {
-          "color": "--mpp-text-primary",
-          "path": "mpp/local_fire_department",
-          "style": {}
-        },
-        "items": [],
-        "label": "Machine 01"
-      },
-      {
-        "data": {
           "code": "DC3-T1-P1",
           "definitionId": 16,
           "definitionName": "Printer",
@@ -279,26 +299,6 @@
         },
         "items": [],
         "label": "P - 003"
-      },
-      {
-        "data": {
-          "code": "DC4",
-          "definitionId": 3,
-          "definitionName": "Production Areadfd",
-          "description": "Die casting area - 3 machines",
-          "id": 31,
-          "name": "Die Cast 4",
-          "sortOrder": 1,
-          "typeName": "Area"
-        },
-        "expanded": false,
-        "icon": {
-          "color": "--mpp-text-primary",
-          "path": "mpp/workspaces",
-          "style": {}
-        },
-        "items": [],
-        "label": "Die Cast 4"
       },
       {
         "data": {
@@ -339,6 +339,26 @@
         },
         "items": [],
         "label": "P - 004"
+      },
+      {
+        "data": {
+          "code": "TRIM1",
+          "definitionId": 3,
+          "definitionName": "",
+          "description": "Trim shop - area-level processing, no sublot split",
+          "id": 37,
+          "name": "Trim Shop 1",
+          "sortOrder": 1,
+          "typeName": "Area"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/workspaces",
+          "style": {}
+        },
+        "items": [],
+        "label": "Trim Shop 1"
       },
       {
         "data": {
@@ -507,7 +527,7 @@
           "definitionName": "Terminal",
           "description": "Machining In",
           "id": 50,
-          "name": "Machining In",
+          "name": "Machining In test",
           "sortOrder": 1,
           "typeName": "Cell"
         },
@@ -518,7 +538,7 @@
           "style": {}
         },
         "items": [],
-        "label": "Machining In"
+        "label": "Machining In test"
       },
       {
         "data": {
@@ -2262,26 +2282,6 @@
       },
       {
         "data": {
-          "code": "TRIM1",
-          "definitionId": 3,
-          "definitionName": "Production Areadfd",
-          "description": "Trim shop - area-level processing, no sublot split",
-          "id": 37,
-          "name": "Trim Shop 1",
-          "sortOrder": 2,
-          "typeName": "Area"
-        },
-        "expanded": false,
-        "icon": {
-          "color": "--mpp-text-primary",
-          "path": "mpp/workspaces",
-          "style": {}
-        },
-        "items": [],
-        "label": "Trim Shop 1"
-      },
-      {
-        "data": {
           "code": "DC4-M02",
           "definitionId": 8,
           "definitionName": "Die Cast Machine",
@@ -2302,11 +2302,11 @@
       },
       {
         "data": {
-          "code": "DC3-M02",
+          "code": "DC2-M02",
           "definitionId": 8,
           "definitionName": "Die Cast Machine",
           "description": "Die cast machine",
-          "id": 25,
+          "id": 19,
           "name": "Machine 02",
           "sortOrder": 2,
           "typeName": "Cell"
@@ -2322,11 +2322,11 @@
       },
       {
         "data": {
-          "code": "DC2-M02",
+          "code": "DC3-M02",
           "definitionId": 8,
           "definitionName": "Die Cast Machine",
           "description": "Die cast machine",
-          "id": 19,
+          "id": 25,
           "name": "Machine 02",
           "sortOrder": 2,
           "typeName": "Cell"
@@ -2382,11 +2382,11 @@
       },
       {
         "data": {
-          "code": "DC2-M03",
+          "code": "DC3-M03",
           "definitionId": 8,
           "definitionName": "Die Cast Machine",
           "description": "Die cast machine",
-          "id": 20,
+          "id": 26,
           "name": "Machine 03",
           "sortOrder": 3,
           "typeName": "Cell"
@@ -2402,31 +2402,11 @@
       },
       {
         "data": {
-          "code": "DC2",
-          "definitionId": 3,
-          "definitionName": "Production Areadfd",
-          "description": "Die casting area - 3 machines",
-          "id": 17,
-          "name": "Die Cast 2",
-          "sortOrder": 3,
-          "typeName": "Area"
-        },
-        "expanded": false,
-        "icon": {
-          "color": "--mpp-text-primary",
-          "path": "mpp/workspaces",
-          "style": {}
-        },
-        "items": [],
-        "label": "Die Cast 2"
-      },
-      {
-        "data": {
-          "code": "DC3-M03",
+          "code": "DC2-M03",
           "definitionId": 8,
           "definitionName": "Die Cast Machine",
           "description": "Die cast machine",
-          "id": 26,
+          "id": 20,
           "name": "Machine 03",
           "sortOrder": 3,
           "typeName": "Cell"
@@ -2459,6 +2439,26 @@
         },
         "items": [],
         "label": "Machine 03"
+      },
+      {
+        "data": {
+          "code": "TRIM2",
+          "definitionId": 3,
+          "definitionName": "",
+          "description": "Trim shop - area-level processing, no sublot split",
+          "id": 40,
+          "name": "Trim Shop 2",
+          "sortOrder": 3,
+          "typeName": "Area"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/workspaces",
+          "style": {}
+        },
+        "items": [],
+        "label": "Trim Shop 2"
       },
       {
         "data": {
@@ -2782,6 +2782,26 @@
       },
       {
         "data": {
+          "code": "MA1",
+          "definitionId": 3,
+          "definitionName": "",
+          "description": "Machining and Assembly room",
+          "id": 43,
+          "name": "Machining \u0026 Assembly 1",
+          "sortOrder": 4,
+          "typeName": "Area"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/workspaces",
+          "style": {}
+        },
+        "items": [],
+        "label": "Machining \u0026 Assembly 1"
+      },
+      {
+        "data": {
           "code": "DC4-T1",
           "definitionId": 7,
           "definitionName": "Terminal",
@@ -2802,23 +2822,23 @@
       },
       {
         "data": {
-          "code": "TRIM2",
-          "definitionId": 3,
-          "definitionName": "Production Areadfd",
-          "description": "Trim shop - area-level processing, no sublot split",
-          "id": 40,
-          "name": "Trim Shop 2",
+          "code": "DC2-T1",
+          "definitionId": 7,
+          "definitionName": "Terminal",
+          "description": "Die cast area terminal",
+          "id": 21,
+          "name": "Terminal",
           "sortOrder": 4,
-          "typeName": "Area"
+          "typeName": "Cell"
         },
         "expanded": false,
         "icon": {
           "color": "--mpp-text-primary",
-          "path": "mpp/workspaces",
+          "path": "mpp/tune",
           "style": {}
         },
         "items": [],
-        "label": "Trim Shop 2"
+        "label": "Terminal"
       },
       {
         "data": {
@@ -2839,26 +2859,6 @@
         },
         "items": [],
         "label": "Machine 04"
-      },
-      {
-        "data": {
-          "code": "DC2-T1",
-          "definitionId": 7,
-          "definitionName": "Terminal",
-          "description": "Die cast area terminal",
-          "id": 21,
-          "name": "Terminal",
-          "sortOrder": 4,
-          "typeName": "Cell"
-        },
-        "expanded": false,
-        "icon": {
-          "color": "--mpp-text-primary",
-          "path": "mpp/tune",
-          "style": {}
-        },
-        "items": [],
-        "label": "Terminal"
       },
       {
         "data": {
@@ -3062,6 +3062,26 @@
       },
       {
         "data": {
+          "code": "MA2",
+          "definitionId": 3,
+          "definitionName": "",
+          "description": "Machining and Assembly room",
+          "id": 82,
+          "name": "Machining \u0026 Assembly 2",
+          "sortOrder": 6,
+          "typeName": "Area"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/workspaces",
+          "style": {}
+        },
+        "items": [],
+        "label": "Machining \u0026 Assembly 2"
+      },
+      {
+        "data": {
           "code": "MA1-5GOF",
           "definitionId": 5,
           "definitionName": "Production Line",
@@ -3079,26 +3099,6 @@
         },
         "items": [],
         "label": "5G0 Front"
-      },
-      {
-        "data": {
-          "code": "MA1",
-          "definitionId": 3,
-          "definitionName": "Production Areadfd",
-          "description": "Machining and Assembly room",
-          "id": 43,
-          "name": "Machining \u0026 Assembly 1",
-          "sortOrder": 6,
-          "typeName": "Area"
-        },
-        "expanded": false,
-        "icon": {
-          "color": "--mpp-text-primary",
-          "path": "mpp/workspaces",
-          "style": {}
-        },
-        "items": [],
-        "label": "Machining \u0026 Assembly 1"
       },
       {
         "data": {
@@ -3182,26 +3182,6 @@
       },
       {
         "data": {
-          "code": "MA2",
-          "definitionId": 3,
-          "definitionName": "Production Areadfd",
-          "description": "Machining and Assembly room",
-          "id": 82,
-          "name": "Machining \u0026 Assembly 2",
-          "sortOrder": 7,
-          "typeName": "Area"
-        },
-        "expanded": false,
-        "icon": {
-          "color": "--mpp-text-primary",
-          "path": "mpp/workspaces",
-          "style": {}
-        },
-        "items": [],
-        "label": "Machining \u0026 Assembly 2"
-      },
-      {
-        "data": {
           "code": "MA2-RPYCAM1-AOUT2",
           "definitionId": 7,
           "definitionName": "Terminal",
@@ -3239,6 +3219,26 @@
         },
         "items": [],
         "label": "COS (offsite-origin)"
+      },
+      {
+        "data": {
+          "code": "WHSE",
+          "definitionId": 4,
+          "definitionName": "Support Area",
+          "description": "WIP / cast storage - all die cast goes here prior to Trim",
+          "id": 175,
+          "name": "Warehouse",
+          "sortOrder": 7,
+          "typeName": "Area"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/engineering",
+          "style": {}
+        },
+        "items": [],
+        "label": "Warehouse"
       },
       {
         "data": {
@@ -3362,12 +3362,12 @@
       },
       {
         "data": {
-          "code": "WHSE",
+          "code": "SHIPIN",
           "definitionId": 4,
           "definitionName": "Support Area",
-          "description": "WIP / cast storage - all die cast goes here prior to Trim",
-          "id": 175,
-          "name": "Warehouse",
+          "description": "Receiving dock - pass-through parts",
+          "id": 176,
+          "name": "Shipping IN",
           "sortOrder": 9,
           "typeName": "Area"
         },
@@ -3378,16 +3378,16 @@
           "style": {}
         },
         "items": [],
-        "label": "Warehouse"
+        "label": "Shipping IN"
       },
       {
         "data": {
-          "code": "SHIPIN",
+          "code": "SHIPOUT",
           "definitionId": 4,
           "definitionName": "Support Area",
-          "description": "Receiving dock - pass-through parts",
-          "id": 176,
-          "name": "Shipping IN",
+          "description": "Finished-goods staging",
+          "id": 177,
+          "name": "Shipping OUT",
           "sortOrder": 10,
           "typeName": "Area"
         },
@@ -3398,7 +3398,7 @@
           "style": {}
         },
         "items": [],
-        "label": "Shipping IN"
+        "label": "Shipping OUT"
       },
       {
         "data": {
@@ -3462,6 +3462,26 @@
       },
       {
         "data": {
+          "code": "DC4",
+          "definitionId": 3,
+          "definitionName": "",
+          "description": "Die casting area - 3 machines",
+          "id": 31,
+          "name": "Die Cast 4",
+          "sortOrder": 11,
+          "typeName": "Area"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/workspaces",
+          "style": {}
+        },
+        "items": [],
+        "label": "Die Cast 4"
+      },
+      {
+        "data": {
           "code": "MA2-64AOP",
           "definitionId": 5,
           "definitionName": "Production Line",
@@ -3479,26 +3499,6 @@
         },
         "items": [],
         "label": "64A Oil Pan"
-      },
-      {
-        "data": {
-          "code": "SHIPOUT",
-          "definitionId": 4,
-          "definitionName": "Support Area",
-          "description": "Finished-goods staging",
-          "id": 177,
-          "name": "Shipping OUT",
-          "sortOrder": 11,
-          "typeName": "Area"
-        },
-        "expanded": false,
-        "icon": {
-          "color": "--mpp-text-primary",
-          "path": "mpp/engineering",
-          "style": {}
-        },
-        "items": [],
-        "label": "Shipping OUT"
       },
       {
         "data": {
@@ -5021,10 +5021,10 @@
         },
         {
           "messageType": "confirmUnsavedResult",
-          "pageScope": true,
+          "pageScope": false,
           "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tpending \u003d self.view.custom.pendingNav\n\tif action \u003d\u003d \"save\":\n\t\tdraft \u003d self.view.custom.editDraft or {}\n\t\tresult \u003d BlueRidge.Location.Location.handleSaveAll(draft.get(\"meta\") or {}, draft.get(\"attributes\") or [])\n\t\tif not result:\n\t\t\treturn\n\t\tself.view.custom.tree \u003d result[\"tree\"]\n\t\tself.view.custom.selectedPath \u003d result[\"selectedPath\"]\n\t\tself.view.custom.selected \u003d result[\"selected\"]\n\t\tself.view.custom.editDraft \u003d result[\"editDraft\"]\n\t\tself.view.custom.mode \u003d result[\"mode\"]\n\t\tself.view.custom.draftPath \u003d None\n\t\tself.view.custom.dirty \u003d False\n\t\tself.view.custom.pendingNav \u003d None\n\telif action \u003d\u003d \"discard\":\n\t\tself.view.custom.dirty \u003d False\n\t\tself.view.custom.draftPath \u003d None\n\t\tself.view.custom.pendingNav \u003d None\n\t\tBlueRidge.Common.Notify.toast(\"Discarded\", \"Changes discarded.\", \"info\")",
           "sessionScope": false,
-          "viewScope": false
+          "viewScope": true
         }
       ]
     },
