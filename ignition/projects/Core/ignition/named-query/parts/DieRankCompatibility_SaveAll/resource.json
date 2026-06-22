@@ -18,7 +18,7 @@
     "cacheEnabled": false,
     "database": "MPP",
     "fallbackEnabled": false,
-    "lastModificationSignature": "4b38f20370e91870362f0aef68e4d68b7ac6080c80b2d92a884c48c230f3809f",
+    "lastModificationSignature": "50a8355ba5e4fdc85ccaa6a0e7a8c1b6114e066b10b8a1c075140ba90de583db",
     "permissions": [
       {
         "zone": "",
@@ -27,7 +27,19 @@
     ],
     "lastModification": {
       "actor": "admin",
-      "timestamp": "2026-06-22T19:18:03Z"
-    }
+      "timestamp": "2026-06-22T18:02:32Z"
+    },
+    "parameters": [
+      {
+        "type": "Parameter",
+        "identifier": "rowsJson",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "appUserId",
+        "sqlType": 3
+      }
+    ]
   }
 }

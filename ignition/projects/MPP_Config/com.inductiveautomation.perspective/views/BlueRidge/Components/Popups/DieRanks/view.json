@@ -1,5 +1,7 @@
 {
-  "custom": {},
+  "custom": {
+    "test": null
+  },
   "params": {},
   "propConfig": {
     "custom.bodyRows": {
@@ -25,6 +27,15 @@
         },
         "type": "expr"
       }
+    },
+    "custom.test": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.DieRank.saveCompatibilityMatrix\", 0, {view.custom.bodyRows})"
+        },
+        "type": "expr"
+      },
+      "persistent": true
     }
   },
   "props": {

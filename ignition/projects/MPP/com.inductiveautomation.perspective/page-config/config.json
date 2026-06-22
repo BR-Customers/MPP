@@ -12,5 +12,6 @@
       "title": "Select Terminal",
       "viewPath": "BlueRidge/Views/ShopFloor/TerminalSelector"
     }
-  }
+  },
+  "sharedDocks": {}
 }
