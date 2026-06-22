@@ -4,6 +4,10 @@
       "title": "MPP MES",
       "viewPath": "BlueRidge/Views/ShopFloor/HomeRouter"
     },
+    "/dev/test-nav": {
+      "title": "Dev Nav",
+      "viewPath": "BlueRidge/Views/Dev/TestNavHeader"
+    },
     "/navigation-testing": {
       "title": "",
       "viewPath": "BlueRidge/Views/Navigation Testing"
@@ -94,6 +98,22 @@
     }
   },
   "sharedDocks": {
+    "top": [
+      {
+        "anchor": "fixed",
+        "autoBreakpoint": 0,
+        "content": "auto",
+        "handle": "hide",
+        "iconUrl": "",
+        "id": "dev-nav",
+        "modal": false,
+        "resizable": false,
+        "show": "visible",
+        "size": 96,
+        "viewParams": {},
+        "viewPath": "BlueRidge/Views/Dev/TestNavHeader"
+      }
+    ],
     "bottom": [
       {
         "anchor": "fixed",
