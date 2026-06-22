@@ -2,7 +2,7 @@
   "custom": {
     "filter": { "cellLocationId": null },
     "cellOptions": [],
-    "container": { "Id": null, "ItemPartNumber": "", "ItemDescription": "", "AccumulatedParts": 0, "TargetParts": 0, "ClosedTrays": 0, "IsSerialized": false },
+    "container": { "Id": null, "ItemPartNumber": "", "ItemDescription": "", "AccumulatedParts": 0, "TargetParts": 0, "ClosedTrays": 0, "TraysPerContainer": 0, "PartsPerTray": 0, "IsSerialized": false },
     "refreshToken": 0
   },
   "params": {},
@@ -17,7 +17,7 @@
     "custom.container": {
       "binding": {
         "config": { "expression": "if({view.custom.refreshToken} >= 0 && !isNull({view.custom.filter.cellLocationId}), runScript(\"BlueRidge.Lots.Container.getOpenByCell\", 0, {view.custom.filter.cellLocationId}), [])" },
-        "transforms": [ { "code": "\trows = value or []\n\tr = rows[0] if rows else {}\n\treturn {\"Id\": r.get(\"Id\"), \"ItemPartNumber\": r.get(\"ItemPartNumber\") or \"\", \"ItemDescription\": r.get(\"ItemDescription\") or \"\", \"AccumulatedParts\": r.get(\"AccumulatedParts\") or 0, \"TargetParts\": r.get(\"TargetParts\") or 0, \"ClosedTrays\": r.get(\"ClosedTrays\") or 0, \"IsSerialized\": r.get(\"IsSerialized\") or False}", "type": "script" } ],
+        "transforms": [ { "code": "\trows = value or []\n\tr = rows[0] if rows else {}\n\treturn {\"Id\": r.get(\"Id\"), \"ItemPartNumber\": r.get(\"ItemPartNumber\") or \"\", \"ItemDescription\": r.get(\"ItemDescription\") or \"\", \"AccumulatedParts\": r.get(\"AccumulatedParts\") or 0, \"TargetParts\": r.get(\"TargetParts\") or 0, \"ClosedTrays\": r.get(\"ClosedTrays\") or 0, \"TraysPerContainer\": r.get(\"TraysPerContainer\") or 0, \"PartsPerTray\": r.get(\"PartsPerTray\") or 0, \"IsSerialized\": r.get(\"IsSerialized\") or False}", "type": "script" } ],
         "type": "expr"
       }
     }
@@ -26,42 +26,73 @@
   "root": {
     "type": "ia.container.flex",
     "meta": { "name": "root" },
-    "props": { "direction": "column", "style": { "classes": "canvas" } },
+    "props": { "direction": "column", "style": { "classes": "canvas pf-terminal" } },
     "children": [
       {
-        "type": "ia.display.label",
+        "type": "ia.container.flex",
         "meta": { "name": "Header" },
         "position": { "shrink": 0 },
-        "props": { "text": "Assembly (Serialized)", "style": { "fontSize": "22px", "fontWeight": "700", "padding": "16px", "borderBottom": "1px solid var(--mpp-border-subtle)" } }
+        "props": { "direction": "row", "alignItems": "center", "style": { "classes": "pf-terminal-header", "gap": "16px" } },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "TitleBlock" },
+            "position": { "grow": 1 },
+            "props": { "direction": "column", "style": { "gap": "2px" } },
+            "children": [
+              { "type": "ia.display.label", "meta": { "name": "Title" }, "props": { "text": "Assembly - Serialized Line", "style": { "classes": "pf-terminal-title", "fontSize": "22px", "fontWeight": "700" } } },
+              { "type": "ia.display.label", "meta": { "name": "Subtitle" }, "props": { "text": "Dedicated terminal - MIP integrated - operator monitoring", "style": { "classes": "pf-terminal-title-meta" } } }
+            ]
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "ConfirmMethod" },
+            "position": { "shrink": 0 },
+            "props": { "text": "Vision", "data-method": "Vision", "style": { "classes": "pf-confirm-method" } }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "PausedIndicator" },
+            "position": { "shrink": 0 },
+            "props": { "direction": "row", "alignItems": "center", "style": { "classes": "pf-paused-indicator", "gap": "8px" } },
+            "children": [
+              { "type": "ia.display.label", "meta": { "name": "PausedLabel" }, "props": { "text": "Paused" } },
+              { "type": "ia.display.label", "meta": { "name": "PausedCount" }, "props": { "text": "0", "style": { "classes": "pf-paused-indicator-count" } } }
+            ]
+          }
+        ]
       },
       {
         "type": "ia.display.view",
         "meta": { "name": "PrintBanner" },
         "position": { "shrink": 0 },
-        "props": { "path": "BlueRidge/Components/PlantFloor/PrintFailureBanner", "style": { "margin": "8px 16px 0 16px" } }
+        "props": { "path": "BlueRidge/Components/PlantFloor/PrintFailureBanner", "style": { "margin": "12px 16px 0 16px" } }
       },
       {
         "type": "ia.container.flex",
         "meta": { "name": "Body" },
         "position": { "grow": 1 },
-        "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "16px", "margin": "16px", "padding": "16px" } },
+        "props": { "direction": "column", "style": { "gap": "16px", "padding": "16px", "overflow": "auto" } },
         "children": [
           {
             "type": "ia.container.flex",
-            "meta": { "name": "MachineField" },
-            "position": { "basis": "320px", "shrink": 0 },
-            "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+            "meta": { "name": "CellContext" },
+            "position": { "shrink": 0 },
+            "props": { "direction": "row", "alignItems": "center", "style": { "classes": "pf-terminal-cell-context", "gap": "12px" } },
             "children": [
-              { "type": "ia.display.label", "meta": { "name": "MachineLabel" }, "props": { "text": "Assembly Cell", "style": { "classes": "pf-field-label" } } },
+              { "type": "ia.display.label", "meta": { "name": "MachineLabel" }, "props": { "text": "Assembly Cell", "style": { "classes": "pf-cell-context-label" } } },
               {
                 "type": "ia.input.dropdown",
                 "meta": { "name": "CellSelect" },
+                "position": { "basis": "320px", "shrink": 0 },
                 "propConfig": {
                   "props.options": { "binding": { "config": { "path": "view.custom.cellOptions" }, "type": "property" } },
                   "props.value": { "binding": { "config": { "path": "view.custom.filter.cellLocationId", "bidirectional": true }, "type": "property" } }
                 },
                 "props": { "placeholder": "Select cell", "style": { "classes": "pf-field-input" } }
-              }
+              },
+              { "type": "ia.display.label", "meta": { "name": "Spacer" }, "position": { "grow": 1 }, "props": { "text": "" } },
+              { "type": "ia.display.label", "meta": { "name": "ContextMeta" }, "props": { "text": "ByVision - camera scans each tray as a whole - 1 validation event per tray", "style": { "classes": "pf-kpi-sub" } } }
             ]
           },
           {
@@ -76,29 +107,136 @@
           },
           {
             "type": "ia.container.flex",
-            "meta": { "name": "ContainerCard" },
+            "meta": { "name": "Kpis" },
             "position": { "shrink": 0 },
             "propConfig": { "position.display": { "binding": { "type": "expr", "config": { "expression": "!isNull({view.custom.container.Id})" } } } },
-            "props": { "direction": "column", "style": { "classes": "surface-card", "gap": "8px", "padding": "16px" } },
+            "props": { "direction": "row", "wrap": "wrap", "style": { "gap": "10px" } },
             "children": [
-              { "type": "ia.display.label", "meta": { "name": "CItem" }, "propConfig": { "props.text": { "binding": { "type": "expr", "config": { "expression": "'Open container: ' + {view.custom.container.ItemPartNumber} + '  (' + {view.custom.container.ItemDescription} + ')'" } } } }, "props": { "style": { "fontWeight": "700", "fontSize": "18px" } } },
-              { "type": "ia.display.label", "meta": { "name": "CFill" }, "propConfig": { "props.text": { "binding": { "type": "expr", "config": { "expression": "'Filled ' + toStr({view.custom.container.AccumulatedParts}) + ' / ' + toStr({view.custom.container.TargetParts}) + ' parts  ·  ' + toStr({view.custom.container.ClosedTrays}) + ' trays closed'" } } } }, "props": { "style": { "classes": "pf-kpi-sub" } } }
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "KpiItem" },
+                "position": { "grow": 1, "basis": "240px" },
+                "props": { "direction": "column", "style": { "classes": "pf-kpi" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Open Container", "style": { "classes": "pf-kpi-label" } } },
+                  { "type": "ia.display.label", "meta": { "name": "V" }, "propConfig": { "props.text": { "binding": { "type": "expr", "config": { "expression": "{view.custom.container.ItemPartNumber}" } } } }, "props": { "style": { "classes": "pf-kpi-value pf-kpi-value-mono" } } },
+                  { "type": "ia.display.label", "meta": { "name": "S" }, "propConfig": { "props.text": { "binding": { "type": "expr", "config": { "expression": "{view.custom.container.ItemDescription}" } } } }, "props": { "style": { "classes": "pf-kpi-sub" } } }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "KpiFill" },
+                "position": { "grow": 1, "basis": "240px" },
+                "props": { "direction": "column", "style": { "classes": "pf-kpi" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Container Fill", "style": { "classes": "pf-kpi-label" } } },
+                  { "type": "ia.display.label", "meta": { "name": "V" }, "propConfig": { "props.text": { "binding": { "type": "expr", "config": { "expression": "toStr({view.custom.container.AccumulatedParts}) + ' of ' + toStr({view.custom.container.TargetParts})" } } } }, "props": { "style": { "classes": "pf-kpi-value" } } },
+                  { "type": "ia.display.label", "meta": { "name": "S" }, "propConfig": { "props.text": { "binding": { "type": "expr", "config": { "expression": "toStr({view.custom.container.ClosedTrays}) + ' of ' + toStr({view.custom.container.TraysPerContainer}) + ' trays closed - parts accumulated'" } } } }, "props": { "style": { "classes": "pf-kpi-sub" } } }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "KpiTray" },
+                "position": { "grow": 1, "basis": "240px" },
+                "props": { "direction": "column", "style": { "classes": "pf-kpi" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Current Tray", "style": { "classes": "pf-kpi-label" } } },
+                  { "type": "ia.display.label", "meta": { "name": "V" }, "propConfig": { "props.text": { "binding": { "type": "expr", "config": { "expression": "'Tray ' + toStr(({view.custom.container.ClosedTrays} + 1)) + ' of ' + toStr({view.custom.container.TraysPerContainer})" } } } }, "props": { "style": { "classes": "pf-kpi-value" } } },
+                  { "type": "ia.display.label", "meta": { "name": "S" }, "propConfig": { "props.text": { "binding": { "type": "expr", "config": { "expression": "'TrayFullFlag at ' + toStr({view.custom.container.PartsPerTray}) + ' pcs'" } } } }, "props": { "style": { "classes": "pf-kpi-sub" } } }
+                ]
+              }
             ]
           },
           {
-            "type": "ia.input.button",
-            "meta": { "name": "ConfirmButton" },
+            "type": "ia.container.flex",
+            "meta": { "name": "TrayPanel" },
             "position": { "shrink": 0 },
             "propConfig": { "position.display": { "binding": { "type": "expr", "config": { "expression": "!isNull({view.custom.container.Id})" } } } },
-            "props": { "text": "Confirm Completion", "style": { "classes": "pf-btn pf-btn-primary pf-btn-large" } },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script", "scope": "G",
-                  "config": { "script": "\tc = self.view.custom.container\n\tcellId = self.view.custom.filter.cellLocationId\n\tif not c or c.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No open container at this cell.\"}, \"Assembly\")\n\t\treturn\n\tresult = BlueRidge.Lots.Container.complete(c.get(\"Id\"), operatorConfirmed=True, terminalLocationId=cellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Container complete\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1" }
-                }
+            "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "8px" } },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "TrayHeader" },
+                "props": { "direction": "row", "alignItems": "center", "justify": "space-between", "style": { "classes": "pf-panel-header" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "H" }, "propConfig": { "props.text": { "binding": { "type": "expr", "config": { "expression": "'Tray Fill - Tray ' + toStr(({view.custom.container.ClosedTrays} + 1))" } } } }, "props": { "style": { "fontSize": "16px", "fontWeight": "700" } } },
+                  { "type": "ia.display.label", "meta": { "name": "Hsub" }, "props": { "text": "ByVision - camera scans the tray as a whole - 1 validation event per tray", "style": { "classes": "pf-kpi-sub" } } }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "TrayGrid" },
+                "position": { "shrink": 0 },
+                "props": { "direction": "row", "wrap": "wrap", "style": { "gap": "8px", "padding": "8px 0", "maxWidth": "392px" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "P1" }, "position": { "basis": "56px", "shrink": 0 }, "propConfig": { "position.display": { "binding": { "type": "expr", "config": { "expression": "1 <= {view.custom.container.PartsPerTray}" } } } }, "props": { "text": "1", "style": { "height": "56px", "display": "flex", "alignItems": "center", "justifyContent": "center", "fontFamily": "var(--mpp-font-mono)", "fontSize": "11px", "fontWeight": "600", "borderRadius": "var(--mpp-radius-md)", "border": "2px dashed var(--mpp-border-subtle)", "backgroundColor": "var(--mpp-surface-card)", "color": "var(--mpp-text-tertiary)" } } },
+                  { "type": "ia.display.label", "meta": { "name": "P2" }, "position": { "basis": "56px", "shrink": 0 }, "propConfig": { "position.display": { "binding": { "type": "expr", "config": { "expression": "2 <= {view.custom.container.PartsPerTray}" } } } }, "props": { "text": "2", "style": { "height": "56px", "display": "flex", "alignItems": "center", "justifyContent": "center", "fontFamily": "var(--mpp-font-mono)", "fontSize": "11px", "fontWeight": "600", "borderRadius": "var(--mpp-radius-md)", "border": "2px dashed var(--mpp-border-subtle)", "backgroundColor": "var(--mpp-surface-card)", "color": "var(--mpp-text-tertiary)" } } },
+                  { "type": "ia.display.label", "meta": { "name": "P3" }, "position": { "basis": "56px", "shrink": 0 }, "propConfig": { "position.display": { "binding": { "type": "expr", "config": { "expression": "3 <= {view.custom.container.PartsPerTray}" } } } }, "props": { "text": "3", "style": { "height": "56px", "display": "flex", "alignItems": "center", "justifyContent": "center", "fontFamily": "var(--mpp-font-mono)", "fontSize": "11px", "fontWeight": "600", "borderRadius": "var(--mpp-radius-md)", "border": "2px dashed var(--mpp-border-subtle)", "backgroundColor": "var(--mpp-surface-card)", "color": "var(--mpp-text-tertiary)" } } },
+                  { "type": "ia.display.label", "meta": { "name": "P4" }, "position": { "basis": "56px", "shrink": 0 }, "propConfig": { "position.display": { "binding": { "type": "expr", "config": { "expression": "4 <= {view.custom.container.PartsPerTray}" } } } }, "props": { "text": "4", "style": { "height": "56px", "display": "flex", "alignItems": "center", "justifyContent": "center", "fontFamily": "var(--mpp-font-mono)", "fontSize": "11px", "fontWeight": "600", "borderRadius": "var(--mpp-radius-md)", "border": "2px dashed var(--mpp-border-subtle)", "backgroundColor": "var(--mpp-surface-card)", "color": "var(--mpp-text-tertiary)" } } },
+                  { "type": "ia.display.label", "meta": { "name": "P5" }, "position": { "basis": "56px", "shrink": 0 }, "propConfig": { "position.display": { "binding": { "type": "expr", "config": { "expression": "5 <= {view.custom.container.PartsPerTray}" } } } }, "props": { "text": "5", "style": { "height": "56px", "display": "flex", "alignItems": "center", "justifyContent": "center", "fontFamily": "var(--mpp-font-mono)", "fontSize": "11px", "fontWeight": "600", "borderRadius": "var(--mpp-radius-md)", "border": "2px dashed var(--mpp-border-subtle)", "backgroundColor": "var(--mpp-surface-card)", "color": "var(--mpp-text-tertiary)" } } },
+                  { "type": "ia.display.label", "meta": { "name": "P6" }, "position": { "basis": "56px", "shrink": 0 }, "propConfig": { "position.display": { "binding": { "type": "expr", "config": { "expression": "6 <= {view.custom.container.PartsPerTray}" } } } }, "props": { "text": "6", "style": { "height": "56px", "display": "flex", "alignItems": "center", "justifyContent": "center", "fontFamily": "var(--mpp-font-mono)", "fontSize": "11px", "fontWeight": "600", "borderRadius": "var(--mpp-radius-md)", "border": "2px dashed var(--mpp-border-subtle)", "backgroundColor": "var(--mpp-surface-card)", "color": "var(--mpp-text-tertiary)" } } },
+                  { "type": "ia.display.label", "meta": { "name": "P7" }, "position": { "basis": "56px", "shrink": 0 }, "propConfig": { "position.display": { "binding": { "type": "expr", "config": { "expression": "7 <= {view.custom.container.PartsPerTray}" } } } }, "props": { "text": "7", "style": { "height": "56px", "display": "flex", "alignItems": "center", "justifyContent": "center", "fontFamily": "var(--mpp-font-mono)", "fontSize": "11px", "fontWeight": "600", "borderRadius": "var(--mpp-radius-md)", "border": "2px dashed var(--mpp-border-subtle)", "backgroundColor": "var(--mpp-surface-card)", "color": "var(--mpp-text-tertiary)" } } },
+                  { "type": "ia.display.label", "meta": { "name": "P8" }, "position": { "basis": "56px", "shrink": 0 }, "propConfig": { "position.display": { "binding": { "type": "expr", "config": { "expression": "8 <= {view.custom.container.PartsPerTray}" } } } }, "props": { "text": "8", "style": { "height": "56px", "display": "flex", "alignItems": "center", "justifyContent": "center", "fontFamily": "var(--mpp-font-mono)", "fontSize": "11px", "fontWeight": "600", "borderRadius": "var(--mpp-radius-md)", "border": "2px dashed var(--mpp-border-subtle)", "backgroundColor": "var(--mpp-surface-card)", "color": "var(--mpp-text-tertiary)" } } },
+                  { "type": "ia.display.label", "meta": { "name": "P9" }, "position": { "basis": "56px", "shrink": 0 }, "propConfig": { "position.display": { "binding": { "type": "expr", "config": { "expression": "9 <= {view.custom.container.PartsPerTray}" } } } }, "props": { "text": "9", "style": { "height": "56px", "display": "flex", "alignItems": "center", "justifyContent": "center", "fontFamily": "var(--mpp-font-mono)", "fontSize": "11px", "fontWeight": "600", "borderRadius": "var(--mpp-radius-md)", "border": "2px dashed var(--mpp-border-subtle)", "backgroundColor": "var(--mpp-surface-card)", "color": "var(--mpp-text-tertiary)" } } },
+                  { "type": "ia.display.label", "meta": { "name": "P10" }, "position": { "basis": "56px", "shrink": 0 }, "propConfig": { "position.display": { "binding": { "type": "expr", "config": { "expression": "10 <= {view.custom.container.PartsPerTray}" } } } }, "props": { "text": "10", "style": { "height": "56px", "display": "flex", "alignItems": "center", "justifyContent": "center", "fontFamily": "var(--mpp-font-mono)", "fontSize": "11px", "fontWeight": "600", "borderRadius": "var(--mpp-radius-md)", "border": "2px dashed var(--mpp-border-subtle)", "backgroundColor": "var(--mpp-surface-card)", "color": "var(--mpp-text-tertiary)" } } },
+                  { "type": "ia.display.label", "meta": { "name": "P11" }, "position": { "basis": "56px", "shrink": 0 }, "propConfig": { "position.display": { "binding": { "type": "expr", "config": { "expression": "11 <= {view.custom.container.PartsPerTray}" } } } }, "props": { "text": "11", "style": { "height": "56px", "display": "flex", "alignItems": "center", "justifyContent": "center", "fontFamily": "var(--mpp-font-mono)", "fontSize": "11px", "fontWeight": "600", "borderRadius": "var(--mpp-radius-md)", "border": "2px dashed var(--mpp-border-subtle)", "backgroundColor": "var(--mpp-surface-card)", "color": "var(--mpp-text-tertiary)" } } },
+                  { "type": "ia.display.label", "meta": { "name": "P12" }, "position": { "basis": "56px", "shrink": 0 }, "propConfig": { "position.display": { "binding": { "type": "expr", "config": { "expression": "12 <= {view.custom.container.PartsPerTray}" } } } }, "props": { "text": "12", "style": { "height": "56px", "display": "flex", "alignItems": "center", "justifyContent": "center", "fontFamily": "var(--mpp-font-mono)", "fontSize": "11px", "fontWeight": "600", "borderRadius": "var(--mpp-radius-md)", "border": "2px dashed var(--mpp-border-subtle)", "backgroundColor": "var(--mpp-surface-card)", "color": "var(--mpp-text-tertiary)" } } }
+                ]
+              },
+              { "type": "ia.display.label", "meta": { "name": "TrayNote" }, "props": { "text": "The camera scans the full tray as a single image once TrayFullFlag asserts - one validation event per tray; positions show each etched serial. A serial placed during a HardwareInterlockEnable=false window is flagged hardware-interlock-bypassed per UJ-16; the audit row captures the bypass.", "style": { "classes": "pf-kpi-sub" } } }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "CompletionPanel" },
+            "position": { "shrink": 0 },
+            "propConfig": { "position.display": { "binding": { "type": "expr", "config": { "expression": "!isNull({view.custom.container.Id})" } } } },
+            "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "12px", "border": "1px solid var(--mpp-accent-60)" } },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "GateHeader" },
+                "props": { "direction": "row", "alignItems": "center", "justify": "space-between", "style": { "classes": "pf-panel-header" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "H" }, "props": { "text": "WorkOrder Completion Gate", "style": { "fontSize": "16px", "fontWeight": "700" } } },
+                  { "type": "ia.display.label", "meta": { "name": "Hsub" }, "props": { "text": "RequiresCompletionConfirm = 1 - large-button gesture required", "style": { "classes": "pf-kpi-sub" } } }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "GateBody" },
+                "props": { "direction": "row", "alignItems": "center", "style": { "gap": "16px" } },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": { "name": "GateText" },
+                    "position": { "grow": 1 },
+                    "props": { "direction": "column", "style": { "gap": "6px" } },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "GateIntro" }, "propConfig": { "props.text": { "binding": { "type": "expr", "config": { "expression": "'When the container reaches ' + toStr({view.custom.container.TargetParts}) + ' pcs and the PLC asserts CompletionConfirmed=1:'" } } } }, "props": { "style": { "color": "var(--mpp-text-primary)" } } },
+                      { "type": "ia.display.label", "meta": { "name": "B1" }, "props": { "text": "- AIM Shipper ID claimed from local pool (sync FIFO, sub-millisecond)", "style": { "classes": "pf-kpi-sub" } } },
+                      { "type": "ia.display.label", "meta": { "name": "B2" }, "props": { "text": "- ShippingLabel row inserted with PrintedAt = NULL", "style": { "classes": "pf-kpi-sub" } } },
+                      { "type": "ia.display.label", "meta": { "name": "B3" }, "props": { "text": "- Async print message dispatched to Zebra at this terminal", "style": { "classes": "pf-kpi-sub" } } },
+                      { "type": "ia.display.label", "meta": { "name": "B4" }, "props": { "text": "- Container status flips to Complete - WO auto-finishes", "style": { "classes": "pf-kpi-sub" } } }
+                    ]
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": { "name": "ConfirmButton" },
+                    "position": { "shrink": 0 },
+                    "props": { "text": "Confirm Completion", "style": { "classes": "pf-btn pf-btn-primary pf-btn-large", "minHeight": "80px", "minWidth": "200px", "fontSize": "18px" } },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script", "scope": "G",
+                          "config": { "script": "\tc = self.view.custom.container\n\tcellId = self.view.custom.filter.cellLocationId\n\tif not c or c.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No open container at this cell.\"}, \"Assembly\")\n\t\treturn\n\tresult = BlueRidge.Lots.Container.complete(c.get(\"Id\"), operatorConfirmed=True, terminalLocationId=cellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Container complete\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1" }
+                        }
+                      }
+                    }
+                  }
+                ]
               }
-            }
+            ]
           }
         ]
       }

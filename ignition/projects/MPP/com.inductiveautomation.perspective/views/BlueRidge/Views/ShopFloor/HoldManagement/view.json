@@ -17,10 +17,24 @@
     "props": { "direction": "column", "style": { "classes": "canvas" } },
     "children": [
       {
-        "type": "ia.display.label",
-        "meta": { "name": "Header" },
+        "type": "ia.container.flex",
+        "meta": { "name": "HeaderBlock" },
         "position": { "shrink": 0 },
-        "props": { "text": "Hold Management", "style": { "fontSize": "22px", "fontWeight": "700", "padding": "16px", "borderBottom": "1px solid var(--mpp-border-subtle)" } }
+        "props": { "direction": "column", "style": { "classes": "pf-details-header", "gap": "4px", "padding": "16px", "borderBottom": "1px solid var(--mpp-border-subtle)" } },
+        "children": [
+          { "type": "ia.display.label", "meta": { "name": "Header" }, "position": { "shrink": 0 }, "props": { "text": "Hold Management", "style": { "fontSize": "22px", "fontWeight": "700" } } },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "Meta" },
+            "position": { "shrink": 0 },
+            "props": { "direction": "row", "alignItems": "center", "wrap": "wrap", "style": { "classes": "pf-location-meta", "gap": "8px" } },
+            "children": [
+              { "type": "ia.display.label", "meta": { "name": "Fds" }, "props": { "text": "FDS-08-007a" } },
+              { "type": "ia.display.label", "meta": { "name": "Sep" }, "props": { "text": "-" } },
+              { "type": "ia.display.label", "meta": { "name": "Desc" }, "props": { "text": "Place and release holds on LOTs / Containers - AD-elevated per FDS-04-007" } }
+            ]
+          }
+        ]
       },
       {
         "type": "ia.container.flex",
@@ -28,6 +42,120 @@
         "position": { "grow": 1 },
         "props": { "direction": "column", "style": { "gap": "16px", "margin": "16px", "padding": "0", "overflowY": "auto" } },
         "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "FilterRow" },
+            "position": { "shrink": 0 },
+            "props": { "direction": "row", "alignItems": "flex-end", "wrap": "wrap", "style": { "gap": "12px" } },
+            "children": [
+              {
+                "type": "ia.container.flex", "meta": { "name": "FilterField" }, "position": { "basis": "0", "grow": 1 }, "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Filter", "style": { "classes": "pf-field-label" } } },
+                  { "type": "ia.input.text-field", "meta": { "name": "FilterInput" }, "props": { "placeholder": "LotName, AIM Shipper ID, Item, Location...", "style": { "classes": "pf-field-input" } } }
+                ]
+              },
+              {
+                "type": "ia.container.flex", "meta": { "name": "FilterTypeField" }, "position": { "basis": "240px", "shrink": 0 }, "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                "children": [
+                  { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Hold Type", "style": { "classes": "pf-field-label" } } },
+                  { "type": "ia.input.dropdown", "meta": { "name": "FilterType" }, "propConfig": { "props.options": { "binding": { "config": { "path": "view.custom.holdTypeOptions" }, "type": "property" } } }, "props": { "placeholder": "All hold types", "style": { "classes": "pf-field-input" } } }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": { "name": "ListColumns" },
+            "position": { "shrink": 0 },
+            "props": { "direction": "row", "wrap": "wrap", "style": { "gap": "16px" } },
+            "children": [
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "OpenLotsPanel" },
+                "position": { "basis": "0", "grow": 1 },
+                "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "12px", "padding": "16px" } },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": { "name": "OpenLotsHeader" },
+                    "position": { "shrink": 0 },
+                    "props": { "direction": "row", "alignItems": "center", "justify": "space-between", "style": { "classes": "pf-panel-header" } },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "OpenLotsTitle" }, "props": { "text": "Open LOTs", "style": { "fontSize": "16px", "fontWeight": "700" } } },
+                      { "type": "ia.display.label", "meta": { "name": "OpenLotsHint" }, "props": { "text": "open-holds list read pending", "style": { "classes": "pf-kpi-sub" } } }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": { "name": "OpenLotsQueue" },
+                    "position": { "shrink": 0 },
+                    "props": { "direction": "column", "style": { "classes": "pf-queue", "gap": "8px" } },
+                    "children": [
+                      {
+                        "type": "ia.container.flex",
+                        "meta": { "name": "PlaceholderRow" },
+                        "position": { "shrink": 0 },
+                        "props": { "direction": "row", "alignItems": "center", "style": { "classes": "pf-queue-row", "gap": "16px", "padding": "12px 16px" } },
+                        "children": [
+                          {
+                            "type": "ia.container.flex", "meta": { "name": "Info" }, "position": { "grow": 1, "basis": "0" }, "props": { "direction": "column", "style": { "gap": "2px" } },
+                            "children": [
+                              { "type": "ia.display.label", "meta": { "name": "Name" }, "props": { "text": "open-holds list read pending", "style": { "classes": "pf-queue-name" } } },
+                              { "type": "ia.display.label", "meta": { "name": "Detail" }, "props": { "text": "Backing read proc not yet implemented - use the Place Hold form below", "style": { "classes": "pf-queue-detail" } } }
+                            ]
+                          },
+                          { "type": "ia.display.label", "meta": { "name": "Pill" }, "position": { "shrink": 0 }, "props": { "text": "Pending", "style": { "classes": "pf-pill pf-pill-warn" } } }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": { "name": "OpenContainersPanel" },
+                "position": { "basis": "0", "grow": 1 },
+                "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "12px", "padding": "16px" } },
+                "children": [
+                  {
+                    "type": "ia.container.flex",
+                    "meta": { "name": "OpenContainersHeader" },
+                    "position": { "shrink": 0 },
+                    "props": { "direction": "row", "alignItems": "center", "justify": "space-between", "style": { "classes": "pf-panel-header" } },
+                    "children": [
+                      { "type": "ia.display.label", "meta": { "name": "OpenContainersTitle" }, "props": { "text": "Open Containers", "style": { "fontSize": "16px", "fontWeight": "700" } } },
+                      { "type": "ia.display.label", "meta": { "name": "OpenContainersHint" }, "props": { "text": "open-holds list read pending", "style": { "classes": "pf-kpi-sub" } } }
+                    ]
+                  },
+                  {
+                    "type": "ia.container.flex",
+                    "meta": { "name": "OpenContainersQueue" },
+                    "position": { "shrink": 0 },
+                    "props": { "direction": "column", "style": { "classes": "pf-queue", "gap": "8px" } },
+                    "children": [
+                      {
+                        "type": "ia.container.flex",
+                        "meta": { "name": "PlaceholderRow" },
+                        "position": { "shrink": 0 },
+                        "props": { "direction": "row", "alignItems": "center", "style": { "classes": "pf-queue-row", "gap": "16px", "padding": "12px 16px" } },
+                        "children": [
+                          {
+                            "type": "ia.container.flex", "meta": { "name": "Info" }, "position": { "grow": 1, "basis": "0" }, "props": { "direction": "column", "style": { "gap": "2px" } },
+                            "children": [
+                              { "type": "ia.display.label", "meta": { "name": "Name" }, "props": { "text": "open-holds list read pending", "style": { "classes": "pf-queue-name" } } },
+                              { "type": "ia.display.label", "meta": { "name": "Detail" }, "props": { "text": "Backing read proc not yet implemented - use the Place Hold form below", "style": { "classes": "pf-queue-detail" } } }
+                            ]
+                          },
+                          { "type": "ia.display.label", "meta": { "name": "Pill" }, "position": { "shrink": 0 }, "props": { "text": "Pending", "style": { "classes": "pf-pill pf-pill-warn" } } }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
           {
             "type": "ia.container.flex",
             "meta": { "name": "PlacePanel" },
@@ -126,18 +254,27 @@
                 ]
               },
               {
-                "type": "ia.input.button",
-                "meta": { "name": "ReleaseButton" },
+                "type": "ia.container.flex",
+                "meta": { "name": "ActionRow" },
                 "position": { "shrink": 0 },
-                "props": { "text": "Release Hold", "style": { "classes": "pf-btn pf-btn-secondary pf-btn-large" } },
-                "events": {
-                  "component": {
-                    "onActionPerformed": {
-                      "type": "script", "scope": "G",
-                      "config": { "script": "\td = self.view.custom.releaseDraft\n\theId = BlueRidge.Common.Util.toIntOrNone(d.get(\"holdEventId\"))\n\tremarks = (d.get(\"releaseRemarks\") or \"\").strip() or None\n\tif heId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a Hold Event Id.\"}, \"Release Hold\")\n\t\treturn\n\tresult = BlueRidge.Quality.Hold.release(heId, releaseRemarks=remarks)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Hold released\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.releaseDraft = {\"holdEventId\": \"\", \"releaseRemarks\": \"\"}" }
+                "props": { "direction": "row", "alignItems": "center", "wrap": "wrap", "style": { "classes": "pf-actions", "gap": "12px" } },
+                "children": [
+                  {
+                    "type": "ia.input.button",
+                    "meta": { "name": "ReleaseButton" },
+                    "position": { "shrink": 0 },
+                    "props": { "text": "Release Hold", "style": { "classes": "pf-btn pf-btn-secondary pf-btn-large" } },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script", "scope": "G",
+                          "config": { "script": "\td = self.view.custom.releaseDraft\n\theId = BlueRidge.Common.Util.toIntOrNone(d.get(\"holdEventId\"))\n\tremarks = (d.get(\"releaseRemarks\") or \"\").strip() or None\n\tif heId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a Hold Event Id.\"}, \"Release Hold\")\n\t\treturn\n\tresult = BlueRidge.Quality.Hold.release(heId, releaseRemarks=remarks)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Hold released\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.releaseDraft = {\"holdEventId\": \"\", \"releaseRemarks\": \"\"}" }
+                        }
+                      }
                     }
-                  }
-                }
+                  },
+                  { "type": "ia.display.label", "meta": { "name": "AimNote" }, "position": { "grow": 1 }, "props": { "text": "Pre-shipped Containers also fire AIM PlaceOnHold async per FDS-07-008.", "style": { "classes": "pf-kpi-sub" } } }
+                ]
               }
             ]
           }

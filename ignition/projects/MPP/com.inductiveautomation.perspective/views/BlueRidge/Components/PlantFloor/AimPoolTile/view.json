@@ -2,7 +2,8 @@
   "custom": {
     "depths": [],
     "total": 0,
-    "perPartText": ""
+    "perPartText": "",
+    "valueClass": "pf-kpi-value pf-kpi-value-good"
   },
   "params": {},
   "propConfig": {
@@ -26,17 +27,43 @@
         "transforms": [ { "code": "\trows = value or []\n\tif not rows:\n\t\treturn \"No available IDs\"\n\treturn \"  |  \".join([((r.get(\"PartNumber\") or \"?\") + \": \" + str(r.get(\"Depth\") or 0)) for r in rows])", "type": "script" } ],
         "type": "property"
       }
+    },
+    "custom.valueClass": {
+      "binding": {
+        "config": { "path": "view.custom.total" },
+        "transforms": [ { "code": "\tt = value or 0\n\tif t <= 10:\n\t\treturn \"pf-kpi-value pf-kpi-value-bad\"\n\tif t <= 20:\n\t\treturn \"pf-kpi-value pf-kpi-value-warn\"\n\treturn \"pf-kpi-value pf-kpi-value-good\"", "type": "script" } ],
+        "type": "property"
+      }
     }
   },
   "props": { "defaultSize": { "height": 220, "width": 360 } },
   "root": {
     "type": "ia.container.flex",
     "meta": { "name": "root" },
-    "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "8px", "padding": "16px" } },
+    "props": { "direction": "column", "style": { "classes": "pf-kpi pf-panel", "gap": "6px", "padding": "16px" } },
     "children": [
       { "type": "ia.display.label", "meta": { "name": "Label" }, "position": { "shrink": 0 }, "props": { "text": "AIM Shipper Pool", "style": { "classes": "pf-kpi-label" } } },
-      { "type": "ia.display.label", "meta": { "name": "Total" }, "position": { "shrink": 0 }, "propConfig": { "props.text": { "binding": { "type": "expr", "config": { "expression": "toStr({view.custom.total})" } } } }, "props": { "style": { "classes": "pf-kpi-value" } } },
-      { "type": "ia.display.label", "meta": { "name": "PerPart" }, "position": { "grow": 1 }, "propConfig": { "props.text": { "binding": { "type": "property", "config": { "path": "view.custom.perPartText" } } } }, "props": { "style": { "classes": "pf-kpi-sub" } } }
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Total" },
+        "position": { "shrink": 0 },
+        "propConfig": {
+          "props.text": { "binding": { "type": "expr", "config": { "expression": "toStr({view.custom.total})" } } },
+          "props.style.classes": { "binding": { "type": "property", "config": { "path": "view.custom.valueClass" } } }
+        },
+        "props": { "style": { "classes": "pf-kpi-value pf-kpi-value-good" } }
+      },
+      { "type": "ia.display.label", "meta": { "name": "Caption" }, "position": { "shrink": 0 }, "props": { "text": "total available IDs across part numbers", "style": { "classes": "pf-kpi-sub" } } },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "PerPartBlock" },
+        "position": { "grow": 1 },
+        "props": { "direction": "column", "style": { "gap": "3px", "paddingTop": "8px", "marginTop": "4px", "borderTop": "1px dashed var(--mpp-border-subtle)" } },
+        "children": [
+          { "type": "ia.display.label", "meta": { "name": "PerPartLabel" }, "position": { "shrink": 0 }, "props": { "text": "Per part number", "style": { "classes": "pf-kpi-label" } } },
+          { "type": "ia.display.label", "meta": { "name": "PerPart" }, "position": { "grow": 1 }, "propConfig": { "props.text": { "binding": { "type": "property", "config": { "path": "view.custom.perPartText" } } } }, "props": { "style": { "classes": "pf-kpi-sub" } } }
+        ]
+      }
     ]
   }
 }
