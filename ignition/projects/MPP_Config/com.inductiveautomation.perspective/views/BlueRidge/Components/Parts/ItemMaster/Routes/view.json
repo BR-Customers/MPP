@@ -1268,7 +1268,7 @@
                   },
                   "transforms": [
                     {
-                      "code": "\tsteps \u003d value or []\n\tareas \u003d self.view.custom.areas or []\n\topCache \u003d self.view.custom.opTemplatesByArea or {}\n\tout \u003d []\n\ttotal \u003d len(steps)\n\tfor i, s in enumerate(steps):\n\t\ts \u003d s or {}\n\t\tout.append({\u0027rowIndex\u0027: i, \u0027step\u0027: dict(s), \u0027areas\u0027: areas, \u0027opTemplatesByArea\u0027: opCache, \u0027isFirst\u0027: (i \u003d\u003d 0), \u0027isLast\u0027: (i \u003d\u003d total - 1)})\n\treturn out",
+                      "code": "\tsteps \u003d value or []\n\tif len(steps) \u003d\u003d 0:\n\t\treturn []\n\t\n\tareas \u003d self.view.custom.areas or []\n\topCache \u003d self.view.custom.opTemplatesByArea or {}\n\tout \u003d []\n\ttotal \u003d len(steps)\n\tfor i, s in enumerate(steps):\n\t\ts \u003d s or {}\n\t\tout.append({\u0027rowIndex\u0027: i, \u0027step\u0027: dict(s), \u0027areas\u0027: areas, \u0027opTemplatesByArea\u0027: opCache, \u0027isFirst\u0027: (i \u003d\u003d 0), \u0027isLast\u0027: (i \u003d\u003d total - 1)})\n\treturn out",
                       "type": "script"
                     }
                   ],
