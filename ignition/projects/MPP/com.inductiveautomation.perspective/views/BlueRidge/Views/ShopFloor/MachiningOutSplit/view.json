@@ -1,9 +1,5 @@
 {
   "custom": {
-    "filter": {
-      "cellLocationId": null
-    },
-    "cellOptions": [],
     "destOptions": [],
     "parentLot": {
       "Id": null,
@@ -22,14 +18,6 @@
   },
   "params": {},
   "propConfig": {
-    "custom.cellOptions": {
-      "binding": {
-        "type": "expr",
-        "config": {
-          "expression": "runScript(\"BlueRidge.Location.Location.getCellsForDropdownByNamePrefix\", 0, \"Machining Out\")"
-        }
-      }
-    },
     "custom.destOptions": {
       "binding": {
         "type": "expr",
@@ -49,7 +37,7 @@
     "custom.parentLot": {
       "binding": {
         "config": {
-          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({view.custom.filter.cellLocationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {view.custom.filter.cellLocationId}), [])"
+          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}), [])"
         },
         "transforms": [
           {
@@ -230,37 +218,24 @@
             }
           },
           {
-            "type": "ia.input.dropdown",
+            "type": "ia.display.label",
             "meta": {
-              "name": "CellSelect"
-            },
-            "position": {
-              "basis": "320px",
-              "shrink": 0
-            },
-            "propConfig": {
-              "props.options": {
-                "binding": {
-                  "config": {
-                    "path": "view.custom.cellOptions"
-                  },
-                  "type": "property"
-                }
-              },
-              "props.value": {
-                "binding": {
-                  "config": {
-                    "path": "view.custom.filter.cellLocationId",
-                    "bidirectional": true
-                  },
-                  "type": "property"
-                }
-              }
+              "name": "ActiveCellValue"
             },
             "props": {
-              "placeholder": "Select sublotting cell",
+              "text": "",
               "style": {
-                "classes": "pf-field-input"
+                "classes": "pf-cell-context-value"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"No cell bound to this terminal\", {session.custom.cell.name})"
+                  }
+                }
               }
             }
           },
@@ -844,7 +819,7 @@
                       "type": "script",
                       "scope": "G",
                       "config": {
-                        "script": "\tparent = self.view.custom.parentLot\n\totId = self.view.custom.opTemplateId\n\tcellId = self.view.custom.filter.cellLocationId\n\td = self.view.custom.draft\n\tif cellId is None or not parent or parent.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Select a cell that has a machined LOT.\"}, \"Machining OUT\")\n\t\treturn\n\tif otId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"MachiningOut operation template not found.\"}, \"Machining OUT\")\n\t\treturn\n\tq1 = BlueRidge.Common.Util.toIntOrNone(d.get(\"qty1\"))\n\tq2 = BlueRidge.Common.Util.toIntOrNone(d.get(\"qty2\"))\n\tdest1 = d.get(\"dest1\")\n\tdest2 = d.get(\"dest2\")\n\tif q1 is None or q2 is None or q1 <= 0 or q2 <= 0 or dest1 is None or dest2 is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a positive piece count and a destination for both sub-LOTs.\"}, \"Machining OUT\")\n\t\treturn\n\tchildren = [{\"pieceCount\": q1, \"destinationLocationId\": dest1}, {\"pieceCount\": q2, \"destinationLocationId\": dest2}]\n\tresult = BlueRidge.Workorder.Machining.recordSplit(parent.get(\"Id\"), otId, system.util.jsonEncode(children))\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining OUT - Split\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"qty1\": \"\", \"dest1\": None, \"qty2\": \"\", \"dest2\": None}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                        "script": "\tparent = self.view.custom.parentLot\n\totId = self.view.custom.opTemplateId\n\tcellId = self.session.custom.cell.locationId\n\td = self.view.custom.draft\n\tif cellId is None or not parent or parent.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Select a cell that has a machined LOT.\"}, \"Machining OUT\")\n\t\treturn\n\tif otId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"MachiningOut operation template not found.\"}, \"Machining OUT\")\n\t\treturn\n\tq1 = BlueRidge.Common.Util.toIntOrNone(d.get(\"qty1\"))\n\tq2 = BlueRidge.Common.Util.toIntOrNone(d.get(\"qty2\"))\n\tdest1 = d.get(\"dest1\")\n\tdest2 = d.get(\"dest2\")\n\tif q1 is None or q2 is None or q1 <= 0 or q2 <= 0 or dest1 is None or dest2 is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a positive piece count and a destination for both sub-LOTs.\"}, \"Machining OUT\")\n\t\treturn\n\tchildren = [{\"pieceCount\": q1, \"destinationLocationId\": dest1}, {\"pieceCount\": q2, \"destinationLocationId\": dest2}]\n\tresult = BlueRidge.Workorder.Machining.recordSplit(parent.get(\"Id\"), otId, system.util.jsonEncode(children))\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining OUT - Split\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"qty1\": \"\", \"dest1\": None, \"qty2\": \"\", \"dest2\": None}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
                       }
                     }
                   }
