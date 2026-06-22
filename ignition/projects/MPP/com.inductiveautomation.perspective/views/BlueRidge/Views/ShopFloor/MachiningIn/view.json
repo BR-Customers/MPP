@@ -1,83 +1,205 @@
 {
   "custom": {
-    "filter": { "cellLocationId": null },
+    "filter": {
+      "cellLocationId": null
+    },
     "cellOptions": [],
     "queue": [],
     "holdCount": 0,
     "refreshToken": 0,
-    "pending": { "sourceLotId": null, "lotName": "", "sourceItem": "" }
+    "pending": {
+      "sourceLotId": null,
+      "lotName": "",
+      "sourceItem": ""
+    }
   },
   "params": {},
   "propConfig": {
     "custom.cellOptions": {
       "binding": {
-        "config": { "expression": "runScript(\"BlueRidge.Location.Location.listByTier\", 0, \"Cell\")" },
-        "transforms": [
-          { "code": "\treturn [{\"value\": r.get(\"Id\"), \"label\": (r.get(\"Code\") or \"\") + \" - \" + (r.get(\"Name\") or \"\")} for r in (value or [])]", "type": "script" }
-        ],
-        "type": "expr"
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Location.Location.getCellsForDropdownByNamePrefix\", 0, \"Machining In\")"
+        }
       }
     },
     "custom.queue": {
       "binding": {
-        "config": { "expression": "if({view.custom.refreshToken} >= 0 && !isNull({view.custom.filter.cellLocationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {view.custom.filter.cellLocationId}), [])" },
+        "config": {
+          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({view.custom.filter.cellLocationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {view.custom.filter.cellLocationId}), [])"
+        },
         "transforms": [
-          { "code": "\treturn [{\"sourceLotId\": r.get(\"Id\"), \"lotName\": r.get(\"LotName\") or \"\", \"sourceItem\": r.get(\"ItemPartNumber\") or \"\", \"pieceCount\": r.get(\"PieceCount\") or 0, \"arrival\": str(r.get(\"LastMovementAt\") or \"\"), \"position\": i + 1, \"lotStatusCode\": r.get(\"LotStatusCode\") or \"\"} for i, r in enumerate(value or [])]", "type": "script" }
+          {
+            "code": "\treturn [{\"sourceLotId\": r.get(\"Id\"), \"lotName\": r.get(\"LotName\") or \"\", \"sourceItem\": r.get(\"ItemPartNumber\") or \"\", \"pieceCount\": r.get(\"PieceCount\") or 0, \"arrival\": str(r.get(\"LastMovementAt\") or \"\"), \"position\": i + 1, \"lotStatusCode\": r.get(\"LotStatusCode\") or \"\"} for i, r in enumerate(value or [])]",
+            "type": "script"
+          }
         ],
         "type": "expr"
       }
     },
     "custom.holdCount": {
       "binding": {
-        "config": { "path": "view.custom.queue" },
+        "config": {
+          "path": "view.custom.queue"
+        },
         "transforms": [
-          { "code": "\treturn len([r for r in (value or []) if (r.get(\"lotStatusCode\") or \"\") != \"Good\"])", "type": "script" }
+          {
+            "code": "\treturn len([r for r in (value or []) if (r.get(\"lotStatusCode\") or \"\") != \"Good\"])",
+            "type": "script"
+          }
         ],
         "type": "property"
       }
     }
   },
   "props": {
-    "defaultSize": { "height": 1080, "width": 1920 }
+    "defaultSize": {
+      "height": 1080,
+      "width": 1920
+    }
   },
   "root": {
     "type": "ia.container.flex",
-    "meta": { "name": "root" },
-    "props": { "direction": "column", "alignItems": "stretch", "style": { "classes": "pf-terminal canvas", "gap": "16px", "padding": "16px", "overflowY": "auto" } },
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "alignItems": "stretch",
+      "style": {
+        "classes": "pf-terminal canvas",
+        "gap": "16px",
+        "padding": "16px",
+        "overflowY": "auto"
+      }
+    },
     "children": [
       {
         "type": "ia.container.flex",
-        "meta": { "name": "Header" },
-        "position": { "shrink": 0 },
-        "props": { "direction": "row", "alignItems": "flex-end", "justify": "space-between", "wrap": "wrap", "style": { "classes": "pf-terminal-header", "gap": "12px", "paddingBottom": "16px" } },
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "flex-end",
+          "justify": "space-between",
+          "wrap": "wrap",
+          "style": {
+            "classes": "pf-terminal-header",
+            "gap": "12px",
+            "paddingBottom": "16px"
+          }
+        },
         "children": [
           {
             "type": "ia.container.flex",
-            "meta": { "name": "Title" },
-            "position": { "grow": 1, "basis": "0" },
-            "props": { "direction": "column", "style": { "classes": "pf-terminal-title", "gap": "4px" } },
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "grow": 1,
+              "basis": "0"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-terminal-title",
+                "gap": "4px"
+              }
+            },
             "children": [
-              { "type": "ia.display.label", "meta": { "name": "TitleText" }, "props": { "text": "Machining IN", "style": { "classes": "pf-terminal-title", "fontSize": "24px", "fontWeight": "600" } } },
-              { "type": "ia.display.label", "meta": { "name": "TitleMeta" }, "props": { "text": "5G0 Machining WC - dedicated terminal - whole-LOT FIFO pick", "style": { "classes": "pf-terminal-title-meta" } } }
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "TitleText"
+                },
+                "props": {
+                  "text": "Machining IN",
+                  "style": {
+                    "classes": "pf-terminal-title",
+                    "fontSize": "24px",
+                    "fontWeight": "600"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "TitleMeta"
+                },
+                "props": {
+                  "text": "5G0 Machining WC - dedicated terminal - whole-LOT FIFO pick",
+                  "style": {
+                    "classes": "pf-terminal-title-meta"
+                  }
+                }
+              }
             ]
           },
           {
             "type": "ia.container.flex",
-            "meta": { "name": "PausedIndicator" },
-            "position": { "shrink": 0 },
-            "propConfig": {
-              "position.display": { "binding": { "type": "expr", "config": { "expression": "{view.custom.holdCount} > 0" } } }
+            "meta": {
+              "name": "PausedIndicator"
             },
-            "props": { "direction": "row", "alignItems": "center", "style": { "classes": "pf-paused-indicator", "gap": "8px", "padding": "8px 14px" } },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.custom.holdCount} > 0"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "row",
+              "alignItems": "center",
+              "style": {
+                "classes": "pf-paused-indicator",
+                "gap": "8px",
+                "padding": "8px 14px"
+              }
+            },
             "children": [
-              { "type": "ia.display.label", "meta": { "name": "PausedLabel" }, "props": { "text": "On Hold", "style": { "fontSize": "13px", "fontWeight": "500" } } },
               {
                 "type": "ia.display.label",
-                "meta": { "name": "PausedCount" },
-                "propConfig": {
-                  "props.text": { "binding": { "type": "expr", "config": { "expression": "toStr({view.custom.holdCount})" } } }
+                "meta": {
+                  "name": "PausedLabel"
                 },
-                "props": { "style": { "classes": "pf-paused-indicator-count" } }
+                "props": {
+                  "text": "On Hold",
+                  "style": {
+                    "fontSize": "13px",
+                    "fontWeight": "500"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "PausedCount"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "toStr({view.custom.holdCount})"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-paused-indicator-count"
+                  }
+                }
               }
             ]
           }
@@ -85,25 +207,82 @@
       },
       {
         "type": "ia.container.flex",
-        "meta": { "name": "CellSelectPanel" },
-        "position": { "shrink": 0 },
-        "props": { "direction": "row", "alignItems": "flex-end", "wrap": "wrap", "style": { "classes": "pf-panel", "gap": "12px", "padding": "14px 16px" } },
+        "meta": {
+          "name": "CellSelectPanel"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "flex-end",
+          "wrap": "wrap",
+          "style": {
+            "classes": "pf-panel",
+            "gap": "12px",
+            "padding": "14px 16px"
+          }
+        },
         "children": [
           {
             "type": "ia.container.flex",
-            "meta": { "name": "MachineField" },
-            "position": { "basis": "320px", "shrink": 0 },
-            "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "6px" } },
+            "meta": {
+              "name": "MachineField"
+            },
+            "position": {
+              "basis": "320px",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "gap": "6px"
+              }
+            },
             "children": [
-              { "type": "ia.display.label", "meta": { "name": "MachineLabel" }, "props": { "text": "Machining Cell", "style": { "classes": "pf-field-label" } } },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "MachineLabel"
+                },
+                "props": {
+                  "text": "Machining Cell",
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                }
+              },
               {
                 "type": "ia.input.dropdown",
-                "meta": { "name": "CellSelect" },
-                "propConfig": {
-                  "props.options": { "binding": { "config": { "path": "view.custom.cellOptions" }, "type": "property" } },
-                  "props.value": { "binding": { "config": { "path": "view.custom.filter.cellLocationId", "bidirectional": true }, "type": "property" } }
+                "meta": {
+                  "name": "CellSelect"
                 },
-                "props": { "placeholder": "Select cell", "style": { "classes": "pf-field-input" } }
+                "propConfig": {
+                  "props.options": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.cellOptions"
+                      },
+                      "type": "property"
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.filter.cellLocationId",
+                        "bidirectional": true
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "Select cell",
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                }
               }
             ]
           }
@@ -111,78 +290,247 @@
       },
       {
         "type": "ia.container.flex",
-        "meta": { "name": "QueuePanel" },
-        "position": { "grow": 1, "basis": "0" },
-        "props": { "direction": "column", "alignItems": "stretch", "style": { "classes": "pf-panel", "gap": "12px", "padding": "14px 16px", "overflow": "hidden" } },
+        "meta": {
+          "name": "QueuePanel"
+        },
+        "position": {
+          "grow": 1,
+          "basis": "0"
+        },
+        "props": {
+          "direction": "column",
+          "alignItems": "stretch",
+          "style": {
+            "classes": "pf-panel",
+            "gap": "12px",
+            "padding": "14px 16px",
+            "overflow": "hidden"
+          }
+        },
         "children": [
           {
             "type": "ia.container.flex",
-            "meta": { "name": "QueueHeader" },
-            "position": { "shrink": 0 },
-            "props": { "direction": "column", "style": { "classes": "pf-panel-header", "gap": "4px", "alignItems": "flex-start" } },
+            "meta": {
+              "name": "QueueHeader"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-panel-header",
+                "gap": "4px",
+                "alignItems": "flex-start"
+              }
+            },
             "children": [
               {
                 "type": "ia.display.label",
-                "meta": { "name": "QueueTitle" },
-                "propConfig": {
-                  "props.text": { "binding": { "type": "expr", "config": { "expression": "'FIFO Queue - ' + toStr(len({view.custom.queue})) + ' LOTs awaiting'" } } }
+                "meta": {
+                  "name": "QueueTitle"
                 },
-                "props": { "style": { "fontSize": "14px", "fontWeight": "600", "textTransform": "uppercase", "letterSpacing": "0.06em", "color": "var(--mpp-text-secondary)" } }
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "'FIFO Queue - ' + toStr(len({view.custom.queue})) + ' LOTs awaiting'"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "fontSize": "14px",
+                    "fontWeight": "600",
+                    "textTransform": "uppercase",
+                    "letterSpacing": "0.06em",
+                    "color": "var(--mpp-text-secondary)"
+                  }
+                }
               },
-              { "type": "ia.display.label", "meta": { "name": "QueueSub" }, "props": { "text": "Whole cast/trim LOTs moved here at Trim OUT (1:1). No scan-to-receive - pick from queue; BOM-driven rename fires on pick.", "style": { "classes": "pf-kpi-sub" } } }
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "QueueSub"
+                },
+                "props": {
+                  "text": "Whole cast/trim LOTs moved here at Trim OUT (1:1). No scan-to-receive - pick from queue; BOM-driven rename fires on pick.",
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  }
+                }
+              }
             ]
           },
           {
             "type": "ia.display.label",
-            "meta": { "name": "EmptyHint" },
-            "position": { "shrink": 0 },
-            "propConfig": {
-              "props.text": { "binding": { "type": "expr", "config": { "expression": "if(isNull({view.custom.filter.cellLocationId}), 'Select a Machining cell to see its queue.', 'This cell has no LOTs queued.')" } } },
-              "position.display": { "binding": { "type": "expr", "config": { "expression": "len({view.custom.queue}) = 0" } } }
+            "meta": {
+              "name": "EmptyHint"
             },
-            "props": { "style": { "classes": "pf-kpi-sub" } }
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if(isNull({view.custom.filter.cellLocationId}), 'Select a Machining cell to see its queue.', 'This cell has no LOTs queued.')"
+                  }
+                }
+              },
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "len({view.custom.queue}) = 0"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub"
+              }
+            }
           },
           {
             "type": "ia.display.flex-repeater",
-            "meta": { "name": "QueueRepeater" },
-            "position": { "grow": 1, "basis": "0" },
+            "meta": {
+              "name": "QueueRepeater"
+            },
+            "position": {
+              "grow": 1,
+              "basis": "0"
+            },
             "propConfig": {
-              "props.instances": { "binding": { "config": { "path": "view.custom.queue" }, "type": "property" } }
+              "props.instances": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.queue"
+                  },
+                  "type": "property"
+                }
+              }
             },
             "props": {
               "direction": "column",
-              "elementPosition": { "basis": "76px", "shrink": 0 },
+              "elementPosition": {
+                "basis": "76px",
+                "shrink": 0
+              },
               "path": "BlueRidge/Components/PlantFloor/Machining/QueueRow",
-              "style": { "gap": "8px", "overflowY": "auto" },
+              "style": {
+                "gap": "8px",
+                "overflowY": "auto"
+              },
               "useDefaultViewHeight": true,
               "useDefaultViewWidth": false
             }
           },
-          { "type": "ia.display.label", "meta": { "name": "QueueFootnote" }, "position": { "shrink": 0 }, "props": { "text": "Override-FIFO selection prompts for an optional reason (recorded). Held LOTs cannot be picked until the hold is released.", "style": { "classes": "pf-kpi-sub" } } }
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "QueueFootnote"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Override-FIFO selection prompts for an optional reason (recorded). Held LOTs cannot be picked until the hold is released.",
+              "style": {
+                "classes": "pf-kpi-sub"
+              }
+            }
+          }
         ]
       },
       {
         "type": "ia.container.flex",
-        "meta": { "name": "ActiveLotPanel" },
-        "position": { "shrink": 0 },
-        "props": { "direction": "column", "alignItems": "stretch", "style": { "classes": "pf-panel", "gap": "12px", "padding": "14px 16px" } },
+        "meta": {
+          "name": "ActiveLotPanel"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "alignItems": "stretch",
+          "style": {
+            "classes": "pf-panel",
+            "gap": "12px",
+            "padding": "14px 16px"
+          }
+        },
         "children": [
           {
             "type": "ia.container.flex",
-            "meta": { "name": "ActiveHeader" },
-            "position": { "shrink": 0 },
-            "props": { "direction": "row", "style": { "classes": "pf-panel-header" } },
+            "meta": {
+              "name": "ActiveHeader"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "row",
+              "style": {
+                "classes": "pf-panel-header"
+              }
+            },
             "children": [
-              { "type": "ia.display.label", "meta": { "name": "ActiveTitle" }, "props": { "text": "Active machined LOT (after pick)", "style": { "fontSize": "14px", "fontWeight": "600", "textTransform": "uppercase", "letterSpacing": "0.06em", "color": "var(--mpp-text-secondary)" } } }
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "ActiveTitle"
+                },
+                "props": {
+                  "text": "Active machined LOT (after pick)",
+                  "style": {
+                    "fontSize": "14px",
+                    "fontWeight": "600",
+                    "textTransform": "uppercase",
+                    "letterSpacing": "0.06em",
+                    "color": "var(--mpp-text-secondary)"
+                  }
+                }
+              }
             ]
           },
           {
             "type": "ia.container.flex",
-            "meta": { "name": "ActiveEmpty" },
-            "position": { "shrink": 0 },
-            "props": { "direction": "column", "alignItems": "center", "justify": "center", "style": { "classes": "pf-empty-state", "gap": "8px", "padding": "32px 24px" } },
+            "meta": {
+              "name": "ActiveEmpty"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "center",
+              "justify": "center",
+              "style": {
+                "classes": "pf-empty-state",
+                "gap": "8px",
+                "padding": "32px 24px"
+              }
+            },
             "children": [
-              { "type": "ia.display.label", "meta": { "name": "ActiveEmptyText" }, "props": { "text": "No LOT picked yet. Pick a LOT above to fire the BOM-Driven Rename Confirmation. On confirm, a new machined LOT is created from this whole LOT.", "style": { "fontSize": "13px", "textAlign": "center", "maxWidth": "480px" } } }
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "ActiveEmptyText"
+                },
+                "props": {
+                  "text": "No LOT picked yet. Pick a LOT above to fire the BOM-Driven Rename Confirmation. On confirm, a new machined LOT is created from this whole LOT.",
+                  "style": {
+                    "fontSize": "13px",
+                    "textAlign": "center",
+                    "maxWidth": "480px"
+                  }
+                }
+              }
             ]
           }
         ]

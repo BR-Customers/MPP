@@ -280,6 +280,39 @@ def getMachiningDestinationsForDropdown():
     return out
 
 
+def getCellsForDropdownByNamePrefix(namePrefix):
+    """Cell-tier Locations whose Name starts with namePrefix, shaped for
+    ia.input.dropdown -- scopes a routing/selector dropdown to one class of
+    cells (e.g. 'Machining In', 'Machining Out', 'Assembly') instead of every
+    cell. Name-prefix filtering naturally excludes Terminal/Printer cells
+    (named 'P - NNN' / 'Terminal').
+
+    Args:
+        namePrefix (str): the Location.Name prefix to match (e.g. 'Assembly').
+
+    Returns:
+        list[dict]: [{label: '<Code> - <Name>', value: Id, code, name}].
+                    Always a list (never None). Empty if namePrefix is falsy
+                    or matches nothing.
+    """
+    if not namePrefix:
+        return []
+    pfx = namePrefix.strip()
+    out = []
+    for r in (listByTier("Cell") or []):
+        name = r.get("Name") or ""
+        if not name.startswith(pfx):
+            continue
+        code = r.get("Code") or ""
+        out.append({
+            "label": ("%s - %s" % (code, name)).strip(" -"),
+            "value": r.get("Id"),
+            "code":  code,
+            "name":  name,
+        })
+    return out
+
+
 def getCellsForAreaDropdown(areaId):
     """The pickable equipment cells beneath an Area (excludes Terminal/Printer),
     shaped for ia.input.dropdown + scan matching:
