@@ -71,6 +71,12 @@ def getOne(dieRankId):
         {"id": dieRankId},
     )
 
+def getByCode(dieCode):
+	BlueRidge.Common.Util.log("dieCode=%s" % dieCode)
+	return BlueRidge.Common.Db.execOne(
+		"parts/DieRank_GetByCode",
+		{"code": dieCode}
+	)
 
 def getForDropdown():
     """Returns [{label:'A - Premium', value:'A'}, ...] for the Die Rank
@@ -175,18 +181,18 @@ def getCompatibilityMatrix():
     return matrix
 
 
-def saveCompatibilityMatrix(bodyRows):
-	inputData = list(bodyRows)
-	saveData = []
+def saveCompatibilityMatrix(data, appUserId):
 	
-	for row in inputData:
-		for rowData in row.values():
-			for cells in rowData.values()[1]:
-				for cell in cells.values():
-					saveData.append(cell)
-	
-	
-	return str(saveData)
+	jsonData = system.util.jsonEncode(data)
+	if not data:
+		return
+		
+	BlueRidge.Common.Util.log("data=%s" % data)
+	return BlueRidge.Common.Db.execMutation(
+        "parts/DieRankCompatibility_SaveAll",
+        {"rowsJson": jsonData, "appUserId": appUserId},
+    )
+
 
 def add(data):
     """Insert. data: {Code, Name, Description}.
