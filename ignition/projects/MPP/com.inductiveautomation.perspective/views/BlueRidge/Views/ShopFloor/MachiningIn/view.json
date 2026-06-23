@@ -23,7 +23,7 @@
         },
         "transforms": [
           {
-            "code": "\treturn [{\"sourceLotId\": r.get(\"Id\"), \"lotName\": r.get(\"LotName\") or \"\", \"sourceItem\": r.get(\"ItemPartNumber\") or \"\", \"pieceCount\": r.get(\"PieceCount\") or 0, \"arrival\": str(r.get(\"LastMovementAt\") or \"\"), \"position\": i + 1, \"lotStatusCode\": r.get(\"LotStatusCode\") or \"\"} for i, r in enumerate(value or [])]",
+            "code": "\trows = [r for r in (value or []) if r.get(\"HasRenameBom\")]\n\treturn [{\"sourceLotId\": r.get(\"Id\"), \"lotName\": r.get(\"LotName\") or \"\", \"sourceItem\": r.get(\"ItemPartNumber\") or \"\", \"pieceCount\": r.get(\"PieceCount\") or 0, \"arrival\": str(r.get(\"LastMovementAt\") or \"\"), \"position\": i + 1, \"lotStatusCode\": r.get(\"LotStatusCode\") or \"\"} for i, r in enumerate(rows)]",
             "type": "script"
           }
         ],
