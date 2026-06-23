@@ -1,235 +1,1047 @@
 {
   "custom": {
-    "filter": { "cellLocationId": null },
-    "cellOptions": [],
-    "container": { "Id": null, "ItemPartNumber": "", "ItemDescription": "", "AccumulatedParts": 0, "TargetParts": 0, "ClosedTrays": 0, "TraysPerContainer": 0, "PartsPerTray": 0, "IsSerialized": false },
-    "draft": { "trayPosition": "", "partsCount": "", "closureMethod": null },
+    "container": {
+      "Id": null,
+      "ItemPartNumber": "",
+      "ItemDescription": "",
+      "AccumulatedParts": 0,
+      "TargetParts": 0,
+      "ClosedTrays": 0,
+      "TraysPerContainer": 0,
+      "PartsPerTray": 0,
+      "IsSerialized": false
+    },
+    "draft": {
+      "trayPosition": "",
+      "partsCount": "",
+      "closureMethod": null
+    },
     "refreshToken": 0
   },
   "params": {},
   "propConfig": {
-    "custom.cellOptions": {
-      "binding": {
-        "config": { "expression": "runScript(\"BlueRidge.Location.Location.listByTier\", 0, \"Cell\")" },
-        "transforms": [ { "code": "\treturn [{\"value\": r.get(\"Id\"), \"label\": (r.get(\"Code\") or \"\") + \" - \" + (r.get(\"Name\") or \"\")} for r in (value or [])]", "type": "script" } ],
-        "type": "expr"
-      }
-    },
     "custom.container": {
       "binding": {
-        "config": { "expression": "if({view.custom.refreshToken} >= 0 && !isNull({view.custom.filter.cellLocationId}), runScript(\"BlueRidge.Lots.Container.getOpenByCell\", 0, {view.custom.filter.cellLocationId}), [])" },
-        "transforms": [ { "code": "\trows = value or []\n\tr = rows[0] if rows else {}\n\treturn {\"Id\": r.get(\"Id\"), \"ItemPartNumber\": r.get(\"ItemPartNumber\") or \"\", \"ItemDescription\": r.get(\"ItemDescription\") or \"\", \"AccumulatedParts\": r.get(\"AccumulatedParts\") or 0, \"TargetParts\": r.get(\"TargetParts\") or 0, \"ClosedTrays\": r.get(\"ClosedTrays\") or 0, \"TraysPerContainer\": r.get(\"TraysPerContainer\") or 0, \"PartsPerTray\": r.get(\"PartsPerTray\") or 0, \"IsSerialized\": r.get(\"IsSerialized\") or False}", "type": "script" } ],
+        "config": {
+          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Container.getOpenByCell\", 0, {session.custom.cell.locationId}), [])"
+        },
+        "transforms": [
+          {
+            "code": "\trows = value or []\n\tr = rows[0] if rows else {}\n\treturn {\"Id\": r.get(\"Id\"), \"ItemPartNumber\": r.get(\"ItemPartNumber\") or \"\", \"ItemDescription\": r.get(\"ItemDescription\") or \"\", \"AccumulatedParts\": r.get(\"AccumulatedParts\") or 0, \"TargetParts\": r.get(\"TargetParts\") or 0, \"ClosedTrays\": r.get(\"ClosedTrays\") or 0, \"TraysPerContainer\": r.get(\"TraysPerContainer\") or 0, \"PartsPerTray\": r.get(\"PartsPerTray\") or 0, \"IsSerialized\": r.get(\"IsSerialized\") or False}",
+            "type": "script"
+          }
+        ],
         "type": "expr"
       }
     }
   },
-  "props": { "defaultSize": { "height": 1080, "width": 1920 } },
+  "props": {
+    "defaultSize": {
+      "height": 1080,
+      "width": 1920
+    }
+  },
   "root": {
     "type": "ia.container.flex",
-    "meta": { "name": "root" },
-    "props": { "direction": "column", "style": { "classes": "canvas pf-terminal" } },
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "canvas pf-terminal"
+      }
+    },
     "children": [
       {
         "type": "ia.container.flex",
-        "meta": { "name": "Header" },
-        "position": { "shrink": 0 },
-        "props": { "direction": "row", "alignItems": "center", "style": { "classes": "pf-terminal-header", "gap": "16px" } },
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "classes": "pf-terminal-header",
+            "gap": "16px"
+          }
+        },
         "children": [
           {
             "type": "ia.container.flex",
-            "meta": { "name": "TitleBlock" },
-            "position": { "grow": 1 },
-            "props": { "direction": "column", "style": { "gap": "2px" } },
+            "meta": {
+              "name": "TitleBlock"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "2px"
+              }
+            },
             "children": [
-              { "type": "ia.display.label", "meta": { "name": "Title" }, "props": { "text": "Assembly - Non-Serialized Line", "style": { "classes": "pf-terminal-title", "fontSize": "22px", "fontWeight": "700" } } },
-              { "type": "ia.display.label", "meta": { "name": "Subtitle" }, "props": { "text": "Dedicated terminal - operator-driven count - no MIP per-piece handshake", "style": { "classes": "pf-terminal-title-meta" } } }
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Title"
+                },
+                "props": {
+                  "text": "Assembly - Non-Serialized Line",
+                  "style": {
+                    "classes": "pf-terminal-title",
+                    "fontSize": "22px",
+                    "fontWeight": "700"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Subtitle"
+                },
+                "props": {
+                  "text": "Dedicated terminal - operator-driven count - no MIP per-piece handshake",
+                  "style": {
+                    "classes": "pf-terminal-title-meta"
+                  }
+                }
+              }
             ]
           },
           {
             "type": "ia.display.label",
-            "meta": { "name": "ConfirmMethod" },
-            "position": { "shrink": 0 },
-            "props": { "text": "ByVision", "data-method": "Vision", "style": { "classes": "pf-confirm-method" } }
+            "meta": {
+              "name": "ConfirmMethod"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "ByVision",
+              "data-method": "Vision",
+              "style": {
+                "classes": "pf-confirm-method"
+              }
+            }
           },
           {
             "type": "ia.container.flex",
-            "meta": { "name": "PausedIndicator" },
-            "position": { "shrink": 0 },
-            "props": { "direction": "row", "alignItems": "center", "style": { "classes": "pf-paused-indicator", "gap": "8px" } },
+            "meta": {
+              "name": "PausedIndicator"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "row",
+              "alignItems": "center",
+              "style": {
+                "classes": "pf-paused-indicator",
+                "gap": "8px"
+              }
+            },
             "children": [
-              { "type": "ia.display.label", "meta": { "name": "PausedLabel" }, "props": { "text": "Paused" } },
-              { "type": "ia.display.label", "meta": { "name": "PausedCount" }, "props": { "text": "0", "style": { "classes": "pf-paused-indicator-count" } } }
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "PausedLabel"
+                },
+                "props": {
+                  "text": "Paused"
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "PausedCount"
+                },
+                "props": {
+                  "text": "0",
+                  "style": {
+                    "classes": "pf-paused-indicator-count"
+                  }
+                }
+              }
             ]
           }
         ]
       },
       {
         "type": "ia.display.view",
-        "meta": { "name": "PrintBanner" },
-        "position": { "shrink": 0 },
-        "props": { "path": "BlueRidge/Components/PlantFloor/PrintFailureBanner", "style": { "margin": "12px 16px 0 16px" } }
+        "meta": {
+          "name": "PrintBanner"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "path": "BlueRidge/Components/PlantFloor/PrintFailureBanner",
+          "style": {
+            "margin": "12px 16px 0 16px"
+          }
+        }
       },
       {
         "type": "ia.container.flex",
-        "meta": { "name": "Body" },
-        "position": { "grow": 1 },
-        "props": { "direction": "column", "style": { "gap": "16px", "padding": "16px", "overflow": "auto" } },
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "16px",
+            "padding": "16px",
+            "overflow": "auto"
+          }
+        },
         "children": [
           {
             "type": "ia.container.flex",
-            "meta": { "name": "CellContext" },
-            "position": { "shrink": 0 },
-            "props": { "direction": "row", "alignItems": "center", "style": { "classes": "pf-terminal-cell-context", "gap": "12px" } },
+            "meta": {
+              "name": "CellContext"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "row",
+              "alignItems": "center",
+              "style": {
+                "classes": "pf-terminal-cell-context",
+                "gap": "12px"
+              }
+            },
             "children": [
-              { "type": "ia.display.label", "meta": { "name": "MachineLabel" }, "props": { "text": "Assembly Cell", "style": { "classes": "pf-cell-context-label" } } },
               {
-                "type": "ia.input.dropdown",
-                "meta": { "name": "CellSelect" },
-                "position": { "basis": "320px", "shrink": 0 },
-                "propConfig": {
-                  "props.options": { "binding": { "config": { "path": "view.custom.cellOptions" }, "type": "property" } },
-                  "props.value": { "binding": { "config": { "path": "view.custom.filter.cellLocationId", "bidirectional": true }, "type": "property" } }
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "MachineLabel"
                 },
-                "props": { "placeholder": "Select cell", "style": { "classes": "pf-field-input" } }
+                "props": {
+                  "text": "Assembly Cell",
+                  "style": {
+                    "classes": "pf-cell-context-label"
+                  }
+                }
               },
-              { "type": "ia.display.label", "meta": { "name": "Spacer" }, "position": { "grow": 1 }, "props": { "text": "" } },
-              { "type": "ia.display.label", "meta": { "name": "ContextMeta" }, "props": { "text": "FDS-06-014 - per-tray validation, never per-piece. Same Cognex camera as Sort Cage.", "style": { "classes": "pf-kpi-sub" } } }
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "ActiveCellBlock"
+                },
+                "props": {
+                  "direction": "row",
+                  "alignItems": "center",
+                  "style": {
+                    "gap": "8px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "CtxCellLabel"
+                    },
+                    "props": {
+                      "text": "Active Cell",
+                      "style": {
+                        "classes": "pf-cell-context-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "ActiveCellValue"
+                    },
+                    "props": {
+                      "text": "",
+                      "style": {
+                        "classes": "pf-cell-context-value"
+                      }
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"No cell bound to this terminal\", {session.custom.cell.name})"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Spacer"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "props": {
+                  "text": ""
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "ContextMeta"
+                },
+                "props": {
+                  "text": "FDS-06-014 - per-tray validation, never per-piece. Same Cognex camera as Sort Cage.",
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  }
+                }
+              }
             ]
           },
           {
             "type": "ia.display.label",
-            "meta": { "name": "EmptyHint" },
-            "position": { "shrink": 0 },
-            "propConfig": {
-              "props.text": { "binding": { "type": "expr", "config": { "expression": "if(isNull({view.custom.filter.cellLocationId}), 'Select a cell to see its open container.', 'No open container at this cell.')" } } },
-              "position.display": { "binding": { "type": "expr", "config": { "expression": "isNull({view.custom.container.Id})" } } }
+            "meta": {
+              "name": "EmptyHint"
             },
-            "props": { "style": { "classes": "pf-kpi-sub" } }
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if(isNull({session.custom.cell.locationId}), 'No cell bound to see its open container.', 'No open container at this cell.')"
+                  }
+                }
+              },
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "isNull({view.custom.container.Id})"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub"
+              }
+            }
           },
           {
             "type": "ia.container.flex",
-            "meta": { "name": "Kpis" },
-            "position": { "shrink": 0 },
-            "propConfig": { "position.display": { "binding": { "type": "expr", "config": { "expression": "!isNull({view.custom.container.Id})" } } } },
-            "props": { "direction": "row", "wrap": "wrap", "style": { "gap": "10px" } },
+            "meta": {
+              "name": "Kpis"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "!isNull({view.custom.container.Id})"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "row",
+              "wrap": "wrap",
+              "style": {
+                "gap": "10px"
+              }
+            },
             "children": [
               {
                 "type": "ia.container.flex",
-                "meta": { "name": "KpiItem" },
-                "position": { "grow": 1, "basis": "240px" },
-                "props": { "direction": "column", "style": { "classes": "pf-kpi" } },
+                "meta": {
+                  "name": "KpiItem"
+                },
+                "position": {
+                  "grow": 1,
+                  "basis": "240px"
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-kpi"
+                  }
+                },
                 "children": [
-                  { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Open Container", "style": { "classes": "pf-kpi-label" } } },
-                  { "type": "ia.display.label", "meta": { "name": "V" }, "propConfig": { "props.text": { "binding": { "type": "expr", "config": { "expression": "{view.custom.container.ItemPartNumber}" } } } }, "props": { "style": { "classes": "pf-kpi-value pf-kpi-value-mono" } } },
-                  { "type": "ia.display.label", "meta": { "name": "S" }, "propConfig": { "props.text": { "binding": { "type": "expr", "config": { "expression": "{view.custom.container.ItemDescription}" } } } }, "props": { "style": { "classes": "pf-kpi-sub" } } }
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "L"
+                    },
+                    "props": {
+                      "text": "Open Container",
+                      "style": {
+                        "classes": "pf-kpi-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "V"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "{view.custom.container.ItemPartNumber}"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-value pf-kpi-value-mono"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "S"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "{view.custom.container.ItemDescription}"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      }
+                    }
+                  }
                 ]
               },
               {
                 "type": "ia.container.flex",
-                "meta": { "name": "KpiFill" },
-                "position": { "grow": 1, "basis": "240px" },
-                "props": { "direction": "column", "style": { "classes": "pf-kpi" } },
+                "meta": {
+                  "name": "KpiFill"
+                },
+                "position": {
+                  "grow": 1,
+                  "basis": "240px"
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-kpi"
+                  }
+                },
                 "children": [
-                  { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Container Fill", "style": { "classes": "pf-kpi-label" } } },
-                  { "type": "ia.display.label", "meta": { "name": "V" }, "propConfig": { "props.text": { "binding": { "type": "expr", "config": { "expression": "toStr({view.custom.container.AccumulatedParts}) + ' of ' + toStr({view.custom.container.TargetParts})" } } } }, "props": { "style": { "classes": "pf-kpi-value" } } },
-                  { "type": "ia.display.label", "meta": { "name": "S" }, "propConfig": { "props.text": { "binding": { "type": "expr", "config": { "expression": "toStr({view.custom.container.ClosedTrays}) + ' of ' + toStr({view.custom.container.TraysPerContainer}) + ' trays closed - parts accumulated'" } } } }, "props": { "style": { "classes": "pf-kpi-sub" } } }
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "L"
+                    },
+                    "props": {
+                      "text": "Container Fill",
+                      "style": {
+                        "classes": "pf-kpi-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "V"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "toStr({view.custom.container.AccumulatedParts}) + ' of ' + toStr({view.custom.container.TargetParts})"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-value"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "S"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "toStr({view.custom.container.ClosedTrays}) + ' of ' + toStr({view.custom.container.TraysPerContainer}) + ' trays closed - parts accumulated'"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      }
+                    }
+                  }
                 ]
               },
               {
                 "type": "ia.container.flex",
-                "meta": { "name": "KpiTray" },
-                "position": { "grow": 1, "basis": "240px" },
-                "props": { "direction": "column", "style": { "classes": "pf-kpi" } },
+                "meta": {
+                  "name": "KpiTray"
+                },
+                "position": {
+                  "grow": 1,
+                  "basis": "240px"
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-kpi"
+                  }
+                },
                 "children": [
-                  { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Trays Validated", "style": { "classes": "pf-kpi-label" } } },
-                  { "type": "ia.display.label", "meta": { "name": "V" }, "propConfig": { "props.text": { "binding": { "type": "expr", "config": { "expression": "toStr({view.custom.container.ClosedTrays}) + ' / ' + toStr({view.custom.container.TraysPerContainer})" } } } }, "props": { "style": { "classes": "pf-kpi-value pf-kpi-value-good" } } },
-                  { "type": "ia.display.label", "meta": { "name": "S" }, "propConfig": { "props.text": { "binding": { "type": "expr", "config": { "expression": "'PartsPerTray = ' + toStr({view.custom.container.PartsPerTray})" } } } }, "props": { "style": { "classes": "pf-kpi-sub" } } }
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "L"
+                    },
+                    "props": {
+                      "text": "Trays Validated",
+                      "style": {
+                        "classes": "pf-kpi-label"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "V"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "toStr({view.custom.container.ClosedTrays}) + ' / ' + toStr({view.custom.container.TraysPerContainer})"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-value pf-kpi-value-good"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "S"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "'PartsPerTray = ' + toStr({view.custom.container.PartsPerTray})"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      }
+                    }
+                  }
                 ]
               }
             ]
           },
           {
             "type": "ia.container.flex",
-            "meta": { "name": "TrayClosePanel" },
-            "position": { "shrink": 0 },
-            "propConfig": { "position.display": { "binding": { "type": "expr", "config": { "expression": "!isNull({view.custom.container.Id})" } } } },
-            "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "10px" } },
+            "meta": {
+              "name": "TrayClosePanel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "!isNull({view.custom.container.Id})"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-panel",
+                "gap": "10px"
+              }
+            },
             "children": [
               {
                 "type": "ia.container.flex",
-                "meta": { "name": "TrayHeader" },
-                "props": { "direction": "row", "alignItems": "center", "justify": "space-between", "style": { "classes": "pf-panel-header" } },
+                "meta": {
+                  "name": "TrayHeader"
+                },
+                "props": {
+                  "direction": "row",
+                  "alignItems": "center",
+                  "justify": "space-between",
+                  "style": {
+                    "classes": "pf-panel-header"
+                  }
+                },
                 "children": [
-                  { "type": "ia.display.label", "meta": { "name": "H" }, "propConfig": { "props.text": { "binding": { "type": "expr", "config": { "expression": "'Per-Tray Close - ByVision - Tray ' + toStr(({view.custom.container.ClosedTrays} + 1)) + ' of ' + toStr({view.custom.container.TraysPerContainer})" } } } }, "props": { "style": { "fontSize": "16px", "fontWeight": "700" } } },
-                  { "type": "ia.display.label", "meta": { "name": "Hsub" }, "propConfig": { "props.text": { "binding": { "type": "expr", "config": { "expression": "'Configured PartsPerTray = ' + toStr({view.custom.container.PartsPerTray}) + ' - accumulated ' + toStr({view.custom.container.AccumulatedParts}) + ' / ' + toStr({view.custom.container.TargetParts}) + ' toward Container'" } } } }, "props": { "style": { "classes": "pf-kpi-sub" } } }
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "H"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "'Per-Tray Close - ByVision - Tray ' + toStr(({view.custom.container.ClosedTrays} + 1)) + ' of ' + toStr({view.custom.container.TraysPerContainer})"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "fontSize": "16px",
+                        "fontWeight": "700"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Hsub"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "'Configured PartsPerTray = ' + toStr({view.custom.container.PartsPerTray}) + ' - accumulated ' + toStr({view.custom.container.AccumulatedParts}) + ' / ' + toStr({view.custom.container.TargetParts}) + ' toward Container'"
+                          }
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      }
+                    }
+                  }
                 ]
               },
-              { "type": "ia.display.label", "meta": { "name": "TrayNote" }, "props": { "text": "The Cognex camera scans the full tray as a single image once the PLC asserts TrayFullFlag at PartsPerTray - one validation event per tray, never per piece. On PASS, the tray closes and BOM consumption is recorded for that tray. Container fill is the MES-side accumulation of validated tray closes - same camera, same closure path as the Sort Cage non-serialized re-pack flow.", "style": { "classes": "pf-kpi-sub" } } },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "TrayNote"
+                },
+                "props": {
+                  "text": "The Cognex camera scans the full tray as a single image once the PLC asserts TrayFullFlag at PartsPerTray - one validation event per tray, never per piece. On PASS, the tray closes and BOM consumption is recorded for that tray. Container fill is the MES-side accumulation of validated tray closes - same camera, same closure path as the Sort Cage non-serialized re-pack flow.",
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  }
+                }
+              },
               {
                 "type": "ia.container.flex",
-                "meta": { "name": "TrayBody" },
-                "props": { "direction": "row", "wrap": "wrap", "style": { "gap": "12px" } },
+                "meta": {
+                  "name": "TrayBody"
+                },
+                "props": {
+                  "direction": "row",
+                  "wrap": "wrap",
+                  "style": {
+                    "gap": "12px"
+                  }
+                },
                 "children": [
                   {
                     "type": "ia.container.flex",
-                    "meta": { "name": "CameraPane" },
-                    "position": { "grow": 2, "basis": "420px" },
-                    "props": { "direction": "column", "alignItems": "center", "justify": "center", "style": { "minHeight": "280px", "borderRadius": "var(--mpp-radius-lg)", "border": "2px solid var(--mpp-border-subtle)", "background": "linear-gradient(180deg, #0a1322 0%, #0f1d33 60%, #1a2a44 100%)", "padding": "16px", "position": "relative", "overflow": "hidden" } },
+                    "meta": {
+                      "name": "CameraPane"
+                    },
+                    "position": {
+                      "grow": 2,
+                      "basis": "420px"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "alignItems": "center",
+                      "justify": "center",
+                      "style": {
+                        "minHeight": "280px",
+                        "borderRadius": "var(--mpp-radius-lg)",
+                        "border": "2px solid var(--mpp-border-subtle)",
+                        "background": "linear-gradient(180deg, #0a1322 0%, #0f1d33 60%, #1a2a44 100%)",
+                        "padding": "16px",
+                        "position": "relative",
+                        "overflow": "hidden"
+                      }
+                    },
                     "children": [
-                      { "type": "ia.display.label", "meta": { "name": "CamLabel" }, "props": { "text": "NS Line Camera - Live", "style": { "position": "absolute", "top": "12px", "left": "14px", "fontSize": "11px", "textTransform": "uppercase", "letterSpacing": "0.1em", "fontWeight": "500", "color": "var(--mpp-neutral-90)" } } },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "CamLabel"
+                        },
+                        "props": {
+                          "text": "NS Line Camera - Live",
+                          "style": {
+                            "position": "absolute",
+                            "top": "12px",
+                            "left": "14px",
+                            "fontSize": "11px",
+                            "textTransform": "uppercase",
+                            "letterSpacing": "0.1em",
+                            "fontWeight": "500",
+                            "color": "var(--mpp-neutral-90)"
+                          }
+                        }
+                      },
                       {
                         "type": "ia.container.flex",
-                        "meta": { "name": "PassOverlay" },
-                        "props": { "direction": "column", "alignItems": "center", "justify": "center", "style": { "gap": "6px", "padding": "22px 44px", "borderRadius": "var(--mpp-radius-lg)", "border": "3px solid var(--pf-status-good-fg)", "backgroundColor": "var(--pf-status-good-bg)" } },
+                        "meta": {
+                          "name": "PassOverlay"
+                        },
+                        "props": {
+                          "direction": "column",
+                          "alignItems": "center",
+                          "justify": "center",
+                          "style": {
+                            "gap": "6px",
+                            "padding": "22px 44px",
+                            "borderRadius": "var(--mpp-radius-lg)",
+                            "border": "3px solid var(--pf-status-good-fg)",
+                            "backgroundColor": "var(--pf-status-good-bg)"
+                          }
+                        },
                         "children": [
-                          { "type": "ia.display.label", "meta": { "name": "PassWord" }, "props": { "text": "PASS", "style": { "fontSize": "26px", "fontWeight": "700", "letterSpacing": "0.1em", "color": "var(--pf-status-good-fg)" } } },
-                          { "type": "ia.display.label", "meta": { "name": "PassSub" }, "propConfig": { "props.text": { "binding": { "type": "expr", "config": { "expression": "'Last validated tray - ' + toStr({view.custom.container.ClosedTrays}) + ' of ' + toStr({view.custom.container.TraysPerContainer})" } } } }, "props": { "style": { "fontSize": "12px", "textAlign": "center", "color": "var(--mpp-neutral-90)" } } },
-                          { "type": "ia.display.label", "meta": { "name": "PassMeta" }, "propConfig": { "props.text": { "binding": { "type": "expr", "config": { "expression": "toStr({view.custom.container.PartsPerTray}) + ' / ' + toStr({view.custom.container.PartsPerTray}) + ' positions valid'" } } } }, "props": { "style": { "fontSize": "11px", "fontFamily": "var(--mpp-font-mono)", "textAlign": "center", "color": "var(--mpp-neutral-80)" } } }
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "PassWord"
+                            },
+                            "props": {
+                              "text": "PASS",
+                              "style": {
+                                "fontSize": "26px",
+                                "fontWeight": "700",
+                                "letterSpacing": "0.1em",
+                                "color": "var(--pf-status-good-fg)"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "PassSub"
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": {
+                                    "expression": "'Last validated tray - ' + toStr({view.custom.container.ClosedTrays}) + ' of ' + toStr({view.custom.container.TraysPerContainer})"
+                                  }
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "fontSize": "12px",
+                                "textAlign": "center",
+                                "color": "var(--mpp-neutral-90)"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "PassMeta"
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": {
+                                    "expression": "toStr({view.custom.container.PartsPerTray}) + ' / ' + toStr({view.custom.container.PartsPerTray}) + ' positions valid'"
+                                  }
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "fontSize": "11px",
+                                "fontFamily": "var(--mpp-font-mono)",
+                                "textAlign": "center",
+                                "color": "var(--mpp-neutral-80)"
+                              }
+                            }
+                          }
                         ]
                       },
-                      { "type": "ia.display.label", "meta": { "name": "CamStatus" }, "props": { "text": "TrayPresent: FALSE - Awaiting next tray placement - TrayFullFlag: FALSE", "style": { "position": "absolute", "bottom": "12px", "left": "14px", "right": "14px", "fontSize": "11px", "fontFamily": "var(--mpp-font-mono)", "textAlign": "center", "color": "var(--mpp-neutral-80)" } } }
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "CamStatus"
+                        },
+                        "props": {
+                          "text": "TrayPresent: FALSE - Awaiting next tray placement - TrayFullFlag: FALSE",
+                          "style": {
+                            "position": "absolute",
+                            "bottom": "12px",
+                            "left": "14px",
+                            "right": "14px",
+                            "fontSize": "11px",
+                            "fontFamily": "var(--mpp-font-mono)",
+                            "textAlign": "center",
+                            "color": "var(--mpp-neutral-80)"
+                          }
+                        }
+                      }
                     ]
                   },
                   {
                     "type": "ia.container.flex",
-                    "meta": { "name": "CloseForm" },
-                    "position": { "grow": 1, "basis": "300px" },
-                    "props": { "direction": "column", "style": { "gap": "10px" } },
+                    "meta": {
+                      "name": "CloseForm"
+                    },
+                    "position": {
+                      "grow": 1,
+                      "basis": "300px"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "10px"
+                      }
+                    },
                     "children": [
                       {
                         "type": "ia.container.flex",
-                        "meta": { "name": "PosField" },
-                        "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                        "meta": {
+                          "name": "PosField"
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "pf-field",
+                            "gap": "4px"
+                          }
+                        },
                         "children": [
-                          { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Tray position", "style": { "classes": "pf-field-label" } } },
-                          { "type": "ia.input.text-field", "meta": { "name": "Pos" }, "propConfig": { "props.text": { "binding": { "config": { "path": "view.custom.draft.trayPosition", "bidirectional": true }, "type": "property" } } }, "props": { "style": { "classes": "pf-field-input" } } }
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "L"
+                            },
+                            "props": {
+                              "text": "Tray position",
+                              "style": {
+                                "classes": "pf-field-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.input.text-field",
+                            "meta": {
+                              "name": "Pos"
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "path": "view.custom.draft.trayPosition",
+                                    "bidirectional": true
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-field-input"
+                              }
+                            }
+                          }
                         ]
                       },
                       {
                         "type": "ia.container.flex",
-                        "meta": { "name": "CntField" },
-                        "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                        "meta": {
+                          "name": "CntField"
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "pf-field",
+                            "gap": "4px"
+                          }
+                        },
                         "children": [
-                          { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Parts in tray", "style": { "classes": "pf-field-label" } } },
-                          { "type": "ia.input.text-field", "meta": { "name": "Cnt" }, "propConfig": { "props.text": { "binding": { "config": { "path": "view.custom.draft.partsCount", "bidirectional": true }, "type": "property" } } }, "props": { "style": { "classes": "pf-field-input" } } }
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "L"
+                            },
+                            "props": {
+                              "text": "Parts in tray",
+                              "style": {
+                                "classes": "pf-field-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.input.text-field",
+                            "meta": {
+                              "name": "Cnt"
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "path": "view.custom.draft.partsCount",
+                                    "bidirectional": true
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-field-input"
+                              }
+                            }
+                          }
                         ]
                       },
                       {
                         "type": "ia.container.flex",
-                        "meta": { "name": "CmField" },
-                        "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                        "meta": {
+                          "name": "CmField"
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "pf-field",
+                            "gap": "4px"
+                          }
+                        },
                         "children": [
-                          { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Closure method", "style": { "classes": "pf-field-label" } } },
-                          { "type": "ia.input.dropdown", "meta": { "name": "Cm" }, "propConfig": { "props.value": { "binding": { "config": { "path": "view.custom.draft.closureMethod", "bidirectional": true }, "type": "property" } } }, "props": { "placeholder": "Method", "options": [ { "value": "ByCount", "label": "By Count" }, { "value": "ByWeight", "label": "By Weight" }, { "value": "ByVision", "label": "By Vision" } ], "style": { "classes": "pf-field-input" } } }
+                          {
+                            "type": "ia.display.label",
+                            "meta": {
+                              "name": "L"
+                            },
+                            "props": {
+                              "text": "Closure method",
+                              "style": {
+                                "classes": "pf-field-label"
+                              }
+                            }
+                          },
+                          {
+                            "type": "ia.input.dropdown",
+                            "meta": {
+                              "name": "Cm"
+                            },
+                            "propConfig": {
+                              "props.value": {
+                                "binding": {
+                                  "config": {
+                                    "path": "view.custom.draft.closureMethod",
+                                    "bidirectional": true
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "placeholder": "Method",
+                              "options": [
+                                {
+                                  "value": "ByCount",
+                                  "label": "By Count"
+                                },
+                                {
+                                  "value": "ByWeight",
+                                  "label": "By Weight"
+                                },
+                                {
+                                  "value": "ByVision",
+                                  "label": "By Vision"
+                                }
+                              ],
+                              "style": {
+                                "classes": "pf-field-input"
+                              }
+                            }
+                          }
                         ]
                       },
                       {
                         "type": "ia.input.button",
-                        "meta": { "name": "CloseTrayButton" },
-                        "position": { "shrink": 0 },
-                        "props": { "text": "Close Tray", "style": { "classes": "pf-btn pf-btn-secondary pf-btn-large" } },
-                        "events": { "component": { "onActionPerformed": { "type": "script", "scope": "G",
-                          "config": { "script": "\tc = self.view.custom.container\n\tcellId = self.view.custom.filter.cellLocationId\n\td = self.view.custom.draft\n\tif not c or c.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No open container at this cell.\"}, \"Tray close\")\n\t\treturn\n\tpos = BlueRidge.Common.Util.toIntOrNone(d.get(\"trayPosition\"))\n\tcnt = BlueRidge.Common.Util.toIntOrNone(d.get(\"partsCount\"))\n\tcm = d.get(\"closureMethod\")\n\tif pos is None or cnt is None or not cm:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter tray position, parts count, and closure method.\"}, \"Tray close\")\n\t\treturn\n\tresult = BlueRidge.Lots.Container.trayClose(c.get(\"Id\"), pos, cnt, cm, terminalLocationId=cellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tray closed\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"trayPosition\": \"\", \"partsCount\": \"\", \"closureMethod\": None}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1" } } } }
+                        "meta": {
+                          "name": "CloseTrayButton"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Close Tray",
+                          "style": {
+                            "classes": "pf-btn pf-btn-secondary pf-btn-large"
+                          }
+                        },
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "type": "script",
+                              "scope": "G",
+                              "config": {
+                                "script": "\tc = self.view.custom.container\n\tcellId = self.session.custom.cell.locationId\n\td = self.view.custom.draft\n\tif not c or c.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No open container at this cell.\"}, \"Tray close\")\n\t\treturn\n\tpos = BlueRidge.Common.Util.toIntOrNone(d.get(\"trayPosition\"))\n\tcnt = BlueRidge.Common.Util.toIntOrNone(d.get(\"partsCount\"))\n\tcm = d.get(\"closureMethod\")\n\tif pos is None or cnt is None or not cm:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter tray position, parts count, and closure method.\"}, \"Tray close\")\n\t\treturn\n\tresult = BlueRidge.Lots.Container.trayClose(c.get(\"Id\"), pos, cnt, cm, terminalLocationId=cellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tray closed\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"trayPosition\": \"\", \"partsCount\": \"\", \"closureMethod\": None}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                              }
+                            }
+                          }
+                        }
                       }
                     ]
                   }
@@ -239,48 +1051,187 @@
           },
           {
             "type": "ia.container.flex",
-            "meta": { "name": "CompletionPanel" },
-            "position": { "shrink": 0 },
-            "propConfig": { "position.display": { "binding": { "type": "expr", "config": { "expression": "!isNull({view.custom.container.Id})" } } } },
-            "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "12px", "border": "1px solid var(--mpp-accent-60)" } },
+            "meta": {
+              "name": "CompletionPanel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "!isNull({view.custom.container.Id})"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-panel",
+                "gap": "12px",
+                "border": "1px solid var(--mpp-accent-60)"
+              }
+            },
             "children": [
               {
                 "type": "ia.container.flex",
-                "meta": { "name": "GateHeader" },
-                "props": { "direction": "row", "alignItems": "center", "justify": "space-between", "style": { "classes": "pf-panel-header" } },
+                "meta": {
+                  "name": "GateHeader"
+                },
+                "props": {
+                  "direction": "row",
+                  "alignItems": "center",
+                  "justify": "space-between",
+                  "style": {
+                    "classes": "pf-panel-header"
+                  }
+                },
                 "children": [
-                  { "type": "ia.display.label", "meta": { "name": "H" }, "props": { "text": "Container Completion Gate", "style": { "fontSize": "16px", "fontWeight": "700" } } },
-                  { "type": "ia.display.label", "meta": { "name": "Hsub" }, "props": { "text": "Same atomic close as Serialized - claims AIM ID, dispatches print async", "style": { "classes": "pf-kpi-sub" } } }
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "H"
+                    },
+                    "props": {
+                      "text": "Container Completion Gate",
+                      "style": {
+                        "fontSize": "16px",
+                        "fontWeight": "700"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "Hsub"
+                    },
+                    "props": {
+                      "text": "Same atomic close as Serialized - claims AIM ID, dispatches print async",
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      }
+                    }
+                  }
                 ]
               },
               {
                 "type": "ia.container.flex",
-                "meta": { "name": "GateBody" },
-                "props": { "direction": "row", "alignItems": "center", "style": { "gap": "16px" } },
+                "meta": {
+                  "name": "GateBody"
+                },
+                "props": {
+                  "direction": "row",
+                  "alignItems": "center",
+                  "style": {
+                    "gap": "16px"
+                  }
+                },
                 "children": [
                   {
                     "type": "ia.container.flex",
-                    "meta": { "name": "GateText" },
-                    "position": { "grow": 1 },
-                    "props": { "direction": "column", "style": { "gap": "6px" } },
+                    "meta": {
+                      "name": "GateText"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "6px"
+                      }
+                    },
                     "children": [
-                      { "type": "ia.display.label", "meta": { "name": "GateIntro" }, "props": { "text": "When accumulated tray closes reach the configured Container capacity:", "style": { "color": "var(--mpp-text-primary)" } } },
-                      { "type": "ia.display.label", "meta": { "name": "B1" }, "props": { "text": "- AIM Shipper ID claimed from local pool (per-Part-Number FIFO, sub-millisecond)", "style": { "classes": "pf-kpi-sub" } } },
-                      { "type": "ia.display.label", "meta": { "name": "B2" }, "props": { "text": "- ShippingLabel row inserted with PrintedAt = NULL", "style": { "classes": "pf-kpi-sub" } } },
-                      { "type": "ia.display.label", "meta": { "name": "B3" }, "props": { "text": "- Async print dispatched to Zebra at this terminal", "style": { "classes": "pf-kpi-sub" } } },
-                      { "type": "ia.display.label", "meta": { "name": "B4" }, "props": { "text": "- Container status flips to Complete", "style": { "classes": "pf-kpi-sub" } } }
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "GateIntro"
+                        },
+                        "props": {
+                          "text": "When accumulated tray closes reach the configured Container capacity:",
+                          "style": {
+                            "color": "var(--mpp-text-primary)"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "B1"
+                        },
+                        "props": {
+                          "text": "- AIM Shipper ID claimed from local pool (per-Part-Number FIFO, sub-millisecond)",
+                          "style": {
+                            "classes": "pf-kpi-sub"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "B2"
+                        },
+                        "props": {
+                          "text": "- ShippingLabel row inserted with PrintedAt = NULL",
+                          "style": {
+                            "classes": "pf-kpi-sub"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "B3"
+                        },
+                        "props": {
+                          "text": "- Async print dispatched to Zebra at this terminal",
+                          "style": {
+                            "classes": "pf-kpi-sub"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ia.display.label",
+                        "meta": {
+                          "name": "B4"
+                        },
+                        "props": {
+                          "text": "- Container status flips to Complete",
+                          "style": {
+                            "classes": "pf-kpi-sub"
+                          }
+                        }
+                      }
                     ]
                   },
                   {
                     "type": "ia.input.button",
-                    "meta": { "name": "ConfirmButton" },
-                    "position": { "shrink": 0 },
-                    "props": { "text": "Mark Container Complete", "style": { "classes": "pf-btn pf-btn-primary pf-btn-large", "minHeight": "80px", "minWidth": "200px", "fontSize": "17px" } },
+                    "meta": {
+                      "name": "ConfirmButton"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Mark Container Complete",
+                      "style": {
+                        "classes": "pf-btn pf-btn-primary pf-btn-large",
+                        "minHeight": "80px",
+                        "minWidth": "200px",
+                        "fontSize": "17px"
+                      }
+                    },
                     "events": {
                       "component": {
                         "onActionPerformed": {
-                          "type": "script", "scope": "G",
-                          "config": { "script": "\tc = self.view.custom.container\n\tcellId = self.view.custom.filter.cellLocationId\n\tif not c or c.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No open container at this cell.\"}, \"Assembly\")\n\t\treturn\n\tresult = BlueRidge.Lots.Container.complete(c.get(\"Id\"), operatorConfirmed=True, terminalLocationId=cellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Container complete\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1" }
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tc = self.view.custom.container\n\tcellId = self.session.custom.cell.locationId\n\tif not c or c.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No open container at this cell.\"}, \"Assembly\")\n\t\treturn\n\tresult = BlueRidge.Lots.Container.complete(c.get(\"Id\"), operatorConfirmed=True, terminalLocationId=cellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Container complete\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                          }
                         }
                       }
                     }
