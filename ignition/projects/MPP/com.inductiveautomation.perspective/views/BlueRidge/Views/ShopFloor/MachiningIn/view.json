@@ -11,7 +11,8 @@
     "activeMachined": {
       "Id": null,
       "lotName": "",
-      "sourceLotName": ""
+      "itemPartNumber": "",
+      "pieceCount": 0
     }
   },
   "params": {},
@@ -42,6 +43,20 @@
           }
         ],
         "type": "property"
+      }
+    },
+    "custom.activeMachined": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, false, {view.custom.refreshToken}), \"\")"
+        },
+        "transforms": [
+          {
+            "type": "script",
+            "code": "\tmachined = [r for r in (value or []) if not r.get(\"HasRenameBom\")]\n\tr = machined[-1] if machined else {}\n\treturn {\"Id\": r.get(\"Id\"), \"lotName\": r.get(\"LotName\") or \"\", \"itemPartNumber\": r.get(\"ItemPartNumber\") or \"\", \"pieceCount\": r.get(\"PieceCount\") or 0}"
+          }
+        ]
       }
     }
   },
@@ -595,7 +610,7 @@
                     "binding": {
                       "type": "expr",
                       "config": {
-                        "expression": "\"Renamed from \" + {view.custom.activeMachined.sourceLotName} + \"  -  machined LOT #\" + toStr({view.custom.activeMachined.Id})"
+                        "expression": "{view.custom.activeMachined.itemPartNumber} + \"  |  \" + toStr({view.custom.activeMachined.pieceCount}) + \" pcs  |  machined LOT #\" + toStr({view.custom.activeMachined.Id})"
                       }
                     }
                   }
@@ -622,7 +637,7 @@
           "pageScope": true,
           "sessionScope": false,
           "viewScope": false,
-          "script": "\tif payload.get(\"action\") != \"confirm\":\n\t\treturn\n\tp = self.view.custom.pending\n\tcellId = self.session.custom.cell.locationId\n\tif not p or p.get(\"sourceLotId\") is None or cellId is None:\n\t\treturn\n\tresult = BlueRidge.Workorder.Machining.pickAndConsume(p.get(\"sourceLotId\"), cellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining IN\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.activeMachined = {\"Id\": result.get(\"NewId\"), \"lotName\": result.get(\"NewMachinedLotName\") or \"\", \"sourceLotName\": (p.get(\"lotName\") or \"\")}\n\t\tself.view.custom.pending = {\"sourceLotId\": None, \"lotName\": \"\", \"sourceItem\": \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+          "script": "\tif payload.get(\"action\") != \"confirm\":\n\t\treturn\n\tp = self.view.custom.pending\n\tcellId = self.session.custom.cell.locationId\n\tif not p or p.get(\"sourceLotId\") is None or cellId is None:\n\t\treturn\n\tresult = BlueRidge.Workorder.Machining.pickAndConsume(p.get(\"sourceLotId\"), cellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining IN\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.pending = {\"sourceLotId\": None, \"lotName\": \"\", \"sourceItem\": \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
         }
       ]
     }
