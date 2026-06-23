@@ -123,7 +123,7 @@
           "name": "btn_1"
         },
         "props": {
-          "text": "Initials",
+          "text": "Initials (popup)",
           "style": {
             "classes": "pf-btn pf-btn-secondary",
             "fontSize": "12px",
@@ -136,7 +136,7 @@
               "type": "script",
               "scope": "G",
               "config": {
-                "script": "\tsystem.perspective.navigate(\"/shop-floor/initials\")"
+                "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
               }
             }
           }

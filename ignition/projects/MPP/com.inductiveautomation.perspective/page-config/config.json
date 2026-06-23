@@ -12,10 +12,6 @@
       "title": "",
       "viewPath": "BlueRidge/Views/Navigation Testing"
     },
-    "/shop-floor/initials": {
-      "title": "Operator Entry",
-      "viewPath": "BlueRidge/Views/ShopFloor/InitialsEntry"
-    },
     "/shop-floor/downtime": {
       "title": "Downtime Entry",
       "viewPath": "BlueRidge/Views/ShopFloor/DowntimeEntry"
