@@ -5,7 +5,7 @@
   },
   "params": {},
   "propConfig": {},
-  "props": { "defaultSize": { "height": 1080, "width": 1920 } },
+  "props": { "defaultSize": { "height": 800, "width": 1280 } },
   "root": {
     "type": "ia.container.flex",
     "meta": { "name": "root" },
@@ -110,7 +110,7 @@
                 "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
                 "children": [
                   { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Scan Container Shipping Label", "style": { "classes": "pf-field-label" } } },
-                  { "type": "ia.input.text-field", "meta": { "name": "ShippingLabelId" }, "propConfig": { "props.text": { "binding": { "config": { "path": "view.custom.draft.shippingLabelId", "bidirectional": true }, "type": "property" } } }, "props": { "placeholder": "Scan shipping label", "style": { "classes": "pf-field-input pf-field-mono", "minHeight": "44px" } } },
+                  { "type": "ia.input.text-field", "meta": { "name": "ShippingLabelId" }, "propConfig": { "props.text": { "binding": { "config": { "path": "view.custom.draft.shippingLabelId", "bidirectional": true }, "type": "property" } } }, "props": { "placeholder": "Scan shipping label", "style": { "classes": "pf-field-input-mono", "minHeight": "44px" } } },
                   { "type": "ia.display.label", "meta": { "name": "Help" }, "props": { "text": "Per-scan: validates the container is complete, not on hold, and has a valid shipping label.", "style": { "classes": "pf-field-help pf-kpi-sub" } } }
                 ]
               },

@@ -10,7 +10,7 @@
   },
   "params": {},
   "propConfig": {},
-  "props": { "defaultSize": { "height": 1080, "width": 1920 } },
+  "props": { "defaultSize": { "height": 800, "width": 1280 } },
   "root": {
     "type": "ia.container.flex",
     "meta": { "name": "root" },

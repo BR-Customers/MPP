@@ -4,7 +4,7 @@
   },
   "params": {},
   "propConfig": {},
-  "props": { "defaultSize": { "height": 1080, "width": 1920 } },
+  "props": { "defaultSize": { "height": 800, "width": 1280 } },
   "root": {
     "type": "ia.container.flex",
     "meta": { "name": "root" },
@@ -61,21 +61,21 @@
                     "type": "ia.container.flex", "meta": { "name": "KpiContainer" }, "props": { "direction": "column", "style": { "classes": "pf-kpi", "gap": "2px" } },
                     "children": [
                       { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Container", "style": { "classes": "pf-kpi-label" } } },
-                      { "type": "ia.display.label", "meta": { "name": "V" }, "props": { "text": "-", "style": { "classes": "pf-kpi-value pf-kpi-mono" } } }
+                      { "type": "ia.display.label", "meta": { "name": "V" }, "props": { "text": "-", "style": { "classes": "pf-kpi-value-mono" } } }
                     ]
                   },
                   {
                     "type": "ia.container.flex", "meta": { "name": "KpiShipper" }, "props": { "direction": "column", "style": { "classes": "pf-kpi", "gap": "2px" } },
                     "children": [
                       { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "AIM Shipper ID", "style": { "classes": "pf-kpi-label" } } },
-                      { "type": "ia.display.label", "meta": { "name": "V" }, "props": { "text": "-", "style": { "classes": "pf-kpi-value pf-kpi-mono" } } }
+                      { "type": "ia.display.label", "meta": { "name": "V" }, "props": { "text": "-", "style": { "classes": "pf-kpi-value-mono" } } }
                     ]
                   },
                   {
                     "type": "ia.container.flex", "meta": { "name": "KpiItem" }, "props": { "direction": "column", "style": { "classes": "pf-kpi", "gap": "2px" } },
                     "children": [
                       { "type": "ia.display.label", "meta": { "name": "L" }, "props": { "text": "Item", "style": { "classes": "pf-kpi-label" } } },
-                      { "type": "ia.display.label", "meta": { "name": "V" }, "props": { "text": "-", "style": { "classes": "pf-kpi-value pf-kpi-mono" } } }
+                      { "type": "ia.display.label", "meta": { "name": "V" }, "props": { "text": "-", "style": { "classes": "pf-kpi-value-mono" } } }
                     ]
                   },
                   {

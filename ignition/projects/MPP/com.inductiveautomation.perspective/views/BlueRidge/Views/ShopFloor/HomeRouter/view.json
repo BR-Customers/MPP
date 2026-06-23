@@ -3,7 +3,8 @@
   "params": {},
   "props": {
     "defaultSize": {
-      "width": 1280
+      "width": 1280,
+      "height": 800
     }
   },
   "root": {
@@ -227,7 +228,7 @@
         {
           "name": "route",
           "params": [],
-          "script": "\tt \u003d self.session.custom.terminal\n\tif (not t.terminalLocationId) or t.isFallback:\n\t\tsystem.perspective.navigate(\"/shop-floor/terminal-selector\")\n\t\treturn\n\tif t.defaultScreen:\n\t\tsystem.perspective.navigate(t.defaultScreen)\n\t\treturn"
+          "script": "\tt = self.session.custom.terminal\n\tif (not t.terminalLocationId) or t.isFallback:\n\t\tsystem.perspective.navigate(\"/shop-floor/terminal-selector\")\n\t\treturn\n\tif t.defaultScreen:\n\t\tsystem.perspective.navigate(t.defaultScreen)\n\t\treturn"
         }
       ],
       "extensionFunctions": null,

@@ -449,7 +449,7 @@
                     "props": {
                       "placeholder": "Scan or enter LTT",
                       "style": {
-                        "classes": "pf-field-input pf-field-mono"
+                        "classes": "pf-field-input-mono"
                       }
                     },
                     "propConfig": {
@@ -614,7 +614,7 @@
                             },
                             "props": {
                               "style": {
-                                "classes": "pf-field-input pf-field-mono"
+                                "classes": "pf-field-input-mono"
                               }
                             },
                             "propConfig": {

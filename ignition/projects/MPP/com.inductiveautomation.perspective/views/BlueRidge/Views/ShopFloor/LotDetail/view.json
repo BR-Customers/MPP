@@ -36,7 +36,7 @@
   },
   "props": {
     "defaultSize": {
-      "height": 900,
+      "height": 800,
       "width": 1280
     }
   },
@@ -253,7 +253,7 @@
                   "text": "LOT Name",
                   "style": {
                     "classes": "pf-kpi-label",
-                    "color": "var(--mpp-text-muted)",
+                    "color": "var(--mpp-text-tertiary)",
                     "fontSize": "11px",
                     "textTransform": "uppercase",
                     "letterSpacing": "0.08em"
@@ -278,7 +278,7 @@
                 "props": {
                   "text": "",
                   "style": {
-                    "classes": "pf-kpi-value pf-kpi-mono",
+                    "classes": "pf-kpi-value-mono",
                     "color": "var(--mpp-text-primary)",
                     "fontSize": "22px",
                     "fontWeight": "600",
@@ -317,7 +317,7 @@
                   "text": "Item",
                   "style": {
                     "classes": "pf-kpi-label",
-                    "color": "var(--mpp-text-muted)",
+                    "color": "var(--mpp-text-tertiary)",
                     "fontSize": "11px",
                     "textTransform": "uppercase",
                     "letterSpacing": "0.08em"
@@ -342,7 +342,7 @@
                 "props": {
                   "text": "",
                   "style": {
-                    "classes": "pf-kpi-value pf-kpi-mono",
+                    "classes": "pf-kpi-value-mono",
                     "color": "var(--mpp-text-primary)",
                     "fontSize": "18px",
                     "fontWeight": "600",
@@ -381,7 +381,7 @@
                   "text": "Piece Count",
                   "style": {
                     "classes": "pf-kpi-label",
-                    "color": "var(--mpp-text-muted)",
+                    "color": "var(--mpp-text-tertiary)",
                     "fontSize": "11px",
                     "textTransform": "uppercase",
                     "letterSpacing": "0.08em"
@@ -432,7 +432,7 @@
                   "text": "Inventory Available · 0 · 0 in process",
                   "style": {
                     "classes": "pf-kpi-sub",
-                    "color": "var(--mpp-text-muted)",
+                    "color": "var(--mpp-text-tertiary)",
                     "fontSize": "12px"
                   }
                 }
@@ -468,7 +468,7 @@
                   "text": "Current Location",
                   "style": {
                     "classes": "pf-kpi-label",
-                    "color": "var(--mpp-text-muted)",
+                    "color": "var(--mpp-text-tertiary)",
                     "fontSize": "11px",
                     "textTransform": "uppercase",
                     "letterSpacing": "0.08em"
@@ -541,7 +541,7 @@
                   "text": "Tool",
                   "style": {
                     "classes": "pf-kpi-label",
-                    "color": "var(--mpp-text-muted)",
+                    "color": "var(--mpp-text-tertiary)",
                     "fontSize": "11px",
                     "textTransform": "uppercase",
                     "letterSpacing": "0.08em"
@@ -566,7 +566,7 @@
                 "props": {
                   "text": "",
                   "style": {
-                    "classes": "pf-kpi-value pf-kpi-mono",
+                    "classes": "pf-kpi-value-mono",
                     "color": "var(--mpp-text-primary)",
                     "fontSize": "18px",
                     "fontWeight": "600",
@@ -615,7 +615,7 @@
                   "text": "Cavity",
                   "style": {
                     "classes": "pf-kpi-label",
-                    "color": "var(--mpp-text-muted)",
+                    "color": "var(--mpp-text-tertiary)",
                     "fontSize": "11px",
                     "textTransform": "uppercase",
                     "letterSpacing": "0.08em"
@@ -817,7 +817,7 @@
                     "props": {
                       "text": "Parents",
                       "style": {
-                        "color": "var(--mpp-text-muted)",
+                        "color": "var(--mpp-text-tertiary)",
                         "fontSize": "11px",
                         "fontWeight": "600",
                         "textTransform": "uppercase",
@@ -881,7 +881,7 @@
                     "props": {
                       "text": "Children",
                       "style": {
-                        "color": "var(--mpp-text-muted)",
+                        "color": "var(--mpp-text-tertiary)",
                         "fontSize": "11px",
                         "fontWeight": "600",
                         "textTransform": "uppercase",
@@ -1077,7 +1077,7 @@
                     "props": {
                       "text": "Container links land at Assembly when serialized parts produce into a Container (Phase 6).",
                       "style": {
-                        "color": "var(--mpp-text-muted)",
+                        "color": "var(--mpp-text-tertiary)",
                         "fontSize": "13px",
                         "textAlign": "center",
                         "maxWidth": "480px"
@@ -1106,7 +1106,7 @@
             "classes": "pf-actions",
             "gap": "12px",
             "padding": "16px 24px",
-            "borderTop": "1px solid var(--mpp-border)"
+            "borderTop": "1px solid var(--mpp-border-default)"
           }
         },
         "children": [
