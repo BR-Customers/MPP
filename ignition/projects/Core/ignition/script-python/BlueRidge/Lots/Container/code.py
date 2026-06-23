@@ -71,7 +71,7 @@ def complete(containerId, operatorConfirmed=False, plcCompletionConfirmed=False,
     return BlueRidge.Common.Db.execMutation("lots/Container_Complete", params)
 
 
-def getOpenByCell(cellLocationId):
+def getOpenByCell(cellLocationId, _refreshToken=None):
     """Read the OPEN container(s) at a Cell with fill progress (TargetParts /
        AccumulatedParts / ClosedTrays). Returns list[dict] (empty list = none
        open)."""

@@ -10,7 +10,7 @@ import BlueRidge.Common.Db
 import BlueRidge.Common.Util
 
 
-def get():
+def get(_refreshToken=None):
     """Read the single-row AIM pool config (thresholds + last-updated attribution).
        Returns list[dict] (empty list = unconfigured)."""
     BlueRidge.Common.Util.log("get")

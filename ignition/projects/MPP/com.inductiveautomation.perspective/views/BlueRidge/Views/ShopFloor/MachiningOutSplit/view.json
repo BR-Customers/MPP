@@ -37,7 +37,7 @@
     "custom.parentLot": {
       "binding": {
         "config": {
-          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}), \"\")"
+          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, false, {view.custom.refreshToken}), \"\")"
         },
         "transforms": [
           {
@@ -52,8 +52,7 @@
   "props": {
     "defaultSize": {
       "height": 800,
-      "width": 1280,
-      "height": 800
+      "width": 1280
     }
   },
   "root": {
