@@ -43,8 +43,7 @@
   "props": {
     "defaultSize": {
       "height": 800,
-      "width": 1280,
-      "height": 800
+      "width": 1280
     }
   },
   "root": {
@@ -398,7 +397,7 @@
             "props": {
               "direction": "column",
               "elementPosition": {
-                "basis": "76px",
+                "basis": "92px",
                 "shrink": 0
               },
               "path": "BlueRidge/Components/PlantFloor/Machining/QueueRow",

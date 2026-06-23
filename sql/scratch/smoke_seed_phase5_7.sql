@@ -58,6 +58,30 @@ DECLARE @cmp  TABLE (Status BIT, Message NVARCHAR(500), ShippingLabelId BIGINT, 
 DECLARE @hp   TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 
 -- =========================================================================
+-- 0.6 BOM-driven rename (FDS-05-033): Machining IN pick renames a whole 5G0 LOT into a
+--     machined item via the single active published BOM whose only line is 5G0 (QtyPer 1).
+--     Without it, Pick rejects "No active BOM renames ...". Create machined item + BOM once.
+-- =========================================================================
+IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'5G0-MACH')
+BEGIN
+    DECLARE @ci TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+    INSERT INTO @ci EXEC Parts.Item_Create @PartNumber=N'5G0-MACH', @ItemTypeId=4, @Description=N'5G0 Machined Front Cover', @UomId=1, @AppUserId=@U;
+END
+DECLARE @MachItem BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-MACH');
+IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE ItemId=@MachItem AND LocationId=76 AND DeprecatedAt IS NULL)
+    INSERT INTO Parts.ItemLocation (ItemId, LocationId, CreatedAt, IsConsumptionPoint) VALUES (@MachItem, 76, SYSUTCDATETIME(), 0);
+IF NOT EXISTS (SELECT 1 FROM Parts.Bom WHERE ParentItemId=@MachItem AND PublishedAt IS NOT NULL AND DeprecatedAt IS NULL)
+BEGIN
+    DECLARE @bc TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+    INSERT INTO @bc EXEC Parts.Bom_Create @ParentItemId=@MachItem, @AppUserId=@U;
+    DECLARE @BomId BIGINT = (SELECT NewId FROM @bc);
+    DECLARE @bl TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+    INSERT INTO @bl EXEC Parts.BomLine_Add @BomId=@BomId, @ChildItemId=1, @QtyPer=1, @UomId=1, @AppUserId=@U;
+    DECLARE @bp TABLE (Status BIT, Message NVARCHAR(500));
+    INSERT INTO @bp EXEC Parts.Bom_Publish @Id=@BomId, @AppUserId=@U;
+END
+
+-- =========================================================================
 -- 1. MACHINING IN queue: 3 whole 5G0 LOTs at MA1-5GOF-MIN (76)
 -- =========================================================================
 DELETE FROM @rLot; INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId=1,@LotOriginTypeId=1,@CurrentLocationId=76,@PieceCount=48,@AppUserId=@U,@LotName=N'SMK-MIN-1';
