@@ -7,6 +7,11 @@
       "sourceLotId": null,
       "lotName": "",
       "sourceItem": ""
+    },
+    "activeMachined": {
+      "Id": null,
+      "lotName": "",
+      "sourceLotName": ""
     }
   },
   "params": {},
@@ -510,6 +515,92 @@
                   }
                 }
               }
+            ],
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "isNull({view.custom.activeMachined.Id})"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "ActiveCard"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "6px",
+                "padding": "16px",
+                "backgroundColor": "var(--mpp-surface-raised)",
+                "border": "1px solid var(--mpp-border-default)",
+                "borderRadius": "8px"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "!isNull({view.custom.activeMachined.Id})"
+                  }
+                }
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "ActiveCardName"
+                },
+                "props": {
+                  "text": "",
+                  "style": {
+                    "classes": "pf-kpi-value",
+                    "fontSize": "18px"
+                  }
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "if(isNull({view.custom.activeMachined.lotName}) || {view.custom.activeMachined.lotName} = \"\", \"(machined LOT)\", {view.custom.activeMachined.lotName})"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "ActiveCardSub"
+                },
+                "props": {
+                  "text": "",
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  }
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "\"Renamed from \" + {view.custom.activeMachined.sourceLotName} + \"  -  machined LOT #\" + toStr({view.custom.activeMachined.Id})"
+                      }
+                    }
+                  }
+                }
+              }
             ]
           }
         ]
@@ -531,7 +622,7 @@
           "pageScope": true,
           "sessionScope": false,
           "viewScope": false,
-          "script": "\tif payload.get(\"action\") != \"confirm\":\n\t\treturn\n\tp = self.view.custom.pending\n\tcellId = self.session.custom.cell.locationId\n\tif not p or p.get(\"sourceLotId\") is None or cellId is None:\n\t\treturn\n\tresult = BlueRidge.Workorder.Machining.pickAndConsume(p.get(\"sourceLotId\"), cellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining IN\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.pending = {\"sourceLotId\": None, \"lotName\": \"\", \"sourceItem\": \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+          "script": "\tif payload.get(\"action\") != \"confirm\":\n\t\treturn\n\tp = self.view.custom.pending\n\tcellId = self.session.custom.cell.locationId\n\tif not p or p.get(\"sourceLotId\") is None or cellId is None:\n\t\treturn\n\tresult = BlueRidge.Workorder.Machining.pickAndConsume(p.get(\"sourceLotId\"), cellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining IN\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.activeMachined = {\"Id\": result.get(\"NewId\"), \"lotName\": result.get(\"NewMachinedLotName\") or \"\", \"sourceLotName\": (p.get(\"lotName\") or \"\")}\n\t\tself.view.custom.pending = {\"sourceLotId\": None, \"lotName\": \"\", \"sourceItem\": \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
         }
       ]
     }
