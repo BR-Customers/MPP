@@ -8,7 +8,7 @@
   "propConfig": {
     "custom.cfg": {
       "binding": {
-        "config": { "expression": "if({view.custom.refreshToken} >= 0, runScript(\"BlueRidge.Lots.AimPoolConfig.get\"), [])" },
+        "config": { "expression": "if({view.custom.refreshToken} >= 0, runScript(\"BlueRidge.Lots.AimPoolConfig.get\"), \"\")" },
         "transforms": [ { "code": "\trows = value or []\n\tr = rows[0] if rows else {}\n\treturn {\"Id\": r.get(\"Id\") or 1, \"TargetBufferDepth\": r.get(\"TargetBufferDepth\") or 0, \"TopupThreshold\": r.get(\"TopupThreshold\") or 0, \"AlarmWarningDepth\": r.get(\"AlarmWarningDepth\") or 0, \"AlarmCriticalDepth\": r.get(\"AlarmCriticalDepth\") or 0}", "type": "script" } ],
         "type": "expr"
       }
