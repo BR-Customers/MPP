@@ -137,6 +137,43 @@
             ]
           },
           {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "OperatorLabel"
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "classes": "pf-kpi-sub",
+                "cursor": "pointer"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
+                  }
+                }
+              }
+            },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=True, overlayDismiss=True)"
+                  }
+                }
+              }
+            }
+          },
+          {
             "type": "ia.container.flex",
             "meta": {
               "name": "PausedIndicator"
@@ -819,7 +856,7 @@
                       "type": "script",
                       "scope": "G",
                       "config": {
-                        "script": "\tparent = self.view.custom.parentLot\n\totId = self.view.custom.opTemplateId\n\tcellId = self.session.custom.cell.locationId\n\td = self.view.custom.draft\n\tif cellId is None or not parent or parent.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Select a cell that has a machined LOT.\"}, \"Machining OUT\")\n\t\treturn\n\tif otId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"MachiningOut operation template not found.\"}, \"Machining OUT\")\n\t\treturn\n\tq1 = BlueRidge.Common.Util.toIntOrNone(d.get(\"qty1\"))\n\tq2 = BlueRidge.Common.Util.toIntOrNone(d.get(\"qty2\"))\n\tdest1 = d.get(\"dest1\")\n\tdest2 = d.get(\"dest2\")\n\tif q1 is None or q2 is None or q1 <= 0 or q2 <= 0 or dest1 is None or dest2 is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a positive piece count and a destination for both sub-LOTs.\"}, \"Machining OUT\")\n\t\treturn\n\tchildren = [{\"pieceCount\": q1, \"destinationLocationId\": dest1}, {\"pieceCount\": q2, \"destinationLocationId\": dest2}]\n\tresult = BlueRidge.Workorder.Machining.recordSplit(parent.get(\"Id\"), otId, system.util.jsonEncode(children))\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining OUT - Split\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"qty1\": \"\", \"dest1\": None, \"qty2\": \"\", \"dest2\": None}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                        "script": "\tparent = self.view.custom.parentLot\n\totId = self.view.custom.opTemplateId\n\tcellId = self.session.custom.cell.locationId\n\td = self.view.custom.draft\n\tif cellId is None or not parent or parent.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Select a cell that has a machined LOT.\"}, \"Machining OUT\")\n\t\treturn\n\tif otId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"MachiningOut operation template not found.\"}, \"Machining OUT\")\n\t\treturn\n\tq1 = BlueRidge.Common.Util.toIntOrNone(d.get(\"qty1\"))\n\tq2 = BlueRidge.Common.Util.toIntOrNone(d.get(\"qty2\"))\n\tdest1 = d.get(\"dest1\")\n\tdest2 = d.get(\"dest2\")\n\tif q1 is None or q2 is None or q1 <= 0 or q2 <= 0 or dest1 is None or dest2 is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a positive piece count and a destination for both sub-LOTs.\"}, \"Machining OUT\")\n\t\treturn\n\tchildren = [{\"pieceCount\": q1, \"destinationLocationId\": dest1}, {\"pieceCount\": q2, \"destinationLocationId\": dest2}]\n\tresult = BlueRidge.Workorder.Machining.recordSplit(parent.get(\"Id\"), otId, system.util.jsonEncode(children), self.session.custom.appUserId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining OUT - Split\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"qty1\": \"\", \"dest1\": None, \"qty2\": \"\", \"dest2\": None}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
                       }
                     }
                   }
@@ -857,6 +894,17 @@
           }
         ]
       }
-    ]
+    ],
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
+          }
+        }
+      }
+    }
   }
 }

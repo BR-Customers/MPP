@@ -148,6 +148,43 @@
             ]
           },
           {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "OperatorLabel"
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "classes": "pf-kpi-sub",
+                "cursor": "pointer"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
+                  }
+                }
+              }
+            },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=True, overlayDismiss=True)"
+                  }
+                }
+              }
+            }
+          },
+          {
             "type": "ia.container.flex",
             "meta": {
               "name": "PausedIndicator"
@@ -637,9 +674,20 @@
           "pageScope": true,
           "sessionScope": false,
           "viewScope": false,
-          "script": "\tif payload.get(\"action\") != \"confirm\":\n\t\treturn\n\tp = self.view.custom.pending\n\tcellId = self.session.custom.cell.locationId\n\tif not p or p.get(\"sourceLotId\") is None or cellId is None:\n\t\treturn\n\tresult = BlueRidge.Workorder.Machining.pickAndConsume(p.get(\"sourceLotId\"), cellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining IN\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.pending = {\"sourceLotId\": None, \"lotName\": \"\", \"sourceItem\": \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+          "script": "\tif payload.get(\"action\") != \"confirm\":\n\t\treturn\n\tp = self.view.custom.pending\n\tcellId = self.session.custom.cell.locationId\n\tif not p or p.get(\"sourceLotId\") is None or cellId is None:\n\t\treturn\n\tresult = BlueRidge.Workorder.Machining.pickAndConsume(p.get(\"sourceLotId\"), cellId, None, self.session.custom.appUserId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining IN\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.pending = {\"sourceLotId\": None, \"lotName\": \"\", \"sourceItem\": \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
         }
       ]
+    },
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
+          }
+        }
+      }
     }
   }
 }
