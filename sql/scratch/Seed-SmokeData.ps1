@@ -63,4 +63,7 @@ SELECT Seq AS [#], Screen, [Pick / Enter] AS Input, [Use this] FROM (VALUES
 "@
 sqlcmd -S localhost -d MPP_MES_Dev -E -C -W -Q $guide
 Write-Host "Operator: actions auto-attribute to a dev user, or use the Initials popup with 'JD'." -ForegroundColor Cyan
-Write-Host "Test environment ready." -ForegroundColor Cyan
+Write-Host ""
+Write-Host "*** RESTART THE IGNITION GATEWAY NOW ***" -ForegroundColor Yellow
+Write-Host "This rebuilt the database, so the running gateway's DB connection is now stale" -ForegroundColor Yellow
+Write-Host "(screens will show 'no data' until you restart). A project scan is NOT enough." -ForegroundColor Yellow

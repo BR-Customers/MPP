@@ -42,7 +42,7 @@ The run ends by printing a **"WHAT TO SMOKE"** table with the exact IDs to use �
 
 ### 2b. Pick up the project in Ignition
 1. **Designer → Update Project** (loads all the view/script changes from disk).
-2. **Restart the gateway once** after pulling new Named Queries (a scan isn't enough for NQ visibility).
+2. **Restart the gateway** — this is **REQUIRED** after `Seed-SmokeData.ps1`, not optional. The seeder **drops and recreates** the database, which leaves the running gateway holding a **stale/faulted DB connection**. Symptom if you skip it: screens load and session UI works (e.g. the bound cell name shows) but **all DB-backed data is empty** (queues, containers, etc.). A project scan does **not** fix this — only a gateway restart (or reconnecting the `MPP` database connection in the Gateway web UI) does.
 
 ---
 
