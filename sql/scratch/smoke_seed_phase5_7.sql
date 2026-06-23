@@ -70,6 +70,8 @@ END
 DECLARE @MachItem BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-MACH');
 IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE ItemId=@MachItem AND LocationId=76 AND DeprecatedAt IS NULL)
     INSERT INTO Parts.ItemLocation (ItemId, LocationId, CreatedAt, IsConsumptionPoint) VALUES (@MachItem, 76, SYSUTCDATETIME(), 0);
+IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE ItemId=@MachItem AND LocationId=78 AND DeprecatedAt IS NULL)
+    INSERT INTO Parts.ItemLocation (ItemId, LocationId, CreatedAt, IsConsumptionPoint) VALUES (@MachItem, 78, SYSUTCDATETIME(), 0);
 IF NOT EXISTS (SELECT 1 FROM Parts.Bom WHERE ParentItemId=@MachItem AND PublishedAt IS NOT NULL AND DeprecatedAt IS NULL)
 BEGIN
     DECLARE @bc TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
@@ -98,7 +100,7 @@ DECLARE @HoldId BIGINT = (SELECT NewId FROM @hp);
 -- =========================================================================
 -- 2. MACHINING OUT active LOT at MA1-5GOF-MOUT (78)
 -- =========================================================================
-DELETE FROM @rLot; INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId=1,@LotOriginTypeId=1,@CurrentLocationId=78,@PieceCount=48,@AppUserId=@U,@LotName=N'SMK-MOUT-1';
+DELETE FROM @rLot; INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId=@MachItem,@LotOriginTypeId=1,@CurrentLocationId=78,@PieceCount=48,@AppUserId=@U,@LotName=N'SMK-MOUT-1';
 
 -- =========================================================================
 -- 3. ASSEMBLY SERIALIZED open container (5G0, cfg1) at MA1-5GOF-ASER (80)

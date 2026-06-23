@@ -41,7 +41,7 @@
         },
         "transforms": [
           {
-            "code": "\trows = value or []\n\tr = rows[0] if rows else {}\n\treturn {\"Id\": r.get(\"Id\"), \"LotName\": r.get(\"LotName\") or \"\", \"PieceCount\": r.get(\"PieceCount\") or 0, \"ItemPartNumber\": r.get(\"ItemPartNumber\") or \"\"}",
+            "code": "\tmachined = [r for r in (value or []) if not r.get(\"HasRenameBom\")]\n\tr = machined[-1] if machined else {}\n\treturn {\"Id\": r.get(\"Id\"), \"LotName\": r.get(\"LotName\") or \"\", \"PieceCount\": r.get(\"PieceCount\") or 0, \"ItemPartNumber\": r.get(\"ItemPartNumber\") or \"\"}",
             "type": "script"
           }
         ],
