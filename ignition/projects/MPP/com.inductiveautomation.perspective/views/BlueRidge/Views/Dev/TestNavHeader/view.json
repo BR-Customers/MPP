@@ -17,7 +17,6 @@
       "direction": "row",
       "wrap": "wrap",
       "alignItems": "center",
-      "justify": "flex-start",
       "style": {
         "classes": "canvas",
         "gap": "6px",
@@ -38,8 +37,58 @@
             "fontWeight": 700,
             "fontSize": "13px",
             "color": "#b91c1c",
-            "padding": "0 8px",
+            "padding": "0 6px",
             "whiteSpace": "nowrap"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "SimCell"
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "fontSize": "12px",
+            "color": "#1f2937",
+            "padding": "0 6px",
+            "whiteSpace": "nowrap"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "\"Cell: \" + if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"(none)\", {session.custom.cell.name})"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "btn_clearcell"
+        },
+        "props": {
+          "text": "Clear Cell",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "12px",
+            "padding": "4px 10px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tself.session.custom.cell = {\"locationId\": None, \"code\": \"\", \"name\": \"\"}"
+              }
+            }
           }
         }
       },
@@ -59,11 +108,11 @@
         "events": {
           "component": {
             "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
               "config": {
                 "script": "\tsystem.perspective.navigate(\"/\")"
-              },
-              "scope": "G",
-              "type": "script"
+              }
             }
           }
         }
@@ -84,11 +133,11 @@
         "events": {
           "component": {
             "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
               "config": {
                 "script": "\tsystem.perspective.navigate(\"/shop-floor/initials\")"
-              },
-              "scope": "G",
-              "type": "script"
+              }
             }
           }
         }
@@ -109,11 +158,11 @@
         "events": {
           "component": {
             "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
               "config": {
                 "script": "\tsystem.perspective.navigate(\"/shop-floor/terminal-selector\")"
-              },
-              "scope": "G",
-              "type": "script"
+              }
             }
           }
         }
@@ -134,11 +183,11 @@
         "events": {
           "component": {
             "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
               "config": {
                 "script": "\tsystem.perspective.navigate(\"/shop-floor/die-cast\")"
-              },
-              "scope": "G",
-              "type": "script"
+              }
             }
           }
         }
@@ -159,11 +208,11 @@
         "events": {
           "component": {
             "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
               "config": {
                 "script": "\tsystem.perspective.navigate(\"/shop-floor/trim\")"
-              },
-              "scope": "G",
-              "type": "script"
+              }
             }
           }
         }
@@ -184,11 +233,11 @@
         "events": {
           "component": {
             "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
               "config": {
                 "script": "\tsystem.perspective.navigate(\"/shop-floor/receiving\")"
-              },
-              "scope": "G",
-              "type": "script"
+              }
             }
           }
         }
@@ -209,11 +258,11 @@
         "events": {
           "component": {
             "onActionPerformed": {
-              "config": {
-                "script": "\tsystem.perspective.navigate(\"/shop-floor/machining-in\")"
-              },
+              "type": "script",
               "scope": "G",
-              "type": "script"
+              "config": {
+                "script": "\tself.session.custom.cell = {\"locationId\": 76, \"code\": \"MA1-5GOF-MIN\", \"name\": \"MA1-5GOF-MIN (Machining In)\"}\n\tsystem.perspective.navigate(\"/shop-floor/machining-in\")"
+              }
             }
           }
         }
@@ -234,11 +283,11 @@
         "events": {
           "component": {
             "onActionPerformed": {
-              "config": {
-                "script": "\tsystem.perspective.navigate(\"/shop-floor/machining-out\")"
-              },
+              "type": "script",
               "scope": "G",
-              "type": "script"
+              "config": {
+                "script": "\tself.session.custom.cell = {\"locationId\": 78, \"code\": \"MA1-5GOF-MOUT\", \"name\": \"MA1-5GOF-MOUT (Machining Out)\"}\n\tsystem.perspective.navigate(\"/shop-floor/machining-out\")"
+              }
             }
           }
         }
@@ -259,11 +308,11 @@
         "events": {
           "component": {
             "onActionPerformed": {
-              "config": {
-                "script": "\tsystem.perspective.navigate(\"/shop-floor/assembly-serialized\")"
-              },
+              "type": "script",
               "scope": "G",
-              "type": "script"
+              "config": {
+                "script": "\tself.session.custom.cell = {\"locationId\": 80, \"code\": \"MA1-5GOF-ASER\", \"name\": \"MA1-5GOF-ASER (Assembly Ser)\"}\n\tsystem.perspective.navigate(\"/shop-floor/assembly-serialized\")"
+              }
             }
           }
         }
@@ -284,11 +333,11 @@
         "events": {
           "component": {
             "onActionPerformed": {
-              "config": {
-                "script": "\tsystem.perspective.navigate(\"/shop-floor/assembly-nonserialized\")"
-              },
+              "type": "script",
               "scope": "G",
-              "type": "script"
+              "config": {
+                "script": "\tself.session.custom.cell = {\"locationId\": 47, \"code\": \"MA1-COMPBR-AOUT\", \"name\": \"MA1-COMPBR-AOUT (Assembly NonSer)\"}\n\tsystem.perspective.navigate(\"/shop-floor/assembly-nonserialized\")"
+              }
             }
           }
         }
@@ -309,11 +358,11 @@
         "events": {
           "component": {
             "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
               "config": {
                 "script": "\tsystem.perspective.navigate(\"/shop-floor/hold-management\")"
-              },
-              "scope": "G",
-              "type": "script"
+              }
             }
           }
         }
@@ -334,11 +383,11 @@
         "events": {
           "component": {
             "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
               "config": {
                 "script": "\tsystem.perspective.navigate(\"/shop-floor/sort-cage\")"
-              },
-              "scope": "G",
-              "type": "script"
+              }
             }
           }
         }
@@ -359,11 +408,11 @@
         "events": {
           "component": {
             "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
               "config": {
                 "script": "\tsystem.perspective.navigate(\"/shop-floor/shipping\")"
-              },
-              "scope": "G",
-              "type": "script"
+              }
             }
           }
         }
@@ -384,11 +433,11 @@
         "events": {
           "component": {
             "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
               "config": {
                 "script": "\tsystem.perspective.navigate(\"/shop-floor/aim-pool-config\")"
-              },
-              "scope": "G",
-              "type": "script"
+              }
             }
           }
         }
@@ -409,11 +458,11 @@
         "events": {
           "component": {
             "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
               "config": {
                 "script": "\tsystem.perspective.navigate(\"/shop-floor/supervisor\")"
-              },
-              "scope": "G",
-              "type": "script"
+              }
             }
           }
         }
@@ -434,11 +483,11 @@
         "events": {
           "component": {
             "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
               "config": {
                 "script": "\tsystem.perspective.navigate(\"/shop-floor/downtime\")"
-              },
-              "scope": "G",
-              "type": "script"
+              }
             }
           }
         }
@@ -459,11 +508,11 @@
         "events": {
           "component": {
             "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
               "config": {
                 "script": "\tsystem.perspective.navigate(\"/shop-floor/end-of-shift\")"
-              },
-              "scope": "G",
-              "type": "script"
+              }
             }
           }
         }
@@ -484,11 +533,11 @@
         "events": {
           "component": {
             "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
               "config": {
                 "script": "\tsystem.perspective.navigate(\"/shop-floor/shift-summary\")"
-              },
-              "scope": "G",
-              "type": "script"
+              }
             }
           }
         }
@@ -509,11 +558,11 @@
         "events": {
           "component": {
             "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
               "config": {
                 "script": "\tsystem.perspective.navigate(\"/shop-floor/lot-search\")"
-              },
-              "scope": "G",
-              "type": "script"
+              }
             }
           }
         }
@@ -534,11 +583,11 @@
         "events": {
           "component": {
             "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
               "config": {
                 "script": "\tsystem.perspective.navigate(\"/shop-floor/genealogy\")"
-              },
-              "scope": "G",
-              "type": "script"
+              }
             }
           }
         }
