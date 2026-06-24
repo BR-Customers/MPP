@@ -52,13 +52,14 @@ SELECT Seq AS [#], Screen, [Pick / Enter] AS Input, [Use this] FROM (VALUES
  (1,'Machining IN','DEV NAV: Mach IN  (cell MA1-5GOF-MIN)', (SELECT STRING_AGG(LotName, ', ') WITHIN GROUP (ORDER BY Id) FROM Lots.Lot WHERE LotName LIKE 'SMK-MIN-%')+' (-3 is on Hold)'),
  (2,'Machining OUT','DEV NAV: Mach OUT (cell MA1-5GOF-MOUT)', (SELECT TOP 1 LotName FROM Lots.Lot WHERE LotName='SMK-MOUT-1')+'  -- split two qtys summing to 48'),
  (3,'Assembly Serialized','DEV NAV: Asm Ser (cell MA1-5GOF-ASER)', 'open 5G0 container '+CAST((SELECT MAX(Id) FROM Lots.Container WHERE CurrentLocationId=80 AND ContainerStatusCodeId=1) AS VARCHAR)),
- (4,'Assembly Non-Serialized','DEV NAV: Asm NonSer (cell MA1-COMPBR-AOUT)', 'open 5G0-C container '+CAST((SELECT MAX(Id) FROM Lots.Container WHERE CurrentLocationId=47 AND ContainerStatusCodeId=1) AS VARCHAR)),
+ (4,'Assembly Non-Serialized','DEV NAV: Asm NonSer (cell MA1-COMPBR-AOUT)', 'open 6B2 container '+CAST((SELECT MAX(Id) FROM Lots.Container WHERE CurrentLocationId=47 AND ContainerStatusCodeId=1) AS VARCHAR)+'  -- consumes 6B2-MACH + 6B2-PIN per tray'),
  (5,'Shipping Dock','ShippingLabel Id ->', (SELECT CAST(MAX(sl.Id) AS VARCHAR) FROM Lots.ShippingLabel sl JOIN Lots.Container c ON c.Id=sl.ContainerId JOIN Parts.Item i ON i.Id=c.ItemId WHERE i.PartNumber='6MA-HSG' AND sl.IsVoid=0)),
  (6,'Sort Cage','ContainerSerial Id ->', (SELECT CAST(cs.Id AS VARCHAR) FROM Lots.ContainerSerial cs JOIN Lots.SerializedPart sp ON sp.Id=cs.SerializedPartId WHERE sp.SerialNumber='SMK-SER-1')),
  (7,'Sort Cage','New Container Id (dest) ->', (SELECT CAST(MAX(c.Id) AS VARCHAR) FROM Lots.Container c JOIN Parts.Item i ON i.Id=c.ItemId WHERE i.PartNumber='5G0' AND c.ContainerStatusCodeId=1 AND c.CurrentLocationId=73)),
  (8,'Hold Mgmt - place','LOT name or Container Id ->','SMK-MIN-1  (or container '+CAST((SELECT MAX(Id) FROM Lots.Container WHERE CurrentLocationId=80 AND ContainerStatusCodeId=1) AS VARCHAR)+')'),
  (9,'Hold Mgmt - release','Hold Event Id ->', (SELECT CAST(he.Id AS VARCHAR) FROM Quality.HoldEvent he JOIN Lots.Lot l ON l.Id=he.LotId WHERE l.LotName='SMK-MIN-3' AND he.ReleasedAt IS NULL)),
- (10,'AIM Config / Tile','(no input)','thresholds 50/30/20/10; ~100 IDs/part')
+ (10,'AIM Config / Tile','(no input)','thresholds 50/30/20/10; ~100 IDs/part'),
+ (11,'Assembly IN','DEV NAV: Asm IN (cell MA1-COMPBR-AOUT)','scan LTT SMK-6B2M-SCAN -> moves the 6B2-MACH LOT into the cell queue')
 ) g(Seq,Screen,[Pick / Enter],[Use this]) ORDER BY Seq;
 "@
 sqlcmd -S localhost -d MPP_MES_Dev -E -C -W -Q $guide
