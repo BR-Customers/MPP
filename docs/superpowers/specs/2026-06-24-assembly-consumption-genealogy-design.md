@@ -48,7 +48,7 @@ The same correction applies to the existing 5G0 family: machining-rename BOM sho
 
 ### 4.2 Per-tray consumption — extend `ContainerTray_Close`
 After the existing open/full/position validations, **inside the transaction**:
-1. Resolve the container item's **active published BOM** + child lines. Reject if none.
+1. Resolve the container item's **active published BOM** — **only for non-serialized containers**. If there is no BOM (a serialized line, which consumes per-part via the PLC; or a BOM-less PassThrough / casting that is merely *packaged*), **skip consumption and just close the tray** (do NOT reject). When a BOM applies, consume its child lines.
 2. For each child line: `needed = PartsPerTray × QtyPer`. **FIFO-consume** from the cell's open LOTs of that child item (oldest `CreatedAt` first): decrement `PieceCount`; set `Closed` + `LotStatusHistory` at zero. **Reject + roll back if any child is short.** (This replaces the coarse item-agnostic availability gate with a precise per-component check.)
 3. Per consumed source LOT, inline `INSERT Workorder.ConsumptionEvent (SourceLotId, ProducedContainerId = container, ConsumedItemId = child, ProducedItemId = container item, PieceCount, TrayId = the just-closed tray, LocationId = cell, AppUserId, ConsumedAt)`. (Inlined, not `EXEC`-ed — the proc returns a status row, same INSERT-EXEC rule as `Lot_Split`/`Lot_Merge`.)
 4. Existing tray `INSERT` + running-count accumulation unchanged.

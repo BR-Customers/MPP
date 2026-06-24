@@ -87,33 +87,34 @@ BEGIN
             RETURN;
         END
 
-        -- ---- assembly consumption (FDS-06-013/014): resolve the container item's active
-        --      published BOM + verify each component is available at the cell (per-tray need
-        --      = PartsPerTray x QtyPer). The produced side of the consumption is the container. ----
-        DECLARE @ItemId BIGINT, @CellId BIGINT;
-        SELECT @ItemId = ItemId, @CellId = CurrentLocationId FROM Lots.Container WHERE Id = @ContainerId;
-        DECLARE @BomId BIGINT = (SELECT TOP 1 Id FROM Parts.Bom
-            WHERE ParentItemId = @ItemId AND PublishedAt IS NOT NULL AND DeprecatedAt IS NULL
-            ORDER BY VersionNumber DESC);
-        IF @BomId IS NULL
+        -- ---- assembly consumption (FDS-06-013/014) applies to NON-serialized containers
+        --      with a published BOM. Serialized lines consume per-part (PLC); BOM-less
+        --      containers (PassThrough / casting packaging) just close the tray. When a BOM
+        --      applies, verify each component is available at the cell (need = PartsPerTray x
+        --      QtyPer); the produced side of the consumption is the container. ----
+        DECLARE @ItemId BIGINT, @CellId BIGINT, @IsSerialized BIT, @BomId BIGINT;
+        SELECT @ItemId = ct.ItemId, @CellId = ct.CurrentLocationId, @IsSerialized = cc.IsSerialized
+        FROM Lots.Container ct INNER JOIN Parts.ContainerConfig cc ON cc.Id = ct.ContainerConfigId
+        WHERE ct.Id = @ContainerId;
+        SET @BomId = CASE WHEN ISNULL(@IsSerialized, 0) = 0
+            THEN (SELECT TOP 1 Id FROM Parts.Bom WHERE ParentItemId = @ItemId AND PublishedAt IS NOT NULL AND DeprecatedAt IS NULL ORDER BY VersionNumber DESC)
+            ELSE NULL END;
+        IF @BomId IS NOT NULL
         BEGIN
-            SET @Message = N'No active published BOM for the container item; cannot record assembly consumption.';
-            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @Accum AS ContainerAccumulatedParts;
-            RETURN;
-        END
-        DECLARE @ShortChild NVARCHAR(50) =
-            (SELECT TOP 1 ci.PartNumber
-             FROM Parts.BomLine bl
-             INNER JOIN Parts.Item ci ON ci.Id = bl.ChildItemId
-             OUTER APPLY (SELECT ISNULL(SUM(l.PieceCount), 0) AS Avail FROM Lots.Lot l
-                          INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
-                          WHERE l.CurrentLocationId = @CellId AND l.ItemId = bl.ChildItemId AND sc.Code <> N'Closed') a
-             WHERE bl.BomId = @BomId AND a.Avail < CAST(@PartsCount * bl.QtyPer AS INT));
-        IF @ShortChild IS NOT NULL
-        BEGIN
-            SET @Message = N'Insufficient ' + @ShortChild + N' at this cell to fill the tray.';
-            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @Accum AS ContainerAccumulatedParts;
-            RETURN;
+            DECLARE @ShortChild NVARCHAR(50) =
+                (SELECT TOP 1 ci.PartNumber
+                 FROM Parts.BomLine bl
+                 INNER JOIN Parts.Item ci ON ci.Id = bl.ChildItemId
+                 OUTER APPLY (SELECT ISNULL(SUM(l.PieceCount), 0) AS Avail FROM Lots.Lot l
+                              INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
+                              WHERE l.CurrentLocationId = @CellId AND l.ItemId = bl.ChildItemId AND sc.Code <> N'Closed') a
+                 WHERE bl.BomId = @BomId AND a.Avail < CAST(@PartsCount * bl.QtyPer AS INT));
+            IF @ShortChild IS NOT NULL
+            BEGIN
+                SET @Message = N'Insufficient ' + @ShortChild + N' at this cell to fill the tray.';
+                SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @Accum AS ContainerAccumulatedParts;
+                RETURN;
+            END
         END
 
         SET @Activity = Audit.ufn_TruncateActivity(N'Container #' + CAST(@ContainerId AS NVARCHAR(20)) + N' tray ' + CAST(@TrayPosition AS NVARCHAR(10))
@@ -129,7 +130,10 @@ BEGIN
         SET @Accum = (SELECT SUM(PartsClosedCount) FROM Lots.ContainerTray WHERE ContainerId = @ContainerId AND ClosedAt IS NOT NULL);
 
         -- ---- per-tray BOM consumption: one ConsumptionEvent per component, FIFO-decrementing
-        --      source LOTs at the cell; produced side = the container (ProducedContainerId, TrayId). ----
+        --      source LOTs at the cell; produced side = the container (ProducedContainerId, TrayId).
+        --      Skipped when @BomId IS NULL (serialized line, or BOM-less packaging). ----
+        IF @BomId IS NOT NULL
+        BEGIN
         DECLARE @ClosedStatusId BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Closed');
         DECLARE @ChildItemId BIGINT, @ChildQtyPer DECIMAL(18,4), @NeedRemain INT, @SrcLotId BIGINT, @SrcAvail INT, @SrcStatus BIGINT, @Take INT;
         DECLARE bom_cur CURSOR LOCAL FAST_FORWARD FOR
@@ -163,6 +167,7 @@ BEGIN
             FETCH NEXT FROM bom_cur INTO @ChildItemId, @ChildQtyPer;
         END
         CLOSE bom_cur; DEALLOCATE bom_cur;
+        END
 
         DECLARE @NewValue NVARCHAR(MAX) = (SELECT @ContainerId AS ContainerId, @TrayPosition AS TrayPosition,
             @PartsCount AS PartsClosedCount, @ClosureMethod AS ClosureMethod, @Accum AS ContainerAccumulatedParts
