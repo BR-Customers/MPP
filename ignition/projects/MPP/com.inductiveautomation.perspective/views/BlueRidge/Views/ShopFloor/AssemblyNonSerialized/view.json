@@ -13,8 +13,7 @@
     },
     "draft": {
       "trayPosition": "",
-      "partsCount": "",
-      "closureMethod": null
+      "partsCount": ""
     },
     "refreshToken": 0
   },
@@ -1009,46 +1008,31 @@
                               "name": "L"
                             },
                             "props": {
-                              "text": "Closure method",
+                              "text": "Closure method (from config)",
                               "style": {
                                 "classes": "pf-field-label"
                               }
                             }
                           },
                           {
-                            "type": "ia.input.dropdown",
+                            "type": "ia.display.label",
                             "meta": {
-                              "name": "Cm"
-                            },
-                            "propConfig": {
-                              "props.value": {
-                                "binding": {
-                                  "config": {
-                                    "path": "view.custom.draft.closureMethod",
-                                    "bidirectional": true
-                                  },
-                                  "type": "property"
-                                }
-                              }
+                              "name": "ClosureValue"
                             },
                             "props": {
-                              "placeholder": "Method",
-                              "options": [
-                                {
-                                  "value": "ByCount",
-                                  "label": "By Count"
-                                },
-                                {
-                                  "value": "ByWeight",
-                                  "label": "By Weight"
-                                },
-                                {
-                                  "value": "ByVision",
-                                  "label": "By Vision"
-                                }
-                              ],
+                              "text": "",
                               "style": {
                                 "classes": "pf-field-input"
+                              }
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "type": "expr",
+                                  "config": {
+                                    "expression": "if({view.custom.container.ClosureMethod} = \"ByCount\", \"By Count\", if({view.custom.container.ClosureMethod} = \"ByWeight\", \"By Weight\", if({view.custom.container.ClosureMethod} = \"ByVision\", \"By Vision\", if(isNull({view.custom.container.ClosureMethod}), \"-\", {view.custom.container.ClosureMethod}))))"
+                                  }
+                                }
                               }
                             }
                           }
@@ -1074,7 +1058,7 @@
                               "type": "script",
                               "scope": "G",
                               "config": {
-                                "script": "\tc = self.view.custom.container\n\tcellId = self.session.custom.cell.locationId\n\td = self.view.custom.draft\n\tif not c or c.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No open container at this cell.\"}, \"Tray close\")\n\t\treturn\n\tpos = BlueRidge.Common.Util.toIntOrNone(d.get(\"trayPosition\"))\n\tcnt = BlueRidge.Common.Util.toIntOrNone(d.get(\"partsCount\"))\n\tcm = d.get(\"closureMethod\")\n\tif pos is None or cnt is None or not cm:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter tray position, parts count, and closure method.\"}, \"Tray close\")\n\t\treturn\n\tresult = BlueRidge.Lots.Container.trayClose(c.get(\"Id\"), pos, cnt, cm, terminalLocationId=cellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tray closed\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"trayPosition\": \"\", \"partsCount\": \"\", \"closureMethod\": None}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                                "script": "\tc = self.view.custom.container\n\tcellId = self.session.custom.cell.locationId\n\td = self.view.custom.draft\n\tif not c or c.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No open container at this cell.\"}, \"Tray close\")\n\t\treturn\n\tpos = BlueRidge.Common.Util.toIntOrNone(d.get(\"trayPosition\"))\n\tcnt = BlueRidge.Common.Util.toIntOrNone(d.get(\"partsCount\"))\n\tif pos is None or cnt is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter tray position and parts count.\"}, \"Tray close\")\n\t\treturn\n\tresult = BlueRidge.Lots.Container.trayClose(c.get(\"Id\"), pos, cnt, terminalLocationId=cellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tray closed\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"trayPosition\": \"\", \"partsCount\": \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
                               }
                             }
                           }

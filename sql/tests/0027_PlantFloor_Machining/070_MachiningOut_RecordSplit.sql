@@ -100,7 +100,7 @@ DECLARE @ParentStatus NVARCHAR(20) = (SELECT sc.Code FROM Lots.Lot l INNER JOIN 
 EXEC test.Assert_IsEqual @TestName = N'[MachSplit] parent Closed', @Expected = N'Closed', @Actual = @ParentStatus;
 
 -- each child visible in its destination FIFO queue
-CREATE TABLE #Q (Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500), PieceCount INT, LotStatusId BIGINT, LotStatusCode NVARCHAR(20), LastMovementAt DATETIME2(3));
+CREATE TABLE #Q (Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500), PieceCount INT, LotStatusId BIGINT, LotStatusCode NVARCHAR(20), LastMovementAt DATETIME2(3), HasRenameBom BIT);
 INSERT INTO #Q EXEC Lots.Lot_GetWipQueueByLocation @LocationId = @Dest1;
 DECLARE @InQ1 INT = (SELECT COUNT(*) FROM #Q q INNER JOIN #R r ON r.ChildLotId = q.Id WHERE r.DestinationLocationId = @Dest1);
 DROP TABLE #Q;

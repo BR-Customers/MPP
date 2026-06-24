@@ -24,6 +24,7 @@ BEGIN
         cc.TraysPerContainer,
         cc.PartsPerTray,
         cc.IsSerialized,
+        cc.ClosureMethod,
         (cc.TraysPerContainer * cc.PartsPerTray)       AS TargetParts,
         ISNULL((SELECT SUM(t.PartsClosedCount) FROM Lots.ContainerTray t
                 WHERE t.ContainerId = ct.Id AND t.ClosedAt IS NOT NULL), 0) AS AccumulatedParts,

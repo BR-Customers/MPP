@@ -13,6 +13,7 @@ DELETE FROM Quality.HoldEvent WHERE ContainerId IN (SELECT c.Id FROM Lots.Contai
 DELETE sl FROM Lots.ShippingLabel sl INNER JOIN Lots.Container c ON c.Id = sl.ContainerId INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber = N'P7-SHIP-TEST';
 DELETE FROM Lots.AimShipperIdPool WHERE PartNumber = N'P7-SHIP-TEST';
 DELETE tr FROM Lots.ContainerTray tr INNER JOIN Lots.Container c ON c.Id = tr.ContainerId INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber = N'P7-SHIP-TEST';
+DELETE FROM Lots.Lot WHERE LotName = N'STG-030';
 DELETE FROM Lots.Container WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P7-SHIP-TEST');
 GO
 
@@ -24,6 +25,11 @@ IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @Item AND Depr
     INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Item, 1, 1, 0, N'ByCount', @Now);
 DECLARE @Config BIGINT = (SELECT TOP 1 Id FROM Parts.ContainerConfig WHERE ItemId = @Item AND DeprecatedAt IS NULL);
 DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-AOUT');
+-- ContainerTray_Close requires open input parts staged at the cell (the routed material).
+DELETE FROM Lots.Lot WHERE LotName = N'STG-030';
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, CurrentLocationId, CreatedByUserId)
+    VALUES (N'STG-030', @Item, 1, 1, 100000, @Cell, 1);
+
 DECLARE @HoldType BIGINT = (SELECT TOP 1 Id FROM Quality.HoldTypeCode ORDER BY Id);
 
 DECLARE @TP TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
@@ -76,6 +82,7 @@ DELETE FROM Quality.HoldEvent WHERE ContainerId IN (SELECT c.Id FROM Lots.Contai
 DELETE sl FROM Lots.ShippingLabel sl INNER JOIN Lots.Container c ON c.Id = sl.ContainerId INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber = N'P7-SHIP-TEST';
 DELETE FROM Lots.AimShipperIdPool WHERE PartNumber = N'P7-SHIP-TEST';
 DELETE tr FROM Lots.ContainerTray tr INNER JOIN Lots.Container c ON c.Id = tr.ContainerId INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber = N'P7-SHIP-TEST';
+DELETE FROM Lots.Lot WHERE LotName = N'STG-030';
 DELETE FROM Lots.Container WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P7-SHIP-TEST');
 GO
 

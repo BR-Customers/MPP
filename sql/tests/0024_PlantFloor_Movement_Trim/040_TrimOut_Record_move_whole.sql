@@ -68,7 +68,7 @@ DECLARE @ClosCnt NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots
 EXEC test.Assert_IsEqual @TestName = N'[TrimOut] no split (only Depth=0 self-row)', @Expected = N'1', @Actual = @ClosCnt;
 
 -- visible in the destination WIP queue
-CREATE TABLE #Q (Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500), PieceCount INT, LotStatusId BIGINT, LotStatusCode NVARCHAR(20), LastMovementAt DATETIME2(3));
+CREATE TABLE #Q (Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500), PieceCount INT, LotStatusId BIGINT, LotStatusCode NVARCHAR(20), LastMovementAt DATETIME2(3), HasRenameBom BIT);
 INSERT INTO #Q EXEC Lots.Lot_GetWipQueueByLocation @LocationId = @LocB;
 DECLARE @InQ NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM #Q WHERE Id = @L);
 DROP TABLE #Q;

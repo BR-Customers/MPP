@@ -24,7 +24,7 @@ def open(itemId, containerConfigId, cellLocationId, appUserId=None, terminalLoca
     return BlueRidge.Common.Db.execMutation("lots/Container_Open", params)
 
 
-def trayClose(containerId, trayPosition, partsCount, closureMethod, appUserId=None, terminalLocationId=None):
+def trayClose(containerId, trayPosition, partsCount, closureMethod=None, appUserId=None, terminalLocationId=None):
     """Close a tray within a container, recording its parts count + closure method.
        Returns {Status, Message, NewId (ContainerTrayId), ContainerAccumulatedParts}."""
     if appUserId is None:

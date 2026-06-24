@@ -14,6 +14,7 @@ GO
 DELETE sl FROM Lots.ShippingLabel sl INNER JOIN Lots.Container ct ON ct.Id = sl.ContainerId INNER JOIN Parts.Item i ON i.Id = ct.ItemId WHERE i.PartNumber = N'P6-ASM-TEST';
 DELETE FROM Lots.AimShipperIdPool WHERE PartNumber = N'P6-ASM-TEST';
 DELETE tr FROM Lots.ContainerTray tr INNER JOIN Lots.Container ct ON ct.Id = tr.ContainerId INNER JOIN Parts.Item i ON i.Id = ct.ItemId WHERE i.PartNumber = N'P6-ASM-TEST';
+DELETE FROM Lots.Lot WHERE LotName = N'STG-060';
 DELETE FROM Lots.Container WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P6-ASM-TEST');
 GO
 
@@ -41,6 +42,10 @@ DELETE FROM Location.LocationAttribute WHERE LocationId = @Cell AND LocationAttr
 INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue, CreatedAt)
 VALUES (@Cell, @DefId, N'true', @Now);
 
+-- ContainerTray_Close requires open input parts staged at the cell (the routed material).
+DELETE FROM Lots.Lot WHERE LotName = N'STG-060';
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, CurrentLocationId, CreatedByUserId)
+    VALUES (N'STG-060', @Item, 1, 1, 100000, @Cell, 1);
 DECLARE @O TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO @O EXEC Lots.Container_Open @ItemId = @Item, @ContainerConfigId = @Config, @CellLocationId = @Cell, @AppUserId = 1;
 DECLARE @Cid BIGINT = (SELECT NewId FROM @O);
@@ -83,6 +88,7 @@ DELETE la FROM Location.LocationAttribute la INNER JOIN Location.LocationAttribu
 DELETE sl FROM Lots.ShippingLabel sl INNER JOIN Lots.Container ct ON ct.Id = sl.ContainerId INNER JOIN Parts.Item i ON i.Id = ct.ItemId WHERE i.PartNumber = N'P6-ASM-TEST';
 DELETE FROM Lots.AimShipperIdPool WHERE PartNumber = N'P6-ASM-TEST';
 DELETE tr FROM Lots.ContainerTray tr INNER JOIN Lots.Container ct ON ct.Id = tr.ContainerId INNER JOIN Parts.Item i ON i.Id = ct.ItemId WHERE i.PartNumber = N'P6-ASM-TEST';
+DELETE FROM Lots.Lot WHERE LotName = N'STG-060';
 DELETE FROM Lots.Container WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P6-ASM-TEST');
 GO
 

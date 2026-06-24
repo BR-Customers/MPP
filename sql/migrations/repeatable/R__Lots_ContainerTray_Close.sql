@@ -3,8 +3,8 @@
 -- Author:      Blue Ridge Automation
 -- Version:     1.0
 -- Description: Closes a tray within an open Container (Arc 2 Phase 6; FDS-06-014).
---              Validates @PartsCount against the ContainerConfig.PartsPerTray, captures
---              the ClosureMethod (ByCount/ByWeight/ByVision), and returns the container's
+--              Validates @PartsCount against the ContainerConfig.PartsPerTray, derives the
+--              ClosureMethod from the same ContainerConfig (NOT operator-entered) and returns the container's
 --              accumulated parts across closed trays. One tray per (Container,TrayPosition)
 --              -- a re-close rejects. Audits 'TrayClosed'. No OUTPUT params (FDS-11-011);
 --              single terminal SELECT @Status,@Message,@NewId,@ContainerAccumulatedParts.
@@ -14,7 +14,7 @@ CREATE OR ALTER PROCEDURE Lots.ContainerTray_Close
     @ContainerId        BIGINT,
     @TrayPosition       INT,
     @PartsCount         INT,
-    @ClosureMethod      NVARCHAR(20),
+    @ClosureMethod      NVARCHAR(20) = NULL,
     @AppUserId          BIGINT = NULL,
     @TerminalLocationId BIGINT = NULL
 AS
@@ -33,21 +33,17 @@ BEGIN
 
     BEGIN TRY
         -- ---- Tier 1 ----
-        IF @ContainerId IS NULL OR @TrayPosition IS NULL OR @PartsCount IS NULL OR @ClosureMethod IS NULL
+        IF @ContainerId IS NULL OR @TrayPosition IS NULL OR @PartsCount IS NULL
         BEGIN
-            SET @Message = N'Required parameter missing (ContainerId, TrayPosition, PartsCount, ClosureMethod).';
-            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @Accum AS ContainerAccumulatedParts;
-            RETURN;
-        END
-        IF @ClosureMethod NOT IN (N'ByCount', N'ByWeight', N'ByVision')
-        BEGIN
-            SET @Message = N'ClosureMethod must be ByCount, ByWeight, or ByVision.';
+            SET @Message = N'Required parameter missing (ContainerId, TrayPosition, PartsCount).';
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @Accum AS ContainerAccumulatedParts;
             RETURN;
         END
 
-        -- ---- Tier 2: container open + config ----
-        SELECT @StatusCode = ct.ContainerStatusCodeId, @PartsPerTray = cc.PartsPerTray
+        -- ---- Tier 2: container open + config (ClosureMethod is determined by the part's
+        --      ContainerConfig -- the operator does not select it) ----
+        SELECT @StatusCode = ct.ContainerStatusCodeId, @PartsPerTray = cc.PartsPerTray,
+               @ClosureMethod = COALESCE(cc.ClosureMethod, @ClosureMethod, N'ByCount')
         FROM Lots.Container ct
         INNER JOIN Parts.ContainerConfig cc ON cc.Id = ct.ContainerConfigId
         WHERE ct.Id = @ContainerId;
@@ -61,6 +57,13 @@ BEGIN
         IF @StatusCode <> 1  -- 1 = Open
         BEGIN
             SET @Message = N'Container is not open.';
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @Accum AS ContainerAccumulatedParts;
+            RETURN;
+        END
+
+        IF @ClosureMethod NOT IN (N'ByCount', N'ByWeight', N'ByVision')
+        BEGIN
+            SET @Message = N'Configured ClosureMethod (' + ISNULL(@ClosureMethod, N'(none)') + N') is invalid for this container.';
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @Accum AS ContainerAccumulatedParts;
             RETURN;
         END

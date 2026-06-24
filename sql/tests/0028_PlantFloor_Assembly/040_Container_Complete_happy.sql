@@ -12,6 +12,7 @@ GO
 DELETE sl FROM Lots.ShippingLabel sl INNER JOIN Lots.Container ct ON ct.Id = sl.ContainerId INNER JOIN Parts.Item i ON i.Id = ct.ItemId WHERE i.PartNumber = N'P6-ASM-TEST';
 DELETE FROM Lots.AimShipperIdPool WHERE PartNumber = N'P6-ASM-TEST';
 DELETE tr FROM Lots.ContainerTray tr INNER JOIN Lots.Container ct ON ct.Id = tr.ContainerId INNER JOIN Parts.Item i ON i.Id = ct.ItemId WHERE i.PartNumber = N'P6-ASM-TEST';
+DELETE FROM Lots.Lot WHERE LotName = N'STG-040';
 DELETE FROM Lots.Container WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P6-ASM-TEST');
 GO
 
@@ -23,6 +24,11 @@ IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @Item AND Depr
     INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Item, 4, 25, 1, N'ByVision', @Now);
 DECLARE @Config BIGINT = (SELECT TOP 1 Id FROM Parts.ContainerConfig WHERE ItemId = @Item AND DeprecatedAt IS NULL);
 DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-AOUT');
+-- ContainerTray_Close now requires open input parts staged at the cell to cover the trays
+-- (the routed machined material). Stage a cleanable open LOT at the cell (no child rows).
+DELETE FROM Lots.Lot WHERE LotName = N'STG-040';
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, CurrentLocationId, CreatedByUserId)
+    VALUES (N'STG-040', @Item, 1, 1, 100000, @Cell, 1);
 DECLARE @Tpc INT = (SELECT TraysPerContainer FROM Parts.ContainerConfig WHERE Id = @Config);
 DECLARE @Ppt INT = (SELECT PartsPerTray FROM Parts.ContainerConfig WHERE Id = @Config);
 
@@ -72,6 +78,7 @@ GO
 DELETE sl FROM Lots.ShippingLabel sl INNER JOIN Lots.Container ct ON ct.Id = sl.ContainerId INNER JOIN Parts.Item i ON i.Id = ct.ItemId WHERE i.PartNumber = N'P6-ASM-TEST';
 DELETE FROM Lots.AimShipperIdPool WHERE PartNumber = N'P6-ASM-TEST';
 DELETE tr FROM Lots.ContainerTray tr INNER JOIN Lots.Container ct ON ct.Id = tr.ContainerId INNER JOIN Parts.Item i ON i.Id = ct.ItemId WHERE i.PartNumber = N'P6-ASM-TEST';
+DELETE FROM Lots.Lot WHERE LotName = N'STG-040';
 DELETE FROM Lots.Container WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P6-ASM-TEST');
 GO
 
