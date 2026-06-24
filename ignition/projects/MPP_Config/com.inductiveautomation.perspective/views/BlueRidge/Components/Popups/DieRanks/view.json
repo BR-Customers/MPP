@@ -57,12 +57,12 @@
         "RankBId": 2
       },
       {
-        "CanMix": false,
+        "CanMix": true,
         "RankAId": 4,
         "RankBId": 2
       },
       {
-        "CanMix": false,
+        "CanMix": true,
         "RankAId": 5,
         "RankBId": 2
       },
@@ -72,7 +72,7 @@
         "RankBId": 2
       },
       {
-        "CanMix": false,
+        "CanMix": true,
         "RankAId": 10,
         "RankBId": 2
       },
@@ -97,7 +97,7 @@
         "RankBId": 3
       },
       {
-        "CanMix": false,
+        "CanMix": true,
         "RankAId": 5,
         "RankBId": 3
       },
@@ -245,7 +245,7 @@
         },
         "transforms": [
           {
-            "code": "\tinputData \u003d list(value)\n\tsaveData \u003d []\n\t\n\tfor row in inputData:\n\t\tfor cell in row.get(\"row\").get(\"cells\"):\n\t\t\tcurrentCell \u003d cell.get(\"cell\")\n\t\t\t\n\t\t\trankACode \u003d currentCell.get(\"toCode\")\n\t\t\trankA \u003d BlueRidge.Parts.DieRank.getByCode(rankACode)\n\t\t\trankBCode \u003d currentCell.get(\"fromCode\")\n\t\t\trankB \u003d BlueRidge.Parts.DieRank.getByCode(rankBCode)\n\t\t\tif not currentCell.get(\"mirror\"):\n\t\t\t\tsaveData.append({\n\t\t\t\t\t\"RankAId\": rankA.get(\"Id\"),\n\t\t\t\t\t\"RankBId\": rankB.get(\"Id\"),\n\t\t\t\t\t\"CanMix\": currentCell.get(\"compatible\")\n\t\t\t\t})\n\t\t\n\treturn saveData",
+            "code": "\tinputData \u003d list(value)\n\tsaveData \u003d []\n\t\n\tfor row in inputData:\n\t\tfor cell in row.get(\"row\").get(\"cells\"):\n\t\t\tcurrentCell \u003d cell.get(\"cell\")\n\t\t\t\n\t\t\tif not currentCell.get(\"mirror\"):\n\t\t\t\trankACode \u003d currentCell.get(\"toCode\")\n\t\t\t\trankA \u003d BlueRidge.Parts.DieRank.getByCode(rankACode)\n\t\t\t\trankBCode \u003d currentCell.get(\"fromCode\")\n\t\t\t\trankB \u003d BlueRidge.Parts.DieRank.getByCode(rankBCode)\n\t\t\t\tsaveData.append({\n\t\t\t\t\t\"RankAId\": rankA.get(\"Id\"),\n\t\t\t\t\t\"RankBId\": rankB.get(\"Id\"),\n\t\t\t\t\t\"CanMix\": currentCell.get(\"compatible\")\n\t\t\t\t})\n\t\t\n\treturn saveData",
             "type": "script"
           }
         ],
