@@ -44,7 +44,7 @@ The same correction applies to the existing 5G0 family: machining-rename BOM sho
 ### 4.1 Assembly IN — new view + proc
 - **View** `BlueRidge/Views/ShopFloor/AssemblyIn` (mirror `MachiningIn`): FIFO queue of open component LOTs at the Assembly Cell, ordered by `LotMovement.MovedAt`. Dedicated terminal (cell from `session.custom.cell`), operator-initials gate.
 - **Scan-in proc** `Workorder.Assembly_ScanIn(@LotId | @LotName, @CellLocationId, @AppUserId)`: writes a `LotMovement` bringing the (machined) component LOT into this Assembly Cell's queue — **no rename**, the machined LOT keeps its identity. Validates the LOT's item is a BOM component of an assembly item produced at this cell (reject otherwise — D-Q3 confirms validate).
-- **Auto-coupled lines:** queue is populated by `MachiningOut_AutoComplete` (PLC); no operator scan. Coupling = the Machining Cell's `CoupledDownstreamCellLocationId` attribute → this Assembly Cell. (Attribute def + `MachiningOut_AutoComplete` are PLC-gated; we seed the attribute so the model is exercisable by a manual move, but the PLC trigger itself is out of dev scope.)
+- **Auto-coupled lines: DEFERRED (D2)** — pending Jacques on how coupled lines work. This spec builds only the operator scan-in path. (`MachiningOut_AutoComplete` already exists; wiring it to populate the Assembly IN queue, plus the `CoupledDownstreamCellLocationId` attribute, is a later increment — do not seed or wire it here.)
 
 ### 4.2 Per-tray consumption — extend `ContainerTray_Close`
 After the existing open/full/position validations, **inside the transaction**:
@@ -59,7 +59,7 @@ No output LOT. No `LotGenealogy` LOT-row (the produced side is a container, not 
 `ShippingLabel → Container → ConsumptionEvent.ProducedContainerId (one set per tray) → SourceLotId (machined 6B2-MACH) → [machining Consumption edge] → cast LOT (6B2-C) → Die Cast ProductionEvent`. Forward + backward both satisfied (FDS-05-017): containers, serials, and child LOTs are all trace entry points.
 
 ### 4.4 Data / seed
-- **Migration `0030`:** seed the `CoupledDownstreamCellLocationId` Cell-attribute definition (currently missing — T019 was never run); no table change otherwise (the consumption columns already exist).
+- **No schema migration needed** — the consumption columns (`ProducedContainerId`, `TrayId`) already exist, no output-LOT column is required, and the coupled-path attribute is deferred (D2). All work is repeatable procs + seed + views + tests.
 - Fix machining-rename BOMs to `machined ← cast` (`5G0-MACH ← 5G0-C`, `6B2-MACH ← 6B2-C`).
 - Create the **6B2 family**: items `6B2-C`, `6B2-MACH`, `6B2` (+ component(s)); published BOMs (rename + assembly); a **non-serialized** `ContainerConfig` for `6B2`; eligibility.
 - Smoke seed: stage machined component LOTs (`6B2-MACH` + component) at the 6B2 Assembly Cell; an open `6B2` container; a couple of component LOTs in the Assembly IN queue (one pre-moved = "auto-coupled", one to scan in).
@@ -70,10 +70,10 @@ No output LOT. No `LotGenealogy` LOT-row (the produced side is a container, not 
 - **Backward trace:** from a completed 6B2 container, the genealogy/consumption walk reaches the machined + cast ancestors.
 - **Update** existing assembly tray-close/complete tests (`0028/020,040,050,060`) for the BOM-component model (their container item now needs a BOM + staged component LOTs).
 
-## 5. Open decisions (confirm on review)
-- **D1 — 6B2 assembly BOM.** I'll define a representative BOM (`6B2 ← 6B2-MACH ×1 + one fastener component ×N`). Give me the real components/quantities if you have them.
-- **D2 — 6B2 Assembly Cell + coupling.** Which Location is the 6B2 Assembly Cell, and is its feeding Machining Cell coupled (auto) or uncoupled (scan-in) for the demo? Default: seed an uncoupled cell so the scan-in path is testable, plus a coupling attribute on a second cell to show the auto path.
-- **D3 — coarse gate.** Remove the recently-added item-agnostic tray-close availability gate (now superseded by the precise per-component check), or keep it as a cheap pre-check? Rec: remove, to avoid two overlapping checks.
+## 5. Decisions (resolved 2026-06-24)
+- **D1 — 6B2 assembly BOM.** RESOLVED: define a representative BOM now — `6B2 ← 6B2-MACH ×1 + 6B2-PIN ×2` (a mounting fastener). Remap to real MPP components later.
+- **D2 — 6B2 cell + coupling.** RESOLVED: build the **uncoupled** (operator scan-in) path only. The coupled / PLC auto-move path is **deferred pending Jacques** — do NOT seed the coupling attribute or wire `MachiningOut_AutoComplete` in this work.
+- **D3 — coarse gate.** RESOLVED: **remove** the recently-added item-agnostic tray-close availability gate; the precise per-BOM-component check in §4.2 supersedes it.
 
 ## 6. Risks
 - `ContainerTray_Close` grows materially; the per-component FIFO consume + reject-rollback (inlined) is the main care-point. Validations before `BEGIN TRANSACTION`; `ROLLBACK` only in `CATCH`.
