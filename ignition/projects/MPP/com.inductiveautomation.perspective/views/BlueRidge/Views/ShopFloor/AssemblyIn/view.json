@@ -384,7 +384,7 @@
               "grow": 1
             },
             "props": {
-              "path": "BlueRidge/Components/PlantFloor/Machining/QueueRow",
+              "path": "BlueRidge/Components/PlantFloor/Assembly/ScanQueueRow",
               "direction": "column",
               "useDefaultViewHeight": true,
               "elementPosition": {

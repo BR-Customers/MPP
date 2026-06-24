@@ -9,7 +9,8 @@
       "ClosedTrays": 0,
       "TraysPerContainer": 0,
       "PartsPerTray": 0,
-      "IsSerialized": false
+      "IsSerialized": false,
+      "ClosureMethod": ""
     },
     "draft": {
       "trayPosition": "",
@@ -26,7 +27,7 @@
         },
         "transforms": [
           {
-            "code": "\trows = value or []\n\tr = rows[0] if rows else {}\n\treturn {\"Id\": r.get(\"Id\"), \"ItemPartNumber\": r.get(\"ItemPartNumber\") or \"\", \"ItemDescription\": r.get(\"ItemDescription\") or \"\", \"AccumulatedParts\": r.get(\"AccumulatedParts\") or 0, \"TargetParts\": r.get(\"TargetParts\") or 0, \"ClosedTrays\": r.get(\"ClosedTrays\") or 0, \"TraysPerContainer\": r.get(\"TraysPerContainer\") or 0, \"PartsPerTray\": r.get(\"PartsPerTray\") or 0, \"IsSerialized\": r.get(\"IsSerialized\") or False}",
+            "code": "\trows = value or []\n\tr = rows[0] if rows else {}\n\treturn {\"Id\": r.get(\"Id\"), \"ItemPartNumber\": r.get(\"ItemPartNumber\") or \"\", \"ItemDescription\": r.get(\"ItemDescription\") or \"\", \"AccumulatedParts\": r.get(\"AccumulatedParts\") or 0, \"TargetParts\": r.get(\"TargetParts\") or 0, \"ClosedTrays\": r.get(\"ClosedTrays\") or 0, \"TraysPerContainer\": r.get(\"TraysPerContainer\") or 0, \"PartsPerTray\": r.get(\"PartsPerTray\") or 0, \"IsSerialized\": r.get(\"IsSerialized\") or False, \"ClosureMethod\": r.get(\"ClosureMethod\") or \"\"}",
             "type": "script"
           }
         ],
