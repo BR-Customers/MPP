@@ -11,6 +11,7 @@ GO
 
 DELETE sl FROM Lots.ShippingLabel sl INNER JOIN Lots.Container c ON c.Id = sl.ContainerId INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber = N'P7-SHIP-TEST';
 DELETE FROM Lots.AimShipperIdPool WHERE PartNumber = N'P7-SHIP-TEST';
+DELETE FROM Workorder.ConsumptionEvent WHERE ProducedItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P7-SHIP-TEST');
 DELETE tr FROM Lots.ContainerTray tr INNER JOIN Lots.Container c ON c.Id = tr.ContainerId INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber = N'P7-SHIP-TEST';
 DELETE FROM Lots.Lot WHERE LotName = N'STG-080';
 DELETE FROM Lots.Container WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P7-SHIP-TEST');
@@ -23,11 +24,19 @@ DECLARE @Item BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P7-SHIP-T
 IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId = @Item AND DeprecatedAt IS NULL)
     INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, CreatedAt) VALUES (@Item, 1, 1, 0, N'ByCount', @Now);
 DECLARE @Config BIGINT = (SELECT TOP 1 Id FROM Parts.ContainerConfig WHERE ItemId = @Item AND DeprecatedAt IS NULL);
+-- ContainerTray_Close consumes BOM components; give the test container a 1-line BOM + a component.
+IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'P7-SHIP-CHILD') INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, CreatedAt, CreatedByUserId) VALUES (3, N'P7-SHIP-CHILD', N'Phase7 shipping test component', 1, @Now, 1);
+DECLARE @Child BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P7-SHIP-CHILD');
+IF NOT EXISTS (SELECT 1 FROM Parts.Bom WHERE ParentItemId = @Item AND PublishedAt IS NOT NULL AND DeprecatedAt IS NULL)
+BEGIN
+    INSERT INTO Parts.Bom (ParentItemId, VersionNumber, EffectiveFrom, PublishedAt, CreatedByUserId, CreatedAt) VALUES (@Item, 1, @Now, @Now, 1, @Now);
+    INSERT INTO Parts.BomLine (BomId, ChildItemId, QtyPer, UomId, SortOrder) VALUES (SCOPE_IDENTITY(), @Child, 1, 1, 1);
+END
 DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-AOUT');
 -- ContainerTray_Close requires open input parts staged at the cell (the routed material).
 DELETE FROM Lots.Lot WHERE LotName = N'STG-080';
 INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, CurrentLocationId, CreatedByUserId)
-    VALUES (N'STG-080', @Item, 1, 1, 100000, @Cell, 1);
+    VALUES (N'STG-080', @Child, 1, 1, 100000, @Cell, 1);
 
 
 DECLARE @TP TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
@@ -70,6 +79,7 @@ GO
 
 DELETE sl FROM Lots.ShippingLabel sl INNER JOIN Lots.Container c ON c.Id = sl.ContainerId INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber = N'P7-SHIP-TEST';
 DELETE FROM Lots.AimShipperIdPool WHERE PartNumber = N'P7-SHIP-TEST';
+DELETE FROM Workorder.ConsumptionEvent WHERE ProducedItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P7-SHIP-TEST');
 DELETE tr FROM Lots.ContainerTray tr INNER JOIN Lots.Container c ON c.Id = tr.ContainerId INNER JOIN Parts.Item i ON i.Id = c.ItemId WHERE i.PartNumber = N'P7-SHIP-TEST';
 DELETE FROM Lots.Lot WHERE LotName = N'STG-080';
 DELETE FROM Lots.Container WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P7-SHIP-TEST');
