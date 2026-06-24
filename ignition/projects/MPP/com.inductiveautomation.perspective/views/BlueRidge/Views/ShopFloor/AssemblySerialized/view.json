@@ -11,7 +11,8 @@
       "PartsPerTray": 0,
       "IsSerialized": false
     },
-    "refreshToken": 0
+    "refreshToken": 0,
+    "queueByPartText": ""
   },
   "params": {},
   "propConfig": {
@@ -27,6 +28,20 @@
           }
         ],
         "type": "expr"
+      }
+    },
+    "custom.queueByPartText": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, false, {view.custom.refreshToken}), \"\")"
+        },
+        "transforms": [
+          {
+            "type": "script",
+            "code": "\trows = value or []\n\tif not rows:\n\t\treturn \"(none at this cell)\"\n\ttotals = {}\n\torder = []\n\tfor r in rows:\n\t\tk = r.get(\"ItemPartNumber\") or \"?\"\n\t\tif k not in totals:\n\t\t\ttotals[k] = 0\n\t\t\torder.append(k)\n\t\ttotals[k] = totals[k] + (r.get(\"PieceCount\") or 0)\n\treturn \"   |   \".join([\"%s: %d pcs\" % (k, totals[k]) for k in order])"
+          }
+        ]
       }
     }
   },
@@ -334,6 +349,64 @@
                   "text": "ByVision - camera scans each tray as a whole - 1 validation event per tray",
                   "style": {
                     "classes": "pf-kpi-sub"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "ComponentsPanel"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-panel"
+              },
+              "alignItems": "center",
+              "gap": "10px"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "ComponentsLabel"
+                },
+                "props": {
+                  "text": "Components at this cell",
+                  "style": {
+                    "classes": "pf-field-label"
+                  }
+                },
+                "position": {
+                  "shrink": 0
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "ComponentsValue"
+                },
+                "props": {
+                  "text": "",
+                  "style": {
+                    "classes": "pf-field-input-mono"
+                  }
+                },
+                "position": {
+                  "grow": 1
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.queueByPartText"
+                      }
+                    }
                   }
                 }
               }
