@@ -2,7 +2,8 @@
   "custom": {
     "queue": [],
     "refreshToken": 0,
-    "scanInput": ""
+    "scanInput": "",
+    "queueByPartText": ""
   },
   "params": {},
   "propConfig": {
@@ -16,6 +17,20 @@
           {
             "type": "script",
             "code": "\treturn [{\"sourceLotId\": r.get(\"Id\"), \"lotName\": r.get(\"LotName\") or \"\", \"sourceItem\": r.get(\"ItemPartNumber\") or \"\", \"pieceCount\": r.get(\"PieceCount\") or 0, \"arrival\": str(r.get(\"LastMovementAt\") or \"\"), \"position\": i + 1, \"lotStatusCode\": r.get(\"LotStatusCode\") or \"\"} for i, r in enumerate(value or [])]"
+          }
+        ]
+      }
+    },
+    "custom.queueByPartText": {
+      "binding": {
+        "type": "property",
+        "config": {
+          "path": "view.custom.queue"
+        },
+        "transforms": [
+          {
+            "type": "script",
+            "code": "\ttotals = {}\n\torder = []\n\tfor r in (value or []):\n\t\tk = r.get(\"sourceItem\") or \"?\"\n\t\tif k not in totals:\n\t\t\ttotals[k] = 0\n\t\t\torder.append(k)\n\t\ttotals[k] = totals[k] + (r.get(\"pieceCount\") or 0)\n\treturn \"   |   \".join([\"%s: %d pcs\" % (k, totals[k]) for k in order])"
           }
         ]
       }
@@ -344,6 +359,39 @@
                 }
               }
             ]
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "PartTotals"
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "classes": "pf-kpi-sub"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.queueByPartText"
+                  }
+                }
+              },
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "len({view.custom.queue}) > 0"
+                  }
+                }
+              }
+            }
           },
           {
             "type": "ia.display.label",
