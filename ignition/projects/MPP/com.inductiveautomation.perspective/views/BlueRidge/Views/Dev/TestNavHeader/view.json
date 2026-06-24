@@ -345,6 +345,31 @@
       {
         "type": "ia.input.button",
         "meta": {
+          "name": "BtnAsmIn"
+        },
+        "props": {
+          "text": "Asm IN",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "12px",
+            "padding": "4px 10px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tself.session.custom.cell = {\"locationId\": 47, \"code\": \"MA1-COMPBR-AOUT\", \"name\": \"MA1-COMPBR-AOUT (Assembly IN)\"}\n\tsystem.perspective.navigate(\"/shop-floor/assembly-in\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
           "name": "btn_10"
         },
         "props": {

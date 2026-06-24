@@ -44,6 +44,10 @@
       "title": "Assembly (Non-Serialized)",
       "viewPath": "BlueRidge/Views/ShopFloor/AssemblyNonSerialized"
     },
+    "/shop-floor/assembly-in": {
+      "title": "Assembly IN",
+      "viewPath": "BlueRidge/Views/ShopFloor/AssemblyIn"
+    },
     "/shop-floor/hold-management": {
       "title": "Hold Management",
       "viewPath": "BlueRidge/Views/ShopFloor/HoldManagement"
