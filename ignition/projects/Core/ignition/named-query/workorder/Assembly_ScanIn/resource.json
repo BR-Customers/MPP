@@ -20,14 +20,41 @@
     "fallbackEnabled": false,
     "lastModificationSignature": "",
     "permissions": [
-      { "zone": "", "role": "" }
+      {
+        "zone": "",
+        "role": ""
+      }
     ],
-    "lastModification": { "actor": "claude", "timestamp": "2026-06-24T12:00:00Z" },
+    "lastModification": {
+      "actor": "claude",
+      "timestamp": "2026-06-24T12:00:00Z"
+    },
     "parameters": [
-      { "type": "Parameter", "identifier": "lotId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "cellLocationId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "appUserId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "terminalLocationId", "sqlType": 3 }
+      {
+        "type": "Parameter",
+        "identifier": "lotId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "lotName",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "cellLocationId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "appUserId",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "terminalLocationId",
+        "sqlType": 3
+      }
     ]
   }
 }

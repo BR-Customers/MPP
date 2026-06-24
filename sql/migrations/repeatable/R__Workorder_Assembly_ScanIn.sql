@@ -14,8 +14,9 @@
 -- ============================================================
 
 CREATE OR ALTER PROCEDURE Workorder.Assembly_ScanIn
-    @LotId              BIGINT,
-    @CellLocationId     BIGINT,
+    @LotId              BIGINT = NULL,
+    @LotName            NVARCHAR(50) = NULL,
+    @CellLocationId     BIGINT = NULL,
     @AppUserId          BIGINT = NULL,
     @TerminalLocationId BIGINT = NULL
 AS
@@ -27,16 +28,19 @@ BEGIN
     DECLARE @Message NVARCHAR(500) = N'Unknown error';
     DECLARE @NewId   BIGINT        = NULL;
 
-    DECLARE @FromLocationId BIGINT, @StatusCode NVARCHAR(20), @Blocks BIT, @ItemId BIGINT, @LotName NVARCHAR(50);
+    DECLARE @FromLocationId BIGINT, @StatusCode NVARCHAR(20), @Blocks BIT, @ItemId BIGINT;
 
     BEGIN TRY
         -- ---- Tier 1 ----
-        IF @LotId IS NULL OR @CellLocationId IS NULL OR @AppUserId IS NULL
+        IF (@LotId IS NULL AND @LotName IS NULL) OR @CellLocationId IS NULL OR @AppUserId IS NULL
         BEGIN
-            SET @Message = N'Required parameter missing (LotId, CellLocationId, AppUserId).';
+            SET @Message = N'Required parameter missing (LotId or LotName, CellLocationId, AppUserId).';
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
             RETURN;
         END
+        -- resolve a scanned LTT (LotName) to its LotId when only the name was given
+        IF @LotId IS NULL
+            SET @LotId = (SELECT Id FROM Lots.Lot WHERE LotName = @LotName);
 
         -- ---- Tier 2: LOT exists + not blocked ----
         SELECT @FromLocationId = l.CurrentLocationId, @StatusCode = sc.Code, @Blocks = sc.BlocksProduction,

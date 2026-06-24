@@ -10,16 +10,17 @@ import BlueRidge.Common.Db
 import BlueRidge.Common.Util
 
 
-def scanIn(lotId, cellLocationId, appUserId=None, terminalLocationId=None):
+def scanIn(cellLocationId, lotName=None, lotId=None, appUserId=None, terminalLocationId=None):
     """Move a machined component LOT into an Assembly Cell's queue (no rename).
-       Validates the LOT's Item is a BOM component of an assembly produced at the
-       cell; a non-component LOT rejects. Returns {Status, Message, NewId
-       (LotMovementId)}."""
+       The operator typically scans an LTT barcode -> pass it as lotName; lotId is
+       accepted too. Validates the LOT's Item is a BOM component of an assembly
+       produced at the cell; a non-component LOT rejects. Returns {Status, Message,
+       NewId (LotMovementId)}."""
     if appUserId is None:
         appUserId = BlueRidge.Common.Util._currentAppUserId()
     BlueRidge.Common.Util.log(
-        "scanIn lotId=%s cellLocationId=%s appUserId=%s"
-        % (lotId, cellLocationId, appUserId))
-    params = {"lotId": lotId, "cellLocationId": cellLocationId,
+        "scanIn lotName=%s lotId=%s cellLocationId=%s appUserId=%s"
+        % (lotName, lotId, cellLocationId, appUserId))
+    params = {"lotId": lotId, "lotName": lotName, "cellLocationId": cellLocationId,
               "appUserId": appUserId, "terminalLocationId": terminalLocationId}
     return BlueRidge.Common.Db.execMutation("workorder/Assembly_ScanIn", params)

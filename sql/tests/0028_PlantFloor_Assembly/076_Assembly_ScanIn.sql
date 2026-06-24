@@ -12,9 +12,9 @@ SET XACT_ABORT ON;
 EXEC test.BeginTestFile @FileName = N'0028_PlantFloor_Assembly/076_Assembly_ScanIn.sql';
 GO
 
-DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName IN (N'SCAN-076A', N'SCAN-076B'));
-DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName IN (N'SCAN-076A', N'SCAN-076B'));
-DELETE FROM Lots.Lot WHERE LotName IN (N'SCAN-076A', N'SCAN-076B');
+DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName IN (N'SCAN-076A', N'SCAN-076B', N'SCAN-076C'));
+DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName IN (N'SCAN-076A', N'SCAN-076B', N'SCAN-076C'));
+DELETE FROM Lots.Lot WHERE LotName IN (N'SCAN-076A', N'SCAN-076B', N'SCAN-076C');
 GO
 
 DECLARE @Now DATETIME2(3) = SYSUTCDATETIME();
@@ -40,6 +40,7 @@ IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE ItemId = @Out AND Location
 
 INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, CurrentLocationId, CreatedByUserId) VALUES (N'SCAN-076A', @Child, 1, 1, 48, @SrcCell, 1);
 INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, CurrentLocationId, CreatedByUserId) VALUES (N'SCAN-076B', @Other, 1, 1, 48, @SrcCell, 1);
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, CurrentLocationId, CreatedByUserId) VALUES (N'SCAN-076C', @Child, 1, 1, 24, @SrcCell, 1);
 DECLARE @ChildLot BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'SCAN-076A');
 DECLARE @OtherLot BIGINT = (SELECT Id FROM Lots.Lot WHERE LotName = N'SCAN-076B');
 
@@ -62,11 +63,19 @@ DECLARE @S2 NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @R);
 EXEC test.Assert_IsEqual @TestName = N'[ScanIn] non-component LOT rejects (Status 0)', @Expected = N'0', @Actual = @S2;
 DECLARE @NotMoved NVARCHAR(10) = (SELECT CASE WHEN CurrentLocationId = @SrcCell THEN N'1' ELSE N'0' END FROM Lots.Lot WHERE Id = @OtherLot);
 EXEC test.Assert_IsEqual @TestName = N'[ScanIn] rejected LOT not moved', @Expected = N'1', @Actual = @NotMoved;
+
+-- scan a component LOT by its LTT (LotName) instead of id -> resolves + moves in
+DECLARE @R3 TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @R3 EXEC Workorder.Assembly_ScanIn @LotName = N'SCAN-076C', @CellLocationId = @Cell, @AppUserId = 1;
+DECLARE @S3 NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @R3);
+EXEC test.Assert_IsEqual @TestName = N'[ScanIn] scan by LotName (LTT) resolves + moves in (Status 1)', @Expected = N'1', @Actual = @S3;
+DECLARE @CAtCell NVARCHAR(10) = (SELECT CASE WHEN CurrentLocationId = @Cell THEN N'1' ELSE N'0' END FROM Lots.Lot WHERE LotName = N'SCAN-076C');
+EXEC test.Assert_IsEqual @TestName = N'[ScanIn] LotName-scanned LOT now at the cell', @Expected = N'1', @Actual = @CAtCell;
 GO
 
-DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName IN (N'SCAN-076A', N'SCAN-076B'));
-DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName IN (N'SCAN-076A', N'SCAN-076B'));
-DELETE FROM Lots.Lot WHERE LotName IN (N'SCAN-076A', N'SCAN-076B');
+DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName IN (N'SCAN-076A', N'SCAN-076B', N'SCAN-076C'));
+DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName IN (N'SCAN-076A', N'SCAN-076B', N'SCAN-076C'));
+DELETE FROM Lots.Lot WHERE LotName IN (N'SCAN-076A', N'SCAN-076B', N'SCAN-076C');
 GO
 
 EXEC test.EndTestFile;
