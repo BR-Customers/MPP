@@ -81,6 +81,20 @@ BEGIN
             RETURN;
         END
 
+        -- ---- enough input parts staged at this cell to fill the tray (cumulative across closed trays) ----
+        DECLARE @CellAvail INT = ISNULL((
+            SELECT SUM(l.PieceCount) FROM Lots.Lot l
+            INNER JOIN Lots.LotStatusCode lsc ON lsc.Id = l.LotStatusId
+            WHERE l.CurrentLocationId = (SELECT CurrentLocationId FROM Lots.Container WHERE Id = @ContainerId)
+              AND lsc.Code <> N'Closed'), 0);
+        DECLARE @ClosedParts INT = ISNULL((SELECT SUM(PartsClosedCount) FROM Lots.ContainerTray WHERE ContainerId = @ContainerId AND ClosedAt IS NOT NULL), 0);
+        IF @CellAvail < @ClosedParts + @PartsCount
+        BEGIN
+            SET @Message = N'Not enough parts at this cell to fill the tray (' + CAST(@CellAvail AS NVARCHAR(10)) + N' available; ' + CAST(@ClosedParts AS NVARCHAR(10)) + N' already in trays + ' + CAST(@PartsCount AS NVARCHAR(10)) + N' this tray).';
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @Accum AS ContainerAccumulatedParts;
+            RETURN;
+        END
+
         SET @Activity = Audit.ufn_TruncateActivity(N'Container #' + CAST(@ContainerId AS NVARCHAR(20)) + N' tray ' + CAST(@TrayPosition AS NVARCHAR(10))
             + N' ' + Audit.ufn_MidDot() + N' ' + @ClosureMethod + N' ' + Audit.ufn_MidDot() + N' Closed');
 

@@ -72,6 +72,12 @@ IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE ItemId=@MachItem AND Locat
     INSERT INTO Parts.ItemLocation (ItemId, LocationId, CreatedAt, IsConsumptionPoint) VALUES (@MachItem, 76, SYSUTCDATETIME(), 0);
 IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE ItemId=@MachItem AND LocationId=78 AND DeprecatedAt IS NULL)
     INSERT INTO Parts.ItemLocation (ItemId, LocationId, CreatedAt, IsConsumptionPoint) VALUES (@MachItem, 78, SYSUTCDATETIME(), 0);
+IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE ItemId=@MachItem AND LocationId=47 AND DeprecatedAt IS NULL)
+    INSERT INTO Parts.ItemLocation (ItemId, LocationId, CreatedAt, IsConsumptionPoint) VALUES (@MachItem, 47, SYSUTCDATETIME(), 0);
+IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE ItemId=@MachItem AND LocationId=52 AND DeprecatedAt IS NULL)
+    INSERT INTO Parts.ItemLocation (ItemId, LocationId, CreatedAt, IsConsumptionPoint) VALUES (@MachItem, 52, SYSUTCDATETIME(), 0);
+IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE ItemId=@MachItem AND LocationId=80 AND DeprecatedAt IS NULL)
+    INSERT INTO Parts.ItemLocation (ItemId, LocationId, CreatedAt, IsConsumptionPoint) VALUES (@MachItem, 80, SYSUTCDATETIME(), 0);
 IF NOT EXISTS (SELECT 1 FROM Parts.Bom WHERE ParentItemId=@MachItem AND PublishedAt IS NOT NULL AND DeprecatedAt IS NULL)
 BEGIN
     DECLARE @bc TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
@@ -82,6 +88,15 @@ BEGIN
     DECLARE @bp TABLE (Status BIT, Message NVARCHAR(500));
     INSERT INTO @bp EXEC Parts.Bom_Publish @Id=@BomId, @AppUserId=@U;
 END
+
+-- =========================================================================
+-- 0.7 Input material at the assembly/fill cells (simulates machined sub-LOTs routed from
+--     Machining OUT). ContainerTray_Close requires enough open parts at the cell to fill
+--     the trays, so stage it: 47 (non-ser 144), 52 (shipping 100), 80 (serialized 48).
+-- =========================================================================
+DELETE FROM @rLot; INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId=@MachItem,@LotOriginTypeId=1,@CurrentLocationId=47,@PieceCount=144,@AppUserId=@U,@LotName=N'SMK-ASM-47';
+DELETE FROM @rLot; INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId=@MachItem,@LotOriginTypeId=1,@CurrentLocationId=52,@PieceCount=100,@AppUserId=@U,@LotName=N'SMK-ASM-52';
+DELETE FROM @rLot; INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId=@MachItem,@LotOriginTypeId=1,@CurrentLocationId=80,@PieceCount=48,@AppUserId=@U,@LotName=N'SMK-ASM-80';
 
 -- =========================================================================
 -- 1. MACHINING IN queue: 3 whole 5G0 LOTs at MA1-5GOF-MIN (76)
@@ -107,6 +122,8 @@ DELETE FROM @rLot; INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId=@MachItem,@Lot
 -- =========================================================================
 DELETE FROM @rCon; INSERT INTO @rCon EXEC Lots.Container_Open @ItemId=1,@ContainerConfigId=1,@CellLocationId=80,@AppUserId=@U;
 DECLARE @AserCon BIGINT = (SELECT NewId FROM @rCon);
+DECLARE @si INT = 1;
+WHILE @si <= 4 BEGIN DELETE FROM @tc; INSERT INTO @tc EXEC Lots.ContainerTray_Close @ContainerId=@AserCon,@TrayPosition=@si,@PartsCount=12,@ClosureMethod=N'ByVision',@AppUserId=@U; SET @si += 1; END
 
 -- =========================================================================
 -- 4. ASSEMBLY NON-SERIALIZED open container (5G0-C, cfg2) at MA1-COMPBR-AOUT (47)
