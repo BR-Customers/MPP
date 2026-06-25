@@ -50,3 +50,11 @@ def getOpenByContainer(containerId):
     BlueRidge.Common.Util.log("getOpenByContainer containerId=%s" % containerId)
     params = {"containerId": containerId}
     return BlueRidge.Common.Db.execList("quality/Hold_GetOpenByContainer", params)
+
+
+def listOpen(_refreshToken=None):
+    """List all open holds for the Hold Management open-holds panels. Returns
+       list[dict] (empty = none). _refreshToken lets a view binding force a re-read
+       after a place/release (pass it as a runScript arg)."""
+    BlueRidge.Common.Util.log("listOpen")
+    return BlueRidge.Common.Db.execList("quality/Hold_ListOpen")
