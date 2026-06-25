@@ -25,7 +25,14 @@
       "releaseRemarks": ""
     },
     "openHolds": [],
-    "refreshToken": 0
+    "refreshToken": 0,
+    "filterText": "",
+    "filterTypeId": null,
+    "bulkQuery": "",
+    "bulkResults": [],
+    "bulkSelectedLotIds": [],
+    "bulkHoldTypeId": null,
+    "bulkReason": ""
   },
   "params": {},
   "propConfig": {
@@ -33,7 +40,7 @@
       "binding": {
         "type": "expr",
         "config": {
-          "expression": "if({view.custom.refreshToken} >= 0, runScript(\"BlueRidge.Quality.Hold.listOpen\", 0, {view.custom.refreshToken}), \"\")"
+          "expression": "if({view.custom.refreshToken} >= 0, runScript(\"BlueRidge.Quality.Hold.listOpen\", 0, {view.custom.filterText}, {view.custom.filterTypeId}, {view.custom.refreshToken}), \"\")"
         },
         "transforms": [
           {
@@ -219,6 +226,17 @@
                       "style": {
                         "classes": "pf-field-input"
                       }
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.filterText",
+                            "bidirectional": true
+                          }
+                        }
+                      }
                     }
                   }
                 ]
@@ -264,6 +282,15 @@
                             "path": "view.custom.holdTypeOptions"
                           },
                           "type": "property"
+                        }
+                      },
+                      "props.value": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.filterTypeId",
+                            "bidirectional": true
+                          }
                         }
                       }
                     },
@@ -400,7 +427,7 @@
                               "transforms": [
                                 {
                                   "type": "script",
-                                  "code": "\treturn [{\"holdEventId\": r.get(\"HoldEventId\"), \"target\": r.get(\"LotName\") or \"?\", \"holdTypeCode\": r.get(\"HoldTypeCode\") or \"\", \"reason\": r.get(\"Reason\") or \"\"} for r in (value or []) if r.get(\"LotId\") is not None]"
+                                  "code": "\treturn [{\"holdEventId\": r.get(\"HoldEventId\"), \"lotId\": r.get(\"LotId\") or 0, \"target\": r.get(\"LotName\") or \"?\", \"holdTypeCode\": r.get(\"HoldTypeCode\") or \"\", \"reason\": r.get(\"Reason\") or \"\"} for r in (value or []) if r.get(\"LotId\") is not None]"
                                 }
                               ]
                             }
@@ -517,7 +544,7 @@
                               "transforms": [
                                 {
                                   "type": "script",
-                                  "code": "\trows = []\n\tfor r in (value or []):\n\t\tif r.get(\"ContainerId\") is None:\n\t\t\tcontinue\n\t\tnm = \"Container #\" + str(r.get(\"ContainerId\"))\n\t\tif r.get(\"ContainerItemPartNumber\"):\n\t\t\tnm = nm + \"  -  \" + r.get(\"ContainerItemPartNumber\")\n\t\trows.append({\"holdEventId\": r.get(\"HoldEventId\"), \"target\": nm, \"holdTypeCode\": r.get(\"HoldTypeCode\") or \"\", \"reason\": r.get(\"Reason\") or \"\"})\n\treturn rows"
+                                  "code": "\trows = []\n\tfor r in (value or []):\n\t\tif r.get(\"ContainerId\") is None:\n\t\t\tcontinue\n\t\tnm = \"Container #\" + str(r.get(\"ContainerId\"))\n\t\tif r.get(\"ContainerItemPartNumber\"):\n\t\t\tnm = nm + \"  -  \" + r.get(\"ContainerItemPartNumber\")\n\t\trows.append({\"holdEventId\": r.get(\"HoldEventId\"), \"lotId\": 0, \"target\": nm, \"holdTypeCode\": r.get(\"HoldTypeCode\") or \"\", \"reason\": r.get(\"Reason\") or \"\"})\n\treturn rows"
                                 }
                               ]
                             }
@@ -871,6 +898,259 @@
           {
             "type": "ia.container.flex",
             "meta": {
+              "name": "BulkHoldPanel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-panel",
+                "gap": "12px",
+                "padding": "16px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "BulkTitle"
+                },
+                "props": {
+                  "text": "Bulk Hold — search LOTs and place a hold on several at once",
+                  "style": {
+                    "classes": "pf-panel-header"
+                  }
+                },
+                "position": {
+                  "shrink": 0
+                }
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "BulkSearchRow"
+                },
+                "props": {
+                  "direction": "row",
+                  "gap": "10px",
+                  "alignItems": "center"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "children": [
+                  {
+                    "type": "ia.input.text-field",
+                    "meta": {
+                      "name": "BulkQuery"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "placeholder": "Search LOTs by name / part…",
+                      "style": {
+                        "classes": "pf-field-input"
+                      }
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.bulkQuery",
+                            "bidirectional": true
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "BulkSearchButton"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Search",
+                      "style": {
+                        "classes": "pf-btn pf-btn-secondary"
+                      }
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.custom.bulkSelectedLotIds = []\n\tself.view.custom.bulkResults = BlueRidge.Lots.Lot.search(self.view.custom.bulkQuery or None, 1) or []"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.display.flex-repeater",
+                "meta": {
+                  "name": "BulkResultsRepeater"
+                },
+                "position": {
+                  "grow": 1,
+                  "basis": "0"
+                },
+                "props": {
+                  "path": "BlueRidge/Components/PlantFloor/Quality/BulkResultRow",
+                  "direction": "column",
+                  "useDefaultViewHeight": true,
+                  "elementPosition": {
+                    "basis": "64px",
+                    "shrink": 0
+                  },
+                  "style": {
+                    "overflow": "auto"
+                  }
+                },
+                "propConfig": {
+                  "props.instances": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "if(len({view.custom.bulkSelectedLotIds}) >= 0, {view.custom.bulkResults}, {view.custom.bulkResults})"
+                      },
+                      "transforms": [
+                        {
+                          "type": "script",
+                          "code": "\tsel = [int(x) for x in (self.view.custom.bulkSelectedLotIds or [])]\n\trows = []\n\tfor r in (value or []):\n\t\tlid = r.get(\"Id\")\n\t\trows.append({\"lotId\": lid, \"lotName\": r.get(\"LotName\") or \"?\", \"partNumber\": r.get(\"ItemPartNumber\") or \"\", \"statusCode\": r.get(\"LotStatusCode\") or \"\", \"locationName\": r.get(\"CurrentLocationName\") or \"\", \"selected\": (int(lid) in sel if lid is not None else False)})\n\treturn rows"
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "BulkActionRow"
+                },
+                "props": {
+                  "direction": "row",
+                  "gap": "10px",
+                  "alignItems": "center"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "children": [
+                  {
+                    "type": "ia.input.dropdown",
+                    "meta": {
+                      "name": "BulkHoldType"
+                    },
+                    "position": {
+                      "shrink": 0,
+                      "basis": "200px"
+                    },
+                    "props": {
+                      "placeholder": "Hold type",
+                      "style": {
+                        "classes": "pf-field-input"
+                      }
+                    },
+                    "propConfig": {
+                      "props.options": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.holdTypeOptions"
+                          }
+                        }
+                      },
+                      "props.value": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.bulkHoldTypeId",
+                            "bidirectional": true
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.text-field",
+                    "meta": {
+                      "name": "BulkReason"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "placeholder": "Reason (optional)",
+                      "style": {
+                        "classes": "pf-field-input"
+                      }
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.bulkReason",
+                            "bidirectional": true
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "meta": {
+                      "name": "BulkPlaceButton"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Place hold on selected",
+                      "style": {
+                        "classes": "pf-btn pf-btn-primary"
+                      }
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "\"Place hold on \" + len({view.custom.bulkSelectedLotIds}) + \" selected\""
+                          }
+                        }
+                      }
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tids = self.view.custom.bulkSelectedLotIds or []\n\tif self.view.custom.bulkHoldTypeId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Select a hold type.\"}, \"Bulk Hold\")\n\t\treturn\n\tif len(ids) == 0:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Select at least one LOT.\"}, \"Bulk Hold\")\n\t\treturn\n\treason = (self.view.custom.bulkReason or \"\").strip() or None\n\tres = BlueRidge.Quality.Hold.placeBulk(ids, self.view.custom.bulkHoldTypeId, reason)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Bulk Hold\")\n\tif res and res.get(\"Status\"):\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1\n\t\tself.view.custom.bulkResults = []\n\t\tself.view.custom.bulkSelectedLotIds = []"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
               "name": "ReleasePanel"
             },
             "position": {
@@ -1102,6 +1382,13 @@
           "sessionScope": false,
           "viewScope": false,
           "script": "\the = payload.get(\"holdEventId\")\n\tcur = self.view.custom.releaseDraft or {}\n\tself.view.custom.releaseDraft = {\"holdEventId\": (str(he) if he is not None else \"\"), \"releaseRemarks\": (cur.get(\"releaseRemarks\") or \"\")}"
+        },
+        {
+          "messageType": "bulkToggle",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tlid = payload.get(\"lotId\")\n\tif lid is None:\n\t\treturn\n\tlid = int(lid)\n\tcur = [int(x) for x in (self.view.custom.bulkSelectedLotIds or [])]\n\tif lid in cur:\n\t\tcur.remove(lid)\n\telse:\n\t\tcur.append(lid)\n\tself.view.custom.bulkSelectedLotIds = cur"
         }
       ]
     }

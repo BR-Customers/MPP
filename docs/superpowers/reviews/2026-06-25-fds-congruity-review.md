@@ -2,7 +2,7 @@
 
 Audit of the **built application** (SQL procs, Ignition views/entities, seeds, schema) against `MPP_MES_FDS.md`. Focus: the MVP plant-floor execution core (§5–8) + cross-cutting conventions, where the recent Arc 2 Phase 5–7 work concentrated. Sections not deeply line-audited are listed in §E for a follow-up pass.
 
-> **Update 2026-06-25:** **A1 and A2 are FIXED** (verified against a clean reset, suite green 1848/1848). A1 — migration `0030_holdtype_taxonomy_fds0801` re-codes the hold types to Quality / CustomerComplaint / Precautionary. A2 — `020_seed_items` promotes `5G0-MACH` to a master item (ItemType 3) with a rename BOM, and the assembly BOM now consumes it (`5G0 ← 5G0-MACH + PNA`). A3, A4, A5, the §B/§D items, and the §E follow-up remain open.
+> **Update 2026-06-25:** **A1, A2, and A3 (3 of 4 sub-parts) are FIXED** (verified against a clean reset, suite green 1848/1848). A1 — migration `0030_holdtype_taxonomy_fds0801` re-codes the hold types to Quality / CustomerComplaint / Precautionary. A2 — `020_seed_items` promotes `5G0-MACH` to a master item (ItemType 3) with a rename BOM, and the assembly BOM now consumes it (`5G0 ← 5G0-MACH + PNA`). A3 — the open-holds lists are now filterable (text + hold type, via `Hold_ListOpen` filter params), each LOT hold links to Lot Details (`HoldRow` View button), and a new **Bulk Hold** panel does LOT search + multi-select + place-many (`Hold.placeBulk`). **A3's AD-elevation sub-part is intentionally deferred** — `_validateAdCredentials` is a deployment-time seam that fails by design in dev, so wiring it now would block Place/Release. A4, A5, the §B/§D items, and the §E follow-up remain open.
 
 ## A. Confirmed incongruities
 

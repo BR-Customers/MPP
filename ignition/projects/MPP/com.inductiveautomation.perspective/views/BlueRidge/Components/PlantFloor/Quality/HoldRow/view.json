@@ -4,7 +4,8 @@
     "holdEventId": 0,
     "target": "",
     "holdTypeCode": "",
-    "reason": ""
+    "reason": "",
+    "lotId": 0
   },
   "propConfig": {
     "params.sourceLotId": {
@@ -169,6 +170,42 @@
         "props": {
           "style": {
             "classes": "pf-pill"
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "ViewButton"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "text": "View",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary"
+          }
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.params.lotId} > 0"
+              }
+            }
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tif self.view.params.lotId and int(self.view.params.lotId) > 0:\n\t\tsystem.perspective.navigate(\"/shop-floor/lot-detail/\" + str(int(self.view.params.lotId)))"
+              }
+            }
           }
         }
       },
