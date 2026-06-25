@@ -1,34 +1,18 @@
 {
   "custom": {
+    "activeLotId": null,
     "editDraft": {
-      "scannedLtt": "",
-      "itemId": null,
-      "toolCavityId": null,
       "cavityNote": null,
+      "itemId": null,
       "pieceCount": null,
+      "scannedLtt": "",
+      "toolCavityId": null,
       "weight": null,
       "weightUomId": null
     },
-    "activeTool": {
-      "Id": null,
-      "ToolId": null,
-      "ToolCode": "",
-      "ToolName": "",
-      "ToolTypeCode": "",
-      "CellLocationId": null,
-      "AssignedAt": null,
-      "AssignedByUserId": null,
-      "Notes": null
-    },
-    "cavityOptions": [],
-    "cells": [],
-    "selectedCellId": null,
-    "itemOptions": [],
-    "manufacturedOriginId": null,
-    "activeLotId": null,
     "peersThisSession": [],
+    "selectedCellId": null,
     "selectedLotId": null,
-    "shiftTally": [],
     "tallyCavityId": null
   },
   "params": {
@@ -37,50 +21,50 @@
   "propConfig": {
     "custom.activeTool": {
       "binding": {
-        "type": "expr",
         "config": {
           "expression": "runScript(\"BlueRidge.Parts.Tool.getMountedToolForCellOrEmpty\", 0, {session.custom.cell.locationId})"
-        }
+        },
+        "type": "expr"
       }
     },
     "custom.cavityOptions": {
       "binding": {
-        "type": "expr",
         "config": {
           "expression": "runScript(\"BlueRidge.Parts.Tool.getCavitiesForDropdown\", 0, {view.custom.activeTool.ToolId})"
-        }
+        },
+        "type": "expr"
       }
     },
     "custom.cells": {
       "binding": {
-        "type": "expr",
         "config": {
-          "expression": "runScript(\"BlueRidge.Location.Location.getCellsForAreaOrTerminal\", 0, {view.params.areaId}, {session.custom.terminal.terminalLocationId})"
-        }
+          "expression": "runScript(\"BlueRidge.Location.Terminal.getContextCellsForDropdown\", 0, {session.custom.terminal.terminalLocationId}, \"Die Cast Machine\")"
+        },
+        "type": "expr"
       }
     },
     "custom.itemOptions": {
       "binding": {
-        "type": "expr",
         "config": {
           "expression": "runScript(\"BlueRidge.Parts.Item.getEligibleForLocationDropdown\", 0, {session.custom.cell.locationId})"
-        }
+        },
+        "type": "expr"
       }
     },
     "custom.manufacturedOriginId": {
       "binding": {
-        "type": "expr",
         "config": {
           "expression": "runScript(\"BlueRidge.Lots.Lot.getOriginTypeIdByCode\", 0, \"Manufactured\")"
-        }
+        },
+        "type": "expr"
       }
     },
     "custom.shiftTally": {
       "binding": {
-        "type": "expr",
         "config": {
           "expression": "runScript(\"BlueRidge.Lots.Lot.getShiftCavityTally\", 0, {view.custom.activeTool.ToolId})"
-        }
+        },
+        "type": "expr"
       },
       "onChange": {
         "enabled": true,
@@ -90,39 +74,50 @@
   },
   "props": {
     "defaultSize": {
-      "height": 800,
       "width": 1280
     }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": {
-      "name": "root"
-    },
-    "props": {
-      "direction": "column",
-      "style": {
-        "classes": "canvas",
-        "gap": "16px",
-        "padding": "24px"
-      }
-    },
     "children": [
       {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "HeaderBand"
-        },
-        "props": {
-          "direction": "row",
-          "alignItems": "center",
-          "style": {
-            "gap": "16px"
-          }
-        },
         "children": [
           {
-            "type": "ia.container.flex",
+            "children": [
+              {
+                "meta": {
+                  "name": "Title"
+                },
+                "props": {
+                  "style": {
+                    "fontSize": "22px",
+                    "fontWeight": 700
+                  },
+                  "text": "Die Cast LOT Entry"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Subtitle"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "{session.custom.cell.name} + \"  ·  SHARED TERMINAL  ·  \" + if(isNull({view.custom.activeTool.ToolCode}) || {view.custom.activeTool.ToolCode} = \"\", \"No die mounted\", \"Tool \" + {view.custom.activeTool.ToolCode})"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  }
+                },
+                "type": "ia.display.label"
+              }
+            ],
             "meta": {
               "name": "TitleBlock"
             },
@@ -132,59 +127,33 @@
             "props": {
               "direction": "column"
             },
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "Title"
-                },
-                "props": {
-                  "text": "Die Cast LOT Entry",
-                  "style": {
-                    "fontSize": "22px",
-                    "fontWeight": 700
-                  }
-                }
-              },
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "Subtitle"
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-kpi-sub"
-                  }
-                },
-                "propConfig": {
-                  "props.text": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "{session.custom.cell.name} + \"  ·  SHARED TERMINAL  ·  \" + if(isNull({view.custom.activeTool.ToolCode}) || {view.custom.activeTool.ToolCode} = \"\", \"No die mounted\", \"Tool \" + {view.custom.activeTool.ToolCode})"
-                      }
-                    }
-                  }
-                }
-              }
-            ]
+            "type": "ia.container.flex"
           },
           {
-            "type": "ia.display.label",
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=True, overlayDismiss=True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
             "meta": {
               "name": "OperatorLabel",
               "tooltip": {
                 "text": "Switch operator"
               }
             },
-            "events": {
-              "dom": {
-                "onClick": {
-                  "type": "script",
-                  "scope": "G",
+            "propConfig": {
+              "props.text": {
+                "binding": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=True, overlayDismiss=True)"
-                  }
+                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
+                  },
+                  "type": "expr"
                 }
               }
             },
@@ -194,229 +163,238 @@
                 "cursor": "pointer"
               }
             },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
-                  }
-                }
-              }
-            }
+            "type": "ia.display.label"
           },
           {
-            "type": "ia.display.view",
-            "version": 0,
             "meta": {
               "name": "PausedIndicator"
             },
             "position": {
               "display": false
             },
-            "props": {
-              "path": "BlueRidge/Components/PlantFloor/PausedLotIndicator"
-            },
             "propConfig": {
               "props.params.cellLocationId": {
                 "binding": {
-                  "type": "property",
                   "config": {
                     "path": "session.custom.cell.locationId"
-                  }
+                  },
+                  "type": "property"
                 }
               }
-            }
+            },
+            "props": {
+              "path": "BlueRidge/Components/PlantFloor/PausedLotIndicator"
+            },
+            "type": "ia.display.view"
           },
           {
-            "type": "ia.input.button",
-            "version": 0,
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.navigate(\"/\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
             "meta": {
               "name": "CloseButton"
             },
             "props": {
-              "text": "Close",
               "style": {
                 "classes": "pf-btn pf-btn-secondary"
-              }
+              },
+              "text": "Close"
             },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\tsystem.perspective.navigate(\"/\")"
-                  }
-                }
-              }
-            }
+            "type": "ia.input.button"
           }
-        ]
-      },
-      {
-        "type": "ia.container.flex",
+        ],
         "meta": {
-          "name": "ContextBar"
+          "name": "HeaderBand"
         },
         "props": {
-          "direction": "row",
           "alignItems": "center",
           "style": {
-            "classes": "pf-terminal-cell-context",
-            "gap": "12px"
+            "gap": "16px"
           }
         },
+        "type": "ia.container.flex"
+      },
+      {
         "children": [
           {
-            "type": "ia.display.label",
             "meta": {
               "name": "ActiveCellLabel"
             },
             "props": {
-              "text": "Active Cell",
               "style": {
                 "classes": "pf-cell-context-label"
-              }
-            }
+              },
+              "text": "Active Cell"
+            },
+            "type": "ia.display.label"
           },
           {
-            "type": "ia.input.dropdown",
-            "version": 0,
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.applyCell(self.props.value)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
             "meta": {
               "name": "CellDropdown"
             },
             "position": {
               "basis": "320px"
             },
-            "props": {
-              "placeholder": {
-                "text": "Scan or pick a cell"
-              },
-              "search": {
-                "enabled": true
-              }
-            },
             "propConfig": {
               "props.options": {
                 "binding": {
-                  "type": "property",
                   "config": {
                     "path": "view.custom.cells"
                   },
                   "transforms": [
                     {
-                      "type": "script",
-                      "code": "\tcells = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\treturn [{\"label\": c.get(\"label\"), \"value\": c.get(\"value\")} for c in cells]"
+                      "code": "\tcells = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\treturn [{\"label\": c.get(\"label\"), \"value\": c.get(\"value\")} for c in cells]",
+                      "type": "script"
                     }
-                  ]
+                  ],
+                  "type": "property"
                 }
               },
               "props.value": {
                 "binding": {
-                  "type": "property",
                   "config": {
-                    "path": "view.custom.selectedCellId",
-                    "bidirectional": true
-                  }
+                    "bidirectional": true,
+                    "path": "view.custom.selectedCellId"
+                  },
+                  "type": "property"
                 }
               }
             },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\tself.view.rootContainer.applyCell(self.props.value)"
-                  }
-                }
+            "props": {
+              "placeholder": {
+                "text": "Scan or pick a cell"
               }
-            }
+            },
+            "type": "ia.input.dropdown"
           },
           {
-            "type": "ia.display.label",
             "meta": {
               "name": "Spacer"
             },
             "position": {
               "grow": 1
             },
-            "props": {
-              "text": ""
-            }
+            "type": "ia.display.label"
           },
           {
-            "type": "ia.display.label",
             "meta": {
               "name": "ToolMountedSummary"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if(isNull({view.custom.activeTool.ToolCode}) || {view.custom.activeTool.ToolCode} = \"\", \"No die mounted\", \"Tool \" + {view.custom.activeTool.ToolCode} + \" mounted  ·  \" + toStr(len({view.custom.cavityOptions})) + \" cavities active\")"
+                  },
+                  "type": "expr"
+                }
+              }
             },
             "props": {
               "style": {
                 "classes": "pf-kpi-sub"
               }
             },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "if(isNull({view.custom.activeTool.ToolCode}) || {view.custom.activeTool.ToolCode} = \"\", \"No die mounted\", \"Tool \" + {view.custom.activeTool.ToolCode} + \" mounted  ·  \" + toStr(len({view.custom.cavityOptions})) + \" cavities active\")"
-                  }
-                }
-              }
-            }
+            "type": "ia.display.label"
           }
-        ]
-      },
-      {
-        "type": "ia.container.flex",
+        ],
         "meta": {
-          "name": "Body"
-        },
-        "position": {
-          "grow": 1
+          "name": "ContextBar"
         },
         "props": {
-          "direction": "row",
-          "wrap": "wrap",
+          "alignItems": "center",
           "style": {
-            "gap": "16px"
+            "classes": "pf-terminal-cell-context",
+            "gap": "12px"
           }
         },
+        "type": "ia.container.flex"
+      },
+      {
         "children": [
           {
-            "type": "ia.container.flex",
-            "meta": {
-              "name": "NewLotForm"
-            },
-            "position": {
-              "grow": 1,
-              "basis": "480px"
-            },
-            "props": {
-              "direction": "column",
-              "style": {
-                "classes": "pf-panel",
-                "gap": "12px",
-                "padding": "16px"
-              }
-            },
             "children": [
               {
-                "type": "ia.display.label",
                 "meta": {
                   "name": "FormHeader"
                 },
                 "props": {
-                  "text": "New LOT",
                   "style": {
                     "classes": "pf-panel-header"
-                  }
-                }
+                  },
+                  "text": "New LOT"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.container.flex",
+                "children": [
+                  {
+                    "meta": {
+                      "name": "LttLabel"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-field-label"
+                      },
+                      "text": "LTT Barcode (scan)"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "LttInput"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.editDraft.scannedLtt"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "placeholder": "Scan or enter LTT",
+                      "style": {
+                        "classes": "pf-field-input-mono"
+                      }
+                    },
+                    "type": "ia.input.text-field"
+                  },
+                  {
+                    "meta": {
+                      "name": "LttHelp"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-field-help"
+                      },
+                      "text": "Pre-printed labels per FRS 2.2.1. Server mints the LOT id (D4 default)."
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
                 "meta": {
                   "name": "LttField"
                 },
@@ -427,59 +405,65 @@
                     "gap": "4px"
                   }
                 },
-                "children": [
-                  {
-                    "type": "ia.display.label",
-                    "meta": {
-                      "name": "LttLabel"
-                    },
-                    "props": {
-                      "text": "LTT Barcode (scan)",
-                      "style": {
-                        "classes": "pf-field-label"
-                      }
-                    }
-                  },
-                  {
-                    "type": "ia.input.text-field",
-                    "version": 0,
-                    "meta": {
-                      "name": "LttInput"
-                    },
-                    "props": {
-                      "placeholder": "Scan or enter LTT",
-                      "style": {
-                        "classes": "pf-field-input-mono"
-                      }
-                    },
-                    "propConfig": {
-                      "props.text": {
-                        "binding": {
-                          "type": "property",
-                          "config": {
-                            "path": "view.custom.editDraft.scannedLtt",
-                            "bidirectional": true
-                          }
-                        }
-                      }
-                    }
-                  },
-                  {
-                    "type": "ia.display.label",
-                    "meta": {
-                      "name": "LttHelp"
-                    },
-                    "props": {
-                      "text": "Pre-printed labels per FRS 2.2.1. Server mints the LOT id (D4 default).",
-                      "style": {
-                        "classes": "pf-field-help"
-                      }
-                    }
-                  }
-                ]
+                "type": "ia.container.flex"
               },
               {
-                "type": "ia.container.flex",
+                "children": [
+                  {
+                    "meta": {
+                      "name": "ItemLabel"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-field-label"
+                      },
+                      "text": "Item"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "ItemDropdown"
+                    },
+                    "propConfig": {
+                      "props.options": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.itemOptions"
+                          },
+                          "type": "property"
+                        }
+                      },
+                      "props.value": {
+                        "binding": {
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.editDraft.itemId"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "placeholder": {
+                        "text": "Select an item"
+                      }
+                    },
+                    "type": "ia.input.dropdown"
+                  },
+                  {
+                    "meta": {
+                      "name": "ItemHelp"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-field-help"
+                      },
+                      "text": "Eligible items for the active cell (FDS-02-012)."
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
                 "meta": {
                   "name": "ItemField"
                 },
@@ -490,81 +474,86 @@
                     "gap": "4px"
                   }
                 },
-                "children": [
-                  {
-                    "type": "ia.display.label",
-                    "meta": {
-                      "name": "ItemLabel"
-                    },
-                    "props": {
-                      "text": "Item",
-                      "style": {
-                        "classes": "pf-field-label"
-                      }
-                    }
-                  },
-                  {
-                    "type": "ia.input.dropdown",
-                    "version": 0,
-                    "meta": {
-                      "name": "ItemDropdown"
-                    },
-                    "props": {
-                      "placeholder": {
-                        "text": "Select an item"
-                      },
-                      "search": {
-                        "enabled": true
-                      }
-                    },
-                    "propConfig": {
-                      "props.options": {
-                        "binding": {
-                          "type": "property",
-                          "config": {
-                            "path": "view.custom.itemOptions"
-                          }
-                        }
-                      },
-                      "props.value": {
-                        "binding": {
-                          "type": "property",
-                          "config": {
-                            "path": "view.custom.editDraft.itemId",
-                            "bidirectional": true
-                          }
-                        }
-                      }
-                    }
-                  },
-                  {
-                    "type": "ia.display.label",
-                    "meta": {
-                      "name": "ItemHelp"
-                    },
-                    "props": {
-                      "text": "Eligible items for the active cell (FDS-02-012).",
-                      "style": {
-                        "classes": "pf-field-help"
-                      }
-                    }
-                  }
-                ]
+                "type": "ia.container.flex"
               },
               {
-                "type": "ia.container.flex",
-                "meta": {
-                  "name": "ToolCavityRow"
-                },
-                "props": {
-                  "direction": "row",
-                  "style": {
-                    "gap": "10px"
-                  }
-                },
                 "children": [
                   {
-                    "type": "ia.container.flex",
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "ToolLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-label"
+                          },
+                          "text": "Tool (auto-populated)"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "ToolValue"
+                            },
+                            "position": {
+                              "grow": 1
+                            },
+                            "propConfig": {
+                              "props.text": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "if(isNull({view.custom.activeTool.ToolCode}) || {view.custom.activeTool.ToolCode} = \"\", \"No die mounted\", {view.custom.activeTool.ToolCode})"
+                                  },
+                                  "type": "expr"
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-field-input-mono"
+                              }
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "events": {
+                              "component": {
+                                "onActionPerformed": {
+                                  "config": {
+                                    "script": "\t# Launch the Config app's Tools page (separate project; logs in on its own).\n\tsystem.perspective.navigate(url=\"/data/perspective/client/MPP_Config/parts/tools\", newTab=True)"
+                                  },
+                                  "scope": "G",
+                                  "type": "script"
+                                }
+                              }
+                            },
+                            "meta": {
+                              "name": "ToolConfigButton"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-btn pf-btn-secondary"
+                              },
+                              "text": "Tool Config"
+                            },
+                            "type": "ia.input.button"
+                          }
+                        ],
+                        "meta": {
+                          "name": "ToolValueRow"
+                        },
+                        "props": {
+                          "alignItems": "center",
+                          "style": {
+                            "gap": "8px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
                     "meta": {
                       "name": "ToolField"
                     },
@@ -578,86 +567,66 @@
                         "gap": "4px"
                       }
                     },
-                    "children": [
-                      {
-                        "type": "ia.display.label",
-                        "meta": {
-                          "name": "ToolLabel"
-                        },
-                        "props": {
-                          "text": "Tool (auto-populated)",
-                          "style": {
-                            "classes": "pf-field-label"
-                          }
-                        }
-                      },
-                      {
-                        "type": "ia.container.flex",
-                        "meta": {
-                          "name": "ToolValueRow"
-                        },
-                        "props": {
-                          "direction": "row",
-                          "alignItems": "center",
-                          "style": {
-                            "gap": "8px"
-                          }
-                        },
-                        "children": [
-                          {
-                            "type": "ia.display.label",
-                            "meta": {
-                              "name": "ToolValue"
-                            },
-                            "position": {
-                              "grow": 1
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "pf-field-input-mono"
-                              }
-                            },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "type": "expr",
-                                  "config": {
-                                    "expression": "if(isNull({view.custom.activeTool.ToolCode}) || {view.custom.activeTool.ToolCode} = \"\", \"No die mounted\", {view.custom.activeTool.ToolCode})"
-                                  }
-                                }
-                              }
-                            }
-                          },
-                          {
-                            "type": "ia.input.button",
-                            "version": 0,
-                            "meta": {
-                              "name": "ToolConfigButton"
-                            },
-                            "props": {
-                              "text": "Tool Config",
-                              "style": {
-                                "classes": "pf-btn pf-btn-secondary"
-                              }
-                            },
-                            "events": {
-                              "component": {
-                                "onActionPerformed": {
-                                  "type": "script",
-                                  "scope": "G",
-                                  "config": {
-                                    "script": "\t# Launch the Config app's Tools page (separate project; logs in on its own).\n\tsystem.perspective.navigate(url=\"/data/perspective/client/MPP_Config/parts/tools\", newTab=True)"
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        ]
-                      }
-                    ]
+                    "type": "ia.container.flex"
                   },
                   {
-                    "type": "ia.container.flex",
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "CavityLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-label"
+                          },
+                          "text": "Cavity"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "CavityDropdown"
+                        },
+                        "propConfig": {
+                          "props.options": {
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.cavityOptions"
+                              },
+                              "type": "property"
+                            }
+                          },
+                          "props.value": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.editDraft.toolCavityId"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "allowCustomOptions": true,
+                          "placeholder": {
+                            "text": "Select or type a cavity"
+                          }
+                        },
+                        "type": "ia.input.dropdown"
+                      },
+                      {
+                        "meta": {
+                          "name": "CavityHelp"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-help"
+                          },
+                          "text": "Active cavities on the mounted tool. No active cavities? Type one (manual, D2)."
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
                     "meta": {
                       "name": "CavityField"
                     },
@@ -671,84 +640,58 @@
                         "gap": "4px"
                       }
                     },
-                    "children": [
-                      {
-                        "type": "ia.display.label",
-                        "meta": {
-                          "name": "CavityLabel"
-                        },
-                        "props": {
-                          "text": "Cavity",
-                          "style": {
-                            "classes": "pf-field-label"
-                          }
-                        }
-                      },
-                      {
-                        "type": "ia.input.dropdown",
-                        "version": 0,
-                        "meta": {
-                          "name": "CavityDropdown"
-                        },
-                        "props": {
-                          "placeholder": {
-                            "text": "Select or type a cavity"
-                          },
-                          "allowCustomOptions": true,
-                          "search": {
-                            "enabled": true
-                          }
-                        },
-                        "propConfig": {
-                          "props.options": {
-                            "binding": {
-                              "type": "property",
-                              "config": {
-                                "path": "view.custom.cavityOptions"
-                              }
-                            }
-                          },
-                          "props.value": {
-                            "binding": {
-                              "type": "property",
-                              "config": {
-                                "path": "view.custom.editDraft.toolCavityId",
-                                "bidirectional": true
-                              }
-                            }
-                          }
-                        }
-                      },
-                      {
-                        "type": "ia.display.label",
-                        "meta": {
-                          "name": "CavityHelp"
-                        },
-                        "props": {
-                          "text": "Active cavities on the mounted tool. No active cavities? Type one (manual, D2).",
-                          "style": {
-                            "classes": "pf-field-help"
-                          }
-                        }
-                      }
-                    ]
+                    "type": "ia.container.flex"
                   }
-                ]
-              },
-              {
-                "type": "ia.container.flex",
+                ],
                 "meta": {
-                  "name": "CountWeightRow"
+                  "name": "ToolCavityRow"
                 },
                 "props": {
-                  "direction": "row",
                   "style": {
                     "gap": "10px"
                   }
                 },
+                "type": "ia.container.flex"
+              },
+              {
                 "children": [
                   {
-                    "type": "ia.container.flex",
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "PieceCountLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-label"
+                          },
+                          "text": "Piece Count"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "PieceCountInput"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.editDraft.pieceCount"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-input"
+                          }
+                        },
+                        "type": "ia.input.text-field"
+                      }
+                    ],
                     "meta": {
                       "name": "PieceCountField"
                     },
@@ -762,46 +705,45 @@
                         "gap": "4px"
                       }
                     },
+                    "type": "ia.container.flex"
+                  },
+                  {
                     "children": [
                       {
-                        "type": "ia.display.label",
                         "meta": {
-                          "name": "PieceCountLabel"
+                          "name": "WeightLabel"
                         },
                         "props": {
-                          "text": "Piece Count",
                           "style": {
                             "classes": "pf-field-label"
-                          }
-                        }
+                          },
+                          "text": "Weight (optional)"
+                        },
+                        "type": "ia.display.label"
                       },
                       {
-                        "type": "ia.input.text-field",
-                        "version": 0,
                         "meta": {
-                          "name": "PieceCountInput"
+                          "name": "WeightInput"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.editDraft.weight"
+                              },
+                              "type": "property"
+                            }
+                          }
                         },
                         "props": {
                           "style": {
                             "classes": "pf-field-input"
                           }
                         },
-                        "propConfig": {
-                          "props.text": {
-                            "binding": {
-                              "type": "property",
-                              "config": {
-                                "path": "view.custom.editDraft.pieceCount",
-                                "bidirectional": true
-                              }
-                            }
-                          }
-                        }
+                        "type": "ia.input.text-field"
                       }
-                    ]
-                  },
-                  {
-                    "type": "ia.container.flex",
+                    ],
                     "meta": {
                       "name": "WeightField"
                     },
@@ -815,113 +757,327 @@
                         "gap": "4px"
                       }
                     },
-                    "children": [
-                      {
-                        "type": "ia.display.label",
-                        "meta": {
-                          "name": "WeightLabel"
-                        },
-                        "props": {
-                          "text": "Weight (optional)",
-                          "style": {
-                            "classes": "pf-field-label"
-                          }
-                        }
-                      },
-                      {
-                        "type": "ia.input.text-field",
-                        "version": 0,
-                        "meta": {
-                          "name": "WeightInput"
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "pf-field-input"
-                          }
-                        },
-                        "propConfig": {
-                          "props.text": {
-                            "binding": {
-                              "type": "property",
-                              "config": {
-                                "path": "view.custom.editDraft.weight",
-                                "bidirectional": true
-                              }
-                            }
-                          }
-                        }
-                      }
-                    ]
+                    "type": "ia.container.flex"
                   }
-                ]
+                ],
+                "meta": {
+                  "name": "CountWeightRow"
+                },
+                "props": {
+                  "style": {
+                    "gap": "10px"
+                  }
+                },
+                "type": "ia.container.flex"
               },
               {
-                "type": "ia.container.flex",
+                "children": [
+                  {
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "config": {
+                            "script": "\tself.view.rootContainer.openCreateConfirm()"
+                          },
+                          "scope": "G",
+                          "type": "script"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "name": "SubmitButton"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-btn pf-btn-primary pf-btn-large"
+                      },
+                      "text": "Submit  ·  Create LOT"
+                    },
+                    "type": "ia.input.button"
+                  },
+                  {
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "config": {
+                            "script": "\tself.view.rootContainer.cancelDraft()"
+                          },
+                          "scope": "G",
+                          "type": "script"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "name": "CancelButton"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-btn pf-btn-secondary"
+                      },
+                      "text": "Cancel"
+                    },
+                    "type": "ia.input.button"
+                  }
+                ],
                 "meta": {
                   "name": "FormActions"
                 },
                 "props": {
-                  "direction": "row",
                   "alignItems": "center",
                   "style": {
                     "gap": "10px"
                   }
                 },
-                "children": [
-                  {
-                    "type": "ia.input.button",
-                    "version": 0,
-                    "meta": {
-                      "name": "SubmitButton"
-                    },
-                    "props": {
-                      "text": "Submit  ·  Create LOT",
-                      "style": {
-                        "classes": "pf-btn pf-btn-primary pf-btn-large"
-                      }
-                    },
-                    "events": {
-                      "component": {
-                        "onActionPerformed": {
-                          "type": "script",
-                          "scope": "G",
-                          "config": {
-                            "script": "\tself.view.rootContainer.openCreateConfirm()"
-                          }
-                        }
-                      }
-                    }
-                  },
-                  {
-                    "type": "ia.input.button",
-                    "version": 0,
-                    "meta": {
-                      "name": "CancelButton"
-                    },
-                    "props": {
-                      "text": "Cancel",
-                      "style": {
-                        "classes": "pf-btn pf-btn-secondary"
-                      }
-                    },
-                    "events": {
-                      "component": {
-                        "onActionPerformed": {
-                          "type": "script",
-                          "scope": "G",
-                          "config": {
-                            "script": "\tself.view.rootContainer.cancelDraft()"
-                          }
-                        }
-                      }
-                    }
-                  }
-                ]
+                "type": "ia.container.flex"
               }
-            ]
+            ],
+            "meta": {
+              "name": "NewLotForm"
+            },
+            "position": {
+              "basis": "480px",
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-panel",
+                "gap": "12px",
+                "padding": "16px"
+              }
+            },
+            "type": "ia.container.flex"
           },
           {
-            "type": "ia.container.flex",
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "ActiveCavityLabel"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-field-label"
+                      },
+                      "text": "Cavity (this shift)"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "ActiveCavityDropdown"
+                    },
+                    "propConfig": {
+                      "props.options": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.shiftTally"
+                          },
+                          "transforms": [
+                            {
+                              "code": "\treturn BlueRidge.Lots.Lot.shiftCavityOptions(value)",
+                              "type": "script"
+                            }
+                          ],
+                          "type": "property"
+                        }
+                      },
+                      "props.value": {
+                        "binding": {
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.tallyCavityId"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "placeholder": {
+                        "text": "Select a cavity"
+                      }
+                    },
+                    "type": "ia.input.dropdown"
+                  }
+                ],
+                "meta": {
+                  "name": "ActiveCavityCard"
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-panel",
+                    "gap": "8px",
+                    "padding": "16px"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "CumulativeHeader"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "\"Shots this shift\""
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-panel-header"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "ShotKpiLabel"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-label"
+                      },
+                      "text": "Pieces this shift (selected cavity)"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "ShotKpiValue"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "toStr(runScript(\"BlueRidge.Lots.Lot.shiftSumForCavity\", 0, {view.custom.shiftTally}, {view.custom.tallyCavityId}))"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-value"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "DerivedNote"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-field-help"
+                      },
+                      "text": "Sum of as-cast piece counts on the selected cavity, this shift."
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "CumulativeCard"
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-panel",
+                    "gap": "10px",
+                    "padding": "16px"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "RejectEmbed"
+                },
+                "propConfig": {
+                  "props.params.lotId": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.activeLotId"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "path": "BlueRidge/Components/PlantFloor/DieCastEntry/RejectPanel"
+                },
+                "type": "ia.display.view"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "PeerTallyHeader"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "toStr(len({view.custom.peersThisSession})) + \" logged this run\""
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "PeerRepeater"
+                    },
+                    "propConfig": {
+                      "props.instances": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.peersThisSession"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "column",
+                      "elementPosition": {
+                        "basis": "auto"
+                      },
+                      "path": "BlueRidge/Components/PlantFloor/DieCastEntry/PeerTallyRow",
+                      "useDefaultViewHeight": false,
+                      "useDefaultViewWidth": false
+                    },
+                    "type": "ia.display.flex-repeater"
+                  }
+                ],
+                "meta": {
+                  "name": "PeerCard"
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-panel",
+                    "gap": "8px",
+                    "padding": "16px"
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
             "meta": {
               "name": "RightRail"
             },
@@ -934,258 +1090,47 @@
                 "gap": "16px"
               }
             },
-            "children": [
-              {
-                "type": "ia.container.flex",
-                "meta": {
-                  "name": "ActiveCavityCard"
-                },
-                "props": {
-                  "direction": "column",
-                  "style": {
-                    "classes": "pf-panel",
-                    "gap": "8px",
-                    "padding": "16px"
-                  }
-                },
-                "children": [
-                  {
-                    "type": "ia.display.label",
-                    "meta": {
-                      "name": "ActiveCavityLabel"
-                    },
-                    "props": {
-                      "text": "Cavity (this shift)",
-                      "style": {
-                        "classes": "pf-field-label"
-                      }
-                    }
-                  },
-                  {
-                    "type": "ia.input.dropdown",
-                    "version": 0,
-                    "meta": {
-                      "name": "ActiveCavityDropdown"
-                    },
-                    "props": {
-                      "placeholder": {
-                        "text": "Select a cavity"
-                      }
-                    },
-                    "propConfig": {
-                      "props.options": {
-                        "binding": {
-                          "type": "property",
-                          "config": {
-                            "path": "view.custom.shiftTally"
-                          },
-                          "transforms": [
-                            {
-                              "type": "script",
-                              "code": "\treturn BlueRidge.Lots.Lot.shiftCavityOptions(value)"
-                            }
-                          ]
-                        }
-                      },
-                      "props.value": {
-                        "binding": {
-                          "type": "property",
-                          "config": {
-                            "path": "view.custom.tallyCavityId",
-                            "bidirectional": true
-                          }
-                        }
-                      }
-                    }
-                  }
-                ]
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": {
-                  "name": "CumulativeCard"
-                },
-                "props": {
-                  "direction": "column",
-                  "style": {
-                    "classes": "pf-panel",
-                    "gap": "10px",
-                    "padding": "16px"
-                  }
-                },
-                "children": [
-                  {
-                    "type": "ia.display.label",
-                    "meta": {
-                      "name": "CumulativeHeader"
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "pf-panel-header"
-                      }
-                    },
-                    "propConfig": {
-                      "props.text": {
-                        "binding": {
-                          "type": "expr",
-                          "config": {
-                            "expression": "\"Shots this shift\""
-                          }
-                        }
-                      }
-                    }
-                  },
-                  {
-                    "type": "ia.display.label",
-                    "meta": {
-                      "name": "ShotKpiLabel"
-                    },
-                    "props": {
-                      "text": "Pieces this shift (selected cavity)",
-                      "style": {
-                        "classes": "pf-kpi-label"
-                      }
-                    }
-                  },
-                  {
-                    "type": "ia.display.label",
-                    "meta": {
-                      "name": "ShotKpiValue"
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "pf-kpi-value"
-                      }
-                    },
-                    "propConfig": {
-                      "props.text": {
-                        "binding": {
-                          "type": "expr",
-                          "config": {
-                            "expression": "toStr(runScript(\"BlueRidge.Lots.Lot.shiftSumForCavity\", 0, {view.custom.shiftTally}, {view.custom.tallyCavityId}))"
-                          }
-                        }
-                      }
-                    }
-                  },
-                  {
-                    "type": "ia.display.label",
-                    "meta": {
-                      "name": "DerivedNote"
-                    },
-                    "props": {
-                      "text": "Sum of as-cast piece counts on the selected cavity, this shift.",
-                      "style": {
-                        "classes": "pf-field-help"
-                      }
-                    }
-                  }
-                ]
-              },
-              {
-                "type": "ia.display.view",
-                "version": 0,
-                "meta": {
-                  "name": "RejectEmbed"
-                },
-                "props": {
-                  "path": "BlueRidge/Components/PlantFloor/DieCastEntry/RejectPanel"
-                },
-                "propConfig": {
-                  "props.params.lotId": {
-                    "binding": {
-                      "type": "property",
-                      "config": {
-                        "path": "view.custom.activeLotId"
-                      }
-                    }
-                  }
-                }
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": {
-                  "name": "PeerCard"
-                },
-                "props": {
-                  "direction": "column",
-                  "style": {
-                    "classes": "pf-panel",
-                    "gap": "8px",
-                    "padding": "16px"
-                  }
-                },
-                "children": [
-                  {
-                    "type": "ia.display.label",
-                    "meta": {
-                      "name": "PeerTallyHeader"
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "pf-kpi-sub"
-                      }
-                    },
-                    "propConfig": {
-                      "props.text": {
-                        "binding": {
-                          "type": "expr",
-                          "config": {
-                            "expression": "toStr(len({view.custom.peersThisSession})) + \" logged this run\""
-                          }
-                        }
-                      }
-                    }
-                  },
-                  {
-                    "type": "ia.display.flex-repeater",
-                    "meta": {
-                      "name": "PeerRepeater"
-                    },
-                    "propConfig": {
-                      "props.instances": {
-                        "binding": {
-                          "type": "property",
-                          "config": {
-                            "path": "view.custom.peersThisSession"
-                          }
-                        }
-                      }
-                    },
-                    "props": {
-                      "direction": "column",
-                      "elementPosition": {
-                        "basis": "auto"
-                      },
-                      "path": "BlueRidge/Components/PlantFloor/DieCastEntry/PeerTallyRow",
-                      "useDefaultViewHeight": false,
-                      "useDefaultViewWidth": false
-                    }
-                  }
-                ]
-              }
-            ]
+            "type": "ia.container.flex"
           }
-        ]
+        ],
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "style": {
+            "gap": "16px"
+          },
+          "wrap": "wrap"
+        },
+        "type": "ia.container.flex"
       }
     ],
-    "scripts": {
-      "messageHandlers": [
-        {
-          "messageType": "mpp-toast",
-          "pageScope": false,
-          "sessionScope": true,
-          "viewScope": false,
-          "script": "\tBlueRidge.Common.Notify._handle(self, payload)"
-        },
-        {
-          "messageType": "confirmCreateLotResult",
-          "pageScope": true,
-          "sessionScope": false,
-          "viewScope": false,
-          "script": "\taction = payload.get(\"action\") if payload else None\n\tif action == \"cancel\":\n\t\treturn\n\tresult = self.submitCreate()\n\tif result and result.get(\"Status\"):\n\t\tif action == \"clear\":\n\t\t\tself.cancelDraft()\n\t\telif action == \"another\":\n\t\t\tself.clearForAnother()"
+    "events": {
+      "system": {
+        "onStartup": {
+          "config": {
+            "script": "\tself.startup()"
+          },
+          "scope": "G",
+          "type": "script"
         }
-      ],
+      }
+    },
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "canvas",
+        "gap": "16px",
+        "padding": "24px"
+      }
+    },
+    "scripts": {
       "customMethods": [
         {
           "name": "submitCreate",
@@ -1224,18 +1169,25 @@
           "params": [],
           "script": "\t# Keep everything; clear only the cavity, then focus the LTT field for the next scan.\n\tself.view.custom.editDraft.toolCavityId = None\n\tself.view.custom.editDraft.cavityNote = None\n\ttry:\n\t\tself.getChild(\"Body\").getChild(\"NewLotForm\").getChild(\"LttField\").getChild(\"LttInput\").focus()\n\texcept:\n\t\tpass"
         }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "mpp-toast",
+          "pageScope": false,
+          "script": "\tBlueRidge.Common.Notify._handle(self, payload)",
+          "sessionScope": true,
+          "viewScope": false
+        },
+        {
+          "messageType": "confirmCreateLotResult",
+          "pageScope": true,
+          "script": "\taction = payload.get(\"action\") if payload else None\n\tif action == \"cancel\":\n\t\treturn\n\tresult = self.submitCreate()\n\tif result and result.get(\"Status\"):\n\t\tif action == \"clear\":\n\t\t\tself.cancelDraft()\n\t\telif action == \"another\":\n\t\t\tself.clearForAnother()",
+          "sessionScope": false,
+          "viewScope": false
+        }
       ]
     },
-    "events": {
-      "system": {
-        "onStartup": {
-          "type": "script",
-          "scope": "G",
-          "config": {
-            "script": "\tself.startup()"
-          }
-        }
-      }
-    }
+    "type": "ia.container.flex"
   }
 }
