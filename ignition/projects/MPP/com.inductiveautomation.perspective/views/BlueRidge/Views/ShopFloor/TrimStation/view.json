@@ -7,15 +7,27 @@
     "destValue": null,
     "shotCount": 0,
     "scrapCount": 0,
-    "trimState": "out"
+    "trimState": "out",
+    "cells": [],
+    "selectedCellId": null
   },
-  "params": {},
+  "params": {
+    "areaId": null
+  },
   "propConfig": {
     "custom.destCells": {
       "binding": {
         "type": "expr",
         "config": {
           "expression": "runScript(\"BlueRidge.Location.Location.getMachiningDestinationsForDropdown\", 0)"
+        }
+      }
+    },
+    "custom.cells": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Location.Location.getCellsForAreaOrTerminal\", 0, {view.params.areaId}, {session.custom.terminal.terminalLocationId})"
         }
       }
     }
@@ -93,16 +105,42 @@
             }
           },
           {
-            "type": "ia.display.view",
+            "type": "ia.display.label",
             "meta": {
-              "name": "InitialsField"
-            },
-            "props": {
-              "path": "BlueRidge/Components/PlantFloor/InitialsField"
+              "name": "OperatorLabel",
+              "tooltip": {
+                "text": "Switch operator"
+              }
             },
             "position": {
-              "basis": "auto",
               "shrink": 0
+            },
+            "events": {
+              "dom": {
+                "onClick": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=True, overlayDismiss=True)"
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub",
+                "cursor": "pointer"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
+                  }
+                }
+              }
             }
           },
           {
@@ -158,22 +196,54 @@
             }
           },
           {
-            "type": "ia.display.label",
+            "type": "ia.input.dropdown",
             "meta": {
-              "name": "ActiveCellValue"
+              "name": "CellDropdown"
+            },
+            "position": {
+              "basis": "320px",
+              "shrink": 0
             },
             "props": {
-              "text": "",
-              "style": {
-                "classes": "pf-cell-context-value"
+              "placeholder": {
+                "text": "Scan or pick a cell"
+              },
+              "search": {
+                "enabled": true
               }
             },
             "propConfig": {
-              "props.text": {
+              "props.options": {
                 "binding": {
-                  "type": "expr",
+                  "type": "property",
                   "config": {
-                    "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"No cell selected\", {session.custom.cell.name})"
+                    "path": "view.custom.cells"
+                  },
+                  "transforms": [
+                    {
+                      "type": "script",
+                      "code": "\tcells = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\treturn [{\"label\": c.get(\"label\"), \"value\": c.get(\"value\")} for c in cells]"
+                    }
+                  ]
+                }
+              },
+              "props.value": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.custom.selectedCellId",
+                    "bidirectional": true
+                  }
+                }
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tself.view.rootContainer.applyCell(self.props.value)"
                   }
                 }
               }
@@ -753,12 +823,31 @@
         {
           "name": "resolveOutScan",
           "params": [],
-          "script": "\tcode = self.view.custom.outScan\n\tif not code:\n\t\treturn\n\tr = BlueRidge.Lots.Lot.getByName(code)\n\tif r:\n\t\tself.view.custom.activeLotId = r.get(\"Id\")\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"LOT not found\", \"No LOT matches '%s'.\" % code, \"warning\")"
+          "script": "\tif not self.session.custom.appUserId:\n\t\tBlueRidge.Common.Notify.toast(\"Not authorized\", \"Enter your initials to begin.\", \"warning\")\n\t\treturn\n\tcode = self.view.custom.outScan\n\tif not code:\n\t\treturn\n\tr = BlueRidge.Lots.Lot.getByName(code)\n\tif r:\n\t\tself.view.custom.activeLotId = r.get(\"Id\")\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"LOT not found\", \"No LOT matches '%s'.\" % code, \"warning\")"
         },
         {
           "name": "submitTrimOut",
           "params": [],
-          "script": "\tlotId = self.view.custom.activeLotId\n\tif lotId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT\", \"Scan or select a LOT before recording Trim OUT.\", \"warning\")\n\t\treturn\n\toperationTemplateId = BlueRidge.Parts.OperationTemplate.getActiveTemplateIdByCode(\"TrimOut\")\n\tif operationTemplateId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Template missing\", \"No active 'TrimOut' operation template is published.\", \"error\")\n\t\treturn\n\tdest = self.view.custom.destValue\n\tif dest is None or dest == \"\":\n\t\tBlueRidge.Common.Notify.toast(\"No destination\", \"Scan or pick a Machining destination.\", \"warning\")\n\t\treturn\n\tdata = {\n\t\t\"parentLotId\": lotId,\n\t\t\"operationTemplateId\": operationTemplateId,\n\t\t\"shotCount\": self.view.custom.shotCount,\n\t\t\"scrapCount\": self.view.custom.scrapCount,\n\t\t\"destinationCellLocationId\": dest,\n\t}\n\tres = BlueRidge.Workorder.TrimOut.record(data)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Trim OUT recorded\")\n\tif res.get(\"Status\"):\n\t\tsystem.perspective.navigate(\"/shop-floor/lot-detail/\" + str(lotId))"
+          "script": "\tif not self.session.custom.appUserId:\n\t\tBlueRidge.Common.Notify.toast(\"Not authorized\", \"Enter your initials to begin.\", \"warning\")\n\t\treturn\n\tlotId = self.view.custom.activeLotId\n\tif lotId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT\", \"Scan or select a LOT before recording Trim OUT.\", \"warning\")\n\t\treturn\n\toperationTemplateId = BlueRidge.Parts.OperationTemplate.getActiveTemplateIdByCode(\"TrimOut\")\n\tif operationTemplateId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Template missing\", \"No active 'TrimOut' operation template is published.\", \"error\")\n\t\treturn\n\tdest = self.view.custom.destValue\n\tif dest is None or dest == \"\":\n\t\tBlueRidge.Common.Notify.toast(\"No destination\", \"Scan or pick a Machining destination.\", \"warning\")\n\t\treturn\n\tdata = {\n\t\t\"parentLotId\": lotId,\n\t\t\"operationTemplateId\": operationTemplateId,\n\t\t\"shotCount\": self.view.custom.shotCount,\n\t\t\"scrapCount\": self.view.custom.scrapCount,\n\t\t\"destinationCellLocationId\": dest,\n\t}\n\tres = BlueRidge.Workorder.TrimOut.record(data)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Trim OUT recorded\")\n\tif res.get(\"Status\"):\n\t\tsystem.perspective.navigate(\"/shop-floor/lot-detail/\" + str(lotId))"
+        },
+        {
+          "name": "startup",
+          "params": [],
+          "script": "\t# Operator authorization gate: no operator -> force the initials modal (non-dismissable)\n\t# over this screen so nothing can be done until an operator is attributed.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)\n\tself.seedSelectedCell()"
+        },
+        {
+          "name": "applyCell",
+          "params": [
+            {
+              "name": "cellId"
+            }
+          ],
+          "script": "\tcellId = BlueRidge.Common.Util.extractQualifiedValues(cellId)\n\trow = BlueRidge.Location.Location.findCellById(self.view.custom.cells, cellId)\n\tif row is None:\n\t\treturn\n\tself.view.custom.selectedCellId = row.get(\"value\")\n\tself.session.custom.cell = {\"locationId\": row.get(\"value\"), \"code\": row.get(\"code\") or \"\", \"name\": row.get(\"name\") or \"\"}"
+        },
+        {
+          "name": "seedSelectedCell",
+          "params": [],
+          "script": "\tc = self.session.custom.cell\n\tif c and c.get(\"locationId\"):\n\t\tself.view.custom.selectedCellId = c.get(\"locationId\")"
         }
       ],
       "messageHandlers": [
@@ -767,10 +856,21 @@
           "pageScope": true,
           "sessionScope": false,
           "viewScope": false,
-          "script": "\tself.view.custom.activeLotId = payload.get(\"lotId\")\n\tself.view.custom.trimState = \"out\"\n\t# TODO(phase4): record the TrimIn checkpoint via ProductionEvent.record once cumulative inputs exist."
+          "script": "\tif not self.session.custom.appUserId:\n\t\treturn\n\tself.view.custom.activeLotId = payload.get(\"lotId\")\n\tself.view.custom.trimState = \"out\"\n\t# TODO(phase4): record the TrimIn checkpoint via ProductionEvent.record once cumulative inputs exist."
         }
       ],
       "extensionFunctions": null
+    },
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tself.startup()"
+          }
+        }
+      }
     }
   }
 }
