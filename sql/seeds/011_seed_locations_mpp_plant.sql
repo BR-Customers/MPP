@@ -141,24 +141,44 @@ IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'DC4-T1-P1')
 -- === Trim Shop 1 ===
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 3, (SELECT Id FROM Location.Location WHERE Code = N'MPP-MAD'), N'Trim Shop 1', N'TRIM1', N'Trim shop - area-level processing, no sublot split', 5;
+    SELECT 3, (SELECT Id FROM Location.Location WHERE Code = N'MPP-MAD'), N'Trim Shop 1', N'TRIM1', N'Trim shop - trim press cells, no sublot split', 5;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM1-T1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'TRIM1'), N'Terminal', N'TRIM1-T1', N'Area-level trim terminal', 1;
+    SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'TRIM1'), N'Terminal', N'TRIM1-T1', N'Shared trim terminal', 1;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM1-T1-P1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-T1'), N'P - 005', N'TRIM1-T1-P1', N'Label printer for TRIM1-T1', 1;
+-- trim press cells (TrimPress) the shared trim terminal serves
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM1-P01')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
+    SELECT 10, (SELECT Id FROM Location.Location WHERE Code = N'TRIM1'), N'Press 01', N'TRIM1-P01', N'Trim press', 1;
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM1-P02')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
+    SELECT 10, (SELECT Id FROM Location.Location WHERE Code = N'TRIM1'), N'Press 02', N'TRIM1-P02', N'Trim press', 2;
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM1-P03')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
+    SELECT 10, (SELECT Id FROM Location.Location WHERE Code = N'TRIM1'), N'Press 03', N'TRIM1-P03', N'Trim press', 3;
 
 -- === Trim Shop 2 ===
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM2')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 3, (SELECT Id FROM Location.Location WHERE Code = N'MPP-MAD'), N'Trim Shop 2', N'TRIM2', N'Trim shop - area-level processing, no sublot split', 6;
+    SELECT 3, (SELECT Id FROM Location.Location WHERE Code = N'MPP-MAD'), N'Trim Shop 2', N'TRIM2', N'Trim shop - trim press cells, no sublot split', 6;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM2-T1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'TRIM2'), N'Terminal', N'TRIM2-T1', N'Area-level trim terminal', 1;
+    SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'TRIM2'), N'Terminal', N'TRIM2-T1', N'Shared trim terminal', 1;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM2-T1-P1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'TRIM2-T1'), N'P - 006', N'TRIM2-T1-P1', N'Label printer for TRIM2-T1', 1;
+-- trim press cells (TrimPress) the shared trim terminal serves
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM2-P01')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
+    SELECT 10, (SELECT Id FROM Location.Location WHERE Code = N'TRIM2'), N'Press 01', N'TRIM2-P01', N'Trim press', 1;
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM2-P02')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
+    SELECT 10, (SELECT Id FROM Location.Location WHERE Code = N'TRIM2'), N'Press 02', N'TRIM2-P02', N'Trim press', 2;
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM2-P03')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
+    SELECT 10, (SELECT Id FROM Location.Location WHERE Code = N'TRIM2'), N'Press 03', N'TRIM2-P03', N'Trim press', 3;
 
 -- === Machining & Assembly 1 ===
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA1')
