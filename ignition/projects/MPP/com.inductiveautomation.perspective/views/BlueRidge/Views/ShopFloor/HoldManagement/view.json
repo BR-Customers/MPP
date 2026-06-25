@@ -3,15 +3,15 @@
     "holdTypeOptions": [
       {
         "value": 1,
-        "label": "QualityHold"
+        "label": "Quality"
       },
       {
         "value": 2,
-        "label": "EngineeringHold"
+        "label": "Customer Complaint"
       },
       {
         "value": 3,
-        "label": "CustomerHold"
+        "label": "Precautionary"
       }
     ],
     "placeDraft": {

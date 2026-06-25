@@ -63,7 +63,7 @@ DECLARE @hp   TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'5G0-MACH')
 BEGIN
     DECLARE @ci TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
-    INSERT INTO @ci EXEC Parts.Item_Create @PartNumber=N'5G0-MACH', @ItemTypeId=4, @Description=N'5G0 Machined Front Cover', @UomId=1, @AppUserId=@U;
+    INSERT INTO @ci EXEC Parts.Item_Create @PartNumber=N'5G0-MACH', @ItemTypeId=3, @Description=N'5G0 Machined Front Cover', @UomId=1, @AppUserId=@U;  -- normally created by master seed 020 (this guarded block is the fallback)
 END
 DECLARE @MachItem BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-MACH');
 IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE ItemId=@MachItem AND LocationId=76 AND DeprecatedAt IS NULL)

@@ -47,7 +47,7 @@ EXEC test.Assert_IsEqual @TestName = N'[HoldList] open LOT hold listed (with Lot
 DECLARE @ConRow NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM #o WHERE HoldEventId = @HeCon AND ContainerId = @Con AND LotId IS NULL);
 EXEC test.Assert_IsEqual @TestName = N'[HoldList] open container hold listed (with ContainerId, no lot)', @Expected = N'1', @Actual = @ConRow;
 DECLARE @TypeOk NVARCHAR(50) = (SELECT HoldTypeCode FROM #o WHERE HoldEventId = @HeLot);
-EXEC test.Assert_IsEqual @TestName = N'[HoldList] hold type resolved (QualityHold)', @Expected = N'QualityHold', @Actual = @TypeOk;
+EXEC test.Assert_IsEqual @TestName = N'[HoldList] hold type resolved (Quality)', @Expected = N'Quality', @Actual = @TypeOk;
 
 -- release the LOT hold -> drops out; container hold remains
 DECLARE @R TABLE (Status BIT, Message NVARCHAR(500));
