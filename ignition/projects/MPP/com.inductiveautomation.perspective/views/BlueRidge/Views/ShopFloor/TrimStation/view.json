@@ -25,7 +25,7 @@
     "custom.cells": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Location.Location.getCellsForAreaOrTerminal\", 0, {view.params.areaId}, {session.custom.terminal.terminalLocationId})"
+          "expression": "runScript(\"BlueRidge.Location.Terminal.getContextCellsForDropdown\", 0, {session.custom.terminal.terminalLocationId}, \"Trim Press\")"
         },
         "type": "expr"
       }

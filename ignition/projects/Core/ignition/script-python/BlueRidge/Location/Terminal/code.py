@@ -94,14 +94,21 @@ def listContextCells(terminalLocationId):
     )
 
 
-def getContextCellsForDropdown(terminalLocationId):
+def getContextCellsForDropdown(terminalLocationId, kindFilter=None):
     """listContextCells shaped for ia.input.dropdown + scan matching:
        [{label: '<Code> - <Name>', value: LocationId, code, name}].
        Always returns a list (never None) so the runScript-bound
-       view.custom.cells default ([]) is never overwritten with null."""
+       view.custom.cells default ([]) is never overwritten with null.
+
+       kindFilter (optional): when set (e.g. 'Trim Press'), only cells whose Kind
+       matches are returned. The Trim terminal is area/fallback-scoped, so its raw
+       context spans the whole facility on the FALLBACK terminal -- the filter keeps
+       a single-process screen (Trim) showing only its own cell type."""
     rows = listContextCells(terminalLocationId) or []
     out = []
     for r in rows:
+        if kindFilter and (r.get("Kind") or "") != kindFilter:
+            continue
         code = r.get("Code") or ""
         name = r.get("Name") or ""
         out.append({
