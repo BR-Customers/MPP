@@ -1,7 +1,7 @@
 # Terminal Flavor — Shared vs Dedicated Operator Views (Design)
 
 **Date:** 2026-06-25
-**Status:** Proposed — awaiting Hunter approval
+**Status:** Approved (Hunter, 2026-06-25). **Die Cast + Trim built** (DieCast/Trim × Body + Shared + Dedicated; routes + demo terminals seeded; suite green 1848/1848). Machining/Assembly normalization remains optional/out of scope.
 **Implements:** FDS-02-010 (view-policy model, approved by Jacques 2026-06-10) + `docs/superpowers/specs/2026-06-10-terminal-mode-view-policy-design.md`
 **Decisions locked (Hunter, 2026-06-25):** (1) FDS-strict — separate view flavors selected via the Terminal's `DefaultScreen` attribute; (2) Trim is per-terminal (some trim terminals shared, some dedicated).
 

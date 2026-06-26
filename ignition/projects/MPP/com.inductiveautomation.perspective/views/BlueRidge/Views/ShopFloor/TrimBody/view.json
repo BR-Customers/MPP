@@ -6,9 +6,7 @@
     "outScan": "",
     "scrapCount": 0,
     "shotCount": 0,
-    "trimState": "out",
-    "cells": [],
-    "selectedCellId": null
+    "trimState": "out"
   },
   "params": {
     "areaId": null
@@ -18,14 +16,6 @@
       "binding": {
         "config": {
           "expression": "runScript(\"BlueRidge.Location.Location.getMachiningDestinationsForDropdown\", 0)"
-        },
-        "type": "expr"
-      }
-    },
-    "custom.cells": {
-      "binding": {
-        "config": {
-          "expression": "runScript(\"BlueRidge.Location.Terminal.getContextCellsForDropdown\", 0, {session.custom.terminal.terminalLocationId}, \"Trim Press\")"
         },
         "type": "expr"
       }
@@ -164,54 +154,28 @@
             "type": "ia.display.label"
           },
           {
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "config": {
-                    "script": "\tself.view.rootContainer.applyCell(self.props.value)"
-                  },
-                  "scope": "G",
-                  "type": "script"
-                }
-              }
-            },
+            "type": "ia.display.label",
             "meta": {
-              "name": "CellDropdown"
+              "name": "ActiveCellValue"
             },
             "position": {
-              "basis": "320px"
-            },
-            "propConfig": {
-              "props.options": {
-                "binding": {
-                  "config": {
-                    "path": "view.custom.cells"
-                  },
-                  "transforms": [
-                    {
-                      "code": "\tcells = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\treturn [{\"label\": c.get(\"label\"), \"value\": c.get(\"value\")} for c in cells]",
-                      "type": "script"
-                    }
-                  ],
-                  "type": "property"
-                }
-              },
-              "props.value": {
-                "binding": {
-                  "config": {
-                    "bidirectional": true,
-                    "path": "view.custom.selectedCellId"
-                  },
-                  "type": "property"
-                }
-              }
+              "shrink": 0
             },
             "props": {
-              "placeholder": {
-                "text": "Scan or pick a cell"
+              "style": {
+                "classes": "pf-cell-context-value"
               }
             },
-            "type": "ia.input.dropdown"
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"No cell selected\", {session.custom.cell.name})"
+                  }
+                }
+              }
+            }
           },
           {
             "meta": {
@@ -805,19 +769,7 @@
         {
           "name": "startup",
           "params": [],
-          "script": "\t# Operator gate: no logged-in operator -> open the initials popup OVER this screen.\n\t# Non-blocking: the page still populates behind the modal, and session.custom is\n\t# reactive, so the operator label/mutations pick up the user with no re-populate.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)\n\tself.seedSelectedCell()"
-        },
-        {
-          "name": "applyCell",
-          "params": [
-            "cellId"
-          ],
-          "script": "\tcellId = BlueRidge.Common.Util.extractQualifiedValues(cellId)\n\trow = BlueRidge.Location.Location.findCellById(self.view.custom.cells, cellId)\n\tif row is None:\n\t\treturn\n\tself.view.custom.selectedCellId = row.get(\"value\")\n\tself.session.custom.cell = {\"locationId\": row.get(\"value\"), \"code\": row.get(\"code\") or \"\", \"name\": row.get(\"name\") or \"\"}"
-        },
-        {
-          "name": "seedSelectedCell",
-          "params": [],
-          "script": "\tc = self.session.custom.cell\n\tif c and c.get(\"locationId\"):\n\t\tself.view.custom.selectedCellId = c.get(\"locationId\")"
+          "script": "\t# Operator gate: no logged-in operator -> open the initials popup OVER this screen.\n\t# Non-blocking: the page still populates behind the modal, and session.custom is\n\t# reactive, so the operator label/mutations pick up the user with no re-populate.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
         }
       ],
       "extensionFunctions": null,
