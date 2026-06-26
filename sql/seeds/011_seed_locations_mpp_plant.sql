@@ -637,3 +637,23 @@ IF NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la JOIN Location.Locatio
 IF NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la JOIN Location.Location l ON l.Id = la.LocationId WHERE l.Code = N'TRIM1-P01-T1' AND la.LocationAttributeDefinitionId = 17)
     INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue, CreatedAt)
     SELECT (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-P01-T1'), 17, N'/shop-floor/trim/dedicated', SYSUTCDATETIME();
+
+-- === Dedicated machining/assembly terminal DefaultScreen demo (FDS-02-010) ===
+-- These line terminals are dedicated-flavor: each screen binds session.custom.cell to
+-- the terminal's parent ProductionLine (line-resolution), no picker. The smoke seed
+-- (smoke_seed_phase5_7) stages WIP at these same lines so the queues populate.
+--   MA1-5GOF-MIN  -> machining-in     | MA1-5GOF-MOUT -> machining-out
+--   MA1-5GOF-ASER -> assembly-serialized
+--   MA1-COMPBR-MIN -> assembly-in (6B2 scan-in) | MA1-COMPBR-AOUT -> assembly-nonserialized
+DECLARE @dsTerm TABLE (Code NVARCHAR(50), Screen NVARCHAR(200));
+INSERT INTO @dsTerm (Code, Screen) VALUES
+    (N'MA1-5GOF-MIN',    N'/shop-floor/machining-in'),
+    (N'MA1-5GOF-MOUT',   N'/shop-floor/machining-out'),
+    (N'MA1-5GOF-ASER',   N'/shop-floor/assembly-serialized'),
+    (N'MA1-COMPBR-MIN',  N'/shop-floor/assembly-in'),
+    (N'MA1-COMPBR-AOUT', N'/shop-floor/assembly-nonserialized');
+INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue, CreatedAt)
+SELECT l.Id, 17, d.Screen, SYSUTCDATETIME()
+FROM @dsTerm d
+INNER JOIN Location.Location l ON l.Code = d.Code
+WHERE NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la WHERE la.LocationId = l.Id AND la.LocationAttributeDefinitionId = 17);

@@ -1,7 +1,7 @@
 # Terminal Flavor — Shared vs Dedicated Operator Views (Design)
 
 **Date:** 2026-06-25
-**Status:** Approved (Hunter, 2026-06-25). **Die Cast + Trim built** (DieCast/Trim × Body + Shared + Dedicated; routes + demo terminals seeded; suite green 1848/1848). Machining/Assembly normalization remains optional/out of scope.
+**Status:** Approved (Hunter, 2026-06-25). **Die Cast + Trim built** (Body + Shared + Dedicated each). **Machining + Assembly normalized** (2026-06-26): the 5 line screens (MachiningIn, MachiningOutSplit, AssemblyIn, AssemblyNonSerialized, AssemblySerialized) are dedicated-flavor — onStartup binds session.custom.cell to the terminal's parent ProductionLine + presence=confirm; no shared variant (no picker). Smoke seed refactored to resolve locations BY CODE and stage WIP at the lines (fixes the trim-press id-shift regression permanently). Demo DefaultScreen seeded for the MA terminals. Suite green 1848/1848.
 **Implements:** FDS-02-010 (view-policy model, approved by Jacques 2026-06-10) + `docs/superpowers/specs/2026-06-10-terminal-mode-view-policy-design.md`
 **Decisions locked (Hunter, 2026-06-25):** (1) FDS-strict — separate view flavors selected via the Terminal's `DefaultScreen` attribute; (2) Trim is per-terminal (some trim terminals shared, some dedicated).
 
