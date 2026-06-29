@@ -271,7 +271,6 @@
                     "overflowY": "auto",
                     "padding": "4px 0"
                   },
-                  "useDefaultViewHeight": false,
                   "useDefaultViewWidth": false
                 },
                 "type": "ia.display.flex-repeater"

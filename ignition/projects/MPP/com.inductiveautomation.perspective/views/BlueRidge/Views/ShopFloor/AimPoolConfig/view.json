@@ -1,17 +1,10 @@
 {
   "custom": {
-    "cfg": {
-      "Id": 1,
-      "TargetBufferDepth": 0,
-      "TopupThreshold": 0,
-      "AlarmWarningDepth": 0,
-      "AlarmCriticalDepth": 0
-    },
     "draft": {
-      "targetBufferDepth": "",
-      "topupThreshold": "",
+      "alarmCriticalDepth": "",
       "alarmWarningDepth": "",
-      "alarmCriticalDepth": ""
+      "targetBufferDepth": "",
+      "topupThreshold": ""
     },
     "refreshToken": 0
   },
@@ -20,11 +13,11 @@
     "custom.cfg": {
       "binding": {
         "config": {
-          "expression": "if({view.custom.refreshToken} >= 0, runScript(\"BlueRidge.Lots.AimPoolConfig.get\", 0, {view.custom.refreshToken}), \"\")"
+          "expression": "if({view.custom.refreshToken} \u003e\u003d 0, runScript(\"BlueRidge.Lots.AimPoolConfig.get\", 0, {view.custom.refreshToken}), \"\")"
         },
         "transforms": [
           {
-            "code": "\trows = value or []\n\tr = rows[0] if rows else {}\n\treturn {\"Id\": r.get(\"Id\") or 1, \"TargetBufferDepth\": r.get(\"TargetBufferDepth\") or 0, \"TopupThreshold\": r.get(\"TopupThreshold\") or 0, \"AlarmWarningDepth\": r.get(\"AlarmWarningDepth\") or 0, \"AlarmCriticalDepth\": r.get(\"AlarmCriticalDepth\") or 0}",
+            "code": "\trows \u003d value or []\n\tr \u003d rows[0] if rows else {}\n\treturn {\"Id\": r.get(\"Id\") or 1, \"TargetBufferDepth\": r.get(\"TargetBufferDepth\") or 0, \"TopupThreshold\": r.get(\"TopupThreshold\") or 0, \"AlarmWarningDepth\": r.get(\"AlarmWarningDepth\") or 0, \"AlarmCriticalDepth\": r.get(\"AlarmCriticalDepth\") or 0}",
             "type": "script"
           }
         ],
@@ -34,24 +27,76 @@
   },
   "props": {
     "defaultSize": {
-      "height": 800,
       "width": 1280
     }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": {
-      "name": "root"
-    },
-    "props": {
-      "direction": "column",
-      "style": {
-        "classes": "canvas"
-      }
-    },
     "children": [
       {
-        "type": "ia.container.flex",
+        "children": [
+          {
+            "meta": {
+              "name": "Header"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "fontSize": "22px",
+                "fontWeight": "700"
+              },
+              "text": "AIM Pool Configuration"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Tag"
+                },
+                "props": {
+                  "text": "AIM Shipper Pool"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Sep"
+                },
+                "props": {
+                  "text": "-"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Desc"
+                },
+                "props": {
+                  "text": "Buffer depth, top-up and alarm thresholds"
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "Meta"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "alignItems": "center",
+              "style": {
+                "classes": "pf-location-meta",
+                "gap": "8px"
+              },
+              "wrap": "wrap"
+            },
+            "type": "ia.container.flex"
+          }
+        ],
         "meta": {
           "name": "HeaderBlock"
         },
@@ -61,116 +106,19 @@
         "props": {
           "direction": "column",
           "style": {
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
             "classes": "pf-details-header",
             "gap": "4px",
-            "padding": "16px",
-            "borderBottom": "1px solid var(--mpp-border-subtle)"
+            "padding": "16px"
           }
         },
-        "children": [
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "Header"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "props": {
-              "text": "AIM Pool Configuration",
-              "style": {
-                "fontSize": "22px",
-                "fontWeight": "700"
-              }
-            }
-          },
-          {
-            "type": "ia.container.flex",
-            "meta": {
-              "name": "Meta"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "props": {
-              "direction": "row",
-              "alignItems": "center",
-              "wrap": "wrap",
-              "style": {
-                "classes": "pf-location-meta",
-                "gap": "8px"
-              }
-            },
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "Tag"
-                },
-                "props": {
-                  "text": "AIM Shipper Pool"
-                }
-              },
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "Sep"
-                },
-                "props": {
-                  "text": "-"
-                }
-              },
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "Desc"
-                },
-                "props": {
-                  "text": "Buffer depth, top-up and alarm thresholds"
-                }
-              }
-            ]
-          }
-        ]
+        "type": "ia.container.flex"
       },
       {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "Body"
-        },
-        "position": {
-          "grow": 1
-        },
-        "props": {
-          "direction": "column",
-          "style": {
-            "gap": "16px",
-            "margin": "16px",
-            "padding": "0",
-            "overflowY": "auto"
-          }
-        },
         "children": [
           {
-            "type": "ia.container.flex",
-            "meta": {
-              "name": "CurrentKpi"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "props": {
-              "direction": "column",
-              "style": {
-                "classes": "pf-kpi pf-panel",
-                "gap": "6px",
-                "padding": "16px",
-                "borderColor": "var(--pf-status-good-fg)"
-              }
-            },
             "children": [
               {
-                "type": "ia.display.label",
                 "meta": {
                   "name": "KpiLabel"
                 },
@@ -178,14 +126,14 @@
                   "shrink": 0
                 },
                 "props": {
-                  "text": "Target Buffer Depth",
                   "style": {
                     "classes": "pf-kpi-label"
-                  }
-                }
+                  },
+                  "text": "Target Buffer Depth"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.display.label",
                 "meta": {
                   "name": "KpiValue"
                 },
@@ -195,10 +143,10 @@
                 "propConfig": {
                   "props.text": {
                     "binding": {
-                      "type": "expr",
                       "config": {
                         "expression": "toStr({view.custom.cfg.TargetBufferDepth})"
-                      }
+                      },
+                      "type": "expr"
                     }
                   }
                 },
@@ -206,10 +154,10 @@
                   "style": {
                     "classes": "pf-kpi-value pf-kpi-value-good"
                   }
-                }
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.display.label",
                 "meta": {
                   "name": "KpiSub"
                 },
@@ -219,10 +167,10 @@
                 "propConfig": {
                   "props.text": {
                     "binding": {
-                      "type": "expr",
                       "config": {
-                        "expression": "'Top-up: ' + toStr({view.custom.cfg.TopupThreshold}) + '   |   Warn: ' + toStr({view.custom.cfg.AlarmWarningDepth}) + '   |   Critical: ' + toStr({view.custom.cfg.AlarmCriticalDepth})"
-                      }
+                        "expression": "\u0027Top-up: \u0027 + toStr({view.custom.cfg.TopupThreshold}) + \u0027   |   Warn: \u0027 + toStr({view.custom.cfg.AlarmWarningDepth}) + \u0027   |   Critical: \u0027 + toStr({view.custom.cfg.AlarmCriticalDepth})"
+                      },
+                      "type": "expr"
                     }
                   }
                 },
@@ -230,14 +178,12 @@
                   "style": {
                     "classes": "pf-kpi-sub"
                   }
-                }
+                },
+                "type": "ia.display.label"
               }
-            ]
-          },
-          {
-            "type": "ia.container.flex",
+            ],
             "meta": {
-              "name": "EditPanel"
+              "name": "CurrentKpi"
             },
             "position": {
               "shrink": 0
@@ -245,14 +191,17 @@
             "props": {
               "direction": "column",
               "style": {
-                "classes": "pf-panel",
-                "gap": "16px",
+                "borderColor": "var(--pf-status-good-fg)",
+                "classes": "pf-kpi pf-panel",
+                "gap": "6px",
                 "padding": "16px"
               }
             },
+            "type": "ia.container.flex"
+          },
+          {
             "children": [
               {
-                "type": "ia.display.label",
                 "meta": {
                   "name": "EditTitle"
                 },
@@ -260,15 +209,15 @@
                   "shrink": 0
                 },
                 "props": {
-                  "text": "Set thresholds",
                   "style": {
                     "fontSize": "18px",
                     "fontWeight": "700"
-                  }
-                }
+                  },
+                  "text": "Set thresholds"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.display.label",
                 "meta": {
                   "name": "EditLabel"
                 },
@@ -276,31 +225,53 @@
                   "shrink": 0
                 },
                 "props": {
-                  "text": "All four threshold values are required to save.",
                   "style": {
                     "classes": "pf-kpi-sub"
-                  }
-                }
+                  },
+                  "text": "All four threshold values are required to save."
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.container.flex",
-                "meta": {
-                  "name": "FieldRow"
-                },
-                "position": {
-                  "shrink": 0
-                },
-                "props": {
-                  "direction": "row",
-                  "alignItems": "flex-end",
-                  "wrap": "wrap",
-                  "style": {
-                    "gap": "12px"
-                  }
-                },
                 "children": [
                   {
-                    "type": "ia.container.flex",
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "L"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-label"
+                          },
+                          "text": "Target buffer depth"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "TargetBufferDepth"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.draft.targetBufferDepth"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "placeholder": "0",
+                          "style": {
+                            "classes": "pf-field-input"
+                          }
+                        },
+                        "type": "ia.input.text-field"
+                      }
+                    ],
                     "meta": {
                       "name": "TargetField"
                     },
@@ -315,30 +286,32 @@
                         "gap": "4px"
                       }
                     },
+                    "type": "ia.container.flex"
+                  },
+                  {
                     "children": [
                       {
-                        "type": "ia.display.label",
                         "meta": {
                           "name": "L"
                         },
                         "props": {
-                          "text": "Target buffer depth",
                           "style": {
                             "classes": "pf-field-label"
-                          }
-                        }
+                          },
+                          "text": "Top-up threshold"
+                        },
+                        "type": "ia.display.label"
                       },
                       {
-                        "type": "ia.input.text-field",
                         "meta": {
-                          "name": "TargetBufferDepth"
+                          "name": "TopupThreshold"
                         },
                         "propConfig": {
                           "props.text": {
                             "binding": {
                               "config": {
-                                "path": "view.custom.draft.targetBufferDepth",
-                                "bidirectional": true
+                                "bidirectional": true,
+                                "path": "view.custom.draft.topupThreshold"
                               },
                               "type": "property"
                             }
@@ -349,12 +322,10 @@
                           "style": {
                             "classes": "pf-field-input"
                           }
-                        }
+                        },
+                        "type": "ia.input.text-field"
                       }
-                    ]
-                  },
-                  {
-                    "type": "ia.container.flex",
+                    ],
                     "meta": {
                       "name": "TopupField"
                     },
@@ -369,30 +340,32 @@
                         "gap": "4px"
                       }
                     },
+                    "type": "ia.container.flex"
+                  },
+                  {
                     "children": [
                       {
-                        "type": "ia.display.label",
                         "meta": {
                           "name": "L"
                         },
                         "props": {
-                          "text": "Top-up threshold",
                           "style": {
                             "classes": "pf-field-label"
-                          }
-                        }
+                          },
+                          "text": "Alarm warning depth"
+                        },
+                        "type": "ia.display.label"
                       },
                       {
-                        "type": "ia.input.text-field",
                         "meta": {
-                          "name": "TopupThreshold"
+                          "name": "AlarmWarningDepth"
                         },
                         "propConfig": {
                           "props.text": {
                             "binding": {
                               "config": {
-                                "path": "view.custom.draft.topupThreshold",
-                                "bidirectional": true
+                                "bidirectional": true,
+                                "path": "view.custom.draft.alarmWarningDepth"
                               },
                               "type": "property"
                             }
@@ -403,12 +376,10 @@
                           "style": {
                             "classes": "pf-field-input"
                           }
-                        }
+                        },
+                        "type": "ia.input.text-field"
                       }
-                    ]
-                  },
-                  {
-                    "type": "ia.container.flex",
+                    ],
                     "meta": {
                       "name": "WarnField"
                     },
@@ -423,30 +394,32 @@
                         "gap": "4px"
                       }
                     },
+                    "type": "ia.container.flex"
+                  },
+                  {
                     "children": [
                       {
-                        "type": "ia.display.label",
                         "meta": {
                           "name": "L"
                         },
                         "props": {
-                          "text": "Alarm warning depth",
                           "style": {
                             "classes": "pf-field-label"
-                          }
-                        }
+                          },
+                          "text": "Alarm critical depth"
+                        },
+                        "type": "ia.display.label"
                       },
                       {
-                        "type": "ia.input.text-field",
                         "meta": {
-                          "name": "AlarmWarningDepth"
+                          "name": "AlarmCriticalDepth"
                         },
                         "propConfig": {
                           "props.text": {
                             "binding": {
                               "config": {
-                                "path": "view.custom.draft.alarmWarningDepth",
-                                "bidirectional": true
+                                "bidirectional": true,
+                                "path": "view.custom.draft.alarmCriticalDepth"
                               },
                               "type": "property"
                             }
@@ -457,12 +430,10 @@
                           "style": {
                             "classes": "pf-field-input"
                           }
-                        }
+                        },
+                        "type": "ia.input.text-field"
                       }
-                    ]
-                  },
-                  {
-                    "type": "ia.container.flex",
+                    ],
                     "meta": {
                       "name": "CriticalField"
                     },
@@ -477,48 +448,36 @@
                         "gap": "4px"
                       }
                     },
-                    "children": [
-                      {
-                        "type": "ia.display.label",
-                        "meta": {
-                          "name": "L"
-                        },
-                        "props": {
-                          "text": "Alarm critical depth",
-                          "style": {
-                            "classes": "pf-field-label"
-                          }
-                        }
-                      },
-                      {
-                        "type": "ia.input.text-field",
-                        "meta": {
-                          "name": "AlarmCriticalDepth"
-                        },
-                        "propConfig": {
-                          "props.text": {
-                            "binding": {
-                              "config": {
-                                "path": "view.custom.draft.alarmCriticalDepth",
-                                "bidirectional": true
-                              },
-                              "type": "property"
-                            }
-                          }
-                        },
-                        "props": {
-                          "placeholder": "0",
-                          "style": {
-                            "classes": "pf-field-input"
-                          }
-                        }
-                      }
-                    ]
+                    "type": "ia.container.flex"
                   }
-                ]
+                ],
+                "meta": {
+                  "name": "FieldRow"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "alignItems": "flex-end",
+                  "style": {
+                    "gap": "12px"
+                  },
+                  "wrap": "wrap"
+                },
+                "type": "ia.container.flex"
               },
               {
-                "type": "ia.input.button",
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\td \u003d self.view.custom.draft\n\ttarget \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"targetBufferDepth\"))\n\ttopup \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"topupThreshold\"))\n\twarn \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"alarmWarningDepth\"))\n\tcritical \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"alarmCriticalDepth\"))\n\tif target is None or topup is None or warn is None or critical is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter all four threshold values.\"}, \"AIM Pool Config\")\n\t\treturn\n\tresult \u003d BlueRidge.Lots.AimPoolConfig.update(target, topup, warn, critical)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Thresholds saved\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
                 "meta": {
                   "name": "SaveButton"
                 },
@@ -526,27 +485,58 @@
                   "shrink": 0
                 },
                 "props": {
-                  "text": "Save",
                   "style": {
                     "classes": "pf-btn pf-btn-primary pf-btn-large"
-                  }
+                  },
+                  "text": "Save"
                 },
-                "events": {
-                  "component": {
-                    "onActionPerformed": {
-                      "type": "script",
-                      "scope": "G",
-                      "config": {
-                        "script": "\td = self.view.custom.draft\n\ttarget = BlueRidge.Common.Util.toIntOrNone(d.get(\"targetBufferDepth\"))\n\ttopup = BlueRidge.Common.Util.toIntOrNone(d.get(\"topupThreshold\"))\n\twarn = BlueRidge.Common.Util.toIntOrNone(d.get(\"alarmWarningDepth\"))\n\tcritical = BlueRidge.Common.Util.toIntOrNone(d.get(\"alarmCriticalDepth\"))\n\tif target is None or topup is None or warn is None or critical is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter all four threshold values.\"}, \"AIM Pool Config\")\n\t\treturn\n\tresult = BlueRidge.Lots.AimPoolConfig.update(target, topup, warn, critical)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Thresholds saved\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
-                      }
-                    }
-                  }
-                }
+                "type": "ia.input.button"
               }
-            ]
+            ],
+            "meta": {
+              "name": "EditPanel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-panel",
+                "gap": "16px",
+                "padding": "16px"
+              }
+            },
+            "type": "ia.container.flex"
           }
-        ]
+        ],
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "16px",
+            "margin": "16px",
+            "overflowY": "auto",
+            "padding": "0"
+          }
+        },
+        "type": "ia.container.flex"
       }
-    ]
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "canvas"
+      }
+    },
+    "type": "ia.container.flex"
   }
 }
