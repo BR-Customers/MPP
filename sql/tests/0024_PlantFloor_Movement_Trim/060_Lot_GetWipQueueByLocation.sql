@@ -42,7 +42,7 @@ UPDATE Lots.LotMovement SET MovedAt = '2026-02-01T00:00:00' WHERE LotId = @L2;
 DECLARE @ClosedId BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Closed');
 UPDATE Lots.Lot SET LotStatusId = @ClosedId WHERE Id = @L3;
 
-CREATE TABLE #Q (Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500), PieceCount INT, LotStatusId BIGINT, LotStatusCode NVARCHAR(20), LastMovementAt DATETIME2(3));
+CREATE TABLE #Q (Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500), PieceCount INT, LotStatusId BIGINT, LotStatusCode NVARCHAR(20), LastMovementAt DATETIME2(3), HasRenameBom BIT);
 INSERT INTO #Q EXEC Lots.Lot_GetWipQueueByLocation @LocationId = @LocA;
 
 DECLARE @First BIGINT = (SELECT TOP 1 Id FROM #Q ORDER BY LastMovementAt ASC, Id ASC);
@@ -65,7 +65,7 @@ DECLARE @BadLoc BIGINT = (SELECT TOP 1 l.Id FROM Location.Location l
     WHERE l.DeprecatedAt IS NULL
       AND NOT EXISTS (SELECT 1 FROM Lots.Lot x WHERE x.CurrentLocationId = l.Id)
     ORDER BY l.Id);
-CREATE TABLE #Q2 (Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500), PieceCount INT, LotStatusId BIGINT, LotStatusCode NVARCHAR(20), LastMovementAt DATETIME2(3));
+CREATE TABLE #Q2 (Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500), PieceCount INT, LotStatusId BIGINT, LotStatusCode NVARCHAR(20), LastMovementAt DATETIME2(3), HasRenameBom BIT);
 INSERT INTO #Q2 EXEC Lots.Lot_GetWipQueueByLocation @LocationId = @BadLoc;
 DECLARE @Empty NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM #Q2);
 DROP TABLE #Q2;

@@ -193,7 +193,7 @@ def getCellLineQuantity(locationId, itemId):
     )
 
 
-def getWipQueueByLocation(locationId, includeDescendants=False):
+def getWipQueueByLocation(locationId, includeDescendants=False, _refreshToken=None):
     """Arc 2 Phase 4 / Phase 5. The FIFO WIP queue at a location (open LOTs in
        arrival order). Returns list[dict]."""
     BlueRidge.Common.Util.log("locationId=%s includeDescendants=%s" % (locationId, includeDescendants))

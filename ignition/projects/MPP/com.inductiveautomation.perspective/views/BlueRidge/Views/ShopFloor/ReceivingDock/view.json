@@ -321,7 +321,7 @@
                 "props": {
                   "placeholder": "Scan or enter vendor LOT",
                   "style": {
-                    "classes": "pf-field-input pf-field-mono",
+                    "classes": "pf-field-input-mono",
                     "minHeight": "44px"
                   }
                 },
@@ -442,7 +442,7 @@
                       "placeholder": "Min serial",
                       "inputType": "tel",
                       "style": {
-                        "classes": "pf-field-input pf-field-mono",
+                        "classes": "pf-field-input-mono",
                         "minHeight": "44px"
                       }
                     },
@@ -498,7 +498,7 @@
                       "placeholder": "Max serial",
                       "inputType": "tel",
                       "style": {
-                        "classes": "pf-field-input pf-field-mono",
+                        "classes": "pf-field-input-mono",
                         "minHeight": "44px"
                       }
                     },

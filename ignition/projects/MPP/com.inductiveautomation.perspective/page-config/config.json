@@ -4,13 +4,53 @@
       "title": "MPP MES",
       "viewPath": "BlueRidge/Views/ShopFloor/HomeRouter"
     },
+    "/dev/test-nav": {
+      "title": "Dev Nav",
+      "viewPath": "BlueRidge/Views/Dev/TestNavHeader"
+    },
     "/navigation-testing": {
       "title": "",
       "viewPath": "BlueRidge/Views/Navigation Testing"
     },
-    "/shop-floor/terminal-selector": {
-      "title": "Select Terminal",
-      "viewPath": "BlueRidge/Views/ShopFloor/TerminalSelector"
+    "/shop-floor/aim-pool-config": {
+      "title": "AIM Pool Config",
+      "viewPath": "BlueRidge/Views/ShopFloor/AimPoolConfig"
+    },
+    "/shop-floor/assembly-in": {
+      "title": "Assembly IN",
+      "viewPath": "BlueRidge/Views/ShopFloor/AssemblyIn"
+    },
+    "/shop-floor/assembly-nonserialized": {
+      "title": "Assembly (Non-Serialized)",
+      "viewPath": "BlueRidge/Views/ShopFloor/AssemblyNonSerialized"
+    },
+    "/shop-floor/assembly-serialized": {
+      "title": "Assembly (Serialized)",
+      "viewPath": "BlueRidge/Views/ShopFloor/AssemblySerialized"
+    },
+    "/shop-floor/die-cast": {
+      "title": "Die Cast Entry",
+      "viewPath": "BlueRidge/Views/ShopFloor/DieCastShared"
+    },
+    "/shop-floor/die-cast/area/:areaId": {
+      "title": "Die Cast Entry",
+      "viewPath": "BlueRidge/Views/ShopFloor/DieCastShared"
+    },
+    "/shop-floor/downtime": {
+      "title": "Downtime Entry",
+      "viewPath": "BlueRidge/Views/ShopFloor/DowntimeEntry"
+    },
+    "/shop-floor/end-of-shift": {
+      "title": "End of Shift",
+      "viewPath": "BlueRidge/Views/ShopFloor/EndOfShiftEntry"
+    },
+    "/shop-floor/genealogy": {
+      "title": "Genealogy",
+      "viewPath": "BlueRidge/Views/ShopFloor/GenealogyViewer"
+    },
+    "/shop-floor/hold-management": {
+      "title": "Hold Management",
+      "viewPath": "BlueRidge/Views/ShopFloor/HoldManagement"
     },
     "/shop-floor/lot-detail/:lotId": {
       "title": "LOT Detail",
@@ -20,26 +60,83 @@
       "title": "LOT Search",
       "viewPath": "BlueRidge/Views/ShopFloor/LotSearch"
     },
-    "/shop-floor/genealogy": {
-      "title": "Genealogy",
-      "viewPath": "BlueRidge/Views/ShopFloor/GenealogyViewer"
+    "/shop-floor/machining-in": {
+      "title": "Machining IN",
+      "viewPath": "BlueRidge/Views/ShopFloor/MachiningIn"
     },
-    "/shop-floor/trim": {
-      "title": "Trim",
-      "viewPath": "BlueRidge/Views/ShopFloor/TrimStation"
+    "/shop-floor/machining-out": {
+      "title": "Machining OUT - Split",
+      "viewPath": "BlueRidge/Views/ShopFloor/MachiningOutSplit"
     },
     "/shop-floor/receiving": {
       "title": "Receiving",
       "viewPath": "BlueRidge/Views/ShopFloor/ReceivingDock"
     },
-    "/shop-floor/die-cast": {
-      "title": "Die Cast Entry",
-      "viewPath": "BlueRidge/Views/ShopFloor/DieCastEntry"
+    "/shop-floor/shift-summary": {
+      "title": "Shift-End Summary",
+      "viewPath": "BlueRidge/Views/ShopFloor/ShiftEndSummary"
     },
-    "/shop-floor/die-cast/area/:areaId": {
-      "title": "Die Cast Entry",
-      "viewPath": "BlueRidge/Views/ShopFloor/DieCastEntry"
+    "/shop-floor/shipping": {
+      "title": "Shipping Dock",
+      "viewPath": "BlueRidge/Views/ShopFloor/ShippingDock"
+    },
+    "/shop-floor/sort-cage": {
+      "title": "Sort Cage",
+      "viewPath": "BlueRidge/Views/ShopFloor/SortCageWorkflow"
+    },
+    "/shop-floor/supervisor": {
+      "title": "Supervisor Dashboard",
+      "viewPath": "BlueRidge/Views/ShopFloor/SupervisorDashboard"
+    },
+    "/shop-floor/terminal-selector": {
+      "title": "Select Terminal",
+      "viewPath": "BlueRidge/Views/ShopFloor/TerminalSelector"
+    },
+    "/shop-floor/trim": {
+      "title": "Trim Station",
+      "viewPath": "BlueRidge/Views/ShopFloor/TrimShared"
+    },
+    "/shop-floor/die-cast/dedicated": {
+      "title": "Die Cast Entry (Dedicated)",
+      "viewPath": "BlueRidge/Views/ShopFloor/DieCastDedicated"
+    },
+    "/shop-floor/trim/dedicated": {
+      "title": "Trim Station (Dedicated)",
+      "viewPath": "BlueRidge/Views/ShopFloor/TrimDedicated"
     }
   },
-  "sharedDocks": {}
+  "sharedDocks": {
+    "bottom": [
+      {
+        "anchor": "fixed",
+        "autoBreakpoint": 0,
+        "content": null,
+        "handle": "hide",
+        "iconUrl": "",
+        "id": "notify-host",
+        "modal": false,
+        "resizable": false,
+        "show": "visible",
+        "size": 1,
+        "viewParams": {},
+        "viewPath": "BlueRidge/Components/NotifyHost"
+      }
+    ],
+    "top": [
+      {
+        "anchor": "fixed",
+        "autoBreakpoint": 0,
+        "content": "auto",
+        "handle": "hide",
+        "iconUrl": "",
+        "id": "dev-nav",
+        "modal": false,
+        "resizable": false,
+        "show": "visible",
+        "size": 96,
+        "viewParams": {},
+        "viewPath": "BlueRidge/Views/Dev/TestNavHeader"
+      }
+    ]
+  }
 }

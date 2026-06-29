@@ -439,7 +439,7 @@
                 "props": {
                   "text": "Ancestors",
                   "style": {
-                    "background": "var(--mpp-surface-alt)",
+                    "background": "var(--mpp-surface-raised)",
                     "borderBottom": "1px solid var(--mpp-border-subtle)",
                     "color": "var(--mpp-text-secondary)",
                     "fontSize": "11px",
@@ -529,9 +529,9 @@
                     "props": {
                       "text": "⊙",
                       "style": {
-                        "background": "var(--mpp-accent)",
+                        "background": "var(--mpp-accent-60)",
                         "borderRadius": "50%",
-                        "color": "var(--mpp-text-on-accent)",
+                        "color": "var(--mpp-neutral-100)",
                         "fontSize": "13px",
                         "fontWeight": "700",
                         "height": "30px",
@@ -576,9 +576,9 @@
                     "props": {
                       "text": "Root",
                       "style": {
-                        "background": "var(--mpp-accent)",
+                        "background": "var(--mpp-accent-60)",
                         "borderRadius": "4px",
-                        "color": "var(--mpp-text-on-accent)",
+                        "color": "var(--mpp-neutral-100)",
                         "fontSize": "11px",
                         "fontWeight": "600",
                         "letterSpacing": "0.05em",
@@ -611,7 +611,7 @@
                 "props": {
                   "text": "Descendants",
                   "style": {
-                    "background": "var(--mpp-surface-alt)",
+                    "background": "var(--mpp-surface-raised)",
                     "borderBottom": "1px solid var(--mpp-border-subtle)",
                     "borderTop": "1px solid var(--mpp-border-subtle)",
                     "color": "var(--mpp-text-secondary)",

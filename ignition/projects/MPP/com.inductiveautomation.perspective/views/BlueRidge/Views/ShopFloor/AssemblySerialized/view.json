@@ -1,0 +1,1419 @@
+{
+  "custom": {
+    "refreshToken": 0
+  },
+  "params": {},
+  "propConfig": {
+    "custom.container": {
+      "binding": {
+        "config": {
+          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Container.getOpenByCell\", 0, {session.custom.cell.locationId}, {view.custom.refreshToken}), \"\")"
+        },
+        "transforms": [
+          {
+            "code": "\trows = value or []\n\tr = rows[0] if rows else {}\n\treturn {\"Id\": r.get(\"Id\"), \"ItemPartNumber\": r.get(\"ItemPartNumber\") or \"\", \"ItemDescription\": r.get(\"ItemDescription\") or \"\", \"AccumulatedParts\": r.get(\"AccumulatedParts\") or 0, \"TargetParts\": r.get(\"TargetParts\") or 0, \"ClosedTrays\": r.get(\"ClosedTrays\") or 0, \"TraysPerContainer\": r.get(\"TraysPerContainer\") or 0, \"PartsPerTray\": r.get(\"PartsPerTray\") or 0, \"IsSerialized\": r.get(\"IsSerialized\") or False}",
+            "type": "script"
+          }
+        ],
+        "type": "expr"
+      }
+    },
+    "custom.queueByPartText": {
+      "binding": {
+        "config": {
+          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, false, {view.custom.refreshToken}), \"\")"
+        },
+        "transforms": [
+          {
+            "code": "\trows = value or []\n\tif not rows:\n\t\treturn \"(none at this cell)\"\n\ttotals = {}\n\torder = []\n\tfor r in rows:\n\t\tk = r.get(\"ItemPartNumber\") or \"?\"\n\t\tif k not in totals:\n\t\t\ttotals[k] = 0\n\t\t\torder.append(k)\n\t\ttotals[k] = totals[k] + (r.get(\"PieceCount\") or 0)\n\treturn \"   |   \".join([\"%s: %d pcs\" % (k, totals[k]) for k in order])",
+            "type": "script"
+          }
+        ],
+        "type": "expr"
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 1280
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Title"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-terminal-title",
+                    "fontSize": "22px",
+                    "fontWeight": "700"
+                  },
+                  "text": "Assembly - Serialized Line"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Subtitle"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-terminal-title-meta"
+                  },
+                  "text": "Dedicated terminal - MIP integrated - operator monitoring"
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "TitleBlock"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "2px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "ConfirmMethod"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "data-method": "Vision",
+              "style": {
+                "classes": "pf-confirm-method"
+              },
+              "text": "Vision"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=True, overlayDismiss=True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "OperatorLabel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub",
+                "cursor": "pointer"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "PausedLabel"
+                },
+                "props": {
+                  "text": "Paused"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "PausedCount"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-paused-indicator-count"
+                  },
+                  "text": "0"
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "PausedIndicator"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "alignItems": "center",
+              "style": {
+                "classes": "pf-paused-indicator",
+                "gap": "8px"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "classes": "pf-terminal-header",
+            "gap": "16px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "meta": {
+          "name": "PrintBanner"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "path": "BlueRidge/Components/PlantFloor/PrintFailureBanner",
+          "style": {
+            "margin": "12px 16px 0 16px"
+          }
+        },
+        "type": "ia.display.view"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "MachineLabel"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-cell-context-label"
+                  },
+                  "text": "Assembly Cell"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "CtxCellLabel"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-cell-context-label"
+                      },
+                      "text": "Active Cell"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "ActiveCellValue"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"No cell bound to this terminal\", {session.custom.cell.name})"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-cell-context-value"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "ActiveCellBlock"
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "gap": "8px"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "Spacer"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "ContextMeta"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  },
+                  "text": "ByVision - camera scans each tray as a whole - 1 validation event per tray"
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "CellContext"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "alignItems": "center",
+              "style": {
+                "classes": "pf-terminal-cell-context",
+                "gap": "12px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "ComponentsLabel"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-field-label"
+                  },
+                  "text": "Components at this cell"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "ComponentsValue"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.queueByPartText"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-field-input-mono"
+                  }
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "ComponentsPanel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "alignItems": "center",
+              "gap": "10px",
+              "style": {
+                "classes": "pf-panel"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "EmptyHint"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "isNull({view.custom.container.Id})"
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if(isNull({session.custom.cell.locationId}), 'No cell bound to see its open container.', 'No open container at this cell.')"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "L"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-label"
+                      },
+                      "text": "Open Container"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "V"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "{view.custom.container.ItemPartNumber}"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-value pf-kpi-value-mono"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "S"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "{view.custom.container.ItemDescription}"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "KpiItem"
+                },
+                "position": {
+                  "basis": "240px",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-kpi"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "L"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-label"
+                      },
+                      "text": "Container Fill"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "V"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "toStr({view.custom.container.AccumulatedParts}) + ' of ' + toStr({view.custom.container.TargetParts})"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-value"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "S"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "toStr({view.custom.container.ClosedTrays}) + ' of ' + toStr({view.custom.container.TraysPerContainer}) + ' trays closed - parts accumulated'"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "KpiFill"
+                },
+                "position": {
+                  "basis": "240px",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-kpi"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "L"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-label"
+                      },
+                      "text": "Current Tray"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "V"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "'Tray ' + toStr(({view.custom.container.ClosedTrays} + 1)) + ' of ' + toStr({view.custom.container.TraysPerContainer})"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-value"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "S"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "'TrayFullFlag at ' + toStr({view.custom.container.PartsPerTray}) + ' pcs'"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "KpiTray"
+                },
+                "position": {
+                  "basis": "240px",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-kpi"
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "Kpis"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "!isNull({view.custom.container.Id})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "gap": "10px"
+              },
+              "wrap": "wrap"
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "H"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "'Tray Fill - Tray ' + toStr(({view.custom.container.ClosedTrays} + 1))"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "fontSize": "16px",
+                        "fontWeight": "700"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "Hsub"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      },
+                      "text": "ByVision - camera scans the tray as a whole - 1 validation event per tray"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "TrayHeader"
+                },
+                "props": {
+                  "alignItems": "center",
+                  "justify": "space-between",
+                  "style": {
+                    "classes": "pf-panel-header"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "P1"
+                    },
+                    "position": {
+                      "basis": "56px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "1 <= {view.custom.container.PartsPerTray}"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "alignItems": "center",
+                        "backgroundColor": "var(--mpp-surface-card)",
+                        "border": "2px dashed var(--mpp-border-subtle)",
+                        "borderRadius": "var(--mpp-radius-md)",
+                        "color": "var(--mpp-text-tertiary)",
+                        "display": "flex",
+                        "fontFamily": "var(--mpp-font-mono)",
+                        "fontSize": "11px",
+                        "fontWeight": "600",
+                        "height": "56px",
+                        "justifyContent": "center"
+                      },
+                      "text": "1"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "P2"
+                    },
+                    "position": {
+                      "basis": "56px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "2 <= {view.custom.container.PartsPerTray}"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "alignItems": "center",
+                        "backgroundColor": "var(--mpp-surface-card)",
+                        "border": "2px dashed var(--mpp-border-subtle)",
+                        "borderRadius": "var(--mpp-radius-md)",
+                        "color": "var(--mpp-text-tertiary)",
+                        "display": "flex",
+                        "fontFamily": "var(--mpp-font-mono)",
+                        "fontSize": "11px",
+                        "fontWeight": "600",
+                        "height": "56px",
+                        "justifyContent": "center"
+                      },
+                      "text": "2"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "P3"
+                    },
+                    "position": {
+                      "basis": "56px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "3 <= {view.custom.container.PartsPerTray}"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "alignItems": "center",
+                        "backgroundColor": "var(--mpp-surface-card)",
+                        "border": "2px dashed var(--mpp-border-subtle)",
+                        "borderRadius": "var(--mpp-radius-md)",
+                        "color": "var(--mpp-text-tertiary)",
+                        "display": "flex",
+                        "fontFamily": "var(--mpp-font-mono)",
+                        "fontSize": "11px",
+                        "fontWeight": "600",
+                        "height": "56px",
+                        "justifyContent": "center"
+                      },
+                      "text": "3"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "P4"
+                    },
+                    "position": {
+                      "basis": "56px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "4 <= {view.custom.container.PartsPerTray}"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "alignItems": "center",
+                        "backgroundColor": "var(--mpp-surface-card)",
+                        "border": "2px dashed var(--mpp-border-subtle)",
+                        "borderRadius": "var(--mpp-radius-md)",
+                        "color": "var(--mpp-text-tertiary)",
+                        "display": "flex",
+                        "fontFamily": "var(--mpp-font-mono)",
+                        "fontSize": "11px",
+                        "fontWeight": "600",
+                        "height": "56px",
+                        "justifyContent": "center"
+                      },
+                      "text": "4"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "P5"
+                    },
+                    "position": {
+                      "basis": "56px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "5 <= {view.custom.container.PartsPerTray}"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "alignItems": "center",
+                        "backgroundColor": "var(--mpp-surface-card)",
+                        "border": "2px dashed var(--mpp-border-subtle)",
+                        "borderRadius": "var(--mpp-radius-md)",
+                        "color": "var(--mpp-text-tertiary)",
+                        "display": "flex",
+                        "fontFamily": "var(--mpp-font-mono)",
+                        "fontSize": "11px",
+                        "fontWeight": "600",
+                        "height": "56px",
+                        "justifyContent": "center"
+                      },
+                      "text": "5"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "P6"
+                    },
+                    "position": {
+                      "basis": "56px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "6 <= {view.custom.container.PartsPerTray}"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "alignItems": "center",
+                        "backgroundColor": "var(--mpp-surface-card)",
+                        "border": "2px dashed var(--mpp-border-subtle)",
+                        "borderRadius": "var(--mpp-radius-md)",
+                        "color": "var(--mpp-text-tertiary)",
+                        "display": "flex",
+                        "fontFamily": "var(--mpp-font-mono)",
+                        "fontSize": "11px",
+                        "fontWeight": "600",
+                        "height": "56px",
+                        "justifyContent": "center"
+                      },
+                      "text": "6"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "P7"
+                    },
+                    "position": {
+                      "basis": "56px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "7 <= {view.custom.container.PartsPerTray}"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "alignItems": "center",
+                        "backgroundColor": "var(--mpp-surface-card)",
+                        "border": "2px dashed var(--mpp-border-subtle)",
+                        "borderRadius": "var(--mpp-radius-md)",
+                        "color": "var(--mpp-text-tertiary)",
+                        "display": "flex",
+                        "fontFamily": "var(--mpp-font-mono)",
+                        "fontSize": "11px",
+                        "fontWeight": "600",
+                        "height": "56px",
+                        "justifyContent": "center"
+                      },
+                      "text": "7"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "P8"
+                    },
+                    "position": {
+                      "basis": "56px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "8 <= {view.custom.container.PartsPerTray}"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "alignItems": "center",
+                        "backgroundColor": "var(--mpp-surface-card)",
+                        "border": "2px dashed var(--mpp-border-subtle)",
+                        "borderRadius": "var(--mpp-radius-md)",
+                        "color": "var(--mpp-text-tertiary)",
+                        "display": "flex",
+                        "fontFamily": "var(--mpp-font-mono)",
+                        "fontSize": "11px",
+                        "fontWeight": "600",
+                        "height": "56px",
+                        "justifyContent": "center"
+                      },
+                      "text": "8"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "P9"
+                    },
+                    "position": {
+                      "basis": "56px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "9 <= {view.custom.container.PartsPerTray}"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "alignItems": "center",
+                        "backgroundColor": "var(--mpp-surface-card)",
+                        "border": "2px dashed var(--mpp-border-subtle)",
+                        "borderRadius": "var(--mpp-radius-md)",
+                        "color": "var(--mpp-text-tertiary)",
+                        "display": "flex",
+                        "fontFamily": "var(--mpp-font-mono)",
+                        "fontSize": "11px",
+                        "fontWeight": "600",
+                        "height": "56px",
+                        "justifyContent": "center"
+                      },
+                      "text": "9"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "P10"
+                    },
+                    "position": {
+                      "basis": "56px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "10 <= {view.custom.container.PartsPerTray}"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "alignItems": "center",
+                        "backgroundColor": "var(--mpp-surface-card)",
+                        "border": "2px dashed var(--mpp-border-subtle)",
+                        "borderRadius": "var(--mpp-radius-md)",
+                        "color": "var(--mpp-text-tertiary)",
+                        "display": "flex",
+                        "fontFamily": "var(--mpp-font-mono)",
+                        "fontSize": "11px",
+                        "fontWeight": "600",
+                        "height": "56px",
+                        "justifyContent": "center"
+                      },
+                      "text": "10"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "P11"
+                    },
+                    "position": {
+                      "basis": "56px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "11 <= {view.custom.container.PartsPerTray}"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "alignItems": "center",
+                        "backgroundColor": "var(--mpp-surface-card)",
+                        "border": "2px dashed var(--mpp-border-subtle)",
+                        "borderRadius": "var(--mpp-radius-md)",
+                        "color": "var(--mpp-text-tertiary)",
+                        "display": "flex",
+                        "fontFamily": "var(--mpp-font-mono)",
+                        "fontSize": "11px",
+                        "fontWeight": "600",
+                        "height": "56px",
+                        "justifyContent": "center"
+                      },
+                      "text": "11"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "P12"
+                    },
+                    "position": {
+                      "basis": "56px",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "12 <= {view.custom.container.PartsPerTray}"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "alignItems": "center",
+                        "backgroundColor": "var(--mpp-surface-card)",
+                        "border": "2px dashed var(--mpp-border-subtle)",
+                        "borderRadius": "var(--mpp-radius-md)",
+                        "color": "var(--mpp-text-tertiary)",
+                        "display": "flex",
+                        "fontFamily": "var(--mpp-font-mono)",
+                        "fontSize": "11px",
+                        "fontWeight": "600",
+                        "height": "56px",
+                        "justifyContent": "center"
+                      },
+                      "text": "12"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "TrayGrid"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "gap": "8px",
+                    "maxWidth": "392px",
+                    "padding": "8px 0"
+                  },
+                  "wrap": "wrap"
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "TrayNote"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  },
+                  "text": "The camera scans the full tray as a single image once TrayFullFlag asserts - one validation event per tray; positions show each etched serial. A serial placed during a HardwareInterlockEnable=false window is flagged hardware-interlock-bypassed per UJ-16; the audit row captures the bypass."
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "TrayPanel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "!isNull({view.custom.container.Id})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-panel",
+                "gap": "8px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "H"
+                    },
+                    "props": {
+                      "style": {
+                        "fontSize": "16px",
+                        "fontWeight": "700"
+                      },
+                      "text": "WorkOrder Completion Gate"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "Hsub"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      },
+                      "text": "RequiresCompletionConfirm = 1 - large-button gesture required"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "GateHeader"
+                },
+                "props": {
+                  "alignItems": "center",
+                  "justify": "space-between",
+                  "style": {
+                    "classes": "pf-panel-header"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "GateIntro"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "'When the container reaches ' + toStr({view.custom.container.TargetParts}) + ' pcs and the PLC asserts CompletionConfirmed=1:'"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-primary)"
+                          }
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "B1"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-kpi-sub"
+                          },
+                          "text": "- AIM Shipper ID claimed from local pool (sync FIFO, sub-millisecond)"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "B2"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-kpi-sub"
+                          },
+                          "text": "- ShippingLabel row inserted with PrintedAt = NULL"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "B3"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-kpi-sub"
+                          },
+                          "text": "- Async print message dispatched to Zebra at this terminal"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "B4"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-kpi-sub"
+                          },
+                          "text": "- Container status flips to Complete - WO auto-finishes"
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "GateText"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "6px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "config": {
+                            "script": "\tc = self.view.custom.container\n\tcellId = self.session.custom.cell.locationId\n\tif not c or c.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No open container at this cell.\"}, \"Assembly\")\n\t\treturn\n\tresult = BlueRidge.Lots.Container.complete(c.get(\"Id\"), operatorConfirmed=True, terminalLocationId=cellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Container complete\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                          },
+                          "scope": "G",
+                          "type": "script"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "name": "ConfirmButton"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-btn pf-btn-primary pf-btn-large",
+                        "fontSize": "18px",
+                        "minHeight": "80px",
+                        "minWidth": "200px"
+                      },
+                      "text": "Confirm Completion"
+                    },
+                    "type": "ia.input.button"
+                  }
+                ],
+                "meta": {
+                  "name": "GateBody"
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "gap": "16px"
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "CompletionPanel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "!isNull({view.custom.container.Id})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "border": "1px solid var(--mpp-accent-60)",
+                "classes": "pf-panel",
+                "gap": "12px"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "16px",
+            "padding": "16px"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\t# Dedicated-flavor context (FDS-02-010): bind the cell to the terminal's parent line.\n\tt = self.session.custom.terminal\n\tif t and t.get(\"zoneLocationId\"):\n\t\tself.session.custom.cell = {\"locationId\": t.get(\"zoneLocationId\"), \"code\": t.get(\"zoneName\") or \"\", \"name\": t.get(\"zoneName\") or \"\"}\n\ttry:\n\t\tself.session.custom.presence.policy = \"confirm\"\n\texcept:\n\t\tself.session.custom.presence = {\"policy\": \"confirm\"}\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
+          }
+        }
+      }
+    },
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "canvas pf-terminal"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

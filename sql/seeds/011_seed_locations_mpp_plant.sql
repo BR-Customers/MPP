@@ -141,24 +141,44 @@ IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'DC4-T1-P1')
 -- === Trim Shop 1 ===
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 3, (SELECT Id FROM Location.Location WHERE Code = N'MPP-MAD'), N'Trim Shop 1', N'TRIM1', N'Trim shop - area-level processing, no sublot split', 5;
+    SELECT 3, (SELECT Id FROM Location.Location WHERE Code = N'MPP-MAD'), N'Trim Shop 1', N'TRIM1', N'Trim shop - trim press cells, no sublot split', 5;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM1-T1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'TRIM1'), N'Terminal', N'TRIM1-T1', N'Area-level trim terminal', 1;
+    SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'TRIM1'), N'Terminal', N'TRIM1-T1', N'Shared trim terminal', 1;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM1-T1-P1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-T1'), N'P - 005', N'TRIM1-T1-P1', N'Label printer for TRIM1-T1', 1;
+-- trim press cells (TrimPress) the shared trim terminal serves
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM1-P01')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
+    SELECT 10, (SELECT Id FROM Location.Location WHERE Code = N'TRIM1'), N'Press 01', N'TRIM1-P01', N'Trim press', 1;
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM1-P02')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
+    SELECT 10, (SELECT Id FROM Location.Location WHERE Code = N'TRIM1'), N'Press 02', N'TRIM1-P02', N'Trim press', 2;
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM1-P03')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
+    SELECT 10, (SELECT Id FROM Location.Location WHERE Code = N'TRIM1'), N'Press 03', N'TRIM1-P03', N'Trim press', 3;
 
 -- === Trim Shop 2 ===
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM2')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 3, (SELECT Id FROM Location.Location WHERE Code = N'MPP-MAD'), N'Trim Shop 2', N'TRIM2', N'Trim shop - area-level processing, no sublot split', 6;
+    SELECT 3, (SELECT Id FROM Location.Location WHERE Code = N'MPP-MAD'), N'Trim Shop 2', N'TRIM2', N'Trim shop - trim press cells, no sublot split', 6;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM2-T1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
-    SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'TRIM2'), N'Terminal', N'TRIM2-T1', N'Area-level trim terminal', 1;
+    SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'TRIM2'), N'Terminal', N'TRIM2-T1', N'Shared trim terminal', 1;
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM2-T1-P1')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'TRIM2-T1'), N'P - 006', N'TRIM2-T1-P1', N'Label printer for TRIM2-T1', 1;
+-- trim press cells (TrimPress) the shared trim terminal serves
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM2-P01')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
+    SELECT 10, (SELECT Id FROM Location.Location WHERE Code = N'TRIM2'), N'Press 01', N'TRIM2-P01', N'Trim press', 1;
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM2-P02')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
+    SELECT 10, (SELECT Id FROM Location.Location WHERE Code = N'TRIM2'), N'Press 02', N'TRIM2-P02', N'Trim press', 2;
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM2-P03')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
+    SELECT 10, (SELECT Id FROM Location.Location WHERE Code = N'TRIM2'), N'Press 03', N'TRIM2-P03', N'Trim press', 3;
 
 -- === Machining & Assembly 1 ===
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'MA1')
@@ -575,3 +595,65 @@ IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'SHIPOUT')
 IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'FALLBACK-TERMINAL')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'MPP-MAD'), N'Fallback Terminal', N'FALLBACK-TERMINAL', N'Global default terminal returned when an unregistered IP address connects.', 12;
+
+-- === Dedicated Die Cast terminal demo (FDS-02-010 view-flavor) ===
+-- A second DC1 terminal parented DIRECTLY at machine DC1-M01 (not the area). Its
+-- DefaultScreen = the dedicated die-cast view, so its context is fixed to DC1-M01
+-- with no picker. DC1-T1 (area-parented) keeps the shared view + press picker.
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'DC1-M01-T1')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
+    SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'DC1-M01'), N'Terminal', N'DC1-M01-T1', N'Dedicated die-cast terminal at machine DC1-M01', 1;
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'DC1-M01-T1-P1')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'DC1-M01-T1'), N'P - 001D', N'DC1-M01-T1-P1', N'Label printer for DC1-M01-T1', 1;
+
+-- DefaultScreen assignments (LocationAttributeDefinition Id 17 = Terminal.DefaultScreen):
+--   DC1-T1      (area-parented)    -> shared die-cast view (press picker)
+--   DC1-M01-T1  (machine-parented) -> dedicated die-cast view (fixed to DC1-M01)
+IF NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la JOIN Location.Location l ON l.Id = la.LocationId WHERE l.Code = N'DC1-T1' AND la.LocationAttributeDefinitionId = 17)
+    INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue, CreatedAt)
+    SELECT (SELECT Id FROM Location.Location WHERE Code = N'DC1-T1'), 17, N'/shop-floor/die-cast', SYSUTCDATETIME();
+IF NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la JOIN Location.Location l ON l.Id = la.LocationId WHERE l.Code = N'DC1-M01-T1' AND la.LocationAttributeDefinitionId = 17)
+    INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue, CreatedAt)
+    SELECT (SELECT Id FROM Location.Location WHERE Code = N'DC1-M01-T1'), 17, N'/shop-floor/die-cast/dedicated', SYSUTCDATETIME();
+
+-- === Dedicated Trim terminal demo (FDS-02-010 view-flavor) ===
+-- A second TRIM1 terminal parented DIRECTLY at press TRIM1-P01. Its DefaultScreen =
+-- the dedicated trim view, so its context is fixed to TRIM1-P01 with no picker.
+-- TRIM1-T1 (area-parented) keeps the shared view + press picker.
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM1-P01-T1')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
+    SELECT 7, (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-P01'), N'Terminal', N'TRIM1-P01-T1', N'Dedicated trim terminal at press TRIM1-P01', 1;
+IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TRIM1-P01-T1-P1')
+    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
+    SELECT 16, (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-P01-T1'), N'P - 005D', N'TRIM1-P01-T1-P1', N'Label printer for TRIM1-P01-T1', 1;
+
+-- DefaultScreen assignments:
+--   TRIM1-T1     (area-parented)  -> shared trim view (press picker)
+--   TRIM1-P01-T1 (press-parented) -> dedicated trim view (fixed to TRIM1-P01)
+IF NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la JOIN Location.Location l ON l.Id = la.LocationId WHERE l.Code = N'TRIM1-T1' AND la.LocationAttributeDefinitionId = 17)
+    INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue, CreatedAt)
+    SELECT (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-T1'), 17, N'/shop-floor/trim', SYSUTCDATETIME();
+IF NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la JOIN Location.Location l ON l.Id = la.LocationId WHERE l.Code = N'TRIM1-P01-T1' AND la.LocationAttributeDefinitionId = 17)
+    INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue, CreatedAt)
+    SELECT (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-P01-T1'), 17, N'/shop-floor/trim/dedicated', SYSUTCDATETIME();
+
+-- === Dedicated machining/assembly terminal DefaultScreen demo (FDS-02-010) ===
+-- These line terminals are dedicated-flavor: each screen binds session.custom.cell to
+-- the terminal's parent ProductionLine (line-resolution), no picker. The smoke seed
+-- (smoke_seed_phase5_7) stages WIP at these same lines so the queues populate.
+--   MA1-5GOF-MIN  -> machining-in     | MA1-5GOF-MOUT -> machining-out
+--   MA1-5GOF-ASER -> assembly-serialized
+--   MA1-COMPBR-MIN -> assembly-in (6B2 scan-in) | MA1-COMPBR-AOUT -> assembly-nonserialized
+DECLARE @dsTerm TABLE (Code NVARCHAR(50), Screen NVARCHAR(200));
+INSERT INTO @dsTerm (Code, Screen) VALUES
+    (N'MA1-5GOF-MIN',    N'/shop-floor/machining-in'),
+    (N'MA1-5GOF-MOUT',   N'/shop-floor/machining-out'),
+    (N'MA1-5GOF-ASER',   N'/shop-floor/assembly-serialized'),
+    (N'MA1-COMPBR-MIN',  N'/shop-floor/assembly-in'),
+    (N'MA1-COMPBR-AOUT', N'/shop-floor/assembly-nonserialized');
+INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue, CreatedAt)
+SELECT l.Id, 17, d.Screen, SYSUTCDATETIME()
+FROM @dsTerm d
+INNER JOIN Location.Location l ON l.Code = d.Code
+WHERE NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la WHERE la.LocationId = l.Id AND la.LocationAttributeDefinitionId = 17);

@@ -41,7 +41,14 @@ BEGIN
         l.PieceCount,
         l.LotStatusId,
         sc.Code            AS LotStatusCode,
-        lm.LastMovementAt
+        lm.LastMovementAt,
+        CAST(CASE WHEN EXISTS (
+            SELECT 1 FROM Parts.Bom b
+            INNER JOIN Parts.BomLine bl ON bl.BomId = b.Id
+            WHERE b.PublishedAt IS NOT NULL AND b.DeprecatedAt IS NULL
+              AND bl.ChildItemId = l.ItemId AND bl.QtyPer = 1
+              AND NOT EXISTS (SELECT 1 FROM Parts.BomLine x WHERE x.BomId = b.Id AND x.ChildItemId <> l.ItemId)
+        ) THEN 1 ELSE 0 END AS BIT) AS HasRenameBom
     FROM Lots.Lot l
     INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
     INNER JOIN Parts.Item i          ON i.Id  = l.ItemId

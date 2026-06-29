@@ -1,0 +1,42 @@
+{
+  "custom": { "on": false },
+  "params": { "breakId": null, "label": "" },
+  "propConfig": {
+    "params.breakId": { "paramDirection": "input" },
+    "params.label": { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "height": 52, "width": 180 }
+  },
+  "root": {
+    "meta": { "name": "root" },
+    "events": {
+      "component": {
+        "onActionPerformed": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tself.view.custom.on = not self.view.custom.on\n\tsystem.perspective.sendMessage(\"breakToggled\", payload={\"breakId\": self.view.params.breakId, \"on\": self.view.custom.on}, scope=\"page\")"
+          }
+        }
+      }
+    },
+    "propConfig": {
+      "props.text": {
+        "binding": { "config": { "path": "view.params.label" }, "type": "property" }
+      },
+      "props.style.classes": {
+        "binding": { "config": { "expression": "if({view.custom.on}, 'pf-btn pf-btn-primary pf-btn-large', 'pf-btn pf-btn-secondary pf-btn-large')" }, "type": "expr" }
+      }
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        { "messageType": "breakReset", "pageScope": true, "sessionScope": false, "viewScope": false, "script": "\tself.view.custom.on = False" }
+      ]
+    },
+    "props": { "text": "Break" },
+    "type": "ia.input.button"
+  }
+}

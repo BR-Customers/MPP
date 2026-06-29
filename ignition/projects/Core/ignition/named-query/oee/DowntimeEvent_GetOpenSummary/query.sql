@@ -1,0 +1,1 @@
+EXEC Oee.DowntimeEvent_GetOpenSummary

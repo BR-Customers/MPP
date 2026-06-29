@@ -4,6 +4,19 @@
 
 ---
 
+## 🔖 2026-06-17 — Arc 2 Phase 8 (Downtime + Shift Boundary) built end-to-end (SQL + 4 views), pending Designer smoke
+
+**Built on `hunter/explore`** (fast-forwarded from current `main`/`f14b305`). Spec + plan committed today (`docs/superpowers/specs/2026-06-16-arc2-phase8-downtime-shift-design.md`, `docs/superpowers/plans/2026-06-16-arc2-phase8-downtime-shift.md`).
+
+- **SQL — migration `0026`:** `Oee.DowntimeEvent` table + `DowntimeReasonCode.StandardDurationMinutes` delta + `Break` reason type/codes seed + audit seeds. Procs: `DowntimeEvent_Start`/`_End`, `DowntimeReasonCode_Assign` (B7 late-binding), `EndOfShiftEntry_Submit` (FDS-09-013), `DowntimeEvent_GetOpenByLocation`, `Lot_GetInProcessByLocation`, `ShiftHandover_Acknowledge`, `DowntimeEvent_GetOpenSummary`. **SQL suite 1629/1629.**
+- **Ignition:** `BlueRidge.Oee.DowntimeEvent`/`Shift`/`DowntimePlc` scripts + oee NQs (all Core); **4 plant-floor views in MPP** — Downtime Entry (smoked working end-to-end), End-of-Shift Time Entry, Shift-End Summary, Supervisor Dashboard — + routes (`/shop-floor/{downtime,end-of-shift,shift-summary,supervisor}`); `DowntimePlcWatcher` gateway timer (sim-ready, no-op until `_WATCH` configured at commissioning); **toast listener** wired into the MPP session (`Core/Components/NotifyHost` + `Toast` view copied to Core + hidden overlay dock).
+- **Decisions/divergences:** breaks as fixed reason codes w/ uniform durations (**OI-37** raised); manual downtime defaults to `Operator` source; ET reads `CAST … AS DATETIME2(3)`.
+- **Debugging lessons (memories added):** Perspective `bidirectional` must be **inside** binding `config`; a raw `datetimeoffset` return breaks the Ignition JDBC read (cast to `DATETIME2(3)`); plant-floor `pf-*` design system ≠ Config-Tool `screen-active`/`btn`.
+
+**Pending:** Designer smoke of End-of-Shift / Shift-End Summary / Supervisor Dashboard (Downtime Entry already verified working); dashboard Paused-LOTs + Shift-Availability tiles are stubs (need aggregate reads / OEE calc — AIM + Print-Failure tiles are legitimately Phase 7); End-of-Shift ±15-min window-gating not wired (always visible); confirm MPP break durations (OI-37). Not yet pushed to remote; OIR `.docx` regen pending.
+
+---
+
 ## 🔖 2026-06-16 — Phase 4 (Movement + Trim + Receiving) BUILT end-to-end (SQL green; Ignition file-authored, Designer-smoke owed)
 
 Plan: `docs/superpowers/plans/2026-06-16-arc2-phase4-movement-trim.md` (writing-plans from the two 2026-06-15 specs). Executed hybrid: SQL inline TDD; the 3 views via parallel subagents; convergence (routes/scan/commit) in-session. All on `jacques/working`.

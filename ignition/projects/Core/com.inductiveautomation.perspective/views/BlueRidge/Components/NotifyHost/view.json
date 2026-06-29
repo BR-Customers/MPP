@@ -1,0 +1,25 @@
+{
+  "custom": {},
+  "params": {},
+  "props": {
+    "defaultSize": { "height": 1, "width": 1 }
+  },
+  "root": {
+    "meta": { "name": "root" },
+    "props": { "style": { "display": "none" } },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "mpp-toast",
+          "pageScope": false,
+          "sessionScope": true,
+          "viewScope": false,
+          "script": "\tBlueRidge.Common.Notify._handle(self, payload)"
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

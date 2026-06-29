@@ -1,0 +1,875 @@
+{
+  "custom": {
+    "draft": {
+      "dest1": null,
+      "dest2": null,
+      "qty1": "",
+      "qty2": ""
+    },
+    "refreshToken": 0
+  },
+  "params": {},
+  "propConfig": {
+    "custom.destOptions": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Location.Location.getCellsForDropdownByNamePrefix\", 0, \"Assembly\")"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.opTemplateId": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.getActiveTemplateIdByCode\", 0, \"MachiningOut\")"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.parentLot": {
+      "binding": {
+        "config": {
+          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, false, {view.custom.refreshToken}), \"\")"
+        },
+        "transforms": [
+          {
+            "code": "\tmachined = [r for r in (value or []) if not r.get(\"HasRenameBom\")]\n\tr = machined[-1] if machined else {}\n\treturn {\"Id\": r.get(\"Id\"), \"LotName\": r.get(\"LotName\") or \"\", \"PieceCount\": r.get(\"PieceCount\") or 0, \"ItemPartNumber\": r.get(\"ItemPartNumber\") or \"\"}",
+            "type": "script"
+          }
+        ],
+        "type": "expr"
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 1280
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "TitleText"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-terminal-title",
+                    "fontSize": "24px",
+                    "fontWeight": "600"
+                  },
+                  "text": "Machining OUT - Sub-LOT Split"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "TitleMeta"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-terminal-title-meta"
+                  },
+                  "text": "Sublotting line (RequiresSubLotSplit = ON) - dedicated Machining OUT terminal"
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-terminal-title",
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=True, overlayDismiss=True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "OperatorLabel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub",
+                "cursor": "pointer"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "PausedLabel"
+                },
+                "props": {
+                  "style": {
+                    "fontSize": "13px",
+                    "fontWeight": "500"
+                  },
+                  "text": "Paused"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "PausedCount"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-paused-indicator-count"
+                  },
+                  "text": "0"
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "PausedIndicator"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "alignItems": "center",
+              "style": {
+                "classes": "pf-paused-indicator",
+                "gap": "8px",
+                "padding": "8px 14px"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "flex-end",
+          "justify": "space-between",
+          "style": {
+            "classes": "pf-terminal-header",
+            "gap": "12px",
+            "paddingBottom": "16px"
+          },
+          "wrap": "wrap"
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "CtxLabel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-cell-context-label"
+              },
+              "text": "Machining Cell"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "ActiveCellValue"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"No cell bound to this terminal\", {session.custom.cell.name})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-cell-context-value"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "CtxSpacer"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "CtxHint"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub"
+              },
+              "text": "Splitting the machined LOT - rename already fired at Machining IN (FDS-05-033). Children are machining-origin sub-LOTs."
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": {
+          "name": "CellContext"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "classes": "pf-terminal-cell-context",
+            "gap": "12px",
+            "padding": "12px 16px"
+          },
+          "wrap": "wrap"
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "ParentTitle"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "14px",
+                    "fontWeight": "600",
+                    "letterSpacing": "0.06em",
+                    "textTransform": "uppercase"
+                  },
+                  "text": "Active Machined LOT"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "ParentSub"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  },
+                  "text": "Cumulative counters captured at the cell; the operation closes before the split."
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "ParentHeader"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "alignItems": "flex-start",
+                "classes": "pf-panel-header",
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "ParentLot"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if(isNull({view.custom.parentLot.Id}), 'No machined LOT at this cell.', 'Parent LOT: ' + {view.custom.parentLot.LotName} + '  (' + {view.custom.parentLot.ItemPartNumber} + ')  -  ' + toStr({view.custom.parentLot.PieceCount}) + ' pcs')"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-accent-60)",
+                "fontSize": "16px",
+                "fontWeight": "600"
+              }
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": {
+          "name": "ParentPanel"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "pf-panel",
+            "gap": "12px",
+            "padding": "14px 16px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "SplitTitle"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "14px",
+                    "fontWeight": "600",
+                    "letterSpacing": "0.06em",
+                    "textTransform": "uppercase"
+                  },
+                  "text": "Sub-LOT Distribution - 2 destinations"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "AllocHint"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "'Total: ' + toStr(toInt({view.custom.draft.qty1}, 0) + toInt({view.custom.draft.qty2}, 0)) + ' / ' + toStr({view.custom.parentLot.PieceCount}) + ' pcs'"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  }
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "SplitHeader"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "alignItems": "center",
+              "justify": "space-between",
+              "style": {
+                "classes": "pf-panel-header",
+                "gap": "8px"
+              },
+              "wrap": "wrap"
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "SplitNote"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub"
+              },
+              "text": "Default N=2 even split - adjustable; total must equal the parent piece count. The machined LOT splits into machining-origin sub-LOTs, each routed to its destination; LTT labels print showing child + parent LotName (FDS-05-024)."
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Index1"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-repeater-index"
+                      },
+                      "text": "1"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "L"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-label"
+                          },
+                          "text": "Pieces"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "Qty1"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.draft.qty1"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-input"
+                          }
+                        },
+                        "type": "ia.input.text-field"
+                      }
+                    ],
+                    "meta": {
+                      "name": "Qty1Field"
+                    },
+                    "position": {
+                      "basis": "160px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "classes": "pf-field",
+                        "gap": "6px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "L"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-label"
+                          },
+                          "text": "Destination"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "Dest1"
+                        },
+                        "propConfig": {
+                          "props.options": {
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.destOptions"
+                              },
+                              "type": "property"
+                            }
+                          },
+                          "props.value": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.draft.dest1"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "placeholder": "Select destination",
+                          "style": {
+                            "classes": "pf-field-select"
+                          }
+                        },
+                        "type": "ia.input.dropdown"
+                      }
+                    ],
+                    "meta": {
+                      "name": "Dest1Field"
+                    },
+                    "position": {
+                      "basis": "320px",
+                      "grow": 1
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "classes": "pf-field",
+                        "gap": "6px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "Child1"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "alignItems": "flex-end",
+                  "style": {
+                    "classes": "pf-repeater-entity",
+                    "gap": "14px",
+                    "padding": "12px 16px"
+                  },
+                  "wrap": "wrap"
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "Index2"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-repeater-index"
+                      },
+                      "text": "2"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "L"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-label"
+                          },
+                          "text": "Pieces"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "Qty2"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.draft.qty2"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-input"
+                          }
+                        },
+                        "type": "ia.input.text-field"
+                      }
+                    ],
+                    "meta": {
+                      "name": "Qty2Field"
+                    },
+                    "position": {
+                      "basis": "160px",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "classes": "pf-field",
+                        "gap": "6px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "L"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-label"
+                          },
+                          "text": "Destination"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "Dest2"
+                        },
+                        "propConfig": {
+                          "props.options": {
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.destOptions"
+                              },
+                              "type": "property"
+                            }
+                          },
+                          "props.value": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.draft.dest2"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "placeholder": "Select destination",
+                          "style": {
+                            "classes": "pf-field-select"
+                          }
+                        },
+                        "type": "ia.input.dropdown"
+                      }
+                    ],
+                    "meta": {
+                      "name": "Dest2Field"
+                    },
+                    "position": {
+                      "basis": "320px",
+                      "grow": 1
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "classes": "pf-field",
+                        "gap": "6px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "Child2"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "alignItems": "flex-end",
+                  "style": {
+                    "classes": "pf-repeater-entity",
+                    "gap": "14px",
+                    "padding": "12px 16px"
+                  },
+                  "wrap": "wrap"
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "Repeater"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-repeater",
+                "gap": "8px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tparent = self.view.custom.parentLot\n\totId = self.view.custom.opTemplateId\n\tcellId = self.session.custom.cell.locationId\n\td = self.view.custom.draft\n\tif cellId is None or not parent or parent.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Select a cell that has a machined LOT.\"}, \"Machining OUT\")\n\t\treturn\n\tif otId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"MachiningOut operation template not found.\"}, \"Machining OUT\")\n\t\treturn\n\tq1 = BlueRidge.Common.Util.toIntOrNone(d.get(\"qty1\"))\n\tq2 = BlueRidge.Common.Util.toIntOrNone(d.get(\"qty2\"))\n\tdest1 = d.get(\"dest1\")\n\tdest2 = d.get(\"dest2\")\n\tif q1 is None or q2 is None or q1 <= 0 or q2 <= 0 or dest1 is None or dest2 is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a positive piece count and a destination for both sub-LOTs.\"}, \"Machining OUT\")\n\t\treturn\n\tchildren = [{\"pieceCount\": q1, \"destinationLocationId\": dest1}, {\"pieceCount\": q2, \"destinationLocationId\": dest2}]\n\tresult = BlueRidge.Workorder.Machining.recordSplit(parent.get(\"Id\"), otId, system.util.jsonEncode(children), self.session.custom.appUserId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining OUT - Split\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"qty1\": \"\", \"dest1\": None, \"qty2\": \"\", \"dest2\": None}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "SubmitButton"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-btn pf-btn-primary pf-btn-large"
+                  },
+                  "text": "Submit - MachiningOut + Split + Route"
+                },
+                "type": "ia.input.button"
+              },
+              {
+                "meta": {
+                  "name": "ActionsSpacer"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "ActionsHint"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  },
+                  "text": "Non-sublotting lines auto-move whole to the coupled Assembly Cell - no screen."
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "Actions"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "alignItems": "center",
+              "style": {
+                "classes": "pf-actions",
+                "gap": "12px",
+                "marginTop": "12px",
+                "paddingTop": "12px"
+              },
+              "wrap": "wrap"
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "SplitPanel"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "pf-panel",
+            "gap": "12px",
+            "padding": "14px 16px"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\t# Dedicated-flavor context (FDS-02-010): bind the cell to the terminal's parent line.\n\tt = self.session.custom.terminal\n\tif t and t.get(\"zoneLocationId\"):\n\t\tself.session.custom.cell = {\"locationId\": t.get(\"zoneLocationId\"), \"code\": t.get(\"zoneName\") or \"\", \"name\": t.get(\"zoneName\") or \"\"}\n\ttry:\n\t\tself.session.custom.presence.policy = \"confirm\"\n\texcept:\n\t\tself.session.custom.presence = {\"policy\": \"confirm\"}\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
+          }
+        }
+      }
+    },
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "pf-terminal canvas",
+        "gap": "16px",
+        "overflowY": "auto",
+        "padding": "16px"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

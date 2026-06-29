@@ -11,7 +11,8 @@
   "propConfig": {},
   "props": {
     "defaultSize": {
-      "width": 1280
+      "width": 1280,
+      "height": 800
     }
   },
   "root": {

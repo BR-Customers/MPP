@@ -1,0 +1,126 @@
+{
+  "custom": {},
+  "params": {
+    "downtimeEventId": null,
+    "locationCode": "",
+    "sourceCode": "",
+    "reasonCode": null,
+    "startedAt": "",
+    "hasReason": false
+  },
+  "propConfig": {
+    "params.downtimeEventId": { "paramDirection": "input" },
+    "params.locationCode": { "paramDirection": "input" },
+    "params.sourceCode": { "paramDirection": "input" },
+    "params.reasonCode": { "paramDirection": "input" },
+    "params.startedAt": { "paramDirection": "input" },
+    "params.hasReason": { "paramDirection": "input" }
+  },
+  "props": {
+    "defaultSize": { "height": 68 }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": { "name": "Machine" },
+        "position": { "basis": "140px", "shrink": 0 },
+        "propConfig": {
+          "props.text": {
+            "binding": { "config": { "path": "view.params.locationCode" }, "type": "property" }
+          }
+        },
+        "props": { "style": { "fontWeight": "600" } },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": { "name": "Source" },
+        "position": { "basis": "100px", "shrink": 0 },
+        "propConfig": {
+          "props.text": {
+            "binding": { "config": { "path": "view.params.sourceCode" }, "type": "property" }
+          }
+        },
+        "props": { "style": { "color": "var(--mpp-text-secondary)" } },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": { "name": "Reason" },
+        "position": { "basis": "0", "grow": 1 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": { "expression": "if(isNull({view.params.reasonCode}), 'No reason — assign', {view.params.reasonCode})" },
+              "type": "expr"
+            }
+          },
+          "props.style.color": {
+            "binding": {
+              "config": { "expression": "if({view.params.hasReason}, 'var(--mpp-text-primary)', 'var(--pf-status-warn-fg)')" },
+              "type": "expr"
+            }
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": { "name": "StartedAt" },
+        "position": { "basis": "180px", "shrink": 0 },
+        "propConfig": {
+          "props.text": {
+            "binding": { "config": { "path": "view.params.startedAt" }, "type": "property" }
+          }
+        },
+        "props": { "style": { "color": "var(--mpp-text-secondary)" } },
+        "type": "ia.display.label"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"downtimeAssignRequested\", payload={\"downtimeEventId\": self.view.params.downtimeEventId}, scope=\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": { "name": "AssignButton" },
+        "position": { "basis": "120px", "shrink": 0 },
+        "propConfig": {
+          "meta.visible": {
+            "binding": { "config": { "expression": "!{view.params.hasReason}" }, "type": "expr" }
+          }
+        },
+        "props": { "style": { "classes": "pf-btn pf-btn-secondary" }, "text": "Assign" },
+        "type": "ia.input.button"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"downtimeEndRequested\", payload={\"downtimeEventId\": self.view.params.downtimeEventId}, scope=\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": { "name": "EndButton" },
+        "position": { "basis": "100px", "shrink": 0 },
+        "props": { "style": { "classes": "pf-btn pf-btn-primary" }, "text": "End" },
+        "type": "ia.input.button"
+      }
+    ],
+    "meta": { "name": "root" },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "classes": "surface-card",
+        "gap": "12px"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}

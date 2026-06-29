@@ -974,6 +974,21 @@ The audit + interface tables are structurally larger than the entire traceabilit
 
 ---
 
+### OI-37 — End-of-shift break model (fixed reason codes vs per-schedule config) — ⬜ Open (new, 2026-06-17)
+
+**Priority:** LOW
+**Owner:** Blue Ridge Automation (confirm break values with MPP)
+**FDS §:** FDS-09-013 (End-of-Shift Time Entry)
+**References:** Arc 2 Phase 8 spec §3.2 (`docs/superpowers/specs/2026-06-16-arc2-phase8-downtime-shift-design.md`); migration `0026`; `Oee.EndOfShiftEntry_Submit`
+
+**Description:** FDS-09-013 says the *shift schedule* "defines the lunch and breaks for that shift," with durations "resolved from the shift schedule's break configuration." No such per-schedule break configuration exists — not in the as-built `Oee.ShiftSchedule`, not in Data Model v1.9q, and not in the FDS-09-012 import fields.
+
+**Decision (2026-06-17, ratified with Hunter):** Model lunch/breaks as **fixed `DowntimeReasonCode` rows with a uniform standard duration** (`StandardDurationMinutes`), seeded Site-scoped under a new `Break` reason type (migration `0026`: LUNCH 30 / BREAK1 15 / BREAK2 15 — placeholder values). `EndOfShiftEntry_Submit` writes one closed `DowntimeEvent` per selected break with a nominal `StartedAt` (= shift `ActualStart`) and `EndedAt = +StandardDurationMinutes`; only the duration is meaningful for availability. This departs from the FDS's per-schedule wording and the "start times resolved from the schedule" clause.
+
+**Open work:** (1) confirm MPP's actual break/lunch durations (currently placeholder seed values); (2) confirm breaks do not differ per shift schedule. If they do, the additive upgrade path is the `Oee.ShiftScheduleBreak` child table considered and set aside in spec §3.2 — no rework of the event/proc shape.
+
+---
+
 # Part B — User Journey Assumptions & Decisions
 
 These are the 19 assumptions from `MPP_MES_USER_JOURNEYS.md`. Each gates one or more Perspective screens. Cross-references to Part A items are noted per entry.

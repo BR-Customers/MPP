@@ -243,6 +243,76 @@ def getCellsForDropdown():
     return out
 
 
+def getMachiningDestinationsForDropdown():
+    """Machining-IN receiving Cells shaped for ia.input.dropdown -- the valid
+    whole-LOT destinations for Trim OUT (and Machining-line routing). Filters to
+    Cell-tier Locations named 'Machining In%' (EXCLUDES Printers, Assembly /
+    Machining-OUT terminals, Die Cast terminals, and machines). Wraps
+    Location.Location_ListMachiningDestinations.
+
+    Returns:
+        list[dict]: [{label: '<Code> - <Name>', value: Id, code: Code,
+                      name: Name, areaCode, areaName}]. Always a list (never
+                      None) so a runScript-bound dropdown default ([]) is never
+                      overwritten with null. Empty if none exist.
+    """
+    BlueRidge.Common.Util.log("loading machining destinations for dropdown")
+    try:
+        rows = BlueRidge.Common.Db.execList(
+            "location/Location_ListMachiningDestinations", {}
+        ) or []
+    except Exception as e:
+        BlueRidge.Common.Util.log("getMachiningDestinationsForDropdown failed: %s" % str(e))
+        BlueRidge.Common.Notify.toast("Could not load machining destinations", str(e), "error")
+        return []
+    out = []
+    for r in rows:
+        code = r.get("Code") or ""
+        name = r.get("Name") or ""
+        out.append({
+            "label": ("%s - %s" % (code, name)).strip(" -"),
+            "value": r.get("Id"),
+            "code":  code,
+            "name":  name,
+            "areaCode": r.get("AreaCode"),
+            "areaName": r.get("AreaName"),
+        })
+    return out
+
+
+def getCellsForDropdownByNamePrefix(namePrefix):
+    """Cell-tier Locations whose Name starts with namePrefix, shaped for
+    ia.input.dropdown -- scopes a routing/selector dropdown to one class of
+    cells (e.g. 'Machining In', 'Machining Out', 'Assembly') instead of every
+    cell. Name-prefix filtering naturally excludes Terminal/Printer cells
+    (named 'P - NNN' / 'Terminal').
+
+    Args:
+        namePrefix (str): the Location.Name prefix to match (e.g. 'Assembly').
+
+    Returns:
+        list[dict]: [{label: '<Code> - <Name>', value: Id, code, name}].
+                    Always a list (never None). Empty if namePrefix is falsy
+                    or matches nothing.
+    """
+    if not namePrefix:
+        return []
+    pfx = namePrefix.strip()
+    out = []
+    for r in (listByTier("Cell") or []):
+        name = r.get("Name") or ""
+        if not name.startswith(pfx):
+            continue
+        code = r.get("Code") or ""
+        out.append({
+            "label": ("%s - %s" % (code, name)).strip(" -"),
+            "value": r.get("Id"),
+            "code":  code,
+            "name":  name,
+        })
+    return out
+
+
 def getCellsForAreaDropdown(areaId):
     """The pickable equipment cells beneath an Area (excludes Terminal/Printer),
     shaped for ia.input.dropdown + scan matching:
