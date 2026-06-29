@@ -5,94 +5,151 @@
     "title": ""
   },
   "propConfig": {
-    "params.category": { "paramDirection": "input" },
-    "params.title":    { "paramDirection": "input" }
+    "params.category": {
+      "paramDirection": "input"
+    },
+    "params.title": {
+      "paramDirection": "input"
+    }
   },
   "props": {
-    "defaultSize": { "width": 1200, "height": 60 }
+    "defaultSize": {
+      "height": 60,
+      "width": 1200
+    }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": { "name": "root" },
-    "props": {
-      "direction": "row",
-      "alignItems": "center",
-      "style": {
-        "classes": "title-row",
-        "paddingBottom": "8px",
-        "borderBottom": "1px solid var(--mpp-border-subtle)",
-        "background": "var(--mpp-surface-raised)"
-      }
-    },
     "children": [
       {
-        "type": "ia.container.flex",
-        "meta": { "name": "TitleColumn" },
-        "position": { "basis": "auto" },
-        "props": {
-          "direction": "column",
-          "style": { "gap": "2px" }
-        },
         "children": [
           {
-            "type": "ia.container.flex",
-            "meta": { "name": "Breadcrumb" },
-            "position": { "basis": "auto" },
-            "props": {
-              "direction": "row",
-              "alignItems": "center",
-              "style": { "classes": "breadcrumb" }
-            },
             "children": [
               {
-                "type": "ia.display.label",
-                "meta": { "name": "BreadcrumbCategory" },
-                "position": { "basis": "auto" },
+                "meta": {
+                  "name": "BreadcrumbCategory"
+                },
                 "propConfig": {
                   "props.text": {
-                    "binding": { "type": "property", "config": { "path": "view.params.category" } }
+                    "binding": {
+                      "config": {
+                        "path": "view.params.category"
+                      },
+                      "type": "property"
+                    }
                   }
                 },
-                "props": { "style": { "classes": "breadcrumb" } }
+                "props": {
+                  "style": {
+                    "classes": "breadcrumb"
+                  }
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.display.label",
-                "meta": { "name": "BreadcrumbSep" },
-                "position": { "basis": "auto" },
-                "props": { "text": "›", "style": { "classes": "breadcrumb crumb-sep" } }
+                "meta": {
+                  "name": "BreadcrumbSep"
+                },
+                "props": {
+                  "style": {
+                    "classes": "breadcrumb crumb-sep"
+                  },
+                  "text": "›"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.display.label",
-                "meta": { "name": "BreadcrumbActive" },
-                "position": { "basis": "auto" },
+                "meta": {
+                  "name": "BreadcrumbActive"
+                },
                 "propConfig": {
                   "props.text": {
-                    "binding": { "type": "property", "config": { "path": "view.params.title" } }
+                    "binding": {
+                      "config": {
+                        "path": "view.params.title"
+                      },
+                      "type": "property"
+                    }
                   }
                 },
-                "props": { "style": { "classes": "crumb-active" } }
+                "props": {
+                  "style": {
+                    "classes": "crumb-active"
+                  }
+                },
+                "type": "ia.display.label"
               }
-            ]
-          },
-          {
-            "type": "ia.display.label",
-            "meta": { "name": "Title" },
-            "position": { "basis": "auto" },
-            "propConfig": {
-              "props.text": {
-                "binding": { "type": "property", "config": { "path": "view.params.title" } }
+            ],
+            "meta": {
+              "name": "Breadcrumb"
+            },
+            "props": {
+              "alignItems": "center",
+              "style": {
+                "classes": "breadcrumb"
               }
             },
-            "props": { "style": { "classes": "title-row-h1" } }
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "Title"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.title"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "title-row-h1"
+              }
+            },
+            "type": "ia.display.label"
           }
-        ]
+        ],
+        "meta": {
+          "name": "TitleColumn"
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "2px"
+          }
+        },
+        "type": "ia.container.flex"
       },
       {
-        "type": "ia.display.label",
-        "meta": { "name": "TitleRowSpacer" },
-        "position": { "grow": 1 },
-        "props": { "text": "", "style": { "classes": "title-row-spacer" } }
+        "meta": {
+          "name": "TitleRowSpacer"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "style": {
+            "classes": "title-row-spacer"
+          }
+        },
+        "type": "ia.display.label"
       }
-    ]
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "background": "var(--mpp-surface-raised)",
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "classes": "title-row",
+        "paddingBottom": "8px"
+      }
+    },
+    "type": "ia.container.flex"
   }
 }
