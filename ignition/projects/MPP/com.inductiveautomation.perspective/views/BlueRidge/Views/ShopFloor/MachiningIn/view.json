@@ -1,5 +1,13 @@
 {
   "custom": {
+    "activeMachined": {
+      "Id": null,
+      "lotName": "",
+      "itemPartNumber": "",
+      "pieceCount": 0
+    },
+    "holdCount": 0,
+    "queue": [],
     "pending": {
       "lotName": "",
       "sourceItem": "",

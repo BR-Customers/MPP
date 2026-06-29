@@ -1,5 +1,18 @@
 {
   "custom": {
+    "container": {
+      "Id": null,
+      "ItemPartNumber": "",
+      "ItemDescription": "",
+      "AccumulatedParts": 0,
+      "TargetParts": 0,
+      "ClosedTrays": 0,
+      "TraysPerContainer": 0,
+      "PartsPerTray": 0,
+      "IsSerialized": false,
+      "ClosureMethod": ""
+    },
+    "queueByPartText": "",
     "draft": {
       "partsCount": "",
       "trayPosition": ""

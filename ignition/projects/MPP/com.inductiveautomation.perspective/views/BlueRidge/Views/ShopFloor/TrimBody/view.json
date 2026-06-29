@@ -1,6 +1,7 @@
 {
   "custom": {
     "activeLotId": null,
+    "destCells": [],
     "destValue": null,
     "inScan": "",
     "outScan": "",

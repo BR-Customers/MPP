@@ -1,5 +1,19 @@
 {
   "custom": {
+    "activeTool": {
+      "Id": null,
+      "ToolId": null,
+      "ToolCode": "",
+      "ToolName": "",
+      "ToolTypeCode": "",
+      "CellLocationId": null,
+      "AssignedAt": null,
+      "AssignedByUserId": null,
+      "Notes": null
+    },
+    "cavityOptions": [],
+    "itemOptions": [],
+    "shiftTally": [],
     "activeLotId": null,
     "editDraft": {
       "cavityNote": null,

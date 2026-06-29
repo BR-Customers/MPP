@@ -1,5 +1,11 @@
 {
-  "custom": {},
+  "custom": {
+    "openSummary": {
+      "TotalOpen": 0,
+      "WithReason": 0,
+      "WithoutReason": 0
+    }
+  },
   "params": {},
   "propConfig": {
     "custom.openSummary": {

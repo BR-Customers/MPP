@@ -61,6 +61,21 @@ def getOpen():
     return BlueRidge.Common.Db.execOne("oee/Shift_GetOpen")
 
 
+# Binding-safe empty shape for getOpenOrEmpty (matches the Shift_GetOpen columns).
+_EMPTY_SHIFT = {"Id": None, "ShiftScheduleId": None, "ScheduleName": "",
+                "ActualStart": None, "ActualEnd": None, "Remarks": "", "CreatedAt": None}
+
+
+def getOpenOrEmpty():
+    """getOpen() that NEVER returns None -- always a fully-shaped dict -- so a view
+       binding can traverse {custom.shift.Id} without a Quality-Bad on the no-open-
+       shift path (EndOfShiftEntry's ShiftStatus label). Callers detect 'no open
+       shift' via Id IS NULL, not isNull() on the whole object. Mirrors the
+       RouteTemplate.getHeaderOrEmpty convention."""
+    row = getOpen()
+    return row if row else dict(_EMPTY_SHIFT)
+
+
 def acknowledgeHandover(shiftId, cellLocationId=None, appUserId=None, terminalLocationId=None):
     """Record that the operator reviewed the shift-end summary (FDS-09-015).
        Audit-only; the shift-time data is already committed. Returns {Status, Message}."""

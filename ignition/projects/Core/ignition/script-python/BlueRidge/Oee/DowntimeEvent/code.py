@@ -60,5 +60,7 @@ def getEndOfShiftSummary(cellLocationId):
 
 def getOpenSummary():
     """Plant-wide open-downtime counts for the Supervisor Dashboard:
-    {TotalOpen, WithReason, WithoutReason}. Returns {} if the read yields nothing."""
-    return BlueRidge.Common.Db.execOne("oee/DowntimeEvent_GetOpenSummary") or {}
+    {TotalOpen, WithReason, WithoutReason}. Returns a shaped zero-dict (NOT bare
+    {}) on the empty path so the dashboard's nested binding reads stay valid."""
+    return BlueRidge.Common.Db.execOne("oee/DowntimeEvent_GetOpenSummary") \
+        or {"TotalOpen": 0, "WithReason": 0, "WithoutReason": 0}

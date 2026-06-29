@@ -1,5 +1,10 @@
 {
   "custom": {
+    "summary": {
+      "openDowntime": [],
+      "openPauses": [],
+      "inProcessLots": []
+    },
     "filter": { "cellLocationId": null }
   },
   "params": {},

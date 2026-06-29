@@ -1,5 +1,12 @@
 {
   "custom": {
+    "destOptions": [],
+    "parentLot": {
+      "Id": null,
+      "LotName": "",
+      "PieceCount": 0,
+      "ItemPartNumber": ""
+    },
     "draft": {
       "dest1": null,
       "dest2": null,
