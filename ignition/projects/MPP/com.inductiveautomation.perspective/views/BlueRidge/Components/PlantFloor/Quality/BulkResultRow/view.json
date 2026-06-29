@@ -9,19 +9,26 @@
     "selected": false
   },
   "props": {
-    "direction": "row",
-    "alignItems": "center",
-    "style": {
-      "classes": "pf-queue-row",
-      "gap": "16px",
-      "padding": "10px 16px"
+    "defaultSize": {
+      "height": 64,
+      "width": 680
     }
   },
-  "meta": {
-    "name": "root"
-  },
-  "type": "ia.container.flex",
-  "children": [
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "classes": "pf-queue-row",
+        "gap": "16px",
+        "padding": "10px 16px"
+      }
+    },
+    "children": [
     {
       "type": "ia.input.button",
       "meta": {
@@ -128,5 +135,6 @@
         }
       ]
     }
-  ]
+    ]
+  }
 }

@@ -38,7 +38,7 @@
     "props": {
       "direction": "column",
       "style": {
-        "classes": "modal"
+        "classes": "canvas"
       }
     },
     "events": {

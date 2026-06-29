@@ -1747,7 +1747,8 @@ button {
 
 
 /* ─── Plant-floor buttons (cascading: "pf-btn" + variant) ─────────── */
-.psc-pf-btn {
+.psc-pf-btn,
+.psc-pf-primary-button {
     min-height: var(--pf-touch-min);
     display: inline-flex;
     align-items: center;
@@ -1794,7 +1795,8 @@ button {
     color: var(--mpp-text-primary);
 }
 
-.psc-pf-btn-primary {
+.psc-pf-btn-primary,
+.psc-pf-primary-button {
     background: var(--mpp-interactive-primary);
     border-color: var(--mpp-interactive-primary);
     color: var(--mpp-text-primary);
@@ -2770,4 +2772,68 @@ button {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ARC 2 REVIEW (2026-06) — compatibility aliases   [ARC2_BEST_PRACTICES.md rule K]
+   File-authored, never-smoked plant-floor views reference these class/token
+   names, which were never defined in the canonical design system above. These
+   aliases make those views render correctly WITHOUT editing their view.json
+   (respecting the project's Ignition file-edit boundary). LONG-TERM: normalize
+   the view references to the canonical names in Designer, then delete this block.
+   (pf-primary-button is aliased inline on .psc-pf-btn / .psc-pf-btn-primary.)
+   ═══════════════════════════════════════════════════════════════════════ */
+:root {
+    --bg-panel:        var(--mpp-surface-raised); /* PausedLotIndicator count text (was invisible) */
+    --mpp-surface-alt: var(--mpp-surface-card);   /* LotDetail/Genealogy row badges (were transparent) */
+    --radius-lg:       var(--mpp-radius-lg);       /* PausedLotIndicator corner radius */
+}
+
+/* AssemblyIn header — alias of pf-terminal-title / pf-terminal-title-meta */
+.psc-pf-title {
+    font-size: var(--mpp-fs-md);
+    font-weight: var(--mpp-fw-semibold);
+    color: var(--mpp-text-primary);
+}
+.psc-pf-subtitle {
+    font-size: var(--mpp-fs-sm);
+    color: var(--mpp-text-tertiary);
+}
+.psc-pf-section-title {
+    font-size: var(--mpp-fs-sm);
+    font-weight: var(--mpp-fw-semibold);
+    color: var(--mpp-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+.psc-pf-empty-hint {
+    font-size: var(--mpp-fs-xs);
+    color: var(--mpp-text-secondary);
+    letter-spacing: 0.02em;
+}
+
+/* PeerTallyRow LOT name — alias of the pf-field-input-mono mono treatment */
+.psc-pf-field-mono {
+    font-family: var(--mpp-font-mono);
+    letter-spacing: 0.05em;
+    color: var(--mpp-text-primary);
+}
+
+/* MovementScan panels — alias of pf-panel */
+.psc-pf-field-col,
+.psc-pf-review-panel {
+    background: var(--mpp-surface-raised);
+    border: 1px solid var(--mpp-border-subtle);
+    border-radius: var(--mpp-radius-md);
+    padding: 14px var(--mpp-space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--mpp-space-3);
+}
+
+/* LotDetail tool/cavity KPI row (display-gated) — neutral column container */
+.psc-pf-tool-row {
+    display: flex;
+    flex-direction: column;
 }
