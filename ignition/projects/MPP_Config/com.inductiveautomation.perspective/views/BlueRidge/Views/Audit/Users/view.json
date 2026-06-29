@@ -1,0 +1,562 @@
+{
+  "custom": {
+    "filter": {
+      "includeDeprecated": false,
+      "searchText": ""
+    },
+    "rows": [
+      {
+        "AdAccount": "dev.user",
+        "CreatedAt": {
+          "$": [
+            "ts",
+            0,
+            1781898053282
+          ],
+          "$ts": 1781286373635
+        },
+        "DeprecatedAt": null,
+        "DisplayName": "Dev User",
+        "Id": 2,
+        "IgnitionRole": "Admin",
+        "Initials": "DEV"
+      },
+      {
+        "AdAccount": null,
+        "CreatedAt": {
+          "$": [
+            "ts",
+            0,
+            1781898053282
+          ],
+          "$ts": 1781637232618
+        },
+        "DeprecatedAt": null,
+        "DisplayName": "Jacques Potgieter",
+        "Id": 7,
+        "IgnitionRole": null,
+        "Initials": "JGP"
+      },
+      {
+        "AdAccount": null,
+        "CreatedAt": {
+          "$": [
+            "ts",
+            0,
+            1781898053282
+          ],
+          "$ts": 1781716258530
+        },
+        "DeprecatedAt": null,
+        "DisplayName": "Noah E Nesbitt",
+        "Id": 10,
+        "IgnitionRole": null,
+        "Initials": "NLM"
+      },
+      {
+        "AdAccount": null,
+        "CreatedAt": {
+          "$": [
+            "ts",
+            0,
+            1781898053282
+          ],
+          "$ts": 1781907360385
+        },
+        "DeprecatedAt": null,
+        "DisplayName": "slkfsdlkgdshf",
+        "Id": 12,
+        "IgnitionRole": null,
+        "Initials": "DGDF"
+      },
+      {
+        "AdAccount": "system.bootstrap",
+        "CreatedAt": {
+          "$": [
+            "ts",
+            0,
+            1781898053282
+          ],
+          "$ts": 1781286348227
+        },
+        "DeprecatedAt": null,
+        "DisplayName": "System Bootstrap",
+        "Id": 1,
+        "IgnitionRole": "Admin",
+        "Initials": "SYS"
+      }
+    ]
+  },
+  "params": {},
+  "propConfig": {
+    "custom.filter": {
+      "persistent": true
+    },
+    "custom.rows": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Location.AppUser.getUserList\",0, {view.custom.filter.includeDeprecated}, {view.custom.filter.searchText})"
+        },
+        "type": "expr"
+      },
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 720,
+      "width": 1280
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "BreadcrumbCategory"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "breadcrumb"
+                      },
+                      "text": "System"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "BreadcrumbSep"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "breadcrumb crumb-sep"
+                      },
+                      "text": "›"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "BreadcrumbActive"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "crumb-active"
+                      },
+                      "text": "Users"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "Breadcrumb"
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "classes": "breadcrumb"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "Title"
+                },
+                "props": {
+                  "style": {
+                    "classes": "title-row-h1"
+                  },
+                  "text": "Users"
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "TitleColumn"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "2px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "TitleRowSpacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "style": {
+                "classes": "title-row-spacer"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\n\t\tid\u003d\"mpp-operator-editor\", \n\t\tview\u003d\"BlueRidge/Components/Popups/OperatorEditor\", \n\t\tmodal\u003dTrue, \n\t\tshowCloseIcon\u003dFalse,\n\t\tdraggable\u003dFalse,\n\t\tparams\u003d{\"mode\": \"create\", \"editId\": None}\n\t)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "AddCodeButton"
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-primary",
+                "marginRight": "12px"
+              },
+              "text": "+ Add Operator"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "TitleRow"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "classes": "title-row",
+            "paddingBottom": "8px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "SearchLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "label-eyebrow"
+                          },
+                          "text": "Search"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "SearchInput"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.filter.searchText"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "placeholder": "Search…",
+                          "style": {
+                            "classes": "search-input"
+                          }
+                        },
+                        "type": "ia.input.text-field"
+                      }
+                    ],
+                    "meta": {
+                      "name": "SearchField"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "4px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "events": {
+                          "dom": {
+                            "onClick": {
+                              "config": {
+                                "script": "\tsystem.perspective.sendMessage(\"usersRefresh\")"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "IncludeDeprecated"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "propConfig": {
+                          "props.selected": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.filter.includeDeprecated"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "12px",
+                            "whiteSpace": "nowrap"
+                          },
+                          "text": "Include deprecated"
+                        },
+                        "type": "ia.input.checkbox"
+                      }
+                    ],
+                    "meta": {
+                      "name": "IncludeDeprecatedField"
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "8px",
+                        "paddingTop": "4px"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "FilterPanel"
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "filter-panel"
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "FilterSidebar"
+            },
+            "position": {
+              "basis": "220px",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "filter-sidebar"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "ColInitials"
+                        },
+                        "position": {
+                          "basis": "100px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "initials"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "ColDisplayName"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1
+                        },
+                        "props": {
+                          "text": "Display Name"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "ColCreatedAt"
+                        },
+                        "position": {
+                          "basis": "130px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Created At"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "ColDeprecated"
+                        },
+                        "position": {
+                          "basis": "130px",
+                          "shrink": 0
+                        },
+                        "props": {
+                          "text": "Deprecated"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "ColEdit"
+                        },
+                        "position": {
+                          "basis": "80px",
+                          "shrink": 0
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "TableHeader"
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "style": {
+                        "background": "var(--mpp-surface-card)",
+                        "borderBottom": "1px solid var(--mpp-border-subtle)",
+                        "color": "var(--mpp-text-secondary)",
+                        "fontSize": "11px",
+                        "fontWeight": "600",
+                        "letterSpacing": "0.05em",
+                        "padding": "8px 12px",
+                        "textTransform": "uppercase"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "meta": {
+                      "name": "Rows"
+                    },
+                    "propConfig": {
+                      "props.instances": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.rows"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "column",
+                      "elementPosition": {
+                        "basis": "48px",
+                        "shrink": 0
+                      },
+                      "path": "BlueRidge/Components/UserRow",
+                      "useDefaultViewHeight": false,
+                      "useDefaultViewWidth": false
+                    },
+                    "type": "ia.display.flex-repeater"
+                  }
+                ],
+                "meta": {
+                  "name": "DataPanel"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "detail-panel",
+                    "padding": "0px"
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "ContentArea"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "style": {
+                "background": "var(--mpp-surface-canvas)",
+                "padding": "12px"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "MainSplit"
+        },
+        "position": {
+          "grow": 1
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "screen-active"
+      }
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "usersRefresh",
+          "pageScope": true,
+          "script": "\tself.view.refreshBinding(\"custom.rows\")",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

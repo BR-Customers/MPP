@@ -1,0 +1,65 @@
+{
+  "scope": "DG",
+  "version": 2,
+  "restricted": false,
+  "overridable": true,
+  "files": [
+    "query.sql"
+  ],
+  "attributes": {
+    "useMaxReturnSize": false,
+    "autoBatchEnabled": false,
+    "fallbackValue": "",
+    "maxReturnSize": 100,
+    "cacheUnit": "SEC",
+    "type": "Query",
+    "enabled": true,
+    "cacheAmount": 1,
+    "cacheEnabled": false,
+    "database": "MPP",
+    "fallbackEnabled": false,
+    "lastModificationSignature": "c445bfd016c3648efcc02e3ec53a083b0af0ad18c421b877c6228870d66d98fd",
+    "permissions": [
+      {
+        "zone": "",
+        "role": ""
+      }
+    ],
+    "lastModification": {
+      "actor": "admin",
+      "timestamp": "2026-06-16T14:33:56Z"
+    },
+    "parameters": [
+      {
+        "type": "Parameter",
+        "identifier": "id",
+        "sqlType": 3
+      },
+      {
+        "type": "Parameter",
+        "identifier": "initials",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "displayName",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "adAccount",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "ignitionRole",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "appUserId",
+        "sqlType": 3
+      }
+    ]
+  }
+}

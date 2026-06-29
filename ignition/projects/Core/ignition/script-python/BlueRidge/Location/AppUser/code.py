@@ -6,6 +6,88 @@ import BlueRidge.Common.Db
 import BlueRidge.Common.Util
 
 
+def getUserList(includeDeprecated=False, textFilter=None):
+    """List AppUsers for the Users management screen, optionally filtered by
+       free text (matched against Initials / DisplayName / AdAccount).
+       Returns list[dict]."""
+    BlueRidge.Common.Util.log("includeDeprecated=%s textFilter=%s"
+                              % (includeDeprecated, textFilter))
+    return BlueRidge.Common.Db.execList(
+        "location/AppUser_List",
+        {"includeDeprecated": includeDeprecated, "filter": textFilter},
+    )
+
+
+def getUser(chosenId):
+    """Read a single AppUser by Id. Returns a dict or None."""
+    BlueRidge.Common.Util.log("id=%s" % chosenId)
+    return BlueRidge.Common.Db.execOne(
+        "location/AppUser_Get",
+        {"id": chosenId},
+    )
+
+
+def createOperator(meta, appUserId):
+    """Create an Operator-class user (Initials + DisplayName only; AdAccount /
+       IgnitionRole NULL). Returns {Status, Message, NewId}."""
+    attributes = {
+        "initials":     meta.initials,
+        "displayName":  meta.displayName,
+        "adAccount":    None,
+        "ignitionRole": None,
+        "appUserId":    appUserId,
+    }
+    return createUser(attributes)
+
+
+def createUser(attributes):
+    """Create a new AppUser from an attributes dict
+       (initials, displayName, adAccount, ignitionRole, appUserId).
+       Initials must be unique. Returns {Status, Message, NewId}."""
+    BlueRidge.Common.Util.log("initials=%s" % attributes.get("initials"))
+    return BlueRidge.Common.Db.execOne("location/AppUser_Create", attributes)
+
+
+def deprecateUser(chosenId, appUserId):
+    """Soft-delete (deprecate) an AppUser. Returns {Status, Message}."""
+    BlueRidge.Common.Util.log("id=%s appUserId=%s" % (chosenId, appUserId))
+    return BlueRidge.Common.Db.execOne(
+        "location/AppUser_Deprecate",
+        {"id": chosenId, "appUserId": appUserId},
+    )
+
+
+def updateOperator(chosenId, meta, appUserId):
+    """Update an Operator-class user (Initials + DisplayName only).
+       Returns {Status, Message}."""
+    attributes = {
+        "id":           chosenId,
+        "initials":     meta.initials,
+        "displayName":  meta.displayName,
+        "adAccount":    None,
+        "ignitionRole": None,
+        "appUserId":    appUserId,
+    }
+    return updateUser(attributes)
+
+
+def updateUser(attributes):
+    """Update an AppUser from an attributes dict keyed by Id
+       (id, initials, displayName, adAccount, ignitionRole, appUserId).
+       Returns {Status, Message}."""
+    BlueRidge.Common.Util.log("initials=%s" % attributes.get("initials"))
+    return BlueRidge.Common.Db.execOne("location/AppUser_Update", attributes)
+
+
+def emptyMeta():
+    """Blank meta dict for the editor's create-mode initialization."""
+    return {
+        "id":          None,
+        "initials":    "",
+        "displayName": "",
+    }
+
+
 def getByInitials(initials):
     """Resolve an AppUser by shop-floor initials. Returns a dict or None."""
     BlueRidge.Common.Util.log("initials=%s" % initials)

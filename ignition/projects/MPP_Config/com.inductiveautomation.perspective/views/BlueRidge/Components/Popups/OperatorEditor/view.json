@@ -1,0 +1,431 @@
+{
+  "custom": {
+    "editDraft": {
+      "meta": {
+        "displayName": "",
+        "id": null,
+        "initials": ""
+      }
+    },
+    "selected": {
+      "meta": {
+        "displayName": "",
+        "id": null,
+        "initials": ""
+      }
+    }
+  },
+  "params": {
+    "editId": "",
+    "mode": "create"
+  },
+  "propConfig": {
+    "params.editId": {
+      "onChange": {
+        "enabled": null,
+        "script": "\tnewId \u003d currentValue.value\n\tsystem.perspective.print(\"test\")\n\tif newId is None:\n\t\tself.view.custom.selected \u003d {\"meta\": BlueRidge.Location.AppUser.emptyMeta()}\n\telse:\n\t\trow \u003d BlueRidge.Location.AppUser.getUser(newId)\n\t\tif row:\n\t\t\tmeta \u003d {\n\t\t\t\t\"id\":                   row.get(\"Id\"),\n\t\t\t\t\"initials\":             row.get(\"Initials\"),\n\t\t\t\t\"displayName\":          row.get(\"DisplayName\"),\n\t\t\t}\n\t\t\tself.view.custom.selected \u003d {\"meta\": meta}\n\t\telse:\n\t\t\tself.view.custom.selected \u003d {\"meta\": BlueRidge.Location.AppUser.emptyMeta()}\n\tself.view.custom.editDraft \u003d {\"meta\": dict(self.view.custom.selected[\"meta\"])}"
+      },
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.mode": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 300,
+      "width": 560
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "TitleLabel"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.params.mode} \u003d \"create\", \"Add Operator\", \"Edit Operator\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "modal-title",
+                "fontSize": "14px",
+                "fontWeight": "600"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "Spacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "DirtyIndicator"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.editDraft} !\u003d {view.custom.selected}, \"● Unsaved changes\", \"\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-accent)",
+                "fontSize": "11px",
+                "fontStyle": "italic"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.handleClose()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseIcon",
+              "tooltip": {
+                "text": "Close"
+              }
+            },
+            "props": {
+              "path": "mpp/cancel",
+              "style": {
+                "classes": "modal-close",
+                "cursor": "pointer",
+                "height": "18px",
+                "width": "18px"
+              }
+            },
+            "type": "ia.display.icon"
+          }
+        ],
+        "meta": {
+          "name": "HeaderBar"
+        },
+        "position": {
+          "basis": "50px",
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "gap": "12px",
+            "overflow": "hidden",
+            "padding": "0 16px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Initials"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Input"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.meta.initials"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "e.g. JPD",
+                  "style": {
+                    "boxSizing": "border-box",
+                    "classes": "search-input",
+                    "width": "100%"
+                  }
+                },
+                "type": "ia.input.text-field"
+              }
+            ],
+            "meta": {
+              "name": "CodeField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Display Name"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Input"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.meta.displayName"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "Full name to be displayed",
+                  "style": {
+                    "boxSizing": "border-box",
+                    "classes": "search-input",
+                    "width": "100%"
+                  }
+                },
+                "type": "ia.input.text-field"
+              }
+            ],
+            "meta": {
+              "name": "DescriptionField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "FormBody"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "12px",
+            "overflowY": "auto",
+            "padding": "16px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tresult \u003d BlueRidge.Location.AppUser.deprecateUser(self.view.params.editId, self.session.custom.appUserId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Operator deprecated\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"usersRefresh\", scope\u003d\"page\")\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-operator-editor\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "DeprecateButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.params.mode} \u003d \"update\""
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-danger btn-sm"
+              },
+              "text": "Deprecate"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "children": [
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.handleClose()"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "CancelButton"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "btn btn-sm"
+                  },
+                  "text": "Cancel"
+                },
+                "type": "ia.input.button"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tmode \u003d self.view.params.mode\n\tdraft \u003d self.view.custom.editDraft.get(\"meta\", {}) if self.view.custom.editDraft else {}\n\tif mode \u003d\u003d \"create\":\n\t\tresult \u003d BlueRidge.Location.AppUser.createOperator(draft, self.session.custom.appUserId)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"New operator created\")\n\telse:\n\t\tresult \u003d BlueRidge.Location.AppUser.updateOperator(self.view.params.editId, draft, self.session.custom.appUserId)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"Operator updated\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"usersRefresh\", scope\u003d\"page\")\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-operator-editor\")"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "SaveButton"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "btn btn-primary btn-sm"
+                  },
+                  "text": "Save"
+                },
+                "type": "ia.input.button"
+              }
+            ],
+            "meta": {
+              "name": "RightCluster"
+            },
+            "props": {
+              "alignItems": "center",
+              "style": {
+                "gap": "8px"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "FooterBar"
+        },
+        "position": {
+          "basis": "50px",
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "justify": "space-between",
+          "style": {
+            "background": "var(--mpp-surface-raised)",
+            "borderTop": "1px solid var(--mpp-border-subtle)",
+            "gap": "8px",
+            "overflow": "hidden",
+            "padding": "12px 16px"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "background": "var(--mpp-surface-canvas)",
+        "borderRadius": "var(--mpp-radius-md, 8px)",
+        "height": "100%",
+        "overflow": "hidden",
+        "width": "100%"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "handleClose",
+          "params": [],
+          "script": "\tif str(self.view.custom.editDraft) \u003d\u003d str(self.view.custom.selected):\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-operator-editor\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid\u003d\"mpp-confirm-unsaved\",\n\t\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal\u003dTrue,\n\t\t\tshowCloseIcon\u003dFalse,\n\t\t\tparams\u003d{\n\t\t\t\t\"title\": \"Unsaved Changes\",\n\t\t\t\t\"message\": \"You have unsaved changes to this operator. Save before closing?\"\n\t\t\t}\n\t\t)"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "confirmUnsavedResult",
+          "pageScope": true,
+          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tif action \u003d\u003d \"save\":\n\t\tmode \u003d self.view.params.mode\n\t\tdraft \u003d self.view.custom.editDraft.get(\"meta\", {}) if self.view.custom.editDraft else {}\n\t\tif mode \u003d\u003d \"create\":\n\t\t\tresult \u003d BlueRidge.Location.AppUser.createOperator(draft, self.session.custom.appUserId)\n\t\telse:\n\t\t\tresult \u003d BlueRidge.Location.AppUser.updateOperator(self.view.params.editId, draft, self.session.custom.appUserId)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"Operator saved\")\n\t\tif result and result.get(\"Status\"):\n\t\t\tsystem.perspective.sendMessage(\"usersRefresh\", scope\u003d\"page\")\n\t\t\tsystem.perspective.closePopup(id\u003d\"mpp-operator-editor\")\n\telif action \u003d\u003d \"discard\":\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-operator-editor\")",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

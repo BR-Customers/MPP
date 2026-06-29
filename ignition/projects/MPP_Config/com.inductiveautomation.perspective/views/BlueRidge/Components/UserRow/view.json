@@ -1,0 +1,201 @@
+{
+  "custom": {},
+  "params": {
+    "CreatedAt": "",
+    "DeprecatedAt": 0,
+    "DisplayName": "",
+    "Id": null,
+    "Initials": "",
+    "selected": false
+  },
+  "propConfig": {
+    "params.CreatedAt": {
+      "paramDirection": "input"
+    },
+    "params.DeprecatedAt": {
+      "paramDirection": "input"
+    },
+    "params.DisplayName": {
+      "paramDirection": "input"
+    },
+    "params.Id": {
+      "paramDirection": "input"
+    },
+    "params.Initials": {
+      "paramDirection": "input"
+    },
+    "params.selected": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 44
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "Initials"
+        },
+        "position": {
+          "basis": "100px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.Initials"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": {
+          "name": "DisplayName"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.DisplayName"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": {
+          "name": "CreatedAt"
+        },
+        "position": {
+          "basis": "130px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "expression": "dateFormat({view.params.CreatedAt}, \"MM/dd/YYYY hh:ss\")"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": {
+          "name": "Deprecated"
+        },
+        "position": {
+          "basis": "130px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.path": {
+            "binding": {
+              "config": {
+                "expression": "if(({view.params.DeprecatedAt} !\u003d None), \u0027material/check_box\u0027, \u0027material/check_box_outline_blank\u0027)"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "height": "20px",
+            "width": "20px"
+          }
+        },
+        "type": "ia.display.icon"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.openPopup(\n\t\tid\u003d\"mpp-operator-editor\", \n\t\tview\u003d\"BlueRidge/Components/Popups/OperatorEditor\", \n\t\tmodal\u003dTrue, \n\t\tshowCloseIcon\u003dFalse,\n\t\tdraggable\u003dFalse,\n\t\tparams\u003d{\"mode\": \"update\", \"editId\": self.view.params.Id}\n\t)"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "EditButton"
+        },
+        "position": {
+          "basis": "80px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "meta.visible": {
+            "binding": {
+              "config": {
+                "expression": "({view.params.DeprecatedAt} \u003d None)"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "btn btn-sm"
+          },
+          "text": "Edit"
+        },
+        "type": "ia.input.button"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "propConfig": {
+      "props.style.background": {
+        "binding": {
+          "config": {
+            "expression": "if({view.params.selected}, \u0027var(--mpp-accent-20)\u0027, \u0027transparent\u0027)"
+          },
+          "type": "expr"
+        }
+      },
+      "props.style.color": {
+        "binding": {
+          "config": {
+            "expression": "if({view.params.selected}, \u0027var(--mpp-accent-90)\u0027, \u0027var(--mpp-text-primary)\u0027)"
+          },
+          "type": "expr"
+        }
+      },
+      "props.style.opacity": {
+        "binding": {
+          "config": {
+            "expression": "if(({view.params.DeprecatedAt} !\u003d None), 0.55, 1)"
+          },
+          "type": "expr"
+        }
+      }
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "padding": "8px 12px"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}
