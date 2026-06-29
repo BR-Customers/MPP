@@ -4,24 +4,31 @@
     "header": {}
   },
   "propConfig": {
-    "params.header": { "paramDirection": "input" }
+    "params.header": {
+      "paramDirection": "input"
+    }
   },
   "props": {
-    "defaultSize": { "width": 90, "height": 24 }
+    "defaultSize": {
+      "height": 24,
+      "width": 90
+    }
   },
   "root": {
-    "type": "ia.display.label",
-    "meta": { "name": "root" },
+    "meta": {
+      "name": "root"
+    },
     "propConfig": {
       "props.text": {
         "binding": {
-          "type": "property",
-          "config": { "path": "view.params.header.label" }
+          "config": {
+            "path": "view.params.header.label"
+          },
+          "type": "property"
         }
       }
     },
     "props": {
-      "text": "",
       "style": {
         "color": "var(--mpp-text-muted)",
         "fontSize": "12px",
@@ -29,6 +36,7 @@
         "padding": "4px",
         "textAlign": "center"
       }
-    }
+    },
+    "type": "ia.display.label"
   }
 }

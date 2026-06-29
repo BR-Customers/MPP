@@ -1,0 +1,45 @@
+{
+  "scope": "DG",
+  "version": 2,
+  "restricted": false,
+  "overridable": true,
+  "files": [
+    "query.sql"
+  ],
+  "attributes": {
+    "useMaxReturnSize": false,
+    "autoBatchEnabled": false,
+    "fallbackValue": "",
+    "maxReturnSize": 100,
+    "cacheUnit": "SEC",
+    "type": "Query",
+    "enabled": true,
+    "cacheAmount": 1,
+    "cacheEnabled": false,
+    "database": "MPP",
+    "fallbackEnabled": false,
+    "lastModificationSignature": "50a8355ba5e4fdc85ccaa6a0e7a8c1b6114e066b10b8a1c075140ba90de583db",
+    "permissions": [
+      {
+        "zone": "",
+        "role": ""
+      }
+    ],
+    "lastModification": {
+      "actor": "admin",
+      "timestamp": "2026-06-22T18:02:32Z"
+    },
+    "parameters": [
+      {
+        "type": "Parameter",
+        "identifier": "rowsJson",
+        "sqlType": 7
+      },
+      {
+        "type": "Parameter",
+        "identifier": "appUserId",
+        "sqlType": 3
+      }
+    ]
+  }
+}

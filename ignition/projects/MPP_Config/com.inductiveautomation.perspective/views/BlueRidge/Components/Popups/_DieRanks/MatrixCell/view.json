@@ -4,48 +4,54 @@
     "cell": {}
   },
   "propConfig": {
-    "params.cell": { "paramDirection": "input" }
+    "params.cell": {
+      "paramDirection": "input"
+    }
   },
   "props": {
-    "defaultSize": { "width": 90, "height": 30 }
+    "defaultSize": {
+      "height": 30,
+      "width": 90
+    }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": { "name": "root" },
     "events": {
       "dom": {
         "onClick": {
-          "type": "script",
-          "scope": "G",
           "config": {
-            "script": "\tcell = self.view.params.cell or {}\n\tif cell.get('mirror'):\n\t\treturn\n\tsystem.perspective.sendMessage(\n\t\t'matrixCellToggle',\n\t\tpayload={'fromCode': cell.get('fromCode'), 'toCode': cell.get('toCode')},\n\t\tscope='page')"
-          }
+            "script": "\tcell \u003d self.view.params.cell or {}\n\tif cell.get(\u0027mirror\u0027):\n\t\treturn\n\tsystem.perspective.sendMessage(\n\t\t\u0027matrixCellToggle\u0027,\n\t\tpayload\u003d{\u0027fromCode\u0027: cell.get(\u0027fromCode\u0027), \u0027toCode\u0027: cell.get(\u0027toCode\u0027)},\n\t\tscope\u003d\u0027page\u0027)"
+          },
+          "scope": "G",
+          "type": "script"
         }
       }
+    },
+    "meta": {
+      "name": "root"
     },
     "propConfig": {
       "props.style.background": {
         "binding": {
-          "type": "expr",
           "config": {
-            "expression": "if({view.params.cell.mirror}, 'var(--mpp-surface-card)', if({view.params.cell.compatible}, 'var(--mpp-state-good-bg)', 'var(--mpp-state-bad-bg)'))"
-          }
+            "expression": "if({view.params.cell.mirror}, \u0027var(--mpp-surface-card)\u0027, if({view.params.cell.compatible}, \u0027var(--mpp-state-good-bg)\u0027, \u0027var(--mpp-state-bad-bg)\u0027))"
+          },
+          "type": "expr"
         }
       },
       "props.style.border": {
         "binding": {
-          "type": "expr",
           "config": {
-            "expression": "if({view.params.cell.mirror}, '1px solid var(--mpp-border-subtle)', if({view.params.cell.compatible}, '1px solid var(--mpp-state-good-border)', '1px solid var(--mpp-state-bad-border)'))"
-          }
+            "expression": "if({view.params.cell.mirror}, \u00271px solid var(--mpp-border-subtle)\u0027, if({view.params.cell.compatible}, \u00271px solid var(--mpp-state-good-border)\u0027, \u00271px solid var(--mpp-state-bad-border)\u0027))"
+          },
+          "type": "expr"
         }
       },
       "props.style.cursor": {
         "binding": {
-          "type": "expr",
           "config": {
-            "expression": "if({view.params.cell.mirror}, 'default', 'pointer')"
-          }
+            "expression": "if({view.params.cell.mirror}, \u0027default\u0027, \u0027pointer\u0027)"
+          },
+          "type": "expr"
         }
       }
     },
@@ -54,6 +60,7 @@
         "borderRadius": "3px",
         "height": "30px"
       }
-    }
+    },
+    "type": "ia.container.flex"
   }
 }
