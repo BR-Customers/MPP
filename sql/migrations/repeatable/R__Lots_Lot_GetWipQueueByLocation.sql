@@ -41,7 +41,7 @@ BEGIN
         l.PieceCount,
         l.LotStatusId,
         sc.Code            AS LotStatusCode,
-        lm.LastMovementAt,
+        CAST(lm.LastMovementAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS LastMovementAt,
         CAST(CASE WHEN EXISTS (
             SELECT 1 FROM Parts.Bom b
             INNER JOIN Parts.BomLine bl ON bl.BomId = b.Id

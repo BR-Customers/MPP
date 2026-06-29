@@ -24,7 +24,7 @@ BEGIN
            l.LotName      AS LotName,
            l.ItemId       AS ItemId,
            i.PartNumber   AS ItemCode,
-           pe.PausedAt    AS PausedAt,
+           CAST(pe.PausedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS PausedAt,
            pe.PausedByUserId AS PausedByUserId,
            pe.PausedReason   AS PausedReason
     FROM Lots.PauseEvent pe

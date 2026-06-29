@@ -18,7 +18,7 @@ BEGIN
                                     THEN NULL ELSE N'%' + LTRIM(RTRIM(@Query)) + N'%' END;
     SELECT TOP (@LimitRows)
         l.Id, l.LotName, l.ItemId, l.LotOriginTypeId, l.LotStatusId, l.PieceCount,
-        l.VendorLotNumber, l.CurrentLocationId, l.CreatedAt,
+        l.VendorLotNumber, l.CurrentLocationId, CAST(l.CreatedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS CreatedAt,
         i.PartNumber  AS ItemPartNumber,
         sc.Code       AS LotStatusCode,
         ot.Code       AS LotOriginTypeCode,

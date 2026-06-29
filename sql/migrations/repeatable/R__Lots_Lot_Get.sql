@@ -39,8 +39,8 @@ BEGIN
         l.InventoryAvailable,
         l.CreatedByUserId,
         l.CreatedAtTerminalId,
-        l.CreatedAt,
-        l.UpdatedAt,
+        CAST(l.CreatedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS CreatedAt,
+        CAST(l.UpdatedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS UpdatedAt,
         l.UpdatedByUserId,
         l.RowVersion,
         -- resolved display fields (read-side convenience)

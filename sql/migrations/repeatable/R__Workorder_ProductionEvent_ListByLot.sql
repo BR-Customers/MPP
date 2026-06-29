@@ -37,7 +37,7 @@ BEGIN
         ot.Code            AS OperationTemplateCode,
         ot.Name            AS OperationTemplateName,
         pe.WorkOrderOperationId,
-        pe.EventAt,
+        CAST(pe.EventAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS EventAt,
         pe.ShotCount,
         pe.ScrapCount,
         pe.ScrapSourceId,

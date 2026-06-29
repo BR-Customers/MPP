@@ -71,7 +71,7 @@ BEGIN
         CrtActive,
         TotalInProcess,
         InventoryAvailable,
-        CreatedAt,
+        CAST(CreatedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS CreatedAt,
         ItemPartNumber,
         LotStatusCode,
         CurrentLocationName,

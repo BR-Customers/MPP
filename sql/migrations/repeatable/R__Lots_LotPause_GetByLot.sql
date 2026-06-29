@@ -9,7 +9,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
     SELECT pe.Id AS PauseEventId, pe.LotId, pe.LocationId, loc.Name AS LocationName,
-           pe.PausedAt, pe.PausedByUserId, pe.PausedReason
+           CAST(pe.PausedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS PausedAt, pe.PausedByUserId, pe.PausedReason
     FROM Lots.PauseEvent pe
     INNER JOIN Location.Location loc ON loc.Id = pe.LocationId
     WHERE pe.LotId = @LotId AND pe.ResumedAt IS NULL
