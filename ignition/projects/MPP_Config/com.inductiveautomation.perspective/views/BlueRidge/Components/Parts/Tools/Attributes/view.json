@@ -83,7 +83,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\ttid \u003d None\n\tone \u003d BlueRidge.Parts.Tool.getOne(self.view.params.value)\n\tif one:\n\t\ttid \u003d one.get(\"ToolTypeId\")\n\tif not tid:\n\t\tBlueRidge.Common.Notify.toast(\"No tool selected\", \"Pick a tool first.\", \"warning\")\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid\u003d\"mpp-add-attr-def\",\n\t\tview\u003d\"BlueRidge/Components/Popups/AddAttributeDefinition\",\n\t\tmodal\u003dTrue,\n\t\tshowCloseIcon\u003dFalse,\n\t\tparams\u003d{\"toolTypeId\": tid})"
+                    "script": "\ttid \u003d None\n\tone \u003d BlueRidge.Parts.Tool.getOne(self.view.params.value)\n\tif one:\n\t\ttid \u003d one.get(\"ToolTypeId\")\n\tif not tid:\n\t\tBlueRidge.Common.Notify.toast(\"No tool selected\", \"Pick a tool first.\", \"warning\")\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid\u003d\"mpp-add-attr-def\",\n\t\tview\u003d\"BlueRidge/Components/Popups/AddAttributeDefinition\",\n\t\tmodal\u003dTrue,\n\t\tshowCloseIcon\u003dFalse,\n\t\tdraggable\u003dFalse,\n\t\tparams\u003d{\"toolTypeId\": tid})"
                   },
                   "scope": "G",
                   "type": "script"
@@ -277,15 +277,19 @@
           "props.instances": {
             "binding": {
               "config": {
-                "path": "view.custom.state.editDraft.rows"
+                "struct": {
+                  "attributeOptions": "{view.custom.attributeOptions}",
+                  "editDraft": "{view.custom.state.editDraft}"
+                },
+                "waitOnAll": true
               },
               "transforms": [
                 {
-                  "code": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\topts \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.attributeOptions) or []\n\tout \u003d []\n\tfor i, r in enumerate(rows):\n\t\tr \u003d dict(r or {})\n\t\tr[\u0027rowIndex\u0027] \u003d i\n\t\tout.append({\u0027row\u0027: r, \u0027attributeOptions\u0027: opts})\n\treturn out",
+                  "code": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(value.editDraft.rows) or []\n\tif len(rows) \u003d\u003d 0:\n\t\treturn []\n\topts \u003d BlueRidge.Common.Util.extractQualifiedValues(value.attributeOptions) or []\n\tout \u003d []\n\tfor i, r in enumerate(rows):\n\t\tr \u003d dict(r or {})\n\t\tr[\u0027rowIndex\u0027] \u003d i\n\t\tout.append({\u0027row\u0027: r, \u0027attributeOptions\u0027: opts})\n\treturn out",
                   "type": "script"
                 }
               ],
-              "type": "property"
+              "type": "expr-struct"
             }
           }
         },
@@ -440,7 +444,7 @@
         {
           "messageType": "refreshAttrOptions",
           "pageScope": true,
-          "script": "\tself.view.refreshBinding(\"custom.attributeOptions\")\n\trowInstances \u003d self.getChild(\"RowsRepeater\").props.instances\n\t\n\tself.getChild(\"RowsRepeater\").refreshBinding(\u0027props.instances\u0027)\n\t#if not row:\n\t#\treturn\t\n\t#for row in rowInstances:\n\t#\trow.params.attributeOptions \u003d self.view.custom.attributeOptions",
+          "script": "\tself.view.refreshBinding(\"custom.attributeOptions\")\n\trowInstances \u003d self.getChild(\"RowsRepeater\").props.instances\n\t\n\tself.getChild(\"RowsRepeater\").refreshBinding(\u0027props.instances\u0027)\n\t#if not row:\n\t#\treturn\n\t#for row in rowInstances:\n\t#\trow.params.attributeOptions \u003d self.view.custom.attributeOptions",
           "sessionScope": false,
           "viewScope": false
         }
