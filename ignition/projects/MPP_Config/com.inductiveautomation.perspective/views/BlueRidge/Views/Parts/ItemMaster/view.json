@@ -55,17 +55,80 @@
       {
         "children": [
           {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "BreadcrumbCategory"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "breadcrumb"
+                      },
+                      "text": "Parts"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "BreadcrumbSep"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "breadcrumb crumb-sep"
+                      },
+                      "text": "›"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "BreadcrumbActive"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "crumb-active"
+                      },
+                      "text": "Item Master"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "Breadcrumb"
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "classes": "breadcrumb"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "LabelTitle"
+                },
+                "props": {
+                  "style": {
+                    "classes": "title-row-h1"
+                  },
+                  "text": "Item Master"
+                },
+                "type": "ia.display.label"
+              }
+            ],
             "meta": {
-              "name": "LabelTitle"
+              "name": "TitleColumn"
             },
             "props": {
+              "direction": "column",
               "style": {
-                "fontSize": "15px",
-                "fontWeight": "600"
-              },
-              "text": "Item Master"
+                "gap": "2px"
+              }
             },
-            "type": "ia.display.label"
+            "type": "ia.container.flex"
           },
           {
             "meta": {
@@ -104,16 +167,10 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "id": "mpp-add-item",
-                    "modal": true,
-                    "overlayDismiss": false,
-                    "showCloseIcon": false,
-                    "type": "open",
-                    "viewPath": "BlueRidge/Components/Popups/AddItem",
-                    "viewportBound": true
+                    "script": "\tsystem.perspective.openPopup(\n\t\tid\u003d\u0027mpp-add-item\u0027,\n\t\tview\u003d\u0027BlueRidge/Components/Popups/AddItem\u0027,\n\t\tmodal\u003dTrue,\n\t\tshowCloseIcon\u003dFalse,\n\t\tdraggable\u003dFalse\n\t)"
                   },
-                  "scope": "C",
-                  "type": "popup"
+                  "scope": "G",
+                  "type": "script"
                 }
               }
             },
@@ -168,7 +225,7 @@
                       }
                     },
                     "props": {
-                      "placeholder": "🔍 Search items…",
+                      "placeholder": "Search items…",
                       "style": {
                         "classes": "search-input"
                       }
@@ -271,6 +328,7 @@
                     "overflowY": "auto",
                     "padding": "4px 0"
                   },
+                  "useDefaultViewHeight": false,
                   "useDefaultViewWidth": false
                 },
                 "type": "ia.display.flex-repeater"

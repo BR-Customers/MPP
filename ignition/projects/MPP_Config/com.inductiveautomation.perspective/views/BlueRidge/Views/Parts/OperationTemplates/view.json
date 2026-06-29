@@ -207,7 +207,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\n\t\tid\u003d\u0027mpp-new-operation-template\u0027,\n\t\tview\u003d\u0027BlueRidge/Components/Popups/NewOperationTemplate\u0027,\n\t\tmodal\u003dTrue,\n\t\tshowCloseIcon\u003dFalse\n\t)"
+                    "script": "\tsystem.perspective.openPopup(\n\t\tid\u003d\u0027mpp-new-operation-template\u0027,\n\t\tview\u003d\u0027BlueRidge/Components/Popups/NewOperationTemplate\u0027,\n\t\tmodal\u003dTrue,\n\t\tshowCloseIcon\u003dFalse,\n\t\tdraggable\u003dFalse\n\t)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -296,7 +296,7 @@
                       }
                     },
                     "props": {
-                      "placeholder": "🔍 Search templates…",
+                      "placeholder": "Search templates…",
                       "style": {
                         "classes": "search-input"
                       }

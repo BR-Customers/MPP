@@ -151,7 +151,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(id\u003d\"mpp-downtime-code-editor\", view\u003d\"BlueRidge/Components/Popups/DowntimeCodeEditor\", modal\u003dTrue, showCloseIcon\u003dFalse, params\u003d{\"mode\": \"create\", \"editId\": None})"
+                    "script": "\tsystem.perspective.openPopup(\n\t\tid\u003d\"mpp-downtime-code-editor\", \n\t\tview\u003d\"BlueRidge/Components/Popups/DowntimeCodeEditor\", \n\t\tmodal\u003dTrue, \n\t\tshowCloseIcon\u003dFalse,\n\t\tdraggable\u003dFalse,\n\t\tparams\u003d{\"mode\": \"create\", \"editId\": None}\n\t)"
                   },
                   "scope": "G",
                   "type": "script"
