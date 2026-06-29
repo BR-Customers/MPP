@@ -34,6 +34,7 @@ BEGIN
         @HoldTypeCodeId AS HoldTypeCodeId, @AppUserId AS AppUserId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
     DECLARE @CurrentLotStatus BIGINT, @Subject NVARCHAR(100), @Activity NVARCHAR(500), @NewValue NVARCHAR(MAX);
+    DECLARE @PriorConStatus BIGINT = NULL;  -- P7-7: container's pre-hold status, captured for restore on release
 
     BEGIN TRY
         -- ---- Tier 1: exactly one target + required params ----
@@ -89,6 +90,7 @@ BEGIN
                 SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
                 RETURN;
             END
+            SELECT @PriorConStatus = ContainerStatusCodeId FROM Lots.Container WHERE Id = @ContainerId;  -- P7-7
             SET @Subject = N'Container #' + CAST(@ContainerId AS NVARCHAR(20));
         END
 
@@ -100,8 +102,8 @@ BEGIN
         -- ---- Mutation (atomic) ----
         BEGIN TRANSACTION;
 
-        INSERT INTO Quality.HoldEvent (LotId, ContainerId, HoldTypeCodeId, Reason, PlacedByUserId, PlacedAt)
-        VALUES (@LotId, @ContainerId, @HoldTypeCodeId, @Reason, @AppUserId, SYSUTCDATETIME());
+        INSERT INTO Quality.HoldEvent (LotId, ContainerId, HoldTypeCodeId, Reason, PlacedByUserId, PlacedAt, PriorContainerStatusCodeId)
+        VALUES (@LotId, @ContainerId, @HoldTypeCodeId, @Reason, @AppUserId, SYSUTCDATETIME(), @PriorConStatus);
         SET @NewId = SCOPE_IDENTITY();
 
         IF @LotId IS NOT NULL

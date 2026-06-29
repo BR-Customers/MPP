@@ -19,7 +19,7 @@ BEGIN
 
     DECLARE @Status  BIT           = 0;
     DECLARE @Message NVARCHAR(500) = N'Unknown error';
-    DECLARE @ContainerId BIGINT, @IsVoid BIT, @ConStatus BIGINT, @Activity NVARCHAR(500);
+    DECLARE @ContainerId BIGINT, @IsVoid BIT, @ConStatus BIGINT, @Activity NVARCHAR(500), @ShipLoc BIGINT;
 
     BEGIN TRY
         IF @ShippingLabelId IS NULL OR @AppUserId IS NULL
@@ -58,8 +58,18 @@ BEGIN
 
         SET @Activity = Audit.ufn_TruncateActivity(N'Container #' + CAST(@ContainerId AS NVARCHAR(20)) + N' ' + Audit.ufn_MidDot() + N' Shipping ' + Audit.ufn_MidDot() + N' Shipped');
 
+        -- P7-4: resolve the finished-goods shipping location (SHIPOUT). Container has no
+        -- source LotId (parts trace via ContainerSerial/ConsumptionEvent genealogy), so
+        -- shipping traceability is the container's own CurrentLocationId move + the
+        -- ContainerShipped audit row -- not a per-LOT LotMovement. COALESCE keeps the
+        -- current location if SHIPOUT is unseeded.
+        SET @ShipLoc = (SELECT Id FROM Location.Location WHERE Code = N'SHIPOUT' AND DeprecatedAt IS NULL);
+
         BEGIN TRANSACTION;
-        UPDATE Lots.Container SET ContainerStatusCodeId = 3 WHERE Id = @ContainerId;  -- 3 = Shipped
+        UPDATE Lots.Container
+        SET ContainerStatusCodeId = 3,                               -- 3 = Shipped
+            CurrentLocationId     = COALESCE(@ShipLoc, CurrentLocationId)
+        WHERE Id = @ContainerId;
         EXEC Audit.Audit_LogOperation
             @AppUserId = @AppUserId, @TerminalLocationId = @TerminalLocationId, @LocationId = NULL,
             @LogEntityTypeCode = N'Container', @EntityId = @ContainerId, @LogEventTypeCode = N'ContainerShipped',

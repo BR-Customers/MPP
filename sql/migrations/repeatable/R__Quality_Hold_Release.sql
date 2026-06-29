@@ -78,7 +78,12 @@ BEGIN
         END
         ELSE
         BEGIN
-            UPDATE Lots.Container SET ContainerStatusCodeId = 2 WHERE Id = @ContainerId;  -- 2 = Complete
+            -- P7-7: restore the container's pre-hold status (captured on the HoldEvent at
+            -- place time) instead of forcing Complete -- so a shipped->hold->release
+            -- container returns to Shipped, not a re-shippable Complete. Falls back to
+            -- Complete (2) for pre-0031 holds that have no captured prior status.
+            SELECT @PriorStatus = PriorContainerStatusCodeId FROM Quality.HoldEvent WHERE Id = @HoldEventId;
+            UPDATE Lots.Container SET ContainerStatusCodeId = COALESCE(@PriorStatus, 2) WHERE Id = @ContainerId;
         END
 
         EXEC Audit.Audit_LogOperation

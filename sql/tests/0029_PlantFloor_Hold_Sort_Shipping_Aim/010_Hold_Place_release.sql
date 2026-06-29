@@ -72,7 +72,12 @@ EXEC test.Assert_IsEqual @TestName = N'[Hold] LOT hold released (Status 1)', @Ex
 DECLARE @LotStat2 NVARCHAR(10) = (SELECT CAST(LotStatusId AS NVARCHAR(10)) FROM Lots.Lot WHERE Id = @Lot);
 EXEC test.Assert_IsEqual @TestName = N'[Hold] LOT status restored to Good (1)', @Expected = N'1', @Actual = @LotStat2;
 
--- place + release hold on the CONTAINER
+-- place + release hold on the CONTAINER.
+-- P7-7: Hold_Release restores the container's PRIOR status (captured at place
+-- time), not a hardcoded Complete. Put the container in Complete (2) first so
+-- the realistic "hold a completed container, then release it" path restores
+-- back to Complete.
+UPDATE Lots.Container SET ContainerStatusCodeId = 2 WHERE Id = @Con;  -- 2 = Complete
 DECLARE @P3 TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO @P3 EXEC Quality.Hold_Place @ContainerId = @Con, @HoldTypeCodeId = @HoldType, @AppUserId = 2;
 DECLARE @He3 BIGINT = (SELECT NewId FROM @P3);
@@ -81,7 +86,19 @@ EXEC test.Assert_IsEqual @TestName = N'[Hold] container hold -> status Hold (4)'
 DECLARE @R2 TABLE (Status BIT, Message NVARCHAR(500));
 INSERT INTO @R2 EXEC Quality.Hold_Release @HoldEventId = @He3, @AppUserId = 2;
 DECLARE @ConStat2 NVARCHAR(10) = (SELECT CAST(ContainerStatusCodeId AS NVARCHAR(10)) FROM Lots.Container WHERE Id = @Con);
-EXEC test.Assert_IsEqual @TestName = N'[Hold] container hold released -> Complete (2)', @Expected = N'2', @Actual = @ConStat2;
+EXEC test.Assert_IsEqual @TestName = N'[Hold] container hold released -> restored to prior Complete (2)', @Expected = N'2', @Actual = @ConStat2;
+
+-- P7-7 regression: a SHIPPED (3) container held for a recall and then released
+-- must return to Shipped, NOT a re-shippable Complete (which would let
+-- Container_Ship double-ship it).
+UPDATE Lots.Container SET ContainerStatusCodeId = 3 WHERE Id = @Con;  -- 3 = Shipped
+DECLARE @P4 TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @P4 EXEC Quality.Hold_Place @ContainerId = @Con, @HoldTypeCodeId = @HoldType, @AppUserId = 2;
+DECLARE @He4 BIGINT = (SELECT NewId FROM @P4);
+DECLARE @R3 TABLE (Status BIT, Message NVARCHAR(500));
+INSERT INTO @R3 EXEC Quality.Hold_Release @HoldEventId = @He4, @AppUserId = 2;
+DECLARE @ConStat3 NVARCHAR(10) = (SELECT CAST(ContainerStatusCodeId AS NVARCHAR(10)) FROM Lots.Container WHERE Id = @Con);
+EXEC test.Assert_IsEqual @TestName = N'[Hold] P7-7: shipped container hold released -> restored to Shipped (3)', @Expected = N'3', @Actual = @ConStat3;
 GO
 
 DELETE FROM Quality.HoldEvent WHERE LotId IN (SELECT l.Id FROM Lots.Lot l INNER JOIN Parts.Item i ON i.Id = l.ItemId WHERE i.PartNumber = N'P6-ASM-TEST')

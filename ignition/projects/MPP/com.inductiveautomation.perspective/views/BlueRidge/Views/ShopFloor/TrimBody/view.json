@@ -4,8 +4,8 @@
     "destValue": null,
     "inScan": "",
     "outScan": "",
-    "scrapCount": 0,
-    "shotCount": 0,
+    "scrapCount": null,
+    "shotCount": null,
     "trimState": "out"
   },
   "params": {
@@ -764,7 +764,7 @@
         {
           "name": "submitTrimOut",
           "params": [],
-          "script": "\tlotId = self.view.custom.activeLotId\n\tif lotId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT\", \"Scan or select a LOT before recording Trim OUT.\", \"warning\")\n\t\treturn\n\toperationTemplateId = BlueRidge.Parts.OperationTemplate.getActiveTemplateIdByCode(\"TrimOut\")\n\tif operationTemplateId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Template missing\", \"No active 'TrimOut' operation template is published.\", \"error\")\n\t\treturn\n\tdest = self.view.custom.destValue\n\tif dest is None or dest == \"\":\n\t\tBlueRidge.Common.Notify.toast(\"No destination\", \"Scan or pick a Machining destination.\", \"warning\")\n\t\treturn\n\tdata = {\n\t\t\"parentLotId\": lotId,\n\t\t\"operationTemplateId\": operationTemplateId,\n\t\t\"shotCount\": self.view.custom.shotCount,\n\t\t\"scrapCount\": self.view.custom.scrapCount,\n\t\t\"destinationCellLocationId\": dest,\n\t}\n\tres = BlueRidge.Workorder.TrimOut.record(data)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Trim OUT recorded\")\n\tif res.get(\"Status\"):\n\t\tsystem.perspective.navigate(\"/shop-floor/lot-detail/\" + str(lotId))"
+          "script": "\tlotId = self.view.custom.activeLotId\n\tif lotId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT\", \"Scan or select a LOT before recording Trim OUT.\", \"warning\")\n\t\treturn\n\toperationTemplateId = BlueRidge.Parts.OperationTemplate.getActiveTemplateIdByCode(\"TrimOut\")\n\tif operationTemplateId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Template missing\", \"No active 'TrimOut' operation template is published.\", \"error\")\n\t\treturn\n\tdest = self.view.custom.destValue\n\tif dest is None or dest == \"\":\n\t\tBlueRidge.Common.Notify.toast(\"No destination\", \"Scan or pick a Machining destination.\", \"warning\")\n\t\treturn\n\tdata = {\n\t\t\"parentLotId\": lotId,\n\t\t\"operationTemplateId\": operationTemplateId,\n\t\t\"shotCount\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.shotCount),\n\t\t\"scrapCount\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.scrapCount),\n\t\t\"destinationCellLocationId\": dest,\n\t}\n\tres = BlueRidge.Workorder.TrimOut.record(data)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Trim OUT recorded\")\n\tif res.get(\"Status\"):\n\t\tsystem.perspective.navigate(\"/shop-floor/lot-detail/\" + str(lotId))"
         },
         {
           "name": "startup",
