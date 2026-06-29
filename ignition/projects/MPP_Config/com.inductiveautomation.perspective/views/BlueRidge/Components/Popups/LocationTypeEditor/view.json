@@ -3,28 +3,28 @@
     "editDraft": {
       "attributes": [],
       "meta": {
-        "Code": "",
+        "Code": "ProductionArea",
         "Description": "",
-        "Icon": "",
-        "Id": "",
-        "LocationTypeId": "",
-        "Name": ""
+        "Icon": "mpp/workspaces",
+        "Id": 3,
+        "LocationTypeId": 3,
+        "Name": "Production Area"
       }
     },
     "mode": "update",
     "selected": {
       "attributes": [],
       "meta": {
-        "Code": "",
+        "Code": "ProductionArea",
         "Description": "",
-        "Icon": "",
-        "Id": "",
-        "LocationTypeId": "",
-        "Name": ""
+        "Icon": "mpp/workspaces",
+        "Id": 3,
+        "LocationTypeId": 3,
+        "Name": "Production Area"
       }
     },
-    "selectedDefId": "",
-    "tierId": ""
+    "selectedDefId": 3,
+    "tierId": 3
   },
   "params": {},
   "propConfig": {
@@ -83,7 +83,7 @@
               "dom": {
                 "onClick": {
                   "config": {
-                    "script": "\tif self.view.custom.editDraft \u003d\u003d self.view.custom.selected:\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-loc-type-editor\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid\u003d\"mpp-confirm-unsaved\",\n\t\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal\u003dTrue,\n\t\t\tshowCloseIcon\u003dFalse,\n\t\t\tparams\u003d{\n\t\t\t\t\"title\": \"Unsaved Changes\",\n\t\t\t\t\"message\": \"You have unsaved changes to this Location Type Definition. Save before closing?\"\n\t\t\t}\n\t\t)"
+                    "script": "\tself.view.rootContainer.handleClose()"
                   },
                   "scope": "G",
                   "type": "script"
@@ -665,68 +665,86 @@
                     "type": "ia.display.label"
                   },
                   {
-                    "type": "ia.container.flex",
-                    "meta": { "name": "Input" },
-                    "props": {
-                      "alignItems": "center",
-                      "style": { "gap": "8px", "minHeight": "32px" }
-                    },
                     "children": [
                       {
-                        "type": "ia.display.icon",
-                        "meta": { "name": "IconPreview" },
-                        "position": { "basis": "24px", "shrink": 0 },
+                        "meta": {
+                          "name": "IconPreview"
+                        },
+                        "position": {
+                          "basis": "24px",
+                          "shrink": 0
+                        },
                         "propConfig": {
-                          "props.path": {
-                            "binding": {
-                              "type": "property",
-                              "config": { "path": "view.custom.editDraft.meta.Icon" }
-                            }
-                          },
                           "position.display": {
                             "binding": {
-                              "type": "expr",
-                              "config": { "expression": "{view.custom.editDraft.meta.Icon} !\u003d \"\"" }
+                              "config": {
+                                "expression": "{view.custom.editDraft.meta.Icon} !\u003d \"\""
+                              },
+                              "type": "expr"
+                            }
+                          },
+                          "props.path": {
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.editDraft.meta.Icon"
+                              },
+                              "type": "property"
                             }
                           }
                         },
                         "props": {
                           "color": "var(--mpp-text-primary)",
-                          "style": { "height": "24px", "width": "24px" }
-                        }
+                          "style": {
+                            "height": "24px",
+                            "width": "24px"
+                          }
+                        },
+                        "type": "ia.display.icon"
                       },
                       {
-                        "type": "ia.display.label",
-                        "meta": { "name": "EmptyHint" },
-                        "position": { "basis": "24px", "shrink": 0 },
+                        "meta": {
+                          "name": "EmptyHint"
+                        },
+                        "position": {
+                          "basis": "24px",
+                          "shrink": 0
+                        },
                         "propConfig": {
                           "position.display": {
                             "binding": {
-                              "type": "expr",
-                              "config": { "expression": "{view.custom.editDraft.meta.Icon} \u003d \"\"" }
+                              "config": {
+                                "expression": "{view.custom.editDraft.meta.Icon} \u003d \"\""
+                              },
+                              "type": "expr"
                             }
                           }
                         },
                         "props": {
-                          "text": "—",
                           "style": {
                             "color": "var(--mpp-text-tertiary)",
                             "fontSize": "20px",
                             "lineHeight": "24px",
                             "textAlign": "center",
                             "width": "24px"
-                          }
-                        }
+                          },
+                          "text": "—"
+                        },
+                        "type": "ia.display.label"
                       },
                       {
-                        "type": "ia.display.label",
-                        "meta": { "name": "NameLabel" },
-                        "position": { "grow": 1 },
+                        "meta": {
+                          "name": "NameLabel"
+                        },
+                        "position": {
+                          "grow": 1
+                        },
                         "propConfig": {
                           "props.text": {
                             "binding": {
-                              "type": "expr",
-                              "config": { "expression": "if({view.custom.editDraft.meta.Icon} \u003d \"\", \"(none)\", runScript(\"BlueRidge.Common.Util._humanizeIconName\", 0, replace({view.custom.editDraft.meta.Icon}, \"mpp/\", \"\")))" }
+                              "config": {
+                                "expression": "if({view.custom.editDraft.meta.Icon} \u003d \"\", \"(none)\", runScript(\"BlueRidge.Common.Util._humanizeIconName\", 0, replace({view.custom.editDraft.meta.Icon}, \"mpp/\", \"\")))"
+                              },
+                              "type": "expr"
                             }
                           }
                         },
@@ -738,29 +756,47 @@
                             "textOverflow": "ellipsis",
                             "whiteSpace": "nowrap"
                           }
-                        }
+                        },
+                        "type": "ia.display.label"
                       },
                       {
-                        "type": "ia.input.button",
-                        "meta": { "name": "PickButton" },
-                        "position": { "shrink": 0 },
-                        "props": {
-                          "text": "Pick…",
-                          "style": { "classes": "btn btn-sm" }
-                        },
                         "events": {
                           "component": {
                             "onActionPerformed": {
-                              "type": "script",
-                              "scope": "G",
                               "config": {
                                 "script": "\tdraft \u003d self.view.custom.editDraft or {}\n\tmeta \u003d (draft.get(\"meta\") if hasattr(draft, \"get\") else None) or {}\n\tselected \u003d meta.get(\"Icon\") if hasattr(meta, \"get\") else \"\"\n\tsystem.perspective.openPopup(\n\t\tid\u003d\"mpp-icon-picker\",\n\t\tview\u003d\"BlueRidge/Components/Popups/IconPicker\",\n\t\tmodal\u003dTrue,\n\t\tshowCloseIcon\u003dFalse,\n\t\tparams\u003d{\n\t\t\t\"selected\":     selected or \"\",\n\t\t\t\"replyMessage\": \"iconPickerResult\"\n\t\t}\n\t)"
-                              }
+                              },
+                              "scope": "G",
+                              "type": "script"
                             }
                           }
-                        }
+                        },
+                        "meta": {
+                          "name": "PickButton"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "btn btn-sm"
+                          },
+                          "text": "Pick…"
+                        },
+                        "type": "ia.input.button"
                       }
-                    ]
+                    ],
+                    "meta": {
+                      "name": "Input"
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "style": {
+                        "gap": "8px",
+                        "minHeight": "32px"
+                      }
+                    },
+                    "type": "ia.container.flex"
                   }
                 ],
                 "meta": {
@@ -964,6 +1000,10 @@
             "meta": {
               "name": "AttrHeader"
             },
+            "position": {
+              "basis": "35px",
+              "shrink": 0
+            },
             "props": {
               "alignItems": "center",
               "style": {
@@ -1122,11 +1162,10 @@
             "props": {
               "direction": "column",
               "elementPosition": {
-                "basis": "56px",
+                "basis": "58px",
                 "shrink": 0
               },
               "path": "BlueRidge/Components/AttributeDefinitionRow",
-              "useDefaultViewHeight": false,
               "useDefaultViewWidth": false
             },
             "type": "ia.display.flex-repeater"
@@ -1166,7 +1205,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tif self.view.custom.editDraft \u003d\u003d self.view.custom.selected:\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-loc-type-editor\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid\u003d\"mpp-confirm-unsaved\",\n\t\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal\u003dTrue,\n\t\t\tshowCloseIcon\u003dFalse,\n\t\t\tparams\u003d{\n\t\t\t\t\"title\": \"Unsaved Changes\",\n\t\t\t\t\"message\": \"You have unsaved changes to this Location Type Definition. Save before closing?\"\n\t\t\t}\n\t\t)"
+                    "script": "\tself.view.rootContainer.handleClose()"
                   },
                   "scope": "G",
                   "type": "script"
@@ -1223,7 +1262,13 @@
       }
     },
     "scripts": {
-      "customMethods": [],
+      "customMethods": [
+        {
+          "name": "handleClose",
+          "params": [],
+          "script": "\tif str(self.view.custom.editDraft) \u003d\u003d str(self.view.custom.selected):\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-loc-type-editor\")\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid\u003d\"mpp-confirm-unsaved\",\n\t\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal\u003dTrue,\n\t\t\tshowCloseIcon\u003dFalse,\n\t\t\tparams\u003d{\n\t\t\t\t\"title\": \"Unsaved Changes\",\n\t\t\t\t\"message\": \"You have unsaved changes to this Location Type Definition. Save before closing?\"\n\t\t\t}\n\t\t)"
+        }
+      ],
       "extensionFunctions": null,
       "messageHandlers": [
         {
@@ -1257,7 +1302,7 @@
         {
           "messageType": "confirmUnsavedResult",
           "pageScope": true,
-          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tif action \u003d\u003d \"save\":\n\t\tdraft \u003d self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\t\tresult \u003d BlueRidge.Location.LocationTypeDefinition.handleSaveAll(draft.get(\"meta\"), draft.get(\"attributes\"))\n\t\tif result and result.get(\"Status\"):\n\t\t\tsystem.perspective.closePopup(id\u003d\"mpp-loc-type-editor\")\n\telif action \u003d\u003d \"discard\":\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-loc-type-editor\")",
+          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tif action \u003d\u003d \"save\":\n\t\tdraft \u003d self.view.custom.editDraft or {\"meta\": None, \"attributes\": []}\n\t\tresult \u003d BlueRidge.Location.LocationTypeDefinition.handleSaveAll(draft.get(\"meta\"), draft.get(\"attributes\"))\n\t\tsystem.perspective.print(str(result))\n\t\tif result:\n\t\t\tsystem.perspective.closePopup(id\u003d\"mpp-loc-type-editor\")\n\t\t\n\t\t# old code - status does not return with \"status\" so why was it like this?\n\t\t#if result and result.get(\"Status\"):\n\t\t#\tsystem.perspective.closePopup(id\u003d\"mpp-loc-type-editor\")\n\telif action \u003d\u003d \"discard\":\n\t\tsystem.perspective.closePopup(id\u003d\"mpp-loc-type-editor\")",
           "sessionScope": false,
           "viewScope": false
         },
