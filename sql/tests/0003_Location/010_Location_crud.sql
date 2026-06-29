@@ -316,7 +316,8 @@ CREATE TABLE #R (
     Id BIGINT, LocationTypeDefinitionId BIGINT, ParentLocationId BIGINT,
     Name NVARCHAR(200), Code NVARCHAR(50), Description NVARCHAR(500),
     SortOrder INT, CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3),
-    LocationTypeDefinitionName NVARCHAR(200), LocationTypeName NVARCHAR(200)
+    LocationTypeDefinitionName NVARCHAR(200), LocationTypeName NVARCHAR(200),
+    Icon NVARCHAR(100)
 );
 INSERT INTO #R EXEC Location.Location_List @ParentLocationId = @SiteId, @FilterByParent = 1;
 SELECT @ChildCount = COUNT(*) FROM #R;
@@ -355,7 +356,8 @@ CREATE TABLE #R (
     Id BIGINT, LocationTypeDefinitionId BIGINT, ParentLocationId BIGINT,
     Name NVARCHAR(200), Code NVARCHAR(50), Description NVARCHAR(500),
     SortOrder INT, CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3),
-    LocationTypeDefinitionName NVARCHAR(200), LocationTypeName NVARCHAR(200)
+    LocationTypeDefinitionName NVARCHAR(200), LocationTypeName NVARCHAR(200),
+    Icon NVARCHAR(100)
 );
 INSERT INTO #R EXEC Location.Location_List @LocationTypeDefinitionId = 3;
 SELECT @DefCount = COUNT(*) FROM #R;

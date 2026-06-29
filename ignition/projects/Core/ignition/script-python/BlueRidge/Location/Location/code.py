@@ -123,6 +123,37 @@ def getOne(locationId):
     }
 
 
+def getFilteredList(nameFilter):
+    """Flat, name/code-filtered location list for the Plant Hierarchy search
+    box. Returns Tree-component node dicts (label/icon/data) for rows whose
+    Name or Code matches nameFilter. Empty/blank filter returns all locations."""
+    BlueRidge.Common.Util.log("nameFilter=%s" % nameFilter)
+    rows = BlueRidge.Common.Db.execList(
+        "location/Location_List",
+        {"filter": nameFilter},
+    )
+    nodes = []
+    for r in rows:
+        nodes.append({
+            "label":    r.get("Name"),
+            "icon":     {"path": r.get("Icon") or "mpp/factory",
+                         "color": "--mpp-text-primary", "style": {}},
+            "expanded": False,
+            "data": {
+                "id":             r.get("Id"),
+                "code":           r.get("Code"),
+                "name":           r.get("Name"),
+                "definitionName": r.get("LocationTypeDefinitionName"),
+                "definitionId":   r.get("LocationTypeDefinitionId"),
+                "typeName":       r.get("LocationTypeName"),
+                "description":    r.get("Description"),
+                "sortOrder":      r.get("SortOrder"),
+            },
+            "items": [],
+        })
+    return nodes
+
+
 def getAttributesByLocation(locationId):
     """
     Returns all attribute values for a Location, ordered by definition
