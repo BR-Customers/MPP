@@ -1,13 +1,12 @@
 {
   "custom": {
     "activeLotId": null,
-    "destCells": [],
     "destValue": null,
     "inScan": "",
     "outScan": "",
     "scrapCount": null,
     "shotCount": null,
-    "trimState": "out"
+    "trimState": "in"
   },
   "params": {
     "areaId": null
@@ -75,7 +74,7 @@
               "dom": {
                 "onClick": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=True, overlayDismiss=True)"
+                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dTrue, overlayDismiss\u003dTrue)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -92,7 +91,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
+                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} \u003d \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
                   },
                   "type": "expr"
                 }
@@ -155,28 +154,28 @@
             "type": "ia.display.label"
           },
           {
-            "type": "ia.display.label",
             "meta": {
               "name": "ActiveCellValue"
             },
             "position": {
               "shrink": 0
             },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} \u003d \"\", \"No cell selected\", {session.custom.cell.name})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
             "props": {
               "style": {
                 "classes": "pf-cell-context-value"
               }
             },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"No cell selected\", {session.custom.cell.name})"
-                  }
-                }
-              }
-            }
+            "type": "ia.display.label"
           },
           {
             "meta": {
@@ -219,7 +218,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tself.view.custom.trimState = \"in\""
+                    "script": "\tself.view.custom.trimState \u003d \"in\""
                   },
                   "scope": "G",
                   "type": "script"
@@ -233,7 +232,7 @@
               "props.style.classes": {
                 "binding": {
                   "config": {
-                    "expression": "if({view.custom.trimState} = \"in\", \"pf-btn pf-btn-primary\", \"pf-btn pf-btn-secondary\")"
+                    "expression": "if({view.custom.trimState} \u003d \"in\", \"pf-btn pf-btn-primary\", \"pf-btn pf-btn-secondary\")"
                   },
                   "type": "expr"
                 }
@@ -253,7 +252,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tself.view.custom.trimState = \"out\""
+                    "script": "\tself.view.custom.trimState \u003d \"out\""
                   },
                   "scope": "G",
                   "type": "script"
@@ -267,7 +266,7 @@
               "props.style.classes": {
                 "binding": {
                   "config": {
-                    "expression": "if({view.custom.trimState} = \"out\", \"pf-btn pf-btn-primary\", \"pf-btn pf-btn-secondary\")"
+                    "expression": "if({view.custom.trimState} \u003d \"out\", \"pf-btn pf-btn-primary\", \"pf-btn pf-btn-secondary\")"
                   },
                   "type": "expr"
                 }
@@ -361,7 +360,7 @@
           "position.display": {
             "binding": {
               "config": {
-                "expression": "{view.custom.trimState} = \"in\""
+                "expression": "{view.custom.trimState} \u003d \"in\""
               },
               "type": "expr"
             }
@@ -728,7 +727,7 @@
           "position.display": {
             "binding": {
               "config": {
-                "expression": "{view.custom.trimState} = \"out\""
+                "expression": "{view.custom.trimState} \u003d \"out\""
               },
               "type": "expr"
             }
@@ -744,6 +743,17 @@
         "type": "ia.container.flex"
       }
     ],
+    "events": {
+      "system": {
+        "onStartup": {
+          "config": {
+            "script": "\tself.startup()"
+          },
+          "scope": "G",
+          "type": "script"
+        }
+      }
+    },
     "meta": {
       "name": "root"
     },
@@ -760,17 +770,17 @@
         {
           "name": "resolveOutScan",
           "params": [],
-          "script": "\tcode = self.view.custom.outScan\n\tif not code:\n\t\treturn\n\tr = BlueRidge.Lots.Lot.getByName(code)\n\tif r:\n\t\tself.view.custom.activeLotId = r.get(\"Id\")\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"LOT not found\", \"No LOT matches '%s'.\" % code, \"warning\")"
+          "script": "\tcode \u003d self.view.custom.outScan\n\tif not code:\n\t\treturn\n\tr \u003d BlueRidge.Lots.Lot.getByName(code)\n\tif r:\n\t\tself.view.custom.activeLotId \u003d r.get(\"Id\")\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"LOT not found\", \"No LOT matches \u0027%s\u0027.\" % code, \"warning\")"
         },
         {
           "name": "submitTrimOut",
           "params": [],
-          "script": "\tlotId = self.view.custom.activeLotId\n\tif lotId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT\", \"Scan or select a LOT before recording Trim OUT.\", \"warning\")\n\t\treturn\n\toperationTemplateId = BlueRidge.Parts.OperationTemplate.getActiveTemplateIdByCode(\"TrimOut\")\n\tif operationTemplateId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Template missing\", \"No active 'TrimOut' operation template is published.\", \"error\")\n\t\treturn\n\tdest = self.view.custom.destValue\n\tif dest is None or dest == \"\":\n\t\tBlueRidge.Common.Notify.toast(\"No destination\", \"Scan or pick a Machining destination.\", \"warning\")\n\t\treturn\n\tdata = {\n\t\t\"parentLotId\": lotId,\n\t\t\"operationTemplateId\": operationTemplateId,\n\t\t\"shotCount\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.shotCount),\n\t\t\"scrapCount\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.scrapCount),\n\t\t\"destinationCellLocationId\": dest,\n\t}\n\tres = BlueRidge.Workorder.TrimOut.record(data)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Trim OUT recorded\")\n\tif res.get(\"Status\"):\n\t\tsystem.perspective.navigate(\"/shop-floor/lot-detail/\" + str(lotId))"
+          "script": "\tlotId \u003d self.view.custom.activeLotId\n\tif lotId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT\", \"Scan or select a LOT before recording Trim OUT.\", \"warning\")\n\t\treturn\n\toperationTemplateId \u003d BlueRidge.Parts.OperationTemplate.getActiveTemplateIdByCode(\"TrimOut\")\n\tif operationTemplateId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Template missing\", \"No active \u0027TrimOut\u0027 operation template is published.\", \"error\")\n\t\treturn\n\tdest \u003d self.view.custom.destValue\n\tif dest is None or dest \u003d\u003d \"\":\n\t\tBlueRidge.Common.Notify.toast(\"No destination\", \"Scan or pick a Machining destination.\", \"warning\")\n\t\treturn\n\tdata \u003d {\n\t\t\"parentLotId\": lotId,\n\t\t\"operationTemplateId\": operationTemplateId,\n\t\t\"shotCount\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.shotCount),\n\t\t\"scrapCount\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.scrapCount),\n\t\t\"destinationCellLocationId\": dest,\n\t}\n\tres \u003d BlueRidge.Workorder.TrimOut.record(data)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Trim OUT recorded\")\n\tif res.get(\"Status\"):\n\t\tsystem.perspective.navigate(\"/shop-floor/lot-detail/\" + str(lotId))"
         },
         {
           "name": "startup",
           "params": [],
-          "script": "\t# Operator gate: no logged-in operator -> open the initials popup OVER this screen.\n\t# Non-blocking: the page still populates behind the modal, and session.custom is\n\t# reactive, so the operator label/mutations pick up the user with no re-populate.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
+          "script": "\t# Operator gate: no logged-in operator -\u003e open the initials popup OVER this screen.\n\t# Non-blocking: the page still populates behind the modal, and session.custom is\n\t# reactive, so the operator label/mutations pick up the user with no re-populate.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dFalse, overlayDismiss\u003dFalse)"
         }
       ],
       "extensionFunctions": null,
@@ -778,23 +788,12 @@
         {
           "messageType": "trimInMoved",
           "pageScope": true,
-          "script": "\tself.view.custom.activeLotId = payload.get(\"lotId\")\n\tself.view.custom.trimState = \"out\"\n\t# TODO(phase4): record the TrimIn checkpoint via ProductionEvent.record once cumulative inputs exist.",
+          "script": "\tself.view.custom.activeLotId \u003d payload.get(\"lotId\")\n\tself.view.custom.trimState \u003d \"out\"\n\t# TODO(phase4): record the TrimIn checkpoint via ProductionEvent.record once cumulative inputs exist.",
           "sessionScope": false,
           "viewScope": false
         }
       ]
     },
-    "type": "ia.container.flex",
-    "events": {
-      "system": {
-        "onStartup": {
-          "config": {
-            "script": "\tself.startup()"
-          },
-          "scope": "G",
-          "type": "script"
-        }
-      }
-    }
+    "type": "ia.container.flex"
   }
 }

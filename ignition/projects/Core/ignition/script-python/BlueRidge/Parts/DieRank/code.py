@@ -73,15 +73,11 @@ def getOne(dieRankId):
 
 
 def getByCode(dieCode):
-    """Single-row lookup by (unique) Code. Returns dict or None.
-    Used by the compatibility matrix to resolve a rank Code back to its Id."""
-    dieCode = _u(dieCode)
+    # Noah's exact implementation (Die Rank compatibility save path).
     BlueRidge.Common.Util.log("dieCode=%s" % dieCode)
-    if dieCode is None:
-        return None
     return BlueRidge.Common.Db.execOne(
         "parts/DieRank_GetByCode",
-        {"code": dieCode},
+        {"code": dieCode}
     )
 
 
@@ -188,16 +184,20 @@ def getCompatibilityMatrix():
     return matrix
 
 
-def saveCompatibilityMatrix(data, appUserId):
-    """Bulk-save the full pairwise compatibility matrix in one call (fewer SQL
-    round-trips than per-cell setCompatibility). data is a list of
-    {RankAId, RankBId, CanMix} rows; omitted pairs are left unchanged.
-    Returns {Status, Message, NewId}, or None when there is nothing to save."""
-    data = _u(data)
-    if not data:
-        return None
+def saveCompatibilityMatrix(data, appUserId=None):
+    # Noah's exact bulk-save logic (jsonEncode the raw view data directly -- do
+    # NOT extractQualifiedValues first, that altered the payload shape the proc
+    # parses). The ONE fix: the DieRanks view passes session.custom.appUserId,
+    # which is empty in dev (login flow not wired), and DieRankCompatibility_SaveAll
+    # REJECTS a NULL @AppUserId ("Required parameter missing") -- that is what broke
+    # the save. Resolve via _currentAppUserId() (the standard helper, with a dev
+    # fallback) when the caller's value is empty, like the sibling mutations do.
     jsonData = system.util.jsonEncode(data)
-    BlueRidge.Common.Util.log("rows=%s" % len(data))
+    if not data:
+        return
+    if not appUserId:
+        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    BlueRidge.Common.Util.log("data=%s" % data)
     return BlueRidge.Common.Db.execMutation(
         "parts/DieRankCompatibility_SaveAll",
         {"rowsJson": jsonData, "appUserId": appUserId},

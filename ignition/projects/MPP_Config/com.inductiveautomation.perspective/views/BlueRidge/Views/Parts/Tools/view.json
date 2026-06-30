@@ -1,15 +1,5 @@
 {
   "custom": {
-    "activeMount": {
-      "AssignedAt": null,
-      "AssignedByInitials": "",
-      "CellName": "",
-      "Id": null,
-      "IsActive": false,
-      "Notes": "",
-      "ReleasedAt": null,
-      "ReleasedByInitials": ""
-    },
     "activeTab": "attributes",
     "activeTabIndex": 0,
     "editDraft": {
@@ -61,7 +51,7 @@
       "searchText": "",
       "statusCode": "All"
     },
-    "mode": "update",
+    "mode": "view",
     "pendingSwitch": null,
     "sectionDirty": {
       "attributes": false,
@@ -74,7 +64,7 @@
           "$": [
             "ts",
             192,
-            1781530515951
+            1782831662967
           ],
           "$ts": 1781544226425
         },
@@ -83,7 +73,7 @@
           "$": [
             "ts",
             192,
-            1781530515951
+            1782831662967
           ],
           "$ts": 1781544231072
         },
@@ -104,7 +94,7 @@
           "$": [
             "ts",
             192,
-            1781530515951
+            1782831662967
           ],
           "$ts": 1781544231072
         },
@@ -616,9 +606,7 @@
                           }
                         },
                         "props": {
-                          "style": {
-                            "classes": "badge badge-muted"
-                          }
+                          "style": {}
                         },
                         "type": "ia.display.label"
                       },

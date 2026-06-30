@@ -125,10 +125,13 @@ BEGIN
             RETURN;
         END
 
-        -- ---- 4. Eligibility (FDS-02-012): Item must resolve at the destination ----
+        -- ---- 4. Eligibility (FDS-02-012 / FDS-03-014 hierarchy cascade) ----
+        -- Item must resolve at the destination Cell OR any ancestor tier
+        -- (Cell -> WorkCenter -> Area -> Site), consistent with the dropdown + Lot_Create.
         IF NOT EXISTS (
             SELECT 1 FROM Parts.v_EffectiveItemLocation
-            WHERE ItemId = @ItemId AND LocationId = @ToLocationId)
+            WHERE ItemId = @ItemId
+              AND LocationId IN (SELECT LocationId FROM Location.ufn_AncestorLocationIds(@ToLocationId)))
         BEGIN
             SET @Message = N'Item is not eligible at the destination location.';
             EXEC Audit.Audit_LogFailure

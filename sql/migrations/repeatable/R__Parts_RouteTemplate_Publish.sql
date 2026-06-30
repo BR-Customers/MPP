@@ -2,7 +2,7 @@
 -- Procedure:   Parts.RouteTemplate_Publish
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     3.1
+-- Version:     3.2
 --
 -- Description:
 --   Flips a Draft RouteTemplate to Published by setting PublishedAt =
@@ -12,6 +12,13 @@
 --   One-way transition — once a route is published, it becomes immutable
 --   (RouteStep mutations reject). To change a published route, use
 --   _CreateNewVersion which creates a Draft clone.
+--
+--   Atomic auto-deprecation: when this version is published, any prior
+--   version for the same ItemId that is currently Published-and-not-
+--   Deprecated is stamped DeprecatedAt = SYSUTCDATETIME() in the same
+--   transaction. Enforces the versioned-entity invariant: at most one
+--   Published-and-not-Deprecated RouteTemplate exists per ItemId (same
+--   model as Parts.Bom_Publish).
 --
 --   Rejects if the route is already published, deprecated, or has zero
 --   RouteStep rows (a published route with no steps is nonsensical).
@@ -38,6 +45,11 @@
 --                       SUBJECT . CATEGORY . ACTION Description +
 --                       resolved-FK OldValue (pre-publish) / NewValue
 --                       (published) snapshots.
+--   2026-06-30 - 3.2 - Atomically auto-deprecate the prior Published version
+--                       (same ItemId, DeprecatedAt IS NULL) on publish, matching
+--                       Parts.Bom_Publish v4.0. Replaces the prior informational
+--                       "supersedes" clause with real single-Published enforcement;
+--                       success message names the deprecated version(s).
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.RouteTemplate_Publish
     @Id            BIGINT,
@@ -143,35 +155,11 @@ BEGIN
         INNER JOIN Parts.Item i ON i.Id = rt.ItemId
         WHERE rt.Id = @Id;
 
-        -- Prior active-published version for this Item (display "supersedes"
-        -- clause). This proc does NOT deprecate the prior version -- the clause
-        -- is informational only.
-        DECLARE @PriorPubVersionStr NVARCHAR(10) = NULL;
-        SELECT TOP 1 @PriorPubVersionStr = CAST(rt.VersionNumber AS NVARCHAR(10))
-        FROM Parts.RouteTemplate rt
-        WHERE rt.ItemId = @ItemId
-          AND rt.Id <> @Id
-          AND rt.PublishedAt IS NOT NULL
-          AND rt.DeprecatedAt IS NULL
-        ORDER BY rt.VersionNumber DESC;
-
-        DECLARE @StepCount INT =
-            (SELECT COUNT(*) FROM Parts.RouteStep WHERE RouteTemplateId = @Id);
-
-        -- Effective date that WILL apply after the override is resolved
-        DECLARE @EffApplied DATETIME2(3);
-        SELECT @EffApplied = ISNULL(@EffectiveFrom, EffectiveFrom)
-        FROM Parts.RouteTemplate WHERE Id = @Id;
-
-        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(
-            @PartNumber + N' ' + Audit.ufn_MidDot() +
-            N' Route v' + @VersionStr + N' ' + Audit.ufn_MidDot() +
-            N' Published' +
-            CASE WHEN @PriorPubVersionStr IS NOT NULL
-                 THEN N' (supersedes v' + @PriorPubVersionStr + N')' ELSE N'' END +
-            N'; ' + CAST(@StepCount AS NVARCHAR(10)) + N' steps' +
-            CASE WHEN @EffApplied IS NOT NULL
-                 THEN N'; effective ' + CONVERT(NVARCHAR(10), @EffApplied, 23) ELSE N'' END);
+        -- Prior Published-and-not-Deprecated version(s) for this Item are
+        -- auto-deprecated when this version publishes (single-Published invariant,
+        -- mirrors Parts.Bom_Publish v4.0). Captured during the in-transaction
+        -- UPDATE below so the narrative + success message can name them.
+        DECLARE @DeprecatedVersions TABLE (VersionNumber INT);
 
         -- OldValue: pre-publish header + resolved-FK steps
         DECLARE @OldValue NVARCHAR(MAX) = (
@@ -199,6 +187,17 @@ BEGIN
 
         BEGIN TRANSACTION;
 
+        -- Single-Published invariant: deprecate any prior Published-and-not-
+        -- Deprecated version for this Item as this version flips to Published.
+        -- Set-based, so it also defensively cleans up stale multi-Published rows.
+        UPDATE Parts.RouteTemplate
+        SET DeprecatedAt = SYSUTCDATETIME()
+        OUTPUT inserted.VersionNumber INTO @DeprecatedVersions
+        WHERE ItemId = @ItemId
+          AND Id <> @Id
+          AND PublishedAt IS NOT NULL
+          AND DeprecatedAt IS NULL;
+
         -- Apply optional overrides in the same UPDATE that flips PublishedAt.
         -- ISNULL preserves the existing column value when the override is NULL.
         UPDATE Parts.RouteTemplate
@@ -206,6 +205,31 @@ BEGIN
             EffectiveFrom = ISNULL(@EffectiveFrom, EffectiveFrom),
             Name          = ISNULL(@Name, Name)
         WHERE Id = @Id;
+
+        -- "(deprecated v<N>[, v<M>])" clause for the audit narrative.
+        DECLARE @DepClause NVARCHAR(200) = N'';
+        IF EXISTS (SELECT 1 FROM @DeprecatedVersions)
+        BEGIN
+            SELECT @DepClause = N' (deprecated ' +
+                STRING_AGG(N'v' + CAST(VersionNumber AS NVARCHAR(10)), N', ')
+                    WITHIN GROUP (ORDER BY VersionNumber) + N')'
+            FROM @DeprecatedVersions;
+        END
+
+        DECLARE @StepCount INT =
+            (SELECT COUNT(*) FROM Parts.RouteStep WHERE RouteTemplateId = @Id);
+
+        -- Effective date now applied to the row (override already resolved above).
+        DECLARE @EffApplied DATETIME2(3);
+        SELECT @EffApplied = EffectiveFrom FROM Parts.RouteTemplate WHERE Id = @Id;
+
+        DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(
+            @PartNumber + N' ' + Audit.ufn_MidDot() +
+            N' Route v' + @VersionStr + N' ' + Audit.ufn_MidDot() +
+            N' Published' + @DepClause +
+            N'; ' + CAST(@StepCount AS NVARCHAR(10)) + N' steps' +
+            CASE WHEN @EffApplied IS NOT NULL
+                 THEN N'; effective ' + CONVERT(NVARCHAR(10), @EffApplied, 23) ELSE N'' END);
 
         -- NewValue: published header + resolved-FK steps
         DECLARE @NewValue NVARCHAR(MAX) = (
@@ -244,7 +268,14 @@ BEGIN
         COMMIT TRANSACTION;
 
         SET @Status  = 1;
-        SET @Message = N'RouteTemplate published successfully.';
+        DECLARE @DepSuffix NVARCHAR(200) = N'';
+        IF EXISTS (SELECT 1 FROM @DeprecatedVersions)
+        BEGIN
+            SELECT @DepSuffix = N' Deprecated ' +
+                STRING_AGG(N'v' + CAST(VersionNumber AS NVARCHAR(10)), N', ') + N'.'
+            FROM @DeprecatedVersions;
+        END
+        SET @Message = N'Published v' + @VersionStr + N'.' + @DepSuffix;
     SELECT @Status AS Status, @Message AS Message;
     END TRY
     BEGIN CATCH

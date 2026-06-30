@@ -140,6 +140,12 @@ def buildTree(rootId, expandDepth=2, defaultIcon="mpp/factory"):
 
     return [rootNode] if rootNode else []
 
+def getTree(rootId):
+    rows = BlueRidge.Common.Db.execList("location/GetTree", {"rootId": rootId})
+    if not rows:
+        return []
+
+    return rows
 
 def findPathById(items, targetId):
     """

@@ -45,12 +45,16 @@ def createUser(attributes):
        (initials, displayName, adAccount, ignitionRole, appUserId).
        Initials must be unique. Returns {Status, Message, NewId}."""
     BlueRidge.Common.Util.log("initials=%s" % attributes.get("initials"))
+    if not attributes.get("appUserId"):
+        attributes["appUserId"] = BlueRidge.Common.Util._currentAppUserId()
     return BlueRidge.Common.Db.execOne("location/AppUser_Create", attributes)
 
 
 def deprecateUser(chosenId, appUserId):
     """Soft-delete (deprecate) an AppUser. Returns {Status, Message}."""
     BlueRidge.Common.Util.log("id=%s appUserId=%s" % (chosenId, appUserId))
+    if not appUserId:
+        appUserId = BlueRidge.Common.Util._currentAppUserId()
     return BlueRidge.Common.Db.execOne(
         "location/AppUser_Deprecate",
         {"id": chosenId, "appUserId": appUserId},
@@ -76,6 +80,8 @@ def updateUser(attributes):
        (id, initials, displayName, adAccount, ignitionRole, appUserId).
        Returns {Status, Message}."""
     BlueRidge.Common.Util.log("initials=%s" % attributes.get("initials"))
+    if not attributes.get("appUserId"):
+        attributes["appUserId"] = BlueRidge.Common.Util._currentAppUserId()
     return BlueRidge.Common.Db.execOne("location/AppUser_Update", attributes)
 
 

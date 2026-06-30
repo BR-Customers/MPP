@@ -36,6 +36,10 @@
       "title": "Die Cast Entry",
       "viewPath": "BlueRidge/Views/ShopFloor/DieCastShared"
     },
+    "/shop-floor/die-cast/dedicated": {
+      "title": "Die Cast Entry (Dedicated)",
+      "viewPath": "BlueRidge/Views/ShopFloor/DieCastDedicated"
+    },
     "/shop-floor/downtime": {
       "title": "Downtime Entry",
       "viewPath": "BlueRidge/Views/ShopFloor/DowntimeEntry"
@@ -95,10 +99,6 @@
     "/shop-floor/trim": {
       "title": "Trim Station",
       "viewPath": "BlueRidge/Views/ShopFloor/TrimShared"
-    },
-    "/shop-floor/die-cast/dedicated": {
-      "title": "Die Cast Entry (Dedicated)",
-      "viewPath": "BlueRidge/Views/ShopFloor/DieCastDedicated"
     },
     "/shop-floor/trim/dedicated": {
       "title": "Trim Station (Dedicated)",
