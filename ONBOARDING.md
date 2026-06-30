@@ -216,8 +216,14 @@ from disk. It authenticates with a per-developer Gateway API key:
    .\scan.ps1
    ```
 
-   A successful scan prints the scan response + post-scan state. A **403** usually means the
-   `Content-Type` header or the key's scan scope is missing; **401** means a bad/missing token.
+   A successful scan prints the scan response + post-scan state. A **401** means a bad/missing
+   token. A **403 "Forbidden"** means the key is *recognized but not authorized* — most often
+   the **gateway's API access security mode** rejects it: a fresh gateway can default to a
+   **roles-based** policy that requires roles your API key doesn't carry. For local dev, set
+   the gateway's web/API access so an authenticated API key is permitted (don't leave it on a
+   roles-based mode the key can't satisfy). *(In production this should require **authenticated**
+   access — the dev convenience here is not a prod posture.)* A 403 can also mean the `POST`
+   went out without `Content-Type: application/json`, but `scan.ps1` already sends that.
 
 ### 5d. Point the Gateway at your dev database
 
@@ -321,7 +327,8 @@ human-readable source of truth for SQL/Ignition/doc conventions) and the
 |---|---|
 | Repo edits don't show in Designer after a scan | That project folder is a **real** Gateway folder, not a junction. Re-run `link-projects.ps1` (Admin) to convert it. |
 | `Access is denied` creating junctions | Not in an elevated shell. Re-run `link-projects.ps1` from an **Administrator** PowerShell. |
-| `scan.ps1` → **403** | Missing `Content-Type: application/json` on the POST, or the API key lacks the scan scope. |
+| `scan.ps1` → bare **403 "Forbidden"** | Key recognized but not authorized. Usual cause on a fresh gateway: the **API access security mode** is roles-based and the key doesn't carry the required roles. Set the gateway's web/API access to permit an authenticated API key (prod should require authenticated). To confirm it's authorization (not the header): a `GET` to the same endpoint also 403s. Check **Status → Diagnostics → Logs** for the named permission. |
+| `scan.ps1` → **403** (other) | The `POST` went without `Content-Type: application/json` (only if you're not using `scan.ps1` — it sends it), or the key lacks the scan scope. |
 | `scan.ps1` → **401** | Bad/missing token in `…\Documents\git-sync-api-key.txt`. |
 | `Reset-DevDatabase.ps1` fails to create the `ignition` login | SQL Server isn't in **Mixed Mode**. Enable it in SSMS, restart the SQL service, re-run. |
 | `Run-Tests.ps1` exits 1 with **0 failures** | A test file threw (often FK cleanup ordering), not an assertion failure. Also: a reset/Ignition race can stick `MPP_MES_Dev` in SINGLE_USER — KILL the session from `master`, then `SET MULTI_USER`. |

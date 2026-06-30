@@ -48,7 +48,7 @@ def end(actualEnd=None, remarks=None, appUserId=None, terminalLocationId=None):
 def getActive(atMoment=None):
     """Resolve the active shift schedule at a moment (default: now).
        Returns a dict or None."""
-    BlueRidge.Common.Util.log("atMoment=%s" % atMoment)
+    BlueRidge.Common.Util.log("atMoment=%s" % atMoment, level="debug")
     return BlueRidge.Common.Db.execOne(
         "oee/Shift_GetActive",
         {"atMoment": atMoment},
@@ -57,8 +57,38 @@ def getActive(atMoment=None):
 
 def getOpen():
     """Return the single currently-open shift instance, or None."""
-    BlueRidge.Common.Util.log("getting open shift")
+    BlueRidge.Common.Util.log("getting open shift", level="debug")
     return BlueRidge.Common.Db.execOne("oee/Shift_GetOpen")
+
+
+# Binding-safe empty shape for getOpenOrEmpty (matches the Shift_GetOpen columns).
+_EMPTY_SHIFT = {"Id": None, "ShiftScheduleId": None, "ScheduleName": "",
+                "ActualStart": None, "ActualEnd": None, "Remarks": "", "CreatedAt": None}
+
+
+def getOpenOrEmpty():
+    """getOpen() that NEVER returns None -- always a fully-shaped dict -- so a view
+       binding can traverse {custom.shift.Id} without a Quality-Bad on the no-open-
+       shift path (EndOfShiftEntry's ShiftStatus label). Callers detect 'no open
+       shift' via Id IS NULL, not isNull() on the whole object. Mirrors the
+       RouteTemplate.getHeaderOrEmpty convention."""
+    row = getOpen()
+    return row if row else dict(_EMPTY_SHIFT)
+
+
+def acknowledgeHandover(shiftId, cellLocationId=None, appUserId=None, terminalLocationId=None):
+    """Record that the operator reviewed the shift-end summary (FDS-09-015).
+       Audit-only; the shift-time data is already committed. Returns {Status, Message}."""
+    BlueRidge.Common.Util.log("shiftId=%s cellLocationId=%s" % (shiftId, cellLocationId))
+    if appUserId is None:
+        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    params = {
+        "shiftId":            shiftId,
+        "cellLocationId":     cellLocationId,
+        "appUserId":          appUserId,
+        "terminalLocationId": terminalLocationId,
+    }
+    return BlueRidge.Common.Db.execMutation("oee/ShiftHandover_Acknowledge", params)
 
 
 def tickShiftBoundary(nowUtc=None):
@@ -71,7 +101,7 @@ def tickShiftBoundary(nowUtc=None):
        downtime/pause events (UJ-10) - the procs own that. Returns a small
        dict describing what it did (for logging/testing). The body is fully
        guarded; a gateway timer must never throw uncaught."""
-    BlueRidge.Common.Util.log("tick nowUtc=%s" % nowUtc)
+    BlueRidge.Common.Util.log("tick nowUtc=%s" % nowUtc, level="debug")
     try:
         active = getActive(nowUtc)      # dict|None; active.Id is the ShiftScheduleId
         openShift = getOpen()           # dict|None
@@ -90,5 +120,5 @@ def tickShiftBoundary(nowUtc=None):
             return {"action": "boundary", "end": endResult, "start": startResult}
         return {"action": "none", "reason": "open shift matches active schedule"}
     except Exception as e:
-        BlueRidge.Common.Util.log("tickShiftBoundary error: %s" % e)
+        BlueRidge.Common.Util.log("tickShiftBoundary error: %s" % e, level="error")
         return {"action": "error", "error": str(e)}

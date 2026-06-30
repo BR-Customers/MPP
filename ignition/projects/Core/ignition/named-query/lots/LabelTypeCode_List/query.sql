@@ -1,0 +1,1 @@
+EXEC Lots.LabelTypeCode_List

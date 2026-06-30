@@ -130,6 +130,31 @@ def getOneOrEmpty(itemId):
     return dict((k, None) for k in _ITEM_SHAPE_KEYS)
 
 
+def getEligibleForLocationDropdown(locationId):
+    """Items eligible at a Location, shaped for ia.input.dropdown:
+        [{label: '<PartNumber> - <Description>', value: Id}].
+    Always a list (never None). Empty if locationId is None or nothing is eligible.
+    Wraps Parts.Item_ListEligibleForLocation. Used by the die-cast entry screen's
+    eligibility-constrained Item dropdown."""
+    locationId = _u(locationId)
+    BlueRidge.Common.Util.log("getEligibleForLocationDropdown locationId=%s" % locationId)
+    if locationId is None:
+        return []
+    try:
+        rows = BlueRidge.Common.Db.execList(
+            "parts/Item_ListEligibleForLocation", {"locationId": locationId})
+    except Exception as e:
+        BlueRidge.Common.Util.log("getEligibleForLocationDropdown failed: %s" % str(e))
+        return []
+    out = []
+    for r in (rows or []):
+        pn = r.get("PartNumber") or ""
+        desc = r.get("Description") or ""
+        label = ("%s - %s" % (pn, desc)) if desc else pn
+        out.append({"label": label, "value": r.get("Id")})
+    return out
+
+
 def mapItemRowsForList(rows, typeFilter="All Types"):
     """Flex-repeater instances transform.
 
@@ -371,3 +396,34 @@ def emptyMeta():
         "countryOfOrigin":  "",
         "maxParts":         None,
     }
+
+
+def getMaxParts(itemId):
+    """Arc 2 Phase 4. Thin read of the OI-12 per-Item lineside cap.
+       Returns {MaxParts} (MaxParts None = uncapped) or None. The cap is
+       enforced server-side in Lots.Lot_MoveToValidated; this drives the
+       Movement Scan capacity hint only."""
+    BlueRidge.Common.Util.log("itemId=%s" % itemId)
+    return BlueRidge.Common.Db.execOne("parts/Item_GetMaxParts", {"itemId": itemId})
+
+
+def getForDropdown():
+    """[{label: PartNumber, value: Id}] for the Receiving PartNumber dropdown
+       (allowCustomOptions). Built off getAll()."""
+    return [{"label": r.get("PartNumber"), "value": r.get("Id")} for r in (getAll() or [])]
+
+
+def getByPartNumber(partNumber):
+    """Resolve an active Item by exact PartNumber (case-insensitive). Returns a
+       dict or None. Used by the Receiving Dock scan-or-pick field to turn a
+       scanned/typed part number into an itemId. Scans getAll() (modest list)
+       rather than a dedicated NQ."""
+    BlueRidge.Common.Util.log("partNumber=%s" % partNumber)
+    target = (BlueRidge.Common.Util.extractQualifiedValues(partNumber) or "")
+    target = ("%s" % target).strip().upper()
+    if not target:
+        return None
+    for r in (getAll() or []):
+        if ("%s" % (r.get("PartNumber") or "")).strip().upper() == target:
+            return r
+    return None

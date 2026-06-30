@@ -139,7 +139,7 @@ for (const [code, name, desc] of [
 
 // Fallback Terminal (Arc 2 Phase 1 Task C): global default returned by
 // Location.Terminal_GetByIpAddress when an unregistered IP connects. Parented at
-// the Site (MPP-MAD) so its derived TerminalMode is 'Shared' (non-Cell parent).
+// the Site (MPP-MAD). Behavior follows its assigned operator view (DefaultScreen; view-policy model, FDS-02-010 v1.4).
 // Lives here (not in migration 0020) because the plant hierarchy parent only
 // exists after this seed runs - migrations run before seeds.
 out.push('\n-- === Fallback Terminal (Arc 2 Phase 1 Task C) ===');

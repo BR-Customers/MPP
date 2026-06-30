@@ -1,0 +1,1 @@
+EXEC Lots.LotPause_GetCountsByLocation @LocationId = :locationId

@@ -1,0 +1,47 @@
+{
+  "scope": "DG",
+  "version": 2,
+  "restricted": false,
+  "overridable": true,
+  "files": [
+    "query.sql"
+  ],
+  "attributes": {
+    "useMaxReturnSize": false,
+    "autoBatchEnabled": false,
+    "fallbackValue": "",
+    "maxReturnSize": 100,
+    "cacheUnit": "SEC",
+    "type": "Query",
+    "enabled": true,
+    "cacheAmount": 1,
+    "cacheEnabled": false,
+    "database": "MPP",
+    "fallbackEnabled": false,
+    "lastModificationSignature": "",
+    "permissions": [
+      {
+        "zone": "",
+        "role": ""
+      }
+    ],
+    "lastModification": {
+      "actor": "claude",
+      "timestamp": "2026-06-16T12:00:00Z"
+    },
+    "parameters": [
+      { "type": "Parameter", "identifier": "lotId", "sqlType": 3 },
+      { "type": "Parameter", "identifier": "operationTemplateId", "sqlType": 3 },
+      { "type": "Parameter", "identifier": "shotCount", "sqlType": 2 },
+      { "type": "Parameter", "identifier": "scrapCount", "sqlType": 2 },
+      { "type": "Parameter", "identifier": "scrapSourceId", "sqlType": 3 },
+      { "type": "Parameter", "identifier": "weightValue", "sqlType": 5 },
+      { "type": "Parameter", "identifier": "weightUomId", "sqlType": 3 },
+      { "type": "Parameter", "identifier": "workOrderOperationId", "sqlType": 3 },
+      { "type": "Parameter", "identifier": "remarks", "sqlType": 7 },
+      { "type": "Parameter", "identifier": "fieldValuesJson", "sqlType": 7 },
+      { "type": "Parameter", "identifier": "appUserId", "sqlType": 3 },
+      { "type": "Parameter", "identifier": "terminalLocationId", "sqlType": 3 }
+    ]
+  }
+}

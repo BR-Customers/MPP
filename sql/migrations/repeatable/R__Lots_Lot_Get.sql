@@ -39,8 +39,8 @@ BEGIN
         l.InventoryAvailable,
         l.CreatedByUserId,
         l.CreatedAtTerminalId,
-        l.CreatedAt,
-        l.UpdatedAt,
+        CAST(l.CreatedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS CreatedAt,
+        CAST(l.UpdatedAt AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3)) AS UpdatedAt,
         l.UpdatedByUserId,
         l.RowVersion,
         -- resolved display fields (read-side convenience)
@@ -48,12 +48,16 @@ BEGIN
         ot.Code            AS LotOriginTypeCode,
         sc.Code            AS LotStatusCode,
         sc.Name            AS LotStatusName,
-        loc.Name           AS CurrentLocationName
+        loc.Name           AS CurrentLocationName,
+        t.Code             AS ToolCode,
+        tc.CavityNumber    AS ToolCavityNumber
     FROM Lots.Lot l
     INNER JOIN Parts.Item            i   ON i.Id   = l.ItemId
     INNER JOIN Lots.LotOriginType    ot  ON ot.Id  = l.LotOriginTypeId
     INNER JOIN Lots.LotStatusCode    sc  ON sc.Id  = l.LotStatusId
     INNER JOIN Location.Location     loc ON loc.Id = l.CurrentLocationId
+    LEFT  JOIN Tools.Tool            t   ON t.Id   = l.ToolId
+    LEFT  JOIN Tools.ToolCavity      tc  ON tc.Id  = l.ToolCavityId
     WHERE (@LotId IS NOT NULL AND l.Id = @LotId)
        OR (@LotId IS NULL AND @LotName IS NOT NULL AND l.LotName = @LotName);
 END;

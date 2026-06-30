@@ -1,0 +1,140 @@
+{
+  "custom": {},
+  "params": {
+    "lotId": 0,
+    "lotName": "",
+    "partNumber": "",
+    "statusCode": "",
+    "locationName": "",
+    "selected": false
+  },
+  "props": {
+    "defaultSize": {
+      "height": 64,
+      "width": 680
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "classes": "pf-queue-row",
+        "gap": "16px",
+        "padding": "10px 16px"
+      }
+    },
+    "children": [
+    {
+      "type": "ia.input.button",
+      "meta": {
+        "name": "ToggleButton"
+      },
+      "position": {
+        "shrink": 0
+      },
+      "props": {
+        "text": "Select",
+        "style": {
+          "classes": "pf-btn pf-btn-secondary"
+        }
+      },
+      "propConfig": {
+        "props.text": {
+          "binding": {
+            "type": "expr",
+            "config": {
+              "expression": "if({view.params.selected}, \"\\u2713 Selected\", \"Select\")"
+            }
+          }
+        },
+        "props.style.classes": {
+          "binding": {
+            "type": "expr",
+            "config": {
+              "expression": "if({view.params.selected}, \"pf-btn pf-btn-primary\", \"pf-btn pf-btn-secondary\")"
+            }
+          }
+        }
+      },
+      "events": {
+        "component": {
+          "onActionPerformed": {
+            "type": "script",
+            "scope": "G",
+            "config": {
+              "script": "\tsystem.perspective.sendMessage(\"bulkToggle\", payload={\"lotId\": self.view.params.lotId}, scope=\"page\")"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "ia.container.flex",
+      "meta": {
+        "name": "Info"
+      },
+      "position": {
+        "grow": 1,
+        "basis": "0"
+      },
+      "props": {
+        "direction": "column",
+        "style": {
+          "gap": "2px"
+        }
+      },
+      "children": [
+        {
+          "type": "ia.display.label",
+          "meta": {
+            "name": "LotName"
+          },
+          "props": {
+            "text": "",
+            "style": {
+              "classes": "pf-queue-name"
+            }
+          },
+          "propConfig": {
+            "props.text": {
+              "binding": {
+                "type": "expr",
+                "config": {
+                  "expression": "{view.params.lotName}"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "ia.display.label",
+          "meta": {
+            "name": "Detail"
+          },
+          "props": {
+            "text": "",
+            "style": {
+              "classes": "pf-queue-detail"
+            }
+          },
+          "propConfig": {
+            "props.text": {
+              "binding": {
+                "type": "expr",
+                "config": {
+                  "expression": "{view.params.partNumber} + \"  \\u00b7  \" + {view.params.statusCode} + if(isNull({view.params.locationName}) || {view.params.locationName} = \"\", \"\", \"  \\u00b7  \" + {view.params.locationName})"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+    ]
+  }
+}

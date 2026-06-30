@@ -1,0 +1,622 @@
+{
+  "custom": {},
+  "params": {},
+  "propConfig": {},
+  "props": {
+    "defaultSize": {
+      "width": 1920,
+      "height": 96
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row",
+      "wrap": "wrap",
+      "alignItems": "center",
+      "style": {
+        "classes": "canvas",
+        "gap": "6px",
+        "padding": "8px",
+        "overflow": "auto",
+        "borderBottom": "2px solid #b91c1c"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "DevTag"
+        },
+        "props": {
+          "text": "DEV NAV",
+          "style": {
+            "fontWeight": 700,
+            "fontSize": "13px",
+            "color": "#b91c1c",
+            "padding": "0 6px",
+            "whiteSpace": "nowrap"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "SimCell"
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "fontSize": "12px",
+            "color": "#1f2937",
+            "padding": "0 6px",
+            "whiteSpace": "nowrap"
+          }
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "\"Cell: \" + if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"(none)\", {session.custom.cell.name})"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "btn_clearcell"
+        },
+        "props": {
+          "text": "Clear Cell",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "12px",
+            "padding": "4px 10px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tself.session.custom.cell = {\"locationId\": None, \"code\": \"\", \"name\": \"\"}"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "btn_0"
+        },
+        "props": {
+          "text": "Home",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "12px",
+            "padding": "4px 10px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.navigate(\"/\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "btn_1"
+        },
+        "props": {
+          "text": "Initials (popup)",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "12px",
+            "padding": "4px 10px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "btn_2"
+        },
+        "props": {
+          "text": "Terminal",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "12px",
+            "padding": "4px 10px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.navigate(\"/shop-floor/terminal-selector\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "btn_3"
+        },
+        "props": {
+          "text": "Die Cast",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "12px",
+            "padding": "4px 10px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.navigate(\"/shop-floor/die-cast\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "btn_4"
+        },
+        "props": {
+          "text": "Trim",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "12px",
+            "padding": "4px 10px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.navigate(\"/shop-floor/trim\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "btn_5"
+        },
+        "props": {
+          "text": "Receiving",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "12px",
+            "padding": "4px 10px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.navigate(\"/shop-floor/receiving\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "btn_6"
+        },
+        "props": {
+          "text": "Mach IN",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "12px",
+            "padding": "4px 10px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tself.session.custom.cell = {\"locationId\": 76, \"code\": \"MA1-5GOF-MIN\", \"name\": \"MA1-5GOF-MIN (Machining In)\"}\n\tsystem.perspective.navigate(\"/shop-floor/machining-in\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "btn_7"
+        },
+        "props": {
+          "text": "Mach OUT",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "12px",
+            "padding": "4px 10px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tself.session.custom.cell = {\"locationId\": 78, \"code\": \"MA1-5GOF-MOUT\", \"name\": \"MA1-5GOF-MOUT (Machining Out)\"}\n\tsystem.perspective.navigate(\"/shop-floor/machining-out\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "btn_8"
+        },
+        "props": {
+          "text": "Asm Ser",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "12px",
+            "padding": "4px 10px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tself.session.custom.cell = {\"locationId\": 80, \"code\": \"MA1-5GOF-ASER\", \"name\": \"MA1-5GOF-ASER (Assembly Ser)\"}\n\tsystem.perspective.navigate(\"/shop-floor/assembly-serialized\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "btn_9"
+        },
+        "props": {
+          "text": "Asm NonSer",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "12px",
+            "padding": "4px 10px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tself.session.custom.cell = {\"locationId\": 47, \"code\": \"MA1-COMPBR-AOUT\", \"name\": \"MA1-COMPBR-AOUT (Assembly NonSer)\"}\n\tsystem.perspective.navigate(\"/shop-floor/assembly-nonserialized\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "BtnAsmIn"
+        },
+        "props": {
+          "text": "Asm IN",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "12px",
+            "padding": "4px 10px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tself.session.custom.cell = {\"locationId\": 47, \"code\": \"MA1-COMPBR-AOUT\", \"name\": \"MA1-COMPBR-AOUT (Assembly IN)\"}\n\tsystem.perspective.navigate(\"/shop-floor/assembly-in\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "btn_10"
+        },
+        "props": {
+          "text": "Hold",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "12px",
+            "padding": "4px 10px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.navigate(\"/shop-floor/hold-management\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "btn_11"
+        },
+        "props": {
+          "text": "Sort Cage",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "12px",
+            "padding": "4px 10px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.navigate(\"/shop-floor/sort-cage\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "btn_12"
+        },
+        "props": {
+          "text": "Shipping",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "12px",
+            "padding": "4px 10px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.navigate(\"/shop-floor/shipping\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "btn_13"
+        },
+        "props": {
+          "text": "AIM Config",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "12px",
+            "padding": "4px 10px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.navigate(\"/shop-floor/aim-pool-config\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "btn_14"
+        },
+        "props": {
+          "text": "Supervisor",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "12px",
+            "padding": "4px 10px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.navigate(\"/shop-floor/supervisor\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "btn_15"
+        },
+        "props": {
+          "text": "Downtime",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "12px",
+            "padding": "4px 10px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.navigate(\"/shop-floor/downtime\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "btn_16"
+        },
+        "props": {
+          "text": "End Shift",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "12px",
+            "padding": "4px 10px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.navigate(\"/shop-floor/end-of-shift\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "btn_17"
+        },
+        "props": {
+          "text": "Shift Sum",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "12px",
+            "padding": "4px 10px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.navigate(\"/shop-floor/shift-summary\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "btn_18"
+        },
+        "props": {
+          "text": "LOT Search",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "12px",
+            "padding": "4px 10px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.navigate(\"/shop-floor/lot-search\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "btn_19"
+        },
+        "props": {
+          "text": "Genealogy",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "fontSize": "12px",
+            "padding": "4px 10px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.navigate(\"/shop-floor/genealogy\")"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

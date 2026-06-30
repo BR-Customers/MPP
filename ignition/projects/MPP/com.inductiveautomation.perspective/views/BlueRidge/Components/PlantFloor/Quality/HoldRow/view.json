@@ -1,0 +1,250 @@
+{
+  "custom": {},
+  "params": {
+    "holdEventId": 0,
+    "target": "",
+    "holdTypeCode": "",
+    "reason": "",
+    "lotId": 0
+  },
+  "propConfig": {
+    "params.sourceLotId": {
+      "paramDirection": "input"
+    },
+    "params.lotName": {
+      "paramDirection": "input"
+    },
+    "params.sourceItem": {
+      "paramDirection": "input"
+    },
+    "params.pieceCount": {
+      "paramDirection": "input"
+    },
+    "params.arrival": {
+      "paramDirection": "input"
+    },
+    "params.position": {
+      "paramDirection": "input"
+    },
+    "params.lotStatusCode": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 92,
+      "width": 640
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "style": {
+        "classes": "pf-queue-row",
+        "gap": "16px",
+        "padding": "12px 16px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Info"
+        },
+        "position": {
+          "grow": 1,
+          "basis": "0"
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "2px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Position"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-queue-position"
+              },
+              "text": ""
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if({view.params.position} = 1, 'Position 1 - oldest', 'Position ' + toStr({view.params.position}))"
+                  }
+                }
+              },
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "false"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "LotName"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-queue-name"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.target}"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Detail"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-queue-detail"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.holdTypeCode} + if(isNull({view.params.reason}) || {view.params.reason} = \"\", \"\", \"  -  \" + {view.params.reason})"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "StatusPill"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.style.classes": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.lotStatusCode} = 'Good', 'pf-pill pf-pill-good', 'pf-pill pf-pill-hold')"
+              }
+            }
+          },
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "\"Hold #\" + toStr({view.params.holdEventId})"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-pill"
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "ViewButton"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "text": "View",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary"
+          }
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.params.lotId} > 0"
+              }
+            }
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tif self.view.params.lotId and int(self.view.params.lotId) > 0:\n\t\tsystem.perspective.navigate(\"/shop-floor/lot-detail/\" + str(int(self.view.params.lotId)))"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "UseButton"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.enabled": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "{view.params.lotStatusCode} = 'Good'"
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "Use",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"holdSelected\", payload={\"holdEventId\": self.view.params.holdEventId}, scope=\"page\")"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

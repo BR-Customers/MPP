@@ -72,6 +72,19 @@ def getOne(dieRankId):
     )
 
 
+def getByCode(dieCode):
+    """Single-row lookup by (unique) Code. Returns dict or None.
+    Used by the compatibility matrix to resolve a rank Code back to its Id."""
+    dieCode = _u(dieCode)
+    BlueRidge.Common.Util.log("dieCode=%s" % dieCode)
+    if dieCode is None:
+        return None
+    return BlueRidge.Common.Db.execOne(
+        "parts/DieRank_GetByCode",
+        {"code": dieCode},
+    )
+
+
 def getForDropdown():
     """Returns [{label:'A - Premium', value:'A'}, ...] for the Die Rank
     dropdown on Add Die / Tool detail header. Plain hyphen separator --
@@ -173,6 +186,22 @@ def getCompatibilityMatrix():
         if b in matrix and a in matrix[b]:
             matrix[b][a] = canMix
     return matrix
+
+
+def saveCompatibilityMatrix(data, appUserId):
+    """Bulk-save the full pairwise compatibility matrix in one call (fewer SQL
+    round-trips than per-cell setCompatibility). data is a list of
+    {RankAId, RankBId, CanMix} rows; omitted pairs are left unchanged.
+    Returns {Status, Message, NewId}, or None when there is nothing to save."""
+    data = _u(data)
+    if not data:
+        return None
+    jsonData = system.util.jsonEncode(data)
+    BlueRidge.Common.Util.log("rows=%s" % len(data))
+    return BlueRidge.Common.Db.execMutation(
+        "parts/DieRankCompatibility_SaveAll",
+        {"rowsJson": jsonData, "appUserId": appUserId},
+    )
 
 
 def add(data):

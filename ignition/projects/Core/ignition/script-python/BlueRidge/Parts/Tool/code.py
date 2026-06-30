@@ -819,3 +819,111 @@ def releaseAssignment(toolId, notes=None):
             "notes":     notes,
         },
     )
+
+
+# -----------------------------------------------------------------------------
+# Die-cast operator station helpers (Phase 3 front-end)
+# -----------------------------------------------------------------------------
+
+def getCavitiesForDropdown(toolId):
+    """Active cavities for the mounted tool, as [{label, value}] for the cavity
+    dropdown (label = 'Cavity N', value = ToolCavity.Id). Empty list = no active
+    cavities (the FE then enters free-entry / manual-cavity mode, D2). Wraps
+    Tools.ToolCavity_ListActiveByTool."""
+    toolId = _u(toolId)
+    BlueRidge.Common.Util.log("getCavitiesForDropdown toolId=%s" % toolId)
+    if toolId is None:
+        return []
+    try:
+        rows = BlueRidge.Common.Db.execList(
+            "parts/ToolCavity_ListActiveByTool", {"toolId": toolId})
+    except Exception as e:
+        BlueRidge.Common.Util.log("getCavitiesForDropdown failed: %s" % str(e))
+        return []
+    return [{"label": "Cavity %s" % r.get("CavityNumber"), "value": r.get("Id")}
+            for r in (rows or [])]
+
+
+def getMountedToolForCell(cellLocationId):
+    """The Tool currently mounted on a Cell (or None). Drives the Die Cast Entry
+    Tool auto-populate. Wraps Tools.ToolAssignment_ListActiveByCell (0 or 1 row)."""
+    cellLocationId = _u(cellLocationId)
+    BlueRidge.Common.Util.log("getMountedToolForCell cellLocationId=%s" % cellLocationId)
+    if cellLocationId is None:
+        return None
+    try:
+        rows = BlueRidge.Common.Db.execList(
+            "parts/ToolAssignment_ListActiveByCell", {"cellLocationId": cellLocationId})
+    except Exception as e:
+        BlueRidge.Common.Util.log("getMountedToolForCell failed: %s" % str(e))
+        return None
+    return rows[0] if rows else None
+
+
+def getMountedToolForCellOrEmpty(cellLocationId):
+    """Binding-safe variant: a fully-shaped dict (never None) so the Tool card's
+    nested-path bindings never Component-Error (pre-declare-bound-props rule). Shape
+    mirrors Tools.ToolAssignment_ListActiveByCell's columns."""
+    row = getMountedToolForCell(cellLocationId)
+    if row is None:
+        return {"Id": None, "ToolId": None, "ToolCode": "", "ToolName": "",
+                "ToolTypeCode": "", "CellLocationId": None, "AssignedAt": None,
+                "AssignedByUserId": None, "Notes": None}
+    return row
+
+
+# -----------------------------------------------------------------------------
+# Cell Mount Card (mount-from-location, Plant Hierarchy) -- inverse of the
+# Tool-side Assignments tab. See spec 2026-06-16-cell-mount-card-design.md.
+# -----------------------------------------------------------------------------
+
+def getCellMountContextOrEmpty(cellLocationId):
+    """Single-row mount context for a Cell, for the Plant Hierarchy Cell Mount
+    Card. Always a fully-shaped dict (never None) so the card's nested-path
+    bindings never Component-Error (pre-declare-bound-props rule). Wraps
+    Tools.ToolAssignment_GetCellContext. IsMountTarget is coerced to a bool;
+    nullable text columns coerced to '' for clean binding render."""
+    cellLocationId = _u(cellLocationId)
+    BlueRidge.Common.Util.log("getCellMountContextOrEmpty cellLocationId=%s" % cellLocationId)
+    empty = {"IsMountTarget": False, "ToolAssignmentId": None, "ToolId": None,
+             "ToolCode": "", "ToolName": "", "ToolTypeCode": "",
+             "AssignedAt": None, "AssignedBy": ""}
+    if cellLocationId is None:
+        return empty
+    try:
+        row = BlueRidge.Common.Db.execOne(
+            "parts/ToolAssignment_GetCellContext", {"cellLocationId": cellLocationId})
+    except Exception as e:
+        BlueRidge.Common.Util.log("getCellMountContextOrEmpty failed: %s" % str(e))
+        return empty
+    if row is None:
+        return empty
+    row["IsMountTarget"] = bool(row.get("IsMountTarget"))
+    for k in ("ToolCode", "ToolName", "ToolTypeCode", "AssignedBy"):
+        if row.get(k) is None:
+            row[k] = ""
+    return row
+
+
+def getMountableToolsForCell(cellLocationId):
+    """Active, currently-unmounted tools compatible with this Cell, as
+    [{label, value}] for the Mount dropdown (label = 'Code - Name',
+    value = Tool.Id). Empty list when the cell is not a mount target or has
+    no available tools. Wraps Tools.Tool_ListMountableForCell."""
+    cellLocationId = _u(cellLocationId)
+    BlueRidge.Common.Util.log("getMountableToolsForCell cellLocationId=%s" % cellLocationId)
+    if cellLocationId is None:
+        return []
+    try:
+        rows = BlueRidge.Common.Db.execList(
+            "parts/Tool_ListMountableForCell", {"cellLocationId": cellLocationId})
+    except Exception as e:
+        BlueRidge.Common.Util.log("getMountableToolsForCell failed: %s" % str(e))
+        return []
+    out = []
+    for r in (rows or []):
+        code = r.get("Code") or ""
+        name = r.get("Name") or ""
+        label = ("%s - %s" % (code, name)) if code and name else (code or name)
+        out.append({"label": label, "value": r.get("Id")})
+    return out

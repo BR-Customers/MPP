@@ -1,0 +1,17 @@
+{
+  "scope": "G",
+  "version": 1,
+  "files": [
+    "handleTimerEvent.py"
+  ],
+  "attributes": {
+    "delay": 30000,
+    "fixedDelay": true,
+    "sharedThread": true,
+    "enabled": true,
+    "lastModification": {
+      "actor": "claude",
+      "timestamp": "2026-06-19T12:00:00Z"
+    }
+  }
+}

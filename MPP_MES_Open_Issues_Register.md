@@ -1,12 +1,12 @@
 # MPP MES — Open Issues Register
 
 **Document:** FDS-MPP-MES-OIR-001
-**Version:** 2.18 — Working Draft
-**Date:** 2026-05-01
+**Version:** 2.19 — Working Draft
+**Date:** 2026-06-15
 **Prepared By:** Blue Ridge Automation
 **Prepared For:** Madison Precision Products, Inc. (Madison, IN)
 
-This register consolidates all open items and design decisions that gate Perspective screen design and implementation. Part A holds the FDS-numbered open items (OI-01 through OI-35). Part B holds the 19 User Journey assumptions/decisions (UJ-01 through UJ-19). Cross-references between the two parts are noted per-item.
+This register consolidates all open items and design decisions that gate Perspective screen design and implementation. Part A holds the FDS-numbered open items (OI-01 through OI-36). Part B holds the 19 User Journey assumptions/decisions (UJ-01 through UJ-19). Cross-references between the two parts are noted per-item.
 
 ---
 
@@ -14,6 +14,7 @@ This register consolidates all open items and design decisions that gate Perspec
 
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
+| 2.19 | 2026-06-15 | Blue Ridge Automation | **OI-36 NEW / ⬜ Open / MEDIUM — Timestamp display timezone (UTC stored, ET displayed).** Codified the convention that all timestamps are persisted UTC (`GETUTCDATETIME()`) and displayed in Eastern Time, converted at the read boundary via `CAST(col AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3))` (now in CLAUDE.md § SQL design). The Audit Browser + `Lot_GetAttributeHistory` already convert; OI-36 tracks the refactor sweep of the remaining Arc 2 plant-floor read procs that still surface raw UTC. Count shifts: Part A MEDIUM Open 2 → 3, Part A Open 3 → 4, Part A total 35 → 36; grand total 54 → 55, open 5 → 6. |
 | 2.18 | 2026-06-09 | Blue Ridge Automation | **OI-35 RESOLVED — Phase 0 architecture gate cleared (Arc-2 Phase-1 SQL unblocked).** Track B (OI-35 B1–B8) signed off 2026-06-08 (`Meeting_Notes/2026-06-08_Phase0_Decision_Log.md`); decisions baked into migration `0020` (design spec `docs/superpowers/specs/2026-06-09-arc2-phase1-sql-foundation-design.md`): B2 monthly partitioning + `TRUNCATE` sliding-window (singleton `Id` PK preserved), B3 columnstore deferred, B4 `LotGenealogyClosure`, B5 materialized qty + fallback view, B6 row-locked `IdentifierSequence_Next` (seed ≈3M, MESL/MESI), B7 `OperationLog`→`LotEventLog` split, B8 filtered indexes, B1 retention → FDS §11. Track A = build-on-assumed-defaults (A4 ShotCount cumulative locked; A1/A2/A5/A6/A7 MPP-confirm in parallel; A8 close-as-not-reproduced; A9 hard-fail). **UJ-03 ⚠️ changed** (Phase 0 T008): no auto even-split default — operator enters all split quantities; FDS §5/§6 even-split-default prose to be removed at next FDS pass. **UJ-05** build default locked to update-in-place + `ContainerSerialHistory` (B10), stays Open pending Quality/Honda affirmation. **Count shifts:** Part A Resolved 30 → 31, Open 4 → 3 (OI-32/-34 + OI-33 remain; OI-35 → Resolved). Grand total: 48 resolved, 0 in review, 5 open, 1 superseded. Companion edits applied same pass: Data Model § "Scaling Decisions" (rev 1.9s), FDS-11-009 retention table, Plant Floor plan B10. |
 | 2.17 | 2026-05-01 | Blue Ridge Automation | **Nine items closed from Jacques's 2026-05-01 markup of the Outstanding Items extract.** OI-07 (Production-only WO seed confirmed → ✅ Resolved). OI-24 (legacy Automation tile not reproduced; covered by `Audit.InterfaceLog` + OPC tag management → ✅ Resolved). OI-25 (Notifications module out-of-MVP; banner notifications already covered via terminal context per FDS-07-006a/b; text/email notifications a future change order or follow-on project → ✅ Resolved). OI-27 (Supply-part flag covered by existing component-part modeling — `Parts.Item` + `Parts.Bom` + `Parts.ItemType` Cast/Machined/Assembled/Received → ✅ Resolved). OI-28 (Cast-override flag covered by `LocationAttribute` system; no new BIT column on Cell → ✅ Resolved). OI-29 (Workstation Category covered by ISA-95 hierarchy; no `WorkstationCategory` LocationAttribute → ✅ Resolved). OI-30 (Legacy Reports-tile contents not mirrored 1:1; the four named PD reports stay MVP via UJ-19; additional Ignition reports beyond those four = post-deployment change order → ✅ Resolved). OI-31 (Proposed direction confirmed + new business rule: cutover seed at **+10,000 above current Flexware `LastCounterValue`** — or MPP-agreed delta — to avoid LTT collisions during partial-cutover windows. Format `MESL{0:D7}` / `MESI{0:D7}` retained, no reset policy, rollover deferred ~30 yrs → ✅ Resolved). UJ-03 (Per-Operation `Parts.OperationTemplate.RequiresSubLotSplit BIT` flag confirmed; mockup verified at Trim OUT with `+ Add sub-LOT` button toggling 1 vs N destination rows; Configuration Tool surfaces this as "may split for machining" toggle on the per-Operation row of the Item edit screen → ✅ Resolved). UJ-19 confirmed in MVP scope: the four named PD reports are deliverables for this project; the post-deployment change-order comment in OI-30 was about reports BEYOND the four. **Count shifts:** Part A Resolved 22 → 30, In Review 1 → 0, Open 11 → 4 (only OI-32, OI-33, OI-34, OI-35 remain); Part B Resolved 16 → 17, In Review 1 → 0, Open 2 → 2 (UJ-05, UJ-19). Grand total: 54 items, 47 resolved, 0 in review, 6 open, 1 superseded. **Companion FDS amendments queued separately:** §16 cutover-offset rule (FDS-16-003) + §12 banners-only / text-out one-liner; FDS embedded Open Items Register trimmed to the 6 remaining items. No data model / SQL changes this revision — register entries + FDS prose only. |
 | 2.16 | 2026-04-29 | Blue Ridge Automation | **OI-35 NEW / ⬜ Open / HIGH — Long-horizon scaling, retention, and archiving strategy.** Captures the 20-year-retention architectural decisions surfaced during the 2026-04-28 indexing & query-perf review. **Tagged "must decide before Arc 2 Phase 1 SQL build"** — partition functions, materialization columns, and closure-table presence all need to be in the CREATE migration; retrofitting them on a populated 100M+ row table is operationally painful. The decision space: per-table retention class (push-back candidates: `Audit.OperationLog` / `InterfaceLog` / `FailureLog` at 7-year vs 20-year), monthly range partitioning + sliding-window automation for ~14 high-volume event tables, clustered columnstore on partitions older than 90 days, materialized closure table for `Lots.LotGenealogy` (so Honda audits don't recursive-CTE-walk 100M+ rows at year 15), materialize `TotalInProcess` / `InventoryAvailable` columns onto `Lots.Lot` (replaces the read-time `v_LotDerivedQuantities` view at scale), switch `Lots.IdentifierSequence_Next` to SQL Server `SEQUENCE` object (eliminates row-level lock contention at LOT creation), split `Audit.OperationLog` into a 7-year retention general audit + a separate 20-year `Lots.LotEventLog` for traceability events. Owner: Blue Ridge architecture + MPP IT (retention policy negotiation). Last-responsible-moment posture confirmed by Jacques 2026-04-29 — the decision is deferred but the gate is hard. Couples to: indexing review meeting note (`Meeting_Notes/2026-04-28_DataModel_Indexing_Scaling_Review.md`), the data model spec § for Arc 2 deferred tables, and the existing "indexing pass" follow-up. Count shifts: Part A Open 10 → 11 (added OI-35 HIGH). Active Part A item count 34 → 35. No FDS / data model / SQL changes this revision — register entry only. |
@@ -42,16 +43,16 @@ This register consolidates all open items and design decisions that gate Perspec
 | Priority | ✅ Resolved | 🔶 In Review | ⬜ Open | Superseded | **Total** |
 |---|---|---|---|---|---|
 | HIGH | 5 (OI-01, OI-02, OI-05, OI-07, OI-35) | 0 | 1 (OI-33) | 0 | **6** |
-| MEDIUM | 16 (OI-03, OI-04, OI-06, OI-08, OI-09, OI-11, OI-12, OI-16, OI-17, OI-18, OI-21, OI-22, OI-24, OI-28, OI-30, OI-31) | 0 | 2 (OI-32, OI-34) | 0 | **18** |
+| MEDIUM | 16 (OI-03, OI-04, OI-06, OI-08, OI-09, OI-11, OI-12, OI-16, OI-17, OI-18, OI-21, OI-22, OI-24, OI-28, OI-30, OI-31) | 0 | 3 (OI-32, OI-34, OI-36) | 0 | **19** |
 | LOW | 10 (OI-13, OI-14, OI-15, OI-19, OI-20, OI-23, OI-25, OI-27, OI-29, OI-32b) | 0 | 0 | 0 | **10** |
 | — | 0 | 0 | 0 | 1 (OI-10) | **1** |
-| **Total** | **31** | **0** | **3** | **1** | **35** |
+| **Total** | **31** | **0** | **4** | **1** | **36** |
 
 > **Authoritative row lists (after v2.18 sync):**
 >
 > - Resolved (31) = OI-01, -02, -03, -04, -05, -06, -07, -08, -09, -11, -12, -13, -14, -15, -16, -17, -18, -19, -20, -21, -22, -23, -24, -25, -27, -28, -29, -30, -31, -32b, -35
 > - In Review (0) = —
-> - Open (3) = OI-32, -33, -34
+> - Open (4) = OI-32, -33, -34, -36
 > - Superseded (1) = OI-10
 
 **Part B counts (19 items) — updated v2.17:**
@@ -63,7 +64,7 @@ This register consolidates all open items and design decisions that gate Perspec
 | LOW | 1 (UJ-06) | 0 | 0 | **1** |
 | **Total** | **17** | **0** | **2** | **19** |
 
-**Grand total:** 54 items (35 Part A + 19 Part B). **48 resolved, 0 in review, 5 open, 1 superseded.**
+**Grand total:** 55 items (36 Part A + 19 Part B). **48 resolved, 0 in review, 6 open, 1 superseded.**
 
 > **Note on UJ descriptions:** Jacques flagged 2026-04-24 that UJ entries lack the options/impact/reference depth of the OI entries. A separate enrichment pass is queued before the next MPP review — not addressed in v2.10.
 
@@ -955,6 +956,36 @@ The audit + interface tables are structurally larger than the entire traceabilit
 - **FDS-11 audit retention paragraph** — currently silent on the per-table retention class. OI-35 resolution drives an FDS-11 amendment.
 
 **Last-responsible-moment posture confirmed by Jacques 2026-04-29.** The decision is deferred but the gate is hard.
+
+---
+
+### OI-36 — Timestamp display timezone (UTC stored, ET displayed) — ⬜ Open (new, 2026-06-15)
+
+**Priority:** MEDIUM
+**Owner:** Blue Ridge Automation
+**FDS §:** cross-cutting (display convention; see CLAUDE.md § SQL design)
+**References:** Audit Browser tz conversion; `R__Lots_Lot_GetAttributeHistory` (converts UTC→ET); memory `project_mpp_audit_timestamp_tz`
+
+**Description:** All timestamps are persisted in UTC (`GETUTCDATETIME()`) and SHALL be displayed to operators in Eastern Time. Read/display procs convert at the boundary via `CAST(<col> AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3))`.
+
+**Decision (2026-06-15):** Confirmed by Jacques — all operator-facing timestamps are ET. Convention codified in CLAUDE.md (SQL design conventions).
+
+**Open work (refactor sweep):** the Audit Browser display procs and the LOT history timeline already convert. The remaining Arc 2 plant-floor read procs still surface raw UTC and need a conversion pass — notably the LOT Detail header/KPIs, LOT Search `CreatedAt`, the Phase 3 `ProductionEvent_ListByLot` `EventAt` (cumulative-cavity card), and the pause/genealogy reads. Hardcoded to Eastern; a future multi-site deployment would parameterize `@DisplayTimeZone` (mirrors the `project_mpp_audit_timestamp_tz` note).
+
+---
+
+### OI-37 — End-of-shift break model (fixed reason codes vs per-schedule config) — ⬜ Open (new, 2026-06-17)
+
+**Priority:** LOW
+**Owner:** Blue Ridge Automation (confirm break values with MPP)
+**FDS §:** FDS-09-013 (End-of-Shift Time Entry)
+**References:** Arc 2 Phase 8 spec §3.2 (`docs/superpowers/specs/2026-06-16-arc2-phase8-downtime-shift-design.md`); migration `0026`; `Oee.EndOfShiftEntry_Submit`
+
+**Description:** FDS-09-013 says the *shift schedule* "defines the lunch and breaks for that shift," with durations "resolved from the shift schedule's break configuration." No such per-schedule break configuration exists — not in the as-built `Oee.ShiftSchedule`, not in Data Model v1.9q, and not in the FDS-09-012 import fields.
+
+**Decision (2026-06-17, ratified with Hunter):** Model lunch/breaks as **fixed `DowntimeReasonCode` rows with a uniform standard duration** (`StandardDurationMinutes`), seeded Site-scoped under a new `Break` reason type (migration `0026`: LUNCH 30 / BREAK1 15 / BREAK2 15 — placeholder values). `EndOfShiftEntry_Submit` writes one closed `DowntimeEvent` per selected break with a nominal `StartedAt` (= shift `ActualStart`) and `EndedAt = +StandardDurationMinutes`; only the duration is meaningful for availability. This departs from the FDS's per-schedule wording and the "start times resolved from the schedule" clause.
+
+**Open work:** (1) confirm MPP's actual break/lunch durations (currently placeholder seed values); (2) confirm breaks do not differ per shift schedule. If they do, the additive upgrade path is the `Oee.ShiftScheduleBreak` child table considered and set aside in spec §3.2 — no rework of the event/proc shape.
 
 ---
 

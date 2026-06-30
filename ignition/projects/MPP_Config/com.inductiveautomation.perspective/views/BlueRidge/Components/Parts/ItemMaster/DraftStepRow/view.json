@@ -36,7 +36,7 @@
         },
         "transforms": [
           {
-            "code": "\tout \u003d []\n\tfor ot in (value or []):\n\t\tcode \u003d ot.get(\u0027Code\u0027) or \u0027\u0027\n\t\tvnum \u003d ot.get(\u0027VersionNumber\u0027, 0)\n\t\tname \u003d ot.get(\u0027Name\u0027) or \u0027\u0027\n\t\tlabel \u003d \u0027%s v%s — %s\u0027 % (code, vnum, name)\n\t\tout.append({\u0027label\u0027: label, \u0027value\u0027: ot.get(\u0027Id\u0027)})\n\treturn out",
+            "code": "\tout \u003d []\n\tfor ot in (value or []):\n\t\tcode \u003d ot.get(\u0027Code\u0027) or \u0027\u0027\n\t\tvnum \u003d ot.get(\u0027VersionNumber\u0027, 0)\n\t\tname \u003d ot.get(\u0027Name\u0027) or \u0027\u0027\n\t\tlabel \u003d \u0027%s v%s - %s\u0027 % (code, vnum, name)\n\t\tout.append({\u0027label\u0027: label, \u0027value\u0027: ot.get(\u0027Id\u0027)})\n\treturn out",
             "type": "script"
           }
         ],
@@ -129,7 +129,7 @@
           "name": "AreaDropdown"
         },
         "position": {
-          "basis": "160px",
+          "basis": "200px",
           "shrink": 0
         },
         "propConfig": {
@@ -174,7 +174,7 @@
           "name": "OpTemplateDropdown"
         },
         "position": {
-          "basis": "260px",
+          "basis": "380px",
           "shrink": 0
         },
         "propConfig": {

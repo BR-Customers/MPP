@@ -7,14 +7,14 @@ This directory holds the **`mpp`** custom Perspective icon library deployed to t
 ```
 ignition/icons/
 └── mpp/                  ← folder name = library name (must match)
-    ├── mpp.svg           ← the SVG sprite (37 logical icons, 36 unique sprites)
+    ├── mpp.svg           ← the SVG sprite (38 logical icons, 37 unique sprites)
     ├── config.json       ← { "svgFileName": "mpp.svg" }
     └── resource.json     ← gateway-scope resource manifest
 ```
 
 ## Lock spec
 
-The 37 logical icons (36 unique sprites — `cancel` serves both `close` and `reject` aliases in `mockup/icons.csv`) are locked against **Material Symbols Outlined** at the following axis combination (set 2026-05-04 in `mockup/icons.csv`):
+The 38 logical icons (37 unique sprites — `cancel` serves both `close` and `reject` aliases in `mockup/icons.csv`) are locked against **Material Symbols Outlined** at the following axis combination (set 2026-05-04 in `mockup/icons.csv`; `print` added 2026-06-11):
 
 | Axis | Value |
 |---|---|
@@ -82,8 +82,8 @@ The library folder name (`mpp`) **must** equal the library reference name used i
 Steps:
 
 1. Copy the entire `ignition/icons/mpp/` folder (all three files) to the gateway path above. Create the parent folders if they don't exist (admin permission required since this is under `Program Files`).
-2. **Restart the Ignition Gateway service.** "Scan File System" in the Gateway web UI registers new library *folders* but does not reliably reload modified content inside an existing sprite — a service restart is the safest reload.
-3. Reference icons from views as `mpp/<material_symbol_name>` (e.g., set an Icon component's `path` to `mpp/play_arrow`).
+2. **Reload the library.** Verified 2026-06-11 on 8.3: for *content changes to the existing sprite*, the config-scan API reloads it without a service restart — `POST http://localhost:8088/data/api/v1/scan/config` with the same `X-Ignition-API-Token` + `Content-Type: application/json` headers `scan.ps1` uses. Confirm with `GET http://localhost:8088/data/perspective/icons/mpp.svg` (the served file should contain the new `id`). A **gateway service restart** remains the fallback, and is still recommended when registering a brand-new library *folder*.
+3. Reference icons from views as `mpp/<material_symbol_name>` (e.g., set an Icon component's `path` to `mpp/play_arrow`). Open sessions/Designer may need a hard refresh (Ctrl+Shift+R) to drop the cached sprite.
 
 > **Pre-8.3 note:** Ignition 8.1.x used a single `<lib>.svg` at `data/modules/com.inductiveautomation.perspective/icons/`. That layout does not work on 8.3.
 

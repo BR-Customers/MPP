@@ -1,0 +1,227 @@
+{
+  "custom": {},
+  "params": {
+    "initials": "",
+    "popupId": "mpp-unknown-initials",
+    "replyMessage": "unknownInitialsResult"
+  },
+  "propConfig": {
+    "params.initials": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.popupId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.replyMessage": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 240,
+      "width": 480
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "modal"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "classes": "modal-header",
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.icon",
+            "meta": {
+              "name": "WarnIcon"
+            },
+            "position": {
+              "basis": "22px",
+              "shrink": 0
+            },
+            "props": {
+              "path": "material/help_outline",
+              "style": {
+                "width": "22px",
+                "height": "22px",
+                "color": "var(--mpp-text-accent)"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "HeaderTitle"
+            },
+            "position": {
+              "basis": "auto",
+              "grow": 1
+            },
+            "props": {
+              "text": "Initials Not Recognised"
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "modal-body",
+            "gap": "6px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Message"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "\"The initials \\\"\" + {view.params.initials} + \"\\\" don't match any operator on file.\""
+                  }
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "14px",
+                "lineHeight": "1.5"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Prompt"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Register a new operator, or dismiss to try again.",
+              "style": {
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "13px"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Footer"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "justify": "flex-end",
+          "style": {
+            "classes": "modal-footer",
+            "gap": "10px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "DismissButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Dismiss",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"action\": \"dismiss\"}, scope=\"page\")\n\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "RegisterButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "text": "Register New User",
+              "style": {
+                "classes": "pf-btn pf-btn-primary"
+              }
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"action\": \"register\"}, scope=\"page\")\n\tsystem.perspective.closePopup(id=self.view.params.popupId)"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

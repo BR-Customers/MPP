@@ -40,12 +40,12 @@
       }
     },
     "events": {
-      "component": {
+      "system": {
         "onStartup": {
           "type": "script",
           "scope": "G",
           "config": {
-            "script": "\tt = self.session.custom.terminal\n\tu = self.session.custom.user\n\tif t and t.get(\"terminalMode\") == \"Dedicated\" and u and u.get(\"initials\"):\n\t\tself.view.custom.initials = u.get(\"initials\")\n\t\tself.resolveInitials()"
+            "script": "\tu = self.session.custom.user\n\tif self.session.custom.presence.policy == \"confirm\" and u and u.get(\"initials\"):\n\t\tself.view.custom.initials = u.get(\"initials\")\n\t\tself.resolveInitials()"
           }
         }
       }

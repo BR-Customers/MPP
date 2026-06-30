@@ -125,10 +125,13 @@ Each node:
 
 ## Events on components
 
-`events` has two channels:
+`events` has three channels:
 
 - `events.component` — component-emitted events (`onActionPerformed`, `onSelectionChange`, `onValueChange`, …)
 - `events.dom` — raw DOM events (`onClick`, `onBlur`, `onMouseEnter`, …)
+- `events.system` — lifecycle events (`onStartup`, `onShutdown`) — the Designer's "System Events" group
+
+**`onStartup`/`onShutdown` MUST go under `events.system`, not `events.component`.** A file-authored `events.component.onStartup` is silently dead: the runtime never fires it, and the Designer shows the script badge on the component but "No Action" in the Event Configuration dialog (it only looks in the `system` channel for lifecycle events). Diagnostic signature: startup script never runs, no error anywhere, badge-vs-dialog mismatch in Designer.
 
 Each event's value is either a single config object or an **array** of configs run in sequence:
 

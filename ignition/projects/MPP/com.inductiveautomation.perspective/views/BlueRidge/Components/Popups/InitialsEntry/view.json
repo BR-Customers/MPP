@@ -1,0 +1,259 @@
+{
+  "custom": {
+    "dialogOpen": false,
+    "error": "",
+    "initials": ""
+  },
+  "params": {
+    "popupId": "mpp-initials"
+  },
+  "props": {
+    "defaultSize": {
+      "height": 720,
+      "width": 900
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "Heading"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-primary)",
+            "fontSize": "34px",
+            "fontWeight": "600"
+          },
+          "text": "Enter your initials"
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": {
+          "name": "TerminalName"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "session.custom.terminal.terminalName"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "16px"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": {
+          "name": "InitialsEcho"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "expression": "if({view.custom.initials} \u003d \"\", \"- - -\", {view.custom.initials})"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-accent)",
+            "fontFamily": "monospace",
+            "fontSize": "56px",
+            "letterSpacing": "0.15em",
+            "marginBottom": "8px",
+            "marginTop": "8px"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "events": {
+          "dom": {
+            "onBlur": {
+              "config": {
+                "script": "\tself.view.rootContainer.submitInitials()"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "ScannerInput"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "bidirectional": true,
+                "path": "view.custom.initials"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "placeholder": "Scan or type initials",
+          "style": {
+            "classes": "pf-field-input-mono",
+            "textAlign": "center",
+            "textTransform": "uppercase",
+            "width": "320px"
+          }
+        },
+        "type": "ia.input.text-field"
+      },
+      {
+        "meta": {
+          "name": "Keyboard"
+        },
+        "position": {
+          "basis": "300px",
+          "shrink": 0
+        },
+        "props": {
+          "params": {
+            "messageName": "initialsKeyPressed"
+          },
+          "path": "BlueRidge/Components/PlantFloor/Keyboard",
+          "style": {
+            "marginTop": "8px",
+            "width": "800px"
+          }
+        },
+        "type": "ia.display.view"
+      },
+      {
+        "meta": {
+          "name": "ErrorLabel"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.custom.error} !\u003d \"\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.custom.error"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-state-bad-fg)",
+            "fontSize": "15px",
+            "marginTop": "8px"
+          }
+        },
+        "type": "ia.display.label"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "direction": "column",
+      "justify": "center",
+      "style": {
+        "classes": "canvas",
+        "gap": "20px",
+        "padding": "32px"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "appendKey",
+          "params": [
+            "ch"
+          ],
+          "script": "\tself.view.custom.error \u003d \"\"\n\tself.view.custom.initials \u003d (self.view.custom.initials or \"\") + ch"
+        },
+        {
+          "name": "clearKeys",
+          "params": [],
+          "script": "\tself.view.custom.error \u003d \"\"\n\tself.view.custom.initials \u003d \"\""
+        },
+        {
+          "name": "backspaceKey",
+          "params": [],
+          "script": "\tself.view.custom.error \u003d \"\"\n\tself.view.custom.initials \u003d (self.view.custom.initials or \"\")[:-1]"
+        },
+        {
+          "name": "loginAs",
+          "params": [
+            "appUserId",
+            "initials",
+            "displayName",
+            "ignitionRole"
+          ],
+          "script": "\t# Popup login: set the session identity, then close. The screen underneath is\n\t# still mounted, and session.custom is reactive, so its operator label / mutations\n\t# pick up the new user without any navigation or post-login re-populate.\n\tself.session.custom.user \u003d {\"appUserId\": appUserId, \"initials\": initials, \"displayName\": displayName, \"ignitionRole\": ignitionRole}\n\tself.session.custom.appUserId \u003d appUserId\n\tsystem.perspective.closePopup(self.view.params.popupId or \"mpp-initials\")"
+        },
+        {
+          "name": "submitInitials",
+          "params": [],
+          "script": "\tif self.view.custom.dialogOpen:\n\t\treturn\n\ttext \u003d (self.view.custom.initials or \"\").strip().upper()\n\tif not text:\n\t\tself.view.custom.error \u003d \"\"\n\t\treturn\n\tu \u003d BlueRidge.Location.AppUser.getByInitials(text)\n\tif u is None:\n\t\tself.view.custom.dialogOpen \u003d True\n\t\tsystem.perspective.openPopup(id\u003d\"mpp-unknown-initials\", view\u003d\"BlueRidge/Components/Popups/UnknownInitials\", params\u003d{\"initials\": text, \"replyMessage\": \"unknownInitialsResult\", \"popupId\": \"mpp-unknown-initials\"}, modal\u003dTrue, showCloseIcon\u003dFalse)\n\t\treturn\n\tself.loginAs(u[\"Id\"], u[\"Initials\"], u[\"DisplayName\"], u.get(\"IgnitionRole\"))"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "initialsKeyPressed",
+          "pageScope": true,
+          "script": "\ta \u003d payload.get(\"action\") if payload else None\n\tif a \u003d\u003d \"key\":\n\t\tself.appendKey(payload.get(\"key\"))\n\telif a \u003d\u003d \"space\":\n\t\tself.appendKey(\" \")\n\telif a \u003d\u003d \"backspace\":\n\t\tself.backspaceKey()\n\telif a \u003d\u003d \"clear\":\n\t\tself.clearKeys()\n\telif a \u003d\u003d \"enter\":\n\t\tself.submitInitials()",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "unknownInitialsResult",
+          "pageScope": true,
+          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tif action \u003d\u003d \"register\":\n\t\tsystem.perspective.openPopup(id\u003d\"mpp-register-operator\", view\u003d\"BlueRidge/Components/Popups/RegisterOperator\", params\u003d{\"initials\": (self.view.custom.initials or \"\").strip().upper(), \"replyMessage\": \"registerOperatorResult\", \"popupId\": \"mpp-register-operator\"}, modal\u003dTrue, showCloseIcon\u003dFalse)\n\telif action \u003d\u003d \"dismiss\":\n\t\tself.view.custom.dialogOpen \u003d False\n\t\tself.clearKeys()",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "registerOperatorResult",
+          "pageScope": true,
+          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tself.view.custom.dialogOpen \u003d False\n\tif action \u003d\u003d \"registered\":\n\t\tself.loginAs(payload.get(\"appUserId\"), payload.get(\"initials\"), payload.get(\"displayName\"), None)",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

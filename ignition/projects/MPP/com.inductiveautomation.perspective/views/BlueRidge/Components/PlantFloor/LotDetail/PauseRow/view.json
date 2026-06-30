@@ -1,0 +1,135 @@
+{
+  "custom": {},
+  "params": {
+    "row": {
+      "LocationName": "",
+      "PausedAt": "",
+      "PausedReason": ""
+    }
+  },
+  "propConfig": {
+    "params.row": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 44,
+      "width": 800
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "gap": "12px",
+        "minHeight": "44px",
+        "paddingLeft": "12px",
+        "paddingRight": "12px",
+        "paddingTop": "8px",
+        "paddingBottom": "8px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "PauseIcon"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "text": "⏸",
+          "style": {
+            "color": "var(--mpp-amber, #d97706)",
+            "fontSize": "14px",
+            "width": "16px"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "LocationLabel"
+        },
+        "position": {
+          "grow": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.row.LocationName"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-primary)",
+            "fontSize": "14px"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "ReasonLabel"
+        },
+        "position": {
+          "grow": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.row.PausedReason"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "13px"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "PausedAtLabel"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "toStr({view.params.row.PausedAt})"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "12px"
+          }
+        }
+      }
+    ]
+  }
+}

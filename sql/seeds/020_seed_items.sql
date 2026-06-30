@@ -9,10 +9,11 @@
 --                - AppUser Id 2 (dev user, matches Common.Util
 --                  ._currentAppUserId fallback)
 --                - 4 OperationTemplates (Die Cast, Trim, CNC, Assembly)
---                - 5 Items: 5G0, 5G0-C, PNA, 6MA-HSG, RPY
---                - ContainerConfig per Item
+--                - 6 Items: 5G0, 5G0-C, PNA, 6MA-HSG, RPY, 5G0-MACH
+--                - ContainerConfig per Item (5G0-MACH is an intermediate, no config)
 --                - Published RouteTemplate + 4 RouteSteps for 5G0
---                - Published Bom + 2 BomLines for 5G0
+--                - Published Boms: 5G0 <- 5G0-MACH + 2x PNA (assembly);
+--                  5G0-MACH <- 5G0-C (machining rename, FDS-05-033)
 --                - 2 QualitySpecs linked to 5G0
 --
 --              Dependencies:
@@ -62,7 +63,7 @@ IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Id = 4)
 SET IDENTITY_INSERT Parts.OperationTemplate OFF;
 
 -- ============================================================
--- Parts.Item (5 items matching mockup)
+-- Parts.Item (6 items: 5 mockup items + 5G0-MACH machining intermediate)
 --   ItemType:  1=RawMaterial 2=Component 3=SubAssembly 4=FinishedGood 5=PassThrough
 --   Uom:       1=EA 2=LB 3=KG
 -- ============================================================
@@ -88,6 +89,10 @@ IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE Id = 4)
 IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE Id = 5)
     INSERT INTO Parts.Item (Id, ItemTypeId, PartNumber, Description, MacolaPartNumber, DefaultSubLotQty, MaxLotSize, UomId, UnitWeight, WeightUomId, CountryOfOrigin, MaxParts, CreatedAt, CreatedByUserId)
     VALUES (5, 4, N'RPY',     N'Assembly Set',                N'RPY-SET-001', 12, NULL, 1, 5.50, 2, N'US', 300, @Now, 2);
+
+IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE Id = 6)
+    INSERT INTO Parts.Item (Id, ItemTypeId, PartNumber, Description, MacolaPartNumber, DefaultSubLotQty, MaxLotSize, UomId, UnitWeight, WeightUomId, CountryOfOrigin, MaxParts, CreatedAt, CreatedByUserId)
+    VALUES (6, 3, N'5G0-MACH', N'5G0 Machined Front Cover',    N'5G0-MCH-001', 24, NULL, 1, 2.90, 2, N'US', NULL, @Now, 2);
 
 SET IDENTITY_INSERT Parts.Item OFF;
 
@@ -164,7 +169,7 @@ IF NOT EXISTS (SELECT 1 FROM Parts.RouteStep WHERE Id = 5)
 SET IDENTITY_INSERT Parts.RouteStep OFF;
 
 -- ============================================================
--- Parts.Bom (published) for Item 1 (5G0)
+-- Parts.Bom (published): Item 1 (5G0 assembly) + Item 6 (5G0-MACH machining rename)
 -- ============================================================
 
 SET IDENTITY_INSERT Parts.Bom ON;
@@ -172,6 +177,10 @@ SET IDENTITY_INSERT Parts.Bom ON;
 IF NOT EXISTS (SELECT 1 FROM Parts.Bom WHERE Id = 1)
     INSERT INTO Parts.Bom (Id, ParentItemId, VersionNumber, EffectiveFrom, PublishedAt, DeprecatedAt, CreatedByUserId, CreatedAt)
     VALUES (1, 1, 1, '2026-01-15', '2026-01-14', NULL, 2, @Now);
+
+IF NOT EXISTS (SELECT 1 FROM Parts.Bom WHERE Id = 2)
+    INSERT INTO Parts.Bom (Id, ParentItemId, VersionNumber, EffectiveFrom, PublishedAt, DeprecatedAt, CreatedByUserId, CreatedAt)
+    VALUES (2, 6, 1, '2026-01-15', '2026-01-14', NULL, 2, @Now);   -- machining rename BOM: 5G0-MACH <- 5G0-C (FDS-05-033)
 
 SET IDENTITY_INSERT Parts.Bom OFF;
 
@@ -183,11 +192,15 @@ SET IDENTITY_INSERT Parts.BomLine ON;
 
 IF NOT EXISTS (SELECT 1 FROM Parts.BomLine WHERE Id = 1)
     INSERT INTO Parts.BomLine (Id, BomId, ChildItemId, QtyPer, UomId, SortOrder)
-    VALUES (1, 1, 2, 1.0, 1, 1);   -- 5G0 needs 1x 5G0-C
+    VALUES (1, 1, 6, 1.0, 1, 1);   -- 5G0 needs 1x 5G0-MACH (machined front cover, per cast->machine->assemble chain)
 
 IF NOT EXISTS (SELECT 1 FROM Parts.BomLine WHERE Id = 2)
     INSERT INTO Parts.BomLine (Id, BomId, ChildItemId, QtyPer, UomId, SortOrder)
     VALUES (2, 1, 3, 2.0, 1, 2);   -- 5G0 needs 2x PNA (Mounting Pin)
+
+IF NOT EXISTS (SELECT 1 FROM Parts.BomLine WHERE Id = 3)
+    INSERT INTO Parts.BomLine (Id, BomId, ChildItemId, QtyPer, UomId, SortOrder)
+    VALUES (3, 2, 2, 1.0, 1, 1);   -- 5G0-MACH (rename) <- 1x 5G0-C (FDS-05-033 single-child rename)
 
 SET IDENTITY_INSERT Parts.BomLine OFF;
 

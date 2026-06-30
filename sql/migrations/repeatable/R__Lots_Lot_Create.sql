@@ -46,7 +46,9 @@ CREATE OR ALTER PROCEDURE Lots.Lot_Create
     @MinSerialNumber    INT           = NULL,
     @MaxSerialNumber    INT           = NULL,
     @AppUserId          BIGINT,
-    @TerminalLocationId BIGINT        = NULL
+    @TerminalLocationId BIGINT        = NULL,
+    @LotName            NVARCHAR(50)  = NULL,   -- D4: caller-supplied identity (pre-printed LTT); NULL = mint server-side (today's behavior)
+    @CavityNote         NVARCHAR(50)  = NULL    -- D2: free-text cavity when no active ToolCavity exists; stored in legacy Lot.CavityNumber
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -137,6 +139,39 @@ BEGIN
             RETURN;
         END
 
+        -- ---- 2b. D4: @LotName (caller-supplied identity) validation ----
+        -- NULL = mint server-side (the inline IdentifierSequence block below, today's
+        -- behavior). Supplied = use it verbatim; do NOT advance the 'Lot' counter (the
+        -- pre-printed LTT carries its own identity; burning a counter would desync).
+        IF @LotName IS NOT NULL
+        BEGIN
+            SET @LotName = LTRIM(RTRIM(@LotName));
+            IF @LotName = N''
+            BEGIN
+                SET @Message = N'LotName cannot be blank.';
+                EXEC Audit.Audit_LogFailure
+                    @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
+                    @EntityId = NULL, @LogEventTypeCode = N'LotCreated',
+                    @FailureReason = @Message, @ProcedureName = @ProcName,
+                    @AttemptedParameters = @Params;
+                SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @MintedLotName AS MintedLotName;
+                RETURN;
+            END
+            -- Friendly uniqueness pre-check (UQ_Lot_LotName is the concurrency backstop:
+            -- a race that slips past surfaces as 2627/2601 in the CATCH = Status 0 row).
+            IF EXISTS (SELECT 1 FROM Lots.Lot WHERE LotName = @LotName)
+            BEGIN
+                SET @Message = N'LOT name ''' + @LotName + N''' already exists.';
+                EXEC Audit.Audit_LogFailure
+                    @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
+                    @EntityId = NULL, @LogEventTypeCode = N'LotCreated',
+                    @FailureReason = @Message, @ProcedureName = @ProcName,
+                    @AttemptedParameters = @Params;
+                SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @MintedLotName AS MintedLotName;
+                RETURN;
+            END
+        END
+
         -- ---- 3. PieceCount sanity ----
         IF @PieceCount <= 0
         BEGIN
@@ -191,9 +226,10 @@ BEGIN
 
         IF @CellHasActiveTool = 1
         BEGIN
-            IF @ToolId IS NULL OR @ToolCavityId IS NULL
+            -- Tool is always required for a die-cast LOT (FDS-05-034).
+            IF @ToolId IS NULL
             BEGIN
-                SET @Message = N'Die-cast-origin LOT requires Tool and Cavity (FDS-05-034).';
+                SET @Message = N'Die-cast-origin LOT requires Tool (FDS-05-034).';
                 EXEC Audit.Audit_LogFailure
                     @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
                     @EntityId = NULL, @LogEventTypeCode = N'LotCreated',
@@ -219,93 +255,127 @@ BEGIN
                 RETURN;
             END
 
-            -- Cavity must belong to the Tool.
-            IF NOT EXISTS (
-                SELECT 1 FROM Tools.ToolCavity WHERE Id = @ToolCavityId AND ToolId = @ToolId
-            )
+            IF @ToolCavityId IS NULL
             BEGIN
-                SET @Message = N'Cavity does not belong to the specified Tool.';
-                EXEC Audit.Audit_LogFailure
-                    @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
-                    @EntityId = NULL, @LogEventTypeCode = N'LotCreated',
-                    @FailureReason = @Message, @ProcedureName = @ProcName,
-                    @AttemptedParameters = @Params;
-                SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @MintedLotName AS MintedLotName;
-                RETURN;
+                -- D2 manual-cavity path: no configured ToolCavity row to validate.
+                -- Require a free-text note; it is stored in the legacy Lot.CavityNumber
+                -- column (auditable, distinguishable from the validated case).
+                IF @CavityNote IS NULL OR LTRIM(RTRIM(@CavityNote)) = N''
+                BEGIN
+                    SET @Message = N'Die-cast-origin LOT requires a Cavity (select a configured cavity or enter one manually) (FDS-05-034).';
+                    EXEC Audit.Audit_LogFailure
+                        @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
+                        @EntityId = NULL, @LogEventTypeCode = N'LotCreated',
+                        @FailureReason = @Message, @ProcedureName = @ProcName,
+                        @AttemptedParameters = @Params;
+                    SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @MintedLotName AS MintedLotName;
+                    RETURN;
+                END
             END
-
-            -- Cavity status must be Active.
-            IF NOT EXISTS (
-                SELECT 1 FROM Tools.ToolCavity tc
-                INNER JOIN Tools.ToolCavityStatusCode sc ON sc.Id = tc.StatusCodeId
-                WHERE tc.Id = @ToolCavityId AND sc.Code = N'Active'
-            )
+            ELSE
             BEGIN
-                SET @Message = N'Cavity is not in Active status.';
-                EXEC Audit.Audit_LogFailure
-                    @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
-                    @EntityId = NULL, @LogEventTypeCode = N'LotCreated',
-                    @FailureReason = @Message, @ProcedureName = @ProcName,
-                    @AttemptedParameters = @Params;
-                SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @MintedLotName AS MintedLotName;
-                RETURN;
+                -- Validated path (unchanged): cavity must belong to the Tool and be Active.
+                IF NOT EXISTS (
+                    SELECT 1 FROM Tools.ToolCavity WHERE Id = @ToolCavityId AND ToolId = @ToolId
+                )
+                BEGIN
+                    SET @Message = N'Cavity does not belong to the specified Tool.';
+                    EXEC Audit.Audit_LogFailure
+                        @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
+                        @EntityId = NULL, @LogEventTypeCode = N'LotCreated',
+                        @FailureReason = @Message, @ProcedureName = @ProcName,
+                        @AttemptedParameters = @Params;
+                    SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @MintedLotName AS MintedLotName;
+                    RETURN;
+                END
+
+                IF NOT EXISTS (
+                    SELECT 1 FROM Tools.ToolCavity tc
+                    INNER JOIN Tools.ToolCavityStatusCode sc ON sc.Id = tc.StatusCodeId
+                    WHERE tc.Id = @ToolCavityId AND sc.Code = N'Active'
+                )
+                BEGIN
+                    SET @Message = N'Cavity is not in Active status.';
+                    EXEC Audit.Audit_LogFailure
+                        @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
+                        @EntityId = NULL, @LogEventTypeCode = N'LotCreated',
+                        @FailureReason = @Message, @ProcedureName = @ProcName,
+                        @AttemptedParameters = @Params;
+                    SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @MintedLotName AS MintedLotName;
+                    RETURN;
+                END
             END
         END
 
         -- ===== Mutation (atomic) =====
         BEGIN TRANSACTION;
 
-        -- Mint the LotName INSIDE the tran (rollback un-burns the counter).
-        -- Mint inline (gap-free, row-locked) rather than via INSERT-EXEC of
-        -- Lots.IdentifierSequence_Next: this proc is itself invoked via
-        -- INSERT-EXEC by callers/tests, and nesting INSERT-EXEC is illegal.
-        -- The minting logic mirrors IdentifierSequence_Next exactly and runs
-        -- inside this proc's transaction, so a rollback un-burns the counter
-        -- (the point of B6). IdentifierSequence_Next remains the standalone
-        -- Ignition-facing single-result-set proc for other minting paths.
+        -- D4: caller-supplied LotName (pre-printed LTT) uses the value verbatim and
+        -- does NOT touch the 'Lot' counter; NULL path mints inline as today.
         DECLARE @SeqLast   BIGINT,
                 @SeqEnd    BIGINT,
                 @SeqFormat NVARCHAR(50),
                 @SeqPrefix NVARCHAR(50),
                 @SeqPad    INT;
 
-        SELECT @SeqLast   = s.LastValue + 1,
-               @SeqEnd    = s.EndingValue,
-               @SeqFormat = s.FormatString
-        FROM Lots.IdentifierSequence s WITH (ROWLOCK, UPDLOCK, HOLDLOCK)
-        WHERE s.Code = N'Lot';
+        IF @LotName IS NOT NULL
+        BEGIN
+            SET @MintedLotName = @LotName;   -- pre-printed LTT carries its own identity
+        END
+        ELSE
+        BEGIN
+            -- Mint the LotName INSIDE the tran (rollback un-burns the counter).
+            -- Mint inline (gap-free, row-locked) rather than via INSERT-EXEC of
+            -- Lots.IdentifierSequence_Next: this proc is itself invoked via
+            -- INSERT-EXEC by callers/tests, and nesting INSERT-EXEC is illegal.
+            -- The minting logic mirrors IdentifierSequence_Next exactly and runs
+            -- inside this proc's transaction, so a rollback un-burns the counter
+            -- (the point of B6). IdentifierSequence_Next remains the standalone
+            -- Ignition-facing single-result-set proc for other minting paths.
+            SELECT @SeqLast   = s.LastValue + 1,
+                   @SeqEnd    = s.EndingValue,
+                   @SeqFormat = s.FormatString
+            FROM Lots.IdentifierSequence s WITH (ROWLOCK, UPDLOCK, HOLDLOCK)
+            WHERE s.Code = N'Lot';
 
-        IF @SeqLast IS NULL
-            RAISERROR(N'Identifier sequence ''Lot'' is not configured.', 16, 1);
-        IF @SeqLast > @SeqEnd
-            RAISERROR(N'Identifier sequence ''Lot'' is exhausted.', 16, 1);
+            IF @SeqLast IS NULL
+                RAISERROR(N'Identifier sequence ''Lot'' is not configured.', 16, 1);
+            IF @SeqLast > @SeqEnd
+                RAISERROR(N'Identifier sequence ''Lot'' is exhausted.', 16, 1);
 
-        UPDATE Lots.IdentifierSequence
-        SET LastValue = @SeqLast, UpdatedAt = SYSUTCDATETIME()
-        WHERE Code = N'Lot';
+            UPDATE Lots.IdentifierSequence
+            SET LastValue = @SeqLast, UpdatedAt = SYSUTCDATETIME()
+            WHERE Code = N'Lot';
 
-        SET @SeqPrefix = CASE WHEN CHARINDEX(N'{', @SeqFormat) > 0
-                              THEN LEFT(@SeqFormat, CHARINDEX(N'{', @SeqFormat) - 1)
-                              ELSE @SeqFormat END;
-        SET @SeqPad = TRY_CAST(
-            SUBSTRING(@SeqFormat,
-                      CHARINDEX(N'D', @SeqFormat, CHARINDEX(N'{', @SeqFormat)) + 1,
-                      CHARINDEX(N'}', @SeqFormat, CHARINDEX(N'{', @SeqFormat)) - CHARINDEX(N'D', @SeqFormat, CHARINDEX(N'{', @SeqFormat)) - 1)
-            AS INT);
-        SET @MintedLotName = CASE WHEN @SeqPad IS NULL OR @SeqPad < 1
-            THEN @SeqPrefix + CAST(@SeqLast AS NVARCHAR(20))
-            ELSE @SeqPrefix + RIGHT(REPLICATE(N'0', @SeqPad) + CAST(@SeqLast AS NVARCHAR(20)), @SeqPad) END;
+            SET @SeqPrefix = CASE WHEN CHARINDEX(N'{', @SeqFormat) > 0
+                                  THEN LEFT(@SeqFormat, CHARINDEX(N'{', @SeqFormat) - 1)
+                                  ELSE @SeqFormat END;
+            SET @SeqPad = TRY_CAST(
+                SUBSTRING(@SeqFormat,
+                          CHARINDEX(N'D', @SeqFormat, CHARINDEX(N'{', @SeqFormat)) + 1,
+                          CHARINDEX(N'}', @SeqFormat, CHARINDEX(N'{', @SeqFormat)) - CHARINDEX(N'D', @SeqFormat, CHARINDEX(N'{', @SeqFormat)) - 1)
+                AS INT);
+            SET @MintedLotName = CASE WHEN @SeqPad IS NULL OR @SeqPad < 1
+                THEN @SeqPrefix + CAST(@SeqLast AS NVARCHAR(20))
+                ELSE @SeqPrefix + RIGHT(REPLICATE(N'0', @SeqPad) + CAST(@SeqLast AS NVARCHAR(20)), @SeqPad) END;
+        END
+
+        -- D2: free-text cavity stored in the legacy Lot.CavityNumber when no validated
+        -- ToolCavityId was supplied (precomputed local; SP template forbids inline CASE
+        -- in the VALUES list).
+        DECLARE @CavityNumberToStore NVARCHAR(50) =
+            CAST(CASE WHEN @ToolCavityId IS NULL THEN @CavityNote ELSE NULL END AS NVARCHAR(50));
 
         INSERT INTO Lots.Lot (
             LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, MaxPieceCount,
-            Weight, WeightUomId, ToolId, ToolCavityId, VendorLotNumber,
+            Weight, WeightUomId, ToolId, ToolCavityId, CavityNumber, VendorLotNumber,
             MinSerialNumber, MaxSerialNumber, CurrentLocationId,
             TotalInProcess, InventoryAvailable,
             CreatedByUserId, CreatedAtTerminalId, CreatedAt
         )
         VALUES (
             @MintedLotName, @ItemId, @LotOriginTypeId, @GoodStatusId, @PieceCount, @MaxLotSize,
-            @Weight, @WeightUomId, @ToolId, @ToolCavityId, @VendorLotNumber,
+            @Weight, @WeightUomId, @ToolId, @ToolCavityId, @CavityNumberToStore, @VendorLotNumber,
             @MinSerialNumber, @MaxSerialNumber, @CurrentLocationId,
             0, @PieceCount,                          -- B5 materialized: TotalInProcess / InventoryAvailable
             @AppUserId, @TerminalLocationId, SYSUTCDATETIME()
@@ -331,9 +401,11 @@ BEGIN
         DECLARE @ToolCode   NVARCHAR(50)  = (SELECT Code FROM Tools.Tool WHERE Id = @ToolId);
         DECLARE @CavityNum  NVARCHAR(50)  = (SELECT CavityNumber FROM Tools.ToolCavity WHERE Id = @ToolCavityId);
 
+        -- Cavity prose: validated cavity number, else the free-text manual note (D2), else '?'.
         DECLARE @ToolSuffix NVARCHAR(200) =
             CASE WHEN @ToolId IS NOT NULL
-                 THEN N'; Tool ' + ISNULL(@ToolCode, N'?') + N', Cavity ' + ISNULL(@CavityNum, N'?')
+                 THEN N'; Tool ' + ISNULL(@ToolCode, N'?') + N', Cavity '
+                      + ISNULL(@CavityNum, ISNULL(@CavityNote + N' (manual)', N'?'))
                  ELSE N'' END;
 
         DECLARE @ActivityRaw NVARCHAR(MAX) =

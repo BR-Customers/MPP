@@ -66,10 +66,10 @@ def execList(nq, params=None):
                     when no rows matched -- never None, never raises for
                     the not-found case.
     """
-    BlueRidge.Common.Util.log("nq=%s params=%s" % (nq, params))
+    BlueRidge.Common.Util.log("nq=%s params=%s" % (nq, params), level="debug")
     ds = system.db.runNamedQuery(nq, params) if params is not None else system.db.runNamedQuery(nq)
     rows = _rowsToDicts(ds)
-    BlueRidge.Common.Util.log("rows=%d" % len(rows))
+    BlueRidge.Common.Util.log("rows=%d" % len(rows), level="debug")
     return rows
 
 
@@ -90,7 +90,7 @@ def execOne(nq, params=None):
     if not rows:
         return None
     if len(rows) > 1:
-        BlueRidge.Common.Util.log("WARN multi-row from execOne nq=%s" % nq)
+        BlueRidge.Common.Util.log("multi-row from execOne nq=%s" % nq, level="warn")
     return rows[0]
 
 
@@ -120,13 +120,13 @@ def execMutation(nq, params=None):
               exceptions. Hard SQL errors / RAISERROR propagate as
               system.db exceptions.
     """
-    BlueRidge.Common.Util.log("nq=%s params=%s" % (nq, params))
+    BlueRidge.Common.Util.log("nq=%s params=%s" % (nq, params), level="debug")
     ds = system.db.runNamedQuery(nq, params) if params is not None else system.db.runNamedQuery(nq)
     rows = _rowsToDicts(ds)
     if not rows:
         return {"Status": 0, "Message": "No status returned from proc"}
     if len(rows) > 1:
-        BlueRidge.Common.Util.log("WARN multi-row from execMutation nq=%s" % nq)
+        BlueRidge.Common.Util.log("multi-row from execMutation nq=%s" % nq, level="warn")
     result = rows[0]
-    BlueRidge.Common.Util.log("result=%s" % result)
+    BlueRidge.Common.Util.log("result=%s" % result, level="debug")
     return result

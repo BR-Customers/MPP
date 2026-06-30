@@ -1,0 +1,114 @@
+{
+  "custom": {
+    "alert": {
+      "text": "",
+      "visible": false
+    }
+  },
+  "params": {},
+  "props": {
+    "defaultSize": {
+      "height": 52,
+      "width": 700
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Msg"
+            },
+            "position": {
+              "grow": 1
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.alert.text"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--pf-status-warn-fg, #7c2d12)",
+                "fontWeight": "600"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.custom.alert \u003d {\"visible\": False, \"text\": \"\"}"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "Ack"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Acknowledge"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "Banner"
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.custom.alert.visible}"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "backgroundColor": "var(--pf-status-warn-bg, #fde68a)",
+            "borderRadius": "6px",
+            "gap": "12px",
+            "padding": "10px 16px"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column"
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "print-failure-alert",
+          "pageScope": false,
+          "script": "\tmsg \u003d (payload.get(\"message\") if payload else None) or \"A shipping label failed to print.\"\n\tself.view.custom.alert \u003d {\"visible\": True, \"text\": msg}",
+          "sessionScope": true,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

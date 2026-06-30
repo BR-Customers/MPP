@@ -90,7 +90,7 @@ from java.util import Collection as JavaCollection
 _DEV_APP_USER_ID = 2
 
 
-def log(msg):
+def log(msg, level="info"):
     """
     Function-trace logger. Auto-fills the calling module's dotted name and
     the calling function's name into the gateway log line, so call sites
@@ -100,13 +100,19 @@ def log(msg):
         <module.path>: <funcName>() <msg>
 
     Args:
-        msg (str): The message to log. Format yourself before calling --
-                   the helper does no interpolation.
+        msg (str):   The message to log. Format yourself before calling --
+                     the helper does no interpolation.
+        level (str): Logger method to use -- "info" (default), "debug",
+                     "trace", "warn", or "error". High-frequency trace
+                     points (timer ticks, per-call DB traces) pass
+                     level="debug" so they stay out of the default INFO
+                     gateway log; bump the relevant logger to DEBUG in the
+                     gateway to see them again when diagnosing.
     """
     frame  = inspect.currentframe().f_back
     module = frame.f_globals.get("__name__", "unknown")
     func   = frame.f_code.co_name
-    system.util.getLogger(module).info("%s() %s" % (func, msg))
+    getattr(system.util.getLogger(module), level)("%s() %s" % (func, msg))
 
 
 def _currentAppUserId():
@@ -133,6 +139,30 @@ def _currentAppUserId():
         # (e.g., timer scripts, startup hooks). Fall through to dev value.
         pass
     return _DEV_APP_USER_ID
+
+
+def toIntOrNone(v):
+    """Coerce a (possibly string) numeric input to int, or None for blank/non-numeric.
+    Plant-floor number fields are text-fields (numeric-entry-field shrinks on focus),
+    so values arrive as strings; this hands typed NQ params a clean int or NULL."""
+    v = extractQualifiedValues(v)
+    try:
+        if v is None or unicode(v).strip() == "":
+            return None
+        return int(float(v))
+    except (ValueError, TypeError):
+        return None
+
+
+def toDecimalOrNone(v):
+    """Coerce a (possibly string) numeric input to float, or None for blank/non-numeric."""
+    v = extractQualifiedValues(v)
+    try:
+        if v is None or unicode(v).strip() == "":
+            return None
+        return float(v)
+    except (ValueError, TypeError):
+        return None
 
 
 def extractQualifiedValues(data):

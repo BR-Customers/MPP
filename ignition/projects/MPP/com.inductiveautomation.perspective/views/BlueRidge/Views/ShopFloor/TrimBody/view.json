@@ -1,0 +1,800 @@
+{
+  "custom": {
+    "activeLotId": null,
+    "destCells": [],
+    "destValue": null,
+    "inScan": "",
+    "outScan": "",
+    "scrapCount": null,
+    "shotCount": null,
+    "trimState": "out"
+  },
+  "params": {
+    "areaId": null
+  },
+  "propConfig": {
+    "custom.destCells": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Location.Location.getMachiningDestinationsForDropdown\", 0)"
+        },
+        "type": "expr"
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 1280
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Title"
+                },
+                "props": {
+                  "style": {
+                    "fontSize": "22px",
+                    "fontWeight": 700
+                  },
+                  "text": "Trim Station"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Subtitle"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  },
+                  "text": "Shared Terminal - Trim Shop Area"
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "TitleBlock"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "direction": "column"
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=True, overlayDismiss=True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "OperatorLabel",
+              "tooltip": {
+                "text": "Switch operator"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub",
+                "cursor": "pointer"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "PausedLotIndicator"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.params.locationId": {
+                "binding": {
+                  "config": {
+                    "path": "session.custom.terminal.zoneLocationId"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "path": "BlueRidge/Components/PlantFloor/PausedLotIndicator"
+            },
+            "type": "ia.display.view"
+          }
+        ],
+        "meta": {
+          "name": "Header"
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "gap": "16px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "ActiveCellLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-cell-context-label"
+              },
+              "text": "Active Cell"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "ActiveCellValue"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-cell-context-value"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"No cell selected\", {session.custom.cell.name})"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "meta": {
+              "name": "Spacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "TrimNote"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub"
+              },
+              "text": "Trim is yield loss only - LOT keeps its cast-part identity through Trim OUT."
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": {
+          "name": "ContextBar"
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "classes": "pf-terminal-cell-context",
+            "gap": "12px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.custom.trimState = \"in\""
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "BtnStateIn"
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.trimState} = \"in\", \"pf-btn pf-btn-primary\", \"pf-btn pf-btn-secondary\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "minHeight": "40px",
+                "minWidth": "150px"
+              },
+              "text": "Check IN"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.custom.trimState = \"out\""
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "BtnStateOut"
+            },
+            "propConfig": {
+              "props.style.classes": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.trimState} = \"out\", \"pf-btn pf-btn-primary\", \"pf-btn pf-btn-secondary\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "minHeight": "40px",
+                "minWidth": "150px"
+              },
+              "text": "Trim OUT"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "StateToggle"
+        },
+        "props": {
+          "style": {
+            "gap": "8px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "InHeader"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-panel-header"
+              },
+              "text": "Movement Scan - Receive at Trim Cell"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "InSub"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub"
+              },
+              "text": "Validates eligibility (v_EffectiveItemLocation) + MaxParts cap on scan-in."
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "MovementScan"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.params.destinationLocationId": {
+                "binding": {
+                  "config": {
+                    "path": "session.custom.terminal.zoneLocationId"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "path": "BlueRidge/Components/PlantFloor/MovementScan"
+            },
+            "type": "ia.display.view"
+          },
+          {
+            "meta": {
+              "name": "InNote"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-field-help"
+              },
+              "text": "On scan-in the LOT moves to this Cell. Closing counters are captured on the OUT step."
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": {
+          "name": "InPanel"
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.custom.trimState} = \"in\""
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "pf-panel",
+            "gap": "12px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "OutHeader"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-panel-header"
+              },
+              "text": "Trim OUT - close + route"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "OutSub"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub"
+              },
+              "text": "Trim is yield loss - no shot delta. Scan the LOT, pick the Machining destination, record rejects."
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "OutScanLabel"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-field-label"
+                  },
+                  "text": "Scan LTT Barcode"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "events": {
+                  "dom": {
+                    "onBlur": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.resolveOutScan()"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "OutScanInput"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.outScan"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "Scan LOT ticket",
+                  "style": {
+                    "classes": "pf-field-input-mono",
+                    "minHeight": "44px",
+                    "textTransform": "uppercase"
+                  }
+                },
+                "type": "ia.input.text-field"
+              },
+              {
+                "meta": {
+                  "name": "ActiveLotLabel"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "if(isNull({view.custom.activeLotId}), \"No LOT selected\", \"LOT #\" + toStr({view.custom.activeLotId}))"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-field-help"
+                  }
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "OutScanField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "DestLabel"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-field-label"
+                  },
+                  "text": "Destination (Machining)"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "DestDropdown"
+                },
+                "propConfig": {
+                  "props.options": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.destCells"
+                      },
+                      "type": "property"
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.destValue"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "Select destination cell",
+                  "style": {
+                    "minHeight": "44px"
+                  }
+                },
+                "type": "ia.input.dropdown"
+              }
+            ],
+            "meta": {
+              "name": "DestField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "ShotLabel"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-field-label"
+                      },
+                      "text": "Shot count"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "ShotCountInput"
+                    },
+                    "propConfig": {
+                      "props.value": {
+                        "binding": {
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.shotCount"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-field-input",
+                        "minHeight": "44px"
+                      }
+                    },
+                    "type": "ia.input.numeric-entry-field"
+                  }
+                ],
+                "meta": {
+                  "name": "ShotField"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-field"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "ScrapLabel"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-field-label"
+                      },
+                      "text": "Scrap count"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "ScrapCountInput"
+                    },
+                    "propConfig": {
+                      "props.value": {
+                        "binding": {
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.scrapCount"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-field-input",
+                        "minHeight": "44px"
+                      }
+                    },
+                    "type": "ia.input.numeric-entry-field"
+                  }
+                ],
+                "meta": {
+                  "name": "ScrapField"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-field"
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "CountsRow"
+            },
+            "props": {
+              "style": {
+                "gap": "12px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.submitTrimOut()"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "BtnTrimOut"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-btn pf-btn-primary pf-btn-large",
+                    "minHeight": "44px",
+                    "minWidth": "160px"
+                  },
+                  "text": "Trim OUT"
+                },
+                "type": "ia.input.button"
+              },
+              {
+                "meta": {
+                  "name": "OutActionsSpacer"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "OutActionsNote"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  },
+                  "text": "Whole-LOT move - no split at Trim (sub-LOT split is at Machining OUT)."
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "OutActions"
+            },
+            "props": {
+              "alignItems": "center",
+              "style": {
+                "classes": "pf-actions",
+                "gap": "8px"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "OutPanel"
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.custom.trimState} = \"out\""
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "pf-panel",
+            "gap": "12px"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "canvas",
+        "gap": "16px",
+        "padding": "24px"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "resolveOutScan",
+          "params": [],
+          "script": "\tcode = self.view.custom.outScan\n\tif not code:\n\t\treturn\n\tr = BlueRidge.Lots.Lot.getByName(code)\n\tif r:\n\t\tself.view.custom.activeLotId = r.get(\"Id\")\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"LOT not found\", \"No LOT matches '%s'.\" % code, \"warning\")"
+        },
+        {
+          "name": "submitTrimOut",
+          "params": [],
+          "script": "\tlotId = self.view.custom.activeLotId\n\tif lotId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT\", \"Scan or select a LOT before recording Trim OUT.\", \"warning\")\n\t\treturn\n\toperationTemplateId = BlueRidge.Parts.OperationTemplate.getActiveTemplateIdByCode(\"TrimOut\")\n\tif operationTemplateId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Template missing\", \"No active 'TrimOut' operation template is published.\", \"error\")\n\t\treturn\n\tdest = self.view.custom.destValue\n\tif dest is None or dest == \"\":\n\t\tBlueRidge.Common.Notify.toast(\"No destination\", \"Scan or pick a Machining destination.\", \"warning\")\n\t\treturn\n\tdata = {\n\t\t\"parentLotId\": lotId,\n\t\t\"operationTemplateId\": operationTemplateId,\n\t\t\"shotCount\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.shotCount),\n\t\t\"scrapCount\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.scrapCount),\n\t\t\"destinationCellLocationId\": dest,\n\t}\n\tres = BlueRidge.Workorder.TrimOut.record(data)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Trim OUT recorded\")\n\tif res.get(\"Status\"):\n\t\tsystem.perspective.navigate(\"/shop-floor/lot-detail/\" + str(lotId))"
+        },
+        {
+          "name": "startup",
+          "params": [],
+          "script": "\t# Operator gate: no logged-in operator -> open the initials popup OVER this screen.\n\t# Non-blocking: the page still populates behind the modal, and session.custom is\n\t# reactive, so the operator label/mutations pick up the user with no re-populate.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "trimInMoved",
+          "pageScope": true,
+          "script": "\tself.view.custom.activeLotId = payload.get(\"lotId\")\n\tself.view.custom.trimState = \"out\"\n\t# TODO(phase4): record the TrimIn checkpoint via ProductionEvent.record once cumulative inputs exist.",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex",
+    "events": {
+      "system": {
+        "onStartup": {
+          "config": {
+            "script": "\tself.startup()"
+          },
+          "scope": "G",
+          "type": "script"
+        }
+      }
+    }
+  }
+}

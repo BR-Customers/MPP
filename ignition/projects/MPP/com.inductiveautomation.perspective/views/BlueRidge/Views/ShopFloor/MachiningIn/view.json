@@ -1,0 +1,677 @@
+{
+  "custom": {
+    "activeMachined": {
+      "Id": null,
+      "lotName": "",
+      "itemPartNumber": "",
+      "pieceCount": 0
+    },
+    "holdCount": 0,
+    "queue": [],
+    "pending": {
+      "lotName": "",
+      "sourceItem": "",
+      "sourceLotId": null
+    },
+    "refreshToken": 0
+  },
+  "params": {},
+  "propConfig": {
+    "custom.activeMachined": {
+      "binding": {
+        "config": {
+          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, false, {view.custom.refreshToken}), \"\")"
+        },
+        "transforms": [
+          {
+            "code": "\tmachined = [r for r in (value or []) if not r.get(\"HasRenameBom\")]\n\tr = machined[-1] if machined else {}\n\treturn {\"Id\": r.get(\"Id\"), \"lotName\": r.get(\"LotName\") or \"\", \"itemPartNumber\": r.get(\"ItemPartNumber\") or \"\", \"pieceCount\": r.get(\"PieceCount\") or 0}",
+            "type": "script"
+          }
+        ],
+        "type": "expr"
+      }
+    },
+    "custom.holdCount": {
+      "binding": {
+        "config": {
+          "path": "view.custom.queue"
+        },
+        "transforms": [
+          {
+            "code": "\treturn len([r for r in (value or []) if (r.get(\"lotStatusCode\") or \"\") != \"Good\"])",
+            "type": "script"
+          }
+        ],
+        "type": "property"
+      }
+    },
+    "custom.queue": {
+      "binding": {
+        "config": {
+          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, false, {view.custom.refreshToken}), \"\")"
+        },
+        "transforms": [
+          {
+            "code": "\trows = [r for r in (value or []) if r.get(\"HasRenameBom\")]\n\treturn [{\"sourceLotId\": r.get(\"Id\"), \"lotName\": r.get(\"LotName\") or \"\", \"sourceItem\": r.get(\"ItemPartNumber\") or \"\", \"pieceCount\": r.get(\"PieceCount\") or 0, \"arrival\": str(r.get(\"LastMovementAt\") or \"\"), \"position\": i + 1, \"lotStatusCode\": r.get(\"LotStatusCode\") or \"\"} for i, r in enumerate(rows)]",
+            "type": "script"
+          }
+        ],
+        "type": "expr"
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 1280
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "TitleText"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-terminal-title",
+                    "fontSize": "24px",
+                    "fontWeight": "600"
+                  },
+                  "text": "Machining IN"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "TitleMeta"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-terminal-title-meta"
+                  },
+                  "text": "5G0 Machining WC - dedicated terminal - whole-LOT FIFO pick"
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-terminal-title",
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=True, overlayDismiss=True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "OperatorLabel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub",
+                "cursor": "pointer"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "PausedLabel"
+                },
+                "props": {
+                  "style": {
+                    "fontSize": "13px",
+                    "fontWeight": "500"
+                  },
+                  "text": "On Hold"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "PausedCount"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "toStr({view.custom.holdCount})"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-paused-indicator-count"
+                  }
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "PausedIndicator"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.custom.holdCount} > 0"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "alignItems": "center",
+              "style": {
+                "classes": "pf-paused-indicator",
+                "gap": "8px",
+                "padding": "8px 14px"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "flex-end",
+          "justify": "space-between",
+          "style": {
+            "classes": "pf-terminal-header",
+            "gap": "12px",
+            "paddingBottom": "16px"
+          },
+          "wrap": "wrap"
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "CtxLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-cell-context-label"
+              },
+              "text": "Active Cell"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "ActiveCellValue"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"No cell bound to this terminal\", {session.custom.cell.name})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-cell-context-value"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "CtxSpacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "CtxHint"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub"
+              },
+              "text": "Dedicated terminal - cell fixed by terminal binding."
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": {
+          "name": "CellContext"
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "classes": "pf-terminal-cell-context",
+            "gap": "12px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "QueueTitle"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "'FIFO Queue - ' + toStr(len({view.custom.queue})) + ' LOTs awaiting'"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "14px",
+                    "fontWeight": "600",
+                    "letterSpacing": "0.06em",
+                    "textTransform": "uppercase"
+                  }
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "QueueSub"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  },
+                  "text": "Whole cast/trim LOTs moved here at Trim OUT (1:1). No scan-to-receive - pick from queue; BOM-driven rename fires on pick."
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "QueueHeader"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "alignItems": "flex-start",
+                "classes": "pf-panel-header",
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "EmptyHint"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "len({view.custom.queue}) = 0"
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if(isNull({session.custom.cell.locationId}), 'No cell is bound to this terminal.', 'This cell has no LOTs queued.')"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "QueueRepeater"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "propConfig": {
+              "props.instances": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.queue"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "elementPosition": {
+                "basis": "92px",
+                "shrink": 0
+              },
+              "path": "BlueRidge/Components/PlantFloor/Machining/QueueRow",
+              "style": {
+                "gap": "8px",
+                "overflowY": "auto"
+              },
+              "useDefaultViewWidth": false
+            },
+            "type": "ia.display.flex-repeater"
+          },
+          {
+            "meta": {
+              "name": "QueueFootnote"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub"
+              },
+              "text": "Override-FIFO selection prompts for an optional reason (recorded). Held LOTs cannot be picked until the hold is released."
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": {
+          "name": "QueuePanel"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "pf-panel",
+            "gap": "12px",
+            "overflow": "hidden",
+            "padding": "14px 16px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "ActiveTitle"
+                },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-secondary)",
+                    "fontSize": "14px",
+                    "fontWeight": "600",
+                    "letterSpacing": "0.06em",
+                    "textTransform": "uppercase"
+                  },
+                  "text": "Active machined LOT (after pick)"
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "ActiveHeader"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-panel-header"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "ActiveEmptyText"
+                },
+                "props": {
+                  "style": {
+                    "fontSize": "13px",
+                    "maxWidth": "480px",
+                    "textAlign": "center"
+                  },
+                  "text": "No LOT picked yet. Pick a LOT above to fire the BOM-Driven Rename Confirmation. On confirm, a new machined LOT is created from this whole LOT."
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "ActiveEmpty"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "isNull({view.custom.activeMachined.Id})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "alignItems": "center",
+              "direction": "column",
+              "justify": "center",
+              "style": {
+                "classes": "pf-empty-state",
+                "gap": "8px",
+                "padding": "32px 24px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "ActiveCardName"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "if(isNull({view.custom.activeMachined.lotName}) || {view.custom.activeMachined.lotName} = \"\", \"(machined LOT)\", {view.custom.activeMachined.lotName})"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-value",
+                    "fontSize": "18px"
+                  }
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "ActiveCardSub"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.activeMachined.itemPartNumber} + \"  |  \" + toStr({view.custom.activeMachined.pieceCount}) + \" pcs  |  machined LOT #\" + toStr({view.custom.activeMachined.Id})"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  }
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "ActiveCard"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "!isNull({view.custom.activeMachined.Id})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "backgroundColor": "var(--mpp-surface-raised)",
+                "border": "1px solid var(--mpp-border-default)",
+                "borderRadius": "8px",
+                "gap": "6px",
+                "padding": "16px"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "ActiveLotPanel"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "pf-panel",
+            "gap": "12px",
+            "padding": "14px 16px"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\t# Dedicated-flavor context (FDS-02-010): bind the cell to the terminal's parent line.\n\tt = self.session.custom.terminal\n\tif t and t.get(\"zoneLocationId\"):\n\t\tself.session.custom.cell = {\"locationId\": t.get(\"zoneLocationId\"), \"code\": t.get(\"zoneName\") or \"\", \"name\": t.get(\"zoneName\") or \"\"}\n\ttry:\n\t\tself.session.custom.presence.policy = \"confirm\"\n\texcept:\n\t\tself.session.custom.presence = {\"policy\": \"confirm\"}\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
+          }
+        }
+      }
+    },
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "pf-terminal canvas",
+        "gap": "16px",
+        "overflowY": "auto",
+        "padding": "16px"
+      }
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "machiningPick",
+          "pageScope": true,
+          "script": "\tself.view.custom.pending = {\"sourceLotId\": payload.get(\"sourceLotId\"), \"lotName\": payload.get(\"lotName\") or \"\", \"sourceItem\": payload.get(\"sourceItem\") or \"\"}\n\tmsg = \"Pick LOT \" + (payload.get(\"lotName\") or \"\") + \" (\" + (payload.get(\"sourceItem\") or \"\") + \") and rename via its machining BOM?\"\n\tsystem.perspective.openPopup(\"mpp-bom-rename\", \"BlueRidge/Components/Popups/BomRenameConfirm\", params={\"title\": \"Machining IN - Pick & Rename\", \"message\": msg, \"replyMessage\": \"bomRenameResult\", \"popupId\": \"mpp-bom-rename\"}, modal=True)",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "bomRenameResult",
+          "pageScope": true,
+          "script": "\tif payload.get(\"action\") != \"confirm\":\n\t\treturn\n\tp = self.view.custom.pending\n\tcellId = self.session.custom.cell.locationId\n\tif not p or p.get(\"sourceLotId\") is None or cellId is None:\n\t\treturn\n\tresult = BlueRidge.Workorder.Machining.pickAndConsume(p.get(\"sourceLotId\"), cellId, None, self.session.custom.appUserId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining IN\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.pending = {\"sourceLotId\": None, \"lotName\": \"\", \"sourceItem\": \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

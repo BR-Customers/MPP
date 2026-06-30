@@ -15,7 +15,8 @@
   },
   "props": {
     "defaultSize": {
-      "width": 1280
+      "width": 1280,
+      "height": 800
     }
   },
   "root": {
@@ -135,7 +136,7 @@
           "component": {
             "onSelectionChange": {
               "config": {
-                "script": "\tsel \u003d self.props.selection.data\n\tif sel:\n\t\tself.view.rootContainer.selectTerminal(sel[0])"
+                "script": "\tsel = self.props.selection.data\n\tif sel:\n\t\tself.view.rootContainer.selectTerminal(sel[0])"
               },
               "scope": "G",
               "type": "script"
@@ -560,12 +561,12 @@
           "params": [
             "row"
           ],
-          "script": "\trow \u003d BlueRidge.Common.Util.extractQualifiedValues(row) or {}\n\tif not row.get(\"TerminalId\"):\n\t\treturn\n\tself.session.custom.terminal \u003d {\"terminalLocationId\": row.get(\"TerminalId\"), \"terminalCode\": row.get(\"TerminalCode\"), \"terminalName\": row.get(\"TerminalName\"), \"zoneLocationId\": row.get(\"ZoneId\"), \"zoneName\": row.get(\"ZoneName\"), \"defaultScreen\": row.get(\"DefaultScreen\") or \"\", \"terminalMode\": row.get(\"TerminalMode\") or \"\", \"isFallback\": bool(row.get(\"IsFallback\"))}\n\tsystem.perspective.navigate(row.get(\"DefaultScreen\") or \"/\")"
+          "script": "\trow = BlueRidge.Common.Util.extractQualifiedValues(row) or {}\n\ttid = row.get(\"TerminalId\")\n\tif not tid:\n\t\treturn\n\tfull = BlueRidge.Location.Terminal.findById(self.view.custom.terminals, tid) or row\n\tself.session.custom.terminal = {\"terminalLocationId\": full.get(\"TerminalId\"), \"terminalCode\": full.get(\"TerminalCode\"), \"terminalName\": full.get(\"TerminalName\"), \"zoneLocationId\": full.get(\"ZoneId\"), \"zoneName\": full.get(\"ZoneName\"), \"defaultScreen\": full.get(\"DefaultScreen\") or \"\", \"isFallback\": bool(full.get(\"IsFallback\"))}\n\tsystem.perspective.navigate(full.get(\"DefaultScreen\") or \"/\")"
         },
         {
           "name": "selectByScan",
           "params": [],
-          "script": "\tcode \u003d (self.view.custom.scanCode or \"\").strip().upper()\n\tif not code:\n\t\treturn\n\tmatch \u003d BlueRidge.Location.Terminal.findByCode(self.view.custom.terminals, code)\n\tif match is None:\n\t\treturn\n\tself.selectTerminal(match)"
+          "script": "\tcode = (self.view.custom.scanCode or \"\").strip().upper()\n\tif not code:\n\t\treturn\n\tmatch = BlueRidge.Location.Terminal.findByCode(self.view.custom.terminals, code)\n\tif match is None:\n\t\treturn\n\tself.selectTerminal(match)"
         }
       ],
       "extensionFunctions": null,

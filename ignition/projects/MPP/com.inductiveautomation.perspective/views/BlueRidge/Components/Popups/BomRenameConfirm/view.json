@@ -1,0 +1,79 @@
+{
+  "custom": {},
+  "params": {
+    "title": "Pick & Rename",
+    "message": "Pick this LOT and rename via its machining BOM?",
+    "replyMessage": "bomRenameResult",
+    "popupId": "mpp-bom-rename"
+  },
+  "propConfig": {
+    "params.title": { "paramDirection": "input", "persistent": true },
+    "params.message": { "paramDirection": "input", "persistent": true },
+    "params.replyMessage": { "paramDirection": "input", "persistent": true },
+    "params.popupId": { "paramDirection": "input", "persistent": true }
+  },
+  "props": {
+    "defaultSize": { "height": 200, "width": 480 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "column",
+      "style": { "classes": "surface-card", "gap": "16px", "padding": "24px" }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Title" },
+        "props": { "style": { "fontSize": "20px", "fontWeight": 700 } },
+        "propConfig": {
+          "props.text": { "binding": { "type": "property", "config": { "path": "view.params.title" } } }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": { "name": "Message" },
+        "position": { "grow": 1 },
+        "props": { "style": { "classes": "pf-kpi-sub" } },
+        "propConfig": {
+          "props.text": { "binding": { "type": "property", "config": { "path": "view.params.message" } } }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "ButtonRow" },
+        "props": { "direction": "row", "alignItems": "center", "wrap": "wrap", "style": { "gap": "10px" } },
+        "children": [
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "CancelButton" },
+            "props": { "text": "Cancel", "style": { "classes": "pf-btn pf-btn-secondary pf-btn-large" } },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script", "scope": "G",
+                  "config": { "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"action\": \"cancel\"}, scope=\"page\")\n\tsystem.perspective.closePopup(id=self.view.params.popupId)" }
+                }
+              }
+            }
+          },
+          { "type": "ia.display.label", "meta": { "name": "Spacer" }, "position": { "grow": 1 }, "props": { "text": "" } },
+          {
+            "type": "ia.input.button",
+            "meta": { "name": "ConfirmButton" },
+            "props": { "text": "Pick & Rename", "style": { "classes": "pf-btn pf-btn-primary pf-btn-large" } },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script", "scope": "G",
+                  "config": { "script": "\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"action\": \"confirm\"}, scope=\"page\")\n\tsystem.perspective.closePopup(id=self.view.params.popupId)" }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
