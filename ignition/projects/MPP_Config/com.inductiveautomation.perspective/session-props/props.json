@@ -2,6 +2,7 @@
   "custom": {
     "activeCategory": "",
     "activeScreen": "BlueRidge/Views/Landing",
+    "appUserId": null,
     "navPanelOpen": false,
     "qsIncomingSpecId": 0,
     "toastInstances": []
