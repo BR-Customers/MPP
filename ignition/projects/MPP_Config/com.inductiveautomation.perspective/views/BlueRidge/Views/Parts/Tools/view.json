@@ -1,15 +1,5 @@
 {
   "custom": {
-    "activeMount": {
-      "AssignedAt": null,
-      "AssignedByInitials": "",
-      "CellName": "",
-      "Id": null,
-      "IsActive": false,
-      "Notes": "",
-      "ReleasedAt": null,
-      "ReleasedByInitials": ""
-    },
     "activeTab": "attributes",
     "activeTabIndex": 0,
     "editDraft": {
@@ -616,9 +606,7 @@
                           }
                         },
                         "props": {
-                          "style": {
-                            "classes": "badge badge-muted"
-                          }
+                          "style": {}
                         },
                         "type": "ia.display.label"
                       },

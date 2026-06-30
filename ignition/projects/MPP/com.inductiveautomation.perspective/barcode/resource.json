@@ -4,13 +4,14 @@
   "restricted": false,
   "overridable": true,
   "files": [
-    "props.json"
+    "onBarcodeDataReceived.py"
   ],
   "attributes": {
-    "lastModificationSignature": "4d4a7291218b6f84f0b4d66dfb66b34833475d1deea82b6eb32e939bf4ea57e8",
+    "lastModificationSignature": "0be606fa8ca242995f260a1b2ebcfff2f05f4ebfead5722d78c0684c7a2b6624",
     "lastModification": {
       "actor": "admin",
       "timestamp": "2026-06-30T16:40:01Z"
-    }
+    },
+    "enabled": true
   }
 }
