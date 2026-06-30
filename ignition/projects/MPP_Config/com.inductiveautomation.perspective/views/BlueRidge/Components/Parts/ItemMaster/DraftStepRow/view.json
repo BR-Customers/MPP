@@ -91,7 +91,7 @@
           "name": "SeqLabel"
         },
         "position": {
-          "basis": "40px",
+          "basis": "20px",
           "shrink": 0
         },
         "propConfig": {
@@ -219,7 +219,7 @@
           "name": "IsRequiredCheckbox"
         },
         "position": {
-          "basis": "70px",
+          "basis": "50px",
           "shrink": 0
         },
         "propConfig": {
@@ -236,7 +236,7 @@
           "style": {
             "fontSize": "11px"
           },
-          "text": "Req"
+          "text": ""
         },
         "type": "ia.input.checkbox"
       },
@@ -260,10 +260,10 @@
         "props": {
           "style": {
             "color": "var(--mpp-text-muted)",
-            "fontSize": "11px",
+            "fontSize": "8px",
             "overflow": "hidden",
             "textOverflow": "ellipsis",
-            "whiteSpace": "nowrap"
+            "whiteSpace": "normal"
           }
         },
         "type": "ia.display.label"
@@ -377,6 +377,7 @@
       "alignItems": "center",
       "style": {
         "gap": "6px",
+        "overflow": "hidden",
         "padding": "4px 8px"
       }
     },
