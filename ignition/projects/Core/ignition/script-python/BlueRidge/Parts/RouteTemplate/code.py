@@ -142,6 +142,37 @@ def listVersions(itemId, includeDeprecated=False):
     )
 
 
+def getDefaultVersionId(itemId):
+    """Version to preselect on the Routes tab when an Item loads: the
+    Published-and-not-Deprecated version if one exists, else the active Draft
+    (lowest VersionNumber), else 0.
+
+    Driving the preselection from here (the Routes tab itemId.onChange handler)
+    is deterministic -- it does its own read and does NOT depend on the versions
+    binding's onChange firing in a particular order, which is the race that left
+    nothing selected on item-to-item navigation.
+    """
+    itemId = _u(itemId)
+    if not itemId:
+        return 0
+    versions = listVersions(itemId)  # active only (no deprecated), newest first
+    if not versions:
+        return 0
+    # Prefer the single Published-and-not-Deprecated version.
+    for v in versions:
+        if v.get("PublishedAt") and not v.get("DeprecatedAt"):
+            return v.get("Id") or 0
+    # No published route -> the active Draft. listVersions already excludes
+    # deprecated, so the remaining rows are Draft(s); pick the lowest version
+    # number ("first draft"). In practice there is at most one active Draft.
+    drafts = [v for v in versions
+              if not v.get("PublishedAt") and not v.get("DeprecatedAt")]
+    if drafts:
+        drafts = sorted(drafts, key=lambda d: d.get("VersionNumber") or 0)
+        return drafts[0].get("Id") or 0
+    return versions[0].get("Id") or 0
+
+
 def getHeader(id):
     """Returns the RouteTemplate header dict for a single version, or None.
     Joined to Parts.Item for PartNumber and Location.AppUser for
