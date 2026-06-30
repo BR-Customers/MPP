@@ -875,20 +875,57 @@ EXEC test.Assert_IsEqual
 GO
 
 -- =============================================
--- Test 18: RouteTemplate_Deprecate on v1
+-- Test 18: RouteTemplate_Deprecate (proc + audit) on an ISOLATED route.
+--   v1 of TEST-RT-001 is auto-deprecated when v2 publishes (single-Published
+--   invariant in Parts.RouteTemplate_Publish), and v2 must stay the active
+--   Published version for the later immutable-route tests. So exercise the
+--   Deprecate proc + its audit on a throwaway route under a separate Item,
+--   avoiding the v1/v2/v3 lifecycle entirely.
 -- =============================================
-DECLARE @S    BIT,
-        @M    NVARCHAR(500),
-        @SStr NVARCHAR(1),
-        @V1Id BIGINT;
+DECLARE @S       BIT,
+        @M       NVARCHAR(500),
+        @SStr    NVARCHAR(1),
+        @DepItem BIGINT,
+        @DepRt   BIGINT,
+        @DepOt   BIGINT;
 
--- Name is not unique across versions (CreateNewVersion copies it); scope to v1
-SELECT @V1Id = Id FROM Parts.RouteTemplate WHERE Name = N'TEST-RT-001' AND VersionNumber = 1;
+-- Throwaway Item + Draft route + one step (a route with steps is what makes the
+-- Deprecate OldValue carry the resolved OperationTemplate FK).
+CREATE TABLE #RcDepI (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #RcDepI
+EXEC Parts.Item_Create
+    @ItemTypeId  = 4,
+    @PartNumber  = N'TEST-RT-ITEM-DEP',
+    @Description = N'Deprecate-test route item',
+    @UomId       = 1,
+    @AppUserId   = 1;
+SELECT @DepItem = NewId FROM #RcDepI;
+DROP TABLE #RcDepI;
 
+CREATE TABLE #RcDepR (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #RcDepR
+EXEC Parts.RouteTemplate_Create
+    @ItemId    = @DepItem,
+    @Name      = N'TEST-RT-DEP',
+    @AppUserId = 1;
+SELECT @DepRt = NewId FROM #RcDepR;
+DROP TABLE #RcDepR;
+
+SELECT @DepOt = Id FROM Parts.OperationTemplate WHERE Code = N'TEST-RT-OT-1';
+CREATE TABLE #RcDepS (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #RcDepS
+EXEC Parts.RouteStep_Add
+    @RouteTemplateId     = @DepRt,
+    @OperationTemplateId = @DepOt,
+    @IsRequired          = 1,
+    @AppUserId           = 1;
+DROP TABLE #RcDepS;
+
+-- Proc under test
 CREATE TABLE #Ru21 (Status BIT, Message NVARCHAR(500));
 INSERT INTO #Ru21
 EXEC Parts.RouteTemplate_Deprecate
-    @Id        = @V1Id,
+    @Id        = @DepRt,
     @AppUserId = 1;
 SELECT @S = Status, @M = Message FROM #Ru21;
 DROP TABLE #Ru21;
@@ -899,13 +936,13 @@ EXEC test.Assert_IsEqual
     @Expected = N'1',
     @Actual   = @SStr;
 
-DECLARE @V1Dep DATETIME2(3);
-SELECT @V1Dep = DeprecatedAt FROM Parts.RouteTemplate WHERE Id = @V1Id;
-DECLARE @V1DepStr NVARCHAR(1) = CASE WHEN @V1Dep IS NOT NULL THEN N'1' ELSE N'0' END;
+DECLARE @DepAt DATETIME2(3);
+SELECT @DepAt = DeprecatedAt FROM Parts.RouteTemplate WHERE Id = @DepRt;
+DECLARE @DepAtStr NVARCHAR(1) = CASE WHEN @DepAt IS NOT NULL THEN N'1' ELSE N'0' END;
 EXEC test.Assert_IsEqual
     @TestName = N'[RtDep1] DeprecatedAt set',
     @Expected = N'1',
-    @Actual   = @V1DepStr;
+    @Actual   = @DepAtStr;
 
 -- Audit-readability: Description follows SUBJECT . Route v1 . Deprecated
 DECLARE @DepDesc NVARCHAR(2000), @DepOld NVARCHAR(MAX);
@@ -913,11 +950,11 @@ SELECT TOP 1 @DepDesc = cl.Description, @DepOld = cl.OldValue
 FROM Audit.ConfigLog cl
 INNER JOIN Audit.LogEntityType nt ON nt.Id = cl.LogEntityTypeId
 INNER JOIN Audit.LogEventType et  ON et.Id = cl.LogEventTypeId
-WHERE cl.EntityId = @V1Id AND nt.Code = N'Route' AND et.Code = N'Deprecated'
+WHERE cl.EntityId = @DepRt AND nt.Code = N'Route' AND et.Code = N'Deprecated'
 ORDER BY cl.Id DESC;
 
 DECLARE @DepDescOk NVARCHAR(1) = CASE
-    WHEN @DepDesc LIKE N'TEST-RT-ITEM-001%Route v1%Deprecated%' THEN N'1' ELSE N'0' END;
+    WHEN @DepDesc LIKE N'TEST-RT-ITEM-DEP%Route v1%Deprecated%' THEN N'1' ELSE N'0' END;
 EXEC test.Assert_IsEqual
     @TestName = N'[RtDep1] Description matches convention shape',
     @Expected = N'1',

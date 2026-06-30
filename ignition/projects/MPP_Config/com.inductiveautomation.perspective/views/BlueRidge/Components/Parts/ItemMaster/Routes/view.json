@@ -3,6 +3,7 @@
     "draftId": 0,
     "mode": "view",
     "opTemplatesByArea": {},
+    "refreshToken": 0,
     "selectedVersionId": 0,
     "showDeprecated": false,
     "state": {
@@ -87,7 +88,7 @@
     "custom.versions": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Parts.RouteTemplate.listVersions\", 0, {view.custom.itemId}, {view.custom.showDeprecated})"
+          "expression": "runScript(\"BlueRidge.Parts.RouteTemplate.listVersions\", 0, {view.custom.itemId}, {view.custom.showDeprecated}, {view.custom.refreshToken})"
         },
         "type": "expr"
       },
@@ -1372,7 +1373,7 @@
         {
           "name": "reloadVersions",
           "params": [],
-          "script": "\tself.view.custom.versions \u003d BlueRidge.Parts.RouteTemplate.listVersions(self.view.custom.itemId, self.view.custom.showDeprecated)"
+          "script": "\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
         }
       ],
       "extensionFunctions": null,

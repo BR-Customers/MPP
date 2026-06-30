@@ -125,11 +125,16 @@ def getActiveForItem(itemId):
 # Phase 5: full versioning surface
 # =============================================================================
 
-def listVersions(itemId, includeDeprecated=False):
+def listVersions(itemId, includeDeprecated=False, _refreshToken=None):
     """Returns the list of RouteTemplate versions for the given Item,
     newest first. Each dict carries Id, ItemId, VersionNumber, Name,
     EffectiveFrom, PublishedAt, DeprecatedAt, CreatedByUserId,
     CreatedByDisplayName, CreatedAt.
+
+    _refreshToken is an ignored cache-buster: the Routes-tab versions binding
+    passes view.custom.refreshToken as the last runScript arg so a mutation can
+    force a re-read (runScript caches on its arg tuple). reloadVersions() bumps
+    the token after create/discard/save/publish.
     """
     itemId = _u(itemId)
     includeDeprecated = _u(includeDeprecated)
