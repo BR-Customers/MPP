@@ -8,11 +8,6 @@
       },
       {
         "CanMix": false,
-        "RankAId": 2,
-        "RankBId": 1
-      },
-      {
-        "CanMix": false,
         "RankAId": 3,
         "RankBId": 1
       },
@@ -20,71 +15,6 @@
         "CanMix": false,
         "RankAId": 4,
         "RankBId": 1
-      },
-      {
-        "CanMix": false,
-        "RankAId": 5,
-        "RankBId": 1
-      },
-      {
-        "CanMix": false,
-        "RankAId": 9,
-        "RankBId": 1
-      },
-      {
-        "CanMix": false,
-        "RankAId": 10,
-        "RankBId": 1
-      },
-      {
-        "CanMix": false,
-        "RankAId": 11,
-        "RankBId": 1
-      },
-      {
-        "CanMix": false,
-        "RankAId": 12,
-        "RankBId": 1
-      },
-      {
-        "CanMix": true,
-        "RankAId": 2,
-        "RankBId": 2
-      },
-      {
-        "CanMix": false,
-        "RankAId": 3,
-        "RankBId": 2
-      },
-      {
-        "CanMix": true,
-        "RankAId": 4,
-        "RankBId": 2
-      },
-      {
-        "CanMix": true,
-        "RankAId": 5,
-        "RankBId": 2
-      },
-      {
-        "CanMix": false,
-        "RankAId": 9,
-        "RankBId": 2
-      },
-      {
-        "CanMix": true,
-        "RankAId": 10,
-        "RankBId": 2
-      },
-      {
-        "CanMix": false,
-        "RankAId": 11,
-        "RankBId": 2
-      },
-      {
-        "CanMix": false,
-        "RankAId": 12,
-        "RankBId": 2
       },
       {
         "CanMix": true,
@@ -98,133 +28,8 @@
       },
       {
         "CanMix": true,
-        "RankAId": 5,
-        "RankBId": 3
-      },
-      {
-        "CanMix": false,
-        "RankAId": 9,
-        "RankBId": 3
-      },
-      {
-        "CanMix": false,
-        "RankAId": 10,
-        "RankBId": 3
-      },
-      {
-        "CanMix": false,
-        "RankAId": 11,
-        "RankBId": 3
-      },
-      {
-        "CanMix": false,
-        "RankAId": 12,
-        "RankBId": 3
-      },
-      {
-        "CanMix": true,
         "RankAId": 4,
         "RankBId": 4
-      },
-      {
-        "CanMix": false,
-        "RankAId": 5,
-        "RankBId": 4
-      },
-      {
-        "CanMix": false,
-        "RankAId": 9,
-        "RankBId": 4
-      },
-      {
-        "CanMix": false,
-        "RankAId": 10,
-        "RankBId": 4
-      },
-      {
-        "CanMix": false,
-        "RankAId": 11,
-        "RankBId": 4
-      },
-      {
-        "CanMix": false,
-        "RankAId": 12,
-        "RankBId": 4
-      },
-      {
-        "CanMix": true,
-        "RankAId": 5,
-        "RankBId": 5
-      },
-      {
-        "CanMix": false,
-        "RankAId": 9,
-        "RankBId": 5
-      },
-      {
-        "CanMix": false,
-        "RankAId": 10,
-        "RankBId": 5
-      },
-      {
-        "CanMix": false,
-        "RankAId": 11,
-        "RankBId": 5
-      },
-      {
-        "CanMix": false,
-        "RankAId": 12,
-        "RankBId": 5
-      },
-      {
-        "CanMix": true,
-        "RankAId": 9,
-        "RankBId": 9
-      },
-      {
-        "CanMix": false,
-        "RankAId": 10,
-        "RankBId": 9
-      },
-      {
-        "CanMix": false,
-        "RankAId": 11,
-        "RankBId": 9
-      },
-      {
-        "CanMix": false,
-        "RankAId": 12,
-        "RankBId": 9
-      },
-      {
-        "CanMix": true,
-        "RankAId": 10,
-        "RankBId": 10
-      },
-      {
-        "CanMix": false,
-        "RankAId": 11,
-        "RankBId": 10
-      },
-      {
-        "CanMix": false,
-        "RankAId": 12,
-        "RankBId": 10
-      },
-      {
-        "CanMix": true,
-        "RankAId": 11,
-        "RankBId": 11
-      },
-      {
-        "CanMix": false,
-        "RankAId": 12,
-        "RankBId": 11
-      },
-      {
-        "CanMix": true,
-        "RankAId": 12,
-        "RankBId": 12
       }
     ]
   },

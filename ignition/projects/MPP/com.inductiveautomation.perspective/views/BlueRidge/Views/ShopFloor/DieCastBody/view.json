@@ -1,19 +1,5 @@
 {
   "custom": {
-    "activeTool": {
-      "Id": null,
-      "ToolId": null,
-      "ToolCode": "",
-      "ToolName": "",
-      "ToolTypeCode": "",
-      "CellLocationId": null,
-      "AssignedAt": null,
-      "AssignedByUserId": null,
-      "Notes": null
-    },
-    "cavityOptions": [],
-    "itemOptions": [],
-    "shiftTally": [],
     "activeLotId": null,
     "editDraft": {
       "cavityNote": null,
@@ -73,7 +59,7 @@
       },
       "onChange": {
         "enabled": true,
-        "script": "\trows = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.shiftTally) or []\n\tids = [r.get(\"ToolCavityId\") for r in rows]\n\tcur = self.view.custom.tallyCavityId\n\tif cur is None or cur not in ids:\n\t\tself.view.custom.tallyCavityId = BlueRidge.Lots.Lot.defaultShiftCavityId(rows)"
+        "script": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.shiftTally) or []\n\tids \u003d [r.get(\"ToolCavityId\") for r in rows]\n\tcur \u003d self.view.custom.tallyCavityId\n\tif cur is None or cur not in ids:\n\t\tself.view.custom.tallyCavityId \u003d BlueRidge.Lots.Lot.defaultShiftCavityId(rows)"
       }
     }
   },
@@ -109,7 +95,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "{session.custom.cell.name} + \"  ·  SHARED TERMINAL  ·  \" + if(isNull({view.custom.activeTool.ToolCode}) || {view.custom.activeTool.ToolCode} = \"\", \"No die mounted\", \"Tool \" + {view.custom.activeTool.ToolCode})"
+                        "expression": "{session.custom.cell.name} + \"  ·  SHARED TERMINAL  ·  \" + if(isNull({view.custom.activeTool.ToolCode}) || {view.custom.activeTool.ToolCode} \u003d \"\", \"No die mounted\", \"Tool \" + {view.custom.activeTool.ToolCode})"
                       },
                       "type": "expr"
                     }
@@ -139,7 +125,7 @@
               "dom": {
                 "onClick": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=True, overlayDismiss=True)"
+                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dTrue, overlayDismiss\u003dTrue)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -156,7 +142,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
+                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} \u003d \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
                   },
                   "type": "expr"
                 }
@@ -242,28 +228,28 @@
             "type": "ia.display.label"
           },
           {
-            "type": "ia.display.label",
             "meta": {
               "name": "ActiveCellValue"
             },
             "position": {
               "shrink": 0
             },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} \u003d \"\", \"No cell selected\", {session.custom.cell.name})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
             "props": {
               "style": {
                 "classes": "pf-cell-context-value"
               }
             },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"No cell selected\", {session.custom.cell.name})"
-                  }
-                }
-              }
-            }
+            "type": "ia.display.label"
           },
           {
             "meta": {
@@ -282,7 +268,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "if(isNull({view.custom.activeTool.ToolCode}) || {view.custom.activeTool.ToolCode} = \"\", \"No die mounted\", \"Tool \" + {view.custom.activeTool.ToolCode} + \" mounted  ·  \" + toStr(len({view.custom.cavityOptions})) + \" cavities active\")"
+                    "expression": "if(isNull({view.custom.activeTool.ToolCode}) || {view.custom.activeTool.ToolCode} \u003d \"\", \"No die mounted\", \"Tool \" + {view.custom.activeTool.ToolCode} + \" mounted  ·  \" + toStr(len({view.custom.cavityOptions})) + \" cavities active\")"
                   },
                   "type": "expr"
                 }
@@ -372,6 +358,19 @@
                       "text": "Pre-printed labels per FRS 2.2.1. Server mints the LOT id (D4 default)."
                     },
                     "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "BarcodeScannerInput"
+                    },
+                    "position": {
+                      "basis": "80px"
+                    },
+                    "props": {
+                      "captureMode": "keyup",
+                      "prefix": "P12"
+                    },
+                    "type": "ia.input.barcodescannerinput"
                   }
                 ],
                 "meta": {
@@ -484,7 +483,7 @@
                               "props.text": {
                                 "binding": {
                                   "config": {
-                                    "expression": "if(isNull({view.custom.activeTool.ToolCode}) || {view.custom.activeTool.ToolCode} = \"\", \"No die mounted\", {view.custom.activeTool.ToolCode})"
+                                    "expression": "if(isNull({view.custom.activeTool.ToolCode}) || {view.custom.activeTool.ToolCode} \u003d \"\", \"No die mounted\", {view.custom.activeTool.ToolCode})"
                                   },
                                   "type": "expr"
                                 }
@@ -502,7 +501,7 @@
                               "component": {
                                 "onActionPerformed": {
                                   "config": {
-                                    "script": "\t# Launch the Config app's Tools page (separate project; logs in on its own).\n\tsystem.perspective.navigate(url=\"/data/perspective/client/MPP_Config/parts/tools\", newTab=True)"
+                                    "script": "\t# Launch the Config app\u0027s Tools page (separate project; logs in on its own).\n\tsystem.perspective.navigate(url\u003d\"/data/perspective/client/MPP_Config/parts/tools\", newTab\u003dTrue)"
                                   },
                                   "scope": "G",
                                   "type": "script"
@@ -1114,27 +1113,27 @@
         {
           "name": "submitCreate",
           "params": [],
-          "script": "\tdraft = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft) or {}\n\ttool = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.activeTool) or {}\n\tcell = BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\t# Cavity: a numeric option value is a real ToolCavityId; a typed (custom) value is a manual cavity note (D2).\n\tcav = draft.get(\"toolCavityId\")\n\ttoolCavityId = None\n\tcavityNote = None\n\tif cav is not None and cav != \"\":\n\t\ttry:\n\t\t\ttoolCavityId = int(cav)\n\t\texcept (ValueError, TypeError):\n\t\t\tcavityNote = unicode(cav)\n\tdata = {\n\t\t\"itemId\": draft.get(\"itemId\"),\n\t\t\"lotOriginTypeId\": self.view.custom.manufacturedOriginId,\n\t\t\"currentLocationId\": cell.get(\"locationId\"),\n\t\t\"pieceCount\": BlueRidge.Common.Util.toIntOrNone(draft.get(\"pieceCount\")),\n\t\t\"weight\": BlueRidge.Common.Util.toDecimalOrNone(draft.get(\"weight\")),\n\t\t\"weightUomId\": draft.get(\"weightUomId\"),\n\t\t\"toolId\": tool.get(\"ToolId\"),\n\t\t\"toolCavityId\": toolCavityId,\n\t}\n\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tresult = BlueRidge.Lots.Lot.create(data, appUserId, termId, None, cavityNote)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle=\"LOT created\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.activeLotId = result.get(\"NewId\")\n\t\tminted = result.get(\"MintedLotName\")\n\t\tscanned = draft.get(\"scannedLtt\")\n\t\tif scanned and minted and scanned != minted:\n\t\t\tBlueRidge.Common.Notify.toast(\"LTT mismatch\", \"Scanned %s but minted %s\" % (scanned, minted), \"warning\")\n\t\tpeers = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.peersThisSession) or []\n\t\tpeers.append({\"peer\": {\"Cavity\": (toolCavityId if toolCavityId is not None else cavityNote), \"LotName\": minted, \"PieceCount\": data.get(\"pieceCount\"), \"LotId\": result.get(\"NewId\")}})\n\t\tself.view.custom.peersThisSession = peers\n\t\tself.view.custom.selectedLotId = result.get(\"NewId\")\n\t\tself.view.custom.shiftTally = BlueRidge.Lots.Lot.getShiftCavityTally(tool.get(\"ToolId\"))\n\treturn result"
+          "script": "\tdraft \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft) or {}\n\ttool \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.activeTool) or {}\n\tcell \u003d BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\t# Cavity: a numeric option value is a real ToolCavityId; a typed (custom) value is a manual cavity note (D2).\n\tcav \u003d draft.get(\"toolCavityId\")\n\ttoolCavityId \u003d None\n\tcavityNote \u003d None\n\tif cav is not None and cav !\u003d \"\":\n\t\ttry:\n\t\t\ttoolCavityId \u003d int(cav)\n\t\texcept (ValueError, TypeError):\n\t\t\tcavityNote \u003d unicode(cav)\n\tdata \u003d {\n\t\t\"itemId\": draft.get(\"itemId\"),\n\t\t\"lotOriginTypeId\": self.view.custom.manufacturedOriginId,\n\t\t\"currentLocationId\": cell.get(\"locationId\"),\n\t\t\"pieceCount\": BlueRidge.Common.Util.toIntOrNone(draft.get(\"pieceCount\")),\n\t\t\"weight\": BlueRidge.Common.Util.toDecimalOrNone(draft.get(\"weight\")),\n\t\t\"weightUomId\": draft.get(\"weightUomId\"),\n\t\t\"toolId\": tool.get(\"ToolId\"),\n\t\t\"toolCavityId\": toolCavityId,\n\t}\n\tappUserId \u003d self.session.custom.appUserId\n\ttermId \u003d None\n\ttry:\n\t\ttermId \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId \u003d None\n\tresult \u003d BlueRidge.Lots.Lot.create(data, appUserId, termId, None, cavityNote)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle\u003d\"LOT created\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.activeLotId \u003d result.get(\"NewId\")\n\t\tminted \u003d result.get(\"MintedLotName\")\n\t\tscanned \u003d draft.get(\"scannedLtt\")\n\t\tif scanned and minted and scanned !\u003d minted:\n\t\t\tBlueRidge.Common.Notify.toast(\"LTT mismatch\", \"Scanned %s but minted %s\" % (scanned, minted), \"warning\")\n\t\tpeers \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.peersThisSession) or []\n\t\tpeers.append({\"peer\": {\"Cavity\": (toolCavityId if toolCavityId is not None else cavityNote), \"LotName\": minted, \"PieceCount\": data.get(\"pieceCount\"), \"LotId\": result.get(\"NewId\")}})\n\t\tself.view.custom.peersThisSession \u003d peers\n\t\tself.view.custom.selectedLotId \u003d result.get(\"NewId\")\n\t\tself.view.custom.shiftTally \u003d BlueRidge.Lots.Lot.getShiftCavityTally(tool.get(\"ToolId\"))\n\treturn result"
         },
         {
           "name": "cancelDraft",
           "params": [],
-          "script": "\t# Reset the whole NEW LOT form (per-leaf writes for reliable bidi refresh).\n\tself.view.custom.editDraft.scannedLtt = \"\"\n\tself.view.custom.editDraft.itemId = None\n\tself.view.custom.editDraft.toolCavityId = None\n\tself.view.custom.editDraft.cavityNote = None\n\tself.view.custom.editDraft.pieceCount = None\n\tself.view.custom.editDraft.weight = None\n\tself.view.custom.editDraft.weightUomId = None"
+          "script": "\t# Reset the whole NEW LOT form (per-leaf writes for reliable bidi refresh).\n\tself.view.custom.editDraft.scannedLtt \u003d \"\"\n\tself.view.custom.editDraft.itemId \u003d None\n\tself.view.custom.editDraft.toolCavityId \u003d None\n\tself.view.custom.editDraft.cavityNote \u003d None\n\tself.view.custom.editDraft.pieceCount \u003d None\n\tself.view.custom.editDraft.weight \u003d None\n\tself.view.custom.editDraft.weightUomId \u003d None"
         },
         {
           "name": "startup",
           "params": [],
-          "script": "\t# Operator gate: no logged-in operator -> open the initials popup OVER this screen.\n\t# Non-blocking: the page still populates behind the modal, and session.custom is\n\t# reactive, so the operator label/mutations pick up the user with no re-populate.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
+          "script": "\t# Operator gate: no logged-in operator -\u003e open the initials popup OVER this screen.\n\t# Non-blocking: the page still populates behind the modal, and session.custom is\n\t# reactive, so the operator label/mutations pick up the user with no re-populate.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dFalse, overlayDismiss\u003dFalse)"
         },
         {
           "name": "openCreateConfirm",
           "params": [],
-          "script": "\tsystem.perspective.openPopup(\"mpp-confirm-create-lot\",\n\t\t\"BlueRidge/Components/Popups/ConfirmCreateLot\",\n\t\tparams={\"replyMessage\": \"confirmCreateLotResult\", \"popupId\": \"mpp-confirm-create-lot\",\n\t\t\t\"title\": \"Create LOT\", \"message\": \"Confirm to create this LOT, then choose what to do with the form.\"},\n\t\tmodal=True, showCloseIcon=True)"
+          "script": "\tsystem.perspective.openPopup(\"mpp-confirm-create-lot\",\n\t\t\"BlueRidge/Components/Popups/ConfirmCreateLot\",\n\t\tparams\u003d{\"replyMessage\": \"confirmCreateLotResult\", \"popupId\": \"mpp-confirm-create-lot\",\n\t\t\t\"title\": \"Create LOT\", \"message\": \"Confirm to create this LOT, then choose what to do with the form.\"},\n\t\tmodal\u003dTrue, showCloseIcon\u003dTrue)"
         },
         {
           "name": "clearForAnother",
           "params": [],
-          "script": "\t# Keep everything; clear only the cavity, then focus the LTT field for the next scan.\n\tself.view.custom.editDraft.toolCavityId = None\n\tself.view.custom.editDraft.cavityNote = None\n\ttry:\n\t\tself.getChild(\"Body\").getChild(\"NewLotForm\").getChild(\"LttField\").getChild(\"LttInput\").focus()\n\texcept:\n\t\tpass"
+          "script": "\t# Keep everything; clear only the cavity, then focus the LTT field for the next scan.\n\tself.view.custom.editDraft.toolCavityId \u003d None\n\tself.view.custom.editDraft.cavityNote \u003d None\n\ttry:\n\t\tself.getChild(\"Body\").getChild(\"NewLotForm\").getChild(\"LttField\").getChild(\"LttInput\").focus()\n\texcept:\n\t\tpass"
         }
       ],
       "extensionFunctions": null,
@@ -1149,7 +1148,7 @@
         {
           "messageType": "confirmCreateLotResult",
           "pageScope": true,
-          "script": "\taction = payload.get(\"action\") if payload else None\n\tif action == \"cancel\":\n\t\treturn\n\tresult = self.submitCreate()\n\tif result and result.get(\"Status\"):\n\t\tif action == \"clear\":\n\t\t\tself.cancelDraft()\n\t\telif action == \"another\":\n\t\t\tself.clearForAnother()",
+          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tif action \u003d\u003d \"cancel\":\n\t\treturn\n\tresult \u003d self.submitCreate()\n\tif result and result.get(\"Status\"):\n\t\tif action \u003d\u003d \"clear\":\n\t\t\tself.cancelDraft()\n\t\telif action \u003d\u003d \"another\":\n\t\t\tself.clearForAnother()",
           "sessionScope": false,
           "viewScope": false
         }

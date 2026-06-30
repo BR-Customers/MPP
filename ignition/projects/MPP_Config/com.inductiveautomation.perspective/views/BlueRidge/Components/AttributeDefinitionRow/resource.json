@@ -1,4 +1,4 @@
-﻿{
+{
   "scope": "G",
   "version": 1,
   "restricted": false,
@@ -8,10 +8,10 @@
     "thumbnail.png"
   ],
   "attributes": {
-    "lastModificationSignature": "",
+    "lastModificationSignature": "176c12427b79fc6d4f2de7681428ff3198142fb0990cb6be2592640ec0a62ac8",
     "lastModification": {
-      "actor": "claude",
-      "timestamp": "2026-05-18T12:00:00Z"
+      "actor": "admin",
+      "timestamp": "2026-06-18T14:22:02Z"
     }
   }
 }

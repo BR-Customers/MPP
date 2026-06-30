@@ -70,82 +70,82 @@
 
 
 def buildTree(rootId, expandDepth=2, defaultIcon="mpp/factory"):
-    """
-    Build a Perspective Tree component JSON structure from the
-    Location.Location_GetTree stored procedure.
-
-    Relies on the GetTree proc returning rows in depth-first order (via its
-    SortPath column), so each row's parent is guaranteed to have been
-    processed already -- enabling a single forward pass.
-
-    Args:
-        rootId (long):     Location.Id to use as the tree root.
-        expandDepth (int): Nodes at depth < expandDepth start expanded.
-                           Default 2 (Enterprise + Site expanded; Areas
-                           and below collapsed).
-        defaultIcon (str): Fallback icon path when
-                           LocationTypeDefinition.Icon is NULL.
-
-    Returns:
-        list: A list containing the root node dict (Perspective Tree expects
-              a list at top level). Returns [] on missing rootId or empty
-              result.
-    """
-    BlueRidge.Common.Util.log("rootId=%s expandDepth=%s" % (rootId, expandDepth))
-    if rootId is None:
-        return []
-
-    rows = BlueRidge.Common.Db.execList("location/GetTree", {"rootId": rootId})
-    if not rows:
-        return []
-
-    nodes = {}        # locationId -> node dict
-    rootNode = None
-
-    for r in rows:
-        locId    = r.get("Id")
-        parentId = r.get("ParentLocationId")
-        depth    = r.get("Depth")
-        iconPath = r.get("Icon") or defaultIcon
-
-        node = {
-            "label": r.get("Name"),
-            "expanded": depth < expandDepth,
-            "icon": {
-                "path":  iconPath,
-                "color": "--mpp-text-primary",
-                "style": {},
-            },
-            "data": {
-                "id":              locId,
-                "code":            r.get("Code"),
-                "name":            r.get("Name"),
-                "definitionName":  r.get("DefinitionName"),
-                "definitionId":    r.get("LocationTypeDefinitionId"),
-                "typeName":        r.get("TypeName"),
-                "hierarchyLevel":  r.get("HierarchyLevel"),
-                "depth":           depth,
-                "description":     r.get("Description"),
-                "sortOrder":       r.get("SortOrder"),
-            },
-            "items": [],
-        }
-        nodes[locId] = node
-
-        # Depth-first ordering guarantees parent is already in `nodes` by now.
-        if depth == 0:
-            rootNode = node
-        else:
-            nodes[parentId]["items"].append(node)
-
-    return [rootNode] if rootNode else []
+	"""
+	Build a Perspective Tree component JSON structure from the
+	Location.Location_GetTree stored procedure.
+	
+	Relies on the GetTree proc returning rows in depth-first order (via its
+	SortPath column), so each row's parent is guaranteed to have been
+	processed already -- enabling a single forward pass.
+	
+	Args:
+	    rootId (long):     Location.Id to use as the tree root.
+	    expandDepth (int): Nodes at depth < expandDepth start expanded.
+	                       Default 2 (Enterprise + Site expanded; Areas
+	                       and below collapsed).
+	    defaultIcon (str): Fallback icon path when
+	                       LocationTypeDefinition.Icon is NULL.
+	
+	Returns:
+	    list: A list containing the root node dict (Perspective Tree expects
+	          a list at top level). Returns [] on missing rootId or empty
+	          result.
+	"""
+	BlueRidge.Common.Util.log("rootId=%s expandDepth=%s" % (rootId, expandDepth))
+	if rootId is None:
+		return []
+	
+	rows = BlueRidge.Common.Db.execList("location/GetTree", {"rootId": rootId})
+	if not rows:
+		return []
+	
+	nodes = {}        # locationId -> node dict
+	rootNode = None
+	
+	for r in rows:
+		locId    = r.get("Id")
+		parentId = r.get("ParentLocationId")
+		depth    = r.get("Depth")
+		iconPath = r.get("Icon") or defaultIcon
+		
+		node = {
+			"label": r.get("Name"),
+			"expanded": depth < expandDepth,
+			"icon": {
+			    "path":  iconPath,
+			    "color": "--mpp-text-primary",
+			    "style": {},
+			},
+			"data": {
+			    "id":              locId,
+			    "code":            r.get("Code"),
+			    "name":            r.get("Name"),
+			    "definitionName":  r.get("DefinitionName"),
+			    "definitionId":    r.get("LocationTypeDefinitionId"),
+			    "typeName":        r.get("TypeName"),
+			    "hierarchyLevel":  r.get("HierarchyLevel"),
+			    "depth":           depth,
+			    "description":     r.get("Description"),
+			    "sortOrder":       r.get("SortOrder"),
+			},
+			"items": [],
+		}
+		nodes[locId] = node
+		
+		# Depth-first ordering guarantees parent is already in `nodes` by now.
+		if depth == 0:
+			rootNode = node
+		else:
+			nodes[parentId]["items"].append(node)
+		
+	return [rootNode] if rootNode else []
 
 def getTree(rootId):
 	rows = BlueRidge.Common.Db.execList("location/GetTree", {"rootId": rootId})
-    if not rows:
-        return []
+	if not rows:
+		return []
         
-    return rows
+	return rows
 
 def findPathById(items, targetId):
     """
