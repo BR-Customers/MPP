@@ -20,10 +20,13 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    -- Hierarchy cascade (FDS-03-014): eligible at @LocationId OR any ancestor tier,
+    -- consistent with Item_ListEligibleForLocation / Lot_Create / Lot_MoveToValidated.
     DECLARE @Path NVARCHAR(20) = (
         SELECT TOP 1 v.Source
         FROM Parts.v_EffectiveItemLocation v
-        WHERE v.ItemId = @ItemId AND v.LocationId = @LocationId
+        WHERE v.ItemId = @ItemId
+          AND v.LocationId IN (SELECT LocationId FROM Location.ufn_AncestorLocationIds(@LocationId))
         ORDER BY CASE WHEN v.Source = N'Direct' THEN 0 ELSE 1 END);
 
     SELECT CASE WHEN @Path IS NULL THEN CAST(0 AS BIT) ELSE CAST(1 AS BIT) END AS IsEligible,

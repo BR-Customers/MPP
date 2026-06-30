@@ -246,12 +246,14 @@ BEGIN
 
         SELECT @BomId = BomId, @MachinedItem = ParentItemId FROM @Matches;
 
-        -- ---- 6. Eligibility (OI-18 / FDS-02-012): the SOURCE Item must resolve at
-        -- the Cell via v_EffectiveItemLocation (BomDerived leg = the machined Item
+        -- ---- 6. Eligibility (OI-18 / FDS-02-012 / FDS-03-014 hierarchy cascade): the
+        -- SOURCE Item must resolve at the Cell OR any ancestor tier (Cell -> WorkCenter
+        -- -> Area -> Site) via v_EffectiveItemLocation (BomDerived leg = the machined Item
         -- is Direct-eligible here, so the cast/trim child line is BomDerived-eligible). ----
         IF NOT EXISTS (
             SELECT 1 FROM Parts.v_EffectiveItemLocation
-            WHERE ItemId = @SourceItem AND LocationId = @CellLocationId)
+            WHERE ItemId = @SourceItem
+              AND LocationId IN (SELECT LocationId FROM Location.ufn_AncestorLocationIds(@CellLocationId)))
         BEGIN
             SET @Message = N'Item is not eligible at the specified location.';
             EXEC Audit.Audit_LogFailure

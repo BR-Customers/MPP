@@ -134,10 +134,14 @@ BEGIN
             RETURN;
         END
 
-        -- ---- 5. Destination eligibility (FDS-02-012). NO MaxParts (Confirm B). ----
+        -- ---- 5. Destination eligibility (FDS-02-012 / FDS-03-014 hierarchy cascade). NO MaxParts (Confirm B). ----
+        -- Eligible at the destination Cell OR any ancestor tier (Cell -> WorkCenter
+        -- -> Area -> Site), consistent with Item_ListEligibleForLocation + the
+        -- Lot_Create / Lot_MoveToValidated gates.
         IF NOT EXISTS (
             SELECT 1 FROM Parts.v_EffectiveItemLocation
-            WHERE ItemId = @ItemId AND LocationId = @DestinationCellLocationId)
+            WHERE ItemId = @ItemId
+              AND LocationId IN (SELECT LocationId FROM Location.ufn_AncestorLocationIds(@DestinationCellLocationId)))
         BEGIN
             SET @Message = N'Item is not eligible at the destination location.';
             EXEC Audit.Audit_LogFailure

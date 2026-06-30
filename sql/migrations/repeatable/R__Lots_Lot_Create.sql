@@ -199,10 +199,14 @@ BEGIN
             RETURN;
         END
 
-        -- ---- 4. Eligibility (Direct U BomDerived) ----
+        -- ---- 4. Eligibility (Direct U BomDerived, FDS-03-014 hierarchy cascade) ----
+        -- Eligible if configured at the Cell OR any ancestor tier (Cell -> WorkCenter
+        -- -> Area -> Site). Must match the dropdown (Item_ListEligibleForLocation) so
+        -- a picked Item is never rejected here.
         IF NOT EXISTS (
             SELECT 1 FROM Parts.v_EffectiveItemLocation
-            WHERE ItemId = @ItemId AND LocationId = @CurrentLocationId
+            WHERE ItemId = @ItemId
+              AND LocationId IN (SELECT LocationId FROM Location.ufn_AncestorLocationIds(@CurrentLocationId))
         )
         BEGIN
             SET @Message = N'Item is not eligible at the specified location.';
