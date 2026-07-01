@@ -7,8 +7,8 @@
       "Name": ""
     },
     "selected": {
-      "Cose": "",
-      "DateType": "String",
+      "Code": "",
+      "DataType": "String",
       "IsRequired": false,
       "Name": ""
     }
@@ -56,6 +56,29 @@
               "grow": 1
             },
             "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "DirtyIndicator"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.editDraft} !\u003d {view.custom.selected}, \"● Unsaved changes\", \"\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-accent)",
+                "fontSize": "11px",
+                "fontStyle": "italic"
+              }
+            },
+            "type": "ia.display.label"
           },
           {
             "events": {
