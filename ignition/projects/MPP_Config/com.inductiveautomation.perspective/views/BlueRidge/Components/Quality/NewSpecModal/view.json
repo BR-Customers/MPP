@@ -69,6 +69,29 @@
             "type": "ia.container.flex"
           },
           {
+            "meta": {
+              "name": "DirtyIndicator"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.draft} !\u003d {view.custom.selected}, \"● Unsaved changes\", \"\")"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-accent)",
+                "fontSize": "11px",
+                "fontStyle": "italic"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
             "events": {
               "dom": {
                 "onClick": {
