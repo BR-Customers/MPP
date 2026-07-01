@@ -395,7 +395,7 @@
                           "name": "ColArea"
                         },
                         "position": {
-                          "basis": "140px",
+                          "basis": "170px",
                           "shrink": 0
                         },
                         "props": {
@@ -408,21 +408,11 @@
                           "name": "ColExcused"
                         },
                         "position": {
-                          "basis": "80px",
+                          "basis": "130px",
                           "shrink": 0
                         },
                         "props": {
                           "text": "Excused"
-                        },
-                        "type": "ia.display.label"
-                      },
-                      {
-                        "meta": {
-                          "name": "ColEdit"
-                        },
-                        "position": {
-                          "basis": "80px",
-                          "shrink": 0
                         },
                         "type": "ia.display.label"
                       }
@@ -462,7 +452,7 @@
                     "props": {
                       "direction": "column",
                       "elementPosition": {
-                        "basis": "48px",
+                        "basis": "50px",
                         "shrink": 0
                       },
                       "path": "BlueRidge/Components/DefectCodeRow",

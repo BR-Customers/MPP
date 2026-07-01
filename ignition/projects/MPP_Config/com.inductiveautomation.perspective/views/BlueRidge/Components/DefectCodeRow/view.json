@@ -166,18 +166,6 @@
           "text": "Edit"
         },
         "type": "ia.input.button"
-      },
-      {
-        "meta": {
-          "name": "Icon"
-        },
-        "position": {
-          "basis": "30px"
-        },
-        "props": {
-          "path": "material/insert_emoticon"
-        },
-        "type": "ia.display.icon"
       }
     ],
     "meta": {
@@ -213,6 +201,7 @@
       "alignItems": "center",
       "style": {
         "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "overflow": "hidden",
         "padding": "8px 12px"
       }
     },
