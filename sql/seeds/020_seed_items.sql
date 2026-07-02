@@ -38,27 +38,27 @@ BEGIN
 END
 
 -- ============================================================
--- OperationTemplates (need AreaLocationId)
---   Areas resolved by Code from 011_seed_locations_mpp_plant.sql: DC1, TRIM1, MA1
+-- OperationTemplates (OperationTypeId FK -> Parts.OperationType, seeded by 0032)
+--   Roles: DC-5G0=DieCast, TRIM-5G0=TrimOut, CNC-5G0=CNC, ASSY-FRONT=AssemblyOut
 -- ============================================================
 
 SET IDENTITY_INSERT Parts.OperationTemplate ON;
 
 IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Id = 1)
-    INSERT INTO Parts.OperationTemplate (Id, Code, VersionNumber, Name, AreaLocationId, Description, CreatedAt)
-    VALUES (1, N'DC-5G0', 1, N'Die Cast 5G0 Front Cover', (SELECT Id FROM Location.Location WHERE Code = N'DC1'), N'Die cast operation for the 5G0 front cover assembly.', @Now);
+    INSERT INTO Parts.OperationTemplate (Id, Code, VersionNumber, Name, OperationTypeId, Description, CreatedAt)
+    VALUES (1, N'DC-5G0', 1, N'Die Cast 5G0 Front Cover', (SELECT Id FROM Parts.OperationType WHERE Code = N'DieCast'), N'Die cast operation for the 5G0 front cover assembly.', @Now);
 
 IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Id = 2)
-    INSERT INTO Parts.OperationTemplate (Id, Code, VersionNumber, Name, AreaLocationId, Description, CreatedAt)
-    VALUES (2, N'TRIM-5G0', 1, N'Trim 5G0 Front Cover', (SELECT Id FROM Location.Location WHERE Code = N'TRIM1'), N'Trim/deflash operation for the 5G0 front cover.', @Now);
+    INSERT INTO Parts.OperationTemplate (Id, Code, VersionNumber, Name, OperationTypeId, Description, CreatedAt)
+    VALUES (2, N'TRIM-5G0', 1, N'Trim 5G0 Front Cover', (SELECT Id FROM Parts.OperationType WHERE Code = N'TrimOut'), N'Trim/deflash operation for the 5G0 front cover.', @Now);
 
 IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Id = 3)
-    INSERT INTO Parts.OperationTemplate (Id, Code, VersionNumber, Name, AreaLocationId, Description, CreatedAt)
-    VALUES (3, N'CNC-5G0', 1, N'CNC Machining 5G0', (SELECT Id FROM Location.Location WHERE Code = N'MA1'), N'CNC machining operation for the 5G0 front cover.', @Now);
+    INSERT INTO Parts.OperationTemplate (Id, Code, VersionNumber, Name, OperationTypeId, Description, CreatedAt)
+    VALUES (3, N'CNC-5G0', 1, N'CNC Machining 5G0', (SELECT Id FROM Parts.OperationType WHERE Code = N'CNC'), N'CNC machining operation for the 5G0 front cover.', @Now);
 
 IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Id = 4)
-    INSERT INTO Parts.OperationTemplate (Id, Code, VersionNumber, Name, AreaLocationId, Description, CreatedAt)
-    VALUES (4, N'ASSY-FRONT', 1, N'Assembly Front Cover', (SELECT Id FROM Location.Location WHERE Code = N'MA1'), N'Final assembly of the 5G0 front cover.', @Now);
+    INSERT INTO Parts.OperationTemplate (Id, Code, VersionNumber, Name, OperationTypeId, Description, CreatedAt)
+    VALUES (4, N'ASSY-FRONT', 1, N'Assembly Front Cover', (SELECT Id FROM Parts.OperationType WHERE Code = N'AssemblyOut'), N'Final assembly of the 5G0 front cover.', @Now);
 
 SET IDENTITY_INSERT Parts.OperationTemplate OFF;
 

@@ -28,28 +28,19 @@ SET NOCOUNT ON;
 
 DECLARE @Now DATETIME2(3) = SYSUTCDATETIME();
 
--- Resolve the Machining Area. Prefer the canonical 'MA1' area (011 seed); fall
--- back to the first active Area-tier Location so a partial location seed still
--- satisfies the FK.
-DECLARE @MachAreaId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1' AND DeprecatedAt IS NULL);
-IF @MachAreaId IS NULL
-    SET @MachAreaId = (
-        SELECT TOP 1 l.Id
-        FROM Location.Location l
-        INNER JOIN Location.LocationTypeDefinition ltd ON ltd.Id = l.LocationTypeDefinitionId
-        INNER JOIN Location.LocationType lt ON lt.Id = ltd.LocationTypeId
-        WHERE l.DeprecatedAt IS NULL AND lt.Code = N'Area'
-        ORDER BY l.Id);
+-- Resolve the operation roles (migration 0032 seeds Parts.OperationType).
+DECLARE @OpTypeMachIn  BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'MachiningIn'  AND DeprecatedAt IS NULL);
+DECLARE @OpTypeMachOut BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'MachiningOut' AND DeprecatedAt IS NULL);
 
-IF @MachAreaId IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Code = N'MachiningIn')
-    INSERT INTO Parts.OperationTemplate (Code, VersionNumber, Name, AreaLocationId, Description, RequiresSubLotSplit, CreatedAt)
-    VALUES (N'MachiningIn', 1, N'Machining In', @MachAreaId,
+IF @OpTypeMachIn IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Code = N'MachiningIn')
+    INSERT INTO Parts.OperationTemplate (Code, VersionNumber, Name, OperationTypeId, Description, RequiresSubLotSplit, CreatedAt)
+    VALUES (N'MachiningIn', 1, N'Machining In', @OpTypeMachIn,
             N'Machining-line IN checkpoint template (Arc 2 Phase 5). FIFO pick of a whole cast/trim LOT + BOM-driven part-identity rename (FDS-05-033); written by MachiningIn_PickAndConsume.',
             0, @Now);
 
-IF @MachAreaId IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Code = N'MachiningOut')
-    INSERT INTO Parts.OperationTemplate (Code, VersionNumber, Name, AreaLocationId, Description, RequiresSubLotSplit, CreatedAt)
-    VALUES (N'MachiningOut', 1, N'Machining Out', @MachAreaId,
+IF @OpTypeMachOut IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Code = N'MachiningOut')
+    INSERT INTO Parts.OperationTemplate (Code, VersionNumber, Name, OperationTypeId, Description, RequiresSubLotSplit, CreatedAt)
+    VALUES (N'MachiningOut', 1, N'Machining Out', @OpTypeMachOut,
             N'Machining-line OUT template (Arc 2 Phase 5). Closing checkpoint for either the operator sub-LOT split (RequiresSubLotSplit=1, FDS-05-009) or the PLC auto-complete/auto-move (FDS-06-008).',
             1, @Now);
 GO
