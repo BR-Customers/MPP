@@ -1,7 +1,7 @@
 # MPP MES — Data Model Reference
 
-**Version:** v1.9 working draft (rev 2026-06-09s — **Scaling Decisions (OI-35)** section added; OI-35 architecture gate signed off 2026-06-08 (B2 monthly partitioning + TRUNCATE sliding-window, B4 closure, B5 materialized qty, B6 row-locked sequence, B7 OperationLog split, B8 filtered indexes; B1 retention → FDS §11); rev 2026-06-08q - **section 3 `Lot.CrtActive BIT`** added (FDS-10-012 Controlled Run Tag hook, MVP-ratified 2026-06-08); rev 2026-06-08p - Location `CoupledDownstreamCellLocationId` typed-FK promotion + `QualityResult.NumericValue`; rev 2026-06-05o — **§7 `Tools.ToolType.CompatibleLocationTypeDefinitionId`** added (migration `0018`) for the Mount-to-Cell tool-type→cell-kind dropdown filter; `Die → DieCastMachine` seeded. Earlier: rev 2026-06-04n — sub-LOT split relocated from Trim OUT to **Machining OUT** per FDS v1.3 / Phased Plan v1.1; `Parts.OperationTemplate.RequiresSubLotSplit` now controls the Machining OUT outbound flow (FDS-05-009), and the ALTER lands in Phase 5 migration `0018` rather than Phase 4 `0017`. v1.9m (2026-04-29) had added the column under the prior Trim-OUT design. See revision history.)
-**Schemas:** 8 | **Tables:** ~73
+**Version:** v1.9 working draft (rev 2026-07-02t — **operation-type restructure: `OperationTemplate.AreaLocationId` dropped, `OperationTypeId` FK added; new `Parts.OperationType` + `Parts.OperationCategory` code tables (migrations 0032/0033)**; rev 2026-06-09s — **Scaling Decisions (OI-35)** section added; OI-35 architecture gate signed off 2026-06-08 (B2 monthly partitioning + TRUNCATE sliding-window, B4 closure, B5 materialized qty, B6 row-locked sequence, B7 OperationLog split, B8 filtered indexes; B1 retention → FDS §11); rev 2026-06-08q - **section 3 `Lot.CrtActive BIT`** added (FDS-10-012 Controlled Run Tag hook, MVP-ratified 2026-06-08); rev 2026-06-08p - Location `CoupledDownstreamCellLocationId` typed-FK promotion + `QualityResult.NumericValue`; rev 2026-06-05o — **§7 `Tools.ToolType.CompatibleLocationTypeDefinitionId`** added (migration `0018`) for the Mount-to-Cell tool-type→cell-kind dropdown filter; `Die → DieCastMachine` seeded. Earlier: rev 2026-06-04n — sub-LOT split relocated from Trim OUT to **Machining OUT** per FDS v1.3 / Phased Plan v1.1; `Parts.OperationTemplate.RequiresSubLotSplit` now controls the Machining OUT outbound flow (FDS-05-009), and the ALTER lands in Phase 5 migration `0018` rather than Phase 4 `0017`. v1.9m (2026-04-29) had added the column under the prior Trim-OUT design. See revision history.)
+**Schemas:** 8 | **Tables:** ~75
 **Target:** Microsoft SQL Server 2022 Standard Edition
 
 ---
@@ -10,6 +10,7 @@
 
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
+| 1.9t | 2026-07-02 | Blue Ridge Automation | **Operation-type model restructure (Spec 1).** `Parts.OperationTemplate.AreaLocationId` (per-area FK) **dropped**; new `OperationTypeId BIGINT NOT NULL FK → Parts.OperationType` added — templates are now area-agnostic and reusable across all areas of a kind, resolved by operation role at the terminal. Two new read-only code tables: **`Parts.OperationCategory`** (3 rows: Die Cast / Trim / Machining & Assembly) and **`Parts.OperationType`** (8 roles: DieCast, TrimIn/Out, MachiningIn/Out, AssemblyIn/Out, CNC). Migrations `0032` (expand) + `0033` (contract). `RequiresSubLotSplit` now correlates to `OperationType.Code='MachiningOut'`. Defect/downtime area filtering is unaffected (those tables keep their own `AreaLocationId`; screens filter by the terminal's runtime area, not the template). |
 | 1.9s | 2026-06-09 | Blue Ridge Automation | **Scaling Decisions (OI-35) section added — Phase 0 architecture gate signed off.** New top-level "Scaling Decisions (OI-35)" section captures the ratified Track-B architecture decisions governing migration `0020_arc2_phase1_shop_floor_foundation.sql`: B2 monthly RANGE-RIGHT partitioning + **`TRUNCATE`-based sliding-window** (singleton `Id` PK preserved — see design spec `docs/superpowers/specs/2026-06-09-arc2-phase1-sql-foundation-design.md`); B3 columnstore deferred (partition-compatible); B4 `LotGenealogyClosure` table; B5 materialized `TotalInProcess`/`InventoryAvailable` + `v_LotDerivedQuantities` fallback; B6 row-locked `IdentifierSequence_Next` (seed ≈3,000,000, MESL/MESI); B7 `OperationLog`→`LotEventLog` split; B8 known filtered indexes; B1 retention per FDS §11. Spec-only (governs the unbuilt `0020`); no shipped table changed. |
 | 1.9r | 2026-06-08 | Blue Ridge Automation | **§5 Quality doc-sync — three migration-`0017` columns back-filled into the spec (were live in the DB but missing from this doc and the ERD).** `Quality.QualitySpec` gains `DeprecatedAt DATETIME2(3) NULL` + `DeprecatedByUserId BIGINT NULL FK → AppUser.Id` (header-level soft-delete). `Quality.QualitySpecAttribute` gains `UomId BIGINT NULL FK → Parts.Uom.Id` (replaces free-text `Uom` usage by the Config Tool QualitySpec editor; legacy `Uom NVARCHAR(20)` retained for back-compat). All three shipped in versioned migration `0017_qualityspec_attribute_uom_fk` (applied) but were never reflected in the data model §5 or `MPP_MES_ERD.html` — surfaced by the 2026-06-08 ERD-vs-DM parallel audit. No SQL change (migration already live); spec + ERD Quality tab updated to match the built schema. |
 | 1.9q | 2026-06-08 | Blue Ridge Automation | **section 3 Lot - `CrtActive BIT NOT NULL DEFAULT 0` added (FDS-10-012 Controlled Run Tag).** CRT workflow ratified for MVP 2026-06-08: a CRT-active LOT forces 200% downstream inspection (via `Quality.QualitySample`) with a supervisor-elevated release path and a `MissedCrtInspect` re-run rule. The column lands in the Arc 2 Phase 1 `Lots.Lot` CREATE; the workflow procs + audit event types build in the Arc 2 Quality phase. No other shipped table affected. |
@@ -382,9 +383,36 @@ Ordered steps within a route.
 | IsRequired | BIT | NOT NULL, DEFAULT 1 | |
 | Description | NVARCHAR(500) | NULL | |
 
+### OperationCategory
+
+Read-only code table grouping operation roles for Config-Tool display. Seeded (3 rows): `DieCast` (Die Cast), `Trim` (Trim), `MachiningAssembly` (Machining & Assembly). Added 2026-07-02 (operation-type restructure, migration `0032`).
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| Code | NVARCHAR(20) | NOT NULL, UNIQUE | DieCast, Trim, MachiningAssembly |
+| Name | NVARCHAR(100) | NOT NULL | |
+| Description | NVARCHAR(500) | NULL | |
+| CreatedAt | DATETIME2(3) | NOT NULL, DEFAULT SYSUTCDATETIME() | |
+| DeprecatedAt | DATETIME2(3) | NULL | |
+
+### OperationType
+
+Read-only code table of operation **roles** — the stable identity a terminal binds to (via its default view / tab focus) so the scanned LOT's route resolves the right `OperationTemplate`, and the axis that lets one template be reused across all areas of a kind (e.g. one die-cast template for DC1–DC4). Seeded (8 rows). Added 2026-07-02 (migration `0032`).
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| Code | NVARCHAR(20) | NOT NULL, UNIQUE | DieCast, TrimIn, TrimOut, MachiningIn, MachiningOut, AssemblyIn, AssemblyOut, CNC |
+| Name | NVARCHAR(100) | NOT NULL | |
+| OperationCategoryId | BIGINT | FK → Parts.OperationCategory.Id, NOT NULL | Grouping category |
+| Description | NVARCHAR(500) | NULL | |
+| CreatedAt | DATETIME2(3) | NOT NULL, DEFAULT SYSUTCDATETIME() | |
+| DeprecatedAt | DATETIME2(3) | NULL | |
+
 ### OperationTemplate
 
-Defines what data to collect at a type of operation. Reusable across products. **Versioned** via `Code` + `VersionNumber` — multiple rows share a Code to represent the evolution of one operation over time. See the clone-to-modify workflow in the Phase 5 `_CreateNewVersion` proc.
+Defines what data to collect at a type of operation. **Area-agnostic and reusable across products and areas** — classified by `OperationTypeId` (operation role); a terminal resolves the right template by role, so one die-cast template serves all four die-cast areas (2026-07-02 restructure; the former per-area `AreaLocationId` was dropped). **Versioned** via `Code` + `VersionNumber` — multiple rows share a Code to represent the evolution of one operation over time. See the clone-to-modify workflow in the Phase 5 `_CreateNewVersion` proc.
 
 | Column | Type | Constraints | Description |
 |---|---|---|---|
@@ -392,7 +420,7 @@ Defines what data to collect at a type of operation. Reusable across products. *
 | Code | NVARCHAR(20) | NOT NULL | Operation family code (e.g., DIE-CAST-801T). Multiple rows may share this value across versions. |
 | VersionNumber | INT | NOT NULL, DEFAULT 1 | Version within the Code family. UNIQUE(Code, VersionNumber) enforces one row per version. |
 | Name | NVARCHAR(100) | NOT NULL | |
-| AreaLocationId | BIGINT | FK → Location.Id, NOT NULL | Area (ISA-95 Area, organizational grouping) |
+| OperationTypeId | BIGINT | FK → Parts.OperationType.Id, NOT NULL | Operation role (see OperationType). Replaces the former `AreaLocationId` — templates are area-agnostic as of the 2026-07-02 restructure; the executing terminal supplies the area at runtime. `RequiresSubLotSplit` now correlates to `OperationType.Code = 'MachiningOut'`. |
 | Description | NVARCHAR(500) | NULL | |
 | RequiresSubLotSplit | BIT | NOT NULL, DEFAULT 0 | **Added v1.9m; relocated to Machining OUT in v1.9n.** Control flag for outbound flows that split a LOT across multiple downstream destinations (used at **Machining OUT** per FDS-05-009 — the physical correlate is a line with a dedicated Machining OUT terminal). When `1`, the Machining OUT screen presents a multi-destination split UX (one sub-LOT per destination, N total); the closing proc (`MachiningOut_RecordSplit`) calls `Lot_Split` and `Lot_MoveTo` per child. When `0` (default), Machining OUT is the PLC-driven auto-move (coupled) or a manual whole-move (uncoupled) — no split. Engineering authors per Item per Cell via the Configuration Tool. Versioned with the rest of the row per the clone-to-modify pattern. Operations with no outbound-split branch — Die Cast, Receiving, **Trim OUT** (now a 1:1 whole-LOT move), Machining IN, Assembly — ignore the column. The ALTER lands in Phase 5 migration `0018`. |
 | CreatedAt | DATETIME2(3) | NOT NULL, DEFAULT GETDATE() | |

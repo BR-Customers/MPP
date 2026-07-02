@@ -4,7 +4,7 @@
 **Project:** Madison Precision Products MES Replacement
 **Prepared By:** Blue Ridge Automation
 **Client:** Madison Precision Products, Inc. (Madison, IN)
-**Version:** 1.4 — Customer Review Release
+**Version:** 1.5 — Customer Review Release
 **Date:** 2026-06-10
 
 ---
@@ -32,6 +32,7 @@ Comments may be returned as annotations on the Word document, an annotated PDF, 
 
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
+| 1.5 | 2026-07-02 | Blue Ridge Automation | **Operation-type model restructure (Spec 1).** Operation templates are decoupled from a specific Area: `OperationTemplate.AreaLocationId` is replaced by an operation **role** (`OperationTypeId` → new `Parts.OperationType`, grouped by `Parts.OperationCategory`) so one template serves all areas of a kind (e.g. one die-cast template for DC1–DC4) and a terminal resolves the right template by role. Amended: **FDS-03-012** (`AreaLocationId` → `OperationTypeId` field), **FDS-03-009** (operation template defines the role, not the area), **FDS-02-001 note** + **FDS-02-003** (defect/downtime screens filter by the terminal's runtime area, not the template). Defect/downtime code area filtering is otherwise unchanged (those tables keep their own `AreaLocationId`). **FDS-05-025** sort/inspection-terminator marker is orthogonal to `OperationType` (a route-step property) — no conflict. Migrations `0032`/`0033`; SQL + Ignition NQ/entity layers built and green; Config-Tool views pending Designer smoke. |
 | 1.4 | 2026-06-10 | Blue Ridge Automation | **Terminal mode model replaced (view-policy).** FDS-02-010 rewritten — dedicated-vs-shared behavior is a property of the operator view assigned via the Terminal's `DefaultScreen` attribute; the parent-tier derivation is retired (MPP's machining/assembly lines + trim shops are tracked at line/area resolution with no equipment cells beneath their terminals, so the hierarchy cannot encode behavior; smoke-discovered 2026-06-10). Dedicated context = the Terminal's parent Location at any tier; shared context picker = descendant **equipment** Cells (new `Location.Terminal_ListContextCells`, excluding Terminal/Printer kinds). FDS-02-008 (no mode attribute; ≥1 child Printer required, `HasPrinter` registry flag), FDS-02-009/011 (context rules re-anchored to view flavor), FDS-04-003 (presence policy via `session.custom.presence.policy`) amended; **FDS-04-006 explicitly unchanged** — both flavors keep the 30-minute re-confirmation. Design record: `docs/superpowers/specs/2026-06-10-terminal-mode-view-policy-design.md`. |
 | 1.3a | 2026-06-09 | Blue Ridge Automation | **FDS-11-009 retention policy amended per OI-35 B1 sign-off (2026-06-08).** The flat "all MES data 20 years" rule is replaced with **differentiated per-table retention** — 20-yr Honda traceability (`Lots.*` events, `ContainerSerial`/`History`, `ShippingLabel`, `Workorder.ConsumptionEvent`/`RejectEvent`, `Quality.QualitySample`/`QualityResult`) vs 7-yr general operational/audit (`Audit.OperationLog`/`FailureLog`/`InterfaceLog`/`ConfigLog`, `Oee.DowntimeEvent`, `Workorder.ProductionEvent`/`Value`, `Quality.QualityAttachment`) — enforced via the OI-35 B2 monthly sliding-window partition process (`TRUNCATE` age-out; see Data Model § "Scaling Decisions"). Final windows subject to MPP IT confirmation (B1). Post-acceptance amendment from the signed-off Phase 0 Track-B architecture review; no other §11 change. **Carried action:** remove the 50/50 even-split-default wording from §5/§6 sub-LOT-split prose at the next pass (UJ-03 changed per Phase 0 T008 — operator enters all split quantities). |
 | 1.3 | 2026-06-03 | Blue Ridge Automation | **Sub-LOT split relocated from Trim OUT to Machining OUT** (per MPP, confirmed 2026-06 — supersedes the prior Trim-OUT split design; not an open item, the question is settled with the customer). Trim is now a **1:1 whole-LOT move tracked at Area resolution** (check-in → process → check-out, no line/cell tracking, no split). The Trim → Machining rename still fires at Machining IN (FDS-05-033) on the whole LOT; the split into N machined sub-LOTs now fires at **Machining OUT** on lines that sublot — physical signature is a dedicated Machining OUT terminal. Edits: FDS-05-009 (retitled "Machining OUT Sub-LOT Split Workflow"), FDS-06-006 (Trim OUT → whole-LOT move), FDS-06-004 (Trim tracked at Area), FDS-06-007 (Machining IN FIFO holds whole LOTs), FDS-06-008 (Machining OUT branches: split on sublotting lines, else auto-move to coupled Assembly), §5.4 intro, §6.3 / §6.4 narrative, and the §8 partial-quality-split reference (now points to FDS-05-022). **No schema change** — `Lot.ParentLotId` / `LotGenealogy` already model machining-origin sub-LOTs, so the Arc 2 Phase 1 build (`0014`) is unaffected. |
@@ -396,7 +397,7 @@ The system SHALL seed five `LocationType` rows at deployment, corresponding to t
 | WorkCenter | Work Center | 3 | Production line or grouping of equipment |
 | Cell | Cell | 4 | Individual station or unit — machines, terminals, inventory locations, scales |
 
-> **ISA-95 note:** The prior "Department" concept has been merged into Area — at MPP, every organizational department (Die Cast, Trim Shop, Machine Shop, Production Control, Quality Control) maps 1:1 to a physical area of the plant. Area-type locations serve both the physical hierarchy role and the organizational grouping role (defect codes, downtime reason codes, and operation templates reference Areas). ISA-95's "Machine" and "Work Cell" distinction has been collapsed into the single `Cell` tier — the distinction between a CNC machine and a manual assembly station is captured by `LocationTypeDefinition`, not by a separate hierarchy level.
+> **ISA-95 note:** The prior "Department" concept has been merged into Area — at MPP, every organizational department (Die Cast, Trim Shop, Machine Shop, Production Control, Quality Control) maps 1:1 to a physical area of the plant. Area-type locations serve both the physical hierarchy role and the organizational grouping role (defect codes and downtime reason codes reference Areas; operation templates are **area-agnostic** as of the 2026-07-02 restructure — they carry an operation role, not an area, per FDS-03-012). ISA-95's "Machine" and "Work Cell" distinction has been collapsed into the single `Cell` tier — the distinction between a CNC machine and a manual assembly station is captured by `LocationTypeDefinition`, not by a separate hierarchy level.
 
 #### FDS-02-002 — Hierarchy Enforcement
 The system SHOULD validate that child locations have a `HierarchyLevel` greater than or equal to their parent's level, determined by joining through `LocationTypeDefinition` to `LocationType`. The system SHALL NOT enforce strict sequential levels — a Cell MAY be a direct child of an Area if no Work Center level exists for that area.
@@ -430,7 +431,7 @@ MPP's five operational areas SHALL be created as `Location` instances at deploym
 | Production Control | SupportArea | Scheduling, shipping, receiving |
 | Quality Control | SupportArea | Inspection, holds, sort cage |
 
-Areas are referenced by defect codes, downtime reason codes, and operation templates for filtering. Die Cast screens show only Die Cast defect codes; Machine Shop screens show only Machine Shop codes. (FRS 3.3.2, 3.7.1)
+Areas are referenced by defect codes and downtime reason codes for filtering. Die Cast screens show only Die Cast defect codes; Machine Shop screens show only Machine Shop codes — the screen filters by the **terminal's runtime area**, not by the operation template (templates are area-agnostic as of the 2026-07-02 restructure). (FRS 3.3.2, 3.7.1)
 
 ### 2.3 Polymorphic Kinds and Configurable Attributes
 
@@ -612,7 +613,7 @@ Each manufactured item SHALL have a versioned route template defining the ordere
 Each route template SHALL contain ordered route steps. Each step SHALL reference an operation template (what data to collect) and carry a sequence number and required flag.
 
 #### FDS-03-009 — Route Steps Do Not Prescribe Machines
-Route steps SHALL reference an operation template, which defines the area and data collection requirements. Route steps SHALL NOT reference a specific machine or location. The operator selects from eligible machines at runtime based on the `ItemLocation` eligibility map. (FRS 3.11.6; confirmed per architectural review 2026-04-06)
+Route steps SHALL reference an operation template, which defines the operation **role** (OperationType) and data collection requirements; the operation is area-agnostic (the executing terminal supplies the area at runtime). Route steps SHALL NOT reference a specific machine or location. The operator selects from eligible machines at runtime based on the `ItemLocation` eligibility map. (FRS 3.11.6; confirmed per architectural review 2026-04-06)
 
 #### FDS-03-010 — Route Versioning
 When a route is revised, a new version SHALL be created. Production records SHALL FK to the route version active at time of execution.
@@ -629,7 +630,7 @@ Operation templates define what data to collect at a type of operation. They are
 |---|---|
 | Code, VersionNumber | Identity within a version family |
 | Name | Human-readable label |
-| AreaLocationId | Area this operation belongs to (for defect/downtime code filtering) |
+| OperationTypeId | Operation **role** (FK → `Parts.OperationType`): DieCast, TrimIn/Out, MachiningIn/Out, AssemblyIn/Out, CNC. A terminal resolves the right template by this role; replaces the former per-area `AreaLocationId` (2026-07-02 restructure — one template now serves all areas of a kind). |
 | Description | Optional notes |
 | *(data collection requirements)* | Defined by `OperationTemplateField` rows referencing `DataCollectionField` — not hardcoded on the template itself |
 
