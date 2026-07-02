@@ -343,8 +343,16 @@ IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE Id = 4)
     INSERT INTO Parts.ItemLocation (Id, ItemId, LocationId, IsConsumptionPoint, MinQuantity, MaxQuantity, DefaultQuantity, CreatedAt)
     SELECT 4, 1, Id, 1, 10, 500, 100, @Now FROM Location.Location WHERE Code = N'DC1-M08';
 
+-- Ancestor-tier (Area) eligibility: 5G0 eligible across all of the DC1 Area.
+-- FDS-03-014 hierarchy-cascade example -- engineering configures at the coarsest
+-- appropriate tier (one Area row) and a Cell-level resolution surfaces it. Required
+-- fixture for 0009_Parts_Process/060_Eligibility_hierarchy_cascade.sql.
+IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE Id = 5)
+    INSERT INTO Parts.ItemLocation (Id, ItemId, LocationId, IsConsumptionPoint, MinQuantity, MaxQuantity, DefaultQuantity, CreatedAt)
+    SELECT 5, 1, Id, 0, NULL, NULL, NULL, @Now FROM Location.Location WHERE Code = N'DC1';
+
 SET IDENTITY_INSERT Parts.ItemLocation OFF;
 
 PRINT 'seed_items: 5 items, 5 container configs, 2 routes (5 steps), 1 BOM (2 lines), 2 quality specs loaded.';
-PRINT 'seed_items: Item 1 (5G0) fully configured -- 14 OperationTemplateFields, 7 QualitySpecAttributes, 4 eligibility locations.';
+PRINT 'seed_items: Item 1 (5G0) fully configured -- 14 OperationTemplateFields, 7 QualitySpecAttributes, 5 eligibility locations (4 cells + DC1 area).';
 GO
