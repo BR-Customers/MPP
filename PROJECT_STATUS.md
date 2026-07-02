@@ -56,7 +56,7 @@ Plan: `docs/superpowers/plans/2026-06-16-arc2-phase4-movement-trim.md` (writing-
 - **3 views:** `Components/PlantFloor/MovementScan`, `Views/ShopFloor/TrimStation` (tabbed IN/OUT), `Views/ShopFloor/ReceivingDock` (parallel-subagent authored). Routes `/shop-floor/trim` + `/shop-floor/receiving` added.
 
 **⚠️ Owed / carry-over:**
-1. **Designer smoke** (the one CLI-impossible step) — exercise all 3 views in a Perspective session. **Gateway RESTART required first** (new Core NQs need it to register for inherited visibility — scan insufficient).
+1. **Designer smoke** (the one CLI-impossible step) — exercise all 3 views in a Perspective session. Run `.\scan.ps1` first — **no gateway restart** (new Core NQs register for inherited visibility on scan; the old "restart required" note was false, corrected 2026-07-02).
 2. **HomeRouter tiles** for Trim/Receiving — deferred (editing the existing HomeRouter `view.json` is the file-edit boundary → do in Designer). Routes are directly navigable now.
 3. **Hardware-gated:** real Zebra LTT print is a deployment gate (raw TCP to networked printers only). Dispatch verifiable via a local socket listener / Labelary.
 4. **TrimStation IN-tab checkpoint** (`ProductionEvent.record` for `TrimIn`) is TODO'd (no counter inputs wired yet); "Record scrap"/"Correct piece count" buttons present but disabled. The IN-tab MOVE works.

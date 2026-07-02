@@ -187,5 +187,5 @@ New versioned migration (after Spec 1's; repo ~`0029` → likely `0031`):
 - **Largest rework is the consumption relocation** (Container → finished-good LOT) — it touches tested Phase 6 (`0028`) procs + the `0028` test suite. Sequence: schema (`FinishedGoodLotId`) → orchestrator → retarget `ConsumptionEvent` → rework/retire `ContainerTray_Close` → update tests.
 - **PLC-gated** closure triggers (weight/vision) are commissioning-time; the proc + manual/count paths are testable now via simulated triggers.
 - **AIM integration remains the one unbuilt external** — `Container_Complete`'s AIM claim stays stubbed until the AIM phase; RFID is a later phase (Container persists to support it).
-- **Views are existing → Designer edits** (view-edit boundary); new inventory popup is file-authorable. `scan.ps1` after NQ/script changes; gateway restart only for brand-new Core NQs needing inherited visibility.
+- **Views are existing → Designer edits** (view-edit boundary); new inventory popup is file-authorable. `scan.ps1` after NQ/script changes is sufficient — **no gateway restart** (including brand-new Core NQs; inherited visibility registers on scan).
 - Keep `OperationType` codes stable (Spec 1) — the machining/assembly views bind to them.

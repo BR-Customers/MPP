@@ -229,7 +229,7 @@ No OI is opened or closed by Spec 1. (OI-32 and the FIFO/split reconciliations b
 - `BlueRidge/Views/Parts/OperationTemplates/view.json` — the list groups/filters by **Category** (via the type join) instead of Area; the persistent filter custom prop `filter.areaLocationId` → `filter.operationTypeId` (or category). Pre-declare the new bound custom props with shaped defaults (per the pre-declare convention).
 - `BlueRidge/Components/Popups/NewOperationTemplate/view.json` — the Area dropdown becomes an **OperationType** dropdown bound to `editDraft.OperationTypeId`; seed `editDraft` with the full shape.
 
-Both views are **existing** → edit in **Designer**, not file-edit (view-edit boundary). Run `scan.ps1` after any new NQ/entity-script; a **gateway restart** is required only if a brand-new Core NQ must register for inherited visibility (the new `OperationType_ListForDropdown`).
+Both views are **existing** → edit in **Designer**, not file-edit (view-edit boundary). Run `scan.ps1` after any new NQ/entity-script — that is sufficient, **including for the brand-new `OperationType_ListForDropdown` Core NQ** (inherited visibility registers on scan; **no gateway restart**).
 
 ---
 

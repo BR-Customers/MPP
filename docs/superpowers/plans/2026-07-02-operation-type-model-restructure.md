@@ -16,7 +16,7 @@
 - **Ignition JDBC (FDS-11-011):** procs SHALL NOT use `OUTPUT` params. Mutation procs end every exit path with `SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;` (drop `@NewId` for Update). Read procs return one result set; empty set = not found. Status-row mutation NQs use `attributes.type: "Query"`.
 - **Audit convention:** `Audit.ConfigLog.Description` shaped `<SUBJECT> · <CATEGORY?> · <ACTION>` via `Audit.ufn_MidDot()` + `Audit.ufn_TruncateActivity()`; `OldValue`/`NewValue` JSON carry resolved-name FK sub-objects (`OperationTypeId: {Id, Code, Name}`, not bare id).
 - **Confirmed decisions (from spec review):** D1 — `OperationCategory` is a normalized table (not a column). D2 — both new tables ship fixed-seed, no CRUD UI. D3 — template→role backfill map is confirmed (see Task 1).
-- **NQ topology:** all Named Queries live in **Core**; MPP/MPP_Config children have none. Run `scan.ps1` after any NQ/entity-script change; a brand-new Core NQ needs a gateway restart to register for inherited visibility.
+- **NQ topology:** all Named Queries live in **Core**; MPP/MPP_Config children have none. Run `scan.ps1` after any NQ/entity-script change — that is sufficient, **including for brand-new Core NQs** (inherited visibility registers on scan). **Never a gateway restart for NQs.** If an inherited NQ reads as "not found" after a scan, the cause is topology (it's in a sibling project, not Core), not a stale registry.
 - **View-edit boundary:** the two Config-Tool views are **existing** → edit in **Designer**, not by file-authoring.
 - **Migration numbers:** shown here as `0030` (expand) / `0031` (contract). **Confirm the next free versioned number at build** (`ls sql/migrations/versioned/`) and renumber both if taken.
 
@@ -496,7 +496,7 @@ In `BlueRidge/Parts/OperationTemplate/code.py`:
 
 - [ ] **Step 4: Scan + smoke the NQ layer**
 
-Run: `.\scan.ps1` (repo root). Then **restart the gateway** (a brand-new Core NQ — `OperationType_ListForDropdown` — must register for inherited MPP/MPP_Config visibility). Verify in the Designer/DB-browser that each edited NQ executes without a param error.
+Run: `.\scan.ps1` (repo root). That registers the new Core NQ (`OperationType_ListForDropdown`) for inherited MPP/MPP_Config visibility — **no gateway restart**. Verify in the Designer/DB-browser that each edited NQ executes without a param error.
 Expected: all five NQs execute; `getOperationTypesForDropdown()` returns the 8 rows.
 
 - [ ] **Step 5: Commit**
@@ -662,4 +662,4 @@ git commit -m "docs: OperationType restructure in Data Model + FDS"
 
 **Type consistency:** `@OperationTypeId BIGINT` and the result columns `OperationTypeCode/Name`, `OperationCategoryCode/Name` are used consistently across Tasks 3–9; `getOperationTypesForDropdown()` returns `[{label, value}]` consumed by Task 11; the confirmed template→role map is identical in Task 1 (backfill) and Task 2 (seeds).
 
-**Notes:** Ignition steps (Tasks 9, 11) aren't SQL-TDD — they use scan/gateway-restart + Designer smoke as their verification. The SQL suite stays green after every task because expand keeps both columns until Task 10.
+**Notes:** Ignition steps (Tasks 9, 11) aren't SQL-TDD — they use `scan.ps1` + Designer smoke as their verification (no gateway restart). The SQL suite stays green after every task because expand keeps both columns until Task 10.
