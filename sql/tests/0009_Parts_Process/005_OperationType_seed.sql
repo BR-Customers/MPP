@@ -59,5 +59,19 @@ DECLARE @HasCol NVARCHAR(10) = CASE WHEN EXISTS (
 EXEC test.Assert_IsEqual @TestName = N'[OpType] OperationTemplate.OperationTypeId exists', @Expected = N'1', @Actual = @HasCol;
 GO
 
+-- =============================================
+-- Test 5: contract phase (0033) -- AreaLocationId dropped, OperationTypeId NOT NULL
+-- =============================================
+DECLARE @HasArea NVARCHAR(10) = CASE WHEN EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'Parts.OperationTemplate') AND name = N'AreaLocationId') THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual @TestName = N'[OpType] AreaLocationId dropped', @Expected = N'0', @Actual = @HasArea;
+
+DECLARE @TypeNullable NVARCHAR(10) = CASE WHEN EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'Parts.OperationTemplate') AND name = N'OperationTypeId' AND is_nullable = 1) THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual @TestName = N'[OpType] OperationTypeId is NOT NULL', @Expected = N'0', @Actual = @TypeNullable;
+GO
+
 EXEC test.EndTestFile;
 GO
