@@ -2,7 +2,7 @@
 -- Procedure:   Parts.OperationTemplate_Create
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     2.0
+-- Version:     3.0
 --
 -- Description:
 --   Creates a brand-new OperationTemplate at VersionNumber = 1. The
@@ -11,13 +11,13 @@
 --
 --   NOTE: To create a subsequent version of an existing template (the
 --   clone-to-modify workflow), call Parts.OperationTemplate_CreateNewVersion
---   instead — it copies the parent row and its OperationTemplateField
+--   instead -- it copies the parent row and its OperationTemplateField
 --   junction rows into a new version atomically.
 --
 -- Parameters (input):
 --   @Code NVARCHAR(20)             - Code for this operation family. Required.
 --   @Name NVARCHAR(100)            - Required.
---   @AreaLocationId BIGINT         - FK → Location.Location (Area-tier). Required.
+--   @OperationTypeId BIGINT        - FK -> Parts.OperationType (role). Required.
 --   @Description NVARCHAR(500) NULL
 --   @AppUserId BIGINT              - Required for audit.
 --
@@ -28,13 +28,14 @@
 -- Change Log:
 --   2026-04-14 - 1.0 - Initial version (OUTPUT params)
 --   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
+--   2026-07-02 - 3.0 - AreaLocationId -> OperationTypeId (operation-type restructure)
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.OperationTemplate_Create
-    @Code           NVARCHAR(20),
-    @Name           NVARCHAR(100),
-    @AreaLocationId BIGINT,
-    @Description    NVARCHAR(500)  = NULL,
-    @AppUserId      BIGINT
+    @Code            NVARCHAR(20),
+    @Name            NVARCHAR(100),
+    @OperationTypeId BIGINT,
+    @Description     NVARCHAR(500)  = NULL,
+    @AppUserId       BIGINT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -47,12 +48,12 @@ BEGIN
     DECLARE @ProcName NVARCHAR(200) = N'Parts.OperationTemplate_Create';
     DECLARE @Params   NVARCHAR(MAX) =
         (SELECT @Code AS Code, @Name AS Name,
-                @AreaLocationId AS AreaLocationId, @Description AS Description
+                @OperationTypeId AS OperationTypeId, @Description AS Description
          FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
     BEGIN TRY
         -- Parameter validation
-        IF @Code IS NULL OR @Name IS NULL OR @AreaLocationId IS NULL OR @AppUserId IS NULL
+        IF @Code IS NULL OR @Name IS NULL OR @OperationTypeId IS NULL OR @AppUserId IS NULL
         BEGIN
             SET @Message = N'Required parameter missing.';
             EXEC Audit.Audit_LogFailure
@@ -64,10 +65,10 @@ BEGIN
             RETURN;
         END
 
-        -- Business rule: AreaLocationId must exist and be active
-        IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Id = @AreaLocationId AND DeprecatedAt IS NULL)
+        -- Business rule: OperationTypeId must exist and be active
+        IF NOT EXISTS (SELECT 1 FROM Parts.OperationType WHERE Id = @OperationTypeId AND DeprecatedAt IS NULL)
         BEGIN
-            SET @Message = N'Invalid or deprecated AreaLocationId.';
+            SET @Message = N'Invalid or deprecated OperationTypeId.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'OperationTemplate',
                 @EntityId = NULL, @LogEventTypeCode = N'Created',
@@ -93,9 +94,9 @@ BEGIN
         BEGIN TRANSACTION;
 
         INSERT INTO Parts.OperationTemplate
-            (Code, VersionNumber, Name, AreaLocationId, Description, CreatedAt)
+            (Code, VersionNumber, Name, OperationTypeId, Description, CreatedAt)
         VALUES
-            (@Code, 1, @Name, @AreaLocationId, @Description, SYSUTCDATETIME());
+            (@Code, 1, @Name, @OperationTypeId, @Description, SYSUTCDATETIME());
 
         SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
 

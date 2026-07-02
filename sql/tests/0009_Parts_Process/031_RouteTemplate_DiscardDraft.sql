@@ -48,14 +48,15 @@ SELECT @ItId4 = NewId FROM #Itm;
 DROP TABLE #Itm;
 
 -- OperationTemplates
+DECLARE @OpTypeId BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'DieCast');
 CREATE TABLE #Ot (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #Ot EXEC Parts.OperationTemplate_Create
     @Code = N'TEST-DD-OT-1', @Name = N'DD OT 1',
-    @AreaLocationId = 3, @AppUserId = 1;
+    @OperationTypeId = @OpTypeId, @AppUserId = 1;
 SELECT @Ot1 = NewId FROM #Ot; DELETE FROM #Ot;
 INSERT INTO #Ot EXEC Parts.OperationTemplate_Create
     @Code = N'TEST-DD-OT-2', @Name = N'DD OT 2',
-    @AreaLocationId = 3, @AppUserId = 1;
+    @OperationTypeId = @OpTypeId, @AppUserId = 1;
 SELECT @Ot2 = NewId FROM #Ot;
 DROP TABLE #Ot;
 
