@@ -19,7 +19,7 @@
 #   getOne(id)                           -> dict | None
 #   getVersionsForCode(code)             -> [{version: <row>}, ...]
 #   getFieldsForTemplate(templateId)     -> [{field: <row>}, ...]
-#   getAreasForDropdown()                -> [{label, value}, ...]
+#   getOperationTypesForDropdown()       -> [{label, value}, ...]
 #   getAvailableDataCollectionFields(templateId) -> [{label, value}, ...]
 #   add(data)                            -> {Status, Message, NewId}
 #   update(data)                         -> {Status, Message}
@@ -55,7 +55,8 @@ def _toRailRow(meta):
         "code":          meta.get("Code"),
         "name":          meta.get("Name"),
         "version":       meta.get("VersionNumber"),
-        "area":          meta.get("AreaName"),
+        "category":      meta.get("OperationCategoryName"),
+        "operationType": meta.get("OperationTypeName"),
         "deprecated":    meta.get("DeprecatedAt") is not None,
     }
 
@@ -64,17 +65,17 @@ def _toRailRow(meta):
 # List feeds
 # -----------------------------------------------------------------------------
 
-def getAllForList(includeDeprecated=False, areaLocationId=None):
-    """Returns all OperationTemplate rows joined with AreaName. Empty list
-    on failure (errors toast and log; we do not propagate)."""
-    BlueRidge.Common.Util.log("includeDeprecated=%s areaLocationId=%s"
-                              % (includeDeprecated, areaLocationId))
+def getAllForList(includeDeprecated=False, operationTypeId=None):
+    """Returns all OperationTemplate rows joined with OperationType + Category.
+    Empty list on failure (errors toast and log; we do not propagate)."""
+    BlueRidge.Common.Util.log("includeDeprecated=%s operationTypeId=%s"
+                              % (includeDeprecated, operationTypeId))
     try:
         return BlueRidge.Common.Db.execList(
             "parts/OperationTemplate_List",
             {
-                "areaLocationId": areaLocationId,
-                "activeOnly":     0 if includeDeprecated else 1,
+                "operationTypeId": operationTypeId,
+                "activeOnly":      0 if includeDeprecated else 1,
             },
         )
     except Exception as e:
@@ -105,16 +106,16 @@ def search(filter=None):
 
     filter keys (all optional):
         searchText      string  -- case-insensitive substring on Code or Name
-        areaLocationId  BIGINT  -- or None for All Areas
+        operationTypeId BIGINT  -- or None for All Types
         includeDeprecated bool  -- default False
     """
     BlueRidge.Common.Util.log("filter=%s" % filter)
     f = _u(filter) or {}
     searchText        = (f.get("searchText") or "").strip().lower()
-    areaLocationId    = f.get("areaLocationId")
+    operationTypeId   = f.get("operationTypeId")
     includeDeprecated = bool(f.get("includeDeprecated", False))
 
-    rows = getAllForList(includeDeprecated, areaLocationId)
+    rows = getAllForList(includeDeprecated, operationTypeId)
 
     # Keep only the highest-version row per Code (mockup pattern).
     latestByCode = {}
@@ -135,18 +136,18 @@ def search(filter=None):
                 continue
         visible.append(r)
 
-    # Group by AreaName (preserve a deterministic order: alpha by area).
-    byArea = {}
+    # Group by OperationCategory (preserve a deterministic order: alpha by category).
+    byCategory = {}
     for r in visible:
-        area = r.get("AreaName") or "(no area)"
-        byArea.setdefault(area, []).append(r)
+        category = r.get("OperationCategoryName") or "(no category)"
+        byCategory.setdefault(category, []).append(r)
 
     instances = []
-    for area in sorted(byArea.keys()):
-        instances.append({"sectionHeader": {"label": area}, "templateRow": None})
-        # Sort within area by Code.
-        rowsInArea = sorted(byArea[area], key=lambda r: (r.get("Code") or ""))
-        for r in rowsInArea:
+    for category in sorted(byCategory.keys()):
+        instances.append({"sectionHeader": {"label": category}, "templateRow": None})
+        # Sort within category by Code.
+        rowsInCategory = sorted(byCategory[category], key=lambda r: (r.get("Code") or ""))
+        for r in rowsInCategory:
             instances.append({"sectionHeader": None, "templateRow": _toRailRow(r)})
     return instances
 
@@ -185,7 +186,7 @@ def getVersionsForCode(code, includeDeprecated=True):
         # Hit the full list with ActiveOnly=0 to include deprecated rows.
         rows = BlueRidge.Common.Db.execList(
             "parts/OperationTemplate_List",
-            {"areaLocationId": None, "activeOnly": 0},
+            {"operationTypeId": None, "activeOnly": 0},
         )
     except Exception as e:
         BlueRidge.Common.Util.log("getVersionsForCode failed: %s" % str(e))
@@ -324,19 +325,19 @@ def getDieCastShotFields():
 # Dropdown lookups
 # -----------------------------------------------------------------------------
 
-def getAreasForDropdown():
-    """Returns [{label, value}, ...] for the Area filter + Detail Area
-    dropdowns. Value is the Area Location.Id (BIGINT)."""
+def getOperationTypesForDropdown():
+    """Returns [{label, value}, ...] for the OperationType filter + Detail
+    OperationType dropdowns. Label is 'Category -- Type Name'; value is the
+    Parts.OperationType.Id (BIGINT)."""
     try:
-        rows = BlueRidge.Location.Location.listByTier("Area")
+        rows = BlueRidge.Common.Db.execList("parts/OperationType_ListForDropdown", {})
     except Exception as e:
-        BlueRidge.Common.Util.log("getAreasForDropdown failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getOperationTypesForDropdown failed: %s" % str(e))
         return []
     out = []
     for r in rows or []:
-        if r.get("DeprecatedAt") is not None:
-            continue
-        out.append({"label": r.get("Name") or r.get("Code"), "value": r.get("Id")})
+        label = "%s -- %s" % (r.get("CategoryName") or "", r.get("Name") or "")
+        out.append({"label": label, "value": r.get("Id")})
     return out
 
 
@@ -388,27 +389,27 @@ def add(data):
     if not name:
         return {"Status": 0, "Message": "Name is required", "NewId": None}
 
-    areaLocationId = data.get("AreaLocationId")
-    if areaLocationId is None:
+    operationTypeId = data.get("OperationTypeId")
+    if operationTypeId is None:
         return {"Status": 0,
-                "Message": "Area is required",
+                "Message": "Operation type is required",
                 "NewId":   None}
 
     return BlueRidge.Common.Db.execMutation(
         "parts/OperationTemplate_Create",
         {
-            "code":           code,
-            "name":           name,
-            "areaLocationId": areaLocationId,
-            "description":    data.get("Description"),
-            "appUserId":      BlueRidge.Common.Util._currentAppUserId(),
+            "code":            code,
+            "name":            name,
+            "operationTypeId": operationTypeId,
+            "description":     data.get("Description"),
+            "appUserId":       BlueRidge.Common.Util._currentAppUserId(),
         },
     )
 
 
 def update(data):
     """Update an existing OperationTemplate. data: {Id, Name,
-    AreaLocationId, Description}. Code + VersionNumber are immutable.
+    OperationTypeId, Description}. Code + VersionNumber are immutable.
     Returns {Status, Message}."""
     data = _u(data) or {}
     BlueRidge.Common.Util.log("data=%s" % data)
@@ -420,11 +421,11 @@ def update(data):
     return BlueRidge.Common.Db.execMutation(
         "parts/OperationTemplate_Update",
         {
-            "id":             templateId,
-            "name":           data.get("Name"),
-            "areaLocationId": data.get("AreaLocationId"),
-            "description":    data.get("Description"),
-            "appUserId":      BlueRidge.Common.Util._currentAppUserId(),
+            "id":              templateId,
+            "name":            data.get("Name"),
+            "operationTypeId": data.get("OperationTypeId"),
+            "description":     data.get("Description"),
+            "appUserId":       BlueRidge.Common.Util._currentAppUserId(),
         },
     )
 

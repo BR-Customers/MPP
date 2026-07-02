@@ -218,20 +218,26 @@ def getSteps(routeTemplateId):
     )
 
 
-def getOperationTemplatesByArea(areaLocationId, includeDeprecated=False):
-    """Returns active OperationTemplate rows in the given Area, ordered by
-    Code + VersionNumber. Powers the per-step Area -> OpTemplate
-    cascading dropdown on the Draft step editor.
+def getOperationTemplatesByType(operationTypeId=None, includeDeprecated=False):
+    """Returns active OperationTemplate rows for the given OperationType (or all
+    active templates when operationTypeId is None), ordered by the List proc.
+    Powers the per-step operation-template picker on the Draft step editor.
     """
-    areaLocationId = _u(areaLocationId)
+    operationTypeId = _u(operationTypeId)
     includeDeprecated = _u(includeDeprecated)
-    if not areaLocationId:
-        return []
     activeOnly = 0 if includeDeprecated else 1
     return BlueRidge.Common.Db.execList(
-        "parts/OperationTemplate_ListByArea",
-        {"areaLocationId": areaLocationId, "activeOnly": activeOnly},
+        "parts/OperationTemplate_List",
+        {"operationTypeId": operationTypeId, "activeOnly": activeOnly},
     )
+
+
+def getOperationTemplatesByArea(areaLocationId=None, includeDeprecated=False):
+    """DEPRECATED (operation-type restructure, 2026-07-02): the Area -> OpTemplate
+    cascade is retired -- operation templates are area-agnostic now. Returns all
+    active templates so the (pending-rework) Routes step editor keeps functioning;
+    prefer getOperationTemplatesByType. The areaLocationId arg is ignored."""
+    return getOperationTemplatesByType(None, includeDeprecated)
 
 
 def createInitial(itemId, name=None, effectiveFrom=None):

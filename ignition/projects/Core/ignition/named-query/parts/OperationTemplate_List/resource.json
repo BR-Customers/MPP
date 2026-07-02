@@ -32,7 +32,7 @@
     "parameters": [
       {
         "type": "Parameter",
-        "identifier": "areaLocationId",
+        "identifier": "operationTypeId",
         "sqlType": 3
       },
       {
