@@ -92,6 +92,10 @@
 - Exact semantics of the n-1 rule: what "previous station's output" maps to in a lot's location/status, and how a lot advances terminal-to-terminal along the line.
 - This reconciles/replaces the `Location_ListMachiningDestinations` "Machining In cell" model and the Phase-4 owed note that the OUT dropdown should be machining-line-scoped.
 
+**✅ First half EXECUTED 2026-07-06 (commit `14ad338`, `jacques/working`).** Root-caused the empty 5G0-Front FIFO: Trim OUT deposited at the HL4 `Machining In` **cell** (`MA1-5GOF-MIN`) while Machining IN reads its terminal **zone = the HL3 line** (`MA1-5GOF`) with `includeDescendants=0` — deposit tier != read tier, so nothing ever matched. Fix = repoint `Location.Location_ListMachiningDestinations` to return the **lines** (HL3 ProductionLine that have a `Machining In%` cell) instead of the cells; Trim now deposits at the line, which Machining IN already reads. Eligibility already sits at the line tier so `TrimOut_Record`'s ancestor-walk gate passes; no view / `TrimOut_Record` change. Full suite 1911/1911; end-to-end verified (TrimOut→line→appears in `Lot_GetWipQueueByLocation(line,0)`).
+- **Deferred (second half):** the per-terminal SortOrder / n-1 self-filtering across the line's terminals — still open, still carries the questions above. Not needed for the minimal deposit/read agreement.
+- **Two loose ends found:** (1) `TrimBody` OUT dropdown placeholder still reads "Select destination cell" — now a *line*; cosmetic, fix in Designer (existing-view file-edit boundary). (2) The 5G0-family item→line **eligibility rows are interactive dev config, NOT seeded** — a freshly-reset DB has zero eligibility at the M&A lines, so Trim OUT would reject there until those `Parts.ItemLocation` rows are seeded (or re-entered). Real seeding-registry item, not part of this fix.
+
 ---
 
 ## Validation — does Trim OUT have a location eligibility check? → YES
