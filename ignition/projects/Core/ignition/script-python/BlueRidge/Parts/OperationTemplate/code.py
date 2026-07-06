@@ -311,6 +311,27 @@ def getActiveTemplateIdByCode(code):
     return None
 
 
+def getActiveTemplateIdForRoute(itemId, operationTypeCode):
+    """Resolve the active OperationTemplate Id for a part's route step of the given
+    OperationType role, or None (Spec 2 Task M3). Terminals know their role
+    ('MachiningOut', 'AssemblyOut', ...) and resolve the right template for the
+    SCANNED part off its active route -- area-agnostic, per the Spec 1 OperationType
+    restructure. Prefer this over getActiveTemplateIdByCode, which resolves a template
+    by its own Code regardless of the part's route."""
+    if itemId is None or operationTypeCode is None:
+        return None
+    try:
+        rows = BlueRidge.Common.Db.execList(
+            "parts/OperationTemplate_GetForRouteRole",
+            {"itemId": itemId, "operationTypeCode": operationTypeCode})
+    except Exception as e:
+        BlueRidge.Common.Util.log("getActiveTemplateIdForRoute failed: %s" % str(e))
+        return None
+    for r in rows or []:
+        return r.get("OperationTemplateId")
+    return None
+
+
 def getDieCastShotFields():
     """The typed data-collection fields for the active DieCastShot OperationTemplate
     (the die-cast checkpoint screen, D5). Returns [{'field': {... DataTypeCode}}], or
