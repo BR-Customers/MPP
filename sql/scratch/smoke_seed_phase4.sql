@@ -63,7 +63,7 @@ DECLARE @TrimOutOt BIGINT = (SELECT Id FROM Parts.OperationTemplate WHERE Code =
 DECLARE @to TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO @to EXEC Workorder.TrimOut_Record
     @ParentLotId = @Lot, @OperationTemplateId = @TrimOutOt, @ShotCount = 48,
-    @DestinationCellLocationId = @MachCell, @AppUserId = 1;
+    @DestinationCellLocationId = @MachCell, @SourceLocationId = @TrimArea, @AppUserId = 1;
 
 -- ---- report ----
 SELECT

@@ -1,8 +1,8 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_TrimOut_Record.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-06-16
--- Version:     1.0
+-- Modified:    2026-07-06
+-- Version:     1.1
 -- Description: Arc 2 Phase 4 (spec sec 4.3). The Trim OUT 1:1 WHOLE-LOT move
 --              (FDS-06-006): writes a closing Workorder.ProductionEvent checkpoint
 --              for the LOT, then moves the WHOLE LOT to @DestinationCellLocationId,
@@ -17,6 +17,16 @@
 --
 --              D1 cumulative-monotonic guard mirrored from ProductionEvent_Record
 --              (new counters must be >= the LOT's prior cumulative).
+--
+--              v1.1 (2026-07-06, Jacques meeting): two data-integrity guards.
+--              (1) @SourceLocationId (required) - the Trim zone the terminal is
+--                  recording from. The LOT's CurrentLocationId must sit at/under
+--                  it (ufn_AncestorLocationIds walk). After a successful OUT the
+--                  LOT sits at the Machining destination, so a second OUT of the
+--                  same LOT rejects here (double-checkout block).
+--              (2) @ShotCount / @ScrapCount, when supplied, cannot exceed the
+--                  LOT's PieceCount (counts validated against what the LOT
+--                  actually contains).
 --
 --              Flow (FDS-11-011 + Msg-3915): ALL rejecting validations run BEFORE
 --              BEGIN TRANSACTION (captured via INSERT-EXEC by callers/tests). The
@@ -33,6 +43,7 @@ CREATE OR ALTER PROCEDURE Workorder.TrimOut_Record
     @ShotCount                 INT    = NULL,
     @ScrapCount                INT    = NULL,
     @DestinationCellLocationId BIGINT,
+    @SourceLocationId          BIGINT,
     @AppUserId                 BIGINT,
     @TerminalLocationId        BIGINT = NULL
 AS
@@ -49,11 +60,13 @@ BEGIN
         SELECT @ParentLotId AS ParentLotId, @OperationTemplateId AS OperationTemplateId,
                @ShotCount AS ShotCount, @ScrapCount AS ScrapCount,
                @DestinationCellLocationId AS DestinationCellLocationId,
+               @SourceLocationId AS SourceLocationId,
                @AppUserId AS AppUserId, @TerminalLocationId AS TerminalLocationId
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
     DECLARE @FromLocationId BIGINT;
     DECLARE @ItemId         BIGINT;
+    DECLARE @LotPieceCount  INT;
     DECLARE @StatusCode     NVARCHAR(20);
     DECLARE @StatusName     NVARCHAR(100);
     DECLARE @Blocks         BIT;
@@ -61,9 +74,9 @@ BEGIN
     BEGIN TRY
         -- ---- 1. Required parameters ----
         IF @ParentLotId IS NULL OR @OperationTemplateId IS NULL
-           OR @DestinationCellLocationId IS NULL OR @AppUserId IS NULL
+           OR @DestinationCellLocationId IS NULL OR @SourceLocationId IS NULL OR @AppUserId IS NULL
         BEGIN
-            SET @Message = N'Required parameter missing (ParentLotId, OperationTemplateId, DestinationCellLocationId, AppUserId).';
+            SET @Message = N'Required parameter missing (ParentLotId, OperationTemplateId, DestinationCellLocationId, SourceLocationId, AppUserId).';
             IF @AppUserId IS NOT NULL
                 EXEC Audit.Audit_LogFailure
                     @AppUserId = @AppUserId, @LogEntityTypeCode = N'ProductionEvent',
@@ -90,6 +103,7 @@ BEGIN
         -- ---- 3. LOT existence + B2 not-blocked guard (INLINED mirror of Lot_AssertNotBlocked) ----
         SELECT @FromLocationId = l.CurrentLocationId,
                @ItemId         = l.ItemId,
+               @LotPieceCount  = l.PieceCount,
                @StatusCode     = sc.Code,
                @StatusName     = sc.Name,
                @Blocks         = sc.BlocksProduction
@@ -112,6 +126,28 @@ BEGIN
         IF @Blocks = 1 OR @StatusCode = N'Closed'
         BEGIN
             SET @Message = N'LOT is ' + @StatusName + N' (status ' + @StatusCode + N') and cannot record Trim OUT.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'ProductionEvent',
+                @EntityId = @ParentLotId, @LogEventTypeCode = N'TrimOutRecorded',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+            RETURN;
+        END
+
+        -- ---- 3b. Source-location guard (double-checkout block, 2026-07-06) ----
+        -- The LOT must currently sit at/under the Trim zone recording the OUT
+        -- (ufn_AncestorLocationIds includes self). After a successful OUT the
+        -- LOT's CurrentLocationId is the Machining destination, so a second OUT
+        -- of the same LOT rejects here.
+        IF NOT EXISTS (
+            SELECT 1 FROM Location.ufn_AncestorLocationIds(@FromLocationId)
+            WHERE LocationId = @SourceLocationId)
+        BEGIN
+            DECLARE @CurrLocName NVARCHAR(200) = (SELECT Name FROM Location.Location WHERE Id = @FromLocationId);
+            SET @Message = N'LOT is not at this Trim station (currently at '
+                         + ISNULL(@CurrLocName, N'an unknown location')
+                         + N'); it may already be checked out.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'ProductionEvent',
                 @EntityId = @ParentLotId, @LogEventTypeCode = N'TrimOutRecorded',
@@ -158,6 +194,33 @@ BEGIN
            OR (@ScrapCount IS NOT NULL AND @ScrapCount < 0)
         BEGIN
             SET @Message = N'ShotCount / ScrapCount cannot be negative.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'ProductionEvent',
+                @EntityId = @ParentLotId, @LogEventTypeCode = N'TrimOutRecorded',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+            RETURN;
+        END
+
+        -- ---- 6b. Counts cannot exceed the LOT's piece count (2026-07-06) ----
+        IF @LotPieceCount IS NOT NULL AND @ShotCount IS NOT NULL AND @ShotCount > @LotPieceCount
+        BEGIN
+            SET @Message = N'ShotCount ' + CAST(@ShotCount AS NVARCHAR(20))
+                         + N' exceeds the LOT piece count ' + CAST(@LotPieceCount AS NVARCHAR(20)) + N'.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'ProductionEvent',
+                @EntityId = @ParentLotId, @LogEventTypeCode = N'TrimOutRecorded',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+            RETURN;
+        END
+
+        IF @LotPieceCount IS NOT NULL AND @ScrapCount IS NOT NULL AND @ScrapCount > @LotPieceCount
+        BEGIN
+            SET @Message = N'ScrapCount ' + CAST(@ScrapCount AS NVARCHAR(20))
+                         + N' exceeds the LOT piece count ' + CAST(@LotPieceCount AS NVARCHAR(20)) + N'.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'ProductionEvent',
                 @EntityId = @ParentLotId, @LogEventTypeCode = N'TrimOutRecorded',

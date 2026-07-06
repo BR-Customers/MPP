@@ -40,7 +40,8 @@ DECLARE @S BIT, @PeId BIGINT;
 CREATE TABLE #T (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #T EXEC Workorder.TrimOut_Record
     @ParentLotId = @L, @OperationTemplateId = @OtId,
-    @ShotCount = 20, @ScrapCount = 2, @DestinationCellLocationId = @LocB, @AppUserId = 1;
+    @ShotCount = 20, @ScrapCount = 2, @DestinationCellLocationId = @LocB,
+    @SourceLocationId = @LocA, @AppUserId = 1;
 SELECT @S = Status, @PeId = NewId FROM #T; DROP TABLE #T;
 
 DECLARE @SStr NVARCHAR(10) = CAST(@S AS NVARCHAR(10));
