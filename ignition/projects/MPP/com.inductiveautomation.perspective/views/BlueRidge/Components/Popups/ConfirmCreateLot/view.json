@@ -56,7 +56,7 @@
           "direction": "row",
           "alignItems": "center",
           "wrap": "nowrap",
-          "style": { "gap": "12px" }
+          "style": { "gap": "12px", "overflow": "hidden" }
         },
         "children": [
           {

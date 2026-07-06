@@ -127,7 +127,8 @@
           "justify": "center",
           "style": {
             "gap": "10px",
-            "marginTop": "4px"
+            "marginTop": "4px",
+            "overflow": "hidden"
           }
         },
         "type": "ia.container.flex"

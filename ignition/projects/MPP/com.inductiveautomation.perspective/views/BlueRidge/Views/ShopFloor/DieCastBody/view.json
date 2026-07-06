@@ -240,7 +240,8 @@
         "props": {
           "alignItems": "center",
           "style": {
-            "gap": "16px"
+            "gap": "16px",
+            "overflow": "hidden"
           }
         },
         "type": "ia.container.flex"

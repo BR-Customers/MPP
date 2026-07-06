@@ -144,7 +144,8 @@
         "props": {
           "alignItems": "center",
           "style": {
-            "gap": "16px"
+            "gap": "16px",
+            "overflow": "hidden"
           }
         },
         "type": "ia.container.flex"
@@ -216,7 +217,8 @@
           "alignItems": "center",
           "style": {
             "classes": "pf-terminal-cell-context",
-            "gap": "12px"
+            "gap": "12px",
+            "overflow": "hidden"
           }
         },
         "type": "ia.container.flex"
@@ -297,7 +299,8 @@
         },
         "props": {
           "style": {
-            "gap": "8px"
+            "gap": "8px",
+            "overflow": "hidden"
           }
         },
         "type": "ia.container.flex"
