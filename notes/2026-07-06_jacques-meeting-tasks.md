@@ -22,8 +22,8 @@ Derived from `notes/2026-07-06_jacques-meeting.md`. Tags: 🐞 data-integrity bu
 - [ ] 🐞 **Routes: Data Collection column empty on create screen** — it populates on the published view but not the draft/create view; fix the create-screen binding.
 
 ## Eligibility & config
-- [ ] ⚙️ **Eligibility should target Area + Production Line tiers**, and **exclude terminals & printers** from the location list. (Ties into the hierarchy-cascade eligibility work.)
-- [ ] 🎨 **Printers must not appear in the eligibility location dropdown** (subset of the above — filter Printer-kind).
+- [x] ⚙️ **Eligibility should target Area + Production Line tiers**, and **exclude terminals & printers** from the location list. *(2026-07-06: `Location_ListForEligibilityPicker` v1.1 offers HierarchyLevel 2+3 (Area + WorkCenter) only. Existing Cell-tier eligibility rows still resolve via the cascade but can no longer be authored; migrate dev-data cell rows up to their line. Test 0009/050 gains two tier assertions, suite 242/242.)*
+- [x] 🎨 **Printers must not appear in the eligibility location dropdown** (subset of the above — filter Printer-kind). *(2026-07-06: structurally excluded — the whole Cell tier is out.)*
 - [x] 🎨 **Terminal selection table: default to 100 rows + add a search bar.** *(2026-07-06: pager `initialOption` 100 (options 25/50/100/200) + a live search field filtering code/name/zone via `Terminal.filterForSelector`.)*
 
 ## Trim IN

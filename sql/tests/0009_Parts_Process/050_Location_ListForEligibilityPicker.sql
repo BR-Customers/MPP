@@ -73,5 +73,36 @@ EXEC test.Assert_IsEqual
 DROP TABLE #P3;
 GO
 
+-- =============================================
+-- Test 4 (v1.1, Jacques 2026-07-06): only Area + WorkCenter tiers offered
+-- =============================================
+IF OBJECT_ID('tempdb..#P4') IS NOT NULL DROP TABLE #P4;
+CREATE TABLE #P4 (
+    Id BIGINT, Code NVARCHAR(50), Name NVARCHAR(200),
+    TierName NVARCHAR(100), TierOrdinal INT, DisplayLabel NVARCHAR(400)
+);
+INSERT INTO #P4 EXEC Location.Location_ListForEligibilityPicker;
+
+DECLARE @BadTier INT = (SELECT COUNT(*) FROM #P4 WHERE TierOrdinal NOT IN (2, 3));
+DECLARE @BadTierStr NVARCHAR(10) = CAST(@BadTier AS NVARCHAR(10));
+EXEC test.Assert_IsEqual
+    @TestName = N'[PickerTiers] only Area (2) + WorkCenter (3) tiers offered',
+    @Expected = N'0',
+    @Actual   = @BadTierStr;
+
+-- terminals + printers (Cell tier) are structurally excluded
+DECLARE @HasCell INT = (SELECT COUNT(*) FROM #P4 p
+    INNER JOIN Location.Location l ON l.Id = p.Id
+    INNER JOIN Location.LocationTypeDefinition ltd ON ltd.Id = l.LocationTypeDefinitionId
+    INNER JOIN Location.LocationType lt ON lt.Id = ltd.LocationTypeId
+    WHERE lt.HierarchyLevel = 4);
+DECLARE @HasCellStr NVARCHAR(10) = CAST(@HasCell AS NVARCHAR(10));
+EXEC test.Assert_IsEqual
+    @TestName = N'[PickerTiers] no Cell-tier rows (terminals/printers excluded)',
+    @Expected = N'0',
+    @Actual   = @HasCellStr;
+DROP TABLE #P4;
+GO
+
 EXEC test.EndTestFile;
 GO
