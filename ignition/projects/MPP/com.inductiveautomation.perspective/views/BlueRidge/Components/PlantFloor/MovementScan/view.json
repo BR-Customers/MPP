@@ -243,7 +243,7 @@
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "if({view.custom.eligibility.IsEligible}, \"Eligible at destination\", \"Not eligible at destination (FDS-02-012)\")"
+                    "expression": "if({view.custom.eligibility.IsEligible}, \"Eligible at destination\", \"Not eligible at destination\")"
                   }
                 }
               },

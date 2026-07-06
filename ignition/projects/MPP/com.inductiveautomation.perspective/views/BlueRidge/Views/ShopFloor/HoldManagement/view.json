@@ -79,28 +79,10 @@
             "children": [
               {
                 "meta": {
-                  "name": "Fds"
-                },
-                "props": {
-                  "text": "FDS-08-007a"
-                },
-                "type": "ia.display.label"
-              },
-              {
-                "meta": {
-                  "name": "Sep"
-                },
-                "props": {
-                  "text": "-"
-                },
-                "type": "ia.display.label"
-              },
-              {
-                "meta": {
                   "name": "Desc"
                 },
                 "props": {
-                  "text": "Place and release holds on LOTs / Containers - AD-elevated per FDS-04-007"
+                  "text": "Place and release holds on LOTs / Containers - AD-elevated action"
                 },
                 "type": "ia.display.label"
               }
@@ -1287,7 +1269,7 @@
                       "style": {
                         "classes": "pf-kpi-sub"
                       },
-                      "text": "Pre-shipped Containers also fire AIM PlaceOnHold async per FDS-07-008."
+                      "text": "Pre-shipped Containers also notify Honda AIM (PlaceOnHold) automatically."
                     },
                     "type": "ia.display.label"
                   }

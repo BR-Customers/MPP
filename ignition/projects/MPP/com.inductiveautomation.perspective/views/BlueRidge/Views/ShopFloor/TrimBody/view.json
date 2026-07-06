@@ -314,7 +314,7 @@
               "style": {
                 "classes": "pf-kpi-sub"
               },
-              "text": "Validates eligibility (v_EffectiveItemLocation) + MaxParts cap on scan-in."
+              "text": "Validates eligibility + the max-parts cap on scan-in."
             },
             "type": "ia.display.label"
           },

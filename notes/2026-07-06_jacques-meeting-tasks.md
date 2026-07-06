@@ -49,7 +49,7 @@ Derived from `notes/2026-07-06_jacques-meeting.md`. Tags: 🐞 data-integrity bu
 - [x] 🎨 **Create LOT popup button spacing** *(2026-07-06: ButtonRow no longer wraps (was wrap+520px so "Confirm & Submit Another" dropped to a second row); popup widened to 640, all three buttons 44px min-height, shrink-proof, 12px gap.)*
 
 ## Cross-cutting
-- [ ] 🎨 **Remove all FDS commentary from Perspective views** — no spec/FDS text should be visible on any operator-facing screen.
+- [x] 🎨 **Remove all FDS commentary from Perspective views** — no spec/FDS text should be visible on any operator-facing screen. *(2026-07-06: swept every view.json in MPP + MPP_Config — stripped FDS-XX-NNN refs from HoldManagement (incl. the standalone FDS badge label), MachiningOutSplit x2, AssemblyNonSerialized, MovementScan, DieCastBody; also rewrote TrimBody's `v_EffectiveItemLocation` internal-name help text. Script comments (never rendered) intentionally kept. Residual grep over visible text/expression strings: zero hits.)*
 
 ---
 

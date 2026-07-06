@@ -255,7 +255,7 @@
               "style": {
                 "classes": "pf-kpi-sub"
               },
-              "text": "Splitting the machined LOT - rename already fired at Machining IN (FDS-05-033). Children are machining-origin sub-LOTs."
+              "text": "Splitting the machined LOT - rename already fired at Machining IN. Children are machining-origin sub-LOTs."
             },
             "type": "ia.display.label"
           }
@@ -442,7 +442,7 @@
               "style": {
                 "classes": "pf-kpi-sub"
               },
-              "text": "Extract one machining-origin sub-LOT from the parent. Enter a piece count up to the parent's remaining count and a destination. The parent stays open with its reduced count and can be extracted again until it reaches zero. LTT labels print showing child + parent LotName (FDS-05-024)."
+              "text": "Extract one machining-origin sub-LOT from the parent. Enter a piece count up to the parent's remaining count and a destination. The parent stays open with its reduced count and can be extracted again until it reaches zero. LTT labels print showing child + parent LotName."
             },
             "type": "ia.display.label"
           },

@@ -306,7 +306,7 @@
                   "style": {
                     "classes": "pf-kpi-sub"
                   },
-                  "text": "FDS-06-014 - per-tray validation, never per-piece. Same Cognex camera as Sort Cage."
+                  "text": "Per-tray validation, never per-piece. Same Cognex camera as Sort Cage."
                 },
                 "type": "ia.display.label"
               }
