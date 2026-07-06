@@ -35,6 +35,7 @@
       { "type": "Parameter", "identifier": "shotCount", "sqlType": 2 },
       { "type": "Parameter", "identifier": "scrapCount", "sqlType": 2 },
       { "type": "Parameter", "identifier": "destinationCellLocationId", "sqlType": 3 },
+      { "type": "Parameter", "identifier": "sourceLocationId", "sqlType": 3 },
       { "type": "Parameter", "identifier": "appUserId", "sqlType": 3 },
       { "type": "Parameter", "identifier": "terminalLocationId", "sqlType": 3 }
     ]

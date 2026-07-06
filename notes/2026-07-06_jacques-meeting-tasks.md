@@ -35,10 +35,10 @@ Derived from `notes/2026-07-06_jacques-meeting.md`. Tags: 🐞 data-integrity bu
 - [ ] ✨ **Show the Trim inventory + selectable LOT list** on Trim OUT — pick from the queue, while **keeping scan** as an option.
 - [ ] ⚙️ **Destination = production line, not Machining-IN terminals** — the destination dropdown should list the WorkCenter line.
 - [ ] ⚙️ **Trim checkout moves the LOT to the production line, not the terminal** (`CurrentLocationId` = line).
-- [ ] 🎨 **Don't navigate to the LOT summary page on Trim OUT submit** — stay on the screen / return to the queue.
-- [ ] 🐞 **Block double checkout** — was able to check out the same LOT twice from the Trim shop.
-- [ ] ⚙️ **Validate shot count against the LOT** — was able to enter a shot count far exceeding the LOT's piece count.
-- [ ] ⚙️ **Validate/cap scrap count against the LOT** — same overflow issue for scrap.
+- [x] 🎨 **Don't navigate to the LOT summary page on Trim OUT submit** — stay on the screen / return to the queue. *(2026-07-06: success path now clears the OUT form in place; no navigation.)*
+- [x] 🐞 **Block double checkout** — was able to check out the same LOT twice from the Trim shop. *(2026-07-06: `TrimOut_Record` now requires `@SourceLocationId` — the terminal's Trim zone — and rejects when the LOT is not at/under it; TrimBody passes `session.custom.terminal.zoneLocationId`.)*
+- [x] ⚙️ **Validate shot count against the LOT** — was able to enter a shot count far exceeding the LOT's piece count. *(2026-07-06: proc rejects `ShotCount > Lot.PieceCount`.)*
+- [x] ⚙️ **Validate/cap scrap count against the LOT** — same overflow issue for scrap. *(2026-07-06: proc rejects `ScrapCount > Lot.PieceCount`.)*
 
 ## LOT Detail
 - [ ] ✨ **More context per event** — need more than just the terminal/machine name (richer location/context detail).
