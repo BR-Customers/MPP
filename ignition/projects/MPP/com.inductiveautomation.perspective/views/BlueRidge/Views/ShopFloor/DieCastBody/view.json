@@ -1,6 +1,7 @@
 {
   "custom": {
     "activeLotId": null,
+    "activeLotName": null,
     "editDraft": {
       "cavityNote": null,
       "itemId": null,
@@ -11,7 +12,9 @@
       "weightUomId": null
     },
     "peersThisSession": [],
+    "refreshToken": 0,
     "selectedLotId": null,
+    "shiftTally": [],
     "tallyCavityId": null
   },
   "params": {
@@ -21,7 +24,7 @@
     "custom.activeTool": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Parts.Tool.getMountedToolForCellOrEmpty\", 0, {session.custom.cell.locationId})"
+          "expression": "runScript(\"BlueRidge.Parts.Tool.getMountedToolForCellOrEmpty\", 0, {session.custom.cell.locationId}, {view.custom.refreshToken})"
         },
         "type": "expr"
       }
@@ -53,7 +56,7 @@
     "custom.shiftTally": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Lots.Lot.getShiftCavityTally\", 0, {view.custom.activeTool.ToolId})"
+          "expression": "runScript(\"BlueRidge.Lots.Lot.getShiftCavityTally\", 0, {view.custom.activeTool.ToolId}, {view.custom.refreshToken})"
         },
         "type": "expr"
       },
@@ -183,6 +186,35 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
+                    "script": "\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "RefreshButton",
+              "tooltip": {
+                "text": "Re-fetch the mounted tool + shift tally"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Refresh"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
                     "script": "\tsystem.perspective.navigate(\"/\")"
                   },
                   "scope": "G",
@@ -208,7 +240,8 @@
         "props": {
           "alignItems": "center",
           "style": {
-            "gap": "16px"
+            "gap": "16px",
+            "overflow": "hidden"
           }
         },
         "type": "ia.container.flex"
@@ -400,6 +433,17 @@
                     "type": "ia.display.label"
                   },
                   {
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "config": {
+                            "script": "\tself.view.rootContainer.applyItemDefaults(self.props.value)"
+                          },
+                          "scope": "G",
+                          "type": "script"
+                        }
+                      }
+                    },
                     "meta": {
                       "name": "ItemDropdown"
                     },
@@ -437,7 +481,33 @@
                       "style": {
                         "classes": "pf-field-help"
                       },
-                      "text": "Eligible items for the active cell (FDS-02-012)."
+                      "text": "Eligible items for the active cell."
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "NoTemplateWarning"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "!isNull({view.custom.editDraft.itemId}) \u0026\u0026 isNull(runScript(\"BlueRidge.Parts.OperationTemplate.getActiveTemplateIdForRoute\", 0, {view.custom.editDraft.itemId}, \"DieCast\"))"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "color": "var(--mpp-error, #c62828)",
+                        "fontWeight": 600
+                      },
+                      "text": "No die-cast operation template on the route for this part - it cannot be run."
                     },
                     "type": "ia.display.label"
                   }
@@ -885,9 +955,7 @@
                 "props": {
                   "direction": "column",
                   "style": {
-                    "classes": "pf-panel",
-                    "gap": "8px",
-                    "padding": "16px"
+                    "gap": "8px"
                   }
                 },
                 "type": "ia.container.flex"
@@ -896,13 +964,25 @@
                 "children": [
                   {
                     "meta": {
-                      "name": "CumulativeHeader"
+                      "name": "ShotsShiftLabel"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-label"
+                      },
+                      "text": "Shots this shift (incl. scrap)"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "ShotsShiftValue"
                     },
                     "propConfig": {
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "\"Shots this shift\""
+                            "expression": "toStr(runScript(\"BlueRidge.Lots.Lot.shiftShotsFromTally\", 0, {view.custom.shiftTally}))"
                           },
                           "type": "expr"
                         }
@@ -910,14 +990,14 @@
                     },
                     "props": {
                       "style": {
-                        "classes": "pf-panel-header"
+                        "classes": "pf-kpi-value"
                       }
                     },
                     "type": "ia.display.label"
                   },
                   {
                     "meta": {
-                      "name": "ShotKpiLabel"
+                      "name": "PiecesCavityLabel"
                     },
                     "props": {
                       "style": {
@@ -929,7 +1009,7 @@
                   },
                   {
                     "meta": {
-                      "name": "ShotKpiValue"
+                      "name": "PiecesCavityValue"
                     },
                     "propConfig": {
                       "props.text": {
@@ -950,13 +1030,34 @@
                   },
                   {
                     "meta": {
-                      "name": "DerivedNote"
+                      "name": "ScrapCavityLabel"
                     },
                     "props": {
                       "style": {
-                        "classes": "pf-field-help"
+                        "classes": "pf-kpi-label"
                       },
-                      "text": "Sum of as-cast piece counts on the selected cavity, this shift."
+                      "text": "Scrap this shift (selected cavity)"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "ScrapCavityValue"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "toStr(runScript(\"BlueRidge.Lots.Lot.shiftScrapForCavity\", 0, {view.custom.shiftTally}, {view.custom.tallyCavityId}))"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-value"
+                      }
                     },
                     "type": "ia.display.label"
                   }
@@ -967,9 +1068,9 @@
                 "props": {
                   "direction": "column",
                   "style": {
-                    "classes": "pf-panel",
+                    "borderTop": "1px solid var(--mpp-border, #e0e0e0)",
                     "gap": "10px",
-                    "padding": "16px"
+                    "paddingTop": "12px"
                   }
                 },
                 "type": "ia.container.flex"
@@ -983,6 +1084,14 @@
                     "binding": {
                       "config": {
                         "path": "view.custom.activeLotId"
+                      },
+                      "type": "property"
+                    }
+                  },
+                  "props.params.lotLabel": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.activeLotName"
                       },
                       "type": "property"
                     }
@@ -1048,9 +1157,9 @@
                 "props": {
                   "direction": "column",
                   "style": {
-                    "classes": "pf-panel",
+                    "borderTop": "1px solid var(--mpp-border, #e0e0e0)",
                     "gap": "8px",
-                    "padding": "16px"
+                    "paddingTop": "12px"
                   }
                 },
                 "type": "ia.container.flex"
@@ -1065,7 +1174,9 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "16px"
+                "classes": "pf-panel",
+                "gap": "14px",
+                "padding": "16px"
               }
             },
             "type": "ia.container.flex"
@@ -1113,12 +1224,19 @@
         {
           "name": "submitCreate",
           "params": [],
-          "script": "\tdraft \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft) or {}\n\ttool \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.activeTool) or {}\n\tcell \u003d BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\t# Cavity: a numeric option value is a real ToolCavityId; a typed (custom) value is a manual cavity note (D2).\n\tcav \u003d draft.get(\"toolCavityId\")\n\ttoolCavityId \u003d None\n\tcavityNote \u003d None\n\tif cav is not None and cav !\u003d \"\":\n\t\ttry:\n\t\t\ttoolCavityId \u003d int(cav)\n\t\texcept (ValueError, TypeError):\n\t\t\tcavityNote \u003d unicode(cav)\n\tdata \u003d {\n\t\t\"itemId\": draft.get(\"itemId\"),\n\t\t\"lotOriginTypeId\": self.view.custom.manufacturedOriginId,\n\t\t\"currentLocationId\": cell.get(\"locationId\"),\n\t\t\"pieceCount\": BlueRidge.Common.Util.toIntOrNone(draft.get(\"pieceCount\")),\n\t\t\"weight\": BlueRidge.Common.Util.toDecimalOrNone(draft.get(\"weight\")),\n\t\t\"weightUomId\": draft.get(\"weightUomId\"),\n\t\t\"toolId\": tool.get(\"ToolId\"),\n\t\t\"toolCavityId\": toolCavityId,\n\t}\n\tappUserId \u003d self.session.custom.appUserId\n\ttermId \u003d None\n\ttry:\n\t\ttermId \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId \u003d None\n\tresult \u003d BlueRidge.Lots.Lot.create(data, appUserId, termId, None, cavityNote)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle\u003d\"LOT created\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.activeLotId \u003d result.get(\"NewId\")\n\t\tminted \u003d result.get(\"MintedLotName\")\n\t\tscanned \u003d draft.get(\"scannedLtt\")\n\t\tif scanned and minted and scanned !\u003d minted:\n\t\t\tBlueRidge.Common.Notify.toast(\"LTT mismatch\", \"Scanned %s but minted %s\" % (scanned, minted), \"warning\")\n\t\tpeers \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.peersThisSession) or []\n\t\tpeers.append({\"peer\": {\"Cavity\": (toolCavityId if toolCavityId is not None else cavityNote), \"LotName\": minted, \"PieceCount\": data.get(\"pieceCount\"), \"LotId\": result.get(\"NewId\")}})\n\t\tself.view.custom.peersThisSession \u003d peers\n\t\tself.view.custom.selectedLotId \u003d result.get(\"NewId\")\n\t\tself.view.custom.shiftTally \u003d BlueRidge.Lots.Lot.getShiftCavityTally(tool.get(\"ToolId\"))\n\treturn result"
+          "script": "\tdraft \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft) or {}\n\ttool \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.activeTool) or {}\n\tcell \u003d BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\t# Cavity: a numeric option value is a real ToolCavityId; a typed (custom) value is a manual cavity note (D2).\n\tcav \u003d draft.get(\"toolCavityId\")\n\ttoolCavityId \u003d None\n\tcavityNote \u003d None\n\tif cav is not None and cav !\u003d \"\":\n\t\ttry:\n\t\t\ttoolCavityId \u003d int(cav)\n\t\texcept (ValueError, TypeError):\n\t\t\tcavityNote \u003d unicode(cav)\n\t# Gate (2026-07-06 Jacques): a part with no die-cast operation template on its route cannot run.\n\ttplId \u003d BlueRidge.Parts.OperationTemplate.getActiveTemplateIdForRoute(draft.get(\"itemId\"), \"DieCast\")\n\tif tplId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No operation template\", \"The route for this part has no die-cast operation template - it cannot run at Die Cast.\", \"error\")\n\t\treturn None\n\tdata \u003d {\n\t\t\"itemId\": draft.get(\"itemId\"),\n\t\t\"lotOriginTypeId\": self.view.custom.manufacturedOriginId,\n\t\t\"currentLocationId\": cell.get(\"locationId\"),\n\t\t\"pieceCount\": BlueRidge.Common.Util.toIntOrNone(draft.get(\"pieceCount\")),\n\t\t\"weight\": BlueRidge.Common.Util.toDecimalOrNone(draft.get(\"weight\")),\n\t\t\"weightUomId\": draft.get(\"weightUomId\"),\n\t\t\"toolId\": tool.get(\"ToolId\"),\n\t\t\"toolCavityId\": toolCavityId,\n\t}\n\tappUserId \u003d self.session.custom.appUserId\n\ttermId \u003d None\n\ttry:\n\t\ttermId \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId \u003d None\n\tresult \u003d BlueRidge.Lots.Lot.create(data, appUserId, termId, None, cavityNote)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle\u003d\"LOT created\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.activeLotId \u003d result.get(\"NewId\")\n\t\tminted \u003d result.get(\"MintedLotName\")\n\t\tscanned \u003d draft.get(\"scannedLtt\")\n\t\tif scanned and minted and scanned !\u003d minted:\n\t\t\tBlueRidge.Common.Notify.toast(\"LTT mismatch\", \"Scanned %s but minted %s\" % (scanned, minted), \"warning\")\n\t\tpeers \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.peersThisSession) or []\n\t\tpeers.append({\"peer\": {\"Cavity\": (toolCavityId if toolCavityId is not None else cavityNote), \"LotName\": minted, \"PieceCount\": data.get(\"pieceCount\"), \"LotId\": result.get(\"NewId\")}})\n\t\tself.view.custom.peersThisSession \u003d peers\n\t\tself.view.custom.selectedLotId \u003d result.get(\"NewId\")\n\t\tself.view.custom.activeLotName \u003d minted\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1\n\treturn result"
         },
         {
           "name": "cancelDraft",
           "params": [],
           "script": "\t# Reset the whole NEW LOT form (per-leaf writes for reliable bidi refresh).\n\tself.view.custom.editDraft.scannedLtt \u003d \"\"\n\tself.view.custom.editDraft.itemId \u003d None\n\tself.view.custom.editDraft.toolCavityId \u003d None\n\tself.view.custom.editDraft.cavityNote \u003d None\n\tself.view.custom.editDraft.pieceCount \u003d None\n\tself.view.custom.editDraft.weight \u003d None\n\tself.view.custom.editDraft.weightUomId \u003d None"
+        },
+        {
+          "name": "applyItemDefaults",
+          "params": [
+            "itemId"
+          ],
+          "script": "\t# 2026-07-06 Jacques: prefill Piece Count (parts-per-basket \u003d Item.MaxParts) and\n\t# Weight (UnitWeight x count, when configured) when the operator picks a part.\n\t# Only fills EMPTY fields - never overwrites operator-entered values.\n\titemId \u003d BlueRidge.Common.Util.extractQualifiedValues(itemId)\n\trow \u003d BlueRidge.Parts.Item.getOne(itemId)\n\tif not row:\n\t\treturn\n\td \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft) or {}\n\tmaxParts \u003d row.get(\"MaxParts\")\n\tunitWeight \u003d row.get(\"UnitWeight\")\n\tif maxParts and d.get(\"pieceCount\") in (None, \"\"):\n\t\tself.view.custom.editDraft.pieceCount \u003d maxParts\n\tif maxParts and unitWeight and d.get(\"weight\") in (None, \"\"):\n\t\tself.view.custom.editDraft.weight \u003d round(float(unitWeight) * float(maxParts), 3)\n\tif row.get(\"WeightUomId\") and d.get(\"weightUomId\") is None:\n\t\tself.view.custom.editDraft.weightUomId \u003d row.get(\"WeightUomId\")"
         },
         {
           "name": "startup",
@@ -1143,6 +1261,13 @@
           "pageScope": false,
           "script": "\tBlueRidge.Common.Notify._handle(self, payload)",
           "sessionScope": true,
+          "viewScope": false
+        },
+        {
+          "messageType": "rejectRecorded",
+          "pageScope": true,
+          "script": "\t# A reject changes the shift tally (scrap-inclusive) - force a re-read.\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1",
+          "sessionScope": false,
           "viewScope": false
         },
         {

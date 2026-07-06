@@ -275,13 +275,11 @@ def getCellsForDropdown():
 
 
 def getMachiningDestinationsForDropdown():
-    """Machining LINES shaped for ia.input.dropdown -- the valid whole-LOT
-    destinations for Trim OUT (line-deposit model, 2026-07-06). Filters to
-    WorkCenter-tier ProductionLine Locations that have a 'Machining In%'
-    receiving cell (EXCLUDES the cells themselves, Printers, Assembly /
-    Machining-OUT terminals, Die Cast terminals, and machines). Trim OUT
-    deposits the LOT at the line; Machining IN reads that line's FIFO via its
-    terminal zone. Wraps Location.Location_ListMachiningDestinations.
+    """Machining PRODUCTION LINES shaped for ia.input.dropdown -- the valid
+    whole-LOT destinations for Trim OUT (line-resident, Jacques 2026-07-06).
+    WorkCenter-tier lines that have a 'Machining In%' Cell child; printers /
+    terminals / machines are structurally excluded (wrong tier). Wraps
+    Location.Location_ListMachiningDestinations v1.1.
 
     Returns:
         list[dict]: [{label: '<Code> - <Name>', value: Id, code: Code,

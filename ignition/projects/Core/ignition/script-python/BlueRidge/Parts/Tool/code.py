@@ -860,10 +860,12 @@ def getMountedToolForCell(cellLocationId):
     return rows[0] if rows else None
 
 
-def getMountedToolForCellOrEmpty(cellLocationId):
+def getMountedToolForCellOrEmpty(cellLocationId, _refreshToken=None):
     """Binding-safe variant: a fully-shaped dict (never None) so the Tool card's
     nested-path bindings never Component-Error (pre-declare-bound-props rule). Shape
-    mirrors Tools.ToolAssignment_ListActiveByCell's columns."""
+    mirrors Tools.ToolAssignment_ListActiveByCell's columns.
+    _refreshToken is ignored - the Die Cast refresh button bumps a token that
+    runScript bindings pass here to force a re-read (runScript caches on args)."""
     row = getMountedToolForCell(cellLocationId)
     if row is None:
         return {"Id": None, "ToolId": None, "ToolCode": "", "ToolName": "",

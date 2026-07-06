@@ -1,30 +1,30 @@
 {
   "custom": {},
   "params": {
-    "areas": [],
     "isFirst": false,
     "isLast": false,
-    "opTemplatesByArea": {},
+    "opTypes": [],
     "rowIndex": 0,
     "step": {
       "DataCollectionSummary": "",
       "Description": null,
       "Id": null,
       "IsRequired": true,
-      "OperationAreaLocationId": null,
-      "OperationAreaName": "",
       "OperationCode": "",
       "OperationName": "",
       "OperationTemplateId": null,
+      "OperationTypeCode": "",
+      "OperationTypeId": null,
+      "OperationTypeName": "",
       "OperationVersionNumber": null,
       "SequenceNumber": 0
     }
   },
   "propConfig": {
-    "custom.areaOptions": {
+    "custom.opTypeOptions": {
       "binding": {
         "config": {
-          "path": "view.params.areas"
+          "path": "view.params.opTypes"
         },
         "type": "property"
       }
@@ -32,7 +32,7 @@
     "custom.opTemplateOptions": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Parts.RouteTemplate.getOperationTemplatesByArea\", 0, {view.custom.selectedAreaId})"
+          "expression": "runScript(\"BlueRidge.Parts.RouteTemplate.getOperationTemplatesByType\", 0, {view.custom.selectedOpTypeId})"
         },
         "transforms": [
           {
@@ -43,10 +43,10 @@
         "type": "expr"
       }
     },
-    "custom.selectedAreaId": {
+    "custom.selectedOpTypeId": {
       "binding": {
         "config": {
-          "expression": "{view.params.step.OperationAreaLocationId}"
+          "expression": "{view.params.step.OperationTypeId}"
         },
         "type": "expr"
       }
@@ -59,16 +59,13 @@
         "type": "expr"
       }
     },
-    "params.areas": {
-      "paramDirection": "input"
-    },
     "params.isFirst": {
       "paramDirection": "input"
     },
     "params.isLast": {
       "paramDirection": "input"
     },
-    "params.opTemplatesByArea": {
+    "params.opTypes": {
       "paramDirection": "input"
     },
     "params.rowIndex": {
@@ -118,7 +115,7 @@
           "component": {
             "onActionPerformed": {
               "config": {
-                "script": "\tnewArea \u003d self.props.value\n\tself.view.rootContainer.broadcastStep(newArea, None)"
+                "script": "\tnewType \u003d self.props.value\n\tself.view.rootContainer.broadcastStep(newType, None)"
               },
               "scope": "G",
               "type": "script"
@@ -126,7 +123,7 @@
           }
         },
         "meta": {
-          "name": "AreaDropdown"
+          "name": "OpTypeDropdown"
         },
         "position": {
           "basis": "200px",
@@ -136,7 +133,7 @@
           "props.options": {
             "binding": {
               "config": {
-                "path": "view.custom.areaOptions"
+                "path": "view.custom.opTypeOptions"
               },
               "type": "property"
             }
@@ -145,7 +142,7 @@
             "binding": {
               "config": {
                 "bidirectional": true,
-                "path": "view.custom.selectedAreaId"
+                "path": "view.custom.selectedOpTypeId"
               },
               "type": "property"
             }
@@ -163,7 +160,7 @@
           "component": {
             "onActionPerformed": {
               "config": {
-                "script": "\tareaId \u003d self.view.custom.selectedAreaId\n\topId \u003d self.props.value\n\tself.view.rootContainer.broadcastStep(areaId, opId)"
+                "script": "\ttypeId \u003d self.view.custom.selectedOpTypeId\n\topId \u003d self.props.value\n\tself.view.rootContainer.broadcastStep(typeId, opId)"
               },
               "scope": "G",
               "type": "script"
@@ -385,10 +382,10 @@
         {
           "name": "broadcastStep",
           "params": [
-            "areaId",
+            "opTypeId",
             "opTemplateId"
           ],
-          "script": "\tareas \u003d self.view.params.areas or []\n\topCache \u003d self.view.params.opTemplatesByArea or {}\n\tstep \u003d dict(self.view.params.step or {})\n\tstep[\u0027OperationAreaLocationId\u0027] \u003d areaId\n\tstep[\u0027OperationTemplateId\u0027] \u003d opTemplateId\n\tareaName \u003d \u0027\u0027\n\tfor a in areas:\n\t\tif a.get(\u0027Id\u0027) \u003d\u003d areaId:\n\t\t\tareaName \u003d a.get(\u0027Name\u0027) or \u0027\u0027\n\t\t\tbreak\n\tstep[\u0027OperationAreaName\u0027] \u003d areaName\n\topRows \u003d []\n\tif areaId:\n\t\ttry:\n\t\t\topRows \u003d BlueRidge.Parts.RouteTemplate.getOperationTemplatesByArea(areaId)\n\t\texcept Exception:\n\t\t\topRows \u003d []\n\tfor ot in (opRows or []):\n\t\tif ot.get(\u0027Id\u0027) \u003d\u003d opTemplateId:\n\t\t\tstep[\u0027OperationCode\u0027] \u003d ot.get(\u0027Code\u0027) or \u0027\u0027\n\t\t\tstep[\u0027OperationName\u0027] \u003d ot.get(\u0027Name\u0027) or \u0027\u0027\n\t\t\tstep[\u0027OperationVersionNumber\u0027] \u003d ot.get(\u0027VersionNumber\u0027)\n\t\t\tbreak\n\tsystem.perspective.sendMessage(\u0027routeStepChanged\u0027, payload\u003d{\u0027rowIndex\u0027: self.view.params.rowIndex, \u0027step\u0027: step}, scope\u003d\u0027page\u0027)"
+          "script": "\topTypes \u003d self.view.params.opTypes or []\n\tstep \u003d dict(self.view.params.step or {})\n\tstep[\u0027OperationTypeId\u0027] \u003d opTypeId\n\tstep[\u0027OperationTypeName\u0027] \u003d \u0027\u0027\n\tfor t in opTypes:\n\t\tif t.get(\u0027value\u0027) \u003d\u003d opTypeId:\n\t\t\tstep[\u0027OperationTypeName\u0027] \u003d t.get(\u0027label\u0027) or \u0027\u0027\n\t\t\tbreak\n\tstep[\u0027OperationTemplateId\u0027] \u003d opTemplateId\n\tstep[\u0027OperationCode\u0027] \u003d \u0027\u0027\n\tstep[\u0027OperationName\u0027] \u003d \u0027\u0027\n\tstep[\u0027OperationVersionNumber\u0027] \u003d None\n\tstep[\u0027DataCollectionSummary\u0027] \u003d \u0027\u0027\n\tif opTemplateId:\n\t\tfor ot in (BlueRidge.Parts.RouteTemplate.getOperationTemplatesByType(opTypeId) or []):\n\t\t\tif ot.get(\u0027Id\u0027) \u003d\u003d opTemplateId:\n\t\t\t\tstep[\u0027OperationCode\u0027] \u003d ot.get(\u0027Code\u0027) or \u0027\u0027\n\t\t\t\tstep[\u0027OperationName\u0027] \u003d ot.get(\u0027Name\u0027) or \u0027\u0027\n\t\t\t\tstep[\u0027OperationVersionNumber\u0027] \u003d ot.get(\u0027VersionNumber\u0027)\n\t\t\t\tbreak\n\t\t# Jacques 2026-07-06: resolve the Data Collection summary at pick time.\n\t\tstep[\u0027DataCollectionSummary\u0027] \u003d BlueRidge.Parts.OperationTemplate.getFieldSummary(opTemplateId)\n\tsystem.perspective.sendMessage(\u0027routeStepChanged\u0027, payload\u003d{\u0027rowIndex\u0027: self.view.params.rowIndex, \u0027step\u0027: step}, scope\u003d\u0027page\u0027)"
         }
       ],
       "extensionFunctions": null,

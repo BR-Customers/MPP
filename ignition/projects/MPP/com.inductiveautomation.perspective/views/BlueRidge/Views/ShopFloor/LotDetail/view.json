@@ -20,7 +20,12 @@
       "TotalInProcess": 0
     },
     "parents": [],
-    "pauses": []
+    "pauses": [],
+    "scrapSummary": {
+      "CounterScrap": 0,
+      "RejectedTotal": 0,
+      "TotalScrap": 0
+    }
   },
   "params": {
     "lotId": null
@@ -60,7 +65,7 @@
         {
           "name": "load",
           "params": [],
-          "script": "\tlotId = self.view.params.lotId\n\tif not lotId:\n\t\treturn\n\tself.view.custom.lot      = BlueRidge.Lots.Lot.get(lotId) or self.view.custom.lot\n\tself.view.custom.history  = BlueRidge.Lots.Lot.getHistory(lotId)\n\tself.view.custom.parents  = BlueRidge.Lots.Lot.getParents(lotId)\n\tself.view.custom.children = BlueRidge.Lots.Lot.getChildren(lotId)\n\tself.view.custom.pauses   = BlueRidge.Lots.Lot.getPauses(lotId)"
+          "script": "\tlotId = self.view.params.lotId\n\tif not lotId:\n\t\treturn\n\tself.view.custom.lot      = BlueRidge.Lots.Lot.get(lotId) or self.view.custom.lot\n\tself.view.custom.history  = BlueRidge.Lots.Lot.getHistory(lotId)\n\tself.view.custom.parents  = BlueRidge.Lots.Lot.getParents(lotId)\n\tself.view.custom.children = BlueRidge.Lots.Lot.getChildren(lotId)\n\tself.view.custom.pauses   = BlueRidge.Lots.Lot.getPauses(lotId)\n\tself.view.custom.scrapSummary = BlueRidge.Lots.Lot.getScrapSummaryOrEmpty(lotId)"
         }
       ],
       "messageHandlers": null,
@@ -642,6 +647,76 @@
                   "style": {
                     "classes": "pf-kpi-value",
                     "color": "var(--mpp-text-primary)",
+                    "fontSize": "22px",
+                    "fontWeight": "700"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "KpiTotalScrap"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "flex-start",
+              "style": {
+                "classes": "pf-kpi",
+                "gap": "2px",
+                "padding": "16px 20px",
+                "minWidth": "100px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "text": "Total Scrap",
+                  "style": {
+                    "classes": "pf-kpi-label",
+                    "color": "var(--mpp-text-tertiary)",
+                    "fontSize": "11px",
+                    "textTransform": "uppercase",
+                    "letterSpacing": "0.08em"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Value"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "toStr(if(isNull({view.custom.scrapSummary.TotalScrap}), 0, {view.custom.scrapSummary.TotalScrap}))"
+                      }
+                    }
+                  },
+                  "props.style.color": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "if({view.custom.scrapSummary.TotalScrap} > 0, \"var(--mpp-error, #f85149)\", \"var(--mpp-text-primary)\")"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "text": "0",
+                  "style": {
+                    "classes": "pf-kpi-value",
                     "fontSize": "22px",
                     "fontWeight": "700"
                   }

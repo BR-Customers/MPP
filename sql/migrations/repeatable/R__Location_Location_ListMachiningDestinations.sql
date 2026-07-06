@@ -2,37 +2,24 @@
 -- Repeatable:  R__Location_Location_ListMachiningDestinations.sql
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-07-06
--- Version:     2.0
--- Description: Arc 2 Phase 4 tail. The Machining-line destinations the Trim OUT
---              screen offers as 1:1 whole-LOT move targets (the FIFO-queue that
---              Phase 5 Machining IN reads).
+-- Version:     1.1
+-- Description: The Machining destinations the Trim OUT screen offers as 1:1
+--              whole-LOT move targets.
 --
---              LINE-DEPOSIT MODEL (2026-07-06, executes the first half of the
---              2026-06-30 "check LOTs into the LINE" note): Trim OUT deposits the
---              whole LOT at the LINE, not at a specific receiving cell. A Machining
---              line is a WorkCenter-tier (HierarchyLevel 3) 'ProductionLine'
---              Location (e.g. MA1-5GOF '5G0 Front'); its terminals (Machining In,
---              Machining Out, Assembly ...) are Cell-tier (HierarchyLevel 4) child
---              Locations. Each terminal's session zone resolves to this LINE
---              (Terminal_GetByIpAddress projects ParentLocationId AS ZoneLocationId),
---              so Machining IN already reads the line's FIFO via
---              Lots.Lot_GetWipQueueByLocation(zoneLocationId). Depositing at the
---              line puts the LOT exactly where Machining IN looks.
+--              v1.1 (Jacques 2026-07-06, line-resident): destinations are now the
+--              PRODUCTION LINES themselves -- WorkCenter-tier (HierarchyLevel 3)
+--              Locations that have a 'Machining In%' Cell child -- NOT the
+--              Machining-In terminal Cells. Trim checkout moves the LOT to the
+--              LINE (Lot.CurrentLocationId = the WorkCenter), which also aligns
+--              with Machining IN's queue read: the dedicated Machining-In
+--              terminal binds session cell context to its parent LINE
+--              (zoneLocationId), so Lot_GetWipQueueByLocation(line) now finds
+--              what Trim deposited. (v1.0 deposited at the MIN Cell while the
+--              screen read the queue at the line -- a latent mismatch.)
 --
---              Item eligibility is recorded at the line tier (v_EffectiveItemLocation
---              rows sit at the ProductionLine), so TrimOut_Record's ancestor-walk
---              eligibility gate passes when the destination is the line.
---
---              Filter: non-deprecated WorkCenter-tier (HierarchyLevel 3)
---              'ProductionLine' Locations that HAVE at least one non-deprecated
---              'Machining In%' receiving cell -- i.e. lines a Trim LOT can be
---              machined on. This deliberately EXCLUDES the Machining-In cells
---              themselves, label Printers, Assembly / Machining-Out terminals,
---              Die Cast terminals, InspectionLines, and machines. Ordered by Code.
---
---              PriorArt: v1.0 (2026-06-19) returned the HL4 'Machining In' cells;
---              that split the deposit location (cell) from the read location (line)
---              and produced an always-empty Machining-IN FIFO.
+--              Same column shape as v1.0 (Id, Code, Name, AreaCode, AreaName);
+--              AreaCode/AreaName resolve from the line's parent Area. Printers,
+--              terminals, machines are structurally excluded (wrong tier).
 --
 --              Read proc: NO @Status/@Message, NO OUTPUT params; empty rowset =
 --              no machining lines configured (FDS-11-011).
@@ -43,25 +30,22 @@ BEGIN
     SET NOCOUNT ON;
 
     SELECT
-        l.Id,
-        l.Code,
-        l.Name,
+        wc.Id,
+        wc.Code,
+        wc.Name,
         area.Code AS AreaCode,
         area.Name AS AreaName
-    FROM Location.Location l
-    INNER JOIN Location.LocationTypeDefinition ltd ON ltd.Id = l.LocationTypeDefinitionId
+    FROM Location.Location wc
+    INNER JOIN Location.LocationTypeDefinition ltd ON ltd.Id = wc.LocationTypeDefinitionId
     INNER JOIN Location.LocationType lt            ON lt.Id  = ltd.LocationTypeId
-    -- Area parent (the line's parent) for the label.
-    LEFT JOIN Location.Location area ON area.Id = l.ParentLocationId
-    WHERE lt.HierarchyLevel = 3                  -- WorkCenter tier (the LINE)
-      AND ltd.Code = N'ProductionLine'           -- production lines only (not InspectionLine)
-      AND l.DeprecatedAt IS NULL
-      AND EXISTS (                               -- must have a Machining-IN receiving cell
-          SELECT 1
-          FROM Location.Location c
-          WHERE c.ParentLocationId = l.Id
-            AND c.DeprecatedAt IS NULL
-            AND c.Name LIKE N'Machining In%')
-    ORDER BY l.Code;
+    LEFT JOIN Location.Location area ON area.Id = wc.ParentLocationId
+    WHERE lt.HierarchyLevel = 3                 -- WorkCenter tier (the production LINE)
+      AND wc.DeprecatedAt IS NULL
+      -- a machining line is one with a Machining-In receiving Cell child
+      AND EXISTS (SELECT 1 FROM Location.Location c
+                  WHERE c.ParentLocationId = wc.Id
+                    AND c.DeprecatedAt IS NULL
+                    AND c.Name LIKE N'Machining In%')
+    ORDER BY wc.Code;
 END;
 GO

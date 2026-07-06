@@ -13,7 +13,7 @@
     "params.popupId": { "paramDirection": "input", "persistent": true }
   },
   "props": {
-    "defaultSize": { "height": 220, "width": 520 }
+    "defaultSize": { "height": 220, "width": 640 }
   },
   "root": {
     "type": "ia.container.flex",
@@ -51,18 +51,20 @@
       {
         "type": "ia.container.flex",
         "meta": { "name": "ButtonRow" },
+        "position": { "shrink": 0 },
         "props": {
           "direction": "row",
           "alignItems": "center",
-          "wrap": "wrap",
-          "style": { "gap": "10px" }
+          "wrap": "nowrap",
+          "style": { "gap": "12px", "overflow": "hidden" }
         },
         "children": [
           {
             "type": "ia.input.button",
             "version": 0,
             "meta": { "name": "CancelButton" },
-            "props": { "text": "Cancel", "style": { "classes": "pf-btn pf-btn-secondary" } },
+            "position": { "basis": "auto", "shrink": 0 },
+            "props": { "text": "Cancel", "style": { "classes": "pf-btn pf-btn-secondary", "minHeight": "44px" } },
             "events": {
               "component": {
                 "onActionPerformed": {
@@ -82,7 +84,8 @@
             "type": "ia.input.button",
             "version": 0,
             "meta": { "name": "ClearButton" },
-            "props": { "text": "Confirm & Clear", "style": { "classes": "pf-btn pf-btn-primary" } },
+            "position": { "basis": "auto", "shrink": 0 },
+            "props": { "text": "Confirm & Clear", "style": { "classes": "pf-btn pf-btn-primary", "minHeight": "44px" } },
             "events": {
               "component": {
                 "onActionPerformed": {
@@ -96,7 +99,8 @@
             "type": "ia.input.button",
             "version": 0,
             "meta": { "name": "AnotherButton" },
-            "props": { "text": "Confirm & Submit Another", "style": { "classes": "pf-btn pf-btn-primary" } },
+            "position": { "basis": "auto", "shrink": 0 },
+            "props": { "text": "Confirm & Submit Another", "style": { "classes": "pf-btn pf-btn-primary", "minHeight": "44px" } },
             "events": {
               "component": {
                 "onActionPerformed": {

@@ -21,7 +21,7 @@ DECLARE @Now DATETIME2(3) = SYSUTCDATETIME();
 -- ---- locations ----
 DECLARE @DieCastCell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'DC1-M05');   -- a Die Cast Cell (machine)
 DECLARE @TrimArea    BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1');     -- Trim Shop Area
-DECLARE @MachCell    BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-MIN'); -- Machining-In FIFO Cell
+DECLARE @MachCell    BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR'); -- Machining LINE (line-resident, 2026-07-06)
 
 -- ---- smoke Item + eligibility (origin Cell + Trim Area + Machining destination) ----
 IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'SMOKE-P4')
@@ -63,7 +63,7 @@ DECLARE @TrimOutOt BIGINT = (SELECT Id FROM Parts.OperationTemplate WHERE Code =
 DECLARE @to TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO @to EXEC Workorder.TrimOut_Record
     @ParentLotId = @Lot, @OperationTemplateId = @TrimOutOt, @ShotCount = 48,
-    @DestinationCellLocationId = @MachCell, @AppUserId = 1;
+    @DestinationCellLocationId = @MachCell, @SourceLocationId = @TrimArea, @AppUserId = 1;
 
 -- ---- report ----
 SELECT

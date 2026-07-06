@@ -9,10 +9,15 @@
     "defectOptions": []
   },
   "params": {
-    "lotId": null
+    "lotId": null,
+    "lotLabel": null
   },
   "propConfig": {
     "params.lotId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.lotLabel": {
       "paramDirection": "input",
       "persistent": true
     },
@@ -39,9 +44,9 @@
     "props": {
       "direction": "column",
       "style": {
-        "classes": "pf-panel",
+        "borderTop": "1px solid var(--mpp-border, #e0e0e0)",
         "gap": "12px",
-        "padding": "16px"
+        "paddingTop": "12px"
       }
     },
     "children": [
@@ -54,6 +59,36 @@
           "text": "Reject Entry",
           "style": {
             "classes": "pf-panel-header"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "TargetLotLabel"
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if(isNull({view.params.lotId}), \"No LOT yet this session - create a LOT first.\", \"Rejecting against \" + if(isNull({view.params.lotLabel}), \"LOT #\" + toStr({view.params.lotId}), {view.params.lotLabel}))"
+              }
+            }
+          },
+          "props.style.color": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if(isNull({view.params.lotId}), \"var(--mpp-text-secondary, #757575)\", \"var(--mpp-warning, #b26a00)\")"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-kpi-sub",
+            "fontWeight": 600
           }
         }
       },

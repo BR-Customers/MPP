@@ -1,8 +1,17 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_GetAttributeHistory.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-06-15
--- Version:     1.1
+-- Modified:    2026-07-06
+-- Version:     1.2
+--
+--              v1.2 (Jacques 2026-07-06, LOT Detail enrichment):
+--                * Movement Detail carries location CODES ('Name (CODE)') and the
+--                  recording terminal ('[via <terminal>]') - richer context than
+--                  the bare machine name.
+--                * New stream 8 'Production' - Workorder.ProductionEvent
+--                  checkpoints with template, terminal, shots + scrap counters.
+--                * New stream 9 'Reject' - Workorder.RejectEvent rows
+--                  ('Rejected <n> pc (<defect>)') so scrap shows in the timeline.
 -- Description: Unified LOT history read (Phase 2 Task 5 / G3; spec section 4.3).
 --              READ proc -- no @Status/@Message, no status row, ONE result set,
 --              empty set = not found (FDS-11-011). No OUTPUT params.
@@ -86,17 +95,20 @@ BEGIN
 
         UNION ALL
 
-        -- ---- Stream 3: movements ----
+        -- ---- Stream 3: movements (v1.2: codes + recording terminal) ----
         SELECT
             mv.MovedAt                            AS EventAt,
             CAST(1 AS INT)                        AS SortRank,
             CAST(N'Movement' AS NVARCHAR(20))     AS EventKind,
-            CAST(ISNULL(fromloc.Name, N'(none)') + N' -> ' + toloc.Name AS NVARCHAR(500)) AS Detail,
+            CAST(ISNULL(fromloc.Name + N' (' + fromloc.Code + N')', N'(none)')
+                 + N' -> ' + toloc.Name + N' (' + toloc.Code + N')'
+                 + ISNULL(N' [via ' + term.Name + N']', N'') AS NVARCHAR(500)) AS Detail,
             CAST(mv.MovedByUserId AS BIGINT)      AS ByUserId,
             CAST(au.DisplayName AS NVARCHAR(200))  AS ByUserName
         FROM Lots.LotMovement mv
         INNER JOIN Location.Location toloc   ON toloc.Id   = mv.ToLocationId
         LEFT  JOIN Location.Location fromloc ON fromloc.Id = mv.FromLocationId
+        LEFT  JOIN Location.Location term    ON term.Id    = mv.TerminalLocationId
         INNER JOIN Location.AppUser  au      ON au.Id      = mv.MovedByUserId
         WHERE mv.LotId = @LotId
 
@@ -182,6 +194,42 @@ BEGIN
         INNER JOIN Lots.PrintReasonCode pr ON pr.Id = ll.PrintReasonCodeId
         INNER JOIN Location.AppUser     au ON au.Id = ll.PrintedByUserId
         WHERE ll.LotId = @LotId
+
+        UNION ALL
+
+        -- ---- Stream 8 (v1.2): production checkpoints (shots + scrap counters) ----
+        SELECT
+            pe.EventAt                            AS EventAt,
+            CAST(8 AS INT)                        AS SortRank,
+            CAST(N'Production' AS NVARCHAR(20))   AS EventKind,
+            CAST(ot.Name
+                 + ISNULL(N' at ' + term.Name, N'')
+                 + N': shots ' + ISNULL(CAST(pe.ShotCount AS NVARCHAR(20)), N'-')
+                 + N', scrap ' + ISNULL(CAST(pe.ScrapCount AS NVARCHAR(20)), N'-') AS NVARCHAR(500)) AS Detail,
+            CAST(pe.AppUserId AS BIGINT)          AS ByUserId,
+            CAST(au.DisplayName AS NVARCHAR(200))  AS ByUserName
+        FROM Workorder.ProductionEvent pe
+        INNER JOIN Parts.OperationTemplate ot ON ot.Id = pe.OperationTemplateId
+        LEFT  JOIN Location.Location term     ON term.Id = pe.TerminalLocationId
+        INNER JOIN Location.AppUser au        ON au.Id = pe.AppUserId
+        WHERE pe.LotId = @LotId
+
+        UNION ALL
+
+        -- ---- Stream 9 (v1.2): rejects (scrap in the timeline) ----
+        SELECT
+            re.RecordedAt                         AS EventAt,
+            CAST(9 AS INT)                        AS SortRank,
+            CAST(N'Reject' AS NVARCHAR(20))       AS EventKind,
+            CAST(N'Rejected ' + CAST(re.Quantity AS NVARCHAR(20)) + N' pc ('
+                 + dc.Code + ISNULL(N' - ' + dc.Description, N'') + N')'
+                 + ISNULL(N' charged to ' + re.ChargeToArea, N'') AS NVARCHAR(500)) AS Detail,
+            CAST(re.AppUserId AS BIGINT)          AS ByUserId,
+            CAST(au.DisplayName AS NVARCHAR(200))  AS ByUserName
+        FROM Workorder.RejectEvent re
+        INNER JOIN Quality.DefectCode dc ON dc.Id = re.DefectCodeId
+        INNER JOIN Location.AppUser au   ON au.Id = re.AppUserId
+        WHERE re.LotId = @LotId
     ) u
     ORDER BY u.EventAt ASC, u.SortRank ASC;
 END;

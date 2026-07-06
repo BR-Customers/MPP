@@ -4,8 +4,10 @@
     "destValue": null,
     "inScan": "",
     "outScan": "",
+    "refreshToken": 0,
     "scrapCount": null,
     "shotCount": null,
+    "trimInventory": [],
     "trimState": "in"
   },
   "params": {
@@ -16,6 +18,14 @@
       "binding": {
         "config": {
           "expression": "runScript(\"BlueRidge.Location.Location.getMachiningDestinationsForDropdown\", 0)"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.trimInventory": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.terminal.zoneLocationId}, false, {view.custom.refreshToken})"
         },
         "type": "expr"
       }
@@ -134,7 +144,8 @@
         "props": {
           "alignItems": "center",
           "style": {
-            "gap": "16px"
+            "gap": "16px",
+            "overflow": "hidden"
           }
         },
         "type": "ia.container.flex"
@@ -206,7 +217,8 @@
           "alignItems": "center",
           "style": {
             "classes": "pf-terminal-cell-context",
-            "gap": "12px"
+            "gap": "12px",
+            "overflow": "hidden"
           }
         },
         "type": "ia.container.flex"
@@ -287,7 +299,8 @@
         },
         "props": {
           "style": {
-            "gap": "8px"
+            "gap": "8px",
+            "overflow": "hidden"
           }
         },
         "type": "ia.container.flex"
@@ -314,7 +327,7 @@
               "style": {
                 "classes": "pf-kpi-sub"
               },
-              "text": "Validates eligibility (v_EffectiveItemLocation) + MaxParts cap on scan-in."
+              "text": "Validates eligibility + the max-parts cap on scan-in."
             },
             "type": "ia.display.label"
           },
@@ -339,6 +352,212 @@
               "path": "BlueRidge/Components/PlantFloor/MovementScan"
             },
             "type": "ia.display.view"
+          },
+          {
+            "meta": {
+              "name": "InInventoryHeader"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-field-label",
+                "marginTop": "8px"
+              },
+              "text": "Currently in Trim"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "InInventoryTable"
+            },
+            "position": {
+              "basis": "240px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.data": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.trimInventory"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "columns": [
+                {
+                  "align": "left",
+                  "boolean": "checkbox",
+                  "dateFormat": "MM/DD/YYYY",
+                  "editable": false,
+                  "field": "LotName",
+                  "filter": {
+                    "boolean": { "condition": "" },
+                    "date": { "condition": "", "value": "" },
+                    "enabled": false,
+                    "number": { "condition": "", "value": "" },
+                    "string": { "condition": "", "value": "" },
+                    "visible": "on-hover"
+                  },
+                  "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
+                  "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "LOT" },
+                  "justify": "auto",
+                  "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
+                  "number": "value",
+                  "numberFormat": "0,0.##",
+                  "progressBar": {
+                    "bar": { "color": "", "style": { "classes": "" } },
+                    "max": 100,
+                    "min": 0,
+                    "track": { "color": "", "style": { "classes": "" } },
+                    "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
+                  },
+                  "render": "auto",
+                  "resizable": true,
+                  "sort": "none",
+                  "sortable": true,
+                  "strictWidth": false,
+                  "style": { "classes": "" },
+                  "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+                  "viewParams": {},
+                  "viewPath": "",
+                  "visible": true,
+                  "width": 180
+                },
+                {
+                  "align": "left",
+                  "boolean": "checkbox",
+                  "dateFormat": "MM/DD/YYYY",
+                  "editable": false,
+                  "field": "ItemPartNumber",
+                  "filter": {
+                    "boolean": { "condition": "" },
+                    "date": { "condition": "", "value": "" },
+                    "enabled": false,
+                    "number": { "condition": "", "value": "" },
+                    "string": { "condition": "", "value": "" },
+                    "visible": "on-hover"
+                  },
+                  "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
+                  "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Part" },
+                  "justify": "auto",
+                  "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
+                  "number": "value",
+                  "numberFormat": "0,0.##",
+                  "progressBar": {
+                    "bar": { "color": "", "style": { "classes": "" } },
+                    "max": 100,
+                    "min": 0,
+                    "track": { "color": "", "style": { "classes": "" } },
+                    "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
+                  },
+                  "render": "auto",
+                  "resizable": true,
+                  "sort": "none",
+                  "sortable": true,
+                  "strictWidth": false,
+                  "style": { "classes": "" },
+                  "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+                  "viewParams": {},
+                  "viewPath": "",
+                  "visible": true,
+                  "width": ""
+                },
+                {
+                  "align": "center",
+                  "boolean": "checkbox",
+                  "dateFormat": "MM/DD/YYYY",
+                  "editable": false,
+                  "field": "PieceCount",
+                  "filter": {
+                    "boolean": { "condition": "" },
+                    "date": { "condition": "", "value": "" },
+                    "enabled": false,
+                    "number": { "condition": "", "value": "" },
+                    "string": { "condition": "", "value": "" },
+                    "visible": "on-hover"
+                  },
+                  "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
+                  "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Pieces" },
+                  "justify": "auto",
+                  "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
+                  "number": "value",
+                  "numberFormat": "0,0",
+                  "progressBar": {
+                    "bar": { "color": "", "style": { "classes": "" } },
+                    "max": 100,
+                    "min": 0,
+                    "track": { "color": "", "style": { "classes": "" } },
+                    "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
+                  },
+                  "render": "auto",
+                  "resizable": true,
+                  "sort": "none",
+                  "sortable": true,
+                  "strictWidth": false,
+                  "style": { "classes": "" },
+                  "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+                  "viewParams": {},
+                  "viewPath": "",
+                  "visible": true,
+                  "width": 90
+                },
+                {
+                  "align": "center",
+                  "boolean": "checkbox",
+                  "dateFormat": "MM/DD HH:mm",
+                  "editable": false,
+                  "field": "LastMovementAt",
+                  "filter": {
+                    "boolean": { "condition": "" },
+                    "date": { "condition": "", "value": "" },
+                    "enabled": false,
+                    "number": { "condition": "", "value": "" },
+                    "string": { "condition": "", "value": "" },
+                    "visible": "on-hover"
+                  },
+                  "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
+                  "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Arrived" },
+                  "justify": "auto",
+                  "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
+                  "number": "value",
+                  "numberFormat": "0,0.##",
+                  "progressBar": {
+                    "bar": { "color": "", "style": { "classes": "" } },
+                    "max": 100,
+                    "min": 0,
+                    "track": { "color": "", "style": { "classes": "" } },
+                    "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
+                  },
+                  "render": "date",
+                  "resizable": true,
+                  "sort": "none",
+                  "sortable": true,
+                  "strictWidth": false,
+                  "style": { "classes": "" },
+                  "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+                  "viewParams": {},
+                  "viewPath": "",
+                  "visible": true,
+                  "width": 130
+                }
+              ],
+              "pager": {
+                "enabled": false
+              },
+              "rowHeight": 40,
+              "selection": {
+                "enabled": false
+              },
+              "style": {
+                "classes": "pf-table"
+              }
+            },
+            "type": "ia.display.table"
           },
           {
             "meta": {
@@ -397,9 +616,249 @@
               "style": {
                 "classes": "pf-kpi-sub"
               },
-              "text": "Trim is yield loss - no shot delta. Scan the LOT, pick the Machining destination, record rejects."
+              "text": "Pick a LOT from the Trim inventory below (or scan its LTT), choose the production line, record counters."
             },
             "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "component": {
+                "onSelectionChange": {
+                  "config": {
+                    "script": "\tsel \u003d self.props.selection.data\n\tif sel:\n\t\tself.view.custom.activeLotId \u003d sel[0].get(\"Id\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "OutPickTable"
+            },
+            "position": {
+              "basis": "220px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.data": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.trimInventory"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "columns": [
+                {
+                  "align": "center",
+                  "boolean": "checkbox",
+                  "dateFormat": "MM/DD/YYYY",
+                  "editable": false,
+                  "field": "Id",
+                  "filter": {
+                    "boolean": { "condition": "" },
+                    "date": { "condition": "", "value": "" },
+                    "enabled": false,
+                    "number": { "condition": "", "value": "" },
+                    "string": { "condition": "", "value": "" },
+                    "visible": "on-hover"
+                  },
+                  "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
+                  "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Id" },
+                  "justify": "auto",
+                  "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
+                  "number": "value",
+                  "numberFormat": "0,0.##",
+                  "progressBar": {
+                    "bar": { "color": "", "style": { "classes": "" } },
+                    "max": 100,
+                    "min": 0,
+                    "track": { "color": "", "style": { "classes": "" } },
+                    "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
+                  },
+                  "render": "auto",
+                  "resizable": true,
+                  "sort": "none",
+                  "sortable": false,
+                  "strictWidth": false,
+                  "style": { "classes": "" },
+                  "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+                  "viewParams": {},
+                  "viewPath": "",
+                  "visible": false,
+                  "width": ""
+                },
+                {
+                  "align": "left",
+                  "boolean": "checkbox",
+                  "dateFormat": "MM/DD/YYYY",
+                  "editable": false,
+                  "field": "LotName",
+                  "filter": {
+                    "boolean": { "condition": "" },
+                    "date": { "condition": "", "value": "" },
+                    "enabled": false,
+                    "number": { "condition": "", "value": "" },
+                    "string": { "condition": "", "value": "" },
+                    "visible": "on-hover"
+                  },
+                  "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
+                  "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "LOT" },
+                  "justify": "auto",
+                  "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
+                  "number": "value",
+                  "numberFormat": "0,0.##",
+                  "progressBar": {
+                    "bar": { "color": "", "style": { "classes": "" } },
+                    "max": 100,
+                    "min": 0,
+                    "track": { "color": "", "style": { "classes": "" } },
+                    "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
+                  },
+                  "render": "auto",
+                  "resizable": true,
+                  "sort": "none",
+                  "sortable": true,
+                  "strictWidth": false,
+                  "style": { "classes": "" },
+                  "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+                  "viewParams": {},
+                  "viewPath": "",
+                  "visible": true,
+                  "width": 180
+                },
+                {
+                  "align": "left",
+                  "boolean": "checkbox",
+                  "dateFormat": "MM/DD/YYYY",
+                  "editable": false,
+                  "field": "ItemPartNumber",
+                  "filter": {
+                    "boolean": { "condition": "" },
+                    "date": { "condition": "", "value": "" },
+                    "enabled": false,
+                    "number": { "condition": "", "value": "" },
+                    "string": { "condition": "", "value": "" },
+                    "visible": "on-hover"
+                  },
+                  "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
+                  "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Part" },
+                  "justify": "auto",
+                  "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
+                  "number": "value",
+                  "numberFormat": "0,0.##",
+                  "progressBar": {
+                    "bar": { "color": "", "style": { "classes": "" } },
+                    "max": 100,
+                    "min": 0,
+                    "track": { "color": "", "style": { "classes": "" } },
+                    "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
+                  },
+                  "render": "auto",
+                  "resizable": true,
+                  "sort": "none",
+                  "sortable": true,
+                  "strictWidth": false,
+                  "style": { "classes": "" },
+                  "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+                  "viewParams": {},
+                  "viewPath": "",
+                  "visible": true,
+                  "width": ""
+                },
+                {
+                  "align": "center",
+                  "boolean": "checkbox",
+                  "dateFormat": "MM/DD/YYYY",
+                  "editable": false,
+                  "field": "PieceCount",
+                  "filter": {
+                    "boolean": { "condition": "" },
+                    "date": { "condition": "", "value": "" },
+                    "enabled": false,
+                    "number": { "condition": "", "value": "" },
+                    "string": { "condition": "", "value": "" },
+                    "visible": "on-hover"
+                  },
+                  "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
+                  "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Pieces" },
+                  "justify": "auto",
+                  "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
+                  "number": "value",
+                  "numberFormat": "0,0",
+                  "progressBar": {
+                    "bar": { "color": "", "style": { "classes": "" } },
+                    "max": 100,
+                    "min": 0,
+                    "track": { "color": "", "style": { "classes": "" } },
+                    "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
+                  },
+                  "render": "auto",
+                  "resizable": true,
+                  "sort": "none",
+                  "sortable": true,
+                  "strictWidth": false,
+                  "style": { "classes": "" },
+                  "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+                  "viewParams": {},
+                  "viewPath": "",
+                  "visible": true,
+                  "width": 90
+                },
+                {
+                  "align": "center",
+                  "boolean": "checkbox",
+                  "dateFormat": "MM/DD HH:mm",
+                  "editable": false,
+                  "field": "LastMovementAt",
+                  "filter": {
+                    "boolean": { "condition": "" },
+                    "date": { "condition": "", "value": "" },
+                    "enabled": false,
+                    "number": { "condition": "", "value": "" },
+                    "string": { "condition": "", "value": "" },
+                    "visible": "on-hover"
+                  },
+                  "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
+                  "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Arrived" },
+                  "justify": "auto",
+                  "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
+                  "number": "value",
+                  "numberFormat": "0,0.##",
+                  "progressBar": {
+                    "bar": { "color": "", "style": { "classes": "" } },
+                    "max": 100,
+                    "min": 0,
+                    "track": { "color": "", "style": { "classes": "" } },
+                    "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
+                  },
+                  "render": "date",
+                  "resizable": true,
+                  "sort": "none",
+                  "sortable": true,
+                  "strictWidth": false,
+                  "style": { "classes": "" },
+                  "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+                  "viewParams": {},
+                  "viewPath": "",
+                  "visible": true,
+                  "width": 130
+                }
+              ],
+              "pager": {
+                "enabled": false
+              },
+              "rowHeight": 40,
+              "selection": {
+                "enabled": true
+              },
+              "style": {
+                "classes": "pf-table"
+              }
+            },
+            "type": "ia.display.table"
           },
           {
             "children": [
@@ -775,7 +1234,7 @@
         {
           "name": "submitTrimOut",
           "params": [],
-          "script": "\tlotId \u003d self.view.custom.activeLotId\n\tif lotId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT\", \"Scan or select a LOT before recording Trim OUT.\", \"warning\")\n\t\treturn\n\toperationTemplateId \u003d BlueRidge.Parts.OperationTemplate.getActiveTemplateIdByCode(\"TrimOut\")\n\tif operationTemplateId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Template missing\", \"No active \u0027TrimOut\u0027 operation template is published.\", \"error\")\n\t\treturn\n\tdest \u003d self.view.custom.destValue\n\tif dest is None or dest \u003d\u003d \"\":\n\t\tBlueRidge.Common.Notify.toast(\"No destination\", \"Scan or pick a Machining destination.\", \"warning\")\n\t\treturn\n\tdata \u003d {\n\t\t\"parentLotId\": lotId,\n\t\t\"operationTemplateId\": operationTemplateId,\n\t\t\"shotCount\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.shotCount),\n\t\t\"scrapCount\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.scrapCount),\n\t\t\"destinationCellLocationId\": dest,\n\t}\n\tres \u003d BlueRidge.Workorder.TrimOut.record(data)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Trim OUT recorded\")\n\tif res.get(\"Status\"):\n\t\tsystem.perspective.navigate(\"/shop-floor/lot-detail/\" + str(lotId))"
+          "script": "\tlotId \u003d self.view.custom.activeLotId\n\tif lotId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT\", \"Scan or select a LOT before recording Trim OUT.\", \"warning\")\n\t\treturn\n\toperationTemplateId \u003d BlueRidge.Parts.OperationTemplate.getActiveTemplateIdByCode(\"TrimOut\")\n\tif operationTemplateId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Template missing\", \"No active \u0027TrimOut\u0027 operation template is published.\", \"error\")\n\t\treturn\n\tdest \u003d self.view.custom.destValue\n\tif dest is None or dest \u003d\u003d \"\":\n\t\tBlueRidge.Common.Notify.toast(\"No destination\", \"Scan or pick a Machining destination.\", \"warning\")\n\t\treturn\n\tdata \u003d {\n\t\t\"parentLotId\": lotId,\n\t\t\"operationTemplateId\": operationTemplateId,\n\t\t\"shotCount\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.shotCount),\n\t\t\"scrapCount\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.scrapCount),\n\t\t\"destinationCellLocationId\": dest,\n\t\t\"sourceLocationId\": self.session.custom.terminal.zoneLocationId,\n\t}\n\tres \u003d BlueRidge.Workorder.TrimOut.record(data)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Trim OUT recorded\")\n\tif res.get(\"Status\"):\n\t\t# Stay on the Trim OUT screen (2026-07-06 Jacques): clear the form for the next LOT.\n\t\tself.view.custom.activeLotId \u003d None\n\t\tself.view.custom.outScan \u003d \"\"\n\t\tself.view.custom.shotCount \u003d None\n\t\tself.view.custom.scrapCount \u003d None\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
         },
         {
           "name": "startup",
@@ -788,7 +1247,7 @@
         {
           "messageType": "trimInMoved",
           "pageScope": true,
-          "script": "\tself.view.custom.activeLotId \u003d payload.get(\"lotId\")\n\tself.view.custom.trimState \u003d \"out\"\n\t# TODO(phase4): record the TrimIn checkpoint via ProductionEvent.record once cumulative inputs exist.",
+          "script": "\tself.view.custom.activeLotId \u003d payload.get(\"lotId\")\n\tself.view.custom.trimState \u003d \"out\"\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1\n\t# TODO(phase4): record the TrimIn checkpoint via ProductionEvent.record once cumulative inputs exist.",
           "sessionScope": false,
           "viewScope": false
         }

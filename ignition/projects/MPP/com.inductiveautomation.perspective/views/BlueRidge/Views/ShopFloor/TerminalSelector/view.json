@@ -1,6 +1,7 @@
 {
   "custom": {
-    "scanCode": ""
+    "scanCode": "",
+    "searchText": ""
   },
   "params": {},
   "propConfig": {
@@ -126,10 +127,40 @@
           "justify": "center",
           "style": {
             "gap": "10px",
-            "marginTop": "4px"
+            "marginTop": "4px",
+            "overflow": "hidden"
           }
         },
         "type": "ia.container.flex"
+      },
+      {
+        "meta": {
+          "name": "SearchInput"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "bidirectional": true,
+                "path": "view.custom.searchText"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "deferUpdates": false,
+          "placeholder": "Search terminals (code, name, zone)",
+          "style": {
+            "classes": "pf-field-input",
+            "textAlign": "center",
+            "width": "396px"
+          }
+        },
+        "type": "ia.input.text-field"
       },
       {
         "events": {
@@ -154,9 +185,9 @@
           "props.data": {
             "binding": {
               "config": {
-                "path": "view.custom.terminals"
+                "expression": "runScript(\"BlueRidge.Location.Terminal.filterForSelector\", 0, {view.custom.terminals}, {view.custom.searchText})"
               },
-              "type": "property"
+              "type": "expr"
             }
           }
         },
@@ -531,6 +562,15 @@
               "width": 240
             }
           ],
+          "pager": {
+            "initialOption": 100,
+            "options": [
+              25,
+              50,
+              100,
+              200
+            ]
+          },
           "selection": {
             "enabled": true
           },
