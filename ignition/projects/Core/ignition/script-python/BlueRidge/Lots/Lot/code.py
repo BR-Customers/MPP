@@ -208,10 +208,12 @@ def getByName(lotName):
     return get(lotName=_u(lotName))
 
 
-def getLineInventoryByPart(locationId):
+def getLineInventoryByPart(locationId, _refreshToken=None):
     """Spec 2 Task I2. On-hand open LOTs at a line location, grouped by part then
        FIFO by arrival, for the inventory check-in popup. Returns list[dict] with
-       ItemId, PartNumber, Description, LotId, LotName, InventoryAvailable, ArrivedAt."""
+       ItemId, PartNumber, Description, LotId, LotName, InventoryAvailable, ArrivedAt.
+       _refreshToken is unused server-side; it lets a view's expression binding
+       re-run the read after a check-in by referencing a bumped token."""
     if locationId is None:
         return []
     BlueRidge.Common.Util.log("getLineInventoryByPart locationId=%s" % locationId)
