@@ -342,6 +342,26 @@ def getDieCastShotFields():
     return getDieCastFieldsWithType(tid)
 
 
+def getFieldSummary(operationTemplateId):
+    """Comma-joined data-collection field names for a template - the same
+    summary RouteStep_ListByRoute composes in SQL. '' when none / no template.
+    Drives the Routes draft-step Data Collection column at pick time
+    (Jacques 2026-07-06: the draft column stayed blank until save/publish)."""
+    tid = _u(operationTemplateId)
+    if tid is None:
+        return ""
+    try:
+        rows = BlueRidge.Common.Db.execList(
+            "parts/OperationTemplateField_ListByTemplate",
+            {"operationTemplateId": tid},
+        ) or []
+    except Exception as e:
+        BlueRidge.Common.Util.log("getFieldSummary failed: %s" % str(e))
+        return ""
+    names = [r.get("Name") or r.get("Code") or "" for r in rows]
+    return ", ".join([n for n in names if n])
+
+
 # -----------------------------------------------------------------------------
 # Dropdown lookups
 # -----------------------------------------------------------------------------

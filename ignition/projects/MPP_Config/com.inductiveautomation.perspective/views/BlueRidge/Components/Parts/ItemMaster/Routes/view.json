@@ -2,7 +2,7 @@
   "custom": {
     "draftId": 0,
     "mode": "view",
-    "opTemplatesByArea": {},
+    "opTypes": [],
     "refreshToken": 0,
     "selectedVersionId": 0,
     "showDeprecated": false,
@@ -25,10 +25,10 @@
     "value": ""
   },
   "propConfig": {
-    "custom.areas": {
+    "custom.opTypes": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Location.Location.getAllAreas\", 0, false)"
+          "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.getOperationTypesForDropdown\", 0)"
         },
         "type": "expr"
       }
@@ -72,7 +72,7 @@
         },
         "transforms": [
           {
-            "code": "\tout \u003d []\n\tfor r in (value or []):\n\t\tr \u003d r or {}\n\t\tout.append({\u0027seq\u0027: r.get(\u0027SequenceNumber\u0027), \u0027areaName\u0027: r.get(\u0027OperationAreaName\u0027) or \u0027\u0027, \u0027opCode\u0027: r.get(\u0027OperationCode\u0027) or \u0027\u0027, \u0027opName\u0027: r.get(\u0027OperationName\u0027) or \u0027\u0027, \u0027isRequired\u0027: bool(r.get(\u0027IsRequired\u0027)), \u0027dataFields\u0027: r.get(\u0027DataCollectionSummary\u0027) or \u0027\u0027})\n\treturn out",
+            "code": "\tout \u003d []\n\tfor r in (value or []):\n\t\tr \u003d r or {}\n\t\tout.append({\u0027seq\u0027: r.get(\u0027SequenceNumber\u0027), \u0027areaName\u0027: r.get(\u0027OperationTypeName\u0027) or \u0027\u0027, \u0027opCode\u0027: r.get(\u0027OperationCode\u0027) or \u0027\u0027, \u0027opName\u0027: r.get(\u0027OperationName\u0027) or \u0027\u0027, \u0027isRequired\u0027: bool(r.get(\u0027IsRequired\u0027)), \u0027dataFields\u0027: r.get(\u0027DataCollectionSummary\u0027) or \u0027\u0027})\n\treturn out",
             "type": "script"
           }
         ],
@@ -491,7 +491,7 @@
                   },
                   "transforms": [
                     {
-                      "code": "\tout \u003d []\n\tfor r in (value or []):\n\t\tr \u003d r or {}\n\t\tout.append({\u0027seq\u0027: r.get(\u0027SequenceNumber\u0027), \u0027areaName\u0027: r.get(\u0027OperationAreaName\u0027) or \u0027\u0027, \u0027opCode\u0027: r.get(\u0027OperationCode\u0027) or \u0027\u0027, \u0027opName\u0027: r.get(\u0027OperationName\u0027) or \u0027\u0027, \u0027isRequired\u0027: bool(r.get(\u0027IsRequired\u0027)), \u0027dataFields\u0027: r.get(\u0027DataCollectionSummary\u0027) or \u0027\u0027})\n\treturn out",
+                      "code": "\tout \u003d []\n\tfor r in (value or []):\n\t\tr \u003d r or {}\n\t\tout.append({\u0027seq\u0027: r.get(\u0027SequenceNumber\u0027), \u0027areaName\u0027: r.get(\u0027OperationTypeName\u0027) or \u0027\u0027, \u0027opCode\u0027: r.get(\u0027OperationCode\u0027) or \u0027\u0027, \u0027opName\u0027: r.get(\u0027OperationName\u0027) or \u0027\u0027, \u0027isRequired\u0027: bool(r.get(\u0027IsRequired\u0027)), \u0027dataFields\u0027: r.get(\u0027DataCollectionSummary\u0027) or \u0027\u0027})\n\treturn out",
                       "type": "script"
                     }
                   ],
@@ -632,7 +632,7 @@
                     "style": {
                       "classes": ""
                     },
-                    "title": "Area"
+                    "title": "Operation Type"
                   },
                   "justify": "auto",
                   "nullFormat": {
@@ -1137,7 +1137,7 @@
               },
               {
                 "meta": {
-                  "name": "HdrArea"
+                  "name": "HdrOpType"
                 },
                 "position": {
                   "basis": "160px",
@@ -1151,7 +1151,7 @@
                     "letterSpacing": "0.05em",
                     "textTransform": "uppercase"
                   },
-                  "text": "Area"
+                  "text": "Operation Type"
                 },
                 "type": "ia.display.label"
               },
@@ -1269,7 +1269,7 @@
                   },
                   "transforms": [
                     {
-                      "code": "\tsteps \u003d value or []\n\tareas \u003d self.view.custom.areas or []\n\topCache \u003d self.view.custom.opTemplatesByArea or {}\n\tout \u003d []\n\ttotal \u003d len(steps)\n\tfor i, s in enumerate(steps):\n\t\ts \u003d s or {}\n\t\tout.append({\u0027rowIndex\u0027: i, \u0027step\u0027: dict(s), \u0027areas\u0027: areas, \u0027opTemplatesByArea\u0027: opCache, \u0027isFirst\u0027: (i \u003d\u003d 0), \u0027isLast\u0027: (i \u003d\u003d total - 1)})\n\treturn out",
+                      "code": "\tsteps \u003d value or []\n\topTypes \u003d self.view.custom.opTypes or []\n\tout \u003d []\n\ttotal \u003d len(steps)\n\tfor i, s in enumerate(steps):\n\t\ts \u003d s or {}\n\t\tout.append({\u0027rowIndex\u0027: i, \u0027step\u0027: dict(s), \u0027opTypes\u0027: opTypes, \u0027isFirst\u0027: (i \u003d\u003d 0), \u0027isLast\u0027: (i \u003d\u003d total - 1)})\n\treturn out",
                       "type": "script"
                     }
                   ],
@@ -1300,7 +1300,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tBlueRidge.Common.Util.log(\u0027BtnAddStep click\u0027)\n\tdraft \u003d self.view.custom.state.editDraft or {}\n\tsteps \u003d list(draft.get(\u0027steps\u0027) or [])\n\tsteps.append({\u0027Id\u0027: None, \u0027SequenceNumber\u0027: len(steps) + 1, \u0027OperationAreaLocationId\u0027: None, \u0027OperationAreaName\u0027: \u0027\u0027, \u0027OperationTemplateId\u0027: None, \u0027OperationCode\u0027: \u0027\u0027, \u0027OperationName\u0027: \u0027\u0027, \u0027OperationVersionNumber\u0027: None, \u0027DataCollectionSummary\u0027: \u0027\u0027, \u0027IsRequired\u0027: True, \u0027Description\u0027: None})\n\tnewDraft \u003d {\u0027Id\u0027: draft.get(\u0027Id\u0027), \u0027Name\u0027: draft.get(\u0027Name\u0027), \u0027EffectiveFrom\u0027: draft.get(\u0027EffectiveFrom\u0027), \u0027steps\u0027: steps}\n\tself.view.custom.state.editDraft \u003d newDraft\n\tself.view.rootContainer.broadcastDirty(True)"
+                    "script": "\tBlueRidge.Common.Util.log(\u0027BtnAddStep click\u0027)\n\tdraft \u003d self.view.custom.state.editDraft or {}\n\tsteps \u003d list(draft.get(\u0027steps\u0027) or [])\n\tsteps.append({\u0027Id\u0027: None, \u0027SequenceNumber\u0027: len(steps) + 1, \u0027OperationTypeId\u0027: None, \u0027OperationTypeCode\u0027: \u0027\u0027, \u0027OperationTypeName\u0027: \u0027\u0027, \u0027OperationTemplateId\u0027: None, \u0027OperationCode\u0027: \u0027\u0027, \u0027OperationName\u0027: \u0027\u0027, \u0027OperationVersionNumber\u0027: None, \u0027DataCollectionSummary\u0027: \u0027\u0027, \u0027IsRequired\u0027: True, \u0027Description\u0027: None})\n\tnewDraft \u003d {\u0027Id\u0027: draft.get(\u0027Id\u0027), \u0027Name\u0027: draft.get(\u0027Name\u0027), \u0027EffectiveFrom\u0027: draft.get(\u0027EffectiveFrom\u0027), \u0027steps\u0027: steps}\n\tself.view.custom.state.editDraft \u003d newDraft\n\tself.view.rootContainer.broadcastDirty(True)"
                   },
                   "scope": "G",
                   "type": "script"
