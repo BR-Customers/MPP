@@ -44,10 +44,9 @@ DECLARE @S     BIT,
         @M     NVARCHAR(500),
         @NewId BIGINT;
 
--- Resolve a production Area (DefId 3) dynamically rather than hardcoding a
--- seed Id/Code, so the OperationTemplate fixtures survive seed regeneration.
-DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
-    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
+-- Resolve an operation role (migration 0032 seeds Parts.OperationType) for the
+-- OperationTemplate fixtures below.
+DECLARE @OpType BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'DieCast');
 
 CREATE TABLE #Rc21 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #Rc21
@@ -65,7 +64,7 @@ INSERT INTO #Rc27
 EXEC Parts.OperationTemplate_Create
     @Code           = N'TEST-RT-OT-1',
     @Name           = N'RT OT 1',
-    @AreaLocationId = @Area,
+    @OperationTypeId = @OpType,
     @AppUserId      = 1;
 SELECT @S = Status, @M = Message, @NewId = NewId FROM #Rc27;
 DROP TABLE #Rc27;
@@ -75,7 +74,7 @@ INSERT INTO #Rc28
 EXEC Parts.OperationTemplate_Create
     @Code           = N'TEST-RT-OT-2',
     @Name           = N'RT OT 2',
-    @AreaLocationId = @Area,
+    @OperationTypeId = @OpType,
     @AppUserId      = 1;
 SELECT @S = Status, @M = Message, @NewId = NewId FROM #Rc28;
 DROP TABLE #Rc28;
@@ -85,7 +84,7 @@ INSERT INTO #Rc29
 EXEC Parts.OperationTemplate_Create
     @Code           = N'TEST-RT-OT-3',
     @Name           = N'RT OT 3',
-    @AreaLocationId = @Area,
+    @OperationTypeId = @OpType,
     @AppUserId      = 1;
 SELECT @S = Status, @M = Message, @NewId = NewId FROM #Rc29;
 DROP TABLE #Rc29;
@@ -398,7 +397,8 @@ CREATE TABLE #StepList (
     Id BIGINT, RouteTemplateId BIGINT, SequenceNumber INT,
     OperationTemplateId BIGINT, OperationCode NVARCHAR(50),
     OperationName NVARCHAR(200), OperationVersionNumber INT,
-    OperationAreaLocationId BIGINT, OperationAreaName NVARCHAR(200),
+    OperationTypeId BIGINT, OperationTypeCode NVARCHAR(50), OperationTypeName NVARCHAR(100),
+    OperationCategoryName NVARCHAR(100),
     DataCollectionSummary NVARCHAR(MAX),
     IsRequired BIT, Description NVARCHAR(500)
 );

@@ -38,27 +38,27 @@ BEGIN
 END
 
 -- ============================================================
--- OperationTemplates (need AreaLocationId)
---   Areas resolved by Code from 011_seed_locations_mpp_plant.sql: DC1, TRIM1, MA1
+-- OperationTemplates (OperationTypeId FK -> Parts.OperationType, seeded by 0032)
+--   Roles: DC-5G0=DieCast, TRIM-5G0=TrimOut, CNC-5G0=CNC, ASSY-FRONT=AssemblyOut
 -- ============================================================
 
 SET IDENTITY_INSERT Parts.OperationTemplate ON;
 
 IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Id = 1)
-    INSERT INTO Parts.OperationTemplate (Id, Code, VersionNumber, Name, AreaLocationId, Description, CreatedAt)
-    VALUES (1, N'DC-5G0', 1, N'Die Cast 5G0 Front Cover', (SELECT Id FROM Location.Location WHERE Code = N'DC1'), N'Die cast operation for the 5G0 front cover assembly.', @Now);
+    INSERT INTO Parts.OperationTemplate (Id, Code, VersionNumber, Name, OperationTypeId, Description, CreatedAt)
+    VALUES (1, N'DC-5G0', 1, N'Die Cast 5G0 Front Cover', (SELECT Id FROM Parts.OperationType WHERE Code = N'DieCast'), N'Die cast operation for the 5G0 front cover assembly.', @Now);
 
 IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Id = 2)
-    INSERT INTO Parts.OperationTemplate (Id, Code, VersionNumber, Name, AreaLocationId, Description, CreatedAt)
-    VALUES (2, N'TRIM-5G0', 1, N'Trim 5G0 Front Cover', (SELECT Id FROM Location.Location WHERE Code = N'TRIM1'), N'Trim/deflash operation for the 5G0 front cover.', @Now);
+    INSERT INTO Parts.OperationTemplate (Id, Code, VersionNumber, Name, OperationTypeId, Description, CreatedAt)
+    VALUES (2, N'TRIM-5G0', 1, N'Trim 5G0 Front Cover', (SELECT Id FROM Parts.OperationType WHERE Code = N'TrimOut'), N'Trim/deflash operation for the 5G0 front cover.', @Now);
 
 IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Id = 3)
-    INSERT INTO Parts.OperationTemplate (Id, Code, VersionNumber, Name, AreaLocationId, Description, CreatedAt)
-    VALUES (3, N'CNC-5G0', 1, N'CNC Machining 5G0', (SELECT Id FROM Location.Location WHERE Code = N'MA1'), N'CNC machining operation for the 5G0 front cover.', @Now);
+    INSERT INTO Parts.OperationTemplate (Id, Code, VersionNumber, Name, OperationTypeId, Description, CreatedAt)
+    VALUES (3, N'CNC-5G0', 1, N'CNC Machining 5G0', (SELECT Id FROM Parts.OperationType WHERE Code = N'CNC'), N'CNC machining operation for the 5G0 front cover.', @Now);
 
 IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Id = 4)
-    INSERT INTO Parts.OperationTemplate (Id, Code, VersionNumber, Name, AreaLocationId, Description, CreatedAt)
-    VALUES (4, N'ASSY-FRONT', 1, N'Assembly Front Cover', (SELECT Id FROM Location.Location WHERE Code = N'MA1'), N'Final assembly of the 5G0 front cover.', @Now);
+    INSERT INTO Parts.OperationTemplate (Id, Code, VersionNumber, Name, OperationTypeId, Description, CreatedAt)
+    VALUES (4, N'ASSY-FRONT', 1, N'Assembly Front Cover', (SELECT Id FROM Parts.OperationType WHERE Code = N'AssemblyOut'), N'Final assembly of the 5G0 front cover.', @Now);
 
 SET IDENTITY_INSERT Parts.OperationTemplate OFF;
 
@@ -343,8 +343,16 @@ IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE Id = 4)
     INSERT INTO Parts.ItemLocation (Id, ItemId, LocationId, IsConsumptionPoint, MinQuantity, MaxQuantity, DefaultQuantity, CreatedAt)
     SELECT 4, 1, Id, 1, 10, 500, 100, @Now FROM Location.Location WHERE Code = N'DC1-M08';
 
+-- Ancestor-tier (Area) eligibility: 5G0 eligible across all of the DC1 Area.
+-- FDS-03-014 hierarchy-cascade example -- engineering configures at the coarsest
+-- appropriate tier (one Area row) and a Cell-level resolution surfaces it. Required
+-- fixture for 0009_Parts_Process/060_Eligibility_hierarchy_cascade.sql.
+IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE Id = 5)
+    INSERT INTO Parts.ItemLocation (Id, ItemId, LocationId, IsConsumptionPoint, MinQuantity, MaxQuantity, DefaultQuantity, CreatedAt)
+    SELECT 5, 1, Id, 0, NULL, NULL, NULL, @Now FROM Location.Location WHERE Code = N'DC1';
+
 SET IDENTITY_INSERT Parts.ItemLocation OFF;
 
 PRINT 'seed_items: 5 items, 5 container configs, 2 routes (5 steps), 1 BOM (2 lines), 2 quality specs loaded.';
-PRINT 'seed_items: Item 1 (5G0) fully configured -- 14 OperationTemplateFields, 7 QualitySpecAttributes, 4 eligibility locations.';
+PRINT 'seed_items: Item 1 (5G0) fully configured -- 14 OperationTemplateFields, 7 QualitySpecAttributes, 5 eligibility locations (4 cells + DC1 area).';
 GO

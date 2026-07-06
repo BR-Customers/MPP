@@ -232,10 +232,11 @@ Same boilerplate, with:
 > `ignition/projects/Core/ignition/named-query/location/AppUser_Create/` folder — copy its
 > `resource.json` and edit the `parameters` array + `query.sql`.
 
-> 🔁 **After creating Named Queries you must RESTART the Ignition gateway** — not just run a
-> scan. Inherited Named Queries (created in Core, used from `MPP_Config`) are only picked up on
-> gateway restart. If you skip this, the page will fail with *"Named query not found ..."* in the
-> gateway log. (A scan is enough for views/scripts; NQ inheritance needs the restart.)
+> 🔁 **After creating Named Queries, run `.\scan.ps1` — that is sufficient. NO gateway restart is
+> needed for NQs**, including inherited ones (created in Core, used from `MPP_Config`); `scan.ps1`
+> registers them for inherited visibility. If a query still reads *"Named query not found"*, the cause
+> is **topology** — it lives in a sibling project, not Core (siblings can't see each other's NQs) — not
+> a stale registry. (Corrected 2026-07-02; the earlier "restart required" claim was false.)
 
 ---
 
@@ -555,11 +556,10 @@ LocationTypeEditor for the established pattern. Not required for a first pass.)
 
 ---
 
-### Task G — Scan, restart, and test
+### Task G — Scan and test
 
-1. **Restart the Ignition gateway** (required for the new Named Queries — see Task A note).
-2. Run **`.\scan.ps1`** at the project root after writing any new view / script / NQ resource so the
-   gateway re-reads the files.
+1. Run **`.\scan.ps1`** at the project root after writing any new view / script / NQ resource so the
+   gateway re-reads the files. **No gateway restart is needed** — scan registers NQs (incl. inherited).
 3. Walk the acceptance checklist in §9 in a browser session (you must be logged in so
    `_currentAppUserId()` resolves).
 
@@ -634,9 +634,10 @@ These are hard-won project conventions. Every one of them has bitten someone bef
 
 - **G1 — Scan after file writes.** After creating/editing any view, script, or NQ on disk, run
   `.\scan.ps1` so the gateway re-reads the files. Nothing updates until you do.
-- **G2 — New Named Queries need a gateway *restart*, not just a scan.** NQs created in Core and used
-  from `MPP_Config` are only registered on restart. Symptom if skipped: *"Named query not found"* in the
-  gateway log and the page fails to load data.
+- **G2 — New Named Queries register on `scan.ps1`; NO gateway restart is ever needed for NQs.** NQs
+  created in Core and used from `MPP_Config` pick up on scan (inherited visibility included). A
+  *"Named query not found"* symptom means the NQ is in the wrong project (a sibling, not Core) — a
+  topology problem, not a stale registry. (Corrected 2026-07-02; the earlier restart claim was false.)
 - **G3 — `system.perspective.*` from a DOM-event script needs `"scope": "G"`.** Popup opens and
   messages silently no-op under `scope: "C"`. Always declare `scope: "G"` on button-click handlers
   that open popups or send messages.

@@ -31,8 +31,7 @@ DECLARE @S     BIT,
         @NewId BIGINT;
 
 -- Resolve a production Area (DefId 3) dynamically for the OperationTemplate fixture.
-DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
-    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
+DECLARE @OpType BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'DieCast');
 
 -- Create test Item
 CREATE TABLE #Rc40 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
@@ -52,7 +51,7 @@ INSERT INTO #Rc30
 EXEC Parts.OperationTemplate_Create
     @Code           = N'TEST-QSPEC-OP',
     @Name           = N'Test Operation for QualitySpec',
-    @AreaLocationId = @Area,  -- first production area (dynamic)
+    @OperationTypeId = @OpType,  -- first operation type (dynamic)
     @Description    = N'Test operation',
     @AppUserId      = 1;
 SELECT @S = Status, @M = Message, @NewId = NewId FROM #Rc30;

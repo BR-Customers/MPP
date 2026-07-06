@@ -26,23 +26,13 @@ SET NOCOUNT ON;
 
 DECLARE @Now DATETIME2(3) = SYSUTCDATETIME();
 
--- Resolve the die-cast Area. Prefer the canonical 'DC1' area (011 seed); fall
--- back to the first active Area-tier Location so a partial location seed still
--- satisfies the FK.
-DECLARE @AreaLocId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'DC1' AND DeprecatedAt IS NULL);
-IF @AreaLocId IS NULL
-    SET @AreaLocId = (
-        SELECT TOP 1 l.Id
-        FROM Location.Location l
-        INNER JOIN Location.LocationTypeDefinition ltd ON ltd.Id = l.LocationTypeDefinitionId
-        INNER JOIN Location.LocationType lt ON lt.Id = ltd.LocationTypeId
-        WHERE l.DeprecatedAt IS NULL AND lt.Code = N'Area'
-        ORDER BY l.Id);
+-- Resolve the operation role (migration 0032 seeds Parts.OperationType).
+DECLARE @OpTypeId BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'DieCast' AND DeprecatedAt IS NULL);
 
-IF @AreaLocId IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Code = N'DieCastShot')
+IF @OpTypeId IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Code = N'DieCastShot')
 BEGIN
-    INSERT INTO Parts.OperationTemplate (Code, VersionNumber, Name, AreaLocationId, Description, CreatedAt)
-    VALUES (N'DieCastShot', 1, N'Die Cast Shot', @AreaLocId,
+    INSERT INTO Parts.OperationTemplate (Code, VersionNumber, Name, OperationTypeId, Description, CreatedAt)
+    VALUES (N'DieCastShot', 1, N'Die Cast Shot', @OpTypeId,
             N'Die-cast operator-station production checkpoint template (Arc 2 Phase 3). Captures cumulative shot/scrap counters plus per-shot data-collection fields.',
             @Now);
 

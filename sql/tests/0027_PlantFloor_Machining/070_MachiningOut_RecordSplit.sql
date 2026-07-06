@@ -44,6 +44,9 @@ DELETE FROM Lots.Lot WHERE LotName LIKE N'P5T-SPL%';
 GO
 
 -- ====================================================================
+-- Extract-one across TWO calls: 48-pc parent -> extract 24 (parent stays open @24)
+-- -> extract the remaining 24 (parent Closes). Each call mints the next '-NN' sublot.
+-- ====================================================================
 DECLARE @Parent BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FPRPY-MOUT');
 DECLARE @Dest1 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FPRPY-AFIN');
 DECLARE @Dest2 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FP6NA-AFIN');
@@ -57,60 +60,80 @@ CREATE TABLE #C (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName 
 INSERT INTO #C EXEC Lots.Lot_Create @ItemId = @MachItem, @LotOriginTypeId = @OriginMfg, @CurrentLocationId = @Parent, @PieceCount = 48, @AppUserId = 1, @LotName = N'P5T-SPL-PARENT';
 SELECT @ParentLot = NewId, @ParentName = MintedLotName FROM #C; DROP TABLE #C;
 
-DECLARE @Json NVARCHAR(MAX) = N'[{"pieceCount":24,"destinationLocationId":' + CAST(@Dest1 AS NVARCHAR(20)) + N'},{"pieceCount":24,"destinationLocationId":' + CAST(@Dest2 AS NVARCHAR(20)) + N'}]';
+-- ---- Call 1: extract 24 -> Dest1 (parent should stay open with 24 remaining) ----
+DECLARE @Json1 NVARCHAR(MAX) = N'[{"pieceCount":24,"destinationLocationId":' + CAST(@Dest1 AS NVARCHAR(20)) + N'}]';
+CREATE TABLE #R1 (Status BIT, Message NVARCHAR(500), ProductionEventId BIGINT, ChildLotId BIGINT, ChildLotName NVARCHAR(50), DestinationLocationId BIGINT, PieceCount INT);
+INSERT INTO #R1 EXEC Workorder.MachiningOut_RecordSplit
+    @ParentLotId = @ParentLot, @OperationTemplateId = @OtId, @SplitChildrenJson = @Json1, @AppUserId = 1;
 
-CREATE TABLE #R (Status BIT, Message NVARCHAR(500), ProductionEventId BIGINT, ChildLotId BIGINT, ChildLotName NVARCHAR(50), DestinationLocationId BIGINT, PieceCount INT);
-INSERT INTO #R EXEC Workorder.MachiningOut_RecordSplit
-    @ParentLotId = @ParentLot, @OperationTemplateId = @OtId, @SplitChildrenJson = @Json, @AppUserId = 1;
+DECLARE @S1 NVARCHAR(10) = (SELECT TOP 1 CAST(Status AS NVARCHAR(10)) FROM #R1);
+EXEC test.Assert_IsEqual @TestName = N'[MachSplit] call-1 Status is 1', @Expected = N'1', @Actual = @S1;
+DECLARE @Prod1 NVARCHAR(20) = (SELECT TOP 1 CAST(ProductionEventId AS NVARCHAR(20)) FROM #R1);
+EXEC test.Assert_IsNotNull @TestName = N'[MachSplit] call-1 ProductionEventId returned', @Value = @Prod1;
 
-DECLARE @S BIT = (SELECT TOP 1 Status FROM #R);
-DECLARE @ProdId BIGINT = (SELECT TOP 1 ProductionEventId FROM #R);
-DECLARE @ChildRows INT = (SELECT COUNT(*) FROM #R WHERE ChildLotId IS NOT NULL);
+-- parent still OPEN (Good) at 24 pcs after the partial extraction
+DECLARE @PStatus1 NVARCHAR(20) = (SELECT sc.Code FROM Lots.Lot l INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId WHERE l.Id = @ParentLot);
+EXEC test.Assert_IsEqual @TestName = N'[MachSplit] parent stays Good after call-1', @Expected = N'Good', @Actual = @PStatus1;
+DECLARE @PPc1 NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id = @ParentLot);
+EXEC test.Assert_IsEqual @TestName = N'[MachSplit] parent remainder 24 after call-1', @Expected = N'24', @Actual = @PPc1;
 
-DECLARE @SStr NVARCHAR(10) = CAST(@S AS NVARCHAR(10));
-EXEC test.Assert_IsEqual @TestName = N'[MachSplit] header Status is 1', @Expected = N'1', @Actual = @SStr;
+-- child -01 minted at Dest1
+DECLARE @Child1 BIGINT = (SELECT TOP 1 ChildLotId FROM #R1 WHERE ChildLotId IS NOT NULL);
+DECLARE @Child1Name NVARCHAR(50) = (SELECT LotName FROM Lots.Lot WHERE Id = @Child1);
+DECLARE @Expect1 NVARCHAR(50) = @ParentName + N'-01';
+EXEC test.Assert_IsEqual @TestName = N'[MachSplit] first child is -01 ordinal', @Expected = @Expect1, @Actual = @Child1Name;
+DROP TABLE #R1;
 
-DECLARE @ProdStr NVARCHAR(20) = CAST(@ProdId AS NVARCHAR(20));
-EXEC test.Assert_IsNotNull @TestName = N'[MachSplit] ProductionEventId returned', @Value = @ProdStr;
+-- ---- Call 2: extract the remaining 24 -> Dest2 (parent should Close) ----
+DECLARE @Json2 NVARCHAR(MAX) = N'[{"pieceCount":24,"destinationLocationId":' + CAST(@Dest2 AS NVARCHAR(20)) + N'}]';
+CREATE TABLE #R2 (Status BIT, Message NVARCHAR(500), ProductionEventId BIGINT, ChildLotId BIGINT, ChildLotName NVARCHAR(50), DestinationLocationId BIGINT, PieceCount INT);
+INSERT INTO #R2 EXEC Workorder.MachiningOut_RecordSplit
+    @ParentLotId = @ParentLot, @OperationTemplateId = @OtId, @SplitChildrenJson = @Json2, @AppUserId = 1;
 
-EXEC test.Assert_RowCount @TestName = N'[MachSplit] two child rows returned', @ExpectedCount = 2, @ActualCount = @ChildRows;
+DECLARE @S2 NVARCHAR(10) = (SELECT TOP 1 CAST(Status AS NVARCHAR(10)) FROM #R2);
+EXEC test.Assert_IsEqual @TestName = N'[MachSplit] call-2 Status is 1', @Expected = N'1', @Actual = @S2;
 
+-- child -02 minted at Dest2 (next ordinal)
+DECLARE @Child2 BIGINT = (SELECT TOP 1 ChildLotId FROM #R2 WHERE ChildLotId IS NOT NULL);
+DECLARE @Child2Name NVARCHAR(50) = (SELECT LotName FROM Lots.Lot WHERE Id = @Child2);
+DECLARE @Expect2 NVARCHAR(50) = @ParentName + N'-02';
+EXEC test.Assert_IsEqual @TestName = N'[MachSplit] second child is -02 ordinal', @Expected = @Expect2, @Actual = @Child2Name;
+DROP TABLE #R2;
+
+-- parent now Closed (remainder zeroed)
+DECLARE @PStatus2 NVARCHAR(20) = (SELECT sc.Code FROM Lots.Lot l INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId WHERE l.Id = @ParentLot);
+EXEC test.Assert_IsEqual @TestName = N'[MachSplit] parent Closed after final extraction', @Expected = N'Closed', @Actual = @PStatus2;
+DECLARE @PPc2 NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id = @ParentLot);
+EXEC test.Assert_IsEqual @TestName = N'[MachSplit] parent PieceCount 0 after final extraction', @Expected = N'0', @Actual = @PPc2;
+
+-- ---- aggregate assertions across both extractions ----
 -- both children carry the machined Item
-DECLARE @ChildWrongItem INT = (SELECT COUNT(*) FROM #R r INNER JOIN Lots.Lot l ON l.Id = r.ChildLotId WHERE r.ChildLotId IS NOT NULL AND l.ItemId <> @MachItem);
+DECLARE @ChildWrongItem INT = (SELECT COUNT(*) FROM Lots.Lot WHERE ParentLotId = @ParentLot AND ItemId <> @MachItem);
 EXEC test.Assert_RowCount @TestName = N'[MachSplit] children carry the machined Item', @ExpectedCount = 0, @ActualCount = @ChildWrongItem;
 
--- Split edges parent->child (RelationshipTypeId=1)
-DECLARE @EdgeCnt INT = (SELECT COUNT(*) FROM Lots.LotGenealogy WHERE ParentLotId = @ParentLot AND RelationshipTypeId = 1 AND ChildLotId IN (SELECT ChildLotId FROM #R WHERE ChildLotId IS NOT NULL));
+-- two Split edges parent->child (RelationshipTypeId=1)
+DECLARE @EdgeCnt INT = (SELECT COUNT(*) FROM Lots.LotGenealogy WHERE ParentLotId = @ParentLot AND RelationshipTypeId = 1);
 EXEC test.Assert_RowCount @TestName = N'[MachSplit] two Split genealogy edges', @ExpectedCount = 2, @ActualCount = @EdgeCnt;
 
--- closure rows parent->child at depth 1
-DECLARE @ClosCnt INT = (SELECT COUNT(*) FROM Lots.LotGenealogyClosure WHERE AncestorLotId = @ParentLot AND Depth = 1 AND DescendantLotId IN (SELECT ChildLotId FROM #R WHERE ChildLotId IS NOT NULL));
+-- two closure rows parent->child at depth 1
+DECLARE @ClosCnt INT = (SELECT COUNT(*) FROM Lots.LotGenealogyClosure WHERE AncestorLotId = @ParentLot AND Depth = 1);
 EXEC test.Assert_RowCount @TestName = N'[MachSplit] two closure rows parent->child depth=1', @ExpectedCount = 2, @ActualCount = @ClosCnt;
 
--- each child at its destination (CurrentLocationId matches the JSON dest)
-DECLARE @MisplacedChildren INT = (SELECT COUNT(*) FROM #R r INNER JOIN Lots.Lot l ON l.Id = r.ChildLotId WHERE r.ChildLotId IS NOT NULL AND l.CurrentLocationId <> r.DestinationLocationId);
-EXEC test.Assert_RowCount @TestName = N'[MachSplit] each child at its destination', @ExpectedCount = 0, @ActualCount = @MisplacedChildren;
+-- each child at its destination (CurrentLocationId matches its call's dest)
+DECLARE @Misplaced INT = (SELECT COUNT(*) FROM Lots.Lot WHERE Id = @Child1 AND CurrentLocationId <> @Dest1)
+                       + (SELECT COUNT(*) FROM Lots.Lot WHERE Id = @Child2 AND CurrentLocationId <> @Dest2);
+EXEC test.Assert_RowCount @TestName = N'[MachSplit] each child at its destination', @ExpectedCount = 0, @ActualCount = @Misplaced;
 
--- each child has a placement LotMovement to its destination
-DECLARE @ChildMoves INT = (SELECT COUNT(*) FROM #R r INNER JOIN Lots.LotMovement m ON m.LotId = r.ChildLotId AND m.ToLocationId = r.DestinationLocationId WHERE r.ChildLotId IS NOT NULL);
-EXEC test.Assert_RowCount @TestName = N'[MachSplit] each child placed via LotMovement', @ExpectedCount = 2, @ActualCount = @ChildMoves;
-
--- parent Closed
-DECLARE @ParentStatus NVARCHAR(20) = (SELECT sc.Code FROM Lots.Lot l INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId WHERE l.Id = @ParentLot);
-EXEC test.Assert_IsEqual @TestName = N'[MachSplit] parent Closed', @Expected = N'Closed', @Actual = @ParentStatus;
-
--- each child visible in its destination FIFO queue
+-- child-1 visible in Dest1 FIFO queue
 CREATE TABLE #Q (Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500), PieceCount INT, LotStatusId BIGINT, LotStatusCode NVARCHAR(20), LastMovementAt DATETIME2(3), HasRenameBom BIT);
 INSERT INTO #Q EXEC Lots.Lot_GetWipQueueByLocation @LocationId = @Dest1;
-DECLARE @InQ1 INT = (SELECT COUNT(*) FROM #Q q INNER JOIN #R r ON r.ChildLotId = q.Id WHERE r.DestinationLocationId = @Dest1);
+DECLARE @InQ1 INT = (SELECT COUNT(*) FROM #Q WHERE Id = @Child1);
 DROP TABLE #Q;
 EXEC test.Assert_RowCount @TestName = N'[MachSplit] child visible in destination-1 FIFO queue', @ExpectedCount = 1, @ActualCount = @InQ1;
 
--- audit: 'Lot'-entity events route to Lots.LotEventLog (B7), NOT Audit.OperationLog.
+-- audit: two 'Lot'-entity MachiningOutSubLotSplit events route to Lots.LotEventLog (B7).
 DECLARE @AudCnt INT = (SELECT COUNT(*) FROM Lots.LotEventLog le INNER JOIN Audit.LogEventType et ON et.Id = le.LogEventTypeId WHERE et.Code = N'MachiningOutSubLotSplit' AND le.EntityId = @ParentLot);
-EXEC test.Assert_RowCount @TestName = N'[MachSplit] MachiningOutSubLotSplit audit in LotEventLog', @ExpectedCount = 1, @ActualCount = @AudCnt;
-
-DROP TABLE #R;
+EXEC test.Assert_RowCount @TestName = N'[MachSplit] two MachiningOutSubLotSplit audits in LotEventLog', @ExpectedCount = 2, @ActualCount = @AudCnt;
 GO
 
 -- ---- cleanup ----

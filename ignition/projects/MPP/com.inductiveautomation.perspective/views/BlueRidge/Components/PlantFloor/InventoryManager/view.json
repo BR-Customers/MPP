@@ -1,0 +1,341 @@
+{
+  "custom": {
+    "scanCode": "",
+    "refreshToken": 0
+  },
+  "params": {
+    "locationId": null,
+    "replyMessage": "inventoryChanged"
+  },
+  "propConfig": {
+    "params.locationId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.replyMessage": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 560,
+      "width": 640
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "alignItems": "stretch",
+      "style": {
+        "classes": "pf-field-col",
+        "gap": "12px",
+        "padding": "16px"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "checkIn",
+          "params": [],
+          "script": "\tcode = self.view.custom.scanCode\n\tif not code:\n\t\treturn\n\tloc = self.view.params.locationId\n\tif loc is None:\n\t\tBlueRidge.Common.Notify.toast(\"No line selected\", \"This inventory view has no location context.\", \"warning\")\n\t\treturn\n\tlot = BlueRidge.Lots.Lot.getByName(code)\n\tif not lot:\n\t\tBlueRidge.Common.Notify.toast(\"LOT not found\", \"No LOT matches '%s'.\" % code, \"warning\")\n\t\treturn\n\tres = BlueRidge.Lots.Lot.moveToValidated(lot.get(\"Id\"), loc)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Checked in\")\n\tif res and res.get(\"Status\"):\n\t\tself.view.custom.scanCode = \"\"\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1\n\t\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"lotId\": lot.get(\"Id\")}, scope=\"page\")"
+        },
+        {
+          "name": "refresh",
+          "params": [],
+          "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+        }
+      ]
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "HeaderLabel"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "text": "Line Inventory",
+          "style": {
+            "fontSize": "20px",
+            "fontWeight": 600
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "ScanLabel"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "text": "Scan an LTT to check it in to this line",
+          "style": {
+            "classes": "pf-field-label",
+            "marginBottom": "0px"
+          }
+        }
+      },
+      {
+        "type": "ia.input.text-field",
+        "meta": {
+          "name": "ScanInput"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "bidirectional": true,
+                "path": "view.custom.scanCode"
+              }
+            }
+          }
+        },
+        "props": {
+          "placeholder": "Scan LTT barcode",
+          "style": {
+            "classes": "pf-field-input-mono",
+            "textTransform": "uppercase",
+            "minHeight": "44px",
+            "fontSize": "18px"
+          }
+        },
+        "events": {
+          "dom": {
+            "onBlur": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tself.view.rootContainer.checkIn()"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "OnHandLabel"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "text": "On hand (grouped by part, FIFO by arrival)",
+          "style": {
+            "classes": "pf-field-label",
+            "marginTop": "8px",
+            "marginBottom": "0px"
+          }
+        }
+      },
+      {
+        "type": "ia.display.table",
+        "meta": {
+          "name": "InventoryTable"
+        },
+        "position": {
+          "basis": "auto",
+          "grow": 1,
+          "shrink": 1
+        },
+        "propConfig": {
+          "props.data": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "runScript(\"BlueRidge.Lots.Lot.getLineInventoryByPart\", 0, {view.params.locationId}, {view.custom.refreshToken})"
+              }
+            }
+          }
+        },
+        "props": {
+          "selection": {
+            "enabled": false
+          },
+          "rowHeight": 40,
+          "pager": {
+            "enabled": false
+          },
+          "style": {
+            "classes": "pf-table"
+          },
+          "columns": [
+            {
+              "align": "left",
+              "boolean": "checkbox",
+              "dateFormat": "MM/DD/YYYY",
+              "editable": false,
+              "field": "PartNumber",
+              "filter": {
+                "boolean": { "condition": "" },
+                "date": { "condition": "", "value": "" },
+                "enabled": false,
+                "number": { "condition": "", "value": "" },
+                "string": { "condition": "", "value": "" },
+                "visible": "on-hover"
+              },
+              "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
+              "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Part" },
+              "justify": "auto",
+              "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
+              "number": "value",
+              "numberFormat": "0,0.##",
+              "progressBar": {
+                "bar": { "color": "", "style": { "classes": "" } },
+                "max": 100,
+                "min": 0,
+                "track": { "color": "", "style": { "classes": "" } },
+                "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
+              },
+              "render": "auto",
+              "resizable": true,
+              "sort": "none",
+              "sortable": false,
+              "strictWidth": false,
+              "style": { "classes": "" },
+              "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+              "viewParams": {},
+              "viewPath": "",
+              "visible": true,
+              "width": ""
+            },
+            {
+              "align": "left",
+              "boolean": "checkbox",
+              "dateFormat": "MM/DD/YYYY",
+              "editable": false,
+              "field": "LotName",
+              "filter": {
+                "boolean": { "condition": "" },
+                "date": { "condition": "", "value": "" },
+                "enabled": false,
+                "number": { "condition": "", "value": "" },
+                "string": { "condition": "", "value": "" },
+                "visible": "on-hover"
+              },
+              "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
+              "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "LOT" },
+              "justify": "auto",
+              "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
+              "number": "value",
+              "numberFormat": "0,0.##",
+              "progressBar": {
+                "bar": { "color": "", "style": { "classes": "" } },
+                "max": 100,
+                "min": 0,
+                "track": { "color": "", "style": { "classes": "" } },
+                "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
+              },
+              "render": "auto",
+              "resizable": true,
+              "sort": "none",
+              "sortable": false,
+              "strictWidth": false,
+              "style": { "classes": "" },
+              "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+              "viewParams": {},
+              "viewPath": "",
+              "visible": true,
+              "width": ""
+            },
+            {
+              "align": "right",
+              "boolean": "checkbox",
+              "dateFormat": "MM/DD/YYYY",
+              "editable": false,
+              "field": "InventoryAvailable",
+              "filter": {
+                "boolean": { "condition": "" },
+                "date": { "condition": "", "value": "" },
+                "enabled": false,
+                "number": { "condition": "", "value": "" },
+                "string": { "condition": "", "value": "" },
+                "visible": "on-hover"
+              },
+              "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
+              "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Available" },
+              "justify": "auto",
+              "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
+              "number": "value",
+              "numberFormat": "0,0",
+              "progressBar": {
+                "bar": { "color": "", "style": { "classes": "" } },
+                "max": 100,
+                "min": 0,
+                "track": { "color": "", "style": { "classes": "" } },
+                "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
+              },
+              "render": "number",
+              "resizable": true,
+              "sort": "none",
+              "sortable": false,
+              "strictWidth": false,
+              "style": { "classes": "" },
+              "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+              "viewParams": {},
+              "viewPath": "",
+              "visible": true,
+              "width": 120
+            },
+            {
+              "align": "left",
+              "boolean": "checkbox",
+              "dateFormat": "MM/DD/YYYY HH:mm",
+              "editable": false,
+              "field": "ArrivedAt",
+              "filter": {
+                "boolean": { "condition": "" },
+                "date": { "condition": "", "value": "" },
+                "enabled": false,
+                "number": { "condition": "", "value": "" },
+                "string": { "condition": "", "value": "" },
+                "visible": "on-hover"
+              },
+              "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
+              "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Arrived (ET)" },
+              "justify": "auto",
+              "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
+              "number": "value",
+              "numberFormat": "0,0.##",
+              "progressBar": {
+                "bar": { "color": "", "style": { "classes": "" } },
+                "max": 100,
+                "min": 0,
+                "track": { "color": "", "style": { "classes": "" } },
+                "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
+              },
+              "render": "date",
+              "resizable": true,
+              "sort": "none",
+              "sortable": false,
+              "strictWidth": false,
+              "style": { "classes": "" },
+              "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
+              "viewParams": {},
+              "viewPath": "",
+              "visible": true,
+              "width": 180
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

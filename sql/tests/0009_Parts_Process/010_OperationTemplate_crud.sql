@@ -43,8 +43,7 @@ GO
 -- =============================================
 -- Test 1: OperationTemplate_Create happy path
 -- =============================================
-DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
-    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
+DECLARE @OpType BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'DieCast');
 DECLARE @S     BIT,
         @M     NVARCHAR(500),
         @SStr  NVARCHAR(1),
@@ -55,7 +54,7 @@ INSERT INTO #Rc1
 EXEC Parts.OperationTemplate_Create
     @Code           = N'TEST-OP-001',
     @Name           = N'Test OP 001',
-    @AreaLocationId = @Area,         -- first production area (dynamic)
+    @OperationTypeId = @OpType,         -- first production area (dynamic)
     @Description    = N'First test operation',
     @AppUserId      = 1;
 SELECT @S = Status, @M = Message, @NewId = NewId FROM #Rc1;
@@ -76,11 +75,11 @@ EXEC test.Assert_IsNotNull
 -- Verify row stored with VersionNumber = 1
 DECLARE @StoredVersion INT,
         @StoredCode    NVARCHAR(20),
-        @StoredArea    BIGINT;
+        @StoredType    BIGINT;
 
 SELECT @StoredVersion = VersionNumber,
        @StoredCode    = Code,
-       @StoredArea    = AreaLocationId
+       @StoredType    = OperationTypeId
 FROM Parts.OperationTemplate
 WHERE Id = @NewId;
 
@@ -95,19 +94,18 @@ EXEC test.Assert_IsEqual
     @Expected = N'TEST-OP-001',
     @Actual   = @StoredCode;
 
-DECLARE @StoredAreaStr NVARCHAR(20) = CAST(@StoredArea AS NVARCHAR(20));
-DECLARE @AreaStr       NVARCHAR(20) = CAST(@Area       AS NVARCHAR(20));
+DECLARE @StoredTypeStr NVARCHAR(20) = CAST(@StoredType AS NVARCHAR(20));
+DECLARE @TypeStr       NVARCHAR(20) = CAST(@OpType     AS NVARCHAR(20));
 EXEC test.Assert_IsEqual
-    @TestName = N'[CreateHappy] AreaLocationId stored',
-    @Expected = @AreaStr,
-    @Actual   = @StoredAreaStr;
+    @TestName = N'[CreateHappy] OperationTypeId stored',
+    @Expected = @TypeStr,
+    @Actual   = @StoredTypeStr;
 GO
 
 -- =============================================
 -- Test 2: OperationTemplate_Create NULL required param
 -- =============================================
-DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
-    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
+DECLARE @OpType BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'DieCast');
 DECLARE @S     BIT,
         @M     NVARCHAR(500),
         @SStr  NVARCHAR(1),
@@ -118,7 +116,7 @@ INSERT INTO #Rc2
 EXEC Parts.OperationTemplate_Create
     @Code           = NULL,
     @Name           = N'Missing Code',
-    @AreaLocationId = @Area,
+    @OperationTypeId = @OpType,
     @AppUserId      = 1;
 SELECT @S = Status, @M = Message, @NewId = NewId FROM #Rc2;
 DROP TABLE #Rc2;
@@ -141,8 +139,7 @@ GO
 --   Second call should fail with "already exists" (Create is the
 --   new-family proc; subsequent versions go through CreateNewVersion).
 -- =============================================
-DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
-    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
+DECLARE @OpType BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'DieCast');
 DECLARE @S     BIT,
         @M     NVARCHAR(500),
         @SStr  NVARCHAR(1),
@@ -154,7 +151,7 @@ INSERT INTO #Rc3
 EXEC Parts.OperationTemplate_Create
     @Code           = N'DUP-OP',
     @Name           = N'Dup Target',
-    @AreaLocationId = @Area,
+    @OperationTypeId = @OpType,
     @AppUserId      = 1;
 SELECT @S = Status, @M = Message, @Id1 = NewId FROM #Rc3;
 DROP TABLE #Rc3;
@@ -170,7 +167,7 @@ INSERT INTO #Rc4
 EXEC Parts.OperationTemplate_Create
     @Code           = N'DUP-OP',
     @Name           = N'Dup Attempt',
-    @AreaLocationId = @Area,
+    @OperationTypeId = @OpType,
     @AppUserId      = 1;
 SELECT @S = Status, @M = Message, @Id2 = NewId FROM #Rc4;
 DROP TABLE #Rc4;
@@ -194,7 +191,7 @@ EXEC test.Assert_IsNull
 GO
 
 -- =============================================
--- Test 4: OperationTemplate_Create invalid AreaLocationId
+-- Test 4: OperationTemplate_Create invalid OperationTypeId
 -- =============================================
 DECLARE @S     BIT,
         @M     NVARCHAR(500),
@@ -204,10 +201,10 @@ DECLARE @S     BIT,
 CREATE TABLE #Rc5 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #Rc5
 EXEC Parts.OperationTemplate_Create
-    @Code           = N'TEST-OP-BADAREA',
-    @Name           = N'Bad Area',
-    @AreaLocationId = 999999,
-    @AppUserId      = 1;
+    @Code            = N'TEST-OP-BADTYPE',
+    @Name            = N'Bad Type',
+    @OperationTypeId = 999999,
+    @AppUserId       = 1;
 SELECT @S = Status, @M = Message, @NewId = NewId FROM #Rc5;
 DROP TABLE #Rc5;
 
@@ -236,14 +233,15 @@ SELECT @OtId = Id FROM Parts.OperationTemplate
 WHERE Code = N'TEST-OP-001' AND VersionNumber = 1;
 
 DECLARE @GetCount INT;
-DECLARE @GotAreaName NVARCHAR(200);
+DECLARE @GotTypeName NVARCHAR(200);
 CREATE TABLE #Get1 (
     Id BIGINT, Code NVARCHAR(50), VersionNumber INT, Name NVARCHAR(200),
-    AreaLocationId BIGINT, AreaName NVARCHAR(200), Description NVARCHAR(500),
-    CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
+    OperationTypeId BIGINT, OperationTypeCode NVARCHAR(50), OperationTypeName NVARCHAR(100),
+    OperationCategoryId BIGINT, OperationCategoryCode NVARCHAR(50), OperationCategoryName NVARCHAR(100),
+    Description NVARCHAR(500), CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
 );
 INSERT INTO #Get1 EXEC Parts.OperationTemplate_Get @Id = @OtId;
-SELECT @GetCount = COUNT(*), @GotAreaName = MAX(AreaName) FROM #Get1;
+SELECT @GetCount = COUNT(*), @GotTypeName = MAX(OperationTypeName) FROM #Get1;
 DROP TABLE #Get1;
 
 EXEC test.Assert_RowCount
@@ -252,8 +250,8 @@ EXEC test.Assert_RowCount
     @ActualCount   = @GetCount;
 
 EXEC test.Assert_IsNotNull
-    @TestName = N'[GetHappy] AreaName populated in proc result',
-    @Value    = @GotAreaName;
+    @TestName = N'[GetHappy] OperationTypeName populated in proc result',
+    @Value    = @GotTypeName;
 GO
 
 -- Test 6 (NULL Id) removed: converted read procs no longer error on NULL.
@@ -263,8 +261,9 @@ GO
 -- =============================================
 CREATE TABLE #ListAll (
     Id BIGINT, Code NVARCHAR(50), VersionNumber INT, Name NVARCHAR(200),
-    AreaLocationId BIGINT, AreaName NVARCHAR(200), Description NVARCHAR(500),
-    CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
+    OperationTypeId BIGINT, OperationTypeCode NVARCHAR(50), OperationTypeName NVARCHAR(100),
+    OperationCategoryId BIGINT, OperationCategoryCode NVARCHAR(50), OperationCategoryName NVARCHAR(100),
+    Description NVARCHAR(500), CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
 );
 INSERT INTO #ListAll EXEC Parts.OperationTemplate_List;
 DECLARE @ListAllCount INT = (SELECT COUNT(*) FROM #ListAll);
@@ -277,13 +276,11 @@ EXEC test.Assert_IsTrue
 GO
 
 -- =============================================
--- Test 8: OperationTemplate_List filtered by AreaLocationId
---   Create a row in a second production area, then filter -- verify the
---   area filter returns it.
+-- Test 8: OperationTemplate_List filtered by OperationTypeId
+--   Create a row with a second operation type, then filter -- verify the
+--   type filter returns it.
 -- =============================================
-DECLARE @Area2 BIGINT = (SELECT Id FROM Location.Location
-    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL
-    ORDER BY SortOrder, Id OFFSET 1 ROWS FETCH NEXT 1 ROWS ONLY);
+DECLARE @OpType2 BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'MachiningIn');
 DECLARE @S     BIT,
         @M     NVARCHAR(500),
         @SStr  NVARCHAR(1),
@@ -292,10 +289,10 @@ DECLARE @S     BIT,
 CREATE TABLE #Rc6 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #Rc6
 EXEC Parts.OperationTemplate_Create
-    @Code           = N'TEST-OP-MS-1',
-    @Name           = N'MachShop OP 1',
-    @AreaLocationId = @Area2,        -- a second production area (dynamic)
-    @AppUserId      = 1;
+    @Code            = N'TEST-OP-MS-1',
+    @Name            = N'MachShop OP 1',
+    @OperationTypeId = @OpType2,     -- a second operation type
+    @AppUserId       = 1;
 SELECT @S = Status, @M = Message, @NewId = NewId FROM #Rc6;
 DROP TABLE #Rc6;
 
@@ -304,28 +301,29 @@ DROP TABLE #Rc6;
 DECLARE @NonMatchCount INT = (
     SELECT COUNT(*)
     FROM Parts.OperationTemplate
-    WHERE AreaLocationId = @Area2
+    WHERE OperationTypeId = @OpType2
       AND Code LIKE N'TEST-OP-MS-%'
 );
 
 EXEC test.Assert_RowCount
-    @TestName      = N'[ListByArea] At least one TEST-OP-MS row in MACHSHOP',
+    @TestName      = N'[ListByType] At least one TEST-OP-MS row for the type',
     @ExpectedCount = 1,
     @ActualCount   = @NonMatchCount;
 
 -- Call the list proc with the filter and capture result set
-CREATE TABLE #ListByArea (
+CREATE TABLE #ListByType (
     Id BIGINT, Code NVARCHAR(50), VersionNumber INT, Name NVARCHAR(200),
-    AreaLocationId BIGINT, AreaName NVARCHAR(200), Description NVARCHAR(500),
-    CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
+    OperationTypeId BIGINT, OperationTypeCode NVARCHAR(50), OperationTypeName NVARCHAR(100),
+    OperationCategoryId BIGINT, OperationCategoryCode NVARCHAR(50), OperationCategoryName NVARCHAR(100),
+    Description NVARCHAR(500), CreatedAt DATETIME2(3), DeprecatedAt DATETIME2(3)
 );
-INSERT INTO #ListByArea EXEC Parts.OperationTemplate_List @AreaLocationId = @Area2;
-DECLARE @ProcMatchCount INT = (SELECT COUNT(*) FROM #ListByArea WHERE AreaLocationId = @Area2);
-DROP TABLE #ListByArea;
+INSERT INTO #ListByType EXEC Parts.OperationTemplate_List @OperationTypeId = @OpType2;
+DECLARE @ProcMatchCount INT = (SELECT COUNT(*) FROM #ListByType WHERE OperationTypeId = @OpType2);
+DROP TABLE #ListByType;
 
 DECLARE @ProcHasMatch BIT = CASE WHEN @ProcMatchCount >= 1 THEN 1 ELSE 0 END;
 EXEC test.Assert_IsTrue
-    @TestName  = N'[ListByArea] Filtered list: proc returned >= 1 matching row',
+    @TestName  = N'[ListByType] Filtered list: proc returned >= 1 matching row',
     @Condition = @ProcHasMatch;
 GO
 
@@ -335,8 +333,7 @@ GO
 --   Assert the new row has VersionNumber = parent + 1, a distinct Id,
 --   and OTF rows copied over.
 -- =============================================
-DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
-    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
+DECLARE @OpType BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'DieCast');
 DECLARE @S         BIT,
         @M         NVARCHAR(500),
         @SStr      NVARCHAR(1),
@@ -350,7 +347,7 @@ INSERT INTO #Rc7
 EXEC Parts.OperationTemplate_Create
     @Code           = N'TEST-OP-VER',
     @Name           = N'Versioned Base',
-    @AreaLocationId = @Area,
+    @OperationTypeId = @OpType,
     @AppUserId      = 1;
 SELECT @S = Status, @M = Message, @ParentId = NewId FROM #Rc7;
 DROP TABLE #Rc7;
@@ -499,8 +496,7 @@ GO
 --   Update Name + Description. Code and VersionNumber are immutable
 --   (not parameters on Update).
 -- =============================================
-DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
-    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
+DECLARE @OpType BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'DieCast');
 DECLARE @S    BIT,
         @M    NVARCHAR(500),
         @SStr NVARCHAR(1),
@@ -514,7 +510,7 @@ INSERT INTO #Ru19
 EXEC Parts.OperationTemplate_Update
     @Id             = @OtId,
     @Name           = N'Test OP 001 Updated',
-    @AreaLocationId = @Area,
+    @OperationTypeId = @OpType,
     @Description    = N'Updated description',
     @AppUserId      = 1;
 SELECT @S = Status, @M = Message FROM #Ru19;
@@ -557,8 +553,7 @@ GO
 -- Test 13: OperationTemplate_Update on deprecated row rejected
 --   Create + deprecate, then update. Status=0.
 -- =============================================
-DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
-    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
+DECLARE @OpType BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'DieCast');
 DECLARE @S     BIT,
         @M     NVARCHAR(500),
         @SStr  NVARCHAR(1),
@@ -569,7 +564,7 @@ INSERT INTO #Rc13
 EXEC Parts.OperationTemplate_Create
     @Code           = N'TEST-OP-UPDDEP',
     @Name           = N'Will Deprecate',
-    @AreaLocationId = @Area,
+    @OperationTypeId = @OpType,
     @AppUserId      = 1;
 SELECT @S = Status, @M = Message, @OtId = NewId FROM #Rc13;
 DROP TABLE #Rc13;
@@ -587,7 +582,7 @@ INSERT INTO #Ru21
 EXEC Parts.OperationTemplate_Update
     @Id             = @OtId,
     @Name           = N'Should Not Apply',
-    @AreaLocationId = @Area,
+    @OperationTypeId = @OpType,
     @AppUserId      = 1;
 SELECT @S = Status, @M = Message FROM #Ru21;
 DROP TABLE #Ru21;
@@ -611,8 +606,7 @@ GO
 -- =============================================
 -- Test 14: OperationTemplate_Deprecate happy path (no RouteStep refs)
 -- =============================================
-DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
-    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
+DECLARE @OpType BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'DieCast');
 DECLARE @S     BIT,
         @M     NVARCHAR(500),
         @SStr  NVARCHAR(1),
@@ -623,7 +617,7 @@ INSERT INTO #Rc14
 EXEC Parts.OperationTemplate_Create
     @Code           = N'TEST-OP-DEP1',
     @Name           = N'Deprecate Target',
-    @AreaLocationId = @Area,
+    @OperationTypeId = @OpType,
     @AppUserId      = 1;
 SELECT @S = Status, @M = Message, @OtId = NewId FROM #Rc14;
 DROP TABLE #Rc14;
@@ -683,8 +677,7 @@ GO
 --   references the OT. Then attempt to deprecate the OT; expect
 --   Status=0 with "active RouteSteps reference" in message.
 -- =============================================
-DECLARE @Area BIGINT = (SELECT TOP 1 Id FROM Location.Location
-    WHERE LocationTypeDefinitionId = 3 AND DeprecatedAt IS NULL ORDER BY SortOrder, Id);
+DECLARE @OpType BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'DieCast');
 DECLARE @S       BIT,
         @M       NVARCHAR(500),
         @SStr    NVARCHAR(1),
@@ -699,7 +692,7 @@ INSERT INTO #Rc15
 EXEC Parts.OperationTemplate_Create
     @Code           = N'TEST-OP-REFD',
     @Name           = N'Referenced OP',
-    @AreaLocationId = @Area,
+    @OperationTypeId = @OpType,
     @AppUserId      = 1;
 SELECT @S = Status, @M = Message, @OtId = NewId FROM #Rc15;
 DROP TABLE #Rc15;

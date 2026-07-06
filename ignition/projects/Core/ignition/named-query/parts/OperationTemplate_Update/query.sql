@@ -1,6 +1,6 @@
 EXEC Parts.OperationTemplate_Update
     @Id             = :id,
     @Name           = :name,
-    @AreaLocationId = :areaLocationId,
+    @OperationTypeId = :operationTypeId,
     @Description    = :description,
     @AppUserId      = :appUserId

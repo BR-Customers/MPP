@@ -2,6 +2,7 @@
   "custom": {
     "container": {
       "Id": null,
+      "ItemId": null,
       "ItemPartNumber": "",
       "ItemDescription": "",
       "AccumulatedParts": 0,
@@ -17,6 +18,7 @@
       "partsCount": "",
       "trayPosition": ""
     },
+    "selectedFinishedGoodItemId": null,
     "refreshToken": 0
   },
   "params": {},
@@ -28,7 +30,7 @@
         },
         "transforms": [
           {
-            "code": "\trows = value or []\n\tr = rows[0] if rows else {}\n\treturn {\"Id\": r.get(\"Id\"), \"ItemPartNumber\": r.get(\"ItemPartNumber\") or \"\", \"ItemDescription\": r.get(\"ItemDescription\") or \"\", \"AccumulatedParts\": r.get(\"AccumulatedParts\") or 0, \"TargetParts\": r.get(\"TargetParts\") or 0, \"ClosedTrays\": r.get(\"ClosedTrays\") or 0, \"TraysPerContainer\": r.get(\"TraysPerContainer\") or 0, \"PartsPerTray\": r.get(\"PartsPerTray\") or 0, \"IsSerialized\": r.get(\"IsSerialized\") or False, \"ClosureMethod\": r.get(\"ClosureMethod\") or \"\"}",
+            "code": "\trows = value or []\n\tr = rows[0] if rows else {}\n\treturn {\"Id\": r.get(\"Id\"), \"ItemId\": r.get(\"ItemId\"), \"ItemPartNumber\": r.get(\"ItemPartNumber\") or \"\", \"ItemDescription\": r.get(\"ItemDescription\") or \"\", \"AccumulatedParts\": r.get(\"AccumulatedParts\") or 0, \"TargetParts\": r.get(\"TargetParts\") or 0, \"ClosedTrays\": r.get(\"ClosedTrays\") or 0, \"TraysPerContainer\": r.get(\"TraysPerContainer\") or 0, \"PartsPerTray\": r.get(\"PartsPerTray\") or 0, \"IsSerialized\": r.get(\"IsSerialized\") or False, \"ClosureMethod\": r.get(\"ClosureMethod\") or \"\"}",
             "type": "script"
           }
         ],
@@ -1025,11 +1027,81 @@
                         "type": "ia.container.flex"
                       },
                       {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "FgLabel"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-field-label"
+                              },
+                              "text": "Finished good (opens a container)"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "FgDropdown"
+                            },
+                            "propConfig": {
+                              "props.options": {
+                                "binding": {
+                                  "config": {
+                                    "expression": "runScript(\"BlueRidge.Workorder.Assembly.getEligibleFinishedGoodsForDropdown\", 0, {session.custom.cell.locationId})"
+                                  },
+                                  "type": "expr"
+                                }
+                              },
+                              "props.value": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.selectedFinishedGoodItemId"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "placeholder": {
+                                "text": "Select finished good"
+                              },
+                              "style": {
+                                "classes": "pf-field-input"
+                              }
+                            },
+                            "type": "ia.input.dropdown"
+                          }
+                        ],
+                        "meta": {
+                          "name": "FgField"
+                        },
+                        "propConfig": {
+                          "position.display": {
+                            "binding": {
+                              "config": {
+                                "expression": "isNull({view.custom.container.Id})"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "pf-field",
+                            "gap": "4px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
                         "events": {
                           "component": {
                             "onActionPerformed": {
                               "config": {
-                                "script": "\tc = self.view.custom.container\n\tcellId = self.session.custom.cell.locationId\n\td = self.view.custom.draft\n\tif not c or c.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No open container at this cell.\"}, \"Tray close\")\n\t\treturn\n\tpos = BlueRidge.Common.Util.toIntOrNone(d.get(\"trayPosition\"))\n\tcnt = BlueRidge.Common.Util.toIntOrNone(d.get(\"partsCount\"))\n\tif pos is None or cnt is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter tray position and parts count.\"}, \"Tray close\")\n\t\treturn\n\tresult = BlueRidge.Lots.Container.trayClose(c.get(\"Id\"), pos, cnt, terminalLocationId=cellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tray closed\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"trayPosition\": \"\", \"partsCount\": \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                                "script": "\tresult = BlueRidge.Workorder.Assembly.handleTrayComplete(self.view.custom.container, self.view.custom.draft, self.view.custom.selectedFinishedGoodItemId, self.session.custom.cell.locationId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tray completed - FG LOT minted\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"trayPosition\": \"\", \"partsCount\": \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1\n\t\tif result.get(\"ContainerFull\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Container full\", \"Press Complete to ship.\", \"info\")"
                               },
                               "scope": "G",
                               "type": "script"
@@ -1046,7 +1118,33 @@
                           "style": {
                             "classes": "pf-btn pf-btn-secondary pf-btn-large"
                           },
-                          "text": "Close Tray"
+                          "text": "Complete Tray"
+                        },
+                        "type": "ia.input.button"
+                      },
+                      {
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params={\"locationId\": self.session.custom.cell.locationId}, title=\"Line Inventory\", modal=False, showCloseIcon=True, draggable=True, resizable=True)"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "InventoryButton"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-btn pf-btn-secondary pf-btn-large"
+                          },
+                          "text": "Inventory"
                         },
                         "type": "ia.input.button"
                       }

@@ -52,18 +52,19 @@ INSERT INTO #Itm EXEC Parts.Item_Create
 DROP TABLE #Itm;
 
 -- OperationTemplates: 3 active + 1 to-be-deprecated
+DECLARE @OpTypeId BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'DieCast');
 CREATE TABLE #Ot (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #Ot EXEC Parts.OperationTemplate_Create
     @Code = N'TEST-SA-OT-1', @Name = N'SA OT 1',
-    @AreaLocationId = 3, @AppUserId = 1;
+    @OperationTypeId = @OpTypeId, @AppUserId = 1;
 SELECT @Ot1 = NewId FROM #Ot; DELETE FROM #Ot;
 INSERT INTO #Ot EXEC Parts.OperationTemplate_Create
     @Code = N'TEST-SA-OT-2', @Name = N'SA OT 2',
-    @AreaLocationId = 3, @AppUserId = 1;
+    @OperationTypeId = @OpTypeId, @AppUserId = 1;
 SELECT @Ot2 = NewId FROM #Ot; DELETE FROM #Ot;
 INSERT INTO #Ot EXEC Parts.OperationTemplate_Create
     @Code = N'TEST-SA-OT-3', @Name = N'SA OT 3',
-    @AreaLocationId = 3, @AppUserId = 1;
+    @OperationTypeId = @OpTypeId, @AppUserId = 1;
 SELECT @Ot3 = NewId FROM #Ot; DELETE FROM #Ot;
 DROP TABLE #Ot;
 GO

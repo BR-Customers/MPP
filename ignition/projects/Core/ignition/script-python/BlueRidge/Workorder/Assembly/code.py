@@ -24,3 +24,64 @@ def scanIn(cellLocationId, lotName=None, lotId=None, appUserId=None, terminalLoc
     params = {"lotId": lotId, "lotName": lotName, "cellLocationId": cellLocationId,
               "appUserId": appUserId, "terminalLocationId": terminalLocationId}
     return BlueRidge.Common.Db.execMutation("workorder/Assembly_ScanIn", params)
+
+
+def completeTray(finishedGoodItemId, pieceCount, cellLocationId,
+                 closureMethod=None, appUserId=None, terminalLocationId=None):
+    """Complete an assembly tray = mint the finished-good LOT (tray = LOT), consume
+       BOM x PieceCount FIFO from component stock at the cell INTO that LOT, and attach
+       the tray to the cell's open Container (auto-open). Returns {Status, Message,
+       FinishedGoodLotId, ContainerId, ContainerTrayId, ContainerFull}. When
+       ContainerFull is 1 the caller (view) should complete the container via
+       BlueRidge.Lots.Container.complete (AIM claim + ShippingLabel) - this proc does
+       NOT complete the container (Spec 2 delegation)."""
+    if appUserId is None:
+        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    BlueRidge.Common.Util.log(
+        "completeTray finishedGoodItemId=%s pieceCount=%s cellLocationId=%s appUserId=%s"
+        % (finishedGoodItemId, pieceCount, cellLocationId, appUserId))
+    params = {"finishedGoodItemId": finishedGoodItemId, "pieceCount": pieceCount,
+              "cellLocationId": cellLocationId, "closureMethod": closureMethod,
+              "appUserId": appUserId, "terminalLocationId": terminalLocationId}
+    return BlueRidge.Common.Db.execMutation("workorder/Assembly_CompleteTray", params)
+
+
+def handleTrayComplete(container, draft, selectedFinishedGoodItemId, cellLocationId):
+    """View helper for the non-serialized assembly tray-complete button. Resolves the
+       finished-good Item (the open container's Item, or the operator-selected FG when
+       no container is open yet - completeTray auto-opens one), validates the parts
+       count, and mints the FG LOT via completeTray. Returns the completeTray result
+       dict, or a Status-0 dict on a validation miss (surfaced by notifyResult)."""
+    cnt = BlueRidge.Common.Util.toIntOrNone(draft.get("partsCount")) if draft else None
+    if container and container.get("Id") is not None:
+        fgItem = container.get("ItemId")
+    else:
+        fgItem = selectedFinishedGoodItemId
+    if fgItem is None:
+        return {"Status": False, "Message": "Select a finished good (or open a container) first."}
+    if cnt is None:
+        return {"Status": False, "Message": "Enter the parts count for the tray."}
+    return completeTray(fgItem, cnt, cellLocationId, terminalLocationId=cellLocationId)
+
+
+def getEligibleFinishedGoodsForDropdown(cellLocationId):
+    """Returns [{label, value}, ...] of the finished-good Items eligible at the
+       assembly cell, for the persistent finished-good dropdown. Value is the
+       Parts.Item.Id (BIGINT); label is 'PartNumber - Description'. Reuses the
+       eligibility read (at an assembly-out cell the eligible items are the assembled
+       finished goods)."""
+    if cellLocationId is None:
+        return []
+    try:
+        rows = BlueRidge.Common.Db.execList(
+            "parts/Item_ListEligibleForLocation", {"locationId": cellLocationId})
+    except Exception as e:
+        BlueRidge.Common.Util.log("getEligibleFinishedGoodsForDropdown failed: %s" % str(e))
+        return []
+    out = []
+    for r in rows or []:
+        part = r.get("PartNumber") or ""
+        desc = r.get("Description") or ""
+        label = ("%s - %s" % (part, desc)) if desc else part
+        out.append({"label": label, "value": r.get("Id")})
+    return out

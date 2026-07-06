@@ -27,19 +27,10 @@
     ],
     "lastModification": {
       "actor": "claude",
-      "timestamp": "2026-05-26T00:00:00Z"
+      "timestamp": "2026-07-06T12:00:00Z"
     },
     "parameters": [
-      {
-        "type": "Parameter",
-        "identifier": "areaLocationId",
-        "sqlType": 3
-      },
-      {
-        "type": "Parameter",
-        "identifier": "activeOnly",
-        "sqlType": 6
-      }
+      { "type": "Parameter", "identifier": "locationId", "sqlType": 3 }
     ]
   }
 }

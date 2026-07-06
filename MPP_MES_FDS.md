@@ -4,8 +4,8 @@
 **Project:** Madison Precision Products MES Replacement
 **Prepared By:** Blue Ridge Automation
 **Client:** Madison Precision Products, Inc. (Madison, IN)
-**Version:** 1.4 — Customer Review Release
-**Date:** 2026-06-10
+**Version:** 1.6 — Customer Review Release
+**Date:** 2026-07-06
 
 ---
 
@@ -32,6 +32,8 @@ Comments may be returned as annotations on the Word document, an annotated PDF, 
 
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
+| 1.6 | 2026-07-06 | Blue Ridge Automation | **Machining extract-one + assembly finished-good LOT (Spec 2).** Machining OUT is now **extract-one / partial-remainder** - the operator extracts one-or-more sub-LOTs of an entered quantity and the parent STAYS OPEN with its remaining balance, closing only at zero (retires the even-N-way-split default; **closes UJ-03** and executes the v1.3a carried action). Amended **FDS-05-009** (extraction workflow), **FDS-05-010** (partial-remainder handling), **FDS-05-022** (parent stays open across extractions). Assembly-out (serialized AND non-serialized) now **mints a finished-good LOT** where `tray = LOT`, consuming `BOM x PieceCount` FIFO (oldest-first by `CreatedAt`) from line inventory with the Container retained as the wrapper; consumption targets the finished-good LOT. Amended **FDS-06-013** (non-serialized mint + tray=LOT + container wrapper), **FDS-06-010/011** (serialized mints the FG LOT), **FDS-06-020/021** (`ConsumptionEvent.ProducedLotId` is the primary consumption target; assembly genealogy shape). Reconciled the FIFO-ordering wording into one stated rule per terminal class (machining-in queue `LotMovement.MovedAt` FDS-06-007; machining-cell cavity FIFO `CreatedAt` FDS-05-029; assembly consumption `CreatedAt` FDS-06-013). New column `Lots.ContainerTray.FinishedGoodLotId` (see Data Model). Closes **OI-32** (lineside check-in IS the allocation). Design record: `docs/superpowers/specs/2026-07-02-machining-assembly-plant-floor-flow-design.md`. |
+| 1.5 | 2026-07-02 | Blue Ridge Automation | **Operation-type model restructure (Spec 1).** Operation templates are decoupled from a specific Area: `OperationTemplate.AreaLocationId` is replaced by an operation **role** (`OperationTypeId` → new `Parts.OperationType`, grouped by `Parts.OperationCategory`) so one template serves all areas of a kind (e.g. one die-cast template for DC1–DC4) and a terminal resolves the right template by role. Amended: **FDS-03-012** (`AreaLocationId` → `OperationTypeId` field), **FDS-03-009** (operation template defines the role, not the area), **FDS-02-001 note** + **FDS-02-003** (defect/downtime screens filter by the terminal's runtime area, not the template). Defect/downtime code area filtering is otherwise unchanged (those tables keep their own `AreaLocationId`). **FDS-05-025** sort/inspection-terminator marker is orthogonal to `OperationType` (a route-step property) — no conflict. Migrations `0032`/`0033`; SQL + Ignition NQ/entity layers built and green; Config-Tool views pending Designer smoke. |
 | 1.4 | 2026-06-10 | Blue Ridge Automation | **Terminal mode model replaced (view-policy).** FDS-02-010 rewritten — dedicated-vs-shared behavior is a property of the operator view assigned via the Terminal's `DefaultScreen` attribute; the parent-tier derivation is retired (MPP's machining/assembly lines + trim shops are tracked at line/area resolution with no equipment cells beneath their terminals, so the hierarchy cannot encode behavior; smoke-discovered 2026-06-10). Dedicated context = the Terminal's parent Location at any tier; shared context picker = descendant **equipment** Cells (new `Location.Terminal_ListContextCells`, excluding Terminal/Printer kinds). FDS-02-008 (no mode attribute; ≥1 child Printer required, `HasPrinter` registry flag), FDS-02-009/011 (context rules re-anchored to view flavor), FDS-04-003 (presence policy via `session.custom.presence.policy`) amended; **FDS-04-006 explicitly unchanged** — both flavors keep the 30-minute re-confirmation. Design record: `docs/superpowers/specs/2026-06-10-terminal-mode-view-policy-design.md`. |
 | 1.3a | 2026-06-09 | Blue Ridge Automation | **FDS-11-009 retention policy amended per OI-35 B1 sign-off (2026-06-08).** The flat "all MES data 20 years" rule is replaced with **differentiated per-table retention** — 20-yr Honda traceability (`Lots.*` events, `ContainerSerial`/`History`, `ShippingLabel`, `Workorder.ConsumptionEvent`/`RejectEvent`, `Quality.QualitySample`/`QualityResult`) vs 7-yr general operational/audit (`Audit.OperationLog`/`FailureLog`/`InterfaceLog`/`ConfigLog`, `Oee.DowntimeEvent`, `Workorder.ProductionEvent`/`Value`, `Quality.QualityAttachment`) — enforced via the OI-35 B2 monthly sliding-window partition process (`TRUNCATE` age-out; see Data Model § "Scaling Decisions"). Final windows subject to MPP IT confirmation (B1). Post-acceptance amendment from the signed-off Phase 0 Track-B architecture review; no other §11 change. **Carried action:** remove the 50/50 even-split-default wording from §5/§6 sub-LOT-split prose at the next pass (UJ-03 changed per Phase 0 T008 — operator enters all split quantities). |
 | 1.3 | 2026-06-03 | Blue Ridge Automation | **Sub-LOT split relocated from Trim OUT to Machining OUT** (per MPP, confirmed 2026-06 — supersedes the prior Trim-OUT split design; not an open item, the question is settled with the customer). Trim is now a **1:1 whole-LOT move tracked at Area resolution** (check-in → process → check-out, no line/cell tracking, no split). The Trim → Machining rename still fires at Machining IN (FDS-05-033) on the whole LOT; the split into N machined sub-LOTs now fires at **Machining OUT** on lines that sublot — physical signature is a dedicated Machining OUT terminal. Edits: FDS-05-009 (retitled "Machining OUT Sub-LOT Split Workflow"), FDS-06-006 (Trim OUT → whole-LOT move), FDS-06-004 (Trim tracked at Area), FDS-06-007 (Machining IN FIFO holds whole LOTs), FDS-06-008 (Machining OUT branches: split on sublotting lines, else auto-move to coupled Assembly), §5.4 intro, §6.3 / §6.4 narrative, and the §8 partial-quality-split reference (now points to FDS-05-022). **No schema change** — `Lot.ParentLotId` / `LotGenealogy` already model machining-origin sub-LOTs, so the Arc 2 Phase 1 build (`0014`) is unaffected. |
@@ -396,7 +398,7 @@ The system SHALL seed five `LocationType` rows at deployment, corresponding to t
 | WorkCenter | Work Center | 3 | Production line or grouping of equipment |
 | Cell | Cell | 4 | Individual station or unit — machines, terminals, inventory locations, scales |
 
-> **ISA-95 note:** The prior "Department" concept has been merged into Area — at MPP, every organizational department (Die Cast, Trim Shop, Machine Shop, Production Control, Quality Control) maps 1:1 to a physical area of the plant. Area-type locations serve both the physical hierarchy role and the organizational grouping role (defect codes, downtime reason codes, and operation templates reference Areas). ISA-95's "Machine" and "Work Cell" distinction has been collapsed into the single `Cell` tier — the distinction between a CNC machine and a manual assembly station is captured by `LocationTypeDefinition`, not by a separate hierarchy level.
+> **ISA-95 note:** The prior "Department" concept has been merged into Area — at MPP, every organizational department (Die Cast, Trim Shop, Machine Shop, Production Control, Quality Control) maps 1:1 to a physical area of the plant. Area-type locations serve both the physical hierarchy role and the organizational grouping role (defect codes and downtime reason codes reference Areas; operation templates are **area-agnostic** as of the 2026-07-02 restructure — they carry an operation role, not an area, per FDS-03-012). ISA-95's "Machine" and "Work Cell" distinction has been collapsed into the single `Cell` tier — the distinction between a CNC machine and a manual assembly station is captured by `LocationTypeDefinition`, not by a separate hierarchy level.
 
 #### FDS-02-002 — Hierarchy Enforcement
 The system SHOULD validate that child locations have a `HierarchyLevel` greater than or equal to their parent's level, determined by joining through `LocationTypeDefinition` to `LocationType`. The system SHALL NOT enforce strict sequential levels — a Cell MAY be a direct child of an Area if no Work Center level exists for that area.
@@ -430,7 +432,7 @@ MPP's five operational areas SHALL be created as `Location` instances at deploym
 | Production Control | SupportArea | Scheduling, shipping, receiving |
 | Quality Control | SupportArea | Inspection, holds, sort cage |
 
-Areas are referenced by defect codes, downtime reason codes, and operation templates for filtering. Die Cast screens show only Die Cast defect codes; Machine Shop screens show only Machine Shop codes. (FRS 3.3.2, 3.7.1)
+Areas are referenced by defect codes and downtime reason codes for filtering. Die Cast screens show only Die Cast defect codes; Machine Shop screens show only Machine Shop codes — the screen filters by the **terminal's runtime area**, not by the operation template (templates are area-agnostic as of the 2026-07-02 restructure). (FRS 3.3.2, 3.7.1)
 
 ### 2.3 Polymorphic Kinds and Configurable Attributes
 
@@ -612,7 +614,7 @@ Each manufactured item SHALL have a versioned route template defining the ordere
 Each route template SHALL contain ordered route steps. Each step SHALL reference an operation template (what data to collect) and carry a sequence number and required flag.
 
 #### FDS-03-009 — Route Steps Do Not Prescribe Machines
-Route steps SHALL reference an operation template, which defines the area and data collection requirements. Route steps SHALL NOT reference a specific machine or location. The operator selects from eligible machines at runtime based on the `ItemLocation` eligibility map. (FRS 3.11.6; confirmed per architectural review 2026-04-06)
+Route steps SHALL reference an operation template, which defines the operation **role** (OperationType) and data collection requirements; the operation is area-agnostic (the executing terminal supplies the area at runtime). Route steps SHALL NOT reference a specific machine or location. The operator selects from eligible machines at runtime based on the `ItemLocation` eligibility map. (FRS 3.11.6; confirmed per architectural review 2026-04-06)
 
 #### FDS-03-010 — Route Versioning
 When a route is revised, a new version SHALL be created. Production records SHALL FK to the route version active at time of execution.
@@ -629,7 +631,7 @@ Operation templates define what data to collect at a type of operation. They are
 |---|---|
 | Code, VersionNumber | Identity within a version family |
 | Name | Human-readable label |
-| AreaLocationId | Area this operation belongs to (for defect/downtime code filtering) |
+| OperationTypeId | Operation **role** (FK → `Parts.OperationType`): DieCast, TrimIn/Out, MachiningIn/Out, AssemblyIn/Out, CNC. A terminal resolves the right template by this role; replaces the former per-area `AreaLocationId` (2026-07-02 restructure — one template now serves all areas of a kind). |
 | Description | Optional notes |
 | *(data collection requirements)* | Defined by `OperationTemplateField` rows referencing `DataCollectionField` — not hardcoded on the template itself |
 
@@ -1001,24 +1003,24 @@ The MES distinguishes two LOT-multiplication patterns. Only the second is a true
 - **Basket-level sublots** are absorbed by the two patterns above: at Die Cast, one basket = one cavity-parallel LOT = one label; at Machining, basket-level splitting is the Machining sub-LOT pattern.
 
 #### FDS-05-022 — Sublot Pattern (Machining)
-A sublot SHALL be a `Lots.Lot` row with a non-NULL `ParentLotId` FK. Sublots carry an independent `LotNumber` (from the LTT barcode scanned at creation), their own piece count, status, and movement history, but trace back to the parent via the FK plus a `LotGenealogy` row with `RelationshipType = Split`. Sublots SHALL persist for the full LOT lifecycle — they are never re-merged back into the parent, and their labels travel with the physical container. The parent LOT's piece count SHALL be decremented by the total pieces split off; the parent reaches `LotStatusCode = Closed` when its piece count hits zero (all pieces split off to sublots or consumed).
+A sublot SHALL be a `Lots.Lot` row with a non-NULL `ParentLotId` FK. Sublots carry an independent `LotNumber` (from the LTT barcode scanned at creation), their own piece count, status, and movement history, but trace back to the parent via the FK plus a `LotGenealogy` row with `RelationshipType = Split`. Sublots SHALL persist for the full LOT lifecycle — they are never re-merged back into the parent, and their labels travel with the physical container. The parent LOT's piece count SHALL be decremented by the total pieces extracted; under the extract-one / partial-remainder model (FDS-05-009) the parent **stays open** with its remaining balance across successive extractions and reaches `LotStatusCode = Closed` only when its piece count hits zero (all pieces extracted to sublots or consumed).
 
 Sublots created under FDS-05-022 inherit the parent's `ToolId` / `ToolCavityId` (both typically NULL for Machining-origin parents). If the parent is unusually die-cast-origin and is split at Machining, the children SHALL carry `ToolId = NULL` and `ToolCavityId = NULL` — the Tool/Cavity identity is already recorded on the parent LOT's row and on the genealogy edge; sublots are Machining LOTs, not die cast.
 
 #### FDS-05-024 — Sublot Labels
 Every sublot LTT label SHALL display both the sublot's own `LotNumber` and the `ParentLotNumber`. The `Lots.LotLabel` row SHALL carry a `ParentLotId` reference column (nullable — non-sublot labels have no parent) for label-regeneration and audit purposes. The operator-visible genealogy view SHALL let a user enter either number and see the other. Label reprint workflows (FDS-05-020) for a sublot SHALL preserve the parent reference.
 
-#### FDS-05-009 — Machining OUT Sub-LOT Split Workflow
+#### FDS-05-009 — Machining OUT Sub-LOT Extraction Workflow (Extract-One / Partial-Remainder)
 
-> 🔶 **PENDING INTERNAL REVIEW — UJ-03:** Even-split default vs. alternative defaults still needs review with Ben.
+> **UJ-03 RESOLVED (2026-07-06).** The even-N-way-split default is retired. Machining OUT is now **extract-one / partial-remainder**: the operator extracts one or more sub-LOTs of an entered quantity from the machined parent, and the parent STAYS OPEN with its remaining balance for further extraction (or coupled feed) until its piece count reaches zero. This executes the v1.3a carried action and closes UJ-03.
 
-The sub-LOT split that distributes a machined LOT across downstream destinations SHALL happen at **Machining OUT** (per MPP — confirmed 2026-06; supersedes the prior Trim-OUT design). Only lines that sublot perform this split; their physical signature is a dedicated **Machining OUT terminal** (lines without one feed the coupled Assembly Cell whole, per FDS-06-008). By Machining OUT the **Trim → Machining rename has already fired** at Machining IN (FDS-05-033), so the parent being split is the **machined** LOT and the children are machined sub-LOTs (machining-origin — `ToolId` / `ToolCavityId` NULL per FDS-05-022). The mechanics:
+The sub-LOT extraction that draws machined sub-LOTs off a machined parent LOT SHALL happen at **Machining OUT** (per MPP - confirmed 2026-06; supersedes the prior Trim-OUT design). Only lines that sublot perform this extraction; their physical signature is a dedicated **Machining OUT terminal** (lines without one feed the coupled Assembly Cell whole, per FDS-06-008). By Machining OUT the **Trim -> Machining rename has already fired** at Machining IN (FDS-05-033), so the parent being drawn from is the **machined** LOT and the children are machined sub-LOTs (machining-origin - `ToolId` / `ToolCavityId` NULL per FDS-05-022). The mechanics:
 
 1. When the operator completes the Machining operation on a parent (machined) LOT and triggers Machining OUT (FDS-06-008), the system SHALL present a sub-LOT split confirmation dialog.
-2. Calculate an even N-way split of the parent LOT's piece count (default N=2; e.g., 50 → 25/25; 51 → 26/25). The operator MAY adjust the number of sublots and per-sublot quantities; the total SHALL equal the parent's piece count.
+2. Present an **extract-one** entry: the operator enters the piece count to extract into a sub-LOT (there is no even-split default and no pre-computed quantities - the operator enters every extracted quantity per UJ-03). One or more sub-LOTs MAY be extracted in a single Machining OUT action; the extracted total SHALL be less than or equal to the parent's remaining piece count, and an over-extraction SHALL be rejected with a clear message. The parent is NOT required to be fully drawn in one action.
 3. For each sub-LOT, the operator SHALL select the destination (scan or dropdown per FDS-02-009). Routing MAY drive the destination set where the line's Operation Template defines it.
 4. On confirmation, create N child LOT records per FDS-05-022 (sublot pattern). Each sub-LOT inherits the parent's **machined** `ItemId` (the Trim → Machining rename already happened at Machining IN per FDS-05-033). Each child requires a fresh LTT barcode scan.
-5. Decrement the parent LOT's piece count by the total pieces split off; close the parent if all pieces moved (`LotStatusCode = Closed`).
+5. Decrement the parent LOT's piece count by the total pieces extracted. The parent **stays open** with its remaining balance and MAY be extracted from again on a later Machining OUT action (or fed whole to a coupled Assembly Cell); the parent reaches `LotStatusCode = Closed` **only** when its piece count is driven to zero. Each extraction call sequences the sub-LOT `-NN` suffix from the current maximum, so repeated single-sublot draws number correctly across successive extractions.
 6. Write `LotGenealogy` records with `RelationshipType = Split` for each parent→child link.
 7. Write a `LotMovement` for each sub-LOT moving from the Machining Cell to its destination.
 8. Print LTT labels for each child sublot — labels follow the FDS-05-024 parent-reference rule (MPP's `SL`-id sublot numbering convention — exact pre/post format confirmed at lot-number-generation build time).
@@ -1026,8 +1028,8 @@ The sub-LOT split that distributes a machined LOT across downstream destinations
 
 A line that does **not** sublot skips this workflow entirely — the whole machined LOT auto-moves to the coupled Assembly Cell (FDS-06-008). The operator MAY also cancel a split on a sublotting line and move the whole LOT to a single destination. (FRS 2.1.4, 2.2.5, 3.9.12)
 
-#### FDS-05-010 — Uneven Split Handling
-If the parent LOT's piece count is odd, the system SHALL propose the closest even split (e.g., 51 → 26/25). The operator MAY adjust these sizes before confirming. The total of all child quantities SHALL equal the parent's piece count.
+#### FDS-05-010 — Partial-Remainder Handling
+Under extract-one there is no even-split proposal. The operator enters each extracted sub-LOT quantity directly (FDS-05-009 step 2); the system SHALL validate only that the extracted total is less than or equal to the parent's remaining piece count, and SHALL reject an over-extraction with a clear message. Any un-extracted balance remains on the open parent LOT (FDS-05-022) and is available for a subsequent extraction, a coupled auto-feed, or eventual close at zero. The system SHALL NOT force an even or symmetric division.
 
 #### FDS-05-011 — Split Genealogy Permanence
 The parent→child relationship created by a split SHALL be permanent and immutable. Child sublots SHALL carry a `ParentLotId` FK for direct adjacency queries, and `LotGenealogy` records for graph traversal. Both directions (parent→children, child→parent) SHALL be queryable. This applies equally to auto-split sublots (FDS-05-009), per-cavity sublots (FDS-05-023), and basket-level sublots created ad-hoc at container close.
@@ -1296,6 +1298,8 @@ On serialized assembly lines (e.g., 5G0 Fronts/Rears), the MES SHALL integrate w
    - Place the serial into the current container tray (`ContainerSerial` record)
    - Write a `LotGenealogy` record with relationship type CONSUMPTION
 
+On serialized tray completion, the MES SHALL **mint a finished-good LOT** exactly as the non-serialized path does (FDS-06-013): the tray is the finished-good LOT (`tray = LOT`), each `SerializedPart` for that tray sets `ProducingLotId` to the minted finished-good LOT, and the `ConsumptionEvent`s for the tray target that LOT via `ProducedLotId` (FDS-06-020). This removes the prior serialized/non-serialized inconsistency where only serialized carried a producing-LOT reference. `ContainerSerial` still pins each serial to its tray; the Container is retained as the wrapper.
+
 (FRS 2.1.7, 2.1.10; Touchpoint Agreement Section 1.4)
 
 #### FDS-06-011 — Serialized Assembly Material Identification
@@ -1313,6 +1317,8 @@ Strict BOM check is the default — wrong-part scans are rejected. When a substi
 
 Permanent substitutes — recurring or planned — SHALL be handled via BOM revision (`Bom_CreateNewVersion` → edit `BomLine` → `Bom_Publish`), NOT via repeated supervisor overrides. Engineering / Quality is the BOM author; operators consuming overrides at scale is an engineering signal that the BOM needs updating.
 
+On tray completion the identified source material rolls up into the minted finished-good LOT (FDS-06-010): the finished-good LOT is the `ProducedLotId` on each resulting `ConsumptionEvent` (FDS-06-020), and its genealogy Consumption edges trace back to every verified source LOT (FDS-06-021).
+
 #### FDS-06-012 — Hardware Interlock Bypass
 When the automation sets `HardwareInterlockEnable=false`, the MIP SHALL write `PartSN="NoRead"` and the machine proceeds without MES serial validation (per Touchpoint Agreement 1.1). The system SHALL:
 
@@ -1323,13 +1329,15 @@ When the automation sets `HardwareInterlockEnable=false`, the MIP SHALL write `P
 
 ### 6.6 Assembly Workflow — Non-Serialized Lines
 
-#### FDS-06-013 — Non-Serialized Assembly
-On non-serialized lines (e.g., 6B2 Cam Holder, RPY Assembly Sets), the operator SHALL:
+#### FDS-06-013 — Non-Serialized Assembly (Mint Finished-Good LOT; Tray = LOT)
+On non-serialized lines (e.g., 6B2 Cam Holder, RPY Assembly Sets), assembly-out **mints a finished-good LOT** - the tray IS the LOT (1:1). The operator SHALL:
 
-1. Identify source LOT(s) by scanning LTT barcodes (consumption sources for the BOM).
-2. Place parts into the open **tray**. The tray is the validation unit — its closure is gated by `Parts.ContainerConfig.ClosureMethod` (`ByCount` / `ByWeight` / `ByVision` per FDS-06-014).
-3. On each tray pass, the MES SHALL write a `Workorder.ConsumptionEvent` decrementing source LOT piece counts by `PartsPerTray × BomLine.QtyPer` per source, increment the container's running parts count by `PartsPerTray`, and open the next tray.
-4. The container closes automatically when its running count reaches capacity (FDS-06-014). If WO auto-finish is enabled (FDS-06-028), the WO close cascades from there.
+1. Select the finished-good Item from the persistent eligibility-driven dropdown for the line (FDS-02-009 scan-or-dropdown; eligibility from `Parts.Item_ListEligibleForLocation`), and identify source LOT(s) by scanning LTT barcodes (consumption sources for the BOM).
+2. Place parts into the open **tray**. The tray is the validation unit - its closure is gated by `Parts.ContainerConfig.ClosureMethod` (`ByCount` / `ByWeight` / `ByVision` per FDS-06-014).
+3. On tray closure, the MES SHALL - in one atomic transaction - **mint a finished-good LOT** (origin `Manufactured`, at the Cell) whose `PieceCount` is the closure-determined finished count (1 for a single complex set, N for a multi-part tray), then **consume the BOM FIFO**: for each `BomLine` of the finished-good Item it draws `BomLine.QtyPer x PieceCount` oldest-first (see the FIFO rule below) from the eligible component LOTs at the line, partial or full, decrementing (and closing at zero) each source LOT. Each draw writes a `Workorder.ConsumptionEvent` whose **`ProducedLotId` is the finished-good LOT** (FDS-06-020) plus a `LotGenealogy` Consumption edge to the finished-good LOT (FDS-06-021).
+4. The **Container is retained as the wrapper** and is managed by the same event: the MES resolves the open Container at the Cell (opening one if none), inserts a `Lots.ContainerTray` row referencing the finished-good LOT (`ContainerTray.FinishedGoodLotId`), and **completes** the Container when its trays reach `TraysPerContainer` (claims an AIM Shipper ID per §7.4 and dispatches the shipping label per FDS-07-006a). If WO auto-finish is enabled (FDS-06-028), the WO close cascades from there.
+
+**FIFO component draw order.** Component LOTs at an assembly Cell SHALL be consumed oldest-first by `Lots.Lot.CreatedAt` (tie-broken by `Id`). This is the single stated ordering rule for the **assembly** terminal class. It is distinct from - and does not conflict with - the machining terminal rules: the machining-IN pick **queue** is ordered by `LotMovement.MovedAt` (FDS-06-007), and machining-cell cavity-parallel sequencing is FIFO by `CreatedAt` grouped by `ToolCavityId` (FDS-05-029). Each terminal class has exactly one ordering rule.
 
 For lines with PLC integration (MicroLogix1400 PLCs per Appendix C), `PartDisposition` flags and `ContainerName` tags provide automated tray validation without individual serial tracking.
 
@@ -1408,10 +1416,10 @@ The `ScrapSourceId` column SHALL be NULL for non-scrap production events and NOT
 ### 6.9 Consumption Events
 
 #### FDS-06-020 — Consumption Tracking
-Every time source material is consumed to produce output, the system SHALL write an immutable `ConsumptionEvent` recording: source LOT, produced LOT (or container), consumed item, produced item, piece count, location, operator, terminal, tray (if applicable), produced serial number (if serialized), and timestamp.
+Every time source material is consumed to produce output, the system SHALL write an immutable `ConsumptionEvent` recording: source LOT, **produced finished-good LOT** (`ConsumptionEvent.ProducedLotId` - the primary consumption target for both the machining rename and assembly-out; a produced Container reference, where retained, is secondary/denormalized), consumed item, produced item, piece count, location, operator, terminal, tray (if applicable), produced serial number (if serialized), and timestamp. Assembly-out consumption SHALL set `ProducedLotId` to the minted finished-good LOT (FDS-06-013), NOT only a container.
 
 #### FDS-06-021 — Consumption Genealogy
-Each consumption event SHALL also generate a `LotGenealogy` record with relationship type Consumption, linking the source LOT to the output LOT or serialized part. This is the backbone of Honda traceability — every finished good traces back to every component LOT consumed. (FRS 3.13.2)
+Each consumption event SHALL also generate a `LotGenealogy` record with relationship type Consumption, linking the source LOT to the **produced finished-good LOT** (`ProducedLotId`, FDS-06-020) or serialized part. The genealogy shape at assembly is therefore `Container -> ContainerTray -> FinishedGoodLot -> component LOTs` (Consumption edges + closure), so Honda trace resolves uniformly through the LOT closure table (the Container->Tray->LOT hops are FK joins). This is the backbone of Honda traceability - every finished good traces back to every component LOT consumed. (FRS 3.13.2)
 
 ### 6.10 Work Orders — `MVP-LITE` (with Demand + Maintenance flows `FUTURE`)
 

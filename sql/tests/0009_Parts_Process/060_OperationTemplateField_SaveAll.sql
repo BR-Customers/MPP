@@ -7,12 +7,9 @@ GO
 DECLARE @TemplateId BIGINT = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'SA-OTF-TPL' AND DeprecatedAt IS NULL);
 IF @TemplateId IS NULL
 BEGIN
-    DECLARE @AreaId BIGINT = (SELECT TOP 1 l.Id FROM Location.Location l
-                              INNER JOIN Location.LocationTypeDefinition ltd ON ltd.Id = l.LocationTypeDefinitionId
-                              INNER JOIN Location.LocationType lt ON lt.Id = ltd.LocationTypeId
-                              WHERE lt.Code = N'Area' AND l.DeprecatedAt IS NULL ORDER BY l.Code);
-    INSERT INTO Parts.OperationTemplate (Code, Name, VersionNumber, AreaLocationId, CreatedAt)
-    VALUES (N'SA-OTF-TPL', N'Field bundled save test template', 1, @AreaId, SYSUTCDATETIME());
+    DECLARE @OpTypeId BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'DieCast');
+    INSERT INTO Parts.OperationTemplate (Code, Name, VersionNumber, OperationTypeId, CreatedAt)
+    VALUES (N'SA-OTF-TPL', N'Field bundled save test template', 1, @OpTypeId, SYSUTCDATETIME());
     SET @TemplateId = SCOPE_IDENTITY();
 END
 -- Clean prior junctions for isolation

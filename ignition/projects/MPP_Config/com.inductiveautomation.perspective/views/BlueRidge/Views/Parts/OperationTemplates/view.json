@@ -13,7 +13,7 @@
       }
     },
     "filter": {
-      "areaLocationId": null,
+      "operationTypeId": null,
       "includeDeprecated": false,
       "searchText": ""
     },
@@ -29,10 +29,10 @@
   },
   "params": {},
   "propConfig": {
-    "custom.areaOptions": {
+    "custom.typeOptions": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.getAreasForDropdown\", 0)"
+          "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.getOperationTypesForDropdown\", 0)"
         },
         "type": "expr"
       }
@@ -61,7 +61,7 @@
         "type": "expr"
       }
     },
-    "custom.filter.areaLocationId": {
+    "custom.filter.operationTypeId": {
       "persistent": true
     },
     "custom.filter.searchText": {
@@ -257,7 +257,7 @@
                       "props.options": {
                         "binding": {
                           "config": {
-                            "path": "view.custom.areaOptions"
+                            "path": "view.custom.typeOptions"
                           },
                           "type": "property"
                         }
@@ -266,14 +266,14 @@
                         "binding": {
                           "config": {
                             "bidirectional": true,
-                            "path": "view.custom.filter.areaLocationId"
+                            "path": "view.custom.filter.operationTypeId"
                           },
                           "type": "property"
                         }
                       }
                     },
                     "props": {
-                      "noSelectionText": "All Areas",
+                      "noSelectionText": "All Types",
                       "style": {
                         "classes": "select"
                       }
@@ -710,7 +710,7 @@
                               "style": {
                                 "classes": "field-label"
                               },
-                              "text": "Area"
+                              "text": "Operation Type"
                             },
                             "type": "ia.display.label"
                           },
@@ -722,7 +722,7 @@
                               "props.options": {
                                 "binding": {
                                   "config": {
-                                    "path": "view.custom.areaOptions"
+                                    "path": "view.custom.typeOptions"
                                   },
                                   "type": "property"
                                 }
@@ -731,7 +731,7 @@
                                 "binding": {
                                   "config": {
                                     "bidirectional": true,
-                                    "path": "view.custom.editDraft.meta.AreaLocationId"
+                                    "path": "view.custom.editDraft.meta.OperationTypeId"
                                   },
                                   "type": "property"
                                 }
