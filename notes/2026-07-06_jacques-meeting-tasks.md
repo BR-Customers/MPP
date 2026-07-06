@@ -27,8 +27,8 @@ Derived from `notes/2026-07-06_jacques-meeting.md`. Tags: 🐞 data-integrity bu
 - [ ] 🎨 **Terminal selection table: default to 100 rows + add a search bar.**
 
 ## Trim IN
-- [ ] ⚙️ **Confirm Trim IN's available cells are terminals, not printers** — verify the location list excludes Printer-kind.
-- [ ] 🐞 **"null" under the Eligible label** on Trim IN — show a value or hide it.
+- [x] ⚙️ **Confirm Trim IN's available cells are terminals, not printers** — verify the location list excludes Printer-kind. *(2026-07-06: verified in code — `Terminal_ListContextCells` excludes `Terminal` + `Printer` kinds, and TrimShared further filters to `Kind = 'Trim Press'`.)*
+- [ ] 🐞 **"null" under the Eligible label** on Trim IN — show a value or hide it. *(2026-07-06: every operand under the Eligible label is isNull-guarded, so the literal "null" needs a live repro. One real defect found+fixed in that exact spot: the Capacity line's infinity fallback rendered a raw backslash-u221e escape as literal text instead of an infinity glyph; now ASCII `(no cap)`. Confirm on Designer smoke.)*
 - [ ] ✨ **Show a Trim inventory** — display what's currently in Trim (on-hand LOTs at the trim area/line).
 
 ## Trim OUT / checkout

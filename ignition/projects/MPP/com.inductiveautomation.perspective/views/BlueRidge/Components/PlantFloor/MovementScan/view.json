@@ -277,7 +277,7 @@
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "\"Capacity: \" + toStr(if(isNull({view.custom.existingQty.ExistingPieceCount}), 0, {view.custom.existingQty.ExistingPieceCount}) + if(isNull({view.custom.lot.PieceCount}), 0, {view.custom.lot.PieceCount})) + \" of \" + if(isNull({view.custom.maxParts.MaxParts}), \"\\u221e\", toStr({view.custom.maxParts.MaxParts}))"
+                    "expression": "\"Capacity: \" + toStr(if(isNull({view.custom.existingQty.ExistingPieceCount}), 0, {view.custom.existingQty.ExistingPieceCount}) + if(isNull({view.custom.lot.PieceCount}), 0, {view.custom.lot.PieceCount})) + if(isNull({view.custom.maxParts.MaxParts}), \" (no cap)\", \" of \" + toStr({view.custom.maxParts.MaxParts}))"
                   }
                 }
               }
