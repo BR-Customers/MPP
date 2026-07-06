@@ -148,6 +148,19 @@ def getHistory(lotId):
     return BlueRidge.Common.Db.execList("lots/Lot_GetAttributeHistory", {"lotId": lotId})
 
 
+def getScrapSummaryOrEmpty(lotId):
+    """LOT Detail Total Scrap card (Jacques 2026-07-06). Always returns the
+       fully-shaped dict {RejectedTotal, CounterScrap, TotalScrap} (zeros when
+       no scrap / no lot) per the pre-declared-bound-props rule."""
+    lotId = _u(lotId)
+    BlueRidge.Common.Util.log("lotId=%s" % lotId)
+    empty = {"RejectedTotal": 0, "CounterScrap": 0, "TotalScrap": 0}
+    if lotId is None or lotId == "":
+        return empty
+    row = BlueRidge.Common.Db.execOne("lots/Lot_GetScrapSummary", {"lotId": lotId})
+    return row if row else empty
+
+
 def getPauses(lotId):
     BlueRidge.Common.Util.log("lotId=%s" % lotId)
     return BlueRidge.Common.Db.execList("lots/LotPause_GetByLot", {"lotId": lotId})

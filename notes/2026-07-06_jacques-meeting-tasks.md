@@ -41,9 +41,9 @@ Derived from `notes/2026-07-06_jacques-meeting.md`. Tags: 🐞 data-integrity bu
 - [x] ⚙️ **Validate/cap scrap count against the LOT** — same overflow issue for scrap. *(2026-07-06: proc rejects `ScrapCount > Lot.PieceCount`.)*
 
 ## LOT Detail
-- [ ] ✨ **More context per event** — need more than just the terminal/machine name (richer location/context detail).
-- [ ] ✨ **Scrap in LOT Detail** — show scrap recorded in each movement where applicable, and add a **Total Scrap card** at the top.
-- [ ] 🎨 **Round the date** in the LOT Detail history (over-precise timestamp).
+- [x] ✨ **More context per event** — need more than just the terminal/machine name (richer location/context detail). *(2026-07-06: `Lot_GetAttributeHistory` v1.2 — Movement rows now read `Name (CODE) -> Name (CODE) [via <terminal>]`, and two new streams joined the timeline: `Production` (template + terminal + shots/scrap counters) and `Reject` (qty + defect + charge-to). HistoryRow got icons/colors for both.)*
+- [x] ✨ **Scrap in LOT Detail** — show scrap recorded in each movement where applicable, and add a **Total Scrap card** at the top. *(2026-07-06: Reject/Production timeline rows carry the scrap per event; new `Lots.Lot_GetScrapSummary` proc + Total Scrap KPI tile in the top strip (red when > 0). TotalScrap = SUM(RejectEvent.Quantity) + MAX(ProductionEvent.ScrapCount) — the two disjoint scrap channels. Tested (0022/060, 7/7).)*
+- [x] 🎨 **Round the date** in the LOT Detail history (over-precise timestamp). *(2026-07-06: the offender was the Pauses tab — `PauseRow` rendered raw `toStr(PausedAt)`; now `MM/dd HH:mm`. The main timeline already rounded.)*
 
 ## Create LOT popup
 - [x] 🎨 **Create LOT popup button spacing** *(2026-07-06: ButtonRow no longer wraps (was wrap+520px so "Confirm & Submit Another" dropped to a second row); popup widened to 640, all three buttons 44px min-height, shrink-proof, 12px gap.)*

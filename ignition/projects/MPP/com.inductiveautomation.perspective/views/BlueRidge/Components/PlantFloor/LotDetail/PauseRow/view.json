@@ -118,7 +118,7 @@
             "binding": {
               "type": "expr",
               "config": {
-                "expression": "toStr({view.params.row.PausedAt})"
+                "expression": "dateFormat({view.params.row.PausedAt}, \"MM/dd HH:mm\")"
               }
             }
           }
