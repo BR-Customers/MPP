@@ -1176,6 +1176,7 @@
               "style": {
                 "classes": "pf-panel",
                 "gap": "14px",
+                "overflow": "hidden",
                 "padding": "16px"
               }
             },
@@ -1236,7 +1237,7 @@
           "params": [
             "itemId"
           ],
-          "script": "\t# 2026-07-06 Jacques: prefill Piece Count (parts-per-basket \u003d Item.MaxParts) and\n\t# Weight (UnitWeight x count, when configured) when the operator picks a part.\n\t# Only fills EMPTY fields - never overwrites operator-entered values.\n\titemId \u003d BlueRidge.Common.Util.extractQualifiedValues(itemId)\n\trow \u003d BlueRidge.Parts.Item.getOne(itemId)\n\tif not row:\n\t\treturn\n\td \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft) or {}\n\tmaxParts \u003d row.get(\"MaxParts\")\n\tunitWeight \u003d row.get(\"UnitWeight\")\n\tif maxParts and d.get(\"pieceCount\") in (None, \"\"):\n\t\tself.view.custom.editDraft.pieceCount \u003d maxParts\n\tif maxParts and unitWeight and d.get(\"weight\") in (None, \"\"):\n\t\tself.view.custom.editDraft.weight \u003d round(float(unitWeight) * float(maxParts), 3)\n\tif row.get(\"WeightUomId\") and d.get(\"weightUomId\") is None:\n\t\tself.view.custom.editDraft.weightUomId \u003d row.get(\"WeightUomId\")"
+          "script": "\t# 2026-07-06 Jacques: prefill Piece Count (parts-per-basket \u003d Item.DefaultSubLotQty,\n\t# MaxParts fallback) and\n\t# Weight (UnitWeight x count, when configured) when the operator picks a part.\n\t# Only fills EMPTY fields - never overwrites operator-entered values.\n\titemId \u003d BlueRidge.Common.Util.extractQualifiedValues(itemId)\n\trow \u003d BlueRidge.Parts.Item.getOne(itemId)\n\tif not row:\n\t\treturn\n\td \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft) or {}\n\tperBasket \u003d row.get(\"DefaultSubLotQty\") or row.get(\"MaxParts\")\n\tunitWeight \u003d row.get(\"UnitWeight\")\n\tif perBasket and d.get(\"pieceCount\") in (None, \"\"):\n\t\tself.view.custom.editDraft.pieceCount \u003d perBasket\n\tif perBasket and unitWeight and d.get(\"weight\") in (None, \"\"):\n\t\tself.view.custom.editDraft.weight \u003d round(float(unitWeight) * float(perBasket), 3)\n\tif row.get(\"WeightUomId\") and d.get(\"weightUomId\") is None:\n\t\tself.view.custom.editDraft.weightUomId \u003d row.get(\"WeightUomId\")"
         },
         {
           "name": "startup",

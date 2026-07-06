@@ -208,7 +208,7 @@
           "name": "OpTypePicker"
         },
         "position": {
-          "basis": "200px",
+          "basis": "260px",
           "shrink": 0
         },
         "propConfig": {
@@ -251,7 +251,7 @@
           "name": "OpTypeDisplay"
         },
         "position": {
-          "basis": "200px",
+          "basis": "260px",
           "shrink": 0
         },
         "propConfig": {
