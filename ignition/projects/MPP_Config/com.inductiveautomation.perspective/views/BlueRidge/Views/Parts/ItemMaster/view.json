@@ -318,7 +318,7 @@
                 "props": {
                   "direction": "column",
                   "elementPosition": {
-                    "basis": "36px",
+                    "basis": "45px",
                     "shrink": 0
                   },
                   "elementStyle": {
@@ -329,7 +329,6 @@
                     "overflowY": "auto",
                     "padding": "4px 0"
                   },
-                  "useDefaultViewHeight": true,
                   "useDefaultViewWidth": false
                 },
                 "type": "ia.display.flex-repeater"
