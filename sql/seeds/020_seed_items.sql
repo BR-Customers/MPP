@@ -282,6 +282,26 @@ IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation il INNER JOIN Parts.Item i ON i.
     INSERT INTO Parts.ItemLocation (ItemId, LocationId, IsConsumptionPoint, MinQuantity, MaxQuantity, DefaultQuantity, CreatedAt)
     SELECT i.Id, l.Id, 0, NULL, NULL, NULL, SYSUTCDATETIME() FROM Parts.Item i, Location.Location l WHERE i.PartNumber = N'5G0' AND l.Code = N'MA1-5GOF-ASER';
 
+-- 5G0 line-resident eligibility (line-deposit model, 2026-07-06).
+-- The 5G0 Front terminals (Machining In / Machining Out / Assembly Serialized)
+-- all bind their session cell context to the parent LINE (MA1-5GOF, zoneLocationId),
+-- and Trim OUT now deposits the whole LOT at the LINE. Eligibility is checked
+-- against the destination's ancestor chain, which walks UP from the line -- it
+-- never reaches the child cells -- so the flow needs the 5G0 items eligible at
+-- the LINE itself, not only at the MIN/MOUT/ASER cells above. Additive: the
+-- cell rows remain for any cell-scoped read.
+IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation il INNER JOIN Parts.Item i ON i.Id = il.ItemId INNER JOIN Location.Location l ON l.Id = il.LocationId WHERE i.PartNumber = N'5G0-C' AND l.Code = N'MA1-5GOF' AND il.DeprecatedAt IS NULL)
+    INSERT INTO Parts.ItemLocation (ItemId, LocationId, IsConsumptionPoint, MinQuantity, MaxQuantity, DefaultQuantity, CreatedAt)
+    SELECT i.Id, l.Id, 0, NULL, NULL, NULL, SYSUTCDATETIME() FROM Parts.Item i, Location.Location l WHERE i.PartNumber = N'5G0-C' AND l.Code = N'MA1-5GOF';
+
+IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation il INNER JOIN Parts.Item i ON i.Id = il.ItemId INNER JOIN Location.Location l ON l.Id = il.LocationId WHERE i.PartNumber = N'5G0-M' AND l.Code = N'MA1-5GOF' AND il.DeprecatedAt IS NULL)
+    INSERT INTO Parts.ItemLocation (ItemId, LocationId, IsConsumptionPoint, MinQuantity, MaxQuantity, DefaultQuantity, CreatedAt)
+    SELECT i.Id, l.Id, 0, NULL, NULL, NULL, SYSUTCDATETIME() FROM Parts.Item i, Location.Location l WHERE i.PartNumber = N'5G0-M' AND l.Code = N'MA1-5GOF';
+
+IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation il INNER JOIN Parts.Item i ON i.Id = il.ItemId INNER JOIN Location.Location l ON l.Id = il.LocationId WHERE i.PartNumber = N'5G0' AND l.Code = N'MA1-5GOF' AND il.DeprecatedAt IS NULL)
+    INSERT INTO Parts.ItemLocation (ItemId, LocationId, IsConsumptionPoint, MinQuantity, MaxQuantity, DefaultQuantity, CreatedAt)
+    SELECT i.Id, l.Id, 0, NULL, NULL, NULL, SYSUTCDATETIME() FROM Parts.Item i, Location.Location l WHERE i.PartNumber = N'5G0' AND l.Code = N'MA1-5GOF';
+
 -- RD-BRKT (pass-through) eligible at the receiving + shipping docks.
 IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation il INNER JOIN Parts.Item i ON i.Id = il.ItemId INNER JOIN Location.Location l ON l.Id = il.LocationId WHERE i.PartNumber = N'RD-BRKT' AND l.Code = N'SHIPIN' AND il.DeprecatedAt IS NULL)
     INSERT INTO Parts.ItemLocation (ItemId, LocationId, IsConsumptionPoint, MinQuantity, MaxQuantity, DefaultQuantity, CreatedAt)
@@ -292,5 +312,5 @@ IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation il INNER JOIN Parts.Item i ON i.
     SELECT i.Id, l.Id, 0, NULL, NULL, NULL, SYSUTCDATETIME() FROM Parts.Item i, Location.Location l WHERE i.PartNumber = N'RD-BRKT' AND l.Code = N'SHIPOUT';
 GO
 
-PRINT 'seed_items: 8 items (6MA-C/6MA-M/6MA/PIN-A/5G0-C/5G0-M/5G0/RD-BRKT), 2 container configs, 2 BOMs (3 lines), 1 quality spec (2 attributes), 14 eligibility rows loaded (routes seeded separately in 029_seed_item_routes.sql).';
+PRINT 'seed_items: 8 items (6MA-C/6MA-M/6MA/PIN-A/5G0-C/5G0-M/5G0/RD-BRKT), 2 container configs, 2 BOMs (3 lines), 1 quality spec (2 attributes), 17 eligibility rows loaded incl. 5G0-C/5G0-M/5G0 at the MA1-5GOF line (routes seeded separately in 029_seed_item_routes.sql).';
 GO
