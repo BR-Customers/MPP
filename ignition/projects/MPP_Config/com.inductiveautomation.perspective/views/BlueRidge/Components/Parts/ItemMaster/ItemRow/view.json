@@ -147,6 +147,7 @@
       "style": {
         "borderBottom": "1px solid var(--mpp-border-subtle)",
         "cursor": "pointer",
+        "overflow": "hidden",
         "padding": "6px 10px"
       }
     },
