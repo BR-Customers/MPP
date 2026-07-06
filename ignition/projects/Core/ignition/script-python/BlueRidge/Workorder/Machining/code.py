@@ -8,20 +8,21 @@ import BlueRidge.Common.Db
 import BlueRidge.Common.Util
 
 
-def pickAndConsume(sourceLotId, cellLocationId, queueOverrideReason=None, appUserId=None, terminalLocationId=None):
-    """Machining IN: FIFO pick of a whole cast/trim LOT + BOM-driven rename
-       (FDS-05-033). Mints the machined LOT, consumes the source, writes genealogy +
-       checkpoint, closes the source. Returns {Status, Message, NewId (machined
-       LotId), NewMachinedLotName, ConsumptionEventId, ProductionEventId}."""
+def recordPick(lotId, lineLocationId, appUserId=None, terminalLocationId=None):
+    """Machining IN ("unworked arrivals" model): pick a LOT checked into the line to
+       START machining. Records ONE MachiningIn checkpoint ProductionEvent against the
+       SAME LOT and stops -- no new LOT, no consumption, no BOM rename, no close. The
+       event is stamped to terminalLocationId (which must sit under the line) so the
+       LOT flips to HasLineEvent=1 and leaves the unworked-arrivals queue. Returns
+       {Status, Message, NewId (ProductionEventId)}."""
     if appUserId is None:
         appUserId = BlueRidge.Common.Util._currentAppUserId()
     BlueRidge.Common.Util.log(
-        "pickAndConsume sourceLotId=%s cellLocationId=%s appUserId=%s"
-        % (sourceLotId, cellLocationId, appUserId))
-    params = {"sourceLotId": sourceLotId, "cellLocationId": cellLocationId,
-              "queueOverrideReason": queueOverrideReason, "appUserId": appUserId,
-              "terminalLocationId": terminalLocationId}
-    return BlueRidge.Common.Db.execMutation("workorder/MachiningIn_PickAndConsume", params)
+        "recordPick lotId=%s lineLocationId=%s appUserId=%s terminalLocationId=%s"
+        % (lotId, lineLocationId, appUserId, terminalLocationId))
+    params = {"lotId": lotId, "lineLocationId": lineLocationId,
+              "appUserId": appUserId, "terminalLocationId": terminalLocationId}
+    return BlueRidge.Common.Db.execMutation("workorder/MachiningIn_RecordPick", params)
 
 
 def autoComplete(lotId, cellLocationId, appUserId=None, terminalLocationId=None):
