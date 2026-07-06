@@ -79,6 +79,23 @@ def findByCode(terminals, code):
     return None
 
 
+def filterForSelector(rows, search):
+    """Case-insensitive contains-filter over TerminalCode / TerminalName /
+       ZoneName for the Terminal Selector table search bar (Jacques 2026-07-06).
+       Always returns a list; empty/blank search returns rows unchanged."""
+    rows = BlueRidge.Common.Util.extractQualifiedValues(rows) or []
+    s = ("%s" % (BlueRidge.Common.Util.extractQualifiedValues(search) or "")).strip().upper()
+    if not s:
+        return rows
+    out = []
+    for r in rows:
+        r = r or {}
+        hay = "%s %s %s" % (r.get("TerminalCode") or "", r.get("TerminalName") or "", r.get("ZoneName") or "")
+        if s in hay.upper():
+            out.append(r)
+    return out
+
+
 def listContextCells(terminalLocationId):
     """Eligible location-context rows for a shared-flavor view at the given
        terminal: active descendant EQUIPMENT cells of the terminal's parent

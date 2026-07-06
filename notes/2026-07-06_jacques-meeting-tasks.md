@@ -24,7 +24,7 @@ Derived from `notes/2026-07-06_jacques-meeting.md`. Tags: 🐞 data-integrity bu
 ## Eligibility & config
 - [ ] ⚙️ **Eligibility should target Area + Production Line tiers**, and **exclude terminals & printers** from the location list. (Ties into the hierarchy-cascade eligibility work.)
 - [ ] 🎨 **Printers must not appear in the eligibility location dropdown** (subset of the above — filter Printer-kind).
-- [ ] 🎨 **Terminal selection table: default to 100 rows + add a search bar.**
+- [x] 🎨 **Terminal selection table: default to 100 rows + add a search bar.** *(2026-07-06: pager `initialOption` 100 (options 25/50/100/200) + a live search field filtering code/name/zone via `Terminal.filterForSelector`.)*
 
 ## Trim IN
 - [x] ⚙️ **Confirm Trim IN's available cells are terminals, not printers** — verify the location list excludes Printer-kind. *(2026-07-06: verified in code — `Terminal_ListContextCells` excludes `Terminal` + `Printer` kinds, and TrimShared further filters to `Kind = 'Trim Press'`.)*
@@ -44,6 +44,9 @@ Derived from `notes/2026-07-06_jacques-meeting.md`. Tags: 🐞 data-integrity bu
 - [ ] ✨ **More context per event** — need more than just the terminal/machine name (richer location/context detail).
 - [ ] ✨ **Scrap in LOT Detail** — show scrap recorded in each movement where applicable, and add a **Total Scrap card** at the top.
 - [ ] 🎨 **Round the date** in the LOT Detail history (over-precise timestamp).
+
+## Create LOT popup
+- [x] 🎨 **Create LOT popup button spacing** *(2026-07-06: ButtonRow no longer wraps (was wrap+520px so "Confirm & Submit Another" dropped to a second row); popup widened to 640, all three buttons 44px min-height, shrink-proof, 12px gap.)*
 
 ## Cross-cutting
 - [ ] 🎨 **Remove all FDS commentary from Perspective views** — no spec/FDS text should be visible on any operator-facing screen.
