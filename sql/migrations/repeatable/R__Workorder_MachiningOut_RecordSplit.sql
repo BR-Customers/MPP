@@ -3,19 +3,22 @@
 -- Author:      Blue Ridge Automation
 -- Modified:    2026-06-19
 -- Version:     1.0
--- Description: Arc 2 Phase 5 Machining OUT - operator-driven sub-LOT split on
---              SUBLOTTING lines (RequiresSubLotSplit=1), FDS-05-009. The operator
---              completes machining and confirms an N-way split of the machined LOT
---              into N sub-LOTs, each routed to its own destination. In one atomic
---              transaction the proc:
---                * writes a closing MachiningOut Workorder.ProductionEvent
---                  checkpoint for the parent,
+-- Description: Arc 2 Phase 5 Machining OUT - operator-driven EXTRACT-ONE sub-LOT
+--              split on SUBLOTTING lines (RequiresSubLotSplit=1), FDS-05-009. The
+--              operator completes machining and extracts one-or-more sub-LOTs from the
+--              machined parent, each routed to its own destination. The parent STAYS
+--              OPEN with its remaining balance and can be extracted from again; it
+--              Closes only when the extraction zeroes its PieceCount (executes UJ-03 /
+--              the customer machining-out discovery). In one atomic transaction:
+--                * writes a MachiningOut Workorder.ProductionEvent checkpoint for the
+--                  parent (ShotCount = pieces extracted this call),
 --                * for EACH child: mints a sub-LOT (parent-derived '<parent>-NN'
 --                  name, inheriting the parent's MACHINED Item - the rename already
 --                  happened at Machining IN, FDS-05-033 - NULL Tool/Cavity per B13),
 --                  writes the Lots.LotGenealogy Split edge + B4 closure rows, and
 --                  INLINE-moves the child to its destinationLocationId,
---                * Closes the parent (all pieces allocated to sub-LOTs).
+--                * decrements the parent by the extracted total and Closes it ONLY
+--                  when the remainder reaches 0 (mirror R__Lots_Lot_Split residual).
 --              Returns a multi-row result: header columns (Status, Message,
 --              ProductionEventId) REPEATED on every row, plus per-child
 --              (ChildLotId, ChildLotName, DestinationLocationId, PieceCount).
@@ -42,8 +45,9 @@
 --
 --              Validation: parent exists + open + not-blocked; OPENJSON parse;
 --              >=1 child; every pieceCount>0; every destination valid + non-deprecated;
---              SUM(pieceCount) == parent.PieceCount (a full allocation -> parent
---              Closed; this is a SPLIT-AND-CLOSE, not the partial Lot_Split).
+--              SUM(pieceCount) <= parent.PieceCount (over-extraction rejected; a
+--              partial extraction leaves the parent OPEN with the remainder, a full
+--              extraction Closes it).
 --
 --              B1 context params (@AppUserId / @TerminalLocationId). No OUTPUT
 --              params (FDS-11-011). Audit 'MachiningOutSubLotSplit' (Lot subject =
@@ -251,11 +255,11 @@ BEGIN
             RETURN;
         END
 
-        -- ---- 8. SUM(children) == parent.PieceCount (full allocation -> parent Closed) ----
-        IF @SumChildren <> @ParentPc
+        -- ---- 8. SUM(children) <= parent.PieceCount (extract-one; over-extraction rejected) ----
+        IF @SumChildren > @ParentPc
         BEGIN
-            SET @Message = N'Split children (' + CAST(@SumChildren AS NVARCHAR(20))
-                         + N') must equal parent piece count (' + CAST(@ParentPc AS NVARCHAR(20)) + N').';
+            SET @Message = N'Split total (' + CAST(@SumChildren AS NVARCHAR(20))
+                         + N') exceeds the parent LOT''s remaining piece count (' + CAST(@ParentPc AS NVARCHAR(20)) + N').';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
                 @EntityId = @ParentLotId, @LogEventTypeCode = N'MachiningOutSubLotSplit',
@@ -294,7 +298,8 @@ BEGIN
         -- ===== Mutation (atomic) =====
         BEGIN TRANSACTION;
 
-        -- ---- 10. Closing MachiningOut ProductionEvent for the parent. ----
+        -- ---- 10. MachiningOut ProductionEvent for the parent (ShotCount = pieces
+        -- extracted THIS call, not the whole parent - extract-one semantics). ----
         INSERT INTO Workorder.ProductionEvent (
             LotId, OperationTemplateId, WorkOrderOperationId, EventAt,
             ShotCount, ScrapCount, ScrapSourceId,
@@ -302,7 +307,7 @@ BEGIN
         )
         VALUES (
             @ParentLotId, @OperationTemplateId, NULL, SYSUTCDATETIME(),
-            @ParentPc, NULL, NULL,
+            @SumChildren, NULL, NULL,
             NULL, NULL, @AppUserId, @TerminalLocationId, NULL
         );
 
@@ -374,27 +379,36 @@ BEGIN
             SET @i = @i + 1;
         END
 
-        -- ---- 12. Close the parent (INLINE mirror of Lots.Lot_UpdateStatus). All
-        -- pieces allocated to sub-LOTs; reduce residual to 0 + Close. ----
+        -- ---- 12. Reduce the parent by the extracted total (extract-one /
+        -- partial-remainder; mirror R__Lots_Lot_Split residual-reduce + auto-close).
+        -- The parent stays OPEN until its PieceCount reaches 0, then Closes. ----
+        DECLARE @Remaining INT = @ParentPc - @SumChildren;
+
         INSERT INTO Lots.LotAttributeChange (LotId, AttributeName, OldValue, NewValue, ChangedByUserId, TerminalLocationId, ChangedAt)
-        VALUES (@ParentLotId, N'PieceCount', CAST(@ParentPc AS NVARCHAR(500)), N'0', @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
+        VALUES (@ParentLotId, N'PieceCount', CAST(@ParentPc AS NVARCHAR(500)), CAST(@Remaining AS NVARCHAR(500)), @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
 
         UPDATE Lots.Lot
-        SET PieceCount         = 0,
-            InventoryAvailable = 0,
-            LotStatusId        = @ClosedStatusId,
+        SET PieceCount         = PieceCount - @SumChildren,
+            InventoryAvailable = InventoryAvailable - @SumChildren,
             UpdatedAt          = SYSUTCDATETIME(),
             UpdatedByUserId    = @AppUserId
         WHERE Id = @ParentLotId;
 
-        INSERT INTO Lots.LotStatusHistory (LotId, OldStatusId, NewStatusId, Reason, ChangedByUserId, TerminalLocationId, ChangedAt)
-        VALUES (@ParentLotId, @ParentStatus, @ClosedStatusId, N'Closed by Machining OUT split (all pieces allocated to sub-LOTs).', @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
+        IF @Remaining = 0
+        BEGIN
+            UPDATE Lots.Lot SET LotStatusId = @ClosedStatusId WHERE Id = @ParentLotId;
+            INSERT INTO Lots.LotStatusHistory (LotId, OldStatusId, NewStatusId, Reason, ChangedByUserId, TerminalLocationId, ChangedAt)
+            VALUES (@ParentLotId, @ParentStatus, @ClosedStatusId, N'Closed by Machining OUT split (all pieces extracted to sub-LOTs).', @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
+        END
 
         -- ---- 13. Audit (resolved-FK JSON + readable Description) ----
+        DECLARE @ParentOutcome NVARCHAR(50) =
+            CASE WHEN @Remaining = 0 THEN N'parent Closed'
+                 ELSE N'parent open, ' + CAST(@Remaining AS NVARCHAR(20)) + N' pcs remain' END;
         DECLARE @ActivityRaw NVARCHAR(MAX) =
             @ParentName + N' ' + Audit.ufn_MidDot() + N' Machining OUT ' + Audit.ufn_MidDot()
-            + N' Split into ' + CAST(@ChildCount AS NVARCHAR(10)) + N' sub-LOT(s), '
-            + CAST(@SumChildren AS NVARCHAR(20)) + N' pcs (parent Closed)';
+            + N' Extracted ' + CAST(@ChildCount AS NVARCHAR(10)) + N' sub-LOT(s), '
+            + CAST(@SumChildren AS NVARCHAR(20)) + N' pcs (' + @ParentOutcome + N')';
         DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
 
         DECLARE @OldValue NVARCHAR(MAX) = (
@@ -428,7 +442,8 @@ BEGIN
         COMMIT TRANSACTION;
 
         SET @Status  = 1;
-        SET @Message = N'LOT ' + @ParentName + N' split into ' + CAST(@ChildCount AS NVARCHAR(10)) + N' sub-LOT(s) at Machining OUT.';
+        SET @Message = N'LOT ' + @ParentName + N' extracted ' + CAST(@ChildCount AS NVARCHAR(10)) + N' sub-LOT(s) at Machining OUT ('
+                     + @ParentOutcome + N').';
 
         -- ---- Return (Option A): one row per minted child, header cols repeated ----
         SELECT @Status AS Status, @Message AS Message, @ProductionEventId AS ProductionEventId,

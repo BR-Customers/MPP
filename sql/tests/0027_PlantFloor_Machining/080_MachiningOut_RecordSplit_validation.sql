@@ -38,7 +38,7 @@ DELETE FROM Lots.Lot WHERE LotName LIKE N'P5T-SPL%';
 GO
 
 -- =============================================
--- Test 1: SUM(children) != parent piece count rejects
+-- Test 1a: over-extraction (SUM > parent) rejects; parent stays open + intact
 -- =============================================
 DECLARE @Parent BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FPRPY-MOUT');
 DECLARE @Dest BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FPRPY-AFIN');
@@ -52,24 +52,58 @@ INSERT INTO #C1 EXEC Lots.Lot_Create @ItemId = @MachItem, @LotOriginTypeId = @Or
 SELECT @L1 = NewId FROM #C1; DROP TABLE #C1;
 
 DECLARE @D NVARCHAR(20) = CAST(@Dest AS NVARCHAR(20));
--- 24 + 20 = 44 != 48
-DECLARE @Json1 NVARCHAR(MAX) = N'[{"pieceCount":24,"destinationLocationId":' + @D + N'},{"pieceCount":20,"destinationLocationId":' + @D + N'}]';
+-- 30 + 24 = 54 > 48 (over-extraction)
+DECLARE @Json1 NVARCHAR(MAX) = N'[{"pieceCount":30,"destinationLocationId":' + @D + N'},{"pieceCount":24,"destinationLocationId":' + @D + N'}]';
 DECLARE @S1 BIT, @M1 NVARCHAR(500);
 CREATE TABLE #R1 (Status BIT, Message NVARCHAR(500), ProductionEventId BIGINT, ChildLotId BIGINT, ChildLotName NVARCHAR(50), DestinationLocationId BIGINT, PieceCount INT);
 INSERT INTO #R1 EXEC Workorder.MachiningOut_RecordSplit @ParentLotId = @L1, @OperationTemplateId = @OtId, @SplitChildrenJson = @Json1, @AppUserId = 1;
 SELECT TOP 1 @S1 = Status, @M1 = Message FROM #R1;
 DROP TABLE #R1;
 DECLARE @S1cond BIT = CASE WHEN @S1 = 0 THEN 1 ELSE 0 END;
-EXEC test.Assert_IsTrue @TestName = N'[MachSplitVal] sum != parent rejected', @Condition = @S1cond;
-EXEC test.Assert_Contains @TestName = N'[MachSplitVal] sum-mismatch message', @HaystackStr = @M1, @NeedleStr = N'must equal parent piece count';
+EXEC test.Assert_IsTrue @TestName = N'[MachSplitVal] over-extraction rejected', @Condition = @S1cond;
+EXEC test.Assert_Contains @TestName = N'[MachSplitVal] over-extraction message', @HaystackStr = @M1, @NeedleStr = N'exceeds the parent';
 
 -- parent untouched: still Good, no children, no closing PE
 DECLARE @P1Status NVARCHAR(20) = (SELECT sc.Code FROM Lots.Lot l INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId WHERE l.Id = @L1);
-EXEC test.Assert_IsEqual @TestName = N'[MachSplitVal] parent still Good after sum reject', @Expected = N'Good', @Actual = @P1Status;
+EXEC test.Assert_IsEqual @TestName = N'[MachSplitVal] parent still Good after over-extraction reject', @Expected = N'Good', @Actual = @P1Status;
 DECLARE @P1Children NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.Lot WHERE ParentLotId = @L1);
-EXEC test.Assert_IsEqual @TestName = N'[MachSplitVal] no children after sum reject', @Expected = N'0', @Actual = @P1Children;
+EXEC test.Assert_IsEqual @TestName = N'[MachSplitVal] no children after over-extraction reject', @Expected = N'0', @Actual = @P1Children;
 DECLARE @P1Pe NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Workorder.ProductionEvent WHERE LotId = @L1);
-EXEC test.Assert_IsEqual @TestName = N'[MachSplitVal] no ProductionEvent after sum reject', @Expected = N'0', @Actual = @P1Pe;
+EXEC test.Assert_IsEqual @TestName = N'[MachSplitVal] no ProductionEvent after over-extraction reject', @Expected = N'0', @Actual = @P1Pe;
+GO
+
+-- =============================================
+-- Test 1b: partial extraction (SUM < parent) is ACCEPTED; parent stays open w/ remainder
+-- =============================================
+DECLARE @Parent BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FPRPY-MOUT');
+DECLARE @Dest BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FPRPY-AFIN');
+DECLARE @MachItem BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-MACH-TEST');
+DECLARE @OriginMfg BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
+DECLARE @OtId BIGINT = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'MachiningOut');
+
+DECLARE @L1b BIGINT;
+CREATE TABLE #C1b (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
+INSERT INTO #C1b EXEC Lots.Lot_Create @ItemId = @MachItem, @LotOriginTypeId = @OriginMfg, @CurrentLocationId = @Parent, @PieceCount = 48, @AppUserId = 1, @LotName = N'P5T-SPL-PART';
+SELECT @L1b = NewId FROM #C1b; DROP TABLE #C1b;
+
+DECLARE @Db NVARCHAR(20) = CAST(@Dest AS NVARCHAR(20));
+-- 24 + 20 = 44 < 48 (partial extraction -> parent stays open with 4 remaining)
+DECLARE @Json1b NVARCHAR(MAX) = N'[{"pieceCount":24,"destinationLocationId":' + @Db + N'},{"pieceCount":20,"destinationLocationId":' + @Db + N'}]';
+DECLARE @S1b BIT;
+CREATE TABLE #R1b (Status BIT, Message NVARCHAR(500), ProductionEventId BIGINT, ChildLotId BIGINT, ChildLotName NVARCHAR(50), DestinationLocationId BIGINT, PieceCount INT);
+INSERT INTO #R1b EXEC Workorder.MachiningOut_RecordSplit @ParentLotId = @L1b, @OperationTemplateId = @OtId, @SplitChildrenJson = @Json1b, @AppUserId = 1;
+SELECT TOP 1 @S1b = Status FROM #R1b;
+DROP TABLE #R1b;
+DECLARE @S1bStr NVARCHAR(10) = CAST(@S1b AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[MachSplitVal] partial extraction accepted (Status 1)', @Expected = N'1', @Actual = @S1bStr;
+
+-- parent stays open (Good) with the 4-pc remainder + two children minted
+DECLARE @P1bStatus NVARCHAR(20) = (SELECT sc.Code FROM Lots.Lot l INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId WHERE l.Id = @L1b);
+EXEC test.Assert_IsEqual @TestName = N'[MachSplitVal] parent stays Good after partial extraction', @Expected = N'Good', @Actual = @P1bStatus;
+DECLARE @P1bPc NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id = @L1b);
+EXEC test.Assert_IsEqual @TestName = N'[MachSplitVal] parent remainder is 4 after partial extraction', @Expected = N'4', @Actual = @P1bPc;
+DECLARE @P1bChildren NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.Lot WHERE ParentLotId = @L1b);
+EXEC test.Assert_IsEqual @TestName = N'[MachSplitVal] two children after partial extraction', @Expected = N'2', @Actual = @P1bChildren;
 GO
 
 -- =============================================

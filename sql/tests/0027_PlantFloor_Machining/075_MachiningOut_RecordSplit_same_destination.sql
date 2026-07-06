@@ -44,38 +44,50 @@ DECLARE @MachItem BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-MA
 DECLARE @OriginMfg BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
 DECLARE @OtId BIGINT = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'MachiningOut');
 
-DECLARE @ParentLot BIGINT;
+-- 60-pc parent, extracted one 20-pc sublot per call, THREE calls, all to the same
+-- destination. Each call mints the next '-NN' ordinal; parent Closes on the third.
+DECLARE @ParentLot BIGINT, @ParentName NVARCHAR(50);
 CREATE TABLE #C (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
 INSERT INTO #C EXEC Lots.Lot_Create @ItemId = @MachItem, @LotOriginTypeId = @OriginMfg, @CurrentLocationId = @Parent, @PieceCount = 60, @AppUserId = 1, @LotName = N'P5T-SPL-SAME';
-SELECT @ParentLot = NewId FROM #C; DROP TABLE #C;
+SELECT @ParentLot = NewId, @ParentName = MintedLotName FROM #C; DROP TABLE #C;
 
 DECLARE @D NVARCHAR(20) = CAST(@Dest AS NVARCHAR(20));
-DECLARE @Json NVARCHAR(MAX) = N'[{"pieceCount":20,"destinationLocationId":' + @D + N'},{"pieceCount":20,"destinationLocationId":' + @D + N'},{"pieceCount":20,"destinationLocationId":' + @D + N'}]';
+DECLARE @Json1 NVARCHAR(MAX) = N'[{"pieceCount":20,"destinationLocationId":' + @D + N'}]';
 
-CREATE TABLE #R (Status BIT, Message NVARCHAR(500), ProductionEventId BIGINT, ChildLotId BIGINT, ChildLotName NVARCHAR(50), DestinationLocationId BIGINT, PieceCount INT);
-INSERT INTO #R EXEC Workorder.MachiningOut_RecordSplit
-    @ParentLotId = @ParentLot, @OperationTemplateId = @OtId, @SplitChildrenJson = @Json, @AppUserId = 1;
+-- ---- Call 1 -> parent Good @40 ----
+CREATE TABLE #R1 (Status BIT, Message NVARCHAR(500), ProductionEventId BIGINT, ChildLotId BIGINT, ChildLotName NVARCHAR(50), DestinationLocationId BIGINT, PieceCount INT);
+INSERT INTO #R1 EXEC Workorder.MachiningOut_RecordSplit @ParentLotId = @ParentLot, @OperationTemplateId = @OtId, @SplitChildrenJson = @Json1, @AppUserId = 1;
+DECLARE @S1 NVARCHAR(10) = (SELECT TOP 1 CAST(Status AS NVARCHAR(10)) FROM #R1); DROP TABLE #R1;
+EXEC test.Assert_IsEqual @TestName = N'[MachSplitSame] call-1 Status is 1', @Expected = N'1', @Actual = @S1;
+DECLARE @Pc1 NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id = @ParentLot);
+EXEC test.Assert_IsEqual @TestName = N'[MachSplitSame] parent 40 after call-1', @Expected = N'40', @Actual = @Pc1;
 
-DECLARE @S BIT = (SELECT TOP 1 Status FROM #R);
-DECLARE @SStr NVARCHAR(10) = CAST(@S AS NVARCHAR(10));
-EXEC test.Assert_IsEqual @TestName = N'[MachSplitSame] Status is 1', @Expected = N'1', @Actual = @SStr;
+-- ---- Call 2 -> parent Good @20 ----
+CREATE TABLE #R2 (Status BIT, Message NVARCHAR(500), ProductionEventId BIGINT, ChildLotId BIGINT, ChildLotName NVARCHAR(50), DestinationLocationId BIGINT, PieceCount INT);
+INSERT INTO #R2 EXEC Workorder.MachiningOut_RecordSplit @ParentLotId = @ParentLot, @OperationTemplateId = @OtId, @SplitChildrenJson = @Json1, @AppUserId = 1;
+DROP TABLE #R2;
+DECLARE @Pc2 NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id = @ParentLot);
+EXEC test.Assert_IsEqual @TestName = N'[MachSplitSame] parent 20 after call-2', @Expected = N'20', @Actual = @Pc2;
 
-DECLARE @ChildRows INT = (SELECT COUNT(*) FROM #R WHERE ChildLotId IS NOT NULL);
-EXEC test.Assert_RowCount @TestName = N'[MachSplitSame] three child rows returned', @ExpectedCount = 3, @ActualCount = @ChildRows;
+-- ---- Call 3 -> parent Closed @0 ----
+CREATE TABLE #R3 (Status BIT, Message NVARCHAR(500), ProductionEventId BIGINT, ChildLotId BIGINT, ChildLotName NVARCHAR(50), DestinationLocationId BIGINT, PieceCount INT);
+INSERT INTO #R3 EXEC Workorder.MachiningOut_RecordSplit @ParentLotId = @ParentLot, @OperationTemplateId = @OtId, @SplitChildrenJson = @Json1, @AppUserId = 1;
+DROP TABLE #R3;
 
--- all three at the same destination
-DECLARE @AtDest INT = (SELECT COUNT(*) FROM #R r INNER JOIN Lots.Lot l ON l.Id = r.ChildLotId WHERE r.ChildLotId IS NOT NULL AND l.CurrentLocationId = @Dest);
+-- three children, all at the same destination
+DECLARE @ChildRows INT = (SELECT COUNT(*) FROM Lots.Lot WHERE ParentLotId = @ParentLot);
+EXEC test.Assert_RowCount @TestName = N'[MachSplitSame] three children minted', @ExpectedCount = 3, @ActualCount = @ChildRows;
+DECLARE @AtDest INT = (SELECT COUNT(*) FROM Lots.Lot WHERE ParentLotId = @ParentLot AND CurrentLocationId = @Dest);
 EXEC test.Assert_RowCount @TestName = N'[MachSplitSame] all three children at the same destination', @ExpectedCount = 3, @ActualCount = @AtDest;
 
--- distinct child LotNames
-DECLARE @DistinctNames INT = (SELECT COUNT(DISTINCT ChildLotName) FROM #R WHERE ChildLotId IS NOT NULL);
-EXEC test.Assert_RowCount @TestName = N'[MachSplitSame] three distinct child LotNames', @ExpectedCount = 3, @ActualCount = @DistinctNames;
+-- sequential '-01','-02','-03' ordinals
+DECLARE @SeqNames INT = (SELECT COUNT(*) FROM Lots.Lot WHERE ParentLotId = @ParentLot
+    AND LotName IN (@ParentName + N'-01', @ParentName + N'-02', @ParentName + N'-03'));
+EXEC test.Assert_RowCount @TestName = N'[MachSplitSame] children named -01/-02/-03', @ExpectedCount = 3, @ActualCount = @SeqNames;
 
--- parent Closed
+-- parent Closed after the final extraction
 DECLARE @ParentStatus NVARCHAR(20) = (SELECT sc.Code FROM Lots.Lot l INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId WHERE l.Id = @ParentLot);
 EXEC test.Assert_IsEqual @TestName = N'[MachSplitSame] parent Closed', @Expected = N'Closed', @Actual = @ParentStatus;
-
-DROP TABLE #R;
 GO
 
 -- ---- cleanup ----
