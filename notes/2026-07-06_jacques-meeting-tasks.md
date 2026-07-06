@@ -1,0 +1,57 @@
+# Task List — Jacques Meeting (2026-07-06)
+
+Derived from `notes/2026-07-06_jacques-meeting.md`. Tags: 🐞 data-integrity bug · ⚙️ validation/gating · 🎨 UI/layout · ✨ enhancement.
+
+> **Recurring theme — "line-resident":** several items point the machining hand-off at the **production line** (WorkCenter), not terminals — Trim OUT destination, Trim checkout move-target, and eligibility tier. Worth doing as one coherent change. This aligns with what's now landing on `main` (OperationType/route-role model).
+
+---
+
+## Die Cast entry
+- [ ] 🎨 **Add a "refresh mounted tool" button** on the Die Cast terminal page — re-fetch the currently mounted tool without reloading the screen.
+- [ ] 🎨 **Fix cavity dropdown resize glitch** — the cavity dropdown scales/resizes weirdly when a cavity is selected.
+- [ ] ✨ **Prepopulate defaults from the part** — part count defaults to the part's **parts-per-basket**; weight defaults from the part **if it exists**.
+- [ ] 🐞 **"Cavity this shift" dropdown shows too many** — check the query; it's listing more than expected.
+- [ ] 🐞 **"Shots this shift" is null** — should show a count.
+- [ ] ✨ **"Shots this shift" should also reflect scrap** — include/account for scrap.
+- [ ] ⚙️ **Verify reject entry is cavity-scoped** — confirm reject entry records in the context of the selected cavity.
+- [ ] 🎨 **Consolidate the three right-side cards into one card.**
+- [ ] ⚙️ **Gate: no run without an operation template** — was able to run a part in Die Cast with no operation template; block it.
+
+## Operation templates & Routes
+- [ ] ⚙️ **Scope the operation-template selection dropdown** — currently not scoped by area. (Reconcile with the new area-agnostic OperationType/role model — likely filter by role/route rather than Area.)
+- [ ] 🐞 **Routes: Data Collection column empty on create screen** — it populates on the published view but not the draft/create view; fix the create-screen binding.
+
+## Eligibility & config
+- [ ] ⚙️ **Eligibility should target Area + Production Line tiers**, and **exclude terminals & printers** from the location list. (Ties into the hierarchy-cascade eligibility work.)
+- [ ] 🎨 **Printers must not appear in the eligibility location dropdown** (subset of the above — filter Printer-kind).
+- [ ] 🎨 **Terminal selection table: default to 100 rows + add a search bar.**
+
+## Trim IN
+- [ ] ⚙️ **Confirm Trim IN's available cells are terminals, not printers** — verify the location list excludes Printer-kind.
+- [ ] 🐞 **"null" under the Eligible label** on Trim IN — show a value or hide it.
+- [ ] ✨ **Show a Trim inventory** — display what's currently in Trim (on-hand LOTs at the trim area/line).
+
+## Trim OUT / checkout
+- [ ] ✨ **Show the Trim inventory + selectable LOT list** on Trim OUT — pick from the queue, while **keeping scan** as an option.
+- [ ] ⚙️ **Destination = production line, not Machining-IN terminals** — the destination dropdown should list the WorkCenter line.
+- [ ] ⚙️ **Trim checkout moves the LOT to the production line, not the terminal** (`CurrentLocationId` = line).
+- [ ] 🎨 **Don't navigate to the LOT summary page on Trim OUT submit** — stay on the screen / return to the queue.
+- [ ] 🐞 **Block double checkout** — was able to check out the same LOT twice from the Trim shop.
+- [ ] ⚙️ **Validate shot count against the LOT** — was able to enter a shot count far exceeding the LOT's piece count.
+- [ ] ⚙️ **Validate/cap scrap count against the LOT** — same overflow issue for scrap.
+
+## LOT Detail
+- [ ] ✨ **More context per event** — need more than just the terminal/machine name (richer location/context detail).
+- [ ] ✨ **Scrap in LOT Detail** — show scrap recorded in each movement where applicable, and add a **Total Scrap card** at the top.
+- [ ] 🎨 **Round the date** in the LOT Detail history (over-precise timestamp).
+
+## Cross-cutting
+- [ ] 🎨 **Remove all FDS commentary from Perspective views** — no spec/FDS text should be visible on any operator-facing screen.
+
+---
+
+### Suggested priority
+1. **Data-integrity / gating (🐞⚙️):** double checkout, shot/scrap overflow validation, run-without-op-template gate, cavity-this-shift over-listing, shots-this-shift null.
+2. **Line-resident cluster (⚙️):** Trim OUT destination = line, Trim checkout move-target = line, eligibility at Area/Line + exclude terminals/printers.
+3. **Enhancements (✨):** Trim inventory (IN/OUT), part-count/weight defaults, LOT Detail scrap + context.
+4. **UI polish (🎨):** card consolidation, cavity dropdown glitch, refresh button, table rows+search, date rounding, button spacing, FDS-comment removal.
