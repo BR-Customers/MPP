@@ -229,11 +229,14 @@ def getOriginOptions():
     return [{"label": r["Name"], "value": r["Id"]} for r in BlueRidge.Common.Db.execList("lots/LotOriginType_List")]
 
 
-def getShiftCavityTally(toolId):
+def getShiftCavityTally(toolId, _refreshToken=None):
     """Arc 2 Phase 3 die-cast right rail. One row per active (configured) cavity of
-       the mounted die: PieceSum = sum of as-cast PieceCount for LOTs Created this
-       OEE shift on that tool+cavity, and ShiftShots = max(PieceSum) across cavities
-       (both computed in SQL). Returns list[dict]; [] when no die is mounted."""
+       the mounted die: PieceSum = sum of as-cast pieces this OEE shift (live
+       PieceCount + rejected qty added back, v1.1 2026-07-06), RejectSum = the
+       per-cavity scrapped qty, ShiftShots = max(PieceSum) across cavities (all
+       computed in SQL). Returns list[dict]; [] when no die is mounted.
+       _refreshToken is ignored - runScript bindings pass a bumped token to force
+       a re-read (runScript caches on args)."""
     toolId = _u(toolId)
     BlueRidge.Common.Util.log("toolId=%s" % toolId)
     if toolId is None or toolId == "":
@@ -256,6 +259,28 @@ def shiftSumForCavity(tally, toolCavityId):
     for r in rows:
         if r.get("ToolCavityId") == cid:
             return r.get("PieceSum") or 0
+    return 0
+
+
+def shiftScrapForCavity(tally, toolCavityId):
+    """The selected cavity's shift scrapped quantity (RejectSum) from a tally
+       list. Int (0 if absent). Jacques 2026-07-06: the shift card surfaces scrap."""
+    rows = _u(tally) or []
+    cid = _u(toolCavityId)
+    for r in rows:
+        if r.get("ToolCavityId") == cid:
+            return r.get("RejectSum") or 0
+    return 0
+
+
+def shiftShotsFromTally(tally):
+    """ShiftShots (the busiest cavity's as-cast piece total this shift) from a
+       tally list - identical on every row, so read the first. Int (0 when
+       empty). This is the actual 'Shots this shift' number for the card; it was
+       computed in SQL but never displayed before 2026-07-06."""
+    rows = _u(tally) or []
+    for r in rows:
+        return r.get("ShiftShots") or 0
     return 0
 
 
