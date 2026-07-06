@@ -91,3 +91,9 @@ In the **LOT Detail history**, the **date should be rounded** (over-precise time
 
 ## Trim checkout — move the LOT to the production line, not the terminal
 When **checking out a LOT from Trim**, it should **move the LOT to the production line** (WorkCenter), **not to the terminal**. (Line-resident: `CurrentLocationId` = the production line.)
+
+## Routes tab — restructure "Area" to Operation Type
+On the **Routes tab**, the **"Area"** concept/column needs to be **restructured to Operation Type** (route steps classified by operation type/role, per the OperationType restructure — not by Area). *(Overlaps the already-in-progress routes op-template dropdown task — see tasks file.)*
+
+## Routes — "New Version" doesn't switch to the route editor
+On the Routes tab, hitting **New Version** does **not switch to the route editor** (should open/enter the editor for the new draft version).

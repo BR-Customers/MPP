@@ -48,6 +48,11 @@ Derived from `notes/2026-07-06_jacques-meeting.md`. Tags: 🐞 data-integrity bu
 ## Create LOT popup
 - [x] 🎨 **Create LOT popup button spacing** *(2026-07-06: ButtonRow no longer wraps (was wrap+520px so "Confirm & Submit Another" dropped to a second row); popup widened to 640, all three buttons 44px min-height, shrink-proof, 12px gap.)*
 
+## Smoke findings (added during the 2026-07-06 Designer smoke)
+- [x] ⚙️ **Routes tab: restructure "Area" to Operation Type** — *(already landed earlier this session as part of the op-template dropdown scoping: role dropdown cascade, headers, and published column all read Operation Type now.)*
+- [x] 🐞 **Routes: New Version doesn't switch to the route editor** — *(2026-07-06: the handler selected the new draft id BEFORE reloading the version list; the dropdown (bidi-bound) nulled the unknown value and the onChange reset mode back to view, wiping the primed editor state. Fixed: reload-then-select, plus the onChange now restores a live primed draft selection instead of resetting on a spurious null. Re-smoke to confirm.)*
+- [x] 🎨 **Item Master list: per-row scrollbars** — *(2026-07-06: repeater was useDefaultViewHeight:false + basis:auto; now true + pixel basis (45px after Hunter's row-height bump) + overflow:hidden on wrappers/row root; whole-list scroll on the repeater.)*
+
 ## Cross-cutting
 - [x] 🎨 **Remove all FDS commentary from Perspective views** — no spec/FDS text should be visible on any operator-facing screen. *(2026-07-06: swept every view.json in MPP + MPP_Config — stripped FDS-XX-NNN refs from HoldManagement (incl. the standalone FDS badge label), MachiningOutSplit x2, AssemblyNonSerialized, MovementScan, DieCastBody; also rewrote TrimBody's `v_EffectiveItemLocation` internal-name help text. Script comments (never rendered) intentionally kept. Residual grep over visible text/expression strings: zero hits.)*
 
