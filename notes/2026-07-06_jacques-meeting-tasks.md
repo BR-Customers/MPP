@@ -50,7 +50,7 @@ Derived from `notes/2026-07-06_jacques-meeting.md`. Tags: 🐞 data-integrity bu
 
 ## Smoke findings (added during the 2026-07-06 Designer smoke)
 - [x] ⚙️ **Routes tab: restructure "Area" to Operation Type** — *(already landed earlier this session as part of the op-template dropdown scoping: role dropdown cascade, headers, and published column all read Operation Type now.)*
-- [x] 🐞 **Routes: New Version doesn't switch to the route editor** — *(2026-07-06: the handler selected the new draft id BEFORE reloading the version list; the dropdown (bidi-bound) nulled the unknown value and the onChange reset mode back to view, wiping the primed editor state. Fixed: reload-then-select, plus the onChange now restores a live primed draft selection instead of resetting on a spurious null. Re-smoke to confirm.)*
+- [x] 🐞 **Routes: New Version doesn't switch to the route editor** — *(2026-07-06: first fix (reload-then-select + onChange guard) did not hold in smoke. Per Hunter's direction the Routes tab was REBUILT on the BOMs-tab architecture: no table component, one mode-aware `RouteStepRow` repeater serving published (read-only) and draft (editable) states, `state.{selected,editDraft}` bundles with atomic loads, binding-based dirty, and BOMs' race-free New Version flow (synchronously rewrite the version list, then select, then prime state directly). `DraftStepRow` retired. Re-smoke the whole tab.)*
 - [x] 🎨 **Item Master list: per-row scrollbars** — *(2026-07-06: repeater was useDefaultViewHeight:false + basis:auto; now true + pixel basis (45px after Hunter's row-height bump) + overflow:hidden on wrappers/row root; whole-list scroll on the repeater.)*
 
 ## Cross-cutting
