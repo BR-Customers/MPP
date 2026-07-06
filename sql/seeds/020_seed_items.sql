@@ -37,7 +37,7 @@
 --
 --              Dependencies:
 --                - 011_seed_locations_mpp_plant.sql (Location.Location seeded
---                  by Code: DC1-M01/M02/M05/M06/M07, MA1-6MD-MIN/AOUT,
+--                  by Code: DC1-M01/M02/M05/M06/M07, MA1-FPRPY-MIN/MOUT/AFIN,
 --                  MA1-5GOF-MIN/MOUT/ASER, TRIM1, SHIPIN, SHIPOUT)
 --
 --              Route wiring (RouteTemplate/RouteStep) for these items is NOT
@@ -239,21 +239,28 @@ IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation il INNER JOIN Parts.Item i ON i.
     INSERT INTO Parts.ItemLocation (ItemId, LocationId, IsConsumptionPoint, MinQuantity, MaxQuantity, DefaultQuantity, CreatedAt)
     SELECT i.Id, l.Id, 0, NULL, NULL, NULL, SYSUTCDATETIME() FROM Parts.Item i, Location.Location l WHERE i.PartNumber = N'6MA-C' AND l.Code = N'TRIM1';
 
--- 6MA-M eligible at the 6MD-line machining cell (this line has no separate
--- MOUT cell -- MIN is both the FIFO-pick and machining-complete station).
-IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation il INNER JOIN Parts.Item i ON i.Id = il.ItemId INNER JOIN Location.Location l ON l.Id = il.LocationId WHERE i.PartNumber = N'6MA-M' AND l.Code = N'MA1-6MD-MIN' AND il.DeprecatedAt IS NULL)
+-- 6MA-M eligible at the FPRPY-line machining cells. This line is a full-flow
+-- line (MIN -> MOUT -> AFIN), so the primary 6MA thread can machine-in, do the
+-- extract-one machining-OUT split, then assemble -- all on one line. (The 6MD
+-- line has MIN + AOUT but no MOUT, so it cannot host the machining-out demo.)
+IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation il INNER JOIN Parts.Item i ON i.Id = il.ItemId INNER JOIN Location.Location l ON l.Id = il.LocationId WHERE i.PartNumber = N'6MA-M' AND l.Code = N'MA1-FPRPY-MIN' AND il.DeprecatedAt IS NULL)
     INSERT INTO Parts.ItemLocation (ItemId, LocationId, IsConsumptionPoint, MinQuantity, MaxQuantity, DefaultQuantity, CreatedAt)
-    SELECT i.Id, l.Id, 0, NULL, NULL, NULL, SYSUTCDATETIME() FROM Parts.Item i, Location.Location l WHERE i.PartNumber = N'6MA-M' AND l.Code = N'MA1-6MD-MIN';
+    SELECT i.Id, l.Id, 0, NULL, NULL, NULL, SYSUTCDATETIME() FROM Parts.Item i, Location.Location l WHERE i.PartNumber = N'6MA-M' AND l.Code = N'MA1-FPRPY-MIN';
 
--- 6MA + PIN-A eligible at the 6MD-line assembly-out cell. PIN-A is also a
--- consumption point there (BOM component staged at the assembly cell).
-IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation il INNER JOIN Parts.Item i ON i.Id = il.ItemId INNER JOIN Location.Location l ON l.Id = il.LocationId WHERE i.PartNumber = N'6MA' AND l.Code = N'MA1-6MD-AOUT' AND il.DeprecatedAt IS NULL)
+IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation il INNER JOIN Parts.Item i ON i.Id = il.ItemId INNER JOIN Location.Location l ON l.Id = il.LocationId WHERE i.PartNumber = N'6MA-M' AND l.Code = N'MA1-FPRPY-MOUT' AND il.DeprecatedAt IS NULL)
     INSERT INTO Parts.ItemLocation (ItemId, LocationId, IsConsumptionPoint, MinQuantity, MaxQuantity, DefaultQuantity, CreatedAt)
-    SELECT i.Id, l.Id, 0, NULL, NULL, NULL, SYSUTCDATETIME() FROM Parts.Item i, Location.Location l WHERE i.PartNumber = N'6MA' AND l.Code = N'MA1-6MD-AOUT';
+    SELECT i.Id, l.Id, 0, NULL, NULL, NULL, SYSUTCDATETIME() FROM Parts.Item i, Location.Location l WHERE i.PartNumber = N'6MA-M' AND l.Code = N'MA1-FPRPY-MOUT';
 
-IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation il INNER JOIN Parts.Item i ON i.Id = il.ItemId INNER JOIN Location.Location l ON l.Id = il.LocationId WHERE i.PartNumber = N'PIN-A' AND l.Code = N'MA1-6MD-AOUT' AND il.DeprecatedAt IS NULL)
+-- 6MA + PIN-A eligible at the FPRPY-line assembly cell (AFIN -- the machining-out
+-- split routes sublots here, then non-serialized assembly consumes them). PIN-A is
+-- also a consumption point there (BOM component staged at the assembly cell).
+IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation il INNER JOIN Parts.Item i ON i.Id = il.ItemId INNER JOIN Location.Location l ON l.Id = il.LocationId WHERE i.PartNumber = N'6MA' AND l.Code = N'MA1-FPRPY-AFIN' AND il.DeprecatedAt IS NULL)
     INSERT INTO Parts.ItemLocation (ItemId, LocationId, IsConsumptionPoint, MinQuantity, MaxQuantity, DefaultQuantity, CreatedAt)
-    SELECT i.Id, l.Id, 1, 20, 1000, 200, SYSUTCDATETIME() FROM Parts.Item i, Location.Location l WHERE i.PartNumber = N'PIN-A' AND l.Code = N'MA1-6MD-AOUT';
+    SELECT i.Id, l.Id, 0, NULL, NULL, NULL, SYSUTCDATETIME() FROM Parts.Item i, Location.Location l WHERE i.PartNumber = N'6MA' AND l.Code = N'MA1-FPRPY-AFIN';
+
+IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation il INNER JOIN Parts.Item i ON i.Id = il.ItemId INNER JOIN Location.Location l ON l.Id = il.LocationId WHERE i.PartNumber = N'PIN-A' AND l.Code = N'MA1-FPRPY-AFIN' AND il.DeprecatedAt IS NULL)
+    INSERT INTO Parts.ItemLocation (ItemId, LocationId, IsConsumptionPoint, MinQuantity, MaxQuantity, DefaultQuantity, CreatedAt)
+    SELECT i.Id, l.Id, 1, 20, 1000, 200, SYSUTCDATETIME() FROM Parts.Item i, Location.Location l WHERE i.PartNumber = N'PIN-A' AND l.Code = N'MA1-FPRPY-AFIN';
 
 -- 5G0-C eligible at its die-cast machine.
 IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation il INNER JOIN Parts.Item i ON i.Id = il.ItemId INNER JOIN Location.Location l ON l.Id = il.LocationId WHERE i.PartNumber = N'5G0-C' AND l.Code = N'DC1-M02' AND il.DeprecatedAt IS NULL)
