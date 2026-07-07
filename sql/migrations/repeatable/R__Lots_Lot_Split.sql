@@ -1,8 +1,15 @@
 -- ============================================================
 -- Repeatable:  R__Lots_Lot_Split.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-06-11
+-- Modified:    2026-07-07
 -- Version:     1.0
+--
+-- SCOPE (terminal-mint, 2026-07-07): EXCEPTION-ONLY. The standard Machining &
+-- Assembly flow uses consume-MINTS (Workorder.MachiningOut_Mint /
+-- Workorder.Assembly_CompleteTray, Consumption genealogy RelationshipTypeId=3),
+-- NOT Split. Lot_Split remains for same-part-number divisions with NO identity
+-- change (quality dispositions, holds, logistics). No standard M&A proc calls it.
+--
 -- Description: Splits a parent LOT into N sublot children (Phase 2 Task 2 / G2;
 --              spec section 4.2 + 2.2). Each child is a parent-derived sublot
 --              named '<ParentLotName>-NN' (zero-padded D2 ordinal), inheriting
