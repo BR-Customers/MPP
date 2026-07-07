@@ -4,6 +4,41 @@
 
 ---
 
+## 🔖 2026-07-07 (second session) — Worked the 2026-07-06 working-notes list end-to-end
+
+Merged `origin/main` (Hunter's `97310ac` Route-Category cascade + `7c7dffe` notes) into
+`jacques/working` — clean auto-merge, no conflicts. Then worked every item in
+`notes/2026-07-06_working-notes.md` (per-item resolution log at the top of that file).
+
+- **Operation Template management (Config):** filter dropdown repointed **type → CATEGORY**
+  with a one-click "All Categories" reset; **creation popup** now a **Category → Operation
+  cascade** (auto-selects when a category has one type, e.g. Die Cast); selection list ordered
+  **Die Cast → Trim → Machining & Assembly** (by `OperationCategory.Id`). New entity helper
+  `OperationTemplate.getOperationTypesByCategory`; `search()` filters+orders by category.
+- **Route steps:** dead `OperationAreaName` read removed from `RouteTemplate._mapSteps`
+  (repointed onto the v4.1 proc's Category/Type). The Category→Operation route-step cascade
+  itself came in with `main`'s `97310ac`.
+- **`Parts.Item_Deprecate` → v3.0 CASCADE-deprecate** (the big one): deprecating a part now
+  **cascade-deprecates its owned config** (RouteTemplate / Bom-as-parent / ItemLocation /
+  ContainerConfig) and **blocks ONLY on a live (non-terminal, i.e. not Closed/Scrap) LOT**;
+  a part used as a BomLine child in another part's BOM is neither blocked nor cascaded. Per-
+  dependent audit rows + cascade counts in the Item audit NewValue. New suite
+  `sql/tests/0008_Parts_Item/020_Item_Deprecate_cascade.sql` (**15/15 green**). Item Master
+  deprecate now routes through a `ConfirmDestructive` cascade-warning popup (was immediate).
+- **Terminal-FIFO / `CoupledDownstreamCellLocationId` note:** closed as **OBE** — already
+  answered by the 2026-07-07 terminal-mint redesign (route-driven queue; coupling column
+  dropped in `0036`).
+
+**Verification:** full suite on a throwaway `MPP_MES_Test` = **1886/1887**; the single
+failure (`0024/060 [WipQueue] fresh LOT in MachiningIn`) is **pre-existing + environmental**
+— it resolves demo-seed rows (`6MA-M` / `MA1-FPRPY-MOUT` / `DEV`) that `Run-Tests -SkipDemoSeed`
+omits, unrelated to this session. Ignition changes file-authored + `scan.ps1`'d.
+
+**Owed:** Designer smoke of the Op-Template Category filter + cascade creation popup + the
+Item Master deprecate confirm (existing-view edits, authored with Designer closed).
+
+---
+
 ## 🔖 2026-07-07 — Terminal-mint model: rename-BOM thread unwound, route = single source of truth
 
 **What & why.** The Machining & Assembly flow had accreted a "rename-BOM" mechanism (FDS-05-033) that minted a machined LOT at Machining IN by "consuming" a 1-line BOM. Commits `348762e`/`1e46c60` half-unwound it, leaving `HasRenameBom` as a fragile queue discriminator. This redesign removes it entirely and re-bases terminal FIFO + part identity on the **route**. Brainstormed → spec → 3 plans → executed on `jacques/working`.

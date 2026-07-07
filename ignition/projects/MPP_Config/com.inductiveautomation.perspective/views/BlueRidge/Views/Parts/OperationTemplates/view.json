@@ -13,8 +13,9 @@
       }
     },
     "filter": {
-      "operationTypeId": null,
       "includeDeprecated": false,
+      "operationCategoryId": null,
+      "operationTypeId": null,
       "searchText": ""
     },
     "mode": "view",
@@ -29,14 +30,6 @@
   },
   "params": {},
   "propConfig": {
-    "custom.typeOptions": {
-      "binding": {
-        "config": {
-          "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.getOperationTypesForDropdown\", 0)"
-        },
-        "type": "expr"
-      }
-    },
     "custom.dirty": {
       "binding": {
         "config": {
@@ -61,6 +54,17 @@
         "type": "expr"
       }
     },
+    "custom.categoryOptions": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.getOperationCategoriesForDropdown\", 0)"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.filter.operationCategoryId": {
+      "persistent": true
+    },
     "custom.filter.operationTypeId": {
       "persistent": true
     },
@@ -71,6 +75,14 @@
       "binding": {
         "config": {
           "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.search\", 0, {view.custom.filter})"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.typeOptions": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.getOperationTypesForDropdown\", 0)"
         },
         "type": "expr"
       }
@@ -251,13 +263,13 @@
                 "children": [
                   {
                     "meta": {
-                      "name": "DropdownArea"
+                      "name": "DropdownCategory"
                     },
                     "propConfig": {
                       "props.options": {
                         "binding": {
                           "config": {
-                            "path": "view.custom.typeOptions"
+                            "path": "view.custom.categoryOptions"
                           },
                           "type": "property"
                         }
@@ -266,14 +278,14 @@
                         "binding": {
                           "config": {
                             "bidirectional": true,
-                            "path": "view.custom.filter.operationTypeId"
+                            "path": "view.custom.filter.operationCategoryId"
                           },
                           "type": "property"
                         }
                       }
                     },
                     "props": {
-                      "noSelectionText": "All Types",
+                      "noSelectionText": "All Categories",
                       "style": {
                         "classes": "select"
                       }
@@ -358,7 +370,7 @@
               "name": "LeftPanel"
             },
             "position": {
-              "basis": "240px",
+              "basis": "300px",
               "shrink": 0
             },
             "props": {

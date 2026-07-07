@@ -365,10 +365,12 @@ def update(meta):
 
 
 def deprecate(itemId):
-    """Soft-delete the Item by Id. Returns {Status, Message}. The proc's
-    FK-guards reject deprecation when active Bom / BomLine /
-    RouteTemplate / ItemLocation / ContainerConfig dependents exist;
-    the Message field surfaces the specific dependency."""
+    """Soft-delete the Item by Id. Returns {Status, Message}. The proc
+    (v3.0, 2026-07-07) CASCADE-deprecates the part's owned config artifacts
+    (RouteTemplate / Bom-as-parent / ItemLocation / ContainerConfig) and
+    rejects ONLY when a live (non-terminal) LOT of the part still exists; the
+    Message field surfaces that hard stop. A part used as a BomLine child in
+    another part's BOM is neither blocked nor cascaded."""
     itemId = _u(itemId)
     BlueRidge.Common.Util.log("itemId=%s" % itemId)
     return BlueRidge.Common.Db.execMutation(
