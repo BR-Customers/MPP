@@ -187,6 +187,14 @@
               "shrink": 0
             },
             "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "!{view.params.cellPickerEnabled}"
+                  },
+                  "type": "expr"
+                }
+              },
               "props.text": {
                 "binding": {
                   "config": {
