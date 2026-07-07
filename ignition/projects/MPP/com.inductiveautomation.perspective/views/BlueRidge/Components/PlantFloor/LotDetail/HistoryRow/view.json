@@ -3,6 +3,8 @@
   "params": {
     "row": {
       "EventAt": "",
+      "EventAtDisplay": "",
+      "EventAgo": "",
       "EventKind": "",
       "Detail": "",
       "ByUserName": ""
@@ -152,7 +154,7 @@
             "binding": {
               "type": "expr",
               "config": {
-                "expression": "if(dateDiff({view.params.row.EventAt}, now(60000), \"minute\") < 1, \"just now\", if(dateDiff({view.params.row.EventAt}, now(60000), \"minute\") < 60, toStr(dateDiff({view.params.row.EventAt}, now(60000), \"minute\")) + \"m ago\", if(dateDiff({view.params.row.EventAt}, now(60000), \"hour\") < 24, toStr(dateDiff({view.params.row.EventAt}, now(60000), \"hour\")) + \"h ago\", toStr(dateDiff({view.params.row.EventAt}, now(60000), \"day\")) + \"d ago\"))) + \"  ·  \" + toStr({view.params.row.ByUserName}) + \"  ·  \" + dateFormat({view.params.row.EventAt}, \"MM/dd HH:mm\")"
+                "expression": "coalesce({view.params.row.EventAgo}, \"\") + \"  ·  \" + toStr({view.params.row.ByUserName}) + \"  ·  \" + coalesce({view.params.row.EventAtDisplay}, \"\")"
               }
             }
           }

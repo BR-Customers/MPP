@@ -836,7 +836,7 @@
                           "transforms": [
                             {
                               "type": "script",
-                              "code": "\trows = value or []\n\tout = []\n\tfor r in rows:\n\t\tr = BlueRidge.Common.Util.extractQualifiedValues(r) or {}\n\t\tout.append({'row': r})\n\treturn out"
+                              "code": "\treturn BlueRidge.Lots.Lot.mapHistoryInstances(value)"
                             }
                           ]
                         }

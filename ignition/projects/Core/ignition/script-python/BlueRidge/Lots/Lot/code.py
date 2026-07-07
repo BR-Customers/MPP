@@ -148,6 +148,79 @@ def getHistory(lotId):
     return BlueRidge.Common.Db.execList("lots/Lot_GetAttributeHistory", {"lotId": lotId})
 
 
+def mapHistoryInstances(rows):
+    """LOT Detail history repeater instances: one {'row': {...}} per history row
+       with EventAtDisplay ('MM/dd HH:mm') and EventAgo ('3h ago') precomputed in
+       Python. The HistoryRow view consumes the precomputed strings verbatim --
+       date math in expression bindings proved unreliable for repeater params
+       (the Date serializes to a string on the param hop; dateFormat/dateDiff
+       then pass the raw value through), which surfaced as over-precise
+       timestamps on the 2026-07-07 smoke."""
+    rows = BlueRidge.Common.Util.extractQualifiedValues(rows) or []
+    out = []
+    for r in rows:
+        r = dict(r or {})
+        ev = r.get("EventAt")
+        disp = ""
+        ago = ""
+        if ev is not None:
+            try:
+                disp = system.date.format(ev, "MM/dd HH:mm")
+                mins = system.date.minutesBetween(ev, system.date.now())
+                if mins < 1:
+                    ago = "just now"
+                elif mins < 60:
+                    ago = "%dm ago" % mins
+                elif mins < 1440:
+                    ago = "%dh ago" % (mins // 60)
+                else:
+                    ago = "%dd ago" % (mins // 1440)
+            except:
+                # ev arrived as a pre-serialized string -- truncate to the same
+                # 'yyyy-MM-dd HH:mm' precision rather than showing millis.
+                disp = ("%s" % ev)[:16]
+        r["EventAtDisplay"] = disp
+        r["EventAgo"] = ago
+        out.append({"row": r})
+    return out
+
+
+def mapTrimInventoryInstances(rows, selectable=False, selectedLotId=None):
+    """TrimBody 'Currently in Trim' card-repeater instances (machining QueueRow
+       styling, Jacques 2026-07-07). One instance per Lot_GetWipQueueByLocation
+       row with the arrival display + FIFO position precomputed in Python.
+       selectable=True renders the Select action (the Trim OUT pick list);
+       selectedLotId highlights the active pick. Property-binding transform
+       callers re-run this via the refreshToken bump on selection."""
+    rows = BlueRidge.Common.Util.extractQualifiedValues(rows) or []
+    selectable = bool(BlueRidge.Common.Util.extractQualifiedValues(selectable))
+    selectedLotId = BlueRidge.Common.Util.extractQualifiedValues(selectedLotId)
+    out = []
+    pos = 0
+    for r in rows:
+        r = r or {}
+        pos += 1
+        arr = r.get("LastMovementAt")
+        arrival = ""
+        if arr is not None:
+            try:
+                arrival = system.date.format(arr, "MM/dd HH:mm")
+            except:
+                arrival = ("%s" % arr)[:16]
+        out.append({
+            "lotId":         r.get("Id"),
+            "lotName":       r.get("LotName") or "",
+            "item":          r.get("ItemPartNumber") or "",
+            "pieceCount":    r.get("PieceCount") or 0,
+            "arrival":       arrival,
+            "position":      pos,
+            "lotStatusCode": r.get("LotStatusCode") or "",
+            "isSelected":    (selectedLotId is not None and r.get("Id") == selectedLotId),
+            "selectable":    selectable,
+        })
+    return out
+
+
 def getLatestForToolCavityOrEmpty(toolId, toolCavityId, _refreshToken=None):
     """The cavity-scoped reject target (Jacques 2026-07-06): the newest open
        LOT cast on (tool, cavity). Always returns the fully-shaped dict
