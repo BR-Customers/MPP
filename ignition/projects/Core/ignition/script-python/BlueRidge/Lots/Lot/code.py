@@ -206,18 +206,24 @@ def getCellLineQuantity(locationId, itemId):
     )
 
 
-def getWipQueueByLocation(locationId, includeDescendants=False, operationTypeCode=None, _refreshToken=None):
+def getWipQueueByLocation(locationId, includeDescendants=False, _refreshToken=None, operationTypeCode=None):
     """Route-driven WIP queue at a location (terminal-mint spec §3.2): open LOTs whose
        next PENDING route step carries operationTypeCode (the terminal's OperationType
        role, e.g. 'MachiningIn' / 'MachiningOut' / 'AssemblyOut'), in arrival order.
-       When operationTypeCode is None every open LOT at the location is returned with
-       its resolved next-step role (NextOperationTypeCode / NextSequenceNumber).
-       Returns list[dict]."""
+       When operationTypeCode is empty/None every open LOT at the location is returned
+       with its resolved next-step role (NextOperationTypeCode / NextSequenceNumber) so
+       the caller can slice by role in a transform.
+
+       operationTypeCode is the LAST arg so existing positional bindings
+       (locationId, includeDescendants, refreshToken) keep working; pass a 4th arg to
+       filter by role. Returns list[dict]."""
+    otc = _u(operationTypeCode)
+    otc = otc if otc else None   # "" (from an expression binding) -> None -> all roles
     BlueRidge.Common.Util.log("locationId=%s includeDescendants=%s operationTypeCode=%s"
-                              % (locationId, includeDescendants, operationTypeCode))
+                              % (locationId, includeDescendants, otc))
     return BlueRidge.Common.Db.execList(
         "lots/Lot_GetWipQueueByLocation",
-        {"locationId": _u(locationId), "operationTypeCode": _u(operationTypeCode),
+        {"locationId": _u(locationId), "operationTypeCode": otc,
          "includeDescendants": bool(includeDescendants)},
     )
 

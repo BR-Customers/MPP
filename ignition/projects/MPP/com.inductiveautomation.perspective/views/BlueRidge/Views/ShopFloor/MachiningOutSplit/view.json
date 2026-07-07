@@ -34,11 +34,11 @@
     "custom.parentLot": {
       "binding": {
         "config": {
-          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, false, {view.custom.refreshToken}), \"\")"
+          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, false, {view.custom.refreshToken}, \"MachiningOut\"), \"\")"
         },
         "transforms": [
           {
-            "code": "\tmachined = [r for r in (value or []) if not r.get(\"HasRenameBom\")]\n\tr = machined[-1] if machined else {}\n\treturn {\"Id\": r.get(\"Id\"), \"LotName\": r.get(\"LotName\") or \"\", \"PieceCount\": r.get(\"PieceCount\") or 0, \"ItemPartNumber\": r.get(\"ItemPartNumber\") or \"\"}",
+            "code": "\t# Terminal-mint: the source is the casting whose next route step is MachiningOut (the read is role-filtered).\n\tsources = value or []\n\tr = sources[-1] if sources else {}\n\treturn {\"Id\": r.get(\"Id\"), \"LotName\": r.get(\"LotName\") or \"\", \"PieceCount\": r.get(\"PieceCount\") or 0, \"ItemPartNumber\": r.get(\"ItemPartNumber\") or \"\"}",
             "type": "script"
           }
         ],
@@ -606,7 +606,7 @@
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\tparent = self.view.custom.parentLot\n\totId = self.view.custom.opTemplateId\n\tcellId = self.session.custom.cell.locationId\n\td = self.view.custom.draft\n\tif cellId is None or not parent or parent.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Select a cell that has a machined LOT.\"}, \"Machining OUT\")\n\t\treturn\n\tif otId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"MachiningOut operation template not found.\"}, \"Machining OUT\")\n\t\treturn\n\tq = BlueRidge.Common.Util.toIntOrNone(d.get(\"qty\"))\n\tdest = d.get(\"dest\")\n\tif q is None or q <= 0 or dest is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a positive piece count and a destination for the sub-LOT.\"}, \"Machining OUT\")\n\t\treturn\n\tchildren = [{\"pieceCount\": q, \"destinationLocationId\": dest}]\n\tresult = BlueRidge.Workorder.Machining.recordSplit(parent.get(\"Id\"), otId, system.util.jsonEncode(children), self.session.custom.appUserId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining OUT - Extract\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"qty\": \"\", \"dest\": None}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                        "script": "\t# Terminal-mint: consume the source casting to MINT a machined SubAssembly LOT\n\t# (line-resident, no destination). Produced part derived via BOM by the proc.\n\tsource = self.view.custom.parentLot\n\totId = self.view.custom.opTemplateId\n\tcellId = self.session.custom.cell.locationId\n\td = self.view.custom.draft\n\tif cellId is None or not source or source.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Select a cell that has a casting ready for Machining OUT.\"}, \"Machining OUT\")\n\t\treturn\n\tif otId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"MachiningOut operation template not found.\"}, \"Machining OUT\")\n\t\treturn\n\tq = BlueRidge.Common.Util.toIntOrNone(d.get(\"qty\"))\n\tif q is None or q <= 0:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a positive quantity to mint.\"}, \"Machining OUT\")\n\t\treturn\n\tresult = BlueRidge.Workorder.Machining.mint(source.get(\"Id\"), otId, q, None, self.session.custom.appUserId, cellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining OUT - Mint\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"qty\": \"\", \"dest\": None}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
                       },
                       "scope": "G",
                       "type": "script"
