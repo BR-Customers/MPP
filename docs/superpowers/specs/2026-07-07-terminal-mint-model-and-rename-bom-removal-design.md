@@ -113,10 +113,19 @@ The audit confirmed the built flow diverges from this model in ways worth statin
 
 ## 4. Schema & config changes
 
-1. **`OperationType` role-kind (recommended, confirm).** Add a role-kind classification to `Parts.OperationType` distinguishing **Advance** vs **Mint** (and optionally **Origin-mint**). House convention (code-table-backed enums) suggests a small `Parts.OperationRoleKind` code table + FK, seeded Advance/Mint. This is **not required** for the core queue rule (a terminal matches its own role regardless), but it enables:
-   - **Route validation** — a route must terminate at a mint step (except top-level FG which terminates by shipping); a mint step's produced part must have a satisfiable BOM.
-   - **Screen behavior selection** and **`ItemType` → role gating** (see 2).
-   Alternative: leave mint-ness implicit in the terminal screen type and skip the column. **Decision needed.**
+1. **`OperationType` role-kind — ADOPTED (Jacques, 2026-07-07).** Add a role-kind classification to `Parts.OperationType` distinguishing **Advance** vs **Mint**, via a small code-table-backed FK per house convention: new `Parts.OperationRoleKind` (seed `Advance`, `Mint`) + `Parts.OperationType.OperationRoleKindId BIGINT NOT NULL FK`. Seed mapping:
+
+   | OperationType | RoleKind |
+   |---|---|
+   | `DieCast` | Mint *(origin-mint; die-cast build out of scope — §8/Q4)* |
+   | `TrimIn`, `TrimOut` | Advance |
+   | `MachiningIn` | Advance |
+   | `MachiningOut` | **Mint** |
+   | `AssemblyIn` | Advance |
+   | `AssemblyOut` | **Mint** |
+   | `CNC` | Advance |
+
+   Origin-mint (`DieCast`) vs consume-mint (`MachiningOut`/`AssemblyOut`) is a *behavioral* distinction owned by the screen, not a third code value — two kinds suffice. The role-kind enables **route validation** (a route must terminate at a mint step except a top-level FG; a mint step's produced part must have a satisfiable BOM) and the `ItemType`→role gate (§4.2).
 2. **`ItemType` → role gating (design hook, may be separate task).** With route as source of truth, the existing-but-unbuilt `ItemType`→allowed-role constraint gains teeth: a `FinishedGood`'s route cannot start with `DieCast`; a `Component` casting cannot be authored as the *output* of `AssemblyOut`; etc. Enforced in SQL (per the no-business-logic-in-Python rule). Scope: hook defined here; enforcement may land as a dependent task.
 3. **BOM authoring consequence (config, not schema).** On lines without a Machining OUT terminal, the FG's BOM lists the **casting** (not a machined SubAssembly) as its component. On lines with one, the SubAssembly's BOM lists the casting and the FG's BOM lists the SubAssembly. No schema change — a config/seed authoring rule.
 4. **No new part type.** The `Casting` type floated in discussion is **not** added — route + BOM carry the distinction.
@@ -137,7 +146,7 @@ Audited exhaustively across SQL, Ignition, and docs. Action legend: **DELETE** (
 | B4 | `sql/migrations/repeatable/R__Workorder_Assembly_CompleteTray.sql` | **VERIFY / minor** | Already mints FG + `Consumption` genealogy (`RelationshipTypeId=3`). Confirm it aligns with the ranked-FG default and the uniform mint model. |
 | B5 | *new* `Parts/*` read proc — ranked eligible-FG list | **ADD** | Returns eligible FGs at the cell + `IsRecommended` per the ranked-default rule (decision 6). Backs the Assembly OUT dropdown. |
 | B6 | *new* `Parts/*` read — "next unsatisfied route step" | **ADD** | Resolves a LOT's lowest-`SequenceNumber` route step with no matching `ProductionEvent`; feeds B1 and any destination logic. |
-| B7 | `R__Workorder_MachiningOut_AutoComplete.sql` · `sql/migrations/versioned/0019_location_coupled_downstream_cell.sql` (`CoupledDownstreamCellLocationId`) · LogEventType `44` (MachiningOutAutoMoved) in `0027_arc2_phase5_machining.sql` | **DECISION** (§7 Q2) | Cell-resident auto-couple path. Retire (delete proc + column + seed + tests) or keep as documented exception. |
+| B7 | `R__Workorder_MachiningOut_AutoComplete.sql` · `sql/migrations/versioned/0019_location_coupled_downstream_cell.sql` (`CoupledDownstreamCellLocationId`) · LogEventType `44` (MachiningOutAutoMoved) in `0027_arc2_phase5_machining.sql` · tests `0027…/040,050,060` | **DELETE** (Jacques: retire) | Retire the cell-resident auto-couple path entirely: drop the `MachiningOut_AutoComplete` proc, the `CoupledDownstreamCellLocationId` column (new versioned migration to drop it; leave 0019 immutable), the `MachiningOutAutoMoved` audit event, and the coupled/uncoupled AutoComplete tests. Its only purpose was the cell→cell auto-move, which §3.8 (line-resident mints) eliminates. Any future PLC-triggered *mint* is a separate concern, not this auto-move. |
 | B8 | `R__Lots_Lot_Split.sql` + `Split` (`RelationshipTypeId=1`) | **REWORK scope** | Retain the proc, but remove its **standard-path** use (B3 stops emitting `Split`). Document as exception-only (quality/holds/logistics). Audit every `LotGenealogy` insert for correct `RelationshipTypeId`. |
 | B9 | `sql/scratch/seed_demo.sql` | **REWORK** | Rename BOMs (step 3, `6MA-M←6MA-C`, `5G0-M←5G0-C`) **kept** but reinterpreted as SubAssembly production BOMs; rebuild the machining thread to mint at OUT via B3 (authentic casting→machined `Consumption`), removing the external `Lot_Create` of the machined LOT and the "not genealogy-linked" gap. Update comments (rename-hint lines ~150–156). |
 | B10 | `sql/seeds/026_seed_machining_operation_templates.sql` | **REWRITE** | Comment still cites `MachiningIn_PickAndConsume`; repoint to `MachiningIn_RecordPick`. Confirm `RequiresSubLotSplit` seeding fits the new mint model (§4). |
@@ -174,7 +183,7 @@ Audited exhaustively across SQL, Ignition, and docs. Action legend: **DELETE** (
 
 ### 5.4 Scope note on the inventory
 
-Items marked **VERIFY** are expected no-change confirmations (Machining IN, Assembly serialized/MIP, Container/Consumption procs, Trim OUT destination) — they are in the list so the plan proves them, not to imply edits. Items marked **DECISION** (B7 and its UI/doc echoes) are gated entirely on §7 Q2 (coupling retirement). The three **REWORK** cores are: **B1** (route-driven queue), **B3/U1/U2** (Machining OUT split→mint), and **U4/B5** (ranked FG default).
+Items marked **VERIFY** are expected no-change confirmations (Machining IN, Assembly serialized/MIP, Container/Consumption procs, Trim OUT destination) — they are in the list so the plan proves them, not to imply edits. B7 (coupling) is now a firm **DELETE** per the resolved decisions (§7). The three **REWORK** cores are: **B1** (route-driven queue), **B3/U1/U2** (Machining OUT split→mint), and **U4/B5** (ranked FG default). `U2::autoComplete()` and the `MachiningOut_AutoComplete` NQ are deleted with B7.
 
 ---
 
@@ -194,13 +203,16 @@ Items marked **VERIFY** are expected no-change confirmations (Machining IN, Asse
 
 ---
 
-## 7. Open questions for Jacques
+## 7. Decisions (resolved 2026-07-07) + remaining question
 
-1. **`OperationType` role-kind column** (§4.1) — add the Advance/Mint classification (enables route validation + `ItemType` gating), or leave mint-ness implicit in the screen type? Recommendation: add it (small, code-table-backed).
-2. **`CoupledDownstreamCellLocationId` + cell-resident auto-couple path** (§5) — retire as superseded by the line-resident route model, or reconcile and surface it? Recommendation: retire, consistent with the 2026-07-06 note; confirm no PLC line still depends on the cell→cell auto-move.
-3. **`Split` residual check** (§3.7) — confirm there is no *standard* M&A step that still needs same-part `Split` after the rewrite (holds/quality are the intended exception homes).
-4. **Origin-mint (Die Cast) scope** — this spec treats Die Cast as upstream/out-of-scope for the rewrite. Confirm the casting-birth path needs no change here.
-5. **`ItemType` → role gating** — land enforcement in this effort, or as a dependent follow-up task?
+**Resolved by Jacques:**
+
+1. **`OperationType` role-kind** — **ADD** the Advance/Mint classification (§4.1).
+2. **`CoupledDownstreamCellLocationId` + cell-resident auto-couple** — **RETIRE** entirely (§5 B7).
+3. **`Split` residual check** — **CONFIRMED**: no *standard* M&A step needs same-part `Split`; `Lot_Split` stays as an exception-only path (holds/quality/logistics) (§3.7).
+4. **Origin-mint (Die Cast) scope** — **CONFIRMED** out of scope; the casting-birth path is unchanged here (§8).
+
+**Still open — Q5, `ItemType` → role gating (scope):** Do we build the *guard-rail* that stops an engineer from authoring an illegal route — enforced in this effort, or deferred to a follow-up? See §4.2 for what the gate is; a recommended split (minimal structural validation now, full `ItemType`×role matrix later) is pending Jacques's call.
 
 ---
 
