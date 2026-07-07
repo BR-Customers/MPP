@@ -82,8 +82,14 @@ def findByCode(terminals, code):
 def filterForSelector(rows, search):
     """Case-insensitive contains-filter over TerminalCode / TerminalName /
        ZoneName for the Terminal Selector table search bar (Jacques 2026-07-06).
-       Always returns a list; empty/blank search returns rows unchanged."""
-    rows = BlueRidge.Common.Util.extractQualifiedValues(rows) or []
+       Always returns a list; empty/blank search returns rows unchanged.
+
+       rows arrives from a runScript EXPRESSION ({view.custom.terminals}), so
+       each element is a Perspective ImmutableMap -- .get() AttributeErrors
+       there, and extractQualifiedValues does not unwrap those types. JSON
+       round-trip to plain Python dicts before touching fields."""
+    rows = system.util.jsonDecode(
+        BlueRidge.Common.Util.convertWrapperObjectToJson(rows)) or []
     s = ("%s" % (BlueRidge.Common.Util.extractQualifiedValues(search) or "")).strip().upper()
     if not s:
         return rows
