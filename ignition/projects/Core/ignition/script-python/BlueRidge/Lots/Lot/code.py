@@ -148,6 +148,27 @@ def getHistory(lotId):
     return BlueRidge.Common.Db.execList("lots/Lot_GetAttributeHistory", {"lotId": lotId})
 
 
+def getLatestForToolCavityOrEmpty(toolId, toolCavityId, _refreshToken=None):
+    """The cavity-scoped reject target (Jacques 2026-07-06): the newest open
+       LOT cast on (tool, cavity). Always returns the fully-shaped dict
+       {Id, LotName, PieceCount, InventoryAvailable, CavityNumber} with None/0
+       values when nothing resolves (pre-declared-bound-props rule).
+       _refreshToken is ignored - runScript bindings pass a bumped token to
+       force a re-read after a create/reject."""
+    toolId = _u(toolId)
+    toolCavityId = _u(toolCavityId)
+    BlueRidge.Common.Util.log("toolId=%s toolCavityId=%s" % (toolId, toolCavityId))
+    empty = {"Id": None, "LotName": "", "PieceCount": 0,
+             "InventoryAvailable": 0, "CavityNumber": None}
+    if not toolId or not toolCavityId:
+        return empty
+    row = BlueRidge.Common.Db.execOne(
+        "lots/Lot_GetLatestForToolCavity",
+        {"toolId": toolId, "toolCavityId": toolCavityId},
+    )
+    return row if row else empty
+
+
 def getScrapSummaryOrEmpty(lotId):
     """LOT Detail Total Scrap card (Jacques 2026-07-06). Always returns the
        fully-shaped dict {RejectedTotal, CounterScrap, TotalScrap} (zeros when

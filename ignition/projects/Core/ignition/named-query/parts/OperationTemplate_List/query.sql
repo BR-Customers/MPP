@@ -1,3 +1,4 @@
 EXEC Parts.OperationTemplate_List
-    @OperationTypeId = :operationTypeId,
+    @OperationTypeId     = :operationTypeId,
+    @OperationCategoryId = :operationCategoryId,
     @ActiveOnly     = :activeOnly

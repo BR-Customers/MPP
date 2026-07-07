@@ -1080,18 +1080,26 @@
                   "name": "RejectEmbed"
                 },
                 "propConfig": {
-                  "props.params.lotId": {
+                  "props.params.refreshToken": {
                     "binding": {
                       "config": {
-                        "path": "view.custom.activeLotId"
+                        "path": "view.custom.refreshToken"
                       },
                       "type": "property"
                     }
                   },
-                  "props.params.lotLabel": {
+                  "props.params.toolCavityId": {
                     "binding": {
                       "config": {
-                        "path": "view.custom.activeLotName"
+                        "path": "view.custom.tallyCavityId"
+                      },
+                      "type": "property"
+                    }
+                  },
+                  "props.params.toolId": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.activeTool.ToolId"
                       },
                       "type": "property"
                     }

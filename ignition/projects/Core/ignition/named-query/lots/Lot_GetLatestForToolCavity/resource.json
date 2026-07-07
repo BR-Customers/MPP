@@ -27,20 +27,11 @@
     ],
     "lastModification": {
       "actor": "claude",
-      "timestamp": "2026-06-03T12:00:00Z"
+      "timestamp": "2026-07-07T14:00:00Z"
     },
     "parameters": [
-      {
-        "type": "Parameter",
-        "identifier": "operationTypeId",
-        "sqlType": 3
-      },
-      { "type": "Parameter", "identifier": "operationCategoryId", "sqlType": 3 },
-      {
-        "type": "Parameter",
-        "identifier": "activeOnly",
-        "sqlType": 6
-      }
+      { "type": "Parameter", "identifier": "toolId", "sqlType": 3 },
+      { "type": "Parameter", "identifier": "toolCavityId", "sqlType": 3 }
     ]
   }
 }

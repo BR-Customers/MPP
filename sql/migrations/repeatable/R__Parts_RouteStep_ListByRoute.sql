@@ -33,6 +33,8 @@
 --                      OperationAreaLocationId + OperationVersionNumber
 --                      projections to drive the Item Master Routes tab.
 --   2026-07-02 - 4.0 - Area -> OperationType + Category (operation-type restructure)
+--   2026-07-07 - 4.1 - OperationCategoryId projected (Routes step picker groups
+--                      by CATEGORY per Jacques 2026-07-06)
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.RouteStep_ListByRoute
     @RouteTemplateId BIGINT
@@ -51,6 +53,7 @@ BEGIN
         ot.OperationTypeId,
         typ.Code         AS OperationTypeCode,
         typ.Name         AS OperationTypeName,
+        typ.OperationCategoryId,
         cat.Name         AS OperationCategoryName,
         ISNULL((
             SELECT STRING_AGG(dcf.Code, N', ') WITHIN GROUP (ORDER BY dcf.Code)
