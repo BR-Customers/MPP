@@ -91,3 +91,27 @@ In the **LOT Detail history**, the **date should be rounded** (over-precise time
 
 ## Trim checkout — move the LOT to the production line, not the terminal
 When **checking out a LOT from Trim**, it should **move the LOT to the production line** (WorkCenter), **not to the terminal**. (Line-resident: `CurrentLocationId` = the production line.)
+
+## Routes tab — restructure "Area" to Operation Type
+On the **Routes tab**, the **"Area"** concept/column needs to be **restructured to Operation Type** (route steps classified by operation type/role, per the OperationType restructure — not by Area). *(Overlaps the already-in-progress routes op-template dropdown task — see tasks file.)*
+
+## Routes — "New Version" doesn't switch to the route editor
+On the Routes tab, hitting **New Version** does **not switch to the route editor** (should open/enter the editor for the new draft version).
+
+## Routes editor — Operation Type dropdown options box too skinny
+In the **Routes editor**, the **Operation Type** dropdown's **options box is too skinny** (widen it so options are readable).
+
+## Routes editor — dropdown should be Operation *Category*, not Operation Type
+The **Operation Type** dropdown on Routes should instead be **Operation Category** (route steps selected by the coarser OperationCategory grouping, not the OperationType role). *(Supersedes the "Area → Operation Type" note above — the target grouping is Operation Category.)*
+
+## Die Cast — piece count STILL does not prepopulate ⚠️ (regression / not working)
+**Piece count still does not prepopulate** on the Die Cast screen. *(A prepopulate-from-part fix was marked done in the tasks file (Piece Count ← `Item.MaxParts`) — but it's still not working in the meeting build. Re-check: is `MaxParts` set on the test part? is the fix deployed/scanned? does it only fill EMPTY fields?)*
+
+## Die Cast — reject entry should go against the CAVITY, not the LOT (Jacques decision)
+**Decision (Jacques):** reject entry should record **against the selected cavity, not the LOT**. *(Resolves the earlier open question — the current behavior charges rejects to the active LOT via its `ToolCavityId`; change it to target the operator-selected cavity.)*
+
+## Die Cast — verify the cavity captured at LOT creation is correct
+Check that the **cavity a LOT is created with is captured correctly** (verify `Lot.ToolCavityId` / cavity attribution is set right at creation).
+
+## Die Cast — no scroll bar on the shift-counts card
+The **shift counts card** on Die Cast **should not have a scroll bar** (size it to fit / `overflow:hidden`).

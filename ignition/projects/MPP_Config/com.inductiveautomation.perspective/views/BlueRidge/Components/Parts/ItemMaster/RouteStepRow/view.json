@@ -1,0 +1,534 @@
+{
+  "custom": {
+    "opTemplateOptions": []
+  },
+  "params": {
+    "mode": "published",
+    "opTypes": [],
+    "rowIndex": 0,
+    "step": {
+      "DataCollectionSummary": "",
+      "Description": null,
+      "Id": null,
+      "IsRequired": true,
+      "OperationCode": "",
+      "OperationName": "",
+      "OperationTemplateId": null,
+      "OperationTypeCode": "",
+      "OperationTypeId": null,
+      "OperationTypeName": "",
+      "OperationVersionNumber": null,
+      "SequenceNumber": 0
+    },
+    "stepCount": 0
+  },
+  "propConfig": {
+    "custom.opTemplateOptions": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.RouteTemplate.getOperationTemplatesByType\", 0, {view.params.step.OperationTypeId})"
+        },
+        "transforms": [
+          {
+            "code": "\tout = []\n\tfor ot in (value or []):\n\t\tot = ot or {}\n\t\tcode = ot.get('Code') or ''\n\t\tvnum = ot.get('VersionNumber', 0)\n\t\tname = ot.get('Name') or ''\n\t\tout.append({'label': '%s v%s - %s' % (code, vnum, name), 'value': ot.get('Id')})\n\treturn out",
+            "type": "script"
+          }
+        ],
+        "type": "expr"
+      }
+    },
+    "params.mode": {
+      "paramDirection": "input"
+    },
+    "params.opTypes": {
+      "paramDirection": "input"
+    },
+    "params.rowIndex": {
+      "paramDirection": "input"
+    },
+    "params.step": {
+      "paramDirection": "input"
+    },
+    "params.stepCount": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 36,
+      "width": 1200
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "meta": {
+          "name": "ColIndex"
+        },
+        "position": {
+          "basis": "36px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "expression": "toStr({view.params.rowIndex} + 1)"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "12px",
+            "textAlign": "right"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "children": [
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(\"routeStepMoveUp\", payload={\"rowIndex\": self.view.params.rowIndex}, scope=\"page\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "UpArrow"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.params.rowIndex} > 0"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-sm",
+                "height": "30px",
+                "padding": "2px 6px"
+              },
+              "text": "▲"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.sendMessage(\"routeStepMoveDown\", payload={\"rowIndex\": self.view.params.rowIndex}, scope=\"page\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "DownArrow"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.params.rowIndex} < {view.params.stepCount} - 1"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-sm",
+                "height": "30px",
+                "padding": "2px 6px"
+              },
+              "text": "▼"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "ColArrows"
+        },
+        "position": {
+          "basis": "72px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.mode} = \"draft\""
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "gap": "2px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"routeStepTypeChanged\", payload={\"rowIndex\": self.view.params.rowIndex, \"newTypeId\": self.props.value}, scope=\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "OpTypePicker"
+        },
+        "position": {
+          "basis": "260px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.mode} = \"draft\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.options": {
+            "binding": {
+              "config": {
+                "path": "view.params.opTypes"
+              },
+              "type": "property"
+            }
+          },
+          "props.value": {
+            "binding": {
+              "config": {
+                "path": "view.params.step.OperationTypeId"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "noSelectionText": "Pick type...",
+          "style": {
+            "classes": "select",
+            "height": "30px"
+          }
+        },
+        "type": "ia.input.dropdown"
+      },
+      {
+        "meta": {
+          "name": "OpTypeDisplay"
+        },
+        "position": {
+          "basis": "260px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.mode} != \"draft\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.step.OperationTypeName"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontSize": "12px"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"routeStepTemplateChanged\", payload={\"rowIndex\": self.view.params.rowIndex, \"newTemplateId\": self.props.value}, scope=\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "OpTemplatePicker"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.mode} = \"draft\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.options": {
+            "binding": {
+              "config": {
+                "path": "view.custom.opTemplateOptions"
+              },
+              "type": "property"
+            }
+          },
+          "props.value": {
+            "binding": {
+              "config": {
+                "path": "view.params.step.OperationTemplateId"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "filterable": true,
+          "noSelectionText": "Pick template...",
+          "style": {
+            "classes": "select",
+            "height": "30px"
+          }
+        },
+        "type": "ia.input.dropdown"
+      },
+      {
+        "meta": {
+          "name": "OpTemplateDisplay"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.mode} != \"draft\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.step.OperationCode} + if(isNull({view.params.step.OperationVersionNumber}), \"\", \" v\" + toStr({view.params.step.OperationVersionNumber})) + \" - \" + {view.params.step.OperationName}"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontSize": "12px"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"routeStepReqChanged\", payload={\"rowIndex\": self.view.params.rowIndex, \"isRequired\": bool(self.props.selected)}, scope=\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "ReqCheckbox"
+        },
+        "position": {
+          "basis": "70px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.mode} = \"draft\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.selected": {
+            "binding": {
+              "config": {
+                "path": "view.params.step.IsRequired"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "fontSize": "11px"
+          },
+          "text": "Req"
+        },
+        "type": "ia.input.checkbox"
+      },
+      {
+        "meta": {
+          "name": "ReqDisplay"
+        },
+        "position": {
+          "basis": "70px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.mode} != \"draft\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "expression": "if({view.params.step.IsRequired}, \"Req\", \"\")"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "11px",
+            "textAlign": "center"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": {
+          "name": "DataCollectionLabel"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.step.DataCollectionSummary"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "color": "var(--mpp-text-muted)",
+            "fontSize": "11px",
+            "overflow": "hidden",
+            "textOverflow": "ellipsis",
+            "whiteSpace": "nowrap"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"routeStepRemove\", payload={\"rowIndex\": self.view.params.rowIndex}, scope=\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "RemoveBtn"
+        },
+        "position": {
+          "basis": "40px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.mode} = \"draft\""
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "btn btn-sm",
+            "height": "30px",
+            "padding": "2px 6px"
+          },
+          "text": "×"
+        },
+        "type": "ia.input.button"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "gap": "6px",
+        "height": "100%",
+        "overflow": "hidden",
+        "padding": "2px 10px"
+      }
+    },
+    "type": "ia.container.flex"
+  }
+}
