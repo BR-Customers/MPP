@@ -125,24 +125,26 @@ git commit -m "feat(seed): capture JP 4-part validation dataset (spec 5.5 data p
 - Test: `sql/tests/0009_Parts_Process/006_OperationRoleKind_seed.sql`
 
 **Interfaces:**
-- Produces: `Parts.OperationRoleKind (Id, Code, Name, …)` seeded `Advance`/`Mint`; `Parts.OperationType.OperationRoleKindId BIGINT NOT NULL FK`, backfilled per the §4.1 seed mapping.
+- Produces: `Parts.OperationRoleKind (Id, Code, Name, …)` seeded `Advance`/`OriginMint`/`ConsumeMint`; `Parts.OperationType.OperationRoleKindId BIGINT NOT NULL FK`, backfilled per the §4.1 seed mapping.
 
 - [ ] **Step 1: Write the failing test**
 
 Create `sql/tests/0009_Parts_Process/006_OperationRoleKind_seed.sql` (follow the sibling `005_OperationType_seed.sql` shape — `SET NOCOUNT ON`, `RAISERROR` on mismatch):
 
 ```sql
--- Asserts the role-kind table + column seed/backfill.
+-- Asserts the role-kind table + column seed/backfill (3 kinds per spec §4.1).
 SET NOCOUNT ON;
-IF (SELECT COUNT(*) FROM Parts.OperationRoleKind) <> 2 RAISERROR('Expected 2 OperationRoleKind rows.',16,1);
-IF NOT EXISTS (SELECT 1 FROM Parts.OperationRoleKind WHERE Code=N'Advance') RAISERROR('Missing Advance kind.',16,1);
-IF NOT EXISTS (SELECT 1 FROM Parts.OperationRoleKind WHERE Code=N'Mint') RAISERROR('Missing Mint kind.',16,1);
+IF (SELECT COUNT(*) FROM Parts.OperationRoleKind) <> 3 RAISERROR('Expected 3 OperationRoleKind rows.',16,1);
+IF NOT EXISTS (SELECT 1 FROM Parts.OperationRoleKind WHERE Code=N'Advance')     RAISERROR('Missing Advance kind.',16,1);
+IF NOT EXISTS (SELECT 1 FROM Parts.OperationRoleKind WHERE Code=N'OriginMint')  RAISERROR('Missing OriginMint kind.',16,1);
+IF NOT EXISTS (SELECT 1 FROM Parts.OperationRoleKind WHERE Code=N'ConsumeMint') RAISERROR('Missing ConsumeMint kind.',16,1);
 -- Every OperationType mapped, NOT NULL:
 IF EXISTS (SELECT 1 FROM Parts.OperationType WHERE OperationRoleKindId IS NULL) RAISERROR('OperationType.OperationRoleKindId has NULLs.',16,1);
--- Spot-check the mapping (MachiningOut+AssemblyOut+DieCast=Mint; MachiningIn=Advance):
-IF (SELECT rk.Code FROM Parts.OperationType t JOIN Parts.OperationRoleKind rk ON rk.Id=t.OperationRoleKindId WHERE t.Code=N'MachiningOut') <> N'Mint' RAISERROR('MachiningOut must be Mint.',16,1);
-IF (SELECT rk.Code FROM Parts.OperationType t JOIN Parts.OperationRoleKind rk ON rk.Id=t.OperationRoleKindId WHERE t.Code=N'MachiningIn') <> N'Advance' RAISERROR('MachiningIn must be Advance.',16,1);
-IF (SELECT rk.Code FROM Parts.OperationType t JOIN Parts.OperationRoleKind rk ON rk.Id=t.OperationRoleKindId WHERE t.Code=N'AssemblyOut') <> N'Mint' RAISERROR('AssemblyOut must be Mint.',16,1);
+-- Spot-check the mapping:
+IF (SELECT rk.Code FROM Parts.OperationType t JOIN Parts.OperationRoleKind rk ON rk.Id=t.OperationRoleKindId WHERE t.Code=N'DieCast')     <> N'OriginMint'  RAISERROR('DieCast must be OriginMint.',16,1);
+IF (SELECT rk.Code FROM Parts.OperationType t JOIN Parts.OperationRoleKind rk ON rk.Id=t.OperationRoleKindId WHERE t.Code=N'MachiningIn') <> N'Advance'     RAISERROR('MachiningIn must be Advance.',16,1);
+IF (SELECT rk.Code FROM Parts.OperationType t JOIN Parts.OperationRoleKind rk ON rk.Id=t.OperationRoleKindId WHERE t.Code=N'MachiningOut')<> N'ConsumeMint' RAISERROR('MachiningOut must be ConsumeMint.',16,1);
+IF (SELECT rk.Code FROM Parts.OperationType t JOIN Parts.OperationRoleKind rk ON rk.Id=t.OperationRoleKindId WHERE t.Code=N'AssemblyOut') <> N'ConsumeMint' RAISERROR('AssemblyOut must be ConsumeMint.',16,1);
 PRINT 'OperationRoleKind seed OK.';
 ```
 
@@ -169,16 +171,18 @@ CREATE TABLE Parts.OperationRoleKind (
 );
 GO
 MERGE Parts.OperationRoleKind AS t
-USING (VALUES (N'Advance',N'Advance'),(N'Mint',N'Mint')) AS s(Code,Name) ON t.Code=s.Code
+USING (VALUES (N'Advance',N'Advance'),(N'OriginMint',N'Origin Mint'),(N'ConsumeMint',N'Consume Mint')) AS s(Code,Name) ON t.Code=s.Code
 WHEN NOT MATCHED THEN INSERT (Code,Name) VALUES (s.Code,s.Name);
 GO
 IF COL_LENGTH(N'Parts.OperationType', N'OperationRoleKindId') IS NULL
     ALTER TABLE Parts.OperationType ADD OperationRoleKindId BIGINT NULL
         CONSTRAINT FK_OperationType_RoleKind REFERENCES Parts.OperationRoleKind(Id);
 GO
--- Backfill per spec §4.1 mapping (Mint: DieCast, MachiningOut, AssemblyOut; else Advance).
+-- Backfill per spec §4.1 mapping: DieCast=OriginMint; MachiningOut/AssemblyOut=ConsumeMint; else Advance.
 UPDATE t SET OperationRoleKindId = (SELECT Id FROM Parts.OperationRoleKind WHERE Code =
-    CASE WHEN t.Code IN (N'DieCast',N'MachiningOut',N'AssemblyOut') THEN N'Mint' ELSE N'Advance' END)
+    CASE WHEN t.Code = N'DieCast' THEN N'OriginMint'
+         WHEN t.Code IN (N'MachiningOut',N'AssemblyOut') THEN N'ConsumeMint'
+         ELSE N'Advance' END)
 FROM Parts.OperationType t WHERE t.OperationRoleKindId IS NULL;
 GO
 IF EXISTS (SELECT 1 FROM Parts.OperationType WHERE OperationRoleKindId IS NULL)
@@ -188,7 +192,7 @@ ALTER TABLE Parts.OperationType ALTER COLUMN OperationRoleKindId BIGINT NOT NULL
 GO
 IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId=N'0034_operation_role_kind')
     INSERT INTO dbo.SchemaVersion (MigrationId, Description)
-    VALUES (N'0034_operation_role_kind', N'Add Parts.OperationRoleKind (Advance/Mint) + OperationType.OperationRoleKindId (NOT NULL, backfilled).');
+    VALUES (N'0034_operation_role_kind', N'Add Parts.OperationRoleKind (Advance/OriginMint/ConsumeMint) + OperationType.OperationRoleKindId (NOT NULL, backfilled).');
 GO
 PRINT 'Migration 0034 (operation_role_kind) applied.';
 GO
@@ -364,8 +368,12 @@ BEGIN
     LastMove AS (
         SELECT m.LotId, MAX(m.MovedAt) AS LastMovementAt FROM Lots.LotMovement m GROUP BY m.LotId
     ),
-    -- Each open LOT at the location joined to the UNSATISFIED steps of its active
+    -- Each open LOT at the location joined to the PENDING steps of its active
     -- (published, non-deprecated) route; rank by SequenceNumber to find the next one.
+    -- "Pending" depends on the step's role-kind (spec §3.2/§4.1):
+    --   Advance     -> pending until a matching ProductionEvent exists
+    --   OriginMint  -> never pending (the LOT exists => it was minted there)
+    --   ConsumeMint -> always pending while the LOT is open (terminal; leaves by closing)
     NextStep AS (
         SELECT l.Id AS LotId, rs.SequenceNumber, rs.OperationTemplateId,
                ROW_NUMBER() OVER (PARTITION BY l.Id ORDER BY rs.SequenceNumber ASC) AS rn
@@ -374,13 +382,19 @@ BEGIN
         INNER JOIN Parts.RouteTemplate rt ON rt.ItemId = l.ItemId
              AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL
         INNER JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
+        INNER JOIN Parts.OperationTemplate ot2 ON ot2.Id = rs.OperationTemplateId
+        INNER JOIN Parts.OperationType oty2    ON oty2.Id = ot2.OperationTypeId
+        INNER JOIN Parts.OperationRoleKind rk  ON rk.Id  = oty2.OperationRoleKindId
         WHERE (
                   (@IncludeDescendants = 1 AND l.CurrentLocationId IN (SELECT Id FROM Descendants))
                OR (@IncludeDescendants = 0 AND l.CurrentLocationId = @LocationId)
               )
-          AND NOT EXISTS (
-                  SELECT 1 FROM Workorder.ProductionEvent pe
-                  WHERE pe.LotId = l.Id AND pe.OperationTemplateId = rs.OperationTemplateId
+          AND (
+                  rk.Code = N'ConsumeMint'                       -- terminal: pending while open
+               OR (rk.Code = N'Advance' AND NOT EXISTS (
+                      SELECT 1 FROM Workorder.ProductionEvent pe
+                      WHERE pe.LotId = l.Id AND pe.OperationTemplateId = rs.OperationTemplateId))
+                  -- OriginMint: never pending (omitted)
               )
     )
     SELECT
@@ -405,7 +419,7 @@ END;
 GO
 ```
 
-> Design notes for the implementer: a LOT with no active published route produces no `NextStep` rows → it silently drops out of every terminal queue (correct — an unconfigured part isn't workable). If a part legitimately has no route yet, that surfaces as "not in any queue," which the route-legality work (Plan 2) will prevent at authoring time.
+> Design notes for the implementer: a LOT with no active published route produces no `NextStep` rows → it silently drops out of every terminal queue (correct — an unconfigured part isn't workable). A `ConsumeMint` terminal step keeps the LOT in that terminal's queue across repeated partial mints until it is fully consumed and `Closed` (then excluded). If a part legitimately has no route yet, "not in any queue" is prevented at authoring time by Plan 2's route-legality validation.
 
 - [ ] **Step 4: Run the test to verify it passes**
 

@@ -58,7 +58,13 @@ Each terminal has an `OperationType` **role**. The FIFO at a terminal of role **
 
 > the line-resident, open LOTs whose **lowest-`SequenceNumber` unsatisfied route step** has role **R**.
 
-A route step is "satisfied" when a `Workorder.ProductionEvent` exists for the LOT against the step's `OperationTemplateId` (both already exist: `ProductionEvent` FKs `OperationTemplateId`; steps carry `SequenceNumber`). So the queue query becomes: *walk the LOT's active route in sequence, find the first step with no matching `ProductionEvent`; if that step's role = my terminal's role, the LOT is in my queue.*
+Whether a step is "satisfied" (so the walk moves past it) depends on its **role-kind** (§4.1):
+
+- **`Advance`** step → satisfied when a `Workorder.ProductionEvent` exists for the LOT against the step's `OperationTemplateId`.
+- **`OriginMint`** step (Die Cast) → *always* satisfied for an existing LOT (the LOT exists because it was minted there).
+- **`ConsumeMint`** step (Machining/Assembly OUT) → *never* satisfied while the LOT is open; it is the terminal step, and the LOT stays in that terminal's queue until it is fully consumed → `Closed` (and `Closed` LOTs are excluded from every queue). This is what lets a 200-pc casting be minted 20 at a time across repeated visits.
+
+So the queue query becomes: *walk the LOT's active route in `SequenceNumber` order, find the first step that is still pending under its role-kind rule; if that step's `OperationType` role = my terminal's role, the LOT is in my queue.* (`ProductionEvent` FKs `OperationTemplateId`; steps carry `SequenceNumber` — both already exist.)
 
 This is **one mechanism for all terminals**, advance and mint alike. It replaces the whole `HasRenameBom` / part-type discrimination. It is literally "route is the source of truth."
 
@@ -125,19 +131,19 @@ This is exactly what keeps the queue rule (§3.2) uniform across advance and min
 
 ## 4. Schema & config changes
 
-1. **`OperationType` role-kind — ADOPTED (Jacques, 2026-07-07).** Add a role-kind classification to `Parts.OperationType` distinguishing **Advance** vs **Mint**, via a small code-table-backed FK per house convention: new `Parts.OperationRoleKind` (seed `Advance`, `Mint`) + `Parts.OperationType.OperationRoleKindId BIGINT NOT NULL FK`. Seed mapping:
+1. **`OperationType` role-kind — ADOPTED (Jacques, 2026-07-07); refined to THREE kinds during planning.** Add a role-kind classification to `Parts.OperationType`, via a small code-table-backed FK per house convention: new `Parts.OperationRoleKind` (seed `Advance`, `OriginMint`, `ConsumeMint`) + `Parts.OperationType.OperationRoleKindId BIGINT NOT NULL FK`. Seed mapping:
 
    | OperationType | RoleKind |
    |---|---|
-   | `DieCast` | Mint *(origin-mint; die-cast build out of scope — §8/Q4)* |
-   | `TrimIn`, `TrimOut` | Advance |
-   | `MachiningIn` | Advance |
-   | `MachiningOut` | **Mint** |
-   | `AssemblyIn` | Advance |
-   | `AssemblyOut` | **Mint** |
-   | `CNC` | Advance |
+   | `DieCast` | `OriginMint` *(produces this part from raw; die-cast build out of scope — §8/Q4)* |
+   | `TrimIn`, `TrimOut` | `Advance` |
+   | `MachiningIn` | `Advance` |
+   | `MachiningOut` | `ConsumeMint` |
+   | `AssemblyIn` | `Advance` |
+   | `AssemblyOut` | `ConsumeMint` |
+   | `CNC` | `Advance` |
 
-   Origin-mint (`DieCast`) vs consume-mint (`MachiningOut`/`AssemblyOut`) is a *behavioral* distinction owned by the screen, not a third code value — two kinds suffice. The role-kind enables **route validation** (a route must terminate at a mint step except a top-level FG; a mint step's produced part must have a satisfiable BOM) and the `ItemType`→role gate (§4.2).
+   **Why three, not two (surfaced in Plan 2 design):** the *queue rule* — not just the screen — must distinguish the two mint flavors. A **`ConsumeMint`** step (Machining/Assembly OUT) is the LOT's terminal step and keeps it in that terminal's queue **until the LOT is fully consumed (closed)** — it is *never* satisfied by a `ProductionEvent`, so flexible repeated mints from the same input pool keep working. An **`OriginMint`** step (Die Cast) *produces* this part, so for any existing LOT it is *always* already satisfied. An **`Advance`** step is satisfied by a matching `ProductionEvent`. Collapsing origin and consume into one "Mint" would make a casting's Die Cast step look pending forever, trapping it in a phantom first queue. The role-kind drives the queue's per-step "pending" test (§3.2) and enables route-legality validation + the `ItemType`→role gate (§4.2).
 2. **Route-legality validation — decision C (Jacques, 2026-07-07): minimal now, full matrix later.**
    - **In scope (this effort) — structural checks** that directly protect the mint model, enforced in the route-save proc (SQL, per no-business-logic-in-Python): (a) a route must terminate at a mint step unless the part is a top-level `FinishedGood` (terminates by shipping); (b) a mint step's derivable produced part must have a satisfiable BOM; (c) a route may not contain two consume-mint steps (a part is consumed once). Reject on save with a clear message.
    - **Deferred (follow-up task) — the full `ItemType`×role legality matrix**: which `ItemType`s may carry which `OperationType` roles (e.g. a `FinishedGood` route cannot start with `DieCast`; a `Component` casting cannot be the output of `AssemblyOut`). A reference table + save-time enforcement; noted here, built later. The mint model functions without it (routes authored correctly by convention); it is a guard-rail, not a dependency.
@@ -268,3 +274,4 @@ Items marked **VERIFY** are expected no-change confirmations (Machining IN, Asse
 | 2026-07-07 | Blue Ridge (with Claude) | Initial draft — terminal mint model, route-as-source-of-truth queue rule, rename-BOM removal, decision "C", BOM-derived mint targets, flexible quantity, `Consumption`-only genealogy, sublot demoted to exception. |
 | 2026-07-07 | Blue Ridge (with Claude) | Added verified Cleanup Inventory (§5) from 3 audits; §3.8 line-resident mints; §3.9 current-state divergences. |
 | 2026-07-07 | Blue Ridge (with Claude) | Resolved open questions (Jacques): role-kind ADDED, coupling RETIRED, `Split` exception-only CONFIRMED, Die Cast out of scope CONFIRMED, route-legality validation = option C. Added §3.10 (where the mint step lives — final step of the consumed part), §5.5 (JP validation dataset preservation constraint). |
+| 2026-07-07 | Blue Ridge (with Claude) | Planning refinement: role-kind is THREE kinds (`Advance`/`OriginMint`/`ConsumeMint`), not two — the queue rule needs the origin-vs-consume distinction (§3.2/§4.1). Implementation plans written: Plan 1 (SQL foundation), Plan 2 (mint behavior + route validation). |
