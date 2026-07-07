@@ -1,0 +1,167 @@
+{
+  "custom": {
+    "expanded": true,
+    "tree": [],
+    "selected": {
+      "id": null,
+      "isTerminal": false,
+      "target": "",
+      "terminal": {}
+    }
+  },
+  "params": {},
+  "propConfig": {
+    "custom.tree": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Location.Tree.buildLauncherTree\", 0, 1, 2)"
+        }
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 340,
+      "height": 800
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "canvas",
+        "gap": "0px",
+        "height": "100%",
+        "overflow": "hidden"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.input.button",
+        "meta": {
+          "name": "LogoToggle"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "text": "☰  DEV NAV",
+          "style": {
+            "classes": "pf-btn pf-btn-secondary",
+            "borderBottom": "2px solid #b91c1c",
+            "borderRadius": "0px",
+            "color": "#b91c1c",
+            "fontSize": "14px",
+            "fontWeight": 700,
+            "justifyContent": "flex-start",
+            "padding": "12px 14px"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tself.view.custom.expanded = not self.view.custom.expanded"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.display.tree",
+        "meta": {
+          "name": "Tree"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.custom.expanded"
+              }
+            }
+          },
+          "props.items": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.custom.tree"
+              }
+            }
+          },
+          "props.selectionData[0].value": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "bidirectional": true,
+                "path": "view.custom.selected"
+              }
+            }
+          }
+        },
+        "props": {
+          "appearance": {
+            "defaultNodeIcons": {
+              "collapsed": {
+                "path": "material/account_tree"
+              },
+              "empty": {
+                "path": "material/inventory"
+              },
+              "expanded": {
+                "path": "material/account_tree"
+              }
+            },
+            "expandIcons": {
+              "collapsed": {
+                "path": "material/chevron_right"
+              },
+              "expanded": {
+                "path": "material/expand_more"
+              }
+            }
+          },
+          "selection": [
+            null
+          ],
+          "selectionData": [
+            {
+              "itemPath": ""
+            }
+          ],
+          "style": {
+            "overflow": "auto",
+            "padding": "6px 4px"
+          }
+        },
+        "events": {
+          "component": {
+            "onSelectionChange": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsel = BlueRidge.Common.Util.extractQualifiedValues(self.props.selectionData) or []\n\tif not sel:\n\t\treturn\n\tdata = sel[0].get(\"value\") or {}\n\tif not data.get(\"isTerminal\"):\n\t\treturn\n\ttarget = data.get(\"target\") or \"\"\n\tif not target:\n\t\treturn\n\tself.session.custom.terminal = data.get(\"terminal\") or {}\n\tsystem.perspective.navigate(target)"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": null
+    }
+  }
+}
