@@ -109,6 +109,18 @@ The audit confirmed the built flow diverges from this model in ways worth statin
 - **The WIP-queue read carries two ad-hoc discriminators** (`HasRenameBom` + `HasLineEvent`). The route-driven next-unsatisfied-step rule (§3.2) **replaces both**.
 - **The "rename BOMs" are not deleted — they are reinterpreted.** The 1-line BOMs (`6MA-M←6MA-C`, `5G0-M←5G0-C`) stop being a Machining-IN discriminator and become the SubAssembly's **real production BOM**, consumed at the Machining OUT mint.
 
+### 3.10 Where the mint step lives (explicit)
+
+The mint step is the **final route step of the consumed (input) part** — the step tied to the terminal/location where that part is consumed. It is **not** a step on the produced part's route, and **not** the step before consumption. Rules:
+
+- A part's route **ends at the terminal where the part is consumed** (its consume-mint step). E.g. casting `6MA-C` route `[DieCast, Trim, MachiningIn, MachiningOut]`; SubAssembly `6MA-M` route `[AssemblyIn, AssemblyOut]`.
+- The **produced part is the output** of that step, **born with zero events**; it does **not** carry the mint step. Its own route begins at the first terminal that acts on it *after* birth (`6MA-M` starts at `AssemblyIn`, not `MachiningOut`).
+- The produced part is **not named on any route step** — it is derived at mint time via BOM + line-eligibility (§3.4). No route step declares an output.
+- The **top-level `FinishedGood` is the exception**: never consumed, so its route terminates by shipping, not a consume-mint (route validation, §4.2).
+- Consequence: a part's *final* route step legitimately **produces a different part number**. Being consumed is that part's terminal step.
+
+This is exactly what keeps the queue rule (§3.2) uniform across advance and mint terminals — the mint terminal's queue holds *inputs*, whose route puts them there — and keeps the route the single source of truth for every terminal a part visits, including its consume terminal.
+
 ---
 
 ## 4. Schema & config changes
@@ -126,7 +138,9 @@ The audit confirmed the built flow diverges from this model in ways worth statin
    | `CNC` | Advance |
 
    Origin-mint (`DieCast`) vs consume-mint (`MachiningOut`/`AssemblyOut`) is a *behavioral* distinction owned by the screen, not a third code value — two kinds suffice. The role-kind enables **route validation** (a route must terminate at a mint step except a top-level FG; a mint step's produced part must have a satisfiable BOM) and the `ItemType`→role gate (§4.2).
-2. **`ItemType` → role gating (design hook, may be separate task).** With route as source of truth, the existing-but-unbuilt `ItemType`→allowed-role constraint gains teeth: a `FinishedGood`'s route cannot start with `DieCast`; a `Component` casting cannot be authored as the *output* of `AssemblyOut`; etc. Enforced in SQL (per the no-business-logic-in-Python rule). Scope: hook defined here; enforcement may land as a dependent task.
+2. **Route-legality validation — decision C (Jacques, 2026-07-07): minimal now, full matrix later.**
+   - **In scope (this effort) — structural checks** that directly protect the mint model, enforced in the route-save proc (SQL, per no-business-logic-in-Python): (a) a route must terminate at a mint step unless the part is a top-level `FinishedGood` (terminates by shipping); (b) a mint step's derivable produced part must have a satisfiable BOM; (c) a route may not contain two consume-mint steps (a part is consumed once). Reject on save with a clear message.
+   - **Deferred (follow-up task) — the full `ItemType`×role legality matrix**: which `ItemType`s may carry which `OperationType` roles (e.g. a `FinishedGood` route cannot start with `DieCast`; a `Component` casting cannot be the output of `AssemblyOut`). A reference table + save-time enforcement; noted here, built later. The mint model functions without it (routes authored correctly by convention); it is a guard-rail, not a dependency.
 3. **BOM authoring consequence (config, not schema).** On lines without a Machining OUT terminal, the FG's BOM lists the **casting** (not a machined SubAssembly) as its component. On lines with one, the SubAssembly's BOM lists the casting and the FG's BOM lists the SubAssembly. No schema change — a config/seed authoring rule.
 4. **No new part type.** The `Casting` type floated in discussion is **not** added — route + BOM carry the distinction.
 
@@ -185,6 +199,14 @@ Audited exhaustively across SQL, Ignition, and docs. Action legend: **DELETE** (
 
 Items marked **VERIFY** are expected no-change confirmations (Machining IN, Assembly serialized/MIP, Container/Consumption procs, Trim OUT destination) — they are in the list so the plan proves them, not to imply edits. B7 (coupling) is now a firm **DELETE** per the resolved decisions (§7). The three **REWORK** cores are: **B1** (route-driven queue), **B3/U1/U2** (Machining OUT split→mint), and **U4/B5** (ranked FG default). `U2::autoComplete()` and the `MachiningOut_AutoComplete` NQ are deleted with B7.
 
+### 5.5 Data preservation — the JP validation dataset (build constraint)
+
+**Jacques's current dev-database content MUST NOT be deleted.** It holds **4 parts** configured with routes, BOMs, and eligibility in active use for testing. Governing rules for any migration/reset this work requires:
+
+1. **Never blow away the DB without first capturing the current 4-part config** into a **JP validation seed file** (proposed `sql/seeds/0NN_seed_jp_validation.sql`; ASCII-only; every reference resolved by natural key, never a hardcoded `Id`, per house convention). Extract the live `Parts.Item`, `Parts.RouteTemplate`/`RouteStep`, `Parts.Bom`/`BomLine`, and `ItemLocation` rows for those 4 parts before any destructive step.
+2. **If underlying tables change** — this effort adds `Parts.OperationRoleKind` + `OperationType.OperationRoleKindId`, drops `CoupledDownstreamCellLocationId`, and shifts route steps to the mint model — the JP validation seed file **must be updated to the new schema** so it reproduces the 4-part dataset cleanly on a post-migration DB: routes authored to end at consume-mint steps per §3.10, the new role-kind FK populated, and no reference to the dropped coupling column.
+3. The seed file is a **first-class deliverable of the plan** (a dedicated task), run after migrations, kept green against the reworked tests. It is **distinct from `seed_demo.sql`** (demo threads) — this is JP's validation fixture, preserving real configured data.
+
 ---
 
 ## 6. Data-flow walkthroughs
@@ -212,7 +234,9 @@ Items marked **VERIFY** are expected no-change confirmations (Machining IN, Asse
 3. **`Split` residual check** — **CONFIRMED**: no *standard* M&A step needs same-part `Split`; `Lot_Split` stays as an exception-only path (holds/quality/logistics) (§3.7).
 4. **Origin-mint (Die Cast) scope** — **CONFIRMED** out of scope; the casting-birth path is unchanged here (§8).
 
-**Still open — Q5, `ItemType` → role gating (scope):** Do we build the *guard-rail* that stops an engineer from authoring an illegal route — enforced in this effort, or deferred to a follow-up? See §4.2 for what the gate is; a recommended split (minimal structural validation now, full `ItemType`×role matrix later) is pending Jacques's call.
+5. **Route-legality validation** — **DECIDED: option C** (Jacques, 2026-07-07). Minimal structural checks land in this effort; the full `ItemType`×role legality matrix is a deferred follow-up (§4.2).
+
+**All open questions resolved.** Additional build constraint locked: **§5.5 — the JP validation dataset must be preserved** (capture-to-seed before any DB reset; keep the seed current with schema changes).
 
 ---
 
@@ -242,3 +266,5 @@ Items marked **VERIFY** are expected no-change confirmations (Machining IN, Asse
 | Date | Author | Change |
 |---|---|---|
 | 2026-07-07 | Blue Ridge (with Claude) | Initial draft — terminal mint model, route-as-source-of-truth queue rule, rename-BOM removal, decision "C", BOM-derived mint targets, flexible quantity, `Consumption`-only genealogy, sublot demoted to exception. |
+| 2026-07-07 | Blue Ridge (with Claude) | Added verified Cleanup Inventory (§5) from 3 audits; §3.8 line-resident mints; §3.9 current-state divergences. |
+| 2026-07-07 | Blue Ridge (with Claude) | Resolved open questions (Jacques): role-kind ADDED, coupling RETIRED, `Split` exception-only CONFIRMED, Die Cast out of scope CONFIRMED, route-legality validation = option C. Added §3.10 (where the mint step lives — final step of the consumed part), §5.5 (JP validation dataset preservation constraint). |
