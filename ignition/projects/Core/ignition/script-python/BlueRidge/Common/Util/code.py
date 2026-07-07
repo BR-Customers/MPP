@@ -770,25 +770,12 @@ def convertWrapperObjectToJson(obj):
     """
     return system.util.jsonEncode(extractQualifiedValues(obj))
 
-
-def toPlain(obj):
-    """
-    Deep-convert ANY Perspective-wrapped container into plain Python
-    dicts/lists via the JSON round-trip -- INCLUDING the
-    com.inductiveautomation.perspective.common ImmutableMap/ImmutableList
-    that container props arrive as in runScript EXPRESSION args, which
-    extractQualifiedValues cannot unwrap (.get() AttributeErrors on them;
-    see feedback_ignition_immutable_map_unwrap).
-
-    Use this at the top of any entity function that is a runScript binding
-    source and receives a container ARG (lists of rows, dicts). Caveat:
-    java.util.Date values become strings on the round-trip -- when a
-    function consumes Date fields, precompute display strings instead
-    (or use a property-binding script transform, whose containers arrive
-    as JavaMap and unwrap normally).
-
-    Returns None for None.
-    """
-    if obj is None:
-        return None
-    return system.util.jsonDecode(convertWrapperObjectToJson(obj))
+# NOTE (2026-07-07): a toPlain(obj) JSON-round-trip helper briefly lived here
+# as an attempted rescue for container props passed as runScript EXPRESSION
+# args. It was removed: re-evaluations receive ImmutableList (which jsonEncode
+# yields nothing useful for), and transform-context wrapped values can send
+# jsonEncode into infinite recursion (Java StackOverflowError). The rule is to
+# never pass container props through runScript args at all -- pass scalars and
+# fetch rows inside the entity function, or use a property-binding script
+# transform (JavaMap; extractQualifiedValues handles it). See
+# feedback_ignition_immutable_map_unwrap.

@@ -355,17 +355,18 @@ def shiftCavityOptions(tally):
     """[{label, value}] for the right-rail cavity dropdown, built from a tally list
        so every configured cavity appears (value = ToolCavityId). Presentation only.
 
-       All the tally readers unwrap via Util.toPlain: the tally arrives from
-       runScript EXPRESSION bindings as ImmutableMap rows, which .get()
-       AttributeErrors on (feedback_ignition_immutable_map_unwrap)."""
-    rows = BlueRidge.Common.Util.toPlain(tally) or []
+       Callers are transform/script contexts or the *ForTool wrappers, so rows
+       arrive as JavaMap or plain dicts -- extractQualifiedValues handles both.
+       NEVER bind these readers via runScript with a container arg
+       (feedback_ignition_immutable_map_unwrap)."""
+    rows = _u(tally) or []
     return [{"label": r.get("CavityLabel") or ("Cavity %s" % r.get("CavityNumber")),
              "value": r.get("ToolCavityId")} for r in rows]
 
 
 def shiftSumForCavity(tally, toolCavityId):
     """The selected cavity's shift piece sum from a tally list. Int (0 if absent)."""
-    rows = BlueRidge.Common.Util.toPlain(tally) or []
+    rows = _u(tally) or []
     cid = _u(toolCavityId)
     for r in rows:
         if r.get("ToolCavityId") == cid:
@@ -376,7 +377,7 @@ def shiftSumForCavity(tally, toolCavityId):
 def shiftScrapForCavity(tally, toolCavityId):
     """The selected cavity's shift scrapped quantity (RejectSum) from a tally
        list. Int (0 if absent). Jacques 2026-07-06: the shift card surfaces scrap."""
-    rows = BlueRidge.Common.Util.toPlain(tally) or []
+    rows = _u(tally) or []
     cid = _u(toolCavityId)
     for r in rows:
         if r.get("ToolCavityId") == cid:
@@ -389,7 +390,7 @@ def shiftShotsFromTally(tally):
        tally list - identical on every row, so read the first. Int (0 when
        empty). This is the actual 'Shots this shift' number for the card; it was
        computed in SQL but never displayed before 2026-07-06."""
-    rows = BlueRidge.Common.Util.toPlain(tally) or []
+    rows = _u(tally) or []
     for r in rows:
         return r.get("ShiftShots") or 0
     return 0
@@ -420,7 +421,7 @@ def defaultShiftCavityId(tally):
     """ToolCavityId of the busiest cavity this shift (highest PieceSum) -> the
        default right-rail selection so the card opens on the most accurate shot
        count. None when the tally is empty."""
-    rows = BlueRidge.Common.Util.toPlain(tally) or []
+    rows = _u(tally) or []
     best = None
     bestSum = -1
     for r in rows:
