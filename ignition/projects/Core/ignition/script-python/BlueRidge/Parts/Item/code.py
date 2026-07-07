@@ -130,19 +130,34 @@ def getOneOrEmpty(itemId):
     return dict((k, None) for k in _ITEM_SHAPE_KEYS)
 
 
-def getEligibleForLocationDropdown(locationId):
+def getEligibleForLocationDropdown(locationId, operationTypeCode=None, _refreshToken=None):
     """Items eligible at a Location, shaped for ia.input.dropdown:
         [{label: '<PartNumber> - <Description>', value: Id}].
     Always a list (never None). Empty if locationId is None or nothing is eligible.
     Wraps Parts.Item_ListEligibleForLocation. Used by the die-cast entry screen's
-    eligibility-constrained Item dropdown."""
+    eligibility-constrained Item dropdown.
+
+    operationTypeCode (optional, 2026-07-07): route-role filter. When supplied
+    (e.g. 'DieCast'), only items whose route carries a step of that OperationType
+    role are listed - the same predicate as the no-template Create gate, so the
+    dropdown never offers a part the gate would block.
+    _refreshToken is ignored - runScript bindings pass a bumped token to force
+    a re-read (runScript caches on args)."""
     locationId = _u(locationId)
-    BlueRidge.Common.Util.log("getEligibleForLocationDropdown locationId=%s" % locationId)
+    operationTypeCode = _u(operationTypeCode)
+    BlueRidge.Common.Util.log(
+        "getEligibleForLocationDropdown locationId=%s operationTypeCode=%s"
+        % (locationId, operationTypeCode))
     if locationId is None:
         return []
     try:
-        rows = BlueRidge.Common.Db.execList(
-            "parts/Item_ListEligibleForLocation", {"locationId": locationId})
+        if operationTypeCode:
+            rows = BlueRidge.Common.Db.execList(
+                "parts/Item_ListEligibleForLocationByRole",
+                {"locationId": locationId, "operationTypeCode": operationTypeCode})
+        else:
+            rows = BlueRidge.Common.Db.execList(
+                "parts/Item_ListEligibleForLocation", {"locationId": locationId})
     except Exception as e:
         BlueRidge.Common.Util.log("getEligibleForLocationDropdown failed: %s" % str(e))
         return []
