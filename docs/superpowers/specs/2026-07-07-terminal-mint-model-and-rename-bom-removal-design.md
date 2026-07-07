@@ -97,6 +97,18 @@ Every standard-flow mint writes `Consumption` edges (input LOT → output LOT) a
 
 The `Lots.Lot_Split` machinery and the `Split` genealogy relationship are **kept** for genuine same-part-number divisions that do *not* change part identity (e.g. splitting a held LOT for a quality disposition, or dividing a LOT for logistics). They are **removed from the standard M&A mint path**. Rationale (Jacques): a great exception, not a standard. The design must verify no standard M&A step depends on `Split` after the rewrite; if a residual standard use is found, it is reworked to a mint or flagged.
 
+### 3.8 Mint outputs are line-resident — no intra-line destination move
+
+Because all inventory is line-resident (LOTs live at the parent line; terminals zone up to it), a minted output LOT is created **at the line** and simply appears at the next terminal via the queue rule (§3.2) — there is **no intra-line cell-to-cell move** and **no destination selection** at a mint terminal. This retires the current Machining OUT "destination cell" dropdown (`getCellsForDropdownByNamePrefix("Assembly")`) entirely rather than rewiring it: the minted SubAssembly is line-resident and its next unsatisfied route step surfaces it at Assembly IN/OUT automatically. Cross-**area** handoffs that genuinely change location (e.g. Trim OUT choosing which Machining line to deposit at) keep their destination pick; intra-line mints do not.
+
+### 3.9 Current-state divergences this redesign closes
+
+The audit confirmed the built flow diverges from this model in ways worth stating explicitly, so the plan targets them:
+
+- **Machining OUT today is a _split_, not a _mint_.** `MachiningOut_RecordSplit` splits an **externally pre-minted** machined LOT into sub-LOTs with `Split` genealogy (`RelationshipTypeId=1`) and builds **no casting→machined edge** — the demo seed even notes "cast LOTs are NOT genealogy-linked to the machined LOTs." Under this design Machining OUT **mints** the machined SubAssembly by **consuming** the casting (`Consumption` genealogy), which closes that genealogy gap. This is the central backend rework.
+- **The WIP-queue read carries two ad-hoc discriminators** (`HasRenameBom` + `HasLineEvent`). The route-driven next-unsatisfied-step rule (§3.2) **replaces both**.
+- **The "rename BOMs" are not deleted — they are reinterpreted.** The 1-line BOMs (`6MA-M←6MA-C`, `5G0-M←5G0-C`) stop being a Machining-IN discriminator and become the SubAssembly's **real production BOM**, consumed at the Machining OUT mint.
+
 ---
 
 ## 4. Schema & config changes
@@ -111,29 +123,58 @@ The `Lots.Lot_Split` machinery and the `Split` genealogy relationship are **kept
 
 ---
 
-## 5. Affected artifacts (audit in the plan phase; indicative)
+## 5. Cleanup Inventory (verified 2026-07-07)
 
-**SQL (stored procs / views):**
-- `Lots.Lot_GetWipQueueByLocation` — **rewrite**: drop `HasRenameBom`; replace the "all line WIP + hints" shape with the route-driven "next-unsatisfied-step role = R" filter (or add a role parameter). This is the core change.
-- `Workorder.MachiningIn_RecordPick` — confirm/keep as **pure advance** (stamp `ProductionEvent`, no consumption, no genealogy).
-- `Workorder.MachiningOut_RecordSplit` — **rework to a consume-mint** (`MachiningOut_Mint`?): consume operator-qty from the casting, mint the SubAssembly via BOM-derivation, `Consumption` genealogy. Remove the split/sublot semantics from the standard path.
-- `Workorder.Assembly_CompleteTray` — **align** with the uniform mint model + ranked FG default; it already consumes per BOM and mints the FG LOT.
-- **New read proc** — ranked eligible-FG list for the Assembly OUT dropdown (`IsRecommended` flag per decision 6).
-- **New read proc / helper** — "next unsatisfied route step" resolution feeding the queue proc.
-- `Workorder.MachiningOut_AutoComplete` + `BlueRidge.Workorder.MachiningPlc` + `CoupledDownstreamCellLocationId` — **reconcile or retire** the cell-resident auto-couple path against the line-resident, route-driven model (per the 2026-07-06 note, this is the vestigial cell-topology construct). Decision needed (§7).
-- `Lots.Lot_Split` + `Split` genealogy — **retain, scope to exception only**; verify no standard M&A dependency.
+Audited exhaustively across SQL, Ignition, and docs. Action legend: **DELETE** (remove) · **REWORK** (substantive behavior change) · **REWRITE** (doc/narrative) · **ADD** (new) · **VERIFY** (confirm still-correct, no expected change) · **DECISION** (gated on an §7 open question).
 
-**Ignition (NQs / entity scripts / views):**
-- Machining IN / OUT / Assembly screens — repoint to the route-driven queue reads; Assembly OUT gets the ranked-default dropdown.
-- Route-step editor — pairs with the pending Category→Operation cascade rework (2026-07-06 note); route authoring now also encodes advance/mint sequence.
+### 5.1 Backend — SQL
 
-**Docs:**
-- FDS-05-032, FDS-05-033, FDS-06-006, FDS-06-007, FDS-06-008 — rewrite the rename-at-Machining-IN and cell-coupling narrative to the terminal-mint / route-driven model.
-- `MPP_MES_DATA_MODEL.md` — `OperationType` role-kind (if adopted); note BOM authoring rule; note `Split` demotion.
-- Revision-history rows on every edited doc (house rule).
+| # | File · object | Action | What |
+|---|---|---|---|
+| B1 | `sql/migrations/repeatable/R__Lots_Lot_GetWipQueueByLocation.sql` | **REWORK** | Drop `HasRenameBom` (and the `HasLineEvent` proxy); replace the "all line WIP + hints" shape with the route-driven **next-unsatisfied-step-role = R** filter (role param or per-terminal read). Core change. |
+| B2 | `sql/migrations/repeatable/R__Workorder_MachiningIn_RecordPick.sql` | **VERIFY** | Already pure advance (stamps `ProductionEvent`, no consume/mint/genealogy). Confirm no residual rename. |
+| B3 | `sql/migrations/repeatable/R__Workorder_MachiningOut_RecordSplit.sql` | **REWORK** | From "split an externally-minted machined LOT (`Split` genealogy, no cast→machined edge)" to **consume-mint**: consume operator-qty from the casting, mint the SubAssembly LOT, write `Consumption` genealogy (casting→machined). Remove intra-line destination param (§3.8). Likely rename (`MachiningOut_Mint`). |
+| B4 | `sql/migrations/repeatable/R__Workorder_Assembly_CompleteTray.sql` | **VERIFY / minor** | Already mints FG + `Consumption` genealogy (`RelationshipTypeId=3`). Confirm it aligns with the ranked-FG default and the uniform mint model. |
+| B5 | *new* `Parts/*` read proc — ranked eligible-FG list | **ADD** | Returns eligible FGs at the cell + `IsRecommended` per the ranked-default rule (decision 6). Backs the Assembly OUT dropdown. |
+| B6 | *new* `Parts/*` read — "next unsatisfied route step" | **ADD** | Resolves a LOT's lowest-`SequenceNumber` route step with no matching `ProductionEvent`; feeds B1 and any destination logic. |
+| B7 | `R__Workorder_MachiningOut_AutoComplete.sql` · `sql/migrations/versioned/0019_location_coupled_downstream_cell.sql` (`CoupledDownstreamCellLocationId`) · LogEventType `44` (MachiningOutAutoMoved) in `0027_arc2_phase5_machining.sql` | **DECISION** (§7 Q2) | Cell-resident auto-couple path. Retire (delete proc + column + seed + tests) or keep as documented exception. |
+| B8 | `R__Lots_Lot_Split.sql` + `Split` (`RelationshipTypeId=1`) | **REWORK scope** | Retain the proc, but remove its **standard-path** use (B3 stops emitting `Split`). Document as exception-only (quality/holds/logistics). Audit every `LotGenealogy` insert for correct `RelationshipTypeId`. |
+| B9 | `sql/scratch/seed_demo.sql` | **REWORK** | Rename BOMs (step 3, `6MA-M←6MA-C`, `5G0-M←5G0-C`) **kept** but reinterpreted as SubAssembly production BOMs; rebuild the machining thread to mint at OUT via B3 (authentic casting→machined `Consumption`), removing the external `Lot_Create` of the machined LOT and the "not genealogy-linked" gap. Update comments (rename-hint lines ~150–156). |
+| B10 | `sql/seeds/026_seed_machining_operation_templates.sql` | **REWRITE** | Comment still cites `MachiningIn_PickAndConsume`; repoint to `MachiningIn_RecordPick`. Confirm `RequiresSubLotSplit` seeding fits the new mint model (§4). |
+| B11 | Old proc-name references `MachiningIn_PickAndConsume` (comments/tests in `R__Workorder_MachiningIn_RecordPick.sql`, `026_seed…`, `seed_demo.sql`, `0028…/077_…`, `0009…/060_…`) | **REWRITE** | Grep + scrub stale name; confirm no orphaned proc definition remains. |
+| B12 | Tests — `0027_PlantFloor_Machining/*` (esp. `010`,`020`,`070`,`075`,`080`,`090`,`100`), `0028_PlantFloor_Assembly/*`, `0024_PlantFloor_Movement_Trim/060_Lot_GetWipQueueByLocation.sql`, `0021_PlantFloor_Lot_Lifecycle/020_Lot_Split.sql` | **REWORK / VERIFY** | Rewrite `Lot_GetWipQueueByLocation` assertions (drop `HasRenameBom`/`HasLineEvent`, assert route-driven queue); rewrite MachiningOut tests for consume-mint + `Consumption` genealogy; delete/mark AutoComplete tests (`040/050/060`) per B7; mark `Lot_Split` test exception-only. New tests per §9. |
 
-**Seeds / demo:**
-- `sql/scratch/seed_demo.sql` — the "rename BOMs" (step 3) become the SubAssembly production BOMs used at Machining OUT; the MachiningIn RecordPick stays advance-only. Rebuild the machining thread to mint at OUT via the reworked proc and produce authentic `Consumption` genealogy.
+### 5.2 Ignition — views, entity scripts, Named Queries
+
+| # | File · symbol | Action | What |
+|---|---|---|---|
+| U1 | `…/ShopFloor/MachiningOutSplit/view.json` (line ~41 `not r.get("HasRenameBom")`; line ~21 `getCellsForDropdownByNamePrefix("Assembly")`) | **REWORK** | Delete the `HasRenameBom` filter; delete the hardcoded Assembly **destination dropdown** (§3.8 — mints are line-resident); repoint the queue to the route-driven read. This screen becomes the Machining OUT **mint** UI (operator qty, prefilled `DefaultSubLotQty`). |
+| U2 | `Core/…/BlueRidge/Workorder/Machining/code.py` — `recordSplit()` / `autoComplete()` / `recordPick()` | **REWORK / VERIFY** | `recordPick()` already correct (advance). Rework `recordSplit()` → mint call (B3), returning new SubAssembly LOT id(s). `autoComplete()` fate tied to B7. |
+| U3 | `…/ShopFloor/MachiningIn/view.json` | **VERIFY** | Repoint queue binding to route-driven read (B1); confirm no `HasLineEvent`/rename assumptions remain client-side. |
+| U4 | `…/ShopFloor/AssemblyNonSerialized/view.json` (`selectedFinishedGoodItemId`, dropdown binding) + `Core/…/Workorder/Assembly/code.py` — `getEligibleFinishedGoodsForDropdown()`, `handleTrayComplete()`, `completeTray()` | **REWORK / ADD** | FG dropdown → bind to the ranked read (B5); default-select the recommended row; `handleTrayComplete()` falls back to top-ranked when none selected. Keep the ranking in SQL, not Python (house rule). |
+| U5 | `Core/ignition/named-query/lots/Lot_GetWipQueueByLocation/query.sql` + `Core/…/BlueRidge/Lots/Lot/code.py::getWipQueueByLocation()` | **REWORK** | Mirror B1's result shape; the 6 consuming views (`MachiningIn`, `MachiningOutSplit`, `AssemblyIn`, `AssemblyNonSerialized`, `AssemblySerialized`, `TrimBody`) then filter by the route-driven fields instead of rename/type hints. |
+| U6 | `Core/ignition/named-query/workorder/{MachiningOut_RecordSplit,MachiningIn_RecordPick,Assembly_CompleteTray}/query.sql` | **REWORK / VERIFY** | Track their procs (B3/B2/B4); update the MachiningOut NQ name/return shape if the proc is renamed to a mint. |
+| U7 | *new* `Core/ignition/named-query/parts/…` — next-step + ranked-FG reads | **ADD** | NQ fronts for B5/B6. Per project topology, all NQs live in Core only. |
+| U8 | `Core/…/Parts/Item/code.py`, `Core/…/Parts/Bom/code.py` | **VERIFY** | Grep for any `RenameBom`/split-at-machining-out client references; scrub if present. |
+| U9 | `…/ShopFloor/TrimBody/view.json` + `Location/Location/code.py::getMachiningDestinationsForDropdown()` | **VERIFY** | Trim OUT keeps its cross-area destination pick (which Machining line) — that is a legitimate location-changing handoff, distinct from the intra-line mint (§3.8). Confirm unaffected. |
+| U10 | `…/AssemblySerialized/view.json` + `Core/…/Workorder/AssemblyPlc/code.py` | **VERIFY** | Serialized/MIP path already `Consumption`-based; confirm alignment; no code change until commissioning. |
+
+### 5.3 Documentation
+
+| # | File · location | Action |
+|---|---|---|
+| D1 | `MPP_MES_FDS.md` — **FDS-06-007** (Machining IN rename) & **FDS-05-033** (Trim→Machining 1-line-BOM rename) | **REWRITE** — Machining IN is pure advance; the rename/consumption moves to the Machining OUT **mint**. Primary touchpoints. |
+| D2 | `MPP_MES_FDS.md` — **FDS-06-008** (split / auto-couple), **FDS-05-009/-022/-024** (sublot-at-Machining-OUT), **FDS-05-032**, **FDS-06-006**, **FDS-06-020/021** (assembly genealogy), **FDS-01-013** (BOM cutover) | **REWRITE** — reframe split→mint, `Consumption`-only genealogy, sublot-as-exception, coupling fate (per §7 Q2), rename-BOMs-become-production-BOMs. |
+| D3 | `MPP_MES_DATA_MODEL.md` — `CoupledDownstreamCellLocationId`, `Item.DefaultSubLotQty` (→ default mint qty), `OperationTemplate.RequiresSubLotSplit`, `ConsumptionEvent.ProducedLotId`, the §2 Trim→Machining narrative; add `OperationType` role-kind if adopted (§4.1) | **REWRITE** — reinterpret/relabel per the mint model; note `Split` demotion and BOM authoring rule. |
+| D4 | `MPP_MES_USER_JOURNEYS.md` — 10:00am Machining scene + Machining-OUT path + UJ-03 decision; `MPP_MES_SUMMARY.md` — OI-11 notes; `PROJECT_STATUS.md` — proc list (`PickAndConsume`), reconciliation notes | **REWRITE** — narrate advance-at-IN / mint-at-OUT / `Consumption`-only. |
+| D5 | `MPP_MES_TASK_LIST_PLANT_FLOOR.csv` (T103, T110, T111), `MPP_MES_PHASED_PLAN_PLANT_FLOOR.md` (Phase 5 Machining IN/OUT sections, proc signatures, test cases, OI-11) | **REWRITE** — retitle the `PickAndConsume` proc + drop the rename modal; align Phase 5 to the mint model. |
+| D6 | `docs/superpowers/specs/2026-07-06-machining-in-unworked-arrivals-design.md` | **SUPERSEDE** — mark superseded by this spec (it is the intermediate half-unwound state that introduced `HasRenameBom`). |
+| D7 | Prior specs referencing the old thread — `2026-07-02-machining-assembly-plant-floor-flow-design.md`, `2026-06-24-assembly-consumption-genealogy-design.md`, `2026-06-15-arc2-phase4-movement-trim-sql-design.md`, `2026-04-23-arc2-model-revisions.md`, `2026-05-20-item-master-boms-design.md` | **REWRITE / cross-ref** — annotate the stale rename-at-IN / 1-line-BOM references to point here. |
+| D8 | Revision-history row on **every** edited doc (house rule) + this spec cross-referenced as the new baseline | **ADD** |
+
+### 5.4 Scope note on the inventory
+
+Items marked **VERIFY** are expected no-change confirmations (Machining IN, Assembly serialized/MIP, Container/Consumption procs, Trim OUT destination) — they are in the list so the plan proves them, not to imply edits. Items marked **DECISION** (B7 and its UI/doc echoes) are gated entirely on §7 Q2 (coupling retirement). The three **REWORK** cores are: **B1** (route-driven queue), **B3/U1/U2** (Machining OUT split→mint), and **U4/B5** (ranked FG default).
 
 ---
 
