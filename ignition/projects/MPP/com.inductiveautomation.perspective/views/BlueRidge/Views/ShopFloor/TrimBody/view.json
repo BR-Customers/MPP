@@ -416,118 +416,176 @@
             "type": "ia.display.label"
           },
           {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "InInventoryHeader"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-field-label"
+                      },
+                      "text": "Currently in Trim"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "InInventoryEmpty"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "len({view.custom.trimInventory}) \u003d 0"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      },
+                      "text": "Nothing is checked in at Trim."
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "InInventoryRepeater"
+                    },
+                    "position": {
+                      "basis": "0",
+                      "grow": 1
+                    },
+                    "propConfig": {
+                      "props.instances": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.trimInventory"
+                          },
+                          "transforms": [
+                            {
+                              "code": "\treturn BlueRidge.Lots.Lot.mapTrimInventoryInstances(value)",
+                              "type": "script"
+                            }
+                          ],
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "column",
+                      "elementPosition": {
+                        "basis": "92px",
+                        "shrink": 0
+                      },
+                      "path": "BlueRidge/Components/PlantFloor/Trim/InventoryRow",
+                      "style": {
+                        "gap": "8px",
+                        "overflowY": "auto"
+                      },
+                      "useDefaultViewWidth": false
+                    },
+                    "type": "ia.display.flex-repeater"
+                  }
+                ],
+                "meta": {
+                  "name": "InPickCol"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "gap": "8px",
+                    "overflow": "hidden"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "MovementScan"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.params.destinationLocationId": {
+                        "binding": {
+                          "config": {
+                            "path": "session.custom.terminal.zoneLocationId"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "path": "BlueRidge/Components/PlantFloor/MovementScan"
+                    },
+                    "type": "ia.display.view"
+                  },
+                  {
+                    "meta": {
+                      "name": "InNote"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-field-help"
+                      },
+                      "text": "On scan-in the LOT moves to this Cell. Closing counters are captured on the OUT step."
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "InFormCol"
+                },
+                "position": {
+                  "basis": "420px",
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "gap": "12px",
+                    "overflow": "hidden"
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
             "meta": {
-              "name": "MovementScan"
+              "name": "InColumns"
             },
             "position": {
-              "shrink": 0
+              "grow": 1
             },
-            "propConfig": {
-              "props.params.destinationLocationId": {
-                "binding": {
-                  "config": {
-                    "path": "session.custom.terminal.zoneLocationId"
-                  },
-                  "type": "property"
-                }
+            "props": {
+              "alignItems": "stretch",
+              "style": {
+                "gap": "16px",
+                "overflow": "hidden"
               }
             },
-            "props": {
-              "path": "BlueRidge/Components/PlantFloor/MovementScan"
-            },
-            "type": "ia.display.view"
-          },
-          {
-            "meta": {
-              "name": "InInventoryHeader"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "props": {
-              "style": {
-                "classes": "pf-field-label",
-                "marginTop": "8px"
-              },
-              "text": "Currently in Trim"
-            },
-            "type": "ia.display.label"
-          },
-          {
-            "meta": {
-              "name": "InInventoryEmpty"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "config": {
-                    "expression": "len({view.custom.trimInventory}) \u003d 0"
-                  },
-                  "type": "expr"
-                }
-              }
-            },
-            "props": {
-              "style": {
-                "classes": "pf-kpi-sub"
-              },
-              "text": "Nothing is checked in at Trim."
-            },
-            "type": "ia.display.label"
-          },
-          {
-            "meta": {
-              "name": "InInventoryRepeater"
-            },
-            "position": {
-              "basis": "300px",
-              "shrink": 0
-            },
-            "propConfig": {
-              "props.instances": {
-                "binding": {
-                  "config": {
-                    "path": "view.custom.trimInventory"
-                  },
-                  "transforms": [
-                    {
-                      "code": "\treturn BlueRidge.Lots.Lot.mapTrimInventoryInstances(value)",
-                      "type": "script"
-                    }
-                  ],
-                  "type": "property"
-                }
-              }
-            },
-            "props": {
-              "direction": "column",
-              "elementPosition": {
-                "basis": "92px",
-                "shrink": 0
-              },
-              "path": "BlueRidge/Components/PlantFloor/Trim/InventoryRow",
-              "style": {
-                "gap": "8px",
-                "overflowY": "auto"
-              },
-              "useDefaultViewWidth": false
-            },
-            "type": "ia.display.flex-repeater"
-          },
-          {
-            "meta": {
-              "name": "InNote"
-            },
-            "props": {
-              "style": {
-                "classes": "pf-field-help"
-              },
-              "text": "On scan-in the LOT moves to this Cell. Closing counters are captured on the OUT step."
-            },
-            "type": "ia.display.label"
+            "type": "ia.container.flex"
           }
         ],
         "meta": {
