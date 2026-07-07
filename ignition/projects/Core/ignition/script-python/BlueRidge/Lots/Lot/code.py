@@ -395,6 +395,27 @@ def shiftShotsFromTally(tally):
     return 0
 
 
+def shiftShotsForTool(toolId, _refreshToken=None):
+    """'Shots this shift' KPI value, fetched-and-computed from SCALAR args only
+       (toolId + ignored refresh token). runScript expression bindings must not
+       pass container props -- re-evaluations receive them as ImmutableList,
+       which neither extractQualifiedValues nor the JSON round-trip survive
+       (feedback_ignition_immutable_map_unwrap). The tally query is cheap."""
+    return shiftShotsFromTally(getShiftCavityTally(toolId))
+
+
+def shiftSumForCavityOnTool(toolId, toolCavityId, _refreshToken=None):
+    """'Pieces this shift (selected cavity)' KPI value from scalar args --
+       see shiftShotsForTool for why the tally is fetched here."""
+    return shiftSumForCavity(getShiftCavityTally(toolId), toolCavityId)
+
+
+def shiftScrapForCavityOnTool(toolId, toolCavityId, _refreshToken=None):
+    """'Scrap this shift (selected cavity)' KPI value from scalar args --
+       see shiftShotsForTool for why the tally is fetched here."""
+    return shiftScrapForCavity(getShiftCavityTally(toolId), toolCavityId)
+
+
 def defaultShiftCavityId(tally):
     """ToolCavityId of the busiest cavity this shift (highest PieceSum) -> the
        default right-rail selection so the card opens on the most accurate shot

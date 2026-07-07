@@ -79,24 +79,26 @@ def findByCode(terminals, code):
     return None
 
 
-def filterForSelector(rows, search):
-    """Case-insensitive contains-filter over TerminalCode / TerminalName /
-       ZoneName for the Terminal Selector table search bar (Jacques 2026-07-06).
-       Always returns a list; empty/blank search returns rows unchanged.
+def listForSelector(searchText=None):
+    """Terminal Selector table rows: Terminal_List filtered case-insensitively
+       on TerminalCode / TerminalName / ZoneName (Jacques 2026-07-06 search bar).
 
-       rows arrives from a runScript EXPRESSION ({view.custom.terminals}), so
-       each element is a Perspective ImmutableMap -- .get() AttributeErrors
-       there, and extractQualifiedValues does not unwrap those types
-       (feedback_ignition_immutable_map_unwrap)."""
-    rows = BlueRidge.Common.Util.toPlain(rows) or []
-    s = ("%s" % (BlueRidge.Common.Util.extractQualifiedValues(search) or "")).strip().upper()
+       Item-Master-style search: the runScript binding passes only the SCALAR
+       search text and the rows are fetched HERE as plain execList dicts, so
+       no Perspective container ever crosses the runScript boundary. (The
+       previous filterForSelector took {view.custom.terminals} as an arg --
+       re-evaluations receive it as ImmutableList, which neither
+       extractQualifiedValues nor the JSON round-trip survive; see
+       feedback_ignition_immutable_map_unwrap.) Always returns a list."""
+    rows = listAll() or []
+    s = ("%s" % (BlueRidge.Common.Util.extractQualifiedValues(searchText) or "")).strip().upper()
     if not s:
         return rows
     out = []
     for r in rows:
         r = r or {}
-        hay = "%s %s %s" % (r.get("TerminalCode") or "", r.get("TerminalName") or "", r.get("ZoneName") or "")
-        if s in hay.upper():
+        hay = ("%s %s %s" % (r.get("TerminalCode") or "", r.get("TerminalName") or "", r.get("ZoneName") or "")).upper()
+        if s in hay:
             out.append(r)
     return out
 

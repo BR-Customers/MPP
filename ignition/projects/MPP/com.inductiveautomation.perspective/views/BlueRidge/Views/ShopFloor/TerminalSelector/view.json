@@ -197,7 +197,7 @@
           "props.data": {
             "binding": {
               "config": {
-                "expression": "runScript(\"BlueRidge.Location.Terminal.filterForSelector\", 0, {view.custom.terminals}, {view.custom.searchText})"
+                "expression": "runScript(\"BlueRidge.Location.Terminal.listForSelector\", 0, {view.custom.searchText})"
               },
               "type": "expr"
             }

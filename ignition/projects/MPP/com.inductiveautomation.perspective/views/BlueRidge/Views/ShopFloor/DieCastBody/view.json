@@ -1074,7 +1074,7 @@
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "toStr(runScript(\"BlueRidge.Lots.Lot.shiftShotsFromTally\", 0, {view.custom.shiftTally}))"
+                            "expression": "toStr(runScript(\"BlueRidge.Lots.Lot.shiftShotsForTool\", 0, {view.custom.activeTool.ToolId}, {view.custom.refreshToken}))"
                           },
                           "type": "expr"
                         }
@@ -1107,7 +1107,7 @@
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "toStr(runScript(\"BlueRidge.Lots.Lot.shiftSumForCavity\", 0, {view.custom.shiftTally}, {view.custom.tallyCavityId}))"
+                            "expression": "toStr(runScript(\"BlueRidge.Lots.Lot.shiftSumForCavityOnTool\", 0, {view.custom.activeTool.ToolId}, {view.custom.tallyCavityId}, {view.custom.refreshToken}))"
                           },
                           "type": "expr"
                         }
@@ -1140,7 +1140,7 @@
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "toStr(runScript(\"BlueRidge.Lots.Lot.shiftScrapForCavity\", 0, {view.custom.shiftTally}, {view.custom.tallyCavityId}))"
+                            "expression": "toStr(runScript(\"BlueRidge.Lots.Lot.shiftScrapForCavityOnTool\", 0, {view.custom.activeTool.ToolId}, {view.custom.tallyCavityId}, {view.custom.refreshToken}))"
                           },
                           "type": "expr"
                         }
