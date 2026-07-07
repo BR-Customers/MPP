@@ -23,6 +23,10 @@
     "cellPickerEnabled": false
   },
   "propConfig": {
+    "params.cellPickerEnabled": {
+      "paramDirection": "input",
+      "persistent": true
+    },
     "custom.activeTool": {
       "binding": {
         "config": {

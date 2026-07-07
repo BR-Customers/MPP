@@ -1,6 +1,7 @@
 {
   "custom": {
     "activeLotId": null,
+    "cells": [],
     "activeLotName": null,
     "destValue": null,
     "inScan": "",
@@ -12,9 +13,22 @@
     "trimState": "in"
   },
   "params": {
-    "areaId": null
+    "areaId": null,
+    "cellPickerEnabled": false
   },
   "propConfig": {
+    "params.cellPickerEnabled": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "custom.cells": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Location.Terminal.getContextCellsForDropdown\", 0, {session.custom.terminal.terminalLocationId}, \"Trim Press\")"
+        },
+        "type": "expr"
+      }
+    },
     "custom.destCells": {
       "binding": {
         "config": {
@@ -188,6 +202,67 @@
               }
             },
             "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.applyCell(self.props.value)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CellPickerDropdown"
+            },
+            "position": {
+              "basis": "300px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.cellPickerEnabled"
+                  },
+                  "type": "property"
+                }
+              },
+              "props.options": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.cells"
+                  },
+                  "transforms": [
+                    {
+                      "code": "\tcells \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\treturn [{\"label\": c.get(\"label\"), \"value\": c.get(\"value\")} for c in cells]",
+                      "type": "script"
+                    }
+                  ],
+                  "type": "property"
+                }
+              },
+              "props.value": {
+                "binding": {
+                  "config": {
+                    "path": "session.custom.cell.locationId"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "placeholder": {
+                "text": "Scan or pick a press"
+              },
+              "style": {
+                "width": "300px"
+              }
+            },
+            "type": "ia.input.dropdown"
           },
           {
             "meta": {
@@ -1032,6 +1107,13 @@
     },
     "scripts": {
       "customMethods": [
+        {
+          "name": "applyCell",
+          "params": [
+            "cellId"
+          ],
+          "script": "\tcellId \u003d BlueRidge.Common.Util.extractQualifiedValues(cellId)\n\trow \u003d BlueRidge.Location.Location.findCellById(self.view.custom.cells, cellId)\n\tif row is None:\n\t\treturn\n\tself.session.custom.cell \u003d {\"locationId\": row.get(\"value\"), \"code\": row.get(\"code\") or \"\", \"name\": row.get(\"name\") or \"\"}"
+        },
         {
           "name": "resolveOutScan",
           "params": [],
