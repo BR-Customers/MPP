@@ -249,7 +249,7 @@ DECLARE @rLot   TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLo
 DECLARE @rMove  TABLE (Status BIT, Message NVARCHAR(500));
 DECLARE @rTrim  TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 DECLARE @rMin   TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);   -- MachiningIn_RecordPick status row (NewId = ProductionEventId)
-DECLARE @rSplit TABLE (Status BIT, Message NVARCHAR(500), ProductionEventId BIGINT, ChildLotId BIGINT, ChildLotName NVARCHAR(50), DestinationLocationId BIGINT, PieceCount INT);
+DECLARE @rMint  TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);   -- MachiningOut_Mint status row (NewId = minted machined LotId)
 DECLARE @rTray  TABLE (Status BIT, Message NVARCHAR(500), FinishedGoodLotId BIGINT, ContainerId BIGINT, ContainerTrayId BIGINT, ContainerFull BIT);
 DECLARE @rComp  TABLE (Status BIT, Message NVARCHAR(500), ShippingLabelId BIGINT, AimShipperId NVARCHAR(50));
 DECLARE @rShip  TABLE (Status BIT, Message NVARCHAR(500));
@@ -290,23 +290,19 @@ INSERT INTO @rMin EXEC Workorder.MachiningIn_RecordPick @LotId = @A_Cast, @LineL
 IF (SELECT Status FROM @rMin) <> 1
 BEGIN SET @ErrMsg = N'6MA-A MachiningIn_RecordPick failed: ' + ISNULL((SELECT Message FROM @rMin), N'?'); THROW 51000, @ErrMsg, 1; END
 
--- Machining OUT parent: mint the MACHINED 6MA-M LOT at MOUT. No proc renames the
--- cast LOT into the machined Item post-rework, so the split parent (which Assembly
--- must consume as 6MA-M) is minted directly here -- mirrors test 070's fixture.
--- NULL Tool/Cavity (machined part, B13). See report: cast->machined genealogy edge
--- is not built by any current proc.
-DELETE FROM @rLot;
-INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId = @I_6MAM, @LotOriginTypeId = @OriginManufactured, @CurrentLocationId = @L_FPRPY_MOUT, @PieceCount = 24, @AppUserId = @U;
-IF (SELECT Status FROM @rLot) <> 1
-BEGIN SET @ErrMsg = N'6MA-A machined Lot_Create failed: ' + ISNULL((SELECT Message FROM @rLot), N'?'); THROW 51000, @ErrMsg, 1; END
-DECLARE @A_Machined BIGINT = (SELECT NewId FROM @rLot);
+-- Machining OUT: consume-mint the MACHINED 6MA-M LOT by consuming the cast LOT
+-- @A_Cast (Consumption genealogy cast->machined via the 6MA-M<-6MA-C BOM). Then
+-- move the machined LOT to the assembly cell (AFIN) for consumption.
+DELETE FROM @rMint;
+INSERT INTO @rMint EXEC Workorder.MachiningOut_Mint @SourceLotId = @A_Cast, @OperationTemplateId = @OT_MachiningOut, @PieceCount = 24, @AppUserId = @U, @TerminalLocationId = @L_FPRPY_MOUT;
+IF (SELECT Status FROM @rMint) <> 1
+BEGIN SET @ErrMsg = N'6MA-A MachiningOut_Mint failed: ' + ISNULL((SELECT Message FROM @rMint), N'?'); THROW 51000, @ErrMsg, 1; END
+DECLARE @A_Machined BIGINT = (SELECT NewId FROM @rMint);
 
-DECLARE @A_SplitJson NVARCHAR(MAX) = N'[{"pieceCount":12,"destinationLocationId":' + CAST(@L_FPRPY_AFIN AS NVARCHAR(20))
-    + N'},{"pieceCount":12,"destinationLocationId":' + CAST(@L_FPRPY_AFIN AS NVARCHAR(20)) + N'}]';
-DELETE FROM @rSplit;
-INSERT INTO @rSplit EXEC Workorder.MachiningOut_RecordSplit @ParentLotId = @A_Machined, @OperationTemplateId = @OT_MachiningOut, @SplitChildrenJson = @A_SplitJson, @AppUserId = @U;
-IF NOT EXISTS (SELECT 1 FROM @rSplit WHERE Status = 1)
-BEGIN SET @ErrMsg = N'6MA-A MachiningOut_RecordSplit failed: ' + ISNULL((SELECT TOP 1 Message FROM @rSplit), N'?'); THROW 51000, @ErrMsg, 1; END
+DELETE FROM @rMove;
+INSERT INTO @rMove EXEC Lots.Lot_MoveTo @LotId = @A_Machined, @ToLocationId = @L_FPRPY_AFIN, @AppUserId = @U;
+IF (SELECT Status FROM @rMove) <> 1
+BEGIN SET @ErrMsg = N'6MA-A machined move to AFIN failed: ' + ISNULL((SELECT Message FROM @rMove), N'?'); THROW 51000, @ErrMsg, 1; END
 
 DELETE FROM @rLot;
 INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId = @I_PINA, @LotOriginTypeId = @OriginReceived, @CurrentLocationId = @L_FPRPY_AFIN, @PieceCount = 48, @VendorLotNumber = N'PINA-VEND-A001', @AppUserId = @U;
@@ -420,18 +416,18 @@ INSERT INTO @rMin EXEC Workorder.MachiningIn_RecordPick @LotId = @B_AfinCast, @L
 IF (SELECT Status FROM @rMin) <> 1
 BEGIN SET @ErrMsg = N'6MA-B AFIN-WIP MachiningIn_RecordPick failed: ' + ISNULL((SELECT Message FROM @rMin), N'?'); THROW 51000, @ErrMsg, 1; END
 
-DELETE FROM @rLot;
-INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId = @I_6MAM, @LotOriginTypeId = @OriginManufactured, @CurrentLocationId = @L_FPRPY_MOUT, @PieceCount = 24, @AppUserId = @U;
-IF (SELECT Status FROM @rLot) <> 1
-BEGIN SET @ErrMsg = N'6MA-B AFIN-WIP machined Lot_Create failed: ' + ISNULL((SELECT Message FROM @rLot), N'?'); THROW 51000, @ErrMsg, 1; END
-DECLARE @B_AfinMachined BIGINT = (SELECT NewId FROM @rLot);
+-- Machining OUT: consume-mint the machined 6MA-M by consuming @B_AfinCast, then move
+-- to AFIN. Assembly closes one tray (12) below, leaving 12 + the container open.
+DELETE FROM @rMint;
+INSERT INTO @rMint EXEC Workorder.MachiningOut_Mint @SourceLotId = @B_AfinCast, @OperationTemplateId = @OT_MachiningOut, @PieceCount = 24, @AppUserId = @U, @TerminalLocationId = @L_FPRPY_MOUT;
+IF (SELECT Status FROM @rMint) <> 1
+BEGIN SET @ErrMsg = N'6MA-B AFIN-WIP MachiningOut_Mint failed: ' + ISNULL((SELECT Message FROM @rMint), N'?'); THROW 51000, @ErrMsg, 1; END
+DECLARE @B_AfinMachined BIGINT = (SELECT NewId FROM @rMint);
 
-DECLARE @B_SplitJson NVARCHAR(MAX) = N'[{"pieceCount":12,"destinationLocationId":' + CAST(@L_FPRPY_AFIN AS NVARCHAR(20))
-    + N'},{"pieceCount":12,"destinationLocationId":' + CAST(@L_FPRPY_AFIN AS NVARCHAR(20)) + N'}]';
-DELETE FROM @rSplit;
-INSERT INTO @rSplit EXEC Workorder.MachiningOut_RecordSplit @ParentLotId = @B_AfinMachined, @OperationTemplateId = @OT_MachiningOut, @SplitChildrenJson = @B_SplitJson, @AppUserId = @U;
-IF NOT EXISTS (SELECT 1 FROM @rSplit WHERE Status = 1)
-BEGIN SET @ErrMsg = N'6MA-B MachiningOut_RecordSplit failed: ' + ISNULL((SELECT TOP 1 Message FROM @rSplit), N'?'); THROW 51000, @ErrMsg, 1; END
+DELETE FROM @rMove;
+INSERT INTO @rMove EXEC Lots.Lot_MoveTo @LotId = @B_AfinMachined, @ToLocationId = @L_FPRPY_AFIN, @AppUserId = @U;
+IF (SELECT Status FROM @rMove) <> 1
+BEGIN SET @ErrMsg = N'6MA-B AFIN-WIP machined move to AFIN failed: ' + ISNULL((SELECT Message FROM @rMove), N'?'); THROW 51000, @ErrMsg, 1; END
 
 DELETE FROM @rLot;
 INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId = @I_PINA, @LotOriginTypeId = @OriginReceived, @CurrentLocationId = @L_FPRPY_AFIN, @PieceCount = 48, @VendorLotNumber = N'PINA-VEND-B001', @AppUserId = @U;
