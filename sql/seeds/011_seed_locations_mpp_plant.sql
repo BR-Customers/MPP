@@ -640,8 +640,8 @@ IF NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la JOIN Location.Locatio
 
 -- === Dedicated machining/assembly terminal DefaultScreen demo (FDS-02-010) ===
 -- These line terminals are dedicated-flavor: each screen binds session.custom.cell to
--- the terminal's parent ProductionLine (line-resolution), no picker. The smoke seed
--- (smoke_seed_phase5_7) stages WIP at these same lines so the queues populate.
+-- the terminal's parent ProductionLine (line-resolution), no picker. The demo seed
+-- (sql/scratch/seed_demo.sql) stages WIP at these same lines so the queues populate.
 --   MA1-5GOF-MIN  -> machining-in     | MA1-5GOF-MOUT -> machining-out
 --   MA1-5GOF-ASER -> assembly-serialized
 --   MA1-COMPBR-MIN -> assembly-in (6B2 scan-in) | MA1-COMPBR-AOUT -> assembly-nonserialized
