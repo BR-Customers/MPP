@@ -398,7 +398,7 @@ CREATE TABLE #StepList (
     OperationTemplateId BIGINT, OperationCode NVARCHAR(50),
     OperationName NVARCHAR(200), OperationVersionNumber INT,
     OperationTypeId BIGINT, OperationTypeCode NVARCHAR(50), OperationTypeName NVARCHAR(100),
-    OperationCategoryName NVARCHAR(100),
+    OperationCategoryId BIGINT, OperationCategoryName NVARCHAR(100),
     DataCollectionSummary NVARCHAR(MAX),
     IsRequired BIT, Description NVARCHAR(500)
 );

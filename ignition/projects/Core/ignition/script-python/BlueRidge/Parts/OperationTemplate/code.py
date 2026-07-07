@@ -382,6 +382,27 @@ def getOperationTypesForDropdown():
     return out
 
 
+def getOperationCategoriesForDropdown():
+    """Returns [{label, value}, ...] of distinct OperationCategories (value =
+    Parts.OperationCategory.Id), derived from OperationType_ListForDropdown
+    (which carries CategoryId). Drives the Routes step Category picker
+    (Jacques 2026-07-06: steps group by CATEGORY, not OperationType)."""
+    try:
+        rows = BlueRidge.Common.Db.execList("parts/OperationType_ListForDropdown", {})
+    except Exception as e:
+        BlueRidge.Common.Util.log("getOperationCategoriesForDropdown failed: %s" % str(e))
+        return []
+    seen = {}
+    out = []
+    for r in rows or []:
+        cid = r.get("CategoryId")
+        if cid is None or cid in seen:
+            continue
+        seen[cid] = True
+        out.append({"label": r.get("CategoryName") or "", "value": cid})
+    return out
+
+
 def getAvailableDataCollectionFields(operationTemplateId):
     """Returns [{label, value}, ...] for the Add-Field dropdown on the
     Fields panel. Filters out DCFs already attached to this template."""

@@ -221,14 +221,30 @@ def getSteps(routeTemplateId):
 def getOperationTemplatesByType(operationTypeId=None, includeDeprecated=False):
     """Returns active OperationTemplate rows for the given OperationType (or all
     active templates when operationTypeId is None), ordered by the List proc.
-    Powers the per-step operation-template picker on the Draft step editor.
     """
     operationTypeId = _u(operationTypeId)
     includeDeprecated = _u(includeDeprecated)
     activeOnly = 0 if includeDeprecated else 1
     return BlueRidge.Common.Db.execList(
         "parts/OperationTemplate_List",
-        {"operationTypeId": operationTypeId, "activeOnly": activeOnly},
+        {"operationTypeId": operationTypeId, "operationCategoryId": None,
+         "activeOnly": activeOnly},
+    )
+
+
+def getOperationTemplatesByCategory(operationCategoryId=None, includeDeprecated=False):
+    """Returns active OperationTemplate rows for the given OperationCategory (or
+    all active templates when operationCategoryId is None). Powers the per-step
+    template picker on the Routes draft editor - steps are grouped by the coarser
+    CATEGORY (Die Cast / Trim / Machining & Assembly) per Jacques 2026-07-06.
+    Rows carry OperationTypeId/Name + OperationCategoryId/Name projections."""
+    operationCategoryId = _u(operationCategoryId)
+    includeDeprecated = _u(includeDeprecated)
+    activeOnly = 0 if includeDeprecated else 1
+    return BlueRidge.Common.Db.execList(
+        "parts/OperationTemplate_List",
+        {"operationTypeId": None, "operationCategoryId": operationCategoryId,
+         "activeOnly": activeOnly},
     )
 
 

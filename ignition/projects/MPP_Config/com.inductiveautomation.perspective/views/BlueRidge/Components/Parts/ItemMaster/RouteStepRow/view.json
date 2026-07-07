@@ -3,14 +3,16 @@
     "opTemplateOptions": []
   },
   "params": {
+    "categories": [],
     "mode": "published",
-    "opTypes": [],
     "rowIndex": 0,
     "step": {
       "DataCollectionSummary": "",
       "Description": null,
       "Id": null,
       "IsRequired": true,
+      "OperationCategoryId": null,
+      "OperationCategoryName": "",
       "OperationCode": "",
       "OperationName": "",
       "OperationTemplateId": null,
@@ -26,7 +28,7 @@
     "custom.opTemplateOptions": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Parts.RouteTemplate.getOperationTemplatesByType\", 0, {view.params.step.OperationTypeId})"
+          "expression": "runScript(\"BlueRidge.Parts.RouteTemplate.getOperationTemplatesByCategory\", 0, {view.params.step.OperationCategoryId})"
         },
         "transforms": [
           {
@@ -37,10 +39,10 @@
         "type": "expr"
       }
     },
-    "params.mode": {
+    "params.categories": {
       "paramDirection": "input"
     },
-    "params.opTypes": {
+    "params.mode": {
       "paramDirection": "input"
     },
     "params.rowIndex": {
@@ -197,7 +199,7 @@
           "component": {
             "onActionPerformed": {
               "config": {
-                "script": "\tsystem.perspective.sendMessage(\"routeStepTypeChanged\", payload={\"rowIndex\": self.view.params.rowIndex, \"newTypeId\": self.props.value}, scope=\"page\")"
+                "script": "\tsystem.perspective.sendMessage(\"routeStepCategoryChanged\", payload={\"rowIndex\": self.view.params.rowIndex, \"newCategoryId\": self.props.value}, scope=\"page\")"
               },
               "scope": "G",
               "type": "script"
@@ -205,7 +207,7 @@
           }
         },
         "meta": {
-          "name": "OpTypePicker"
+          "name": "CategoryPicker"
         },
         "position": {
           "basis": "260px",
@@ -223,7 +225,7 @@
           "props.options": {
             "binding": {
               "config": {
-                "path": "view.params.opTypes"
+                "path": "view.params.categories"
               },
               "type": "property"
             }
@@ -231,14 +233,14 @@
           "props.value": {
             "binding": {
               "config": {
-                "path": "view.params.step.OperationTypeId"
+                "path": "view.params.step.OperationCategoryId"
               },
               "type": "property"
             }
           }
         },
         "props": {
-          "noSelectionText": "Pick type...",
+          "noSelectionText": "Pick category...",
           "style": {
             "classes": "select",
             "height": "30px"
@@ -248,7 +250,7 @@
       },
       {
         "meta": {
-          "name": "OpTypeDisplay"
+          "name": "CategoryDisplay"
         },
         "position": {
           "basis": "260px",
@@ -266,7 +268,7 @@
           "props.text": {
             "binding": {
               "config": {
-                "path": "view.params.step.OperationTypeName"
+                "path": "view.params.step.OperationCategoryName"
               },
               "type": "property"
             }

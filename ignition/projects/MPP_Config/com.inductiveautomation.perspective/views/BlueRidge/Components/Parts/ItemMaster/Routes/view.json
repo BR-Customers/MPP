@@ -1,8 +1,8 @@
 {
   "custom": {
     "activeVersionId": null,
+    "categories": [],
     "includeDeprecated": false,
-    "opTypes": [],
     "state": {
       "editDraft": {
         "deprecatedAt": null,
@@ -48,10 +48,10 @@
         "script": "\tsystem.perspective.sendMessage(\"sectionDirtyChanged\", payload={\"section\": \"routes\", \"isDirty\": bool(currentValue.value)}, scope=\"page\")"
       }
     },
-    "custom.opTypes": {
+    "custom.categories": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.getOperationTypesForDropdown\", 0)"
+          "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.getOperationCategoriesForDropdown\", 0)"
         },
         "type": "expr"
       }
@@ -527,14 +527,14 @@
           },
           {
             "meta": {
-              "name": "ColOpType"
+              "name": "ColCategory"
             },
             "position": {
               "basis": "260px",
               "shrink": 0
             },
             "props": {
-              "text": "Operation Type"
+              "text": "Category"
             },
             "type": "ia.display.label"
           },
@@ -648,7 +648,7 @@
               },
               "transforms": [
                 {
-                  "code": "\tsteps = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\tif len(steps) == 0:\n\t\treturn []\n\tstate = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state) or {}\n\teditDraft = state.get('editDraft') or {}\n\tstatus = editDraft.get('status') or ''\n\tif status == 'Draft':\n\t\tmode = 'draft'\n\telif status == 'Deprecated':\n\t\tmode = 'deprecated'\n\telse:\n\t\tmode = 'published'\n\topTypes = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.opTypes) or []\n\ttotal = len(steps)\n\tout = []\n\tfor i, s in enumerate(steps):\n\t\ts = s or {}\n\t\tout.append({'rowIndex': i, 'step': dict(s), 'mode': mode, 'stepCount': total, 'opTypes': opTypes})\n\treturn out",
+                  "code": "\tsteps = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\tif len(steps) == 0:\n\t\treturn []\n\tstate = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state) or {}\n\teditDraft = state.get('editDraft') or {}\n\tstatus = editDraft.get('status') or ''\n\tif status == 'Draft':\n\t\tmode = 'draft'\n\telif status == 'Deprecated':\n\t\tmode = 'deprecated'\n\telse:\n\t\tmode = 'published'\n\tcategories = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.categories) or []\n\ttotal = len(steps)\n\tout = []\n\tfor i, s in enumerate(steps):\n\t\ts = s or {}\n\t\tout.append({'rowIndex': i, 'step': dict(s), 'mode': mode, 'stepCount': total, 'categories': categories})\n\treturn out",
                   "type": "script"
                 }
               ],
@@ -836,7 +836,7 @@
         {
           "name": "handleAddStep",
           "params": [],
-          "script": "\tdraft = dict(self.view.custom.state.editDraft or {})\n\tsteps = list(draft.get(\"steps\") or [])\n\tsteps.append({\n\t\t\"Id\": None, \"SequenceNumber\": len(steps) + 1,\n\t\t\"OperationTypeId\": None, \"OperationTypeCode\": \"\", \"OperationTypeName\": \"\",\n\t\t\"OperationTemplateId\": None, \"OperationCode\": \"\", \"OperationName\": \"\",\n\t\t\"OperationVersionNumber\": None, \"DataCollectionSummary\": \"\",\n\t\t\"IsRequired\": True, \"Description\": None,\n\t})\n\tdraft[\"steps\"] = steps\n\tself.view.custom.state.editDraft = draft"
+          "script": "\tdraft = dict(self.view.custom.state.editDraft or {})\n\tsteps = list(draft.get(\"steps\") or [])\n\tsteps.append({\n\t\t\"Id\": None, \"SequenceNumber\": len(steps) + 1,\n\t\t\"OperationCategoryId\": None, \"OperationCategoryName\": \"\",\n\t\t\"OperationTypeId\": None, \"OperationTypeCode\": \"\", \"OperationTypeName\": \"\",\n\t\t\"OperationTemplateId\": None, \"OperationCode\": \"\", \"OperationName\": \"\",\n\t\t\"OperationVersionNumber\": None, \"DataCollectionSummary\": \"\",\n\t\t\"IsRequired\": True, \"Description\": None,\n\t})\n\tdraft[\"steps\"] = steps\n\tself.view.custom.state.editDraft = draft"
         },
         {
           "name": "_swapSteps",
@@ -854,12 +854,12 @@
           "script": "\tdraft = dict(self.view.custom.state.editDraft or {})\n\tsteps = list(draft.get(\"steps\") or [])\n\tif idx < 0 or idx >= len(steps):\n\t\treturn\n\tdel steps[idx]\n\tdraft[\"steps\"] = steps\n\tself.view.custom.state.editDraft = draft"
         },
         {
-          "name": "_applyTypeChange",
+          "name": "_applyCategoryChange",
           "params": [
             "idx",
-            "newTypeId"
+            "newCategoryId"
           ],
-          "script": "\tdraft = dict(self.view.custom.state.editDraft or {})\n\tsteps = list(draft.get(\"steps\") or [])\n\tif idx < 0 or idx >= len(steps):\n\t\treturn\n\ts = dict(steps[idx])\n\ts[\"OperationTypeId\"] = newTypeId\n\ts[\"OperationTypeName\"] = \"\"\n\tfor t in BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.opTypes) or []:\n\t\tif t.get(\"value\") == newTypeId:\n\t\t\ts[\"OperationTypeName\"] = t.get(\"label\") or \"\"\n\t\t\tbreak\n\ts[\"OperationTemplateId\"] = None\n\ts[\"OperationCode\"] = \"\"\n\ts[\"OperationName\"] = \"\"\n\ts[\"OperationVersionNumber\"] = None\n\ts[\"DataCollectionSummary\"] = \"\"\n\tsteps[idx] = s\n\tdraft[\"steps\"] = steps\n\tself.view.custom.state.editDraft = draft"
+          "script": "\tdraft = dict(self.view.custom.state.editDraft or {})\n\tsteps = list(draft.get(\"steps\") or [])\n\tif idx < 0 or idx >= len(steps):\n\t\treturn\n\ts = dict(steps[idx])\n\ts[\"OperationCategoryId\"] = newCategoryId\n\ts[\"OperationCategoryName\"] = \"\"\n\tfor c in BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.categories) or []:\n\t\tif c.get(\"value\") == newCategoryId:\n\t\t\ts[\"OperationCategoryName\"] = c.get(\"label\") or \"\"\n\t\t\tbreak\n\ts[\"OperationTypeId\"] = None\n\ts[\"OperationTypeCode\"] = \"\"\n\ts[\"OperationTypeName\"] = \"\"\n\ts[\"OperationTemplateId\"] = None\n\ts[\"OperationCode\"] = \"\"\n\ts[\"OperationName\"] = \"\"\n\ts[\"OperationVersionNumber\"] = None\n\ts[\"DataCollectionSummary\"] = \"\"\n\tsteps[idx] = s\n\tdraft[\"steps\"] = steps\n\tself.view.custom.state.editDraft = draft"
         },
         {
           "name": "_applyTemplateChange",
@@ -867,7 +867,7 @@
             "idx",
             "newTemplateId"
           ],
-          "script": "\tdraft = dict(self.view.custom.state.editDraft or {})\n\tsteps = list(draft.get(\"steps\") or [])\n\tif idx < 0 or idx >= len(steps):\n\t\treturn\n\ts = dict(steps[idx])\n\ts[\"OperationTemplateId\"] = newTemplateId\n\ts[\"OperationCode\"] = \"\"\n\ts[\"OperationName\"] = \"\"\n\ts[\"OperationVersionNumber\"] = None\n\ts[\"DataCollectionSummary\"] = \"\"\n\tif newTemplateId:\n\t\tfor ot in (BlueRidge.Parts.RouteTemplate.getOperationTemplatesByType(s.get(\"OperationTypeId\")) or []):\n\t\t\tif ot.get(\"Id\") == newTemplateId:\n\t\t\t\ts[\"OperationCode\"] = ot.get(\"Code\") or \"\"\n\t\t\t\ts[\"OperationName\"] = ot.get(\"Name\") or \"\"\n\t\t\t\ts[\"OperationVersionNumber\"] = ot.get(\"VersionNumber\")\n\t\t\t\tbreak\n\t\ts[\"DataCollectionSummary\"] = BlueRidge.Parts.OperationTemplate.getFieldSummary(newTemplateId)\n\tsteps[idx] = s\n\tdraft[\"steps\"] = steps\n\tself.view.custom.state.editDraft = draft"
+          "script": "\tdraft = dict(self.view.custom.state.editDraft or {})\n\tsteps = list(draft.get(\"steps\") or [])\n\tif idx < 0 or idx >= len(steps):\n\t\treturn\n\ts = dict(steps[idx])\n\ts[\"OperationTemplateId\"] = newTemplateId\n\ts[\"OperationCode\"] = \"\"\n\ts[\"OperationName\"] = \"\"\n\ts[\"OperationVersionNumber\"] = None\n\ts[\"DataCollectionSummary\"] = \"\"\n\tif newTemplateId:\n\t\tfor ot in (BlueRidge.Parts.RouteTemplate.getOperationTemplatesByCategory(s.get(\"OperationCategoryId\")) or []):\n\t\t\tif ot.get(\"Id\") == newTemplateId:\n\t\t\t\ts[\"OperationCode\"] = ot.get(\"Code\") or \"\"\n\t\t\t\ts[\"OperationName\"] = ot.get(\"Name\") or \"\"\n\t\t\t\ts[\"OperationVersionNumber\"] = ot.get(\"VersionNumber\")\n\t\t\t\ts[\"OperationTypeId\"] = ot.get(\"OperationTypeId\")\n\t\t\t\ts[\"OperationTypeName\"] = ot.get(\"OperationTypeName\") or \"\"\n\t\t\t\tbreak\n\t\ts[\"DataCollectionSummary\"] = BlueRidge.Parts.OperationTemplate.getFieldSummary(newTemplateId)\n\tsteps[idx] = s\n\tdraft[\"steps\"] = steps\n\tself.view.custom.state.editDraft = draft"
         },
         {
           "name": "_applyReqChange",
@@ -916,9 +916,9 @@
           "viewScope": false
         },
         {
-          "messageType": "routeStepTypeChanged",
+          "messageType": "routeStepCategoryChanged",
           "pageScope": true,
-          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tself._applyTypeChange(idx, payload.get(\"newTypeId\"))",
+          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tself._applyCategoryChange(idx, payload.get(\"newCategoryId\"))",
           "sessionScope": false,
           "viewScope": false
         },
