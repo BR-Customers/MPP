@@ -206,13 +206,19 @@ def getCellLineQuantity(locationId, itemId):
     )
 
 
-def getWipQueueByLocation(locationId, includeDescendants=False, _refreshToken=None):
-    """Arc 2 Phase 4 / Phase 5. The FIFO WIP queue at a location (open LOTs in
-       arrival order). Returns list[dict]."""
-    BlueRidge.Common.Util.log("locationId=%s includeDescendants=%s" % (locationId, includeDescendants))
+def getWipQueueByLocation(locationId, includeDescendants=False, operationTypeCode=None, _refreshToken=None):
+    """Route-driven WIP queue at a location (terminal-mint spec §3.2): open LOTs whose
+       next PENDING route step carries operationTypeCode (the terminal's OperationType
+       role, e.g. 'MachiningIn' / 'MachiningOut' / 'AssemblyOut'), in arrival order.
+       When operationTypeCode is None every open LOT at the location is returned with
+       its resolved next-step role (NextOperationTypeCode / NextSequenceNumber).
+       Returns list[dict]."""
+    BlueRidge.Common.Util.log("locationId=%s includeDescendants=%s operationTypeCode=%s"
+                              % (locationId, includeDescendants, operationTypeCode))
     return BlueRidge.Common.Db.execList(
         "lots/Lot_GetWipQueueByLocation",
-        {"locationId": _u(locationId), "includeDescendants": bool(includeDescendants)},
+        {"locationId": _u(locationId), "operationTypeCode": _u(operationTypeCode),
+         "includeDescendants": bool(includeDescendants)},
     )
 
 
