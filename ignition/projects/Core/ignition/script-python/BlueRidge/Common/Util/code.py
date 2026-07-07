@@ -769,3 +769,26 @@ def convertWrapperObjectToJson(obj):
              dirty detection. Returns "null" for None.
     """
     return system.util.jsonEncode(extractQualifiedValues(obj))
+
+
+def toPlain(obj):
+    """
+    Deep-convert ANY Perspective-wrapped container into plain Python
+    dicts/lists via the JSON round-trip -- INCLUDING the
+    com.inductiveautomation.perspective.common ImmutableMap/ImmutableList
+    that container props arrive as in runScript EXPRESSION args, which
+    extractQualifiedValues cannot unwrap (.get() AttributeErrors on them;
+    see feedback_ignition_immutable_map_unwrap).
+
+    Use this at the top of any entity function that is a runScript binding
+    source and receives a container ARG (lists of rows, dicts). Caveat:
+    java.util.Date values become strings on the round-trip -- when a
+    function consumes Date fields, precompute display strings instead
+    (or use a property-binding script transform, whose containers arrive
+    as JavaMap and unwrap normally).
+
+    Returns None for None.
+    """
+    if obj is None:
+        return None
+    return system.util.jsonDecode(convertWrapperObjectToJson(obj))

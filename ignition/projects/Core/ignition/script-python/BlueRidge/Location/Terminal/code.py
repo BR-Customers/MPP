@@ -86,10 +86,9 @@ def filterForSelector(rows, search):
 
        rows arrives from a runScript EXPRESSION ({view.custom.terminals}), so
        each element is a Perspective ImmutableMap -- .get() AttributeErrors
-       there, and extractQualifiedValues does not unwrap those types. JSON
-       round-trip to plain Python dicts before touching fields."""
-    rows = system.util.jsonDecode(
-        BlueRidge.Common.Util.convertWrapperObjectToJson(rows)) or []
+       there, and extractQualifiedValues does not unwrap those types
+       (feedback_ignition_immutable_map_unwrap)."""
+    rows = BlueRidge.Common.Util.toPlain(rows) or []
     s = ("%s" % (BlueRidge.Common.Util.extractQualifiedValues(search) or "")).strip().upper()
     if not s:
         return rows
