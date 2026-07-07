@@ -40,7 +40,7 @@
     "custom.trimInventory": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.terminal.zoneLocationId}, false, {view.custom.refreshToken})"
+          "expression": "runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.terminal.zoneLocationId}, true, {view.custom.refreshToken})"
         },
         "type": "expr"
       }
@@ -528,9 +528,9 @@
                       "props.params.destinationLocationId": {
                         "binding": {
                           "config": {
-                            "path": "session.custom.terminal.zoneLocationId"
+                            "expression": "coalesce({session.custom.cell.locationId}, {session.custom.terminal.zoneLocationId})"
                           },
-                          "type": "property"
+                          "type": "expr"
                         }
                       }
                     },
@@ -580,6 +580,7 @@
             },
             "props": {
               "alignItems": "stretch",
+              "direction": "row-reverse",
               "style": {
                 "gap": "16px",
                 "overflow": "hidden"
@@ -1118,6 +1119,7 @@
             },
             "props": {
               "alignItems": "stretch",
+              "direction": "row-reverse",
               "style": {
                 "gap": "16px",
                 "overflow": "hidden"
