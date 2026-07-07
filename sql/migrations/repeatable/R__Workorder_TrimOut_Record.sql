@@ -1,8 +1,8 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_TrimOut_Record.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-07-06
--- Version:     1.1
+-- Modified:    2026-07-07
+-- Version:     1.2
 -- Description: Arc 2 Phase 4 (spec sec 4.3). The Trim OUT 1:1 WHOLE-LOT move
 --              (FDS-06-006): writes a closing Workorder.ProductionEvent checkpoint
 --              for the LOT, then moves the WHOLE LOT to @DestinationCellLocationId,
@@ -27,6 +27,15 @@
 --              (2) @ShotCount / @ScrapCount, when supplied, cannot exceed the
 --                  LOT's PieceCount (counts validated against what the LOT
 --                  actually contains).
+--
+--              v1.2 (2026-07-07, smoke findings): two refinements to (2).
+--              (a) The cap is the COMBINED sum -- ShotCount + ScrapCount
+--                  together cannot exceed Lot.PieceCount (shots trimmed +
+--                  pieces scrapped both come out of what the LOT contains).
+--              (b) Scrap DECREMENTS the LOT: the move subtracts @ScrapCount
+--                  from Lot.PieceCount, so the LOT arrives at Machining with
+--                  its real remaining quantity (mirrors RejectEvent_Record's
+--                  decrement semantics).
 --
 --              Flow (FDS-11-011 + Msg-3915): ALL rejecting validations run BEFORE
 --              BEGIN TRANSACTION (captured via INSERT-EXEC by callers/tests). The
@@ -203,23 +212,15 @@ BEGIN
             RETURN;
         END
 
-        -- ---- 6b. Counts cannot exceed the LOT's piece count (2026-07-06) ----
-        IF @LotPieceCount IS NOT NULL AND @ShotCount IS NOT NULL AND @ShotCount > @LotPieceCount
+        -- ---- 6b. COMBINED counts cannot exceed the LOT's piece count (v1.2) ----
+        -- Shots trimmed + pieces scrapped both come out of the LOT, so the SUM
+        -- is capped by Lot.PieceCount (not each counter independently). This
+        -- also guarantees the scrap decrement below can never go negative.
+        IF @LotPieceCount IS NOT NULL
+           AND (ISNULL(@ShotCount, 0) + ISNULL(@ScrapCount, 0)) > @LotPieceCount
         BEGIN
-            SET @Message = N'ShotCount ' + CAST(@ShotCount AS NVARCHAR(20))
-                         + N' exceeds the LOT piece count ' + CAST(@LotPieceCount AS NVARCHAR(20)) + N'.';
-            EXEC Audit.Audit_LogFailure
-                @AppUserId = @AppUserId, @LogEntityTypeCode = N'ProductionEvent',
-                @EntityId = @ParentLotId, @LogEventTypeCode = N'TrimOutRecorded',
-                @FailureReason = @Message, @ProcedureName = @ProcName,
-                @AttemptedParameters = @Params;
-            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
-            RETURN;
-        END
-
-        IF @LotPieceCount IS NOT NULL AND @ScrapCount IS NOT NULL AND @ScrapCount > @LotPieceCount
-        BEGIN
-            SET @Message = N'ScrapCount ' + CAST(@ScrapCount AS NVARCHAR(20))
+            SET @Message = N'ShotCount ' + ISNULL(CAST(@ShotCount AS NVARCHAR(20)), N'0')
+                         + N' + ScrapCount ' + ISNULL(CAST(@ScrapCount AS NVARCHAR(20)), N'0')
                          + N' exceeds the LOT piece count ' + CAST(@LotPieceCount AS NVARCHAR(20)) + N'.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'ProductionEvent',
@@ -286,8 +287,11 @@ BEGIN
         SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
 
         -- (b) INLINED whole-LOT move (mirror of Lots.Lot_MoveTo). No split, no children.
+        --     v1.2: scrap comes out of the LOT here -- the LOT arrives at Machining
+        --     with its real remaining quantity. Never negative (guard 6b).
         UPDATE Lots.Lot
         SET CurrentLocationId = @DestinationCellLocationId,
+            PieceCount        = PieceCount - ISNULL(@ScrapCount, 0),
             UpdatedAt         = SYSUTCDATETIME(),
             UpdatedByUserId   = @AppUserId
         WHERE Id = @ParentLotId;
