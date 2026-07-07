@@ -1,5 +1,5 @@
 -- ============================================================
--- 031_seed_jp_validation.sql
+-- seed_jp_validation.sql (scratch backup, run on demand -- NOT auto-run by Reset-DevDatabase)
 -- Jacques's validation fixture (spec 2026-07-07 terminal-mint §5.5):
 -- a faithful capture of the 5G0 family CONFIG as currently worked with,
 -- so a DB rebuild does not lose it. Reproduces exactly what is configured:
@@ -18,7 +18,7 @@
 -- Routes/BOMs built via the production procs. Data-collection FIELDS on the
 -- templates are not reproduced (orthogonal to this fixture). No USE statement:
 -- runs against the sqlcmd session -d target. Distinct from seed_demo.sql.
---   sqlcmd -S localhost -d MPP_MES_Dev -E -b -I -C -i sql/seeds/031_seed_jp_validation.sql
+--   sqlcmd -S localhost -d MPP_MES_Dev -E -b -I -C -i sql/scratch/seed_jp_validation.sql
 -- ============================================================
 SET NOCOUNT ON; SET XACT_ABORT ON; SET QUOTED_IDENTIFIER ON;
 GO

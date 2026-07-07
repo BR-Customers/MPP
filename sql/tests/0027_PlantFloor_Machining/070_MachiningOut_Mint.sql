@@ -90,3 +90,20 @@ DELETE FROM @m; INSERT INTO @m EXEC Workorder.MachiningOut_Mint @SourceLotId = @
 DECLARE @overStatus NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @m);
 EXEC test.Assert_IsEqual @TestName = N'[MoMint] over-mint rejected', @Expected = N'0', @Actual = @overStatus;
 GO
+
+-- ---- teardown (FK-safe): all LOTs of the fixture items 6MA-C / 6MA-M + the fixture BOM ----
+DECLARE @Cast BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'6MA-C');
+DECLARE @Mach BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'6MA-M');
+DECLARE @Lots TABLE (Id BIGINT);
+INSERT INTO @Lots SELECT Id FROM Lots.Lot WHERE ItemId IN (@Cast, @Mach);
+DELETE FROM Workorder.ConsumptionEvent WHERE SourceLotId IN (SELECT Id FROM @Lots) OR ProducedLotId IN (SELECT Id FROM @Lots);
+DELETE FROM Workorder.ProductionEvent WHERE LotId IN (SELECT Id FROM @Lots);
+DELETE FROM Lots.LotGenealogy WHERE ParentLotId IN (SELECT Id FROM @Lots) OR ChildLotId IN (SELECT Id FROM @Lots);
+DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId IN (SELECT Id FROM @Lots) OR DescendantLotId IN (SELECT Id FROM @Lots);
+DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM @Lots);
+DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM @Lots);
+DELETE FROM Lots.LotStatusHistory WHERE LotId IN (SELECT Id FROM @Lots);
+DELETE FROM Lots.Lot WHERE Id IN (SELECT Id FROM @Lots);
+DELETE bl FROM Parts.BomLine bl JOIN Parts.Bom b ON b.Id = bl.BomId WHERE b.ParentItemId = @Mach;
+DELETE FROM Parts.Bom WHERE ParentItemId = @Mach;
+GO
