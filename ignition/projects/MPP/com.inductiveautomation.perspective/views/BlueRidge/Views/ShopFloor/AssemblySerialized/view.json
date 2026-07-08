@@ -227,6 +227,35 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params={\"locationId\": self.session.custom.cell.locationId}, title=\"Line Inventory\", modal=False, showCloseIcon=True, draggable=True, resizable=True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "InventoryButton",
+              "tooltip": {
+                "text": "Check component / pass-through inventory in to this line"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Inventory"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
                     "script": "\tsystem.perspective.navigate(\"/\")"
                   },
                   "scope": "G",
@@ -1383,6 +1412,19 @@
         "gap": "16px",
         "padding": "24px"
       }
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "inventoryChanged",
+          "pageScope": true,
+          "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
     },
     "type": "ia.container.flex"
   }

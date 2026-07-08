@@ -250,6 +250,35 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params={\"locationId\": self.session.custom.cell.locationId}, title=\"Line Inventory\", modal=False, showCloseIcon=True, draggable=True, resizable=True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "InventoryButton",
+              "tooltip": {
+                "text": "Check component / pass-through inventory in to this line"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Inventory"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
                     "script": "\tsystem.perspective.navigate(\"/\")"
                   },
                   "scope": "G",
@@ -647,6 +676,13 @@
           "messageType": "bomRenameResult",
           "pageScope": true,
           "script": "\tif payload.get(\"action\") != \"confirm\":\n\t\treturn\n\tp = self.view.custom.pending\n\tcellId = self.session.custom.cell.locationId\n\tterminalId = self.session.custom.terminal.terminalLocationId\n\tif not p or p.get(\"sourceLotId\") is None or cellId is None:\n\t\treturn\n\tresult = BlueRidge.Workorder.Machining.recordPick(p.get(\"sourceLotId\"), cellId, self.session.custom.appUserId, terminalId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining IN\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.pending = {\"sourceLotId\": None, \"lotName\": \"\", \"sourceItem\": \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "inventoryChanged",
+          "pageScope": true,
+          "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
           "sessionScope": false,
           "viewScope": false
         }

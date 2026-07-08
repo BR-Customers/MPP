@@ -1376,6 +1376,19 @@
         "padding": "24px"
       }
     },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "inventoryChanged",
+          "pageScope": true,
+          "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
     "type": "ia.container.flex"
   }
 }
