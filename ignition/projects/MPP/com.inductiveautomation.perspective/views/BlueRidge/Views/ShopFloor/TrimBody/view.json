@@ -503,6 +503,9 @@
                       }
                     },
                     "props": {
+                      "params": {
+                        "replyMessage": "trimInMoved"
+                      },
                       "path": "BlueRidge/Components/PlantFloor/MovementScan"
                     },
                     "type": "ia.display.view"
@@ -1182,7 +1185,7 @@
         {
           "messageType": "trimInMoved",
           "pageScope": true,
-          "script": "\tself.view.custom.activeLotId \u003d payload.get(\"lotId\")\n\tself.view.custom.trimState \u003d \"out\"\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1\n\t# TODO(phase4): record the TrimIn checkpoint via ProductionEvent.record once cumulative inputs exist.",
+          "script": "\ttry:\n\t\ttermId \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId \u003d None\n\t# TrimIn checkpoint (route Advance step; Phase-4 TODO closed 2026-07-08): without it the\n\t# route-driven queues hold the LOT pending at TrimIn and it never reaches Machining IN.\n\tBlueRidge.Workorder.ProductionEvent.recordTrimInCheckpoint(payload.get(\"lotId\"), self.session.custom.appUserId, termId)\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1",
           "sessionScope": false,
           "viewScope": false
         }

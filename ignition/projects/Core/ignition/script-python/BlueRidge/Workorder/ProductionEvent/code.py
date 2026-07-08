@@ -6,10 +6,37 @@
 
 import BlueRidge.Common.Db
 import BlueRidge.Common.Util
+import BlueRidge.Lots.Lot
+import BlueRidge.Parts.OperationTemplate
 
 
 def _u(value):
     return BlueRidge.Common.Util.extractQualifiedValues(value)
+
+
+def recordTrimInCheckpoint(lotId, appUserId=None, terminalLocationId=None):
+    """Record the TrimIn checkpoint for a LOT just checked into Trim (closes the
+       Phase-4 TODO). The route-driven queues (terminal-mint model) hold a LOT at
+       its lowest unsatisfied Advance step -- without this event a trimmed LOT
+       stays pending at TrimIn and never surfaces on Machining IN (2026-07-08
+       finding, LOT MESL3000123). Resolves the item's route-step template by
+       role; an item whose route has no TrimIn step records nothing (returns
+       None). Counter-less checkpoint (counters belong to the Trim OUT step)."""
+    lotId = _u(lotId)
+    if lotId is None:
+        return None
+    lot = BlueRidge.Lots.Lot.get(lotId=lotId)
+    if not lot:
+        return None
+    tplId = BlueRidge.Parts.OperationTemplate.getActiveTemplateIdForRoute(
+        lot.get("ItemId"), "TrimIn")
+    if tplId is None:
+        BlueRidge.Common.Util.log(
+            "recordTrimInCheckpoint: no TrimIn route step for item %s (lot %s)"
+            % (lot.get("ItemId"), lotId))
+        return None
+    return record({"lotId": lotId, "operationTemplateId": tplId},
+                  appUserId, terminalLocationId)
 
 
 def record(data, appUserId=None, terminalLocationId=None):
