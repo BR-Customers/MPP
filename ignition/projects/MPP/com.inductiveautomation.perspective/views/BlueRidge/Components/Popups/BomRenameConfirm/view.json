@@ -1,8 +1,8 @@
 {
   "custom": {},
   "params": {
-    "title": "Pick & Rename",
-    "message": "Pick this LOT and rename via its machining BOM?",
+    "title": "Start Machining",
+    "message": "Start machining this LOT?",
     "replyMessage": "bomRenameResult",
     "popupId": "mpp-bom-rename"
   },
@@ -62,7 +62,7 @@
           {
             "type": "ia.input.button",
             "meta": { "name": "ConfirmButton" },
-            "props": { "text": "Pick & Rename", "style": { "classes": "pf-btn pf-btn-primary pf-btn-large" } },
+            "props": { "text": "Start Machining", "style": { "classes": "pf-btn pf-btn-primary pf-btn-large" } },
             "events": {
               "component": {
                 "onActionPerformed": {

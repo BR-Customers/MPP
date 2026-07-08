@@ -125,7 +125,7 @@ DECLARE @Misplaced INT = (SELECT COUNT(*) FROM Lots.Lot WHERE Id = @Child1 AND C
 EXEC test.Assert_RowCount @TestName = N'[MachSplit] each child at its destination', @ExpectedCount = 0, @ActualCount = @Misplaced;
 
 -- child-1 visible in Dest1 FIFO queue
-CREATE TABLE #Q (Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500), PieceCount INT, LotStatusId BIGINT, LotStatusCode NVARCHAR(20), LastMovementAt DATETIME2(3), HasRenameBom BIT);
+CREATE TABLE #Q (Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500), PieceCount INT, LotStatusId BIGINT, LotStatusCode NVARCHAR(20), LastMovementAt DATETIME2(3), HasRenameBom BIT, HasLineEvent BIT);
 INSERT INTO #Q EXEC Lots.Lot_GetWipQueueByLocation @LocationId = @Dest1;
 DECLARE @InQ1 INT = (SELECT COUNT(*) FROM #Q WHERE Id = @Child1);
 DROP TABLE #Q;
