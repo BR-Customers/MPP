@@ -44,7 +44,10 @@
     "props": {
       "direction": "column",
       "style": {
-        "classes": "pf-terminal canvas"
+        "classes": "pf-terminal canvas",
+        "gap": "16px",
+        "overflowY": "auto",
+        "padding": "16px"
       }
     },
     "events": {
@@ -66,10 +69,13 @@
         },
         "props": {
           "style": {
-            "classes": "pf-header"
+            "classes": "pf-terminal-header",
+            "gap": "12px",
+            "paddingBottom": "16px"
           },
           "justify": "space-between",
-          "alignItems": "center"
+          "alignItems": "flex-end",
+          "wrap": "wrap"
         },
         "position": {
           "shrink": 0
@@ -80,8 +86,16 @@
             "meta": {
               "name": "Title"
             },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
             "props": {
-              "direction": "column"
+              "direction": "column",
+              "style": {
+                "classes": "pf-terminal-title",
+                "gap": "4px"
+              }
             },
             "children": [
               {
@@ -92,7 +106,9 @@
                 "props": {
                   "text": "Assembly IN",
                   "style": {
-                    "classes": "pf-title"
+                    "classes": "pf-terminal-title",
+                    "fontSize": "24px",
+                    "fontWeight": "600"
                   }
                 }
               },
@@ -104,7 +120,7 @@
                 "props": {
                   "text": "Scan machined components into this cell's queue",
                   "style": {
-                    "classes": "pf-subtitle"
+                    "classes": "pf-terminal-title-meta"
                   }
                 }
               }
@@ -156,10 +172,11 @@
         },
         "props": {
           "style": {
-            "classes": "pf-panel"
+            "classes": "pf-terminal-cell-context",
+            "gap": "12px",
+            "overflow": "hidden"
           },
-          "alignItems": "center",
-          "gap": "10px"
+          "alignItems": "center"
         },
         "position": {
           "shrink": 0
@@ -171,9 +188,9 @@
               "name": "CtxLabel"
             },
             "props": {
-              "text": "Cell",
+              "text": "Active Cell",
               "style": {
-                "classes": "pf-field-label"
+                "classes": "pf-cell-context-label"
               }
             }
           },
@@ -185,7 +202,7 @@
             "props": {
               "text": "",
               "style": {
-                "classes": "pf-field-input-mono"
+                "classes": "pf-cell-context-value"
               }
             },
             "propConfig": {
@@ -193,7 +210,7 @@
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "if(isNull({session.custom.cell.name}), '(no cell bound)', {session.custom.cell.name})"
+                    "expression": "if(isNull({session.custom.cell.name}), 'No cell bound to this terminal', {session.custom.cell.name})"
                   }
                 }
               }
@@ -332,7 +349,7 @@
                 "props": {
                   "text": "Components at this cell",
                   "style": {
-                    "classes": "pf-section-title"
+                    "classes": "pf-panel-header"
                   }
                 }
               },
@@ -401,7 +418,7 @@
             "props": {
               "text": "",
               "style": {
-                "classes": "pf-empty-hint"
+                "classes": "pf-kpi-sub"
               }
             },
             "propConfig": {
@@ -409,7 +426,7 @@
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "if(isNull({session.custom.cell.locationId}), 'No cell is bound to this terminal.', 'No component LOTs at this cell yet — scan one in above.')"
+                    "expression": "if(isNull({session.custom.cell.locationId}), 'No cell is bound to this terminal.', 'No component LOTs at this cell yet - scan one in above.')"
                   }
                 }
               },
