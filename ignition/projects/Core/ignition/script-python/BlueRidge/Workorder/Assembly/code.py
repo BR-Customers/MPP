@@ -64,24 +64,39 @@ def handleTrayComplete(container, draft, selectedFinishedGoodItemId, cellLocatio
     return completeTray(fgItem, cnt, cellLocationId, terminalLocationId=cellLocationId)
 
 
-def getEligibleFinishedGoodsForDropdown(cellLocationId):
-    """Returns [{label, value}, ...] of the finished-good Items eligible at the
-       assembly cell, for the persistent finished-good dropdown. Value is the
-       Parts.Item.Id (BIGINT); label is 'PartNumber - Description'. Reuses the
-       eligibility read (at an assembly-out cell the eligible items are the assembled
-       finished goods)."""
+def _rankedFinishedGoods(cellLocationId):
+    """Ranked eligible finished goods at the cell (terminal-mint decision 6/B5):
+       ordered by BOM-satisfiability against ready line inventory, recommended-first.
+       Each row: {Id, PartNumber, Description, LinesSatisfied, IsRecommended}."""
     if cellLocationId is None:
         return []
     try:
-        rows = BlueRidge.Common.Db.execList(
-            "parts/Item_ListEligibleForLocation", {"locationId": cellLocationId})
+        return BlueRidge.Common.Db.execList(
+            "parts/Item_ListEligibleFinishedGoodsRanked", {"locationId": cellLocationId}) or []
     except Exception as e:
-        BlueRidge.Common.Util.log("getEligibleFinishedGoodsForDropdown failed: %s" % str(e))
+        BlueRidge.Common.Util.log("_rankedFinishedGoods failed: %s" % str(e))
         return []
+
+
+def getEligibleFinishedGoodsForDropdown(cellLocationId):
+    """Returns [{label, value}, ...] of the finished-good Items eligible at the assembly
+       cell, for the persistent finished-good dropdown -- RANKED so the recommended FG
+       (best BOM match against ready line inventory) is first. Value is Parts.Item.Id;
+       label is 'PartNumber - Description'."""
     out = []
-    for r in rows or []:
+    for r in _rankedFinishedGoods(cellLocationId):
         part = r.get("PartNumber") or ""
         desc = r.get("Description") or ""
         label = ("%s - %s" % (part, desc)) if desc else part
         out.append({"label": label, "value": r.get("Id")})
     return out
+
+
+def getRecommendedFinishedGoodId(cellLocationId):
+    """The Item.Id of the recommended finished good to pre-select at the cell (the
+       IsRecommended=1 row, i.e. the top of the ranked list), or None if none eligible.
+       The Assembly OUT view binds the dropdown's default to this."""
+    for r in _rankedFinishedGoods(cellLocationId):
+        if r.get("IsRecommended"):
+            return r.get("Id")
+    return None

@@ -76,7 +76,7 @@
       },
       "onChange": {
         "enabled": true,
-        "script": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.shiftTally) or []\n\tids \u003d [r.get(\"ToolCavityId\") for r in rows]\n\tcur \u003d self.view.custom.tallyCavityId\n\tif cur is None or cur not in ids:\n\t\tself.view.custom.tallyCavityId \u003d BlueRidge.Lots.Lot.defaultShiftCavityId(rows)"
+        "script": "\tids = BlueRidge.Lots.Lot.shiftTallyCavityIds(self.view.custom.shiftTally)\n\tcur = self.view.custom.tallyCavityId\n\tif cur is None or cur not in ids:\n\t\tself.view.custom.tallyCavityId = BlueRidge.Lots.Lot.defaultShiftCavityId(self.view.custom.shiftTally)"
       }
     }
   },
@@ -275,38 +275,6 @@
             "type": "ia.display.label"
           },
           {
-            "meta": {
-              "name": "ActiveCellValue"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "config": {
-                    "expression": "!{view.params.cellPickerEnabled}"
-                  },
-                  "type": "expr"
-                }
-              },
-              "props.text": {
-                "binding": {
-                  "config": {
-                    "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} \u003d \"\", \"No cell selected\", {session.custom.cell.name})"
-                  },
-                  "type": "expr"
-                }
-              }
-            },
-            "props": {
-              "style": {
-                "classes": "pf-cell-context-value"
-              }
-            },
-            "type": "ia.display.label"
-          },
-          {
             "events": {
               "component": {
                 "onActionPerformed": {
@@ -326,14 +294,6 @@
               "shrink": 0
             },
             "propConfig": {
-              "position.display": {
-                "binding": {
-                  "config": {
-                    "path": "view.params.cellPickerEnabled"
-                  },
-                  "type": "property"
-                }
-              },
               "props.options": {
                 "binding": {
                   "config": {
@@ -375,31 +335,23 @@
               "grow": 1
             },
             "type": "ia.display.label"
-          },
-          {
-            "meta": {
-              "name": "ToolMountedSummary"
-            },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "config": {
-                    "expression": "if(isNull({view.custom.activeTool.ToolCode}) || {view.custom.activeTool.ToolCode} \u003d \"\", \"No die mounted\", \"Tool \" + {view.custom.activeTool.ToolCode} + \" mounted  ·  \" + toStr(len({view.custom.cavityOptions})) + \" cavities active\")"
-                  },
-                  "type": "expr"
-                }
-              }
-            },
-            "props": {
-              "style": {
-                "classes": "pf-kpi-sub"
-              }
-            },
-            "type": "ia.display.label"
           }
         ],
         "meta": {
           "name": "ContextBar"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "path": "view.params.cellPickerEnabled"
+              },
+              "type": "property"
+            }
+          }
         },
         "props": {
           "alignItems": "center",

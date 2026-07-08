@@ -8,7 +8,7 @@ Everything you need to walk through and test the application in the dev environm
 
 | Layer | Status |
 |---|---|
-| SQL procs / data layer | **Fully testable** (1817-assertion suite green) |
+| SQL procs / data layer | **Fully testable** (full assertion suite green — run `sql\tests\Run-Tests.ps1`) |
 | Screen data + actions (queues, picks, splits, holds, ship, sort, AIM) | **Fully testable** with seeded data |
 | PLC `OperationComplete`, MIP per-piece handshake | **Simulated / no-op** in dev (no PLC). Assembly/Machining auto-moves won't fire. |
 | Zebra label printing (ZPL) | **Simulated** — `ShippingDispatcher`/`LotLabel` are sim-ready no-ops; no physical print. |
@@ -29,20 +29,26 @@ Everything you need to walk through and test the application in the dev environm
 
 ### 2a. Load the test data — one command
 ```powershell
-.\sql\scratch\Seed-SmokeData.ps1
+.\sql\scripts\Reset-DevDatabase.ps1
 ```
-This **rebuilds** `MPP_MES_Dev` from scratch (all migrations + base seed, guarded so the gateway releases) and layers the scenario data:
-- **phase3_diecast** — Die Cast lots + mounted tools
-- **phase5_7** — the whole production arc (machining queues, assembly containers, a completed/shippable container, a sort-cage serial set, holds, AIM pool)
-- **phase8** — downtime + shift data
+This **rebuilds** `MPP_MES_Dev` from scratch (all migrations + repeatables + the clean parts config in `sql\seeds`), then runs `sql\scratch\seed_demo.sql` to build the **continuous golden-thread dataset** — one connected run per finished good plus WIP staged at every terminal, all built through the real production procs (authentic genealogy / audit).
 
-The run ends by printing a **"WHAT TO SMOKE"** table with the exact IDs to use — keep that handy.
+The demo threads cover the clean part matrix:
+- **6MA** (non-serialized FG) — a completed + shipped run, plus WIP at die-cast / trim / machining-in / machining-out / assembly.
+- **5G0** (serialized FG) — mid-flow: machined LOT with serials placed in an open container + an active quality hold.
+- **RD-BRKT** (pass-through) — one LOT on the receiving dock, one already shipped.
+- Cross-cutting: an open pause, an open hold, an open downtime.
 
-> **Quick arc-only refresh** (no full rebuild, e.g. after you've shipped/picked things and want a fresh arc): run `sql\scratch\smoke_seed_phase5_7.sql` directly — it self-cleans. (The full `Seed-SmokeData.ps1` is the only reliable way to reset *everything*.)
+The run ends by printing a **"WHAT TO SMOKE"** checklist with the exact live IDs / LOT names to use — **that printout is the source of truth; keep it handy** (the per-screen table in §6 below is illustrative — the IDs come from the printout).
+
+> **Config only (no demo threads / LOT-free):** `.\sql\scripts\Reset-DevDatabase.ps1 -SkipDemoSeed`. This is what `Run-Tests.ps1` uses so the suite runs against clean config.
+>
+> **Quick re-seed of the threads only** (no full rebuild — e.g. after you've shipped/picked things and want the golden thread back): `.\Seed-Demo.ps1`. It's idempotent (wipes its own transactional footprint first, then rebuilds), so config / tools / locations are untouched.
 
 ### 2b. Pick up the project in Ignition
 1. **Designer → Update Project** (loads all the view/script changes from disk).
-2. **Restart the gateway** — this is **REQUIRED** after `Seed-SmokeData.ps1`, not optional. The seeder **drops and recreates** the database, which leaves the running gateway holding a **stale/faulted DB connection**. Symptom if you skip it: screens load and session UI works (e.g. the bound cell name shows) but **all DB-backed data is empty** (queues, containers, etc.). A project scan does **not** fix this — only a gateway restart (or reconnecting the `MPP` database connection in the Gateway web UI) does.
+2. After a **full `Reset-DevDatabase.ps1`**, **restart the gateway** — the reset **drops and recreates** the database, leaving the running gateway holding a **stale/faulted DB connection**. Symptom if you skip it: screens load and session UI works (e.g. the bound cell name shows) but **all DB-backed data is empty** (queues, containers, etc.). A project scan does **not** fix this — only a gateway restart (or reconnecting the `MPP` database connection in the Gateway web UI) does.
+3. After a **`.\Seed-Demo.ps1`** re-seed (no schema/DB drop), a gateway restart is **not** needed — run **`.\scan.ps1`** so the gateway picks up the refreshed data.
 
 ---
 
@@ -74,37 +80,42 @@ Two ways, both fine:
 
 ## 6. Per-screen walkthrough
 
-> IDs below are from a fresh `Seed-SmokeData.ps1` run — **confirm against the seed's printed "WHAT TO SMOKE" table** if anything looks off.
+**The authoritative walkthrough is the "WHAT TO SMOKE" checklist that `seed_demo.sql` prints** at the end of `Reset-DevDatabase.ps1` (or `.\Seed-Demo.ps1`). It lists, per screen, the route + cell + the exact live LOT name / ID / container to act on — those IDs vary per reseed, so always read them from the printout rather than hardcoding.
 
-| # | Screen (DEV NAV button) | Do this | Expect |
-|---|---|---|---|
-| 1 | **Mach IN** | Cell auto-binds `MA1-5GOF-MIN`. See the FIFO queue. Click **Pick** on a *Good* row → confirm the BOM-rename modal. | 3 LOTs: `SMK-MIN-1`/`-2` (Good), `SMK-MIN-3` (Hold, Pick disabled). On confirm: a machined LOT is created, toast, queue refreshes. |
-| 2 | **Mach OUT** | Cell auto-binds `MA1-5GOF-MOUT`. Enter two piece counts that **sum to 48**, pick two **Assembly** destinations, Submit. | Parent LOT `SMK-MOUT-1` (48 pcs). Split succeeds (proc enforces sum=48); toast. |
-| 3 | **Asm Ser** | Cell auto-binds `MA1-5GOF-ASER`. | Open 5G0 container, fill 0 / 48. (Confirm Completion needs filled trays — PLC/MIP territory.) |
-| 4 | **Asm NonSer** | Cell auto-binds `MA1-COMPBR-AOUT`. Close a tray (position + count). | Open 5G0-C container, 0 / 144; tray-close toast. |
-| 5 | **Shipping** | Enter **ShippingLabel Id `1`** → Ship. | Container ships → status Shipped; toast. (Reprint button also works.) |
-| 6 | **Sort Cage** | Enter ContainerSerial Id **`1`**, New Container Id **`5`**, tray `1` → Migrate. | Serial migrates to the destination container; toast. |
-| 7 | **Hold** | Place: LOT name `SMK-MIN-1` *or* Container Id `1` + a hold type → Place. Release: Hold Event Id **`1`** (the pre-seeded hold on `SMK-MIN-3`). | Place/Release toasts; `SMK-MIN-3` is already on hold (visible as the Hold pill in Mach IN). |
-| 8 | **AIM Config** | View thresholds; edit + Save. | Loads 50 / 30 / 20 / 10; save toast. |
-| 9 | **Supervisor / Downtime / End Shift / Shift Sum** | Open each. | Downtime/shift data from the phase8 seed. |
-| 10 | **Die Cast** *(shared — has a cell picker)* | Pick a cell; see mounted tool + eligible items. | Die-cast lots + tools from phase3. |
-| 11 | **Initials (popup)** | Click it → enter `JD`. | Popup resolves the operator. |
+The golden thread walks (see the printout for the live IDs):
+
+1. **Die Cast** *(shared — cell picker)* — a WIP `6MA-C` cast LOT waits at `DC1-M01` (tool `DEMO-DC-6MA` mounted); pick it up or shoot a new one.
+2. **Trim** — a WIP cast LOT waits at `TRIM1`; trim it out to `MA1-FPRPY-MIN`.
+3. **Machining IN** — an **unworked arrival** waits at `MA1-FPRPY-MIN`; pick it (records the checkpoint; it drops off the unworked queue).
+4. **Machining OUT** (extract-one split) — a machined `6MA-M` LOT at `MA1-FPRPY-MOUT` (paused + a 2-pc reject on it); extract a sub-LOT → `MA1-FPRPY-AFIN`, parent stays open.
+5. **Assembly Non-Serialized** — an open `6MA` container at `MA1-FPRPY-AFIN` (1 of 2 trays closed); complete tray 2 → it fills + auto-completes (mints the FG LOT).
+6. **Shipping** — the completed `6MA` container is already shipped (its ShippingLabel Id is in the printout); the pass-through `RD-BRKT` has one LOT on the dock + one shipped.
+7. **Serialized Assembly** — the `5G0` container at line `MA1-5GOF` has serials placed (FG-LOT completion deferred, A4).
+8. **Hold Management** — release the active hold on the `5G0` machined LOT.
+9. **Paused-LOT / Resume** — resume the pause on the machining-out LOT.
+10. **Downtime / Supervisor** — end the open downtime on line `MA1-FPRPY`.
+11. **LOT Search / Genealogy / Audit Browser** — trace the `6MA` machined LOT → split sublots → FG LOTs → shipped container.
+12. **Initials (popup)** — enter `JD` to resolve an operator.
+
+> **Screen-wiring note:** the DEV NAV dedicated-terminal buttons bind the **5GOF** line cells (`MA1-5GOF-*`), so the serialized-assembly / machining screens land on the **5G0** thread's line-resident data. The **6MA** thread lives on the `MA1-FPRPY` line, which has no DEV-NAV/DefaultScreen wiring yet — reach its data via LOT Search / Genealogy / the shared Die Cast + Trim screens.
 
 ---
 
 ## 7. Reset / refresh
 
-- **Full reset to clean state:** re-run `.\sql\scratch\Seed-SmokeData.ps1`.
-- **Arc-only refresh:** `sqlcmd -S localhost -d MPP_MES_Dev -E -C -I -i sql\scratch\smoke_seed_phase5_7.sql`.
-- Walking the flow **mutates data** (picks consume LOTs, splits close parents, ship marks shipped) — re-seed to start over.
+- **Full reset to clean state:** re-run `.\sql\scripts\Reset-DevDatabase.ps1` (config + golden thread; restart the gateway after).
+- **Threads-only refresh** (no DB drop): `.\Seed-Demo.ps1`, then `.\scan.ps1`.
+- **Config only (LOT-free):** `.\sql\scripts\Reset-DevDatabase.ps1 -SkipDemoSeed`.
+- Walking the flow **mutates data** (picks record checkpoints, splits close parents, ship marks shipped) — re-seed to start over.
 
 ---
 
 ## 8. Known gaps (not bugs — flagged for follow-up)
 
-- **`phase2` (lot-lifecycle) and `phase4` (trim/receiving) seeds error** on the current schema (legacy drift) and are **excluded** from the seeder. Effect: **LOT Search / Genealogy / LOT Detail** show only the lots created by the other seeds; **Trim** has no LOT staged at a trim cell to scan, and **Receiving** has no dedicated data. Repairing those two seeds is a separate task.
+- **Cast → machined genealogy edge:** post-machining-rework (RecordPick model), no proc links a cast LOT to its machined LOT. `seed_demo.sql` mints the machined LOT directly (mirrors the machining tests), so the proc-built genealogy chain runs **machined → split sublots → FG → container**; the cast LOTs are real, audited WIP but not genealogy-linked. If the demo needs the full cast→machined→FG tree, a transformation/rename proc has to be (re)built.
+- **6MA / `MA1-FPRPY` line not screen-wired:** no DEV-NAV / DefaultScreen rows target the FPRPY terminals yet, so the 6MA thread is reachable via LOT Search / Genealogy / Die Cast / Trim, not the dedicated machining/assembly screens (those bind the 5GOF line).
+- **Serialized FG-LOT completion (A4)** is deferred: the 5G0 thread stops at serial placement in an open container.
 - **Unbacked list placeholders** (render the structure, labeled "read pending"): Hold Mgmt open-LOTs/Containers columns, Shipping loaded-container queue, Sort Cage live camera. These need follow-up read procs.
-- **Trim** is a *shared* terminal but currently shows a read-only Active Cell (no picker / no "Change cell"); its OUT action still works by scanning a LOT name.
 
 ---
 
@@ -112,9 +123,10 @@ Two ways, both fine:
 
 | Tool | What it does |
 |---|---|
-| `sql\scratch\Seed-SmokeData.ps1` | Full reset + seed (the setup/reset button) |
-| `sql\scratch\smoke_seed_phase5_7.sql` | Arc-only re-seed (self-cleaning) |
-| `sql\tests\Run-Tests.ps1` | Full SQL proc test suite (guarded; 1817 assertions) |
-| `sql\scripts\Reset-DevDatabase.ps1` | Rebuild DB only (no scenario seed) |
+| `sql\scripts\Reset-DevDatabase.ps1` | Full rebuild + golden-thread seed (the setup/reset button) |
+| `sql\scripts\Reset-DevDatabase.ps1 -SkipDemoSeed` | Full rebuild, config only (LOT-free — what the test suite uses) |
+| `.\Seed-Demo.ps1` | Re-seed the golden thread only (no DB drop; idempotent) |
+| `sql\scratch\seed_demo.sql` | The golden-thread builder itself (prints the "WHAT TO SMOKE" checklist) |
+| `sql\tests\Run-Tests.ps1` | Full SQL proc test suite (resets `-SkipDemoSeed` first) |
 | `.\scan.ps1` | Trigger an Ignition project resource scan |
 | DEV NAV bar (in the app) | Navigate + simulate the dedicated-terminal cell + open the initials popup |

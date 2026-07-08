@@ -1,6 +1,8 @@
 # MPP MES — Project Status
 
-**Last updated:** 2026-07-07 — **Smoke-findings fix pass on `hunter/explore`: all 14 items from `notes/2026-07-07_smoke_findings.md` addressed (full suite 1945/1945, only the pre-existing `010_Parts_codes_crud` thrower). Per-item ✅/⚠️ annotations live in the findings file. Re-smoke owed — see the section directly below.** Prior header note (2026-07-06 second session): **Jacques 2026-07-06 meeting task list worked on `hunter/explore`: 21 of 24 items fixed, tested, committed (full suite 1934/1934, only the pre-existing `010_Parts_codes_crud` thrower). 3 items open pending live repro / Jacques's call.** Prior header note (earlier 2026-07-06):
+**Last updated:** 2026-07-08 — **Streams converged on `hunter/explore`: main's terminal-mint model redesign (Jacques, ~24 commits — route-driven queues, `MachiningOut_Mint` consume-mint, OperatorBar, Category cascades, `seed_demo` auto-run in Reset-DevDatabase) MERGED with the 2026-07-07 smoke-findings fix pass + follow-ups (Hunter — see that stream's header note below). Merge resolutions: shared-terminal cell picker kept as a picker-only ContextBar hidden on dedicated flavors (reconciles main's ContextBar removal with the picker requirement); die-cast tally readers unified on main's `_tallyRows`; `seed_demo.sql` taken from main (mint model). Full suite + gateway scan re-run post-merge.**
+
+**Prior header note (hunter/explore, 2026-07-07):** **Smoke-findings fix pass on `hunter/explore`: all 14 items from `notes/2026-07-07_smoke_findings.md` addressed (full suite 1945/1945, only the pre-existing `010_Parts_codes_crud` thrower). Per-item ✅/⚠️ annotations live in the findings file. Re-smoke owed — see the section directly below.** Prior header note (2026-07-06 second session): **Jacques 2026-07-06 meeting task list worked on `hunter/explore`: 21 of 24 items fixed, tested, committed (full suite 1934/1934, only the pre-existing `010_Parts_codes_crud` thrower). 3 items open pending live repro / Jacques's call.** Prior header note (earlier 2026-07-06):
 
 ---
 
@@ -22,7 +24,75 @@ Worked `notes/2026-07-07_smoke_findings.md` end to end (per-item ✅/⚠️ anno
 
 **⚠️ Open for Jacques:** (1) if cavity rejects must record with **no open LOT** on the cavity (pure machine scrap), `RejectEvent.LotId` needs a schema change — current design charges the newest open LOT for traceability; (2) weight-prefill semantics (UnitWeight × count) still assumed; (3) dev items need `PartsPerBasket` (`MaxLotSize`) populated via the Item screen for the prefill to show real values.
 
-**⚠️ Owed — re-smoke.** Dev DB was reset by test runs — reseed (`sql/scratch/smoke_seed_phase4.sql` etc.) + **restart the gateway** before smoking. File-edited existing views this pass: TerminalSelector, DieCastBody, DieCastShared, RejectPanel, TrimBody, LotDetail, HistoryRow (+ new `Trim/InventoryRow`); Core script modules Terminal / Item / Lot also changed. Keep Designer closed on the edited views until the scan is picked up (scan already run 2026-07-07). **Spec 2 (machining/assembly plant-floor flow reconciliation) EXECUTED end-to-end on `jacques/working`. All SQL built + verified (full suite 1910/1910 green); Ignition backend + views file-authored + scanned. A4 (serialized FG-LOT) deferred by decision; M3 view-repoint deferred. Awaiting Jacques's Designer smoke of the views. See the Spec 2 section below.** Prior header note (2026-07-02):
+**⚠️ Owed — re-smoke.** Dev DB was reset by test runs — reseed (`sql/scratch/smoke_seed_phase4.sql` etc.) + **restart the gateway** before smoking. File-edited existing views this pass: TerminalSelector, DieCastBody, DieCastShared, RejectPanel, TrimBody, LotDetail, HistoryRow (+ new `Trim/InventoryRow`); Core script modules Terminal / Item / Lot also changed. Keep Designer closed on the edited views until the scan is picked up (scan already run 2026-07-07).
+
+---
+
+**Prior header note (main, 2026-07-07):** **Terminal-mint model redesign EXECUTED end-to-end on `jacques/working` — the rename-BOM thread is unwound; the ROUTE is now the single source of truth for terminal FIFO + part identity.** SQL fully built + validated (full suite **1887/1887**, only the pre-existing `010_Parts_codes_crud` thrower); migrations `0035` (`Parts.OperationRoleKind` Advance/OriginMint/ConsumeMint) + `0036` (drop cell-coupling); Machining OUT is a consume-**mint** (`MachiningOut_Mint`, Consumption genealogy) not a split; route-legality validation at publish; ranked eligible-FG read; `Lot_Split` demoted to exception-only; `seed_demo` + demo routes (`029`) re-authored to the mint model. Ignition NQs/scripts/**views** file-authored + scanned. Docs: Data Model updated (`OperationRoleKind` + v2.0 changelog). Spec: `docs/superpowers/specs/2026-07-07-terminal-mint-model-and-rename-bom-removal-design.md`; plans `...-plan1/2/3-*`. **Owed:** Designer smoke of the mint / route-driven-queue / ranked-FG views; FDS-06-007/05-033/06-008 prose rewrite; JP backup (`sql/scratch/seed_jp_validation.sql`) still old-model; vestigial dest-dropdown on MachiningOutSplit. See the 2026-07-07 section directly below. Prior header note (2026-07-06 second session): **Jacques 2026-07-06 meeting task list worked on `hunter/explore`: 21 of 24 items fixed, tested, committed (full suite 1934/1934). 3 items open. Designer smoke owed.** Prior header note (earlier 2026-07-06): **Spec 2 (machining/assembly plant-floor flow reconciliation) EXECUTED end-to-end on `jacques/working`. All SQL built + verified (full suite 1910/1910 green); Ignition backend + views file-authored + scanned. A4 (serialized FG-LOT) deferred by decision; M3 view-repoint deferred. Awaiting Jacques's Designer smoke of the views. See the Spec 2 section below.** Prior header note (2026-07-02):
+
+---
+
+## 🔖 2026-07-07 (second session) — Worked the 2026-07-06 working-notes list end-to-end
+
+Merged `origin/main` (Hunter's `97310ac` Route-Category cascade + `7c7dffe` notes) into
+`jacques/working` — clean auto-merge, no conflicts. Then worked every item in
+`notes/2026-07-06_working-notes.md` (per-item resolution log at the top of that file).
+
+- **Operation Template management (Config):** filter dropdown repointed **type → CATEGORY**
+  with a one-click "All Categories" reset; **creation popup** now a **Category → Operation
+  cascade** (auto-selects when a category has one type, e.g. Die Cast); selection list ordered
+  **Die Cast → Trim → Machining & Assembly** (by `OperationCategory.Id`). New entity helper
+  `OperationTemplate.getOperationTypesByCategory`; `search()` filters+orders by category.
+- **Route steps:** dead `OperationAreaName` read removed from `RouteTemplate._mapSteps`
+  (repointed onto the v4.1 proc's Category/Type). The Category→Operation route-step cascade
+  itself came in with `main`'s `97310ac`.
+- **`Parts.Item_Deprecate` → v3.0 CASCADE-deprecate** (the big one): deprecating a part now
+  **cascade-deprecates its owned config** (RouteTemplate / Bom-as-parent / ItemLocation /
+  ContainerConfig) and **blocks ONLY on a live (non-terminal, i.e. not Closed/Scrap) LOT**;
+  a part used as a BomLine child in another part's BOM is neither blocked nor cascaded. Per-
+  dependent audit rows + cascade counts in the Item audit NewValue. New suite
+  `sql/tests/0008_Parts_Item/020_Item_Deprecate_cascade.sql` (**15/15 green**). Item Master
+  deprecate now routes through a `ConfirmDestructive` cascade-warning popup (was immediate).
+- **Terminal-FIFO / `CoupledDownstreamCellLocationId` note:** closed as **OBE** — already
+  answered by the 2026-07-07 terminal-mint redesign (route-driven queue; coupling column
+  dropped in `0036`).
+
+**Verification:** full suite on a throwaway `MPP_MES_Test` = **1886/1887**; the single
+failure (`0024/060 [WipQueue] fresh LOT in MachiningIn`) is **pre-existing + environmental**
+— it resolves demo-seed rows (`6MA-M` / `MA1-FPRPY-MOUT` / `DEV`) that `Run-Tests -SkipDemoSeed`
+omits, unrelated to this session. Ignition changes file-authored + `scan.ps1`'d.
+
+**Owed:** Designer smoke of the Op-Template Category filter + cascade creation popup + the
+Item Master deprecate confirm (existing-view edits, authored with Designer closed).
+
+---
+
+## 🔖 2026-07-07 — Terminal-mint model: rename-BOM thread unwound, route = single source of truth
+
+**What & why.** The Machining & Assembly flow had accreted a "rename-BOM" mechanism (FDS-05-033) that minted a machined LOT at Machining IN by "consuming" a 1-line BOM. Commits `348762e`/`1e46c60` half-unwound it, leaving `HasRenameBom` as a fragile queue discriminator. This redesign removes it entirely and re-bases terminal FIFO + part identity on the **route**. Brainstormed → spec → 3 plans → executed on `jacques/working`.
+
+**The model (spec `docs/superpowers/specs/2026-07-07-terminal-mint-model-and-rename-bom-removal-design.md`):**
+- **Route is the single source of truth.** A terminal of `OperationType` role R shows LOTs whose lowest-`SequenceNumber` *pending* route step has role R. "Pending" depends on **`OperationRoleKind`** (new): `Advance` (satisfied by a `ProductionEvent`), `OriginMint` (DieCast — always satisfied), `ConsumeMint` (Machining/Assembly OUT — terminal step, stays queued until the LOT closes).
+- **Model Y (mint-step placement):** the consume-mint is the **final route step of the *consumed* part**. A casting's route carries `…→MachiningIn→MachiningOut` (MachiningOut mints the SubAssembly, consuming the casting). The SubAssembly's route picks up *after* birth (`AssemblyIn→AssemblyOut`). Finished goods are the **output** of Assembly OUT and are **unrouted**.
+- **Decision C:** a SubAssembly identity exists only when the line has a Machining OUT terminal (expressed purely as route authoring).
+- **Consume-mint** = mint a new part-number LOT by consuming input(s) per the *produced* part's BOM (`Consumption` genealogy), derived via BOM + line-eligibility, operator-overridable. Flexible operator qty (prefill `DefaultSubLotQty`). `Lot_Split`/`Split` demoted to exception-only.
+
+**Landed (all committed, ~24 commits):**
+- **SQL** — `0035_operation_role_kind` (table + `OperationType.OperationRoleKindId`); `0036_drop_coupled_downstream_cell` (dropped `CoupledDownstreamCellLocationId` + `Workorder.MachiningOut_AutoComplete`); `Lots.Lot_GetWipQueueByLocation` v3.0 (route-driven, `@OperationTypeCode`, dropped `HasRenameBom`/`HasLineEvent`); `Workorder.MachiningOut_Mint` (replaces `RecordSplit`); route-legality validation in `Parts.RouteTemplate_Publish`; `Parts.Item_ListEligibleFinishedGoodsRanked`; `Lot_Split` header scoped exception-only; `seed_demo.sql` machining threads rebuilt on the mint (authentic cast→machined `Consumption`); **`029_seed_item_routes.sql` demo routes re-authored** to the mint model. Full suite **1887/1887** (only pre-existing `010_Parts_codes` thrower).
+- **Ignition** (Core NQs + scripts + shop-floor views, file-authored + scanned) — `MachiningOut_Mint` NQ + `Machining.mint()`; `Item_ListEligibleFinishedGoodsRanked` NQ; `Lot_GetWipQueueByLocation` NQ/script `@operationTypeCode` (last arg — existing bindings unaffected); MachiningIn/MachiningOutSplit/AssemblyNonSerialized views repointed (queue roles, mint action, ranked-FG default); retired coupling PLC/NQs.
+- **Docs** — Data Model: `OperationRoleKind` table + v2.0 changelog row (flags stale coupling/split prose).
+- **Data preservation** — Jacques's live 4-part 5G0 config was captured to `sql/scratch/seed_jp_validation.sql` before any schema change (his Dev DB was never destructively reset; verified intact, 0 LOTs lost).
+
+**Verified live.** A `6MA-C` casting walks the route-driven queue: fresh → `TrimIn` queue; after Trim + Machining-In events → `MachiningOut` queue (ready to mint). `MachiningOut_Mint` mints the SubAssembly with `Consumption` genealogy (12 assertions green).
+
+**Next-session pickup / owed:**
+1. **Designer smoke** of MachiningOutSplit (mint), the route-driven queues, and the Assembly ranked-FG default against a demo-seeded gateway (`Reset-DevDatabase` default seeds `seed_demo`, but note it `USE MPP_MES_Dev` — see gotcha).
+2. **FDS prose** — FDS-06-007 / 05-033 / 06-008 still narrate rename-at-IN / split / coupling; Data Model `CoupledDownstreamCellLocationId` / `DefaultSubLotQty` / `RequiresSubLotSplit` prose flagged in the changelog.
+3. **JP backup** (`sql/scratch/seed_jp_validation.sql`) still holds Jacques's *old-model* `5G0-c` route (ends at MachiningIn); re-author to Option A (`…→MachiningOut`; `5G0-SA`→AssemblyOut; `5G0-FG` unrouted) when he wants his Dev fixture to match.
+4. Cosmetic: delete the vestigial destination dropdown on MachiningOutSplit (Designer); per-screen queue-role tuning for AssemblyIn/Serialized/Trim (left showing-all on purpose).
+5. Pre-existing (unrelated) `Parts.DataCollectionField_Create` Msg 3915 thrower (`010_Parts_codes_crud`) — the suite's non-zero exit; worth a separate fix.
+
+**Testing gotchas learned this session:** (a) `seed_demo.sql` pins `USE MPP_MES_Dev` — running it via `-d <other>` still hits Dev; validate the demo against a demo-seeded DB by copying with the `USE` swapped. (b) A throwaway `MPP_MES_Test` (`Reset-DevDatabase.ps1 -DatabaseName MPP_MES_Test -SkipDemoSeed`) is the clean way to validate migrations/procs without touching Jacques's hand-built Dev. (c) `sqlcmd.exe` can't open Git-Bash `/tmp` paths — write temp SQL under the repo. (d) Jacques's Dev has only his 4 hand-built parts, NOT the `020` demo dataset — so `029`/`seed_demo` (demo items) can't run there; his Dev is migrations + manual config.
 
 ---
 

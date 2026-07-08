@@ -65,17 +65,22 @@ def _toRailRow(meta):
 # List feeds
 # -----------------------------------------------------------------------------
 
-def getAllForList(includeDeprecated=False, operationTypeId=None):
+def getAllForList(includeDeprecated=False, operationTypeId=None, operationCategoryId=None):
     """Returns all OperationTemplate rows joined with OperationType + Category.
-    Empty list on failure (errors toast and log; we do not propagate)."""
-    BlueRidge.Common.Util.log("includeDeprecated=%s operationTypeId=%s"
-                              % (includeDeprecated, operationTypeId))
+    Empty list on failure (errors toast and log; we do not propagate).
+
+    Filters are AND-composed by OperationTemplate_List: operationTypeId (a
+    single OperationType role) and/or operationCategoryId (the coarser
+    grouping the management screen filters on -- Jacques 2026-07-06)."""
+    BlueRidge.Common.Util.log("includeDeprecated=%s operationTypeId=%s operationCategoryId=%s"
+                              % (includeDeprecated, operationTypeId, operationCategoryId))
     try:
         return BlueRidge.Common.Db.execList(
             "parts/OperationTemplate_List",
             {
-                "operationTypeId": operationTypeId,
-                "activeOnly":      0 if includeDeprecated else 1,
+                "operationTypeId":     operationTypeId,
+                "operationCategoryId": operationCategoryId,
+                "activeOnly":          0 if includeDeprecated else 1,
             },
         )
     except Exception as e:
@@ -111,11 +116,12 @@ def search(filter=None):
     """
     BlueRidge.Common.Util.log("filter=%s" % filter)
     f = _u(filter) or {}
-    searchText        = (f.get("searchText") or "").strip().lower()
-    operationTypeId   = f.get("operationTypeId")
-    includeDeprecated = bool(f.get("includeDeprecated", False))
+    searchText          = (f.get("searchText") or "").strip().lower()
+    operationTypeId     = f.get("operationTypeId")
+    operationCategoryId = f.get("operationCategoryId")
+    includeDeprecated   = bool(f.get("includeDeprecated", False))
 
-    rows = getAllForList(includeDeprecated, operationTypeId)
+    rows = getAllForList(includeDeprecated, operationTypeId, operationCategoryId)
 
     # Keep only the highest-version row per Code (mockup pattern).
     latestByCode = {}
@@ -136,14 +142,19 @@ def search(filter=None):
                 continue
         visible.append(r)
 
-    # Group by OperationCategory (preserve a deterministic order: alpha by category).
+    # Group by OperationCategory, ordered by the category's natural process-flow
+    # order (Parts.OperationCategory.Id: 1=Die Cast, 2=Trim, 3=Machining & Assembly
+    # -- Jacques 2026-07-06), NOT alphabetically. Uncategorized sinks to the bottom.
     byCategory = {}
+    catSortKey = {}
     for r in visible:
         category = r.get("OperationCategoryName") or "(no category)"
         byCategory.setdefault(category, []).append(r)
+        cid = r.get("OperationCategoryId")
+        catSortKey[category] = cid if cid is not None else 9999
 
     instances = []
-    for category in sorted(byCategory.keys()):
+    for category in sorted(byCategory.keys(), key=lambda c: (catSortKey.get(c, 9999), c)):
         instances.append({"sectionHeader": {"label": category}, "templateRow": None})
         # Sort within category by Code.
         rowsInCategory = sorted(byCategory[category], key=lambda r: (r.get("Code") or ""))
@@ -400,6 +411,29 @@ def getOperationCategoriesForDropdown():
             continue
         seen[cid] = True
         out.append({"label": r.get("CategoryName") or "", "value": cid})
+    return out
+
+
+def getOperationTypesByCategory(operationCategoryId=None):
+    """Returns [{label, value}, ...] of the OperationTypes in a single category
+    (value = Parts.OperationType.Id). Drives the SECOND dropdown of the
+    creation-popup cascade (Category -> Type; Jacques 2026-07-06): pick a
+    category, then choose the operation within it. Label is the bare Type Name
+    (the category is already chosen upstream). Empty list when no category is
+    selected. Die Cast has one type, Trim two, Machining & Assembly five."""
+    operationCategoryId = _u(operationCategoryId)
+    if operationCategoryId is None:
+        return []
+    try:
+        rows = BlueRidge.Common.Db.execList("parts/OperationType_ListForDropdown", {})
+    except Exception as e:
+        BlueRidge.Common.Util.log("getOperationTypesByCategory failed: %s" % str(e))
+        return []
+    out = []
+    for r in rows or []:
+        if r.get("CategoryId") != operationCategoryId:
+            continue
+        out.append({"label": r.get("Name") or "", "value": r.get("Id")})
     return out
 
 

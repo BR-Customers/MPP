@@ -17,16 +17,25 @@
 --         (run AFTER Reset-DevDatabase.ps1; -I matters -- Lots.* carry
 --          filtered indexes -> Msg 1934 without it)
 --
--- Topology (RESOLVED 2026-07-06, supersedes any older 6MD-based notes):
---   6MA-C cast    DC1-M01 (die-cast, tool mounted) -> trim TRIM1
---   Machining IN  MA1-FPRPY-MIN  (consumes cast -> machined 6MA-M)
---   Machining OUT MA1-FPRPY-MOUT (extract-one split; children -> AFIN)
---   Assembly      MA1-FPRPY-AFIN (non-serialized; 6MA + PIN-A eligible)
---   5G0-C cast    DC1-M02 -> MA1-5GOF-MIN -> MA1-5GOF-MOUT (mid-flow stop)
---                 -> serialized placement at MA1-5GOF-ASER (FG-LOT completion
---                    deferred, A4)
+-- Topology (RESOLVED 2026-07-06; machining model updated for commits
+-- 348762e/1e46c60 "Machining IN = unworked arrivals, drop BOM consumption"):
+--   6MA-C cast    DC1-M01 (die-cast, tool mounted) -> trim TRIM1 -> MA1-FPRPY-MIN
+--   Machining IN  MA1-FPRPY  RecordPick marks the cast LOT "worked" (NO rename/
+--                 consume post-rework -- the LOT stays 6MA-C).
+--   Machining OUT MA1-FPRPY-MOUT: the machined 6MA-M LOT is minted here via
+--                 Lot_Create (no proc renames cast->machined anymore), then
+--                 extract-one split -> children (6MA-M) -> AFIN.
+--   Assembly      MA1-FPRPY-AFIN (non-serialized; consumes 6MA-M + PIN-A -> 6MA)
+--   5G0-C cast    DC1-M02 -> MA1-5GOF (line); RecordPick; machined 5G0-M minted
+--                 line-resident at MA1-5GOF -> serialized placement (ASER screen
+--                 zones to the line). FG-LOT completion deferred (A4).
 --   RD-BRKT       SHIPIN (receiving) -> SHIPOUT (shipping); pass-through,
 --                 no Container/AIM involved.
+--
+-- GENEALOGY NOTE: post-rework NO proc builds the cast->machined edge (the old
+-- MachiningIn_PickAndConsume did). The authentic proc-built genealogy chain here
+-- is machined LOT -> split sublots -> FG LOT -> container. The cast LOTs are real,
+-- audited WIP but are not genealogy-linked to the machined LOTs. See report.
 --
 -- All locations/parts/users resolved BY CODE / natural key, never a
 -- hardcoded Id (survives identity reseeds). ASCII-only.
@@ -137,13 +146,13 @@ GO
 
 -- ============================================================
 -- STEP 3: Machining-IN rename BOMs (idempotent, guarded).
--- MachiningIn_PickAndConsume (FDS-05-033) requires a single-line published
--- BOM whose only child is the cast Item at QtyPer=1, parented by the
--- machined Item -- this is DISTINCT from the 020-seeded assembly BOMs
--- (6MA<-6MA-M+PIN-A, 5G0<-5G0-M) and was not part of the Task 1 config
--- rewrite. Created here via the production Bom_Create/BomLine_Add/
--- Bom_Publish procs (mirrors the fallback block in
--- sql/scratch/smoke_seed_phase5_7.sql) -- not raw INSERT.
+-- A single-line published BOM whose only child is the cast Item at QtyPer=1,
+-- parented by the machined Item (6MA-M<-6MA-C x1, 5G0-M<-5G0-C x1). Post-rework
+-- NO proc CONSUMES these -- they now drive the Machining IN WIP-queue read's
+-- HasRenameBom hint (Lot_GetWipQueueByLocation) so the screen flags a cast LOT as
+-- "renames to a machined part". DISTINCT from the 020-seeded assembly BOMs
+-- (6MA<-6MA-M+PIN-A, 5G0<-5G0-M). Created via the production Bom_Create/
+-- BomLine_Add/Bom_Publish procs -- not raw INSERT.
 -- ============================================================
 DECLARE @U2 BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
 DECLARE @I_6MAC BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'6MA-C');
@@ -239,10 +248,8 @@ DECLARE @DefectCodeId       BIGINT = (SELECT TOP 1 Id FROM Quality.DefectCode WH
 DECLARE @rLot   TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
 DECLARE @rMove  TABLE (Status BIT, Message NVARCHAR(500));
 DECLARE @rTrim  TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
--- @rMin reshaped 2026-07-08: MachiningIn_RecordPick (unworked-arrivals model)
--- returns only the status row; NewId = the MachiningIn ProductionEventId.
-DECLARE @rMin   TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
-DECLARE @rSplit TABLE (Status BIT, Message NVARCHAR(500), ProductionEventId BIGINT, ChildLotId BIGINT, ChildLotName NVARCHAR(50), DestinationLocationId BIGINT, PieceCount INT);
+DECLARE @rMin   TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);   -- MachiningIn_RecordPick status row (NewId = ProductionEventId)
+DECLARE @rMint  TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);   -- MachiningOut_Mint status row (NewId = minted machined LotId)
 DECLARE @rTray  TABLE (Status BIT, Message NVARCHAR(500), FinishedGoodLotId BIGINT, ContainerId BIGINT, ContainerTrayId BIGINT, ContainerFull BIT);
 DECLARE @rComp  TABLE (Status BIT, Message NVARCHAR(500), ShippingLabelId BIGINT, AimShipperId NVARCHAR(50));
 DECLARE @rShip  TABLE (Status BIT, Message NVARCHAR(500));
@@ -270,50 +277,37 @@ INSERT INTO @rMove EXEC Lots.Lot_MoveTo @LotId = @A_Cast, @ToLocationId = @L_TRI
 IF (SELECT Status FROM @rMove) <> 1
 BEGIN SET @ErrMsg = N'6MA-A move to TRIM1 failed: ' + ISNULL((SELECT Message FROM @rMove), N'?'); THROW 51000, @ErrMsg, 1; END
 
--- 6MA deposits stay CELL-tier (MA1-FPRPY-MIN): 6MA-C eligibility at FPRPY is
--- BOM-derived through 6MA-M's MIN/MOUT cell rows -- there are no line-tier
--- rows, and the FPRPY terminals are not zone-wired yet (see the 5G0 thread
--- note). The 5G0 family is the line-resident exemplar.
 DELETE FROM @rTrim;
 INSERT INTO @rTrim EXEC Workorder.TrimOut_Record @ParentLotId = @A_Cast, @OperationTemplateId = @OT_TrimOut, @ShotCount = 24, @ScrapCount = 0, @DestinationCellLocationId = @L_FPRPY_MIN, @SourceLocationId = @L_TRIM1, @AppUserId = @U;
 IF (SELECT Status FROM @rTrim) <> 1
 BEGIN SET @ErrMsg = N'6MA-A TrimOut_Record failed: ' + ISNULL((SELECT Message FROM @rTrim), N'?'); THROW 51000, @ErrMsg, 1; END
 
--- Machining IN pick (unworked-arrivals model, 2026-07-06): records a checkpoint
--- on the SAME LOT -- no new machined LOT, no consumption, no rename.
+-- Machining IN: record the pick on the cast LOT (marks it "worked" -> drops off the
+-- unworked-arrivals queue). Post-rework (commits 348762e/1e46c60) this NO LONGER
+-- consumes/renames -- the cast LOT stays 6MA-C at the line. FDS-05-033.
 DELETE FROM @rMin;
 INSERT INTO @rMin EXEC Workorder.MachiningIn_RecordPick @LotId = @A_Cast, @LineLocationId = @L_FPRPY, @AppUserId = @U, @TerminalLocationId = @L_FPRPY_MIN;
 IF (SELECT Status FROM @rMin) <> 1
 BEGIN SET @ErrMsg = N'6MA-A MachiningIn_RecordPick failed: ' + ISNULL((SELECT Message FROM @rMin), N'?'); THROW 51000, @ErrMsg, 1; END
-DECLARE @A_Machined BIGINT = @A_Cast;   -- keep-identity: the cast LOT continues
+
+-- Machining OUT: consume-mint the MACHINED 6MA-M LOT by consuming the cast LOT
+-- @A_Cast (Consumption genealogy cast->machined via the 6MA-M<-6MA-C BOM). Then
+-- move the machined LOT to the assembly cell (AFIN) for consumption.
+DELETE FROM @rMint;
+INSERT INTO @rMint EXEC Workorder.MachiningOut_Mint @SourceLotId = @A_Cast, @OperationTemplateId = @OT_MachiningOut, @PieceCount = 24, @AppUserId = @U, @TerminalLocationId = @L_FPRPY_MOUT;
+IF (SELECT Status FROM @rMint) <> 1
+BEGIN SET @ErrMsg = N'6MA-A MachiningOut_Mint failed: ' + ISNULL((SELECT Message FROM @rMint), N'?'); THROW 51000, @ErrMsg, 1; END
+DECLARE @A_Machined BIGINT = (SELECT NewId FROM @rMint);
 
 DELETE FROM @rMove;
-INSERT INTO @rMove EXEC Lots.Lot_MoveTo @LotId = @A_Machined, @ToLocationId = @L_FPRPY_MOUT, @AppUserId = @U;
+INSERT INTO @rMove EXEC Lots.Lot_MoveTo @LotId = @A_Machined, @ToLocationId = @L_FPRPY_AFIN, @AppUserId = @U;
 IF (SELECT Status FROM @rMove) <> 1
-BEGIN SET @ErrMsg = N'6MA-A move machined LOT to MOUT failed: ' + ISNULL((SELECT Message FROM @rMove), N'?'); THROW 51000, @ErrMsg, 1; END
-
-DECLARE @A_SplitJson NVARCHAR(MAX) = N'[{"pieceCount":12,"destinationLocationId":' + CAST(@L_FPRPY_AFIN AS NVARCHAR(20))
-    + N'},{"pieceCount":12,"destinationLocationId":' + CAST(@L_FPRPY_AFIN AS NVARCHAR(20)) + N'}]';
-DELETE FROM @rSplit;
-INSERT INTO @rSplit EXEC Workorder.MachiningOut_RecordSplit @ParentLotId = @A_Machined, @OperationTemplateId = @OT_MachiningOut, @SplitChildrenJson = @A_SplitJson, @AppUserId = @U;
-IF NOT EXISTS (SELECT 1 FROM @rSplit WHERE Status = 1)
-BEGIN SET @ErrMsg = N'6MA-A MachiningOut_RecordSplit failed: ' + ISNULL((SELECT TOP 1 Message FROM @rSplit), N'?'); THROW 51000, @ErrMsg, 1; END
+BEGIN SET @ErrMsg = N'6MA-A machined move to AFIN failed: ' + ISNULL((SELECT Message FROM @rMove), N'?'); THROW 51000, @ErrMsg, 1; END
 
 DELETE FROM @rLot;
 INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId = @I_PINA, @LotOriginTypeId = @OriginReceived, @CurrentLocationId = @L_FPRPY_AFIN, @PieceCount = 48, @VendorLotNumber = N'PINA-VEND-A001', @AppUserId = @U;
 IF (SELECT Status FROM @rLot) <> 1
 BEGIN SET @ErrMsg = N'6MA-A PIN-A stock Lot_Create failed: ' + ISNULL((SELECT Message FROM @rLot), N'?'); THROW 51000, @ErrMsg, 1; END
-
--- INTERIM (2026-07-08): machining keep-identity means no 6MA-M LOT is minted
--- upstream anymore, but the 6MA assembly BOM still consumes 6MA-M -- the flagged
--- follow-up in 2026-07-06-machining-in-unworked-arrivals-design.md (sec Out of
--- scope). Until Assembly is reconciled, stage the 6MA-M inventory directly so the
--- tray/container/ship demo stays end-to-end. Remove once Assembly consumes the
--- kept-identity cast item.
-DELETE FROM @rLot;
-INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId = @I_6MAM, @LotOriginTypeId = @OriginManufactured, @CurrentLocationId = @L_FPRPY_AFIN, @PieceCount = 24, @AppUserId = @U;
-IF (SELECT Status FROM @rLot) <> 1
-BEGIN SET @ErrMsg = N'6MA-A interim 6MA-M stock Lot_Create failed: ' + ISNULL((SELECT Message FROM @rLot), N'?'); THROW 51000, @ErrMsg, 1; END
 
 DELETE FROM @rTray;
 INSERT INTO @rTray EXEC Workorder.Assembly_CompleteTray @FinishedGoodItemId = @I_6MA, @PieceCount = 12, @CellLocationId = @L_FPRPY_AFIN, @AppUserId = @U;
@@ -375,7 +369,6 @@ INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId = @I_6MAC, @LotOriginTypeId = @Or
 IF (SELECT Status FROM @rLot) <> 1
 BEGIN SET @ErrMsg = N'6MA-B MOUT-WIP cast Lot_Create failed: ' + ISNULL((SELECT Message FROM @rLot), N'?'); THROW 51000, @ErrMsg, 1; END
 DECLARE @B_MoutCast BIGINT = (SELECT NewId FROM @rLot);
-DECLARE @B_MoutCastName NVARCHAR(50) = (SELECT MintedLotName FROM @rLot);
 
 DELETE FROM @rMove;
 INSERT INTO @rMove EXEC Lots.Lot_MoveTo @LotId = @B_MoutCast, @ToLocationId = @L_TRIM1, @AppUserId = @U;
@@ -387,17 +380,19 @@ INSERT INTO @rTrim EXEC Workorder.TrimOut_Record @ParentLotId = @B_MoutCast, @Op
 IF (SELECT Status FROM @rTrim) <> 1
 BEGIN SET @ErrMsg = N'6MA-B MOUT-WIP TrimOut_Record failed: ' + ISNULL((SELECT Message FROM @rTrim), N'?'); THROW 51000, @ErrMsg, 1; END
 
+-- Record the pick on the cast LOT (marks worked), then mint the machined 6MA-M
+-- WIP LOT AT MOUT -- this is the live Machining OUT extract-one subject.
 DELETE FROM @rMin;
 INSERT INTO @rMin EXEC Workorder.MachiningIn_RecordPick @LotId = @B_MoutCast, @LineLocationId = @L_FPRPY, @AppUserId = @U, @TerminalLocationId = @L_FPRPY_MIN;
 IF (SELECT Status FROM @rMin) <> 1
 BEGIN SET @ErrMsg = N'6MA-B MOUT-WIP MachiningIn_RecordPick failed: ' + ISNULL((SELECT Message FROM @rMin), N'?'); THROW 51000, @ErrMsg, 1; END
-DECLARE @B_MoutMachined BIGINT = @B_MoutCast;                 -- keep-identity
-DECLARE @B_MoutMachinedName NVARCHAR(50) = @B_MoutCastName;   -- same LOT, same name
 
-DELETE FROM @rMove;
-INSERT INTO @rMove EXEC Lots.Lot_MoveTo @LotId = @B_MoutMachined, @ToLocationId = @L_FPRPY_MOUT, @AppUserId = @U;
-IF (SELECT Status FROM @rMove) <> 1
-BEGIN SET @ErrMsg = N'6MA-B move machined WIP to MOUT failed: ' + ISNULL((SELECT Message FROM @rMove), N'?'); THROW 51000, @ErrMsg, 1; END
+DELETE FROM @rLot;
+INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId = @I_6MAM, @LotOriginTypeId = @OriginManufactured, @CurrentLocationId = @L_FPRPY_MOUT, @PieceCount = 24, @AppUserId = @U;
+IF (SELECT Status FROM @rLot) <> 1
+BEGIN SET @ErrMsg = N'6MA-B MOUT-WIP machined Lot_Create failed: ' + ISNULL((SELECT Message FROM @rLot), N'?'); THROW 51000, @ErrMsg, 1; END
+DECLARE @B_MoutMachined BIGINT = (SELECT NewId FROM @rLot);
+DECLARE @B_MoutMachinedName NVARCHAR(50) = (SELECT MintedLotName FROM @rLot);
 
 -- B-d: WIP at assembly (AFIN): 6MA-M sublots + PIN-A staged, one tray closed, one to go.
 DELETE FROM @rLot;
@@ -420,26 +415,24 @@ DELETE FROM @rMin;
 INSERT INTO @rMin EXEC Workorder.MachiningIn_RecordPick @LotId = @B_AfinCast, @LineLocationId = @L_FPRPY, @AppUserId = @U, @TerminalLocationId = @L_FPRPY_MIN;
 IF (SELECT Status FROM @rMin) <> 1
 BEGIN SET @ErrMsg = N'6MA-B AFIN-WIP MachiningIn_RecordPick failed: ' + ISNULL((SELECT Message FROM @rMin), N'?'); THROW 51000, @ErrMsg, 1; END
-DECLARE @B_AfinMachined BIGINT = @B_AfinCast;   -- keep-identity
 
-DECLARE @B_SplitJson NVARCHAR(MAX) = N'[{"pieceCount":12,"destinationLocationId":' + CAST(@L_FPRPY_AFIN AS NVARCHAR(20))
-    + N'},{"pieceCount":12,"destinationLocationId":' + CAST(@L_FPRPY_AFIN AS NVARCHAR(20)) + N'}]';
-DELETE FROM @rSplit;
-INSERT INTO @rSplit EXEC Workorder.MachiningOut_RecordSplit @ParentLotId = @B_AfinMachined, @OperationTemplateId = @OT_MachiningOut, @SplitChildrenJson = @B_SplitJson, @AppUserId = @U;
-IF NOT EXISTS (SELECT 1 FROM @rSplit WHERE Status = 1)
-BEGIN SET @ErrMsg = N'6MA-B MachiningOut_RecordSplit failed: ' + ISNULL((SELECT TOP 1 Message FROM @rSplit), N'?'); THROW 51000, @ErrMsg, 1; END
+-- Machining OUT: consume-mint the machined 6MA-M by consuming @B_AfinCast, then move
+-- to AFIN. Assembly closes one tray (12) below, leaving 12 + the container open.
+DELETE FROM @rMint;
+INSERT INTO @rMint EXEC Workorder.MachiningOut_Mint @SourceLotId = @B_AfinCast, @OperationTemplateId = @OT_MachiningOut, @PieceCount = 24, @AppUserId = @U, @TerminalLocationId = @L_FPRPY_MOUT;
+IF (SELECT Status FROM @rMint) <> 1
+BEGIN SET @ErrMsg = N'6MA-B AFIN-WIP MachiningOut_Mint failed: ' + ISNULL((SELECT Message FROM @rMint), N'?'); THROW 51000, @ErrMsg, 1; END
+DECLARE @B_AfinMachined BIGINT = (SELECT NewId FROM @rMint);
+
+DELETE FROM @rMove;
+INSERT INTO @rMove EXEC Lots.Lot_MoveTo @LotId = @B_AfinMachined, @ToLocationId = @L_FPRPY_AFIN, @AppUserId = @U;
+IF (SELECT Status FROM @rMove) <> 1
+BEGIN SET @ErrMsg = N'6MA-B AFIN-WIP machined move to AFIN failed: ' + ISNULL((SELECT Message FROM @rMove), N'?'); THROW 51000, @ErrMsg, 1; END
 
 DELETE FROM @rLot;
 INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId = @I_PINA, @LotOriginTypeId = @OriginReceived, @CurrentLocationId = @L_FPRPY_AFIN, @PieceCount = 48, @VendorLotNumber = N'PINA-VEND-B001', @AppUserId = @U;
 IF (SELECT Status FROM @rLot) <> 1
 BEGIN SET @ErrMsg = N'6MA-B PIN-A stock Lot_Create failed: ' + ISNULL((SELECT Message FROM @rLot), N'?'); THROW 51000, @ErrMsg, 1; END
-
--- INTERIM 6MA-M stage (same rationale as thread A): 24 pcs covers the closed
--- tray (12) + the smoke's "complete tray 2" (12).
-DELETE FROM @rLot;
-INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId = @I_6MAM, @LotOriginTypeId = @OriginManufactured, @CurrentLocationId = @L_FPRPY_AFIN, @PieceCount = 24, @AppUserId = @U;
-IF (SELECT Status FROM @rLot) <> 1
-BEGIN SET @ErrMsg = N'6MA-B interim 6MA-M stock Lot_Create failed: ' + ISNULL((SELECT Message FROM @rLot), N'?'); THROW 51000, @ErrMsg, 1; END
 
 DELETE FROM @rTray;
 INSERT INTO @rTray EXEC Workorder.Assembly_CompleteTray @FinishedGoodItemId = @I_6MA, @PieceCount = 12, @CellLocationId = @L_FPRPY_AFIN, @AppUserId = @U;
@@ -449,7 +442,28 @@ DECLARE @B_OpenContainer BIGINT = (SELECT ContainerId FROM @rTray);
 IF (SELECT ContainerFull FROM @rTray) <> 0
 BEGIN SET @ErrMsg = N'6MA-B open-container WIP unexpectedly reported full after 1 tray.'; THROW 51000, @ErrMsg, 1; END
 
+-- B-e: UNWORKED arrival at Machining IN -- a cast LOT trimmed out to MA1-FPRPY-MIN
+-- but NOT yet picked, so the Machining IN unworked-arrivals queue has a live LOT
+-- to pick (every other cast LOT above was RecordPick'd and has dropped off the queue).
+DELETE FROM @rLot;
+INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId = @I_6MAC, @LotOriginTypeId = @OriginManufactured, @CurrentLocationId = @L_DC1M01, @PieceCount = 24, @ToolId = @ToolId6MA, @ToolCavityId = @CavId6MA, @AppUserId = @U;
+IF (SELECT Status FROM @rLot) <> 1
+BEGIN SET @ErrMsg = N'6MA-B MIN-WIP cast Lot_Create failed: ' + ISNULL((SELECT Message FROM @rLot), N'?'); THROW 51000, @ErrMsg, 1; END
+DECLARE @B_MinCast BIGINT = (SELECT NewId FROM @rLot);
+DECLARE @B_MinCastName NVARCHAR(50) = (SELECT MintedLotName FROM @rLot);
+
+DELETE FROM @rMove;
+INSERT INTO @rMove EXEC Lots.Lot_MoveTo @LotId = @B_MinCast, @ToLocationId = @L_TRIM1, @AppUserId = @U;
+IF (SELECT Status FROM @rMove) <> 1
+BEGIN SET @ErrMsg = N'6MA-B MIN-WIP move to TRIM1 failed: ' + ISNULL((SELECT Message FROM @rMove), N'?'); THROW 51000, @ErrMsg, 1; END
+
+DELETE FROM @rTrim;
+INSERT INTO @rTrim EXEC Workorder.TrimOut_Record @ParentLotId = @B_MinCast, @OperationTemplateId = @OT_TrimOut, @ShotCount = 24, @ScrapCount = 0, @DestinationCellLocationId = @L_FPRPY_MIN, @SourceLocationId = @L_TRIM1, @AppUserId = @U;
+IF (SELECT Status FROM @rTrim) <> 1
+BEGIN SET @ErrMsg = N'6MA-B MIN-WIP TrimOut_Record failed: ' + ISNULL((SELECT Message FROM @rTrim), N'?'); THROW 51000, @ErrMsg, 1; END
+
 PRINT N'    6MA-B WIP ready: die-cast=' + CAST(@B_CastAtDC1 AS NVARCHAR(20)) + N', trim=' + CAST(@B_CastAtTrim AS NVARCHAR(20))
+    + N', mach-in unworked=' + CAST(@B_MinCast AS NVARCHAR(20)) + N' (' + @B_MinCastName + N')'
     + N', mach-out=' + CAST(@B_MoutMachined AS NVARCHAR(20)) + N' (' + @B_MoutMachinedName + N'), open container=' + CAST(@B_OpenContainer AS NVARCHAR(20)) + N'.';
 
 -- ============================================================
@@ -462,7 +476,6 @@ INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId = @I_5G0C, @LotOriginTypeId = @Or
 IF (SELECT Status FROM @rLot) <> 1
 BEGIN SET @ErrMsg = N'5G0 cast Lot_Create failed: ' + ISNULL((SELECT Message FROM @rLot), N'?'); THROW 51000, @ErrMsg, 1; END
 DECLARE @G_Cast BIGINT = (SELECT NewId FROM @rLot);
-DECLARE @G_CastName NVARCHAR(50) = (SELECT MintedLotName FROM @rLot);
 
 -- NOTE (2026-07-06, concurrent with this task): the 5GOF terminals are
 -- "dedicated-flavor" (FDS-02-010) -- every terminal's session zones to its
@@ -481,16 +494,23 @@ INSERT INTO @rMove EXEC Lots.Lot_MoveTo @LotId = @G_Cast, @ToLocationId = @L_5GO
 IF (SELECT Status FROM @rMove) <> 1
 BEGIN SET @ErrMsg = N'5G0 move to MA1-5GOF failed: ' + ISNULL((SELECT Message FROM @rMove), N'?'); THROW 51000, @ErrMsg, 1; END
 
+-- Record the pick on the cast LOT at the line (marks worked). Post-rework this no
+-- longer renames/consumes; the machined LOT is minted separately below.
 DELETE FROM @rMin;
 INSERT INTO @rMin EXEC Workorder.MachiningIn_RecordPick @LotId = @G_Cast, @LineLocationId = @L_5GOF, @AppUserId = @U, @TerminalLocationId = @L_5GOF_MIN;
 IF (SELECT Status FROM @rMin) <> 1
 BEGIN SET @ErrMsg = N'5G0 MachiningIn_RecordPick failed: ' + ISNULL((SELECT Message FROM @rMin), N'?'); THROW 51000, @ErrMsg, 1; END
-DECLARE @G_Machined BIGINT = @G_Cast;                    -- keep-identity
-DECLARE @G_MachinedName NVARCHAR(50) = @G_CastName;      -- same LOT, same name
 
--- The picked LOT stays AT @L_5GOF (the line), which is also where the Machining
--- OUT + Assembly Serialized screens read from -- no further move needed (a
--- same-location Lot_MoveTo would reject as a no-op).
+-- Mint the machined 5G0-M LOT AT @L_5GOF (line-resident) -- the 5GOF terminals zone
+-- to the line and the Machining OUT + Assembly Serialized screens read WIP/containers
+-- by exact line match (commit 0b33c42's line-deposit model). 5G0-M is eligible at
+-- MA1-5GOF. This LOT is the serials' producing LOT + the hold subject.
+DELETE FROM @rLot;
+INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId = @I_5G0M, @LotOriginTypeId = @OriginManufactured, @CurrentLocationId = @L_5GOF, @PieceCount = 48, @AppUserId = @U;
+IF (SELECT Status FROM @rLot) <> 1
+BEGIN SET @ErrMsg = N'5G0 machined Lot_Create failed: ' + ISNULL((SELECT Message FROM @rLot), N'?'); THROW 51000, @ErrMsg, 1; END
+DECLARE @G_Machined BIGINT = (SELECT NewId FROM @rLot);
+DECLARE @G_MachinedName NVARCHAR(50) = (SELECT MintedLotName FROM @rLot);
 
 DELETE FROM @rConOp;
 INSERT INTO @rConOp EXEC Lots.Container_Open @ItemId = @I_5G0, @ContainerConfigId = @CC_5G0, @CellLocationId = @L_5GOF, @AppUserId = @U;
@@ -592,7 +612,7 @@ PRINT N'2) TRIM  /shop-floor/trim  (cell TRIM1, operator DEV)';
 PRINT N'     WIP cast LOT ' + @B_CastAtTrimName + N' sitting at TRIM1 -- trim it out to MA1-FPRPY-MIN.';
 PRINT N'';
 PRINT N'3) MACHINING IN  /shop-floor/machining-in  (line MA1-FPRPY, operator DEV)';
-PRINT N'     Unworked arrivals (a pick records the MachiningIn checkpoint on the SAME LOT -- no rename/consume). FPRPY deposits land at MA1-FPRPY-MIN; the zone-wired exemplar is the 5G0 line.';
+PRINT N'     Unworked arrival ' + @B_MinCastName + N' (Id ' + CAST(@B_MinCast AS NVARCHAR(20)) + N', 24 pcs) waiting at MA1-FPRPY-MIN -- pick it (records the MachiningIn checkpoint; it then drops off the unworked queue).';
 PRINT N'';
 PRINT N'4) MACHINING OUT (extract-one split)  /shop-floor/machining-out  (line MA1-FPRPY)';
 PRINT N'     LOT ' + @B_MoutMachinedName + N' (Id ' + CAST(@B_MoutMachined AS NVARCHAR(20)) + N') at MA1-FPRPY-MOUT: paused + 2-pc reject recorded, 22 pcs remain.';
@@ -618,6 +638,7 @@ PRINT N'10) DOWNTIME / SUPERVISOR  /shop-floor/downtime  (line MA1-FPRPY)';
 PRINT N'     Open downtime Id ' + CAST(@X_DowntimeId AS NVARCHAR(20)) + N' -- end it from the Downtime or Supervisor screen.';
 PRINT N'';
 PRINT N'11) LOT SEARCH / GENEALOGY VIEWER / AUDIT BROWSER';
-PRINT N'     Trace the full 6MA chain from cast LOT ' + CAST(@A_Cast AS NVARCHAR(20)) + N' through to the shipped container -- full genealogy + audit trail.';
+PRINT N'     Trace the 6MA-A machined LOT ' + CAST(@A_Machined AS NVARCHAR(20)) + N' -> split sublots -> FG LOTs -> shipped container ' + CAST(@A_Container AS NVARCHAR(20)) + N' (proc-built genealogy + audit).';
+PRINT N'     (Cast LOT ' + CAST(@A_Cast AS NVARCHAR(20)) + N' is real, audited WIP but not genealogy-linked to the machined LOT -- no proc builds the cast->machined edge post-rework.)';
 PRINT N'==================================================================';
 GO

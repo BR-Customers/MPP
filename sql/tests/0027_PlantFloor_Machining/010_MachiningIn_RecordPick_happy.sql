@@ -74,12 +74,9 @@ SELECT @Lot = NewId FROM #C; DROP TABLE #C;
 DECLARE @LotStr NVARCHAR(20) = CAST(@Lot AS NVARCHAR(20));
 EXEC test.Assert_IsNotNull @TestName = N'[MachIn] fixture LOT created at the line', @Value = @LotStr;
 
--- before the pick: unworked arrival at the line (HasLineEvent = 0)
-CREATE TABLE #Q0 (Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500), PieceCount INT, LotStatusId BIGINT, LotStatusCode NVARCHAR(20), LastMovementAt DATETIME2(3), HasRenameBom BIT, HasLineEvent BIT);
-INSERT INTO #Q0 EXEC Lots.Lot_GetWipQueueByLocation @LocationId = @Line;
-DECLARE @Before NVARCHAR(10) = (SELECT CAST(HasLineEvent AS NVARCHAR(10)) FROM #Q0 WHERE Id = @Lot);
-DROP TABLE #Q0;
-EXEC test.Assert_IsEqual @TestName = N'[MachIn] LOT is an unworked arrival before pick', @Expected = N'0', @Actual = @Before;
+-- (Queue membership before/after the pick is covered by the dedicated route-driven
+--  queue test 0024/060_Lot_GetWipQueueByLocation; this file focuses on RecordPick's
+--  advance-not-consume behavior.)
 
 -- pick (record MachiningIn checkpoint)
 DECLARE @S BIT, @ProdId BIGINT;
@@ -118,13 +115,6 @@ EXEC test.Assert_IsEqual @TestName = N'[MachIn] LOT still at the line', @Expecte
 -- no new LOT / no ConsumptionEvent produced by the pick
 DECLARE @CeCnt NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Workorder.ConsumptionEvent WHERE SourceLotId = @Lot);
 EXEC test.Assert_IsEqual @TestName = N'[MachIn] no ConsumptionEvent from the pick', @Expected = N'0', @Actual = @CeCnt;
-
--- after the pick: LOT now has a line event, so it leaves the unworked queue
-CREATE TABLE #Q1 (Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500), PieceCount INT, LotStatusId BIGINT, LotStatusCode NVARCHAR(20), LastMovementAt DATETIME2(3), HasRenameBom BIT, HasLineEvent BIT);
-INSERT INTO #Q1 EXEC Lots.Lot_GetWipQueueByLocation @LocationId = @Line;
-DECLARE @After NVARCHAR(10) = (SELECT CAST(HasLineEvent AS NVARCHAR(10)) FROM #Q1 WHERE Id = @Lot);
-DROP TABLE #Q1;
-EXEC test.Assert_IsEqual @TestName = N'[MachIn] LOT has a line event after pick (leaves unworked queue)', @Expected = N'1', @Actual = @After;
 
 -- audit: 'Lot'-entity events route to Lots.LotEventLog (B7)
 DECLARE @AudCnt NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.LotEventLog le

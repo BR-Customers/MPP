@@ -73,7 +73,7 @@ if (-not (Test-Path $ResetScript)) {
     exit 1
 }
 try {
-    & $ResetScript -ServerInstance $ServerInstance -DatabaseName $DatabaseName
+    & $ResetScript -ServerInstance $ServerInstance -DatabaseName $DatabaseName -SkipDemoSeed
 } catch {
     Write-Host "  Database reset FAILED: $_" -ForegroundColor Red
     exit 1

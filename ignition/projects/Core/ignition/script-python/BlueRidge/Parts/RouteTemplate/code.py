@@ -56,7 +56,11 @@ def _mapSteps(rows):
             templateLabel = opCode or opName
         out.append({
             "seq":           r.get("SequenceNumber"),
-            "areaName":      r.get("OperationAreaName") or "",
+            # 2026-07-07: Area was dropped from OperationTemplate by the operation-type
+            # restructure; RouteStep_ListByRoute v4.1 emits Category/Type instead. The
+            # old "areaName": r.get("OperationAreaName") read was always "" (dead column).
+            "categoryName":  r.get("OperationCategoryName") or "",
+            "operationType": r.get("OperationTypeName") or "",
             "templateLabel": templateLabel,
             "isRequired":    bool(r.get("IsRequired")),
             "dataFields":    r.get("DataCollectionSummary") or "",

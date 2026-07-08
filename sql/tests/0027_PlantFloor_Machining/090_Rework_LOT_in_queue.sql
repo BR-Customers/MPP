@@ -49,12 +49,9 @@ CREATE TABLE #C (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName 
 INSERT INTO #C EXEC Lots.Lot_Create @ItemId = @SrcItem, @LotOriginTypeId = @OriginRcv, @CurrentLocationId = @Line, @PieceCount = 18, @AppUserId = 1, @LotName = N'P5T-REWORK-090';
 SELECT @Rework = NewId FROM #C; DROP TABLE #C;
 
--- rework LOT appears as an unworked arrival in the line's FIFO queue
-CREATE TABLE #Q (Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500), PieceCount INT, LotStatusId BIGINT, LotStatusCode NVARCHAR(20), LastMovementAt DATETIME2(3), HasRenameBom BIT, HasLineEvent BIT);
-INSERT INTO #Q EXEC Lots.Lot_GetWipQueueByLocation @LocationId = @Line;
-DECLARE @InQ NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM #Q WHERE Id = @Rework AND HasLineEvent = 0);
-DROP TABLE #Q;
-EXEC test.Assert_IsEqual @TestName = N'[Rework] rework LOT visible as unworked arrival in the line queue', @Expected = N'1', @Actual = @InQ;
+-- (Queue membership before/after the pick is covered by the dedicated route-driven
+--  queue test 0024/060; this file focuses on a rework LOT flowing through pick with
+--  no special handling.)
 
 -- flows through MachiningIn pick with no special handling (keeps identity)
 DECLARE @S BIT;
@@ -72,12 +69,11 @@ EXEC test.Assert_IsEqual @TestName = N'[Rework] rework LOT keeps its Item (no re
 DECLARE @ReworkStatus NVARCHAR(20) = (SELECT sc.Code FROM Lots.Lot l INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId WHERE l.Id = @Rework);
 EXEC test.Assert_IsEqual @TestName = N'[Rework] rework LOT stays open after pick', @Expected = N'Good', @Actual = @ReworkStatus;
 
--- after the pick it has a line event and leaves the unworked queue
-CREATE TABLE #Q2 (Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500), PieceCount INT, LotStatusId BIGINT, LotStatusCode NVARCHAR(20), LastMovementAt DATETIME2(3), HasRenameBom BIT, HasLineEvent BIT);
-INSERT INTO #Q2 EXEC Lots.Lot_GetWipQueueByLocation @LocationId = @Line;
-DECLARE @Worked NVARCHAR(10) = (SELECT CAST(HasLineEvent AS NVARCHAR(10)) FROM #Q2 WHERE Id = @Rework);
-DROP TABLE #Q2;
-EXEC test.Assert_IsEqual @TestName = N'[Rework] rework LOT has a line event after pick', @Expected = N'1', @Actual = @Worked;
+-- the MachiningIn ProductionEvent exists on the same LOT (advances it in the route-driven queue)
+DECLARE @PeCnt NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Workorder.ProductionEvent pe
+    INNER JOIN Parts.OperationTemplate ot ON ot.Id = pe.OperationTemplateId
+    WHERE pe.LotId = @Rework AND ot.Code = N'MachiningIn');
+EXEC test.Assert_IsEqual @TestName = N'[Rework] MachiningIn event stamped on the rework LOT', @Expected = N'1', @Actual = @PeCnt;
 GO
 
 -- ---- cleanup ----

@@ -75,12 +75,8 @@ EXEC test.Assert_IsEqual @TestName = N'[TrimOut] parent LOT stays Good (open)', 
 DECLARE @ClosCnt NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.LotGenealogyClosure WHERE AncestorLotId = @L OR DescendantLotId = @L);
 EXEC test.Assert_IsEqual @TestName = N'[TrimOut] no split (only Depth=0 self-row)', @Expected = N'1', @Actual = @ClosCnt;
 
--- visible in the destination WIP queue
-CREATE TABLE #Q (Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500), PieceCount INT, LotStatusId BIGINT, LotStatusCode NVARCHAR(20), LastMovementAt DATETIME2(3), HasRenameBom BIT, HasLineEvent BIT);
-INSERT INTO #Q EXEC Lots.Lot_GetWipQueueByLocation @LocationId = @LocB;
-DECLARE @InQ NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM #Q WHERE Id = @L);
-DROP TABLE #Q;
-EXEC test.Assert_IsEqual @TestName = N'[TrimOut] LOT visible in destination FIFO queue', @Expected = N'1', @Actual = @InQ;
+-- (Destination WIP-queue visibility is covered by the dedicated route-driven queue
+--  test 0024/060_Lot_GetWipQueueByLocation; this file focuses on TrimOut move-whole.)
 
 -- audit
 DECLARE @AudCnt NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Audit.OperationLog ol

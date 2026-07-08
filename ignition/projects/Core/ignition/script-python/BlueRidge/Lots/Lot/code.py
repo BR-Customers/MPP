@@ -12,6 +12,28 @@ def _u(value):
     return BlueRidge.Common.Util.extractQualifiedValues(value)
 
 
+def _tallyRows(tally):
+    """The die-cast shift tally is cached in view.custom.shiftTally and read back
+       by the card's display bindings as an array of QualifiedValue wrapping
+       ImmutableMap rows. extractQualifiedValues (_u) unwraps the QualifiedValue
+       layer but NOT ImmutableMap, so r.get(...) raises AttributeError
+       (feedback_ignition_immutable_map_unwrap). Round-trip the unwrapped rows
+       through JSON to get plain dicts. Returns list[dict] ([] on empty/None)."""
+    rows = _u(tally) or []
+    if not rows:
+        return []
+    try:
+        return system.util.jsonDecode(system.util.jsonEncode(rows)) or []
+    except:
+        return rows
+
+
+def shiftTallyCavityIds(tally):
+    """ToolCavityId list from the shift tally (plain values), for the card's
+       cavity-selection guard. Robust to the view.custom ImmutableMap wrapping."""
+    return [r.get("ToolCavityId") for r in _tallyRows(tally)]
+
+
 def create(data, appUserId=None, terminalLocationId=None, lotName=None, cavityNote=None):
     """Mint a new LOT. data carries every Lot_Create field (itemId,
        lotOriginTypeId, currentLocationId, pieceCount, weight, weightUomId,
@@ -300,13 +322,25 @@ def getCellLineQuantity(locationId, itemId):
     )
 
 
-def getWipQueueByLocation(locationId, includeDescendants=False, _refreshToken=None):
-    """Arc 2 Phase 4 / Phase 5. The FIFO WIP queue at a location (open LOTs in
-       arrival order). Returns list[dict]."""
-    BlueRidge.Common.Util.log("locationId=%s includeDescendants=%s" % (locationId, includeDescendants))
+def getWipQueueByLocation(locationId, includeDescendants=False, _refreshToken=None, operationTypeCode=None):
+    """Route-driven WIP queue at a location (terminal-mint spec §3.2): open LOTs whose
+       next PENDING route step carries operationTypeCode (the terminal's OperationType
+       role, e.g. 'MachiningIn' / 'MachiningOut' / 'AssemblyOut'), in arrival order.
+       When operationTypeCode is empty/None every open LOT at the location is returned
+       with its resolved next-step role (NextOperationTypeCode / NextSequenceNumber) so
+       the caller can slice by role in a transform.
+
+       operationTypeCode is the LAST arg so existing positional bindings
+       (locationId, includeDescendants, refreshToken) keep working; pass a 4th arg to
+       filter by role. Returns list[dict]."""
+    otc = _u(operationTypeCode)
+    otc = otc if otc else None   # "" (from an expression binding) -> None -> all roles
+    BlueRidge.Common.Util.log("locationId=%s includeDescendants=%s operationTypeCode=%s"
+                              % (locationId, includeDescendants, otc))
     return BlueRidge.Common.Db.execList(
         "lots/Lot_GetWipQueueByLocation",
-        {"locationId": _u(locationId), "includeDescendants": bool(includeDescendants)},
+        {"locationId": _u(locationId), "operationTypeCode": otc,
+         "includeDescendants": bool(includeDescendants)},
     )
 
 
@@ -353,20 +387,15 @@ def getShiftCavityTally(toolId, _refreshToken=None):
 
 def shiftCavityOptions(tally):
     """[{label, value}] for the right-rail cavity dropdown, built from a tally list
-       so every configured cavity appears (value = ToolCavityId). Presentation only.
-
-       Callers are transform/script contexts or the *ForTool wrappers, so rows
-       arrive as JavaMap or plain dicts -- extractQualifiedValues handles both.
-       NEVER bind these readers via runScript with a container arg
-       (feedback_ignition_immutable_map_unwrap)."""
-    rows = _u(tally) or []
+       so every configured cavity appears (value = ToolCavityId). Presentation only."""
+    rows = _tallyRows(tally)
     return [{"label": r.get("CavityLabel") or ("Cavity %s" % r.get("CavityNumber")),
              "value": r.get("ToolCavityId")} for r in rows]
 
 
 def shiftSumForCavity(tally, toolCavityId):
     """The selected cavity's shift piece sum from a tally list. Int (0 if absent)."""
-    rows = _u(tally) or []
+    rows = _tallyRows(tally)
     cid = _u(toolCavityId)
     for r in rows:
         if r.get("ToolCavityId") == cid:
@@ -377,7 +406,7 @@ def shiftSumForCavity(tally, toolCavityId):
 def shiftScrapForCavity(tally, toolCavityId):
     """The selected cavity's shift scrapped quantity (RejectSum) from a tally
        list. Int (0 if absent). Jacques 2026-07-06: the shift card surfaces scrap."""
-    rows = _u(tally) or []
+    rows = _tallyRows(tally)
     cid = _u(toolCavityId)
     for r in rows:
         if r.get("ToolCavityId") == cid:
@@ -390,7 +419,7 @@ def shiftShotsFromTally(tally):
        tally list - identical on every row, so read the first. Int (0 when
        empty). This is the actual 'Shots this shift' number for the card; it was
        computed in SQL but never displayed before 2026-07-06."""
-    rows = _u(tally) or []
+    rows = _tallyRows(tally)
     for r in rows:
         return r.get("ShiftShots") or 0
     return 0
@@ -421,7 +450,7 @@ def defaultShiftCavityId(tally):
     """ToolCavityId of the busiest cavity this shift (highest PieceSum) -> the
        default right-rail selection so the card opens on the most accurate shot
        count. None when the tally is empty."""
-    rows = _u(tally) or []
+    rows = _tallyRows(tally)
     best = None
     bestSum = -1
     for r in rows:

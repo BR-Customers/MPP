@@ -3,10 +3,17 @@
 #
 # Author:           Blue Ridge Automation
 # Created:          2026-04-13
-# Version:          1.2
+# Version:          1.3
 #
 # Description:
 #   Helpers for the PlantHierarchy view's Perspective Tree component.
+#
+#   buildLauncherTree(rootId, expandDepth)
+#       buildTree(...) overlaid with terminal launch data for the Dev
+#       Launcher. Every node that is a Terminal gets data.isTerminal /
+#       data.target (DefaultScreen) / data.terminal (session payload) and
+#       a play_arrow icon so it reads as launchable. Non-terminal nodes
+#       are left untouched (browse-only). Reuses buildTree + Terminal.listAll.
 #
 #   buildTree(rootId, expandDepth, defaultIcon)
 #       Builds the Tree.props.items JSON structure from the
@@ -66,6 +73,10 @@
 #                      visible even when default expandDepth doesn't
 #                      cover that depth. Add injectDraftNode(...) for
 #                      the +Add Location flow's transient draft tile.
+#   2026-07-07 - 1.3 - Add buildLauncherTree(rootId, expandDepth) for the
+#                      Dev Launcher: overlay terminal launch payload +
+#                      play_arrow icon onto Terminal nodes (view-assembly
+#                      over buildTree + Terminal.listAll; no new SQL).
 # =============================================================================
 
 
@@ -367,3 +378,79 @@ def resolveSelectedId(items, selection):
 
     data = node.get("data") if isinstance(node, dict) else None
     return data.get("id") if isinstance(data, dict) else None
+
+
+def buildLauncherTree(rootId=1, expandDepth=2):
+    """
+    Dev Launcher tree: buildTree(...) overlaid with terminal launch data.
+
+    Composes two existing read sources (buildTree + Terminal.listAll) so the
+    Dev Launcher can browse the full plant hierarchy exactly like the Config
+    app's Plant Hierarchy and act ONLY on Terminal nodes. This is
+    view-assembly, not business logic -- terminal identity and default screens
+    still originate in SQL via Location.Terminal_List.
+
+    For every node whose data.id matches a terminal LocationId, overlays:
+        data.isTerminal = True
+        data.target     = <DefaultScreen>   (navigation path; "" when none)
+        data.terminal   = {terminalLocationId, terminalCode, terminalName,
+                           zoneLocationId, zoneName, defaultScreen, isFallback}
+                          -- exact mirror of the session.custom.terminal payload
+                          set by ShopFloor/TerminalSelector.selectTerminal
+        icon            = mpp/play_arrow (accent) so terminals read as launchable
+
+    Non-terminal nodes keep their buildTree data untouched (data.isTerminal
+    absent), so the launcher's click handler no-ops on them.
+
+    Args:
+        rootId (long):     Location.Id root (default 1 = Enterprise, same as
+                           Plant Hierarchy).
+        expandDepth (int): Nodes at depth < expandDepth start expanded.
+
+    Returns:
+        list: buildTree's list shape with terminal overlays; [] on empty.
+    """
+    BlueRidge.Common.Util.log("rootId=%s expandDepth=%s" % (rootId, expandDepth))
+
+    items = buildTree(rootId, expandDepth, "mpp/factory")
+    if not items:
+        return []
+
+    # {TerminalId (== Location.Id) -> Terminal_List row}
+    byId = {}
+    for row in (BlueRidge.Location.Terminal.listAll() or []):
+        row = row or {}
+        tid = row.get("TerminalId")
+        if tid is not None:
+            byId[tid] = row
+
+    def overlay(nodes):
+        for node in nodes:
+            if not isinstance(node, dict):
+                continue
+            data = node.get("data") or {}
+            row = byId.get(data.get("id"))
+            if row is not None:
+                data["isTerminal"] = True
+                data["target"] = row.get("DefaultScreen") or ""
+                data["terminal"] = {
+                    "terminalLocationId": row.get("TerminalId"),
+                    "terminalCode":       row.get("TerminalCode"),
+                    "terminalName":       row.get("TerminalName"),
+                    "zoneLocationId":     row.get("ZoneId"),
+                    "zoneName":           row.get("ZoneName"),
+                    "defaultScreen":      row.get("DefaultScreen") or "",
+                    "isFallback":         bool(row.get("IsFallback")),
+                }
+                node["data"] = data
+                node["icon"] = {
+                    "path":  "mpp/play_arrow",
+                    "color": "--mpp-accent-50",
+                    "style": {},
+                }
+            children = node.get("items")
+            if children:
+                overlay(children)
+
+    overlay(items)
+    return items

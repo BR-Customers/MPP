@@ -95,6 +95,17 @@ Follow `sql_best_practices_mes.md` and `sql_version_control_guide.md`:
 - Versioned entities (BOM, RouteTemplate, OperationTemplate, QualitySpec) carry `VersionNumber` + `PublishedAt` + `DeprecatedAt`
 - Seed/data string values (and ZPL payloads) are **ASCII-only** — em-dash/middle-dot get stored as mojibake (`â€"`) because `sqlcmd` reads `.sql` files in the Windows codepage; the garbage then shows in Ignition. Verify generated seeds with a byte scan before applying.
 
+### Terminal-mint model — route is the source of truth for Machining & Assembly (2026-07-07)
+
+The rename-BOM thread (mint-a-machined-LOT-at-Machining-IN) is **removed**. The **route** now drives terminal FIFO and part identity. Spec: `docs/superpowers/specs/2026-07-07-terminal-mint-model-and-rename-bom-removal-design.md`. Durable rules:
+
+- **`Parts.OperationRoleKind`** (`Advance` / `OriginMint` / `ConsumeMint`) classifies every `OperationType` (FK `OperationType.OperationRoleKindId`). It drives the queue's per-step "pending" test.
+- **Route-driven queue:** `Lots.Lot_GetWipQueueByLocation(@LocationId, @OperationTypeCode, @IncludeDescendants)` returns the open LOTs whose *lowest-`SequenceNumber` pending route step* has the terminal's role. Pending = Advance-with-no-`ProductionEvent`, OR a ConsumeMint (terminal step, pending until the LOT closes); OriginMint is never pending. `HasRenameBom`/`HasLineEvent` are gone.
+- **Model Y (mint-step placement):** a consume-mint is the **final route step of the *consumed* part**. A casting's route is `…→MachiningIn→MachiningOut` (Machining OUT **mints** the SubAssembly by consuming the casting); the SubAssembly's route picks up *after* birth (`AssemblyIn→AssemblyOut`); **finished goods are the output of Assembly OUT and are UNROUTED**. A SubAssembly identity exists only when the line has a Machining OUT terminal (decision C — pure route authoring).
+- **Consume-mint procs** (`Consumption` genealogy `RelationshipTypeId=3`, never `Split`): `Workorder.MachiningOut_Mint` (casting→SubAssembly, produced part derived via BOM child→parent + line-eligibility, flexible operator qty), `Workorder.Assembly_CompleteTray` (SubAssembly/components→FG). `Lots.Lot_Split` is **exception-only** (same-part divisions: holds/quality/logistics), never the standard M&A path.
+- **Route-legality validation** at `Parts.RouteTemplate_Publish`: non-FinishedGood routes must end at a ConsumeMint; at most one ConsumeMint (last); an OriginMint (Die Cast) is first. (Structural checks only; the full `ItemType`×role matrix is deferred.)
+- **Retired:** `Location.CoupledDownstreamCellLocationId` + `Workorder.MachiningOut_AutoComplete` (cell-coupling; mints are line-resident, no cell→cell auto-move).
+
 ### Stored procedure template
 
 `sql/scripts/_TEMPLATE_stored_procedure.sql`. Three-tier error hierarchy. `RAISERROR` (not `THROW`) in CATCH blocks with nested TRY/CATCH for failure logging. Schema-qualify all DB references. `EXEC` parameters must be literals or `@variables` — never inline `CAST` / arithmetic / `CASE`.
