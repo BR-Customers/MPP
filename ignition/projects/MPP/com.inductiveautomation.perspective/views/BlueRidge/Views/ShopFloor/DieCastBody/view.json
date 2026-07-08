@@ -62,7 +62,7 @@
       },
       "onChange": {
         "enabled": true,
-        "script": "\trows \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.shiftTally) or []\n\tids \u003d [r.get(\"ToolCavityId\") for r in rows]\n\tcur \u003d self.view.custom.tallyCavityId\n\tif cur is None or cur not in ids:\n\t\tself.view.custom.tallyCavityId \u003d BlueRidge.Lots.Lot.defaultShiftCavityId(rows)"
+        "script": "\tids = BlueRidge.Lots.Lot.shiftTallyCavityIds(self.view.custom.shiftTally)\n\tcur = self.view.custom.tallyCavityId\n\tif cur is None or cur not in ids:\n\t\tself.view.custom.tallyCavityId = BlueRidge.Lots.Lot.defaultShiftCavityId(self.view.custom.shiftTally)"
       }
     }
   },
