@@ -1,7 +1,6 @@
 {
   "custom": {
     "activeLotId": null,
-    "cells": [],
     "activeLotName": null,
     "destValue": null,
     "inScan": "",
@@ -9,7 +8,6 @@
     "refreshToken": 0,
     "scrapCount": null,
     "shotCount": null,
-    "trimInventory": [],
     "trimState": "in"
   },
   "params": {
@@ -17,10 +15,6 @@
     "cellPickerEnabled": false
   },
   "propConfig": {
-    "params.cellPickerEnabled": {
-      "paramDirection": "input",
-      "persistent": true
-    },
     "custom.cells": {
       "binding": {
         "config": {
@@ -44,6 +38,10 @@
         },
         "type": "expr"
       }
+    },
+    "params.cellPickerEnabled": {
+      "paramDirection": "input",
+      "persistent": true
     }
   },
   "props": {
@@ -579,7 +577,6 @@
               "grow": 1
             },
             "props": {
-              "alignItems": "stretch",
               "direction": "row-reverse",
               "style": {
                 "gap": "16px",
@@ -591,6 +588,9 @@
         ],
         "meta": {
           "name": "InPanel"
+        },
+        "position": {
+          "grow": 1
         },
         "propConfig": {
           "position.display": {
@@ -794,18 +794,18 @@
                           "name": "ActiveLotLabel"
                         },
                         "propConfig": {
-                          "props.text": {
-                            "binding": {
-                              "config": {
-                                "expression": "if(isNull({view.custom.activeLotId}), \"No LOT selected - tap a card or scan its LTT\", \"LOT \" + coalesce({view.custom.activeLotName}, \"#\" + toStr({view.custom.activeLotId})) + \" selected\")"
-                              },
-                              "type": "expr"
-                            }
-                          },
                           "props.style.color": {
                             "binding": {
                               "config": {
                                 "expression": "if(isNull({view.custom.activeLotId}), \"var(--mpp-text-secondary)\", \"var(--mpp-accent-70)\")"
+                              },
+                              "type": "expr"
+                            }
+                          },
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "if(isNull({view.custom.activeLotId}), \"No LOT selected - tap a card or scan its LTT\", \"LOT \" + coalesce({view.custom.activeLotName}, \"#\" + toStr({view.custom.activeLotId})) + \" selected\")"
                               },
                               "type": "expr"
                             }
@@ -1033,7 +1033,7 @@
                       "style": {
                         "classes": "pf-field-help"
                       },
-                      "text": "Shots + scrap together cannot exceed the LOT's pieces; scrap is deducted from the LOT."
+                      "text": "Shots + scrap together cannot exceed the LOT\u0027s pieces; scrap is deducted from the LOT."
                     },
                     "type": "ia.display.label"
                   },
@@ -1118,7 +1118,6 @@
               "grow": 1
             },
             "props": {
-              "alignItems": "stretch",
               "direction": "row-reverse",
               "style": {
                 "gap": "16px",
@@ -1130,6 +1129,9 @@
         ],
         "meta": {
           "name": "OutPanel"
+        },
+        "position": {
+          "grow": 1
         },
         "propConfig": {
           "position.display": {

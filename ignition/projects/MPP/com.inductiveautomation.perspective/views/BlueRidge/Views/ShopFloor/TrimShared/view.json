@@ -1,7 +1,6 @@
 {
   "custom": {},
   "params": {},
-  "propConfig": {},
   "props": {},
   "root": {
     "children": [
@@ -26,7 +25,7 @@
       "system": {
         "onStartup": {
           "config": {
-            "script": "\ttry:\n\t\tself.session.custom.presence.policy = \"strict\"\n\texcept:\n\t\tself.session.custom.presence = {\"policy\": \"strict\"}"
+            "script": "\ttry:\n\t\tself.session.custom.presence.policy \u003d \"strict\"\n\texcept:\n\t\tself.session.custom.presence \u003d {\"policy\": \"strict\"}"
           },
           "scope": "G",
           "type": "script"
@@ -41,11 +40,6 @@
       "style": {
         "classes": "canvas"
       }
-    },
-    "scripts": {
-      "customMethods": [],
-      "extensionFunctions": null,
-      "messageHandlers": []
     },
     "type": "ia.container.flex"
   }
