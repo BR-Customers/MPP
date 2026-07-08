@@ -122,6 +122,22 @@
         "viewPath": "BlueRidge/Components/NotifyHost"
       }
     ],
+    "left": [
+      {
+        "anchor": "fixed",
+        "autoBreakpoint": 480,
+        "content": "push",
+        "handle": "hide",
+        "iconUrl": "",
+        "id": "LeftDock",
+        "modal": false,
+        "resizable": false,
+        "show": "onDemand",
+        "size": 300,
+        "viewParams": {},
+        "viewPath": "BlueRidge/Views/Dev/DevLauncher"
+      }
+    ],
     "top": [
       {
         "anchor": "fixed",
