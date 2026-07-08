@@ -23,22 +23,24 @@ This is **model validation, not data migration.** We deliberately seed two curat
 
 Chosen because together they cover **both consume-mint variants, both validation modes, and the dirty-data cases**, at ~35 parts total.
 
-### Thread A — 59B Cam-Rocker Holder Set (camera/tray, fan-in, machining-as-mint)
-The 59B family is unusually rich: it contains **both** machining patterns in one program.
+> **Machining role is set by the OUT-terminal rule** (terminal-mint decision C): a machined SubAssembly identity exists **iff the line has a Machining-OUT terminal** (a `... Machining OUT` Workstation). The two threads land on opposite sides of this rule — which is the whole point of picking them.
 
-- **Individual machined holder** (legacy identity change at machining → **Machining-OUT ConsumeMint**):
-  `12231-59B-0000` (casting, `Component`) → `12231-59B-0001` (machined, legacy "59B Finished Goods" → we classify **SubAssembly**). One representative holder (`12231`) plus its 4 intake + 5 exhaust siblings if we want the full set.
-- **The assembled set** (fan-in → **Assembly-OUT ConsumeMint**):
-  `1223A-59B -A0002` (the Cam-Rocker Holder Set, `FinishedGood`) consuming the 10 holders + dowel pins (`90701-5R0-3000`, `90701-5A2-A000`, purchased `Component`).
-- Runs on 3 parallel assembly lines (multi-line same-part); Honda customer; camera + tray (`TrayQuantity 2`, `RecipeNumber 1`); die/cavity lot attributes at casting.
+### Thread A — 59B Cam-Rocker Holder Set (camera/tray, fan-in, **machining = Advance**)
+- The 59B cam-holder lines (`59B Cam Holder Assembly`, `Line 2`, `Line 3`) have Machining **IN** + Assembly workstations but **no Machining OUT** → **no machined SubAssembly identity**; machining is an **Advance** and the set consumes the **castings directly**.
+- **Children (10 holder castings, `Component`):** `12231-59B-0000` … `12235-59B-0000` (intake 1-5) + `12241-59B-0000` … `12245-59B-0000` (exhaust 1-5), each OriginMinted at die cast, advanced through Machining IN.
+- **Finished good (fan-in Assembly-OUT ConsumeMint):** `1223A-59B -A0002` (Cam-Rocker Holder Set, `FinishedGood`) consuming the 10 holder castings + dowel pins (`90701-5R0-3000`, `90701-5A2-A000`, purchased `Component`).
+- Runs on 3 parallel lines (multi-line same-part); Honda customer; camera + tray (`TrayQuantity 2`, `RecipeNumber 1`); die/cavity lot attributes at casting.
 
-**Patterns exercised:** OriginMint (die cast) · Machining-OUT ConsumeMint (casting→machined SubAssembly) · Assembly-OUT ConsumeMint (fan-in, 10→1) · camera-tray validation · multi-line same-part · purchased-component consumption.
+**Patterns exercised:** OriginMint (die cast) · Machining **Advance** (no OUT terminal, identity preserved) · Assembly-OUT ConsumeMint (**fan-in, 10→1**) · camera-tray validation · multi-line same-part · purchased-component consumption.
 
-### Thread B — 5PA Fuel Pump (scale/weight, linear, machining-as-advance)
-- `12270-5PA` (raw cast fuel-pump base, `Component`) → machined (pass-through, **identity preserved → Machining = Advance**) → `12270-5PA -A0001` (`FinishedGood`) consuming the raw + stud bolt (`92900-06014-1B`) + dowel (`94301-08100`).
+### Thread B — 5PA Fuel Pump (scale/weight, linear, **machining = ConsumeMint**)
+- The 5PA fuel-pump machining lines (`5PA Fuel Pump Line 2/3 Machining`) have Machining **IN + OUT** workstations → the machined fuel pump **is** a distinct SubAssembly minted at Machining OUT.
+- **Casting (`Component`):** `12270-5PA` (raw cast fuel-pump base), OriginMinted at die cast.
+- **Machined SubAssembly (Machining-OUT ConsumeMint):** legacy reused `12270-5PA` through machining with **no distinct machined part number**, so our model must **synthesize** a machined identity — proposed `12270-5PA-M` (`SubAssembly`). *This synthesized part is itself a validation artifact of decision C.*
+- **Finished good (Assembly-OUT ConsumeMint):** `12270-5PA -A0001` (`FinishedGood`) consuming the machined SA + stud bolt (`92900-06014-1B`) + dowel (`94301-08100`).
 - Scale-processed (`IsScaleProcessingEnabled = 1`), Honda customer, linear route.
 
-**Patterns exercised:** OriginMint · Machining **Advance** (no identity change — the contrast case to Thread A's machining mint) · Assembly-OUT ConsumeMint (linear 1-child) · **scale/weight** validation (vs Thread A's camera).
+**Patterns exercised:** OriginMint · **Machining-OUT ConsumeMint** (casting→synthesized machined SubAssembly, the contrast case to Thread A) · Assembly-OUT ConsumeMint (linear 1-child) · **scale/weight** validation (vs Thread A's camera) · synthesized-identity handling for decision C.
 
 > The two threads deliberately disagree on what machining does — Thread A mints a new identity at Machining OUT, Thread B passes identity through. Both are real in the legacy data, and our route model must represent both via `OperationRoleKind` on the machining step.
 
@@ -84,10 +86,11 @@ Legacy has no route table; the route is implicit in `WorkCellMaterial` (material
 1. Find every WorkCell whose `WorkCellMaterial` references the part (or its casting/FG identity).
 2. Order those cells by **process stage** parsed from Area/Line/Cell names: Casting → Machining (IN→OUT) → Assembly (IN→OUT).
 3. Emit a `RouteTemplate` (`ItemId` = the part) with `RouteStep`s referencing the matching `OperationTemplate` (by Code), assigning `OperationType`:
-   - Casting cell → `DieCast` (`OriginMint`).
-   - Machining OUT where the part-number **changes** (casting→machined child) → `MachiningOut` (`ConsumeMint`). Where identity is **preserved** → `MachiningIn`/`MachiningOut` as **Advance**.
+   - Casting cell → `DieCast` (`OriginMint`), first step.
+   - **Machining role by OUT-terminal rule (decision C):** if the line has a `... Machining OUT` Workstation → a machined `SubAssembly` identity exists, minted at `MachiningOut` (`ConsumeMint`); if legacy has no distinct machined part number, **synthesize** one (`<part>-M`). If the line has only Machining IN → machining is `MachiningIn` (`Advance`), no SubAssembly.
    - Assembly OUT that consumes children → `AssemblyOut` (`ConsumeMint`).
-4. **Finished goods get NO route** (terminal-mint model v2.0): they are born at their sub-assembly's Assembly-OUT consume-mint. Only castings and sub-assemblies carry routes.
+4. **A route belongs to one part and ends at exactly one ConsumeMint** (its final step). The produced part is derived via BOM child→parent, not stored on the route. Each consumed part carries its own route ending at the shared consume-mint (fan-in = N castings' routes converge on one Assembly-OUT mint).
+5. **Finished goods get NO route** (terminal-mint model v2.0): they are born at the Assembly-OUT consume-mint of the parts they consume. Only castings and sub-assemblies carry routes.
 
 `5A2 Casting 1 Work Cell` is the shared plant-wide OriginMint — its ~60 pass-through materials confirm one casting origin feeding every program.
 
@@ -96,10 +99,20 @@ Legacy has no route table; the route is implicit in `WorkCellMaterial` (material
 - Legacy BOMs are **flat** (`ParentBomComponentID` always NULL); multi-level structure = chained single-level BOMs via shared Material identity. Map each legacy BOM to one `Parts.Bom` + N `Parts.BomLine` (`ChildItemId`, `QtyPer`, `UomId`=EA default when legacy UOM blank).
 - **Version:** legacy `Bom.Version` is free-text and messy (`"10 01"`, `" "`, `"0301"`). Normalize to our integer `VersionNumber` — proposal: collapse all legacy versions of a part to `VersionNumber = 1`, `PublishedAt` set (we only seed the current/active BOM, not history). (Open question 6.1.)
 
-### 3.4 Location mapping
-The legacy plant (18 areas, ~60 lines) dwarfs our seeded demo plant (`DC1-3`, `MA1-*`). Two options (Open question 6.2):
-- **(Recommended) Remap threads onto the existing demo plant** — run Thread A on a full-process line (`MA1-FPRPY`: MIN→MOUT→AFIN) and Thread B on another, reusing `011_seed_locations_mpp_plant.sql` locations. Keeps the location seed stable; sufficient for model validation.
-- **(Fidelity)** Add real 59B + 5PA areas/lines/cells to the location seed. More faithful, heavier, and not needed to validate the model.
+### 3.4 Location mapping — legacy collapses INTO our model (decided 2026-07-08)
+Our 5-tier model is authoritative; we do **not** add a tier for legacy. We seed the **real** legacy location subtree for the two threads (so this seed doubles as location-model validation), collapsing legacy's two middle tiers into our one:
+
+| Legacy tier | → Our tier / LocationTypeDefinition |
+|---|---|
+| Site | Site → `Facility` |
+| Area | Area → `ProductionArea` |
+| ProductionLine **+** WorkCell | **both collapse → WorkCenter** (line-resident model: LOTs live at the WorkCenter/line) |
+| Workstation (`… IN`/`… OUT`, machine name) | Cell → `Terminal` / `CNCMachine` / `DieCastMachine` / `AssemblyStation` (by function) |
+
+- When a legacy Line has multiple WorkCells, all flatten under one WorkCenter and their Workstations become sibling Cells — the WorkCell grouping is dropped (acceptable; our model doesn't carry it).
+- `Code`/`Name` derived from legacy names, ASCII-trimmed; `DeprecatedAt` set for any `DO NOT USE` cells we choose to include (or skip them).
+- Reuse existing `011_seed_locations_mpp_plant.sql` rows where a thread's Area/line already exists; otherwise add the real 59B / 5PA / shared-casting subtree.
+- **Location-model finding to record:** multi-WorkCell lines are the stress case for whether WorkCenter→Cell suffices; flattening validates that it does without a 6th tier.
 
 ### 3.5 Data hygiene (ASCII-only, dirty-data filter)
 - **ASCII-only** on all Name/Description/dunnage (byte-scan before applying). Legacy `ReturnableDunnageCode` holds mojibake `?????`/`????` — drop or replace with a clean placeholder, never store the corruption.
@@ -111,12 +124,15 @@ The legacy plant (18 areas, ~60 lines) dwarfs our seeded demo plant (`DC1-3`, `M
 
 ## 4. Deliverable
 
-A **new sibling** scratch file `sql/scratch/seed_legacy_threads.sql` (NOT an edit of `seed_jp_validation.sql` — Jacques owns and actively edits that; a sibling avoids clobbering concurrent work and keeps the synthetic 5G0 fixture intact). It:
+**Append** the two legacy threads to the existing `sql/scratch/seed_jp_validation.sql` (decided 2026-07-08 — they coexist with the synthetic 5G0 fixture, which stays as the minimal smoke fixture). Added as new clearly-bannered sections after the 5G0 block. It:
 
-- Follows `seed_jp_validation.sql`'s pattern **verbatim**: idempotent (`IF NOT EXISTS` on natural keys — PartNumber/Code — never hardcoded Ids), ASCII-only, no `USE` (runs against the `-d` session), routes/BOMs built via `Parts.RouteTemplate_Create/SaveAll/Publish` + `Parts.Bom_Create/BomLine_Add/Bom_Publish` (route-legality enforced at publish), eligibility via natural-key-resolved `Parts.ItemLocation` inserts.
-- Loads the two threads' Items → OperationTemplates → Routes → BOMs → ItemLocation, ordered items-before-routes (RouteStep resolves OperationTemplate by Code).
-- **Optionally** demos the flow end-to-end by calling the real mutation procs (`Lots.Lot_Create`, `Workorder.MachiningOut_Mint`, `Workorder.Assembly_CompleteTray`, `Workorder.ProductionEvent_Record`) so mint/route/genealogy logic is exercised — not raw inserts. (Master-data config first; live-LOT demo is a follow-on.)
-- Invocation mirrors his: `sqlcmd -S localhost -d MPP_MES_Dev -E -b -I -C -i sql/scratch/seed_legacy_threads.sql`.
+- Follows the file's existing pattern **verbatim**: idempotent (`IF NOT EXISTS` on natural keys — PartNumber/Code — never hardcoded Ids), ASCII-only, no `USE` (runs against the `-d` session), routes/BOMs built via `Parts.RouteTemplate_Create/SaveAll/Publish` + `Parts.Bom_Create/BomLine_Add/Bom_Publish` (route-legality enforced at publish), eligibility via natural-key-resolved `Parts.ItemLocation` inserts.
+- Uses **real legacy part numbers** (trailing-space-trimmed), plus the one synthesized `12270-5PA-M` machined SA (decision C).
+- Loads (in order): the thread Locations (real legacy subtree, collapsed per §3.4) → Items → OperationTemplates → Routes → BOMs → ItemLocation.
+- Live-LOT/genealogy demo via mutation procs (`Lots.Lot_Create`, `Workorder.MachiningOut_Mint`, `Workorder.Assembly_CompleteTray`, `Workorder.ProductionEvent_Record`) is a **follow-on** section, not the first cut — master-data config lands first.
+- Invocation unchanged: `sqlcmd -S localhost -d MPP_MES_Dev -E -b -I -C -i sql/scratch/seed_jp_validation.sql`.
+
+**Before editing:** re-read the on-disk `seed_jp_validation.sql` (Jacques may have edited it since `a2858c3`) and append only — never rewrite his 5G0 section.
 
 Validation gate: after seeding, the derived routes must pass `Parts.RouteTemplate_Publish` legality (non-FinishedGood routes end at a ConsumeMint; ≤1 ConsumeMint, last; OriginMint first) — a real test of both the seed and the model.
 
@@ -133,16 +149,19 @@ Validation gate: after seeding, the derived routes must pass `Parts.RouteTemplat
 
 ---
 
-## 6. Open questions for review
+## 6. Decisions & remaining open questions
 
-1. **BOM version normalization** — collapse legacy free-text versions to a single `VersionNumber=1` current BOM (recommended), or attempt to preserve legacy version history?
-2. **Location strategy** — remap threads onto the existing demo plant (recommended) vs. seed real 59B/5PA lines?
-3. **59B set BOM inconsistency** — the legacy `1223A-59B -A0002` set BOM consumes the **`-0000` castings** directly, while separate `-0001` machined-holder products also exist. Does the set consume castings (as legacy says) or should we model it consuming the machined SubAssemblies? This changes whether the set's children are Component or SubAssembly.
-4. **Program attribute** — where does `5A2`/`RPY`/`59B` live in our model? New nullable `Parts.Item.Program` column, a code table, or description-only for now?
-5. **PassThrough scope** — do we include any Offsite reship parts as a `PassThrough` example, or leave that to `RD-BRKT` already in `020`?
-6. **File placement** — new `sql/scratch/seed_legacy_threads.sql` sibling (recommended, keeps `seed_jp_validation.sql` + the 8-item demo intact), vs. extending an existing seed.
-7. **Part-naming convention** — use the **real legacy part numbers** (`12231-59B-0000`, `1223A-59B -A0002`, `12270-5PA -A0001`) for fidelity, or Jacques's abstracted style (`5G0-c`/`-SA`/`-FG`)? Real numbers are the point of grounding in legacy data, but carry spaces/hyphens; recommend real numbers, trimmed of trailing spaces, since the model must tolerate them anyway.
-8. **Relationship to `seed_jp_validation.sql`** — do the legacy threads **supersede** the synthetic 5G0 fixture (Jacques migrates to real data) or **coexist** (synthetic stays as the minimal smoke fixture, legacy threads as the richer validation set)? Affects whether any test fixtures referencing the synthetic parts need updating.
+**Resolved 2026-07-08:**
+- **Location strategy** — seed the *real* legacy subtree, collapsing legacy Line+WorkCell → our WorkCenter, Workstations → Cells; our model is authoritative, no new tier (§3.4). Doubles as location-model validation.
+- **59B set children** — the set consumes the **castings (Component)** directly: the 59B cam-holder lines have **no Machining-OUT terminal**, so no machined SubAssembly exists (decision C). Matches legacy BOM.
+- **Machining role** — set by the OUT-terminal rule per thread: 59B = Advance, 5PA = ConsumeMint (§2, §3.2).
+- **Part naming** — use **real legacy part numbers**, trailing-space-trimmed. Plus one synthesized `12270-5PA-M` for the 5PA machined SA.
+- **File** — **append to `sql/scratch/seed_jp_validation.sql`**; coexists with the synthetic 5G0 fixture (§4).
+
+**Still open (surface during/after first cut, not blocking):**
+1. **BOM version normalization** — collapse legacy free-text versions to a single current `VersionNumber=1` BOM (recommended), or preserve history? *(Recommend collapse; seed current only.)*
+2. **Program attribute** — where does `5A2`/`RPY`/`59B` live? New nullable `Parts.Item.Program` column, a code table, or description-only for now? *(Recommend description-only for the seed; a `Program` column is a separate model decision.)*
+3. **PassThrough scope** — include an Offsite reship part as a `PassThrough` example, or leave that to `RD-BRKT` in `020`? *(Recommend leave to `RD-BRKT`.)*
 
 ---
 
@@ -151,3 +170,4 @@ Validation gate: after seeding, the derived routes must pass `Parts.RouteTemplat
 | Version | Date | Author | Notes |
 |---|---|---|---|
 | Draft | 2026-07-08 | Jacques + Claude | Initial mapping design from legacy `MES` extract (grids A–G) against target schema (migrations 0002–0036, seeds 011/020/029). |
+| Draft r2 | 2026-07-08 | Jacques + Claude | Review decisions: real legacy locations collapse into our model (no new tier); machining role by OUT-terminal rule (59B=Advance, 5PA=ConsumeMint, synth `12270-5PA-M`); real legacy part naming; append to `seed_jp_validation.sql` (coexist). Corrected the Thread A/B machining-role swap. |
