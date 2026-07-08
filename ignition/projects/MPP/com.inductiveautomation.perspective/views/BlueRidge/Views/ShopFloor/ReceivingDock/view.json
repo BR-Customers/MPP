@@ -95,7 +95,8 @@
           "direction": "row",
           "alignItems": "center",
           "style": {
-            "gap": "16px"
+            "gap": "16px",
+            "overflow": "hidden"
           }
         },
         "children": [

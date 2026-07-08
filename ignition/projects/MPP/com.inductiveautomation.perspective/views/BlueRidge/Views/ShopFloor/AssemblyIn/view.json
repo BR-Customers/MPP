@@ -44,10 +44,10 @@
     "props": {
       "direction": "column",
       "style": {
-        "classes": "pf-terminal canvas",
+        "classes": "canvas",
         "gap": "16px",
         "overflowY": "auto",
-        "padding": "16px"
+        "padding": "24px"
       }
     },
     "events": {
@@ -69,58 +69,55 @@
         },
         "props": {
           "style": {
-            "classes": "pf-terminal-header",
-            "gap": "12px",
-            "paddingBottom": "16px"
+            "gap": "16px",
+            "overflow": "hidden"
           },
-          "justify": "space-between",
-          "alignItems": "flex-end",
-          "wrap": "wrap"
-        },
-        "position": {
-          "shrink": 0
+          "alignItems": "center"
         },
         "children": [
           {
             "type": "ia.container.flex",
             "meta": {
-              "name": "Title"
+              "name": "TitleBlock"
             },
             "position": {
-              "basis": "0",
               "grow": 1
             },
             "props": {
-              "direction": "column",
-              "style": {
-                "classes": "pf-terminal-title",
-                "gap": "4px"
-              }
+              "direction": "column"
             },
             "children": [
               {
                 "type": "ia.display.label",
                 "meta": {
-                  "name": "TitleText"
+                  "name": "Title"
                 },
                 "props": {
                   "text": "Assembly IN",
                   "style": {
-                    "classes": "pf-terminal-title",
-                    "fontSize": "24px",
-                    "fontWeight": "600"
+                    "fontSize": "22px",
+                    "fontWeight": 700
                   }
                 }
               },
               {
                 "type": "ia.display.label",
                 "meta": {
-                  "name": "TitleMeta"
+                  "name": "Subtitle"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"No cell bound\", {session.custom.cell.name}) + \"  ·  Scan machined components into this cell's queue\""
+                      }
+                    }
+                  }
                 },
                 "props": {
-                  "text": "Scan machined components into this cell's queue",
                   "style": {
-                    "classes": "pf-terminal-title-meta"
+                    "classes": "pf-kpi-sub"
                   }
                 }
               }
@@ -162,59 +159,58 @@
                 }
               }
             }
-          }
-        ]
-      },
-      {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "CellContext"
-        },
-        "props": {
-          "style": {
-            "classes": "pf-terminal-cell-context",
-            "gap": "12px",
-            "overflow": "hidden"
-          },
-          "alignItems": "center"
-        },
-        "position": {
-          "shrink": 0
-        },
-        "children": [
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "CtxLabel"
-            },
-            "props": {
-              "text": "Active Cell",
-              "style": {
-                "classes": "pf-cell-context-label"
-              }
-            }
           },
           {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "ActiveCellValue"
-            },
-            "props": {
-              "text": "",
-              "style": {
-                "classes": "pf-cell-context-value"
-              }
-            },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "expr",
+            "events": {
+              "component": {
+                "onActionPerformed": {
                   "config": {
-                    "expression": "if(isNull({session.custom.cell.name}), 'No cell bound to this terminal', {session.custom.cell.name})"
-                  }
+                    "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                  },
+                  "scope": "G",
+                  "type": "script"
                 }
               }
-            }
+            },
+            "meta": {
+              "name": "RefreshButton",
+              "tooltip": {
+                "text": "Refresh"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Refresh"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.navigate(\"/\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseButton"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Close"
+            },
+            "type": "ia.input.button"
           }
         ]
       },
