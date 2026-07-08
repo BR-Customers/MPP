@@ -25,7 +25,7 @@
       "system": {
         "onStartup": {
           "config": {
-            "script": "\ttry:\n\t\tself.session.custom.presence.policy \u003d \"strict\"\n\texcept:\n\t\tself.session.custom.presence \u003d {\"policy\": \"strict\"}"
+            "script": "\ttry:\n\t\tself.session.custom.presence.policy \u003d \"strict\"\n\texcept:\n\t\tself.session.custom.presence \u003d {\"policy\": \"strict\"}\n\t# Screen-scoped cell guard (2026-07-08): session.custom.cell is shared across process\n\t# screens - a cell picked elsewhere (e.g. a die-cast machine) must not leak into this\n\t# screen. Clear it unless it is one of THIS terminal's Trim Press context cells.\n\ttry:\n\t\tcells \u003d BlueRidge.Location.Terminal.getContextCellsForDropdown(self.session.custom.terminal.terminalLocationId, \"Trim Press\")\n\t\tids \u003d [c.get(\"value\") for c in cells]\n\t\tc \u003d self.session.custom.cell\n\t\tif c and c.get(\"locationId\") not in ids:\n\t\t\tself.session.custom.cell \u003d {\"locationId\": None, \"code\": \"\", \"name\": \"\"}\n\texcept:\n\t\tpass"
           },
           "scope": "G",
           "type": "script"

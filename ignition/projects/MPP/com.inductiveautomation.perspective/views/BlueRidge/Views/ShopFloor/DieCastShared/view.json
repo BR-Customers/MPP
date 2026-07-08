@@ -43,7 +43,7 @@
           "type": "script",
           "scope": "G",
           "config": {
-            "script": "\ttry:\n\t\tself.session.custom.presence.policy = \"strict\"\n\texcept:\n\t\tself.session.custom.presence = {\"policy\": \"strict\"}"
+            "script": "\ttry:\n\t\tself.session.custom.presence.policy = \"strict\"\n\texcept:\n\t\tself.session.custom.presence = {\"policy\": \"strict\"}\n\t# Screen-scoped cell guard (2026-07-08): session.custom.cell is shared across process\n\t# screens - a cell picked elsewhere (e.g. a die-cast machine) must not leak into this\n\t# screen. Clear it unless it is one of THIS terminal's Die Cast Machine context cells.\n\ttry:\n\t\tcells = BlueRidge.Location.Terminal.getContextCellsForDropdown(self.session.custom.terminal.terminalLocationId, \"Die Cast Machine\")\n\t\tids = [c.get(\"value\") for c in cells]\n\t\tc = self.session.custom.cell\n\t\tif c and c.get(\"locationId\") not in ids:\n\t\t\tself.session.custom.cell = {\"locationId\": None, \"code\": \"\", \"name\": \"\"}\n\texcept:\n\t\tpass"
           }
         }
       }

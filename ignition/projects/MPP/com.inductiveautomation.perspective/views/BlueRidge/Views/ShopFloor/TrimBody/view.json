@@ -34,7 +34,7 @@
     "custom.trimInventory": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.terminal.zoneLocationId}, true, {view.custom.refreshToken})"
+          "expression": "if(isNull({session.custom.cell.locationId}), \"\", runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}))"
         },
         "type": "expr"
       }
@@ -423,7 +423,7 @@
                       "style": {
                         "classes": "pf-kpi-sub"
                       },
-                      "text": "Nothing is checked in at Trim."
+                      "text": "No LOTs checked in at this press. Pick a press above, then scan LOTs in."
                     },
                     "type": "ia.display.label"
                   },
@@ -496,9 +496,9 @@
                       "props.params.destinationLocationId": {
                         "binding": {
                           "config": {
-                            "expression": "coalesce({session.custom.cell.locationId}, {session.custom.terminal.zoneLocationId})"
+                            "path": "session.custom.cell.locationId"
                           },
-                          "type": "expr"
+                          "type": "property"
                         }
                       }
                     },
@@ -650,7 +650,7 @@
                       "style": {
                         "classes": "pf-kpi-sub"
                       },
-                      "text": "Nothing is checked in at Trim."
+                      "text": "No LOTs checked in at this press. Pick a press above, then scan LOTs in."
                     },
                     "type": "ia.display.label"
                   },
