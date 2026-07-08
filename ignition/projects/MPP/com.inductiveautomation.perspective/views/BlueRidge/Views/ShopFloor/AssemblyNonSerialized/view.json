@@ -14,6 +14,18 @@
       "ClosureMethod": ""
     },
     "queueByPartText": "",
+    "fgConfig": {
+      "Id": null,
+      "ItemId": null,
+      "TraysPerContainer": 0,
+      "PartsPerTray": 0,
+      "IsSerialized": false,
+      "DunnageCode": "",
+      "CustomerCode": "",
+      "ClosureMethod": "",
+      "TargetWeight": null
+    },
+    "closureRaw": "",
     "draft": {
       "partsCount": "",
       "trayPosition": ""
@@ -34,6 +46,26 @@
             "type": "script"
           }
         ],
+        "type": "expr"
+      }
+    },
+    "custom.fgConfig": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.ContainerConfig.getByItemOrEmpty\", 0, coalesce({view.custom.container.ItemId}, {view.custom.selectedFinishedGoodItemId}))"
+        },
+        "type": "expr"
+      },
+      "onChange": {
+        "enabled": true,
+        "script": "\t# Auto-populate from the part's container config: prefill the parts-in-tray\n\t# field with PartsPerTray (only into an EMPTY field - never overwrite input).\n\tcfg = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fgConfig) or {}\n\tppt = cfg.get(\"PartsPerTray\")\n\td = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.draft) or {}\n\tif ppt and d.get(\"partsCount\") in (None, \"\"):\n\t\tself.view.custom.draft = {\"partsCount\": ppt, \"trayPosition\": d.get(\"trayPosition\") or \"\"}"
+      }
+    },
+    "custom.closureRaw": {
+      "binding": {
+        "config": {
+          "expression": "if(isNull({view.custom.container.Id}), {view.custom.fgConfig.ClosureMethod}, {view.custom.container.ClosureMethod})"
+        },
         "type": "expr"
       }
     },
@@ -226,6 +258,35 @@
                 "classes": "pf-btn pf-btn-secondary"
               },
               "text": "Refresh"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params={\"locationId\": self.session.custom.cell.locationId}, title=\"Line Inventory\", modal=False, showCloseIcon=True, draggable=True, resizable=True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "InventoryButton",
+              "tooltip": {
+                "text": "Check component / pass-through inventory in to this line"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Inventory"
             },
             "type": "ia.input.button"
           },
@@ -626,7 +687,7 @@
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "if(isNull({view.custom.container.Id}), 'Per-Tray Close - completing the first tray opens a container', 'Per-Tray Close - ByVision - Tray ' + toStr(({view.custom.container.ClosedTrays} + 1)) + ' of ' + toStr({view.custom.container.TraysPerContainer}))"
+                            "expression": "if(isNull({view.custom.container.Id}), if({view.custom.fgConfig.TraysPerContainer} > 0, 'Per-Tray Close - first tray opens a container (' + toStr({view.custom.fgConfig.TraysPerContainer}) + ' trays x ' + toStr({view.custom.fgConfig.PartsPerTray}) + ' parts/tray)', 'Per-Tray Close - completing the first tray opens a container'), 'Per-Tray Close - ByVision - Tray ' + toStr(({view.custom.container.ClosedTrays} + 1)) + ' of ' + toStr({view.custom.container.TraysPerContainer}))"
                           },
                           "type": "expr"
                         }
@@ -956,7 +1017,7 @@
                               "props.text": {
                                 "binding": {
                                   "config": {
-                                    "expression": "if({view.custom.container.ClosureMethod} = \"ByCount\", \"By Count\", if({view.custom.container.ClosureMethod} = \"ByWeight\", \"By Weight\", if({view.custom.container.ClosureMethod} = \"ByVision\", \"By Vision\", if(isNull({view.custom.container.ClosureMethod}), \"-\", {view.custom.container.ClosureMethod}))))"
+                                    "expression": "if({view.custom.closureRaw} = \"ByCount\", \"By Count\", if({view.custom.closureRaw} = \"ByWeight\", \"By Weight\", if({view.custom.closureRaw} = \"ByVision\", \"By Vision\", if(isNull({view.custom.closureRaw}) || {view.custom.closureRaw} = \"\", \"-\", {view.custom.closureRaw}))))"
                                   },
                                   "type": "expr"
                                 }
@@ -1075,32 +1136,6 @@
                             "classes": "pf-btn pf-btn-secondary pf-btn-large"
                           },
                           "text": "Complete Tray"
-                        },
-                        "type": "ia.input.button"
-                      },
-                      {
-                        "events": {
-                          "component": {
-                            "onActionPerformed": {
-                              "config": {
-                                "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params={\"locationId\": self.session.custom.cell.locationId}, title=\"Line Inventory\", modal=False, showCloseIcon=True, draggable=True, resizable=True)"
-                              },
-                              "scope": "G",
-                              "type": "script"
-                            }
-                          }
-                        },
-                        "meta": {
-                          "name": "InventoryButton"
-                        },
-                        "position": {
-                          "shrink": 0
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "pf-btn pf-btn-secondary pf-btn-large"
-                          },
-                          "text": "Inventory"
                         },
                         "type": "ia.input.button"
                       }
