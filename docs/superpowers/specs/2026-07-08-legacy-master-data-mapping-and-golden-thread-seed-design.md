@@ -33,14 +33,18 @@ Chosen because together they cover **both consume-mint variants, both validation
 
 **Patterns exercised:** OriginMint (die cast) · Machining **Advance** (no OUT terminal, identity preserved) · Assembly-OUT ConsumeMint (**fan-in, 10→1**) · camera-tray validation · multi-line same-part · purchased-component consumption.
 
-### Thread B — 5PA Fuel Pump (scale/weight, linear, **machining = ConsumeMint**)
-- The 5PA fuel-pump machining lines (`5PA Fuel Pump Line 2/3 Machining`) have Machining **IN + OUT** workstations → the machined fuel pump **is** a distinct SubAssembly minted at Machining OUT.
-- **Casting (`Component`):** `12270-5PA` (raw cast fuel-pump base), OriginMinted at die cast.
-- **Machined SubAssembly (Machining-OUT ConsumeMint):** legacy reused `12270-5PA` through machining with **no distinct machined part number**, so our model must **synthesize** a machined identity — proposed `12270-5PA-M` (`SubAssembly`). *This synthesized part is itself a validation artifact of decision C.*
-- **Finished good (Assembly-OUT ConsumeMint):** `12270-5PA -A0001` (`FinishedGood`) consuming the machined SA + stud bolt (`92900-06014-1B`) + dowel (`94301-08100`).
-- Scale-processed (`IsScaleProcessingEnabled = 1`), Honda customer, linear route.
+### Thread B — 6NA Fuel Pump (linear, **machining = ConsumeMint**)
+> **Line choice driven by OUR model (011), the authority:** the modeled `MA2-5PA` line has *only* Machining-In terminals (no Machining Out), so a 5PA fuel pump can't be the machining-mint thread in our model. The complete fuel-pump line **with** a Machining Out is `MA1-FP6NA` ("Fuel Pump 6na 6vj": MIN→MOUT→AFIN). Thread B therefore uses the **6NA fuel pump** family on `MA1-FP6NA`.
 
-**Patterns exercised:** OriginMint · **Machining-OUT ConsumeMint** (casting→synthesized machined SubAssembly, the contrast case to Thread A) · Assembly-OUT ConsumeMint (linear 1-child) · **scale/weight** validation (vs Thread A's camera) · synthesized-identity handling for decision C.
+- **Casting (`Component`):** `12270-6NA` (raw cast fuel-pump base, legacy "59B Components"), OriginMinted at die cast.
+- **Machined SubAssembly (Machining-OUT ConsumeMint):** legacy reused `12270-6NA` through machining with **no distinct machined part number**, so our model must **synthesize** one — `12270-6NA-M` (`SubAssembly`). *This synthesized part is itself a validation artifact of decision C.*
+- **Finished good (Assembly-OUT ConsumeMint at AFIN):** `12270-6NA -0001` (`FinishedGood`) consuming the machined SA + stud bolt (`92900-06014-1B`) + dowel (`94301-08100`).
+- Honda customer, linear route: casting `DieCast→MachiningIn→MachiningOut`; SA `AssemblyOut`; FG unrouted.
+
+**Patterns exercised:** OriginMint · **Machining-OUT ConsumeMint** (casting→synthesized machined SubAssembly, the contrast case to Thread A) · Assembly-OUT ConsumeMint (linear 1-child) · synthesized-identity handling for decision C.
+
+### Location mapping — no new locations
+Both threads map onto **existing** `011_seed_locations_mpp_plant.sql` lines (the reconciled real plant already collapses legacy Line+WorkCell into WorkCenter): Thread A → `MA2-59B` (`MA2-59B-MIN`, `MA2-59B-AOUT1`); Thread B → `MA1-FP6NA` (`MA1-FP6NA-MIN`, `-MOUT`, `-AFIN`). Castings origin-mint at existing DieCastMachine cells (e.g. `DC3-M01`, `DC2-M01`). The seed adds **no** location rows.
 
 > The two threads deliberately disagree on what machining does — Thread A mints a new identity at Machining OUT, Thread B passes identity through. Both are real in the legacy data, and our route model must represent both via `OperationRoleKind` on the machining step.
 
