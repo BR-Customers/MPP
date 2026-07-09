@@ -1,28 +1,23 @@
 -- ============================================================
 -- seed_jp_validation.sql (scratch backup, run on demand -- NOT auto-run by Reset-DevDatabase)
--- Jacques's validation fixture -- RE-AUTHORED 2026-07-07 to the terminal-mint
--- model (spec 2026-07-07 §5.5; matches the canonical demo routes in
--- sql/seeds/029_seed_item_routes.sql). Old-model backup:
--- sql/scratch/seed_jp_validation.old-model.sql.
+-- Jacques's validation fixture (spec 2026-07-07 terminal-mint §5.5):
+-- a faithful capture of the 5G0 family CONFIG as currently worked with,
+-- so a DB rebuild does not lose it. Reproduces exactly what is configured:
 --
 --   Items:  5G0-c (Component), 5G0-SA (SubAssembly), 5G0-FG (FinishedGood),
 --           '21001 pin' (Component)      [Uom PCS]
 --   Op templates: DC-A/T-IN-A/T-Out-A/M-In-A/M-Out-A/A-Out-A
---   Routes (mint = LAST step of the CONSUMED part; produced part is born there):
---     5G0-c  = DieCast -> TrimIn -> TrimOut -> MachiningIn -> MachiningOut
---              (MachiningOut consumes the casting -> MINTS 5G0-SA)
---     5G0-SA = AssemblyOut         (born at 5G0-c's MachiningOut; no Assembly-In
---              terminal on this line -> AssemblyOut consumes SA+pins -> MINTS 5G0-FG)
---     5G0-FG = (unrouted -- it is the OUTPUT of Assembly OUT; packaged/shipped)
---   BOMs (drive the consume-mint child->parent derivation):
---     5G0-SA = 5G0-c x1
---     5G0-FG = 5G0-SA x1 + '21001 pin' x6
+--   Routes: 5G0-c  = DieCast -> TrimIn -> TrimOut -> MachiningIn
+--           5G0-FG = AssemblyOut
+--           5G0-SA = (none)
+--   BOM:    5G0-FG = 5G0-c x1 + '21001 pin' x6
 --   Elig:   5G0-c @DC1/TRIM1/MA1-5GOF ; 5G0-SA,5G0-FG @MA1-5GOF ;
 --           '21001 pin' @MA1/MA2
 --
 -- Idempotent + natural-key resolved (survives identity reseeds). ASCII only.
--- Routes/BOMs built via the production procs (route-legality enforced at Publish).
--- No USE statement: runs against the sqlcmd session -d target.
+-- Routes/BOMs built via the production procs. Data-collection FIELDS on the
+-- templates are not reproduced (orthogonal to this fixture). No USE statement:
+-- runs against the sqlcmd session -d target. Distinct from seed_demo.sql.
 --   sqlcmd -S localhost -d MPP_MES_Dev -E -b -I -C -i sql/scratch/seed_jp_validation.sql
 -- ============================================================
 SET NOCOUNT ON; SET XACT_ABORT ON; SET QUOTED_IDENTIFIER ON;
@@ -72,8 +67,7 @@ DECLARE @rc TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 DECLARE @rs TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 DECLARE @rp TABLE (Status BIT, Message NVARCHAR(500));
 
--- 5G0-c (casting): DieCast -> TrimIn -> TrimOut -> MachiningIn -> MachiningOut
---   (MachiningOut is the casting's final step -> mints 5G0-SA by Consumption)
+-- 5G0-c: DieCast -> TrimIn -> TrimOut -> MachiningIn
 DECLARE @I_C BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
 IF NOT EXISTS (SELECT 1 FROM Parts.RouteTemplate WHERE ItemId = @I_C AND PublishedAt IS NOT NULL AND DeprecatedAt IS NULL)
 BEGIN
@@ -81,7 +75,7 @@ BEGIN
     DECLARE @RC_C BIGINT = (SELECT NewId FROM @rc);
     DECLARE @StepsC NVARCHAR(MAX) = (
         SELECT CAST(NULL AS BIGINT) AS Id, ot.Id AS OperationTemplateId, 1 AS IsRequired, CAST(NULL AS NVARCHAR(500)) AS Description
-        FROM (VALUES (1,N'DC-A'),(2,N'T-IN-A'),(3,N'T-Out-A'),(4,N'M-In-A'),(5,N'M-Out-A')) v(Seq,Code)
+        FROM (VALUES (1,N'DC-A'),(2,N'T-IN-A'),(3,N'T-Out-A'),(4,N'M-In-A')) v(Seq,Code)
         JOIN Parts.OperationTemplate ot ON ot.Code = v.Code
         ORDER BY v.Seq FOR JSON PATH, INCLUDE_NULL_VALUES);
     DELETE FROM @rs; INSERT INTO @rs EXEC Parts.RouteTemplate_SaveAll @Id=@RC_C, @Name=N'Route v1', @EffectiveFrom=@Eff, @AppUserId=@U, @StepsJson=@StepsC;
@@ -90,54 +84,37 @@ BEGIN
     IF (SELECT Status FROM @rp) <> 1 RAISERROR(N'5G0-c route Publish failed.', 16, 1);
 END
 
--- 5G0-SA (sub-assembly): AssemblyOut
---   (born at 5G0-c's MachiningOut; AssemblyOut consumes SA+pins -> mints 5G0-FG)
-DECLARE @I_SA BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-SA');
-IF NOT EXISTS (SELECT 1 FROM Parts.RouteTemplate WHERE ItemId = @I_SA AND PublishedAt IS NOT NULL AND DeprecatedAt IS NULL)
+-- 5G0-FG: AssemblyOut
+DECLARE @I_FG2 BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-FG');
+IF NOT EXISTS (SELECT 1 FROM Parts.RouteTemplate WHERE ItemId = @I_FG2 AND PublishedAt IS NOT NULL AND DeprecatedAt IS NULL)
 BEGIN
-    DELETE FROM @rc; INSERT INTO @rc EXEC Parts.RouteTemplate_Create @ItemId=@I_SA, @Name=N'Route v1', @EffectiveFrom=@Eff, @AppUserId=@U;
-    DECLARE @RC_SA BIGINT = (SELECT NewId FROM @rc);
-    DECLARE @StepsSA NVARCHAR(MAX) = (
+    DELETE FROM @rc; INSERT INTO @rc EXEC Parts.RouteTemplate_Create @ItemId=@I_FG2, @Name=N'Route v1', @EffectiveFrom=@Eff, @AppUserId=@U;
+    DECLARE @RC_FG BIGINT = (SELECT NewId FROM @rc);
+    DECLARE @StepsFG NVARCHAR(MAX) = (
         SELECT CAST(NULL AS BIGINT) AS Id, ot.Id AS OperationTemplateId, 1 AS IsRequired, CAST(NULL AS NVARCHAR(500)) AS Description
         FROM Parts.OperationTemplate ot WHERE ot.Code = N'A-Out-A' FOR JSON PATH, INCLUDE_NULL_VALUES);
-    DELETE FROM @rs; INSERT INTO @rs EXEC Parts.RouteTemplate_SaveAll @Id=@RC_SA, @Name=N'Route v1', @EffectiveFrom=@Eff, @AppUserId=@U, @StepsJson=@StepsSA;
-    IF (SELECT Status FROM @rs) <> 1 RAISERROR(N'5G0-SA route SaveAll failed.', 16, 1);
-    DELETE FROM @rp; INSERT INTO @rp EXEC Parts.RouteTemplate_Publish @Id=@RC_SA, @AppUserId=@U;
-    IF (SELECT Status FROM @rp) <> 1 RAISERROR(N'5G0-SA route Publish failed.', 16, 1);
+    DELETE FROM @rs; INSERT INTO @rs EXEC Parts.RouteTemplate_SaveAll @Id=@RC_FG, @Name=N'Route v1', @EffectiveFrom=@Eff, @AppUserId=@U, @StepsJson=@StepsFG;
+    IF (SELECT Status FROM @rs) <> 1 RAISERROR(N'5G0-FG route SaveAll failed.', 16, 1);
+    DELETE FROM @rp; INSERT INTO @rp EXEC Parts.RouteTemplate_Publish @Id=@RC_FG, @AppUserId=@U;
+    IF (SELECT Status FROM @rp) <> 1 RAISERROR(N'5G0-FG route Publish failed.', 16, 1);
 END
-
--- 5G0-FG (finished good): NO route -- it is the OUTPUT of Assembly OUT.
+-- 5G0-SA: (no route configured)
 GO
 
--- ---- 4. BOMs via procs (child->parent drives the consume-mint derivation) ----
---   5G0-SA = 5G0-c x1                 (MachiningOut mints the SA from the casting)
---   5G0-FG = 5G0-SA x1 + '21001 pin' x6 (AssemblyOut mints the FG from SA + pins)
+-- ---- 4. BOM via procs: 5G0-FG = 5G0-c x1 + '21001 pin' x6 ----
 DECLARE @U BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
 DECLARE @Uom BIGINT = (SELECT Id FROM Parts.Uom WHERE Code = N'PCS');
-DECLARE @I_C BIGINT   = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
-DECLARE @I_SA BIGINT  = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-SA');
-DECLARE @I_FG BIGINT  = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-FG');
+DECLARE @I_C BIGINT  = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
+DECLARE @I_FG BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-FG');
 DECLARE @I_PIN BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'21001 pin');
 DECLARE @bc TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 DECLARE @bl TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 DECLARE @bp TABLE (Status BIT, Message NVARCHAR(500));
-
--- 5G0-SA BOM = 5G0-c x1
-IF NOT EXISTS (SELECT 1 FROM Parts.Bom WHERE ParentItemId = @I_SA AND PublishedAt IS NOT NULL AND DeprecatedAt IS NULL)
-BEGIN
-    DELETE FROM @bc; INSERT INTO @bc EXEC Parts.Bom_Create @ParentItemId=@I_SA, @AppUserId=@U;
-    DECLARE @Bom_SA BIGINT = (SELECT NewId FROM @bc);
-    DELETE FROM @bl; INSERT INTO @bl EXEC Parts.BomLine_Add @BomId=@Bom_SA, @ChildItemId=@I_C, @QtyPer=1, @UomId=@Uom, @AppUserId=@U;
-    DELETE FROM @bp; INSERT INTO @bp EXEC Parts.Bom_Publish @Id=@Bom_SA, @AppUserId=@U;
-    IF (SELECT Status FROM @bp) <> 1 RAISERROR(N'5G0-SA BOM publish failed.', 16, 1);
-END
-
--- 5G0-FG BOM = 5G0-SA x1 + '21001 pin' x6
 IF NOT EXISTS (SELECT 1 FROM Parts.Bom WHERE ParentItemId = @I_FG AND PublishedAt IS NOT NULL AND DeprecatedAt IS NULL)
 BEGIN
     DELETE FROM @bc; INSERT INTO @bc EXEC Parts.Bom_Create @ParentItemId=@I_FG, @AppUserId=@U;
     DECLARE @Bom_FG BIGINT = (SELECT NewId FROM @bc);
-    DELETE FROM @bl; INSERT INTO @bl EXEC Parts.BomLine_Add @BomId=@Bom_FG, @ChildItemId=@I_SA,  @QtyPer=1, @UomId=@Uom, @AppUserId=@U;
+    DELETE FROM @bl; INSERT INTO @bl EXEC Parts.BomLine_Add @BomId=@Bom_FG, @ChildItemId=@I_C, @QtyPer=1, @UomId=@Uom, @AppUserId=@U;
     DELETE FROM @bl; INSERT INTO @bl EXEC Parts.BomLine_Add @BomId=@Bom_FG, @ChildItemId=@I_PIN, @QtyPer=6, @UomId=@Uom, @AppUserId=@U;
     DELETE FROM @bp; INSERT INTO @bp EXEC Parts.Bom_Publish @Id=@Bom_FG, @AppUserId=@U;
     IF (SELECT Status FROM @bp) <> 1 RAISERROR(N'5G0-FG BOM publish failed.', 16, 1);
@@ -162,5 +139,5 @@ JOIN Location.Location loc ON loc.Code = e.LocCode
 WHERE NOT EXISTS (SELECT 1 FROM Parts.ItemLocation il WHERE il.ItemId = i.Id AND il.LocationId = loc.Id);
 GO
 
-PRINT N'seed_jp_validation: 5G0 family config (terminal-mint model) captured.';
+PRINT N'031_seed_jp_validation: 5G0 family config captured.';
 GO
