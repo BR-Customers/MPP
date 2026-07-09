@@ -1,8 +1,8 @@
 -- ============================================================
 -- Repeatable:  R__Location_Location_ListMachiningDestinations.sql
 -- Author:      Blue Ridge Automation
--- Modified:    2026-07-06
--- Version:     1.1
+-- Modified:    2026-07-09
+-- Version:     2.0
 -- Description: The Machining destinations the Trim OUT screen offers as 1:1
 --              whole-LOT move targets.
 --
@@ -21,10 +21,19 @@
 --              AreaCode/AreaName resolve from the line's parent Area. Printers,
 --              terminals, machines are structurally excluded (wrong tier).
 --
+--              v2.0 (2026-07-09, smoke finding): optional @ItemId eligibility
+--              filter. When supplied, only lines where the Item resolves via
+--              Parts.v_EffectiveItemLocation at the line OR any ancestor tier
+--              (the FDS-03-014 cascade) are returned -- the SAME predicate
+--              TrimOut_Record enforces at commit, so the dropdown can never
+--              offer a destination the proc would reject. NULL = unchanged
+--              v1.1 behavior (all machining lines).
+--
 --              Read proc: NO @Status/@Message, NO OUTPUT params; empty rowset =
 --              no machining lines configured (FDS-11-011).
 -- ============================================================
 CREATE OR ALTER PROCEDURE Location.Location_ListMachiningDestinations
+    @ItemId BIGINT = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -46,6 +55,11 @@ BEGIN
                   WHERE c.ParentLocationId = wc.Id
                     AND c.DeprecatedAt IS NULL
                     AND c.Name LIKE N'Machining In%')
+      -- v2.0 eligibility filter: mirror of TrimOut_Record's destination gate
+      AND (@ItemId IS NULL OR EXISTS (
+            SELECT 1 FROM Parts.v_EffectiveItemLocation eil
+            WHERE eil.ItemId = @ItemId
+              AND eil.LocationId IN (SELECT LocationId FROM Location.ufn_AncestorLocationIds(wc.Id))))
     ORDER BY wc.Code;
 END;
 GO

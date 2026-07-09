@@ -1,6 +1,5 @@
 {
   "custom": {
-    "destOptions": [],
     "parentLot": {
       "Id": null,
       "LotName": "",
@@ -8,21 +7,12 @@
       "ItemPartNumber": ""
     },
     "draft": {
-      "dest": null,
       "qty": ""
     },
     "refreshToken": 0
   },
   "params": {},
   "propConfig": {
-    "custom.destOptions": {
-      "binding": {
-        "config": {
-          "expression": "runScript(\"BlueRidge.Location.Location.getCellsForDropdownByNamePrefix\", 0, \"Assembly\")"
-        },
-        "type": "expr"
-      }
-    },
     "custom.opTemplateId": {
       "binding": {
         "config": {
@@ -502,68 +492,6 @@
                       }
                     },
                     "type": "ia.container.flex"
-                  },
-                  {
-                    "children": [
-                      {
-                        "meta": {
-                          "name": "L"
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "pf-field-label"
-                          },
-                          "text": "Destination"
-                        },
-                        "type": "ia.display.label"
-                      },
-                      {
-                        "meta": {
-                          "name": "Dest"
-                        },
-                        "propConfig": {
-                          "props.options": {
-                            "binding": {
-                              "config": {
-                                "path": "view.custom.destOptions"
-                              },
-                              "type": "property"
-                            }
-                          },
-                          "props.value": {
-                            "binding": {
-                              "config": {
-                                "bidirectional": true,
-                                "path": "view.custom.draft.dest"
-                              },
-                              "type": "property"
-                            }
-                          }
-                        },
-                        "props": {
-                          "placeholder": "Select destination",
-                          "style": {
-                            "classes": "pf-field-select"
-                          }
-                        },
-                        "type": "ia.input.dropdown"
-                      }
-                    ],
-                    "meta": {
-                      "name": "DestField"
-                    },
-                    "position": {
-                      "basis": "320px",
-                      "grow": 1
-                    },
-                    "props": {
-                      "direction": "column",
-                      "style": {
-                        "classes": "pf-field",
-                        "gap": "6px"
-                      }
-                    },
-                    "type": "ia.container.flex"
                   }
                 ],
                 "meta": {
@@ -606,7 +534,7 @@
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\t# Terminal-mint: consume the source casting to MINT a machined SubAssembly LOT\n\t# (line-resident, no destination). Produced part derived via BOM by the proc.\n\tsource = self.view.custom.parentLot\n\totId = self.view.custom.opTemplateId\n\tcellId = self.session.custom.cell.locationId\n\td = self.view.custom.draft\n\tif cellId is None or not source or source.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Select a cell that has a casting ready for Machining OUT.\"}, \"Machining OUT\")\n\t\treturn\n\tif otId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"MachiningOut operation template not found.\"}, \"Machining OUT\")\n\t\treturn\n\tq = BlueRidge.Common.Util.toIntOrNone(d.get(\"qty\"))\n\tif q is None or q <= 0:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a positive quantity to mint.\"}, \"Machining OUT\")\n\t\treturn\n\tresult = BlueRidge.Workorder.Machining.mint(source.get(\"Id\"), otId, q, None, self.session.custom.appUserId, cellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining OUT - Mint\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"qty\": \"\", \"dest\": None}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                        "script": "\t# Terminal-mint: consume the source casting to MINT a machined SubAssembly LOT\n\t# (line-resident, no destination). Produced part derived via BOM by the proc.\n\tsource = self.view.custom.parentLot\n\totId = self.view.custom.opTemplateId\n\tcellId = self.session.custom.cell.locationId\n\td = self.view.custom.draft\n\tif cellId is None or not source or source.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Select a cell that has a casting ready for Machining OUT.\"}, \"Machining OUT\")\n\t\treturn\n\tif otId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"MachiningOut operation template not found.\"}, \"Machining OUT\")\n\t\treturn\n\tq = BlueRidge.Common.Util.toIntOrNone(d.get(\"qty\"))\n\tif q is None or q <= 0:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a positive quantity to mint.\"}, \"Machining OUT\")\n\t\treturn\n\tresult = BlueRidge.Workorder.Machining.mint(source.get(\"Id\"), otId, q, None, self.session.custom.appUserId, cellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining OUT - Mint\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"qty\": \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
                       },
                       "scope": "G",
                       "type": "script"

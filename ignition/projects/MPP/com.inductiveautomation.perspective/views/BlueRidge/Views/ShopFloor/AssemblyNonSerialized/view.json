@@ -907,55 +907,6 @@
                               "style": {
                                 "classes": "pf-field-label"
                               },
-                              "text": "Tray position"
-                            },
-                            "type": "ia.display.label"
-                          },
-                          {
-                            "meta": {
-                              "name": "Pos"
-                            },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "config": {
-                                    "bidirectional": true,
-                                    "path": "view.custom.draft.trayPosition"
-                                  },
-                                  "type": "property"
-                                }
-                              }
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "pf-field-input"
-                              }
-                            },
-                            "type": "ia.input.text-field"
-                          }
-                        ],
-                        "meta": {
-                          "name": "PosField"
-                        },
-                        "props": {
-                          "direction": "column",
-                          "style": {
-                            "classes": "pf-field",
-                            "gap": "4px"
-                          }
-                        },
-                        "type": "ia.container.flex"
-                      },
-                      {
-                        "children": [
-                          {
-                            "meta": {
-                              "name": "L"
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "pf-field-label"
-                              },
                               "text": "Parts in tray"
                             },
                             "type": "ia.display.label"
@@ -1118,7 +1069,7 @@
                           "component": {
                             "onActionPerformed": {
                               "config": {
-                                "script": "\tresult = BlueRidge.Workorder.Assembly.handleTrayComplete(self.view.custom.container, self.view.custom.draft, self.view.custom.selectedFinishedGoodItemId, self.session.custom.cell.locationId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tray completed - FG LOT minted\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"trayPosition\": \"\", \"partsCount\": \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1\n\t\tif result.get(\"ContainerFull\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Container full\", \"Press Complete to ship.\", \"info\")"
+                                "script": "\tresult = BlueRidge.Workorder.Assembly.handleTrayComplete(self.view.custom.container, self.view.custom.draft, self.view.custom.selectedFinishedGoodItemId, self.session.custom.cell.locationId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tray completed - FG LOT minted\")\n\tif result and result.get(\"Status\"):\n\t\t# Re-prime the next tray from the part's config (the fgConfig onChange only\n\t\t# fires when the CONFIG changes, so a same-container tray 2 would stay blank).\n\t\tcfg = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fgConfig) or {}\n\t\tself.view.custom.draft = {\"trayPosition\": \"\", \"partsCount\": cfg.get(\"PartsPerTray\") or \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1\n\t\tif result.get(\"ContainerFull\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Container full\", \"Press Complete to ship.\", \"info\")"
                               },
                               "scope": "G",
                               "type": "script"
