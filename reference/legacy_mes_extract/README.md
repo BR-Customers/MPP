@@ -30,10 +30,10 @@ it is byte-accurate (unlike the transcribed snapshot here).
 ### Schema (discovery)
 - `mes_tables.csv` — `MES` table inventory (name, approx rows, column count)
 - `mes_foreign_keys.csv` — `MES` FK relationships
-- `mes_columns.csv` — `MES` column catalog *(regenerate — large)*
+- `mes_columns.csv` — `MES` column catalog. Core/structural tables (Bom, BomComponent, Material, Lot, WorkOrder, WorkCell, etc.) are complete; a few very-wide peripheral tables (`LblParts`'s 74 cols, some dashboard-config tables) are abbreviated to key columns — regenerate for the exhaustive list.
 - `emmd_tables.csv` — `EMMD` table inventory
 - `emmd_foreign_keys.csv` — `EMMD` FK relationships
-- `emmd_columns.csv` — `EMMD` column catalog *(regenerate — large)*
+- `emmd_columns.csv` — `EMMD` column catalog
 
 ### MES master / reference data
 - `code_tables.csv` — state/type/disposition/UoM/class/role/privilege lookups (grid #A)
@@ -49,5 +49,9 @@ it is byte-accurate (unlike the transcribed snapshot here).
 - `identifier_formats.csv` — LTT / serialized-item id formats (grid #G2)
 - `label_templates.csv` — ZPL label templates (grid #G3)
 
-A file marked *(regenerate)* or absent means it was too large to transcribe
-reliably from chat — regenerate it from the DB.
+All 18 files are populated from the chat snapshot. Row counts: materials 343,
+bom 225, bom_components 557, workcell_material 548, code_tables 219,
+production_orders 189, work_orders 190, locations 253, navigation 59,
+customers 8, identifier_formats 2, label_templates 3; schema: mes_tables 102,
+mes_foreign_keys 94, mes_columns 471, emmd_tables 25, emmd_foreign_keys 30,
+emmd_columns 145.
