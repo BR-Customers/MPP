@@ -1,0 +1,220 @@
+Domain,Id,Name,DisplayName,Extra
+ContainerState,1,CREATED,Created,NULL
+ContainerState,2,FINISHED,Finished,NULL
+Disposition,1,GOOD,Good,NULL
+Disposition,2,BAD,Bad,NULL
+Disposition,3,HOLD,Hold,NULL
+Disposition,4,DELETED,Deleted,NULL
+LotAttribute,1,DIE NAME,Die Name,NULL
+LotAttribute,2,CAVITY NAME,Cavity Name,NULL
+LotState,1,CREATED,Created,NULL
+LotState,2,STARTED,Started,NULL
+LotState,3,COMPLETED,Completed,NULL
+LotState,4,FINISHED,Finished,NULL
+LotState,5,SCRAPPED,Scrapped,NULL
+LotTransactionType,1,CREATED,Created,NULL
+LotTransactionType,2,STARTED,Started,NULL
+LotTransactionType,3,COMPLETED,Completed,NULL
+LotTransactionType,4,FINISHED,Finished,NULL
+LotTransactionType,5,SCRAPPED,Scrapped,NULL
+LotTransactionType,6,ADJUSTED,Adjusted,NULL
+MaterialClass,12,5G0 Finished Goods,NULL,IsFinishedGood=1
+MaterialClass,35,5A2 Finished Goods,NULL,IsFinishedGood=1
+MaterialClass,36,5G0 Components,NULL,IsFinishedGood=0
+MaterialClass,37,5A2 Components,NULL,IsFinishedGood=0
+MaterialClass,41,RPY Components,NULL,IsFinishedGood=0
+MaterialClass,42,Offsite Finished Goods,NULL,IsFinishedGood=1
+MaterialClass,43,RPY Finished Goods,NULL,IsFinishedGood=1
+MaterialClass,44,59B Finished Goods,NULL,IsFinishedGood=1
+MaterialClass,45,59B Components,NULL,IsFinishedGood=0
+MaterialClass,48,5K8 Finished Goods,NULL,IsFinishedGood=1
+MaterialClass,49,5K8 Components,NULL,IsFinishedGood=0
+MaterialClass,50,5BA Components,NULL,IsFinishedGood=0
+MaterialClass,51,5BA Finished Goods,NULL,IsFinishedGood=1
+MaterialClass,52,5PA Finished Goods,NULL,IsFinishedGood=1
+MaterialClass,53,5PA Components,NULL,IsFinishedGood=0
+MaterialClass,54,Offsite Components,NULL,IsFinishedGood=0
+MaterialClass,56,6B2 Finished Goods,NULL,IsFinishedGood=1
+MaterialClass,57,6B2 Components,NULL,IsFinishedGood=0
+MaterialClass,58,6C2/6MA Finished Goods,NULL,IsFinishedGood=1
+MaterialClass,59,6C2/6MA Components,NULL,IsFinishedGood=0
+MaterialClass,60,64A Components,NULL,IsFinishedGood=0
+MaterialClass,61,64A Finished Goods,NULL,IsFinishedGood=1
+MaterialClass,63,6MA Components,NULL,IsFinishedGood=0
+MaterialClass,64,6MA Finished Goods,NULL,IsFinishedGood=1
+MaterialClass,65,5J6 Finished Goods,NULL,IsFinishedGood=1
+MaterialClass,66,5J6 Components,NULL,IsFinishedGood=0
+MaterialClass,67,6FB Components,NULL,IsFinishedGood=0
+MaterialClass,68,6FB Finished Goods,NULL,IsFinishedGood=1
+MaterialClass,75,6MD Finished Goods,NULL,IsFinishedGood=0
+MaterialClass,76,6MD Components,NULL,IsFinishedGood=0
+MaterialClass,83,66V Finished Goods,NULL,IsFinishedGood=1
+MaterialClass,84,66V Components,NULL,IsFinishedGood=0
+MaterialClass,86,Astemo Components,NULL,IsFinishedGood=0
+MaterialClass,87,Astemo Finished Goods,NULL,IsFinishedGood=0
+Privilege,16,AREA_ADD,Area add,NULL
+Privilege,17,AREA_DELETE,Area delete,NULL
+Privilege,18,AREA_SAVE,Area save,NULL
+Privilege,19,AREA_VIEW,Area view,NULL
+Privilege,20,BILL_OF_MATERIAL_ADD,Bill of material add,NULL
+Privilege,21,BILL_OF_MATERIAL_COPY,Bill of material copy,NULL
+Privilege,22,BILL_OF_MATERIAL_DELETE,Bill of material delete,NULL
+Privilege,23,BILL_OF_MATERIAL_VIEW,Bill of material view,NULL
+Privilege,24,CONTAINER_ADD,Container add,NULL
+Privilege,25,CONTAINER_ADD_LOT,Container add lot,NULL
+Privilege,26,CONTAINER_ADD_SERIALIZED_ITEM,Container add serialized item,NULL
+Privilege,27,CONTAINER_DELETE,Container delete,NULL
+Privilege,28,CONTAINER_FINISH,Container finish,NULL
+Privilege,29,CONTAINER_PRINT_LABEL,Container print label,NULL
+Privilege,30,CONTAINER_REMOVE_LOT,Container remove lot,NULL
+Privilege,31,CONTAINER_REMOVE_SERIALIZED_ITEM,Container remove serialized item,NULL
+Privilege,32,CONTAINER_SAVE,Container save,NULL
+Privilege,33,CONTAINER_SCRAP,Container scrap,NULL
+Privilege,34,CONTAINER_SEARCH,Container search,NULL
+Privilege,35,CONTAINER_VIEW,Container view,NULL
+Privilege,36,DASHBOARD_ADD,Dashboard add,NULL
+Privilege,37,DASHBOARD_DELETE,Dashboard delete,NULL
+Privilege,38,DASHBOARD_RESEQUENCE,Dashboard resequence,NULL
+Privilege,39,DASHBOARD_SAVE,Dashboard save,NULL
+Privilege,40,DASHBOARD_VIEW,Dashboard view,NULL
+Privilege,41,LABEL_PRINTER_ADD,Label printer add,NULL
+Privilege,42,LABEL_PRINTER_DELETE,Label printer delete,NULL
+Privilege,43,LABEL_PRINTER_SAVE,Label printer save,NULL
+Privilege,44,LABEL_PRINTER_VIEW,Label printer view,NULL
+Privilege,45,LABEL_TEMPLATE_VIEW,Label template view,NULL
+Privilege,46,LOT_ADD,Lot add,NULL
+Privilege,47,LOT_COMPLETE_AT_LOCATION,Lot complete at location,NULL
+Privilege,48,LOT_DELETE,Lot delete,NULL
+Privilege,49,LOT_FINISH,Lot finish,NULL
+Privilege,50,LOT_PRINT_LABEL,Lot print label,NULL
+Privilege,51,LOT_SAVE,Lot save,NULL
+Privilege,52,LOT_SCRAP_FROM_INVENTORY,Lot scrap from inventory,NULL
+Privilege,53,LOT_SCRAP_FROM_LOCATION,Lot scrap from location,NULL
+Privilege,54,LOT_SEARCH,Lot search,NULL
+Privilege,55,LOT_START_AT_LOCATION,Lot start at location,NULL
+Privilege,56,LOT_VIEW,Lot view,NULL
+Privilege,57,MATERIAL_ADD,Material add,NULL
+Privilege,58,MATERIAL_ALLOCATION_ADD,Material allocation add,NULL
+Privilege,59,MATERIAL_ALLOCATION_DELETE,Material allocation delete,NULL
+Privilege,60,MATERIAL_ALLOCATION_RESEQUENCE,Material allocation resequence,NULL
+Privilege,61,MATERIAL_ALLOCATION_SAVE,Material allocation save,NULL
+Privilege,62,MATERIAL_ALLOCATION_VIEW,Material allocation view,NULL
+Privilege,63,MATERIAL_CLASS_ADD,Material class add,NULL
+Privilege,64,MATERIAL_CLASS_DELETE,Material class delete,NULL
+Privilege,65,MATERIAL_CLASS_SAVE,Material class save,NULL
+Privilege,66,MATERIAL_CLASS_VIEW,Material class view,NULL
+Privilege,67,MATERIAL_COPY,Material copy,NULL
+Privilege,68,MATERIAL_DELETE,Material delete,NULL
+Privilege,69,MATERIAL_SAVE,Material save,NULL
+Privilege,70,MATERIAL_VIEW,Material view,NULL
+Privilege,71,MATERIAL_WORK_CELL_ADD,Material-work cell add,NULL
+Privilege,72,MATERIAL_WORK_CELL_DELETE,Material-work cell delete,NULL
+Privilege,73,MATERIAL_WORK_CELL_SAVE,Material-work cell save,NULL
+Privilege,74,MATERIAL_WORK_CELL_VIEW,Material-work cell view,NULL
+Privilege,75,PRODUCTION_LINE_ADD,Production line add,NULL
+Privilege,76,PRODUCTION_LINE_DELETE,Production line delete,NULL
+Privilege,77,PRODUCTION_LINE_SAVE,Production line save,NULL
+Privilege,78,PRODUCTION_LINE_VIEW,Production line view,NULL
+Privilege,79,PRODUCTION_ORDER_ADD,Production order add,NULL
+Privilege,80,PRODUCTION_ORDER_DELETE,Production order delete,NULL
+Privilege,81,PRODUCTION_ORDER_SAVE,Production order save,NULL
+Privilege,82,PRODUCTION_ORDER_VIEW,Production order view,NULL
+Privilege,83,ROLE_ACTIVE_DIRECTORY_GROUP_ADD,Role active directory group add,NULL
+Privilege,84,ROLE_ACTIVE_DIRECTORY_GROUP_DELETE,Role active directory group delete,NULL
+Privilege,85,ROLE_ADD,Role add,NULL
+Privilege,86,ROLE_DELETE,Role delete,NULL
+Privilege,87,ROLE_SAVE,Role save,NULL
+Privilege,88,ROLE_VIEW,Role view,NULL
+Privilege,89,SERIALIZED_ITEM_ADD,Serialized item add,NULL
+Privilege,90,SERIALIZED_ITEM_SAVE,Serialized item save,NULL
+Privilege,91,SERIALIZED_ITEM_SEARCH,Serialized item search,NULL
+Privilege,92,SERIALIZED_ITEM_VIEW,Serialized item view,NULL
+Privilege,93,SITE_SAVE,Site save,NULL
+Privilege,94,SITE_VIEW,Site view,NULL
+Privilege,95,WORK_CELL_ADD,Work cell add,NULL
+Privilege,96,WORK_CELL_DELETE,Work cell delete,NULL
+Privilege,97,WORK_CELL_SAVE,Work cell save,NULL
+Privilege,98,WORK_CELL_VIEW,Work cell view,NULL
+Privilege,99,WORK_ORDER_ADD,Work order add,NULL
+Privilege,100,WORK_ORDER_DELETE,Work order delete,NULL
+Privilege,101,WORK_ORDER_SAVE,Work order save,NULL
+Privilege,102,WORK_ORDER_VIEW,Work order view,NULL
+Privilege,103,WORKSTATION_ADD,Workstation add,NULL
+Privilege,104,WORKSTATION_DELETE,Workstation delete,NULL
+Privilege,105,WORKSTATION_SAVE,Workstation save,NULL
+Privilege,106,WORKSTATION_VIEW,Workstation view,NULL
+Privilege,107,AUTOMATION_INTERFACE_VIEW_5A2,Automation interface view,NULL
+Privilege,108,AUTOMATION_INTERFACE_WRITE_5A2,Automation interface write,NULL
+Privilege,109,AUTOMATION_INTERFACE_VIEW_5G0,Automation interface view,NULL
+Privilege,110,AUTOMATION_INTERFACE_WRITE_5G0,Automation interface write,NULL
+Privilege,111,BILL_OF_MATERIAL_SAVE,Bill of material save,NULL
+Privilege,112,BILL_OF_MATERIAL_COMPONENT_ADD,Bill of material component add,NULL
+Privilege,113,BILL_OF_MATERIAL_COMPONENT_DELETE,Bill of material component delete,NULL
+Privilege,114,BILL_OF_MATERIAL_COMPONENT_SAVE,Bill of material component save,NULL
+Privilege,115,BILL_OF_MATERIAL_COMPONENT_VIEW,Bill of material component view,NULL
+Privilege,116,DASHBOARD_SCRIPT_SAVE,Dashboard script save,NULL
+Privilege,117,WORK_ORDER_TOGGLE_ACTIVE,Work order toggle active,NULL
+Privilege,118,SERIALIZED_ITEM_COMPLETE_AT_LOCATION,Serialized item complete at location,NULL
+Privilege,119,SERIALIZED_ITEM_FINISH,Serialized item finish,NULL
+Privilege,120,SERIALIZED_ITEM_START_AT_LOCATION,Serialized item start at location,NULL
+Privilege,121,CONTAINER_UNLOCK_TRAY,Unlock Tray,NULL
+Privilege,122,VISION_SYSTEM_BROWSE_IMAGES,Vision System Browse Images,NULL
+Privilege,123,VISION_SYSTEM_DISPLAY_DIAGNOSTICS,Vision System Display Diagnostics,NULL
+Privilege,124,MATERIAL_ALLOCATION_CAST_PART_OVERRIDE,Material allocation cast part override,NULL
+Privilege,125,NOTIFICATION_TEMPLATE_ADD,Notification template add,NULL
+Privilege,126,NOTIFICATION_TEMPLATE_DELETE,Notification template delete,NULL
+Privilege,127,NOTIFICATION_TEMPLATE_SAVE,Notification template save,NULL
+Privilege,128,NOTIFICATION_TEMPLATE_VIEW,Notification template view,NULL
+Privilege,129,NOTIFICATION_SUBSCRIPTION_ADD,Notification subscription add,NULL
+Privilege,130,NOTIFICATION_SUBSCRIPTION_DELETE,Notification subscription delete,NULL
+Privilege,131,NOTIFICATION_SUBSCRIPTION_SAVE,Notification subscription save,NULL
+Privilege,132,NOTIFICATION_SUBSCRIPTION_VIEW,Notification subscription view,NULL
+Privilege,133,VISION_SYSTEM_ENABLE_INSPECTION_ONLY,Vision system enable inspection-only,NULL
+Privilege,134,REMOTE_WORKSTATION_LAUNCH,Remote workstation launch,NULL
+Privilege,135,MATERIAL_ALLOCATION_PURGE,Material allocation purge,NULL
+ProductionOrderState,1,CLOSED,Closed,NULL
+ProductionOrderState,2,COMPLETED,Completed,NULL
+ProductionOrderState,3,QUEUED,Queued,NULL
+ProductionOrderState,4,RELEASED,Released,NULL
+ProductionOrderState,5,SCHEDULED,Scheduled,NULL
+ProductionOrderState,6,STARTED,Started,NULL
+ProductionOrderState,7,SUSPENDED,Suspended,NULL
+Role,14,5A2 Administrators / IT,NULL,NULL
+Role,15,5A2 Supervisors / Quality,NULL,NULL
+Role,16,5A2 Users,NULL,NULL
+Role,17,5G0 Administrators / IT,NULL,NULL
+Role,18,5G0 Supervisors / Quality,NULL,NULL
+Role,19,5G0 Users,NULL,NULL
+Role,21,5G0 Production Control / Finance,NULL,NULL
+Role,22,5A2 Production Control / Finance,NULL,NULL
+Role,24,RPY Administrators / IT,NULL,NULL
+Role,25,RPY Production Control / Finance,NULL,NULL
+Role,26,RPY Supervisors / Quality,NULL,NULL
+Role,27,RPY Users,NULL,NULL
+SerializedItemState,1,CREATED,Created,NULL
+SerializedItemState,2,STARTED,Started,NULL
+SerializedItemState,3,COMPLETED,Completed,NULL
+SerializedItemState,4,FINISHED,Finished,NULL
+SerializedItemTransactionType,1,CREATED,Created,NULL
+SerializedItemTransactionType,2,STARTED,Started,NULL
+SerializedItemTransactionType,3,COMPLETED,Completed,NULL
+SerializedItemTransactionType,4,FINISHED,Finished,NULL
+SubLotTransactionType,1,CREATED,Created,NULL
+SubLotTransactionType,2,ALLOCATED,Allocated,NULL
+UnitOfMeasure,1,Gram,Grams,Abbrev=G
+UnitOfMeasure,2,Kilogram,Kilograms,Abbrev=KG
+UnitOfMeasure,3,Pound,Pounds,Abbrev=LB
+UnitOfMeasure,4,Ounce,Ounces,Abbrev=OZ
+VisionSystemEventType,1,TRAY LOCK,Tray Lock,NULL
+VisionSystemEventType,2,TRAY UNLOCK,Tray Unlock,NULL
+VisionSystemEventType,3,INSPECTION PASS,Inspection Pass,NULL
+VisionSystemEventType,4,INSPECTION FAIL,Inspection Fail,NULL
+VisionSystemEventType,5,CONTAINER COMPLETED,Container Completed,NULL
+VisionSystemEventType,6,TRAY UNLOCK OVERRIDE,Tray Unlock Override,NULL
+VisionSystemEventType,7,INTERFACE ERROR,Interface Error,NULL
+VisionSystemEventType,8,CONTAINER CREATED,Container Created,NULL
+VisionSystemEventType,9,CONTAINER EXISTS,Container Exists,NULL
+WorkOrderState,1,COMPLETED,Completed,NULL
+WorkOrderState,2,SUSPENDED,Suspended,NULL
+WorkOrderState,3,RELEASED,Released,NULL
+WorkOrderState,6,STARTED,Started,NULL
