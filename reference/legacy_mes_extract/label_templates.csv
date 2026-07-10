@@ -1,0 +1,4 @@
+Id,Name,DisplayName,TemplatePath
+1,CONTAINER,Container Label,\FLXWAPSRV1\Label Templates\Label Template - Container.zpl
+3,CONTAINER_HOLD,Container Label (HOLD),\FLXWAPSRV1\Label Templates\Label Template - Container Hold.zpl
+2,LOT,Lot Label,\FLXWAPSRV1\Label Templates\Label Template - Lot.zpl
