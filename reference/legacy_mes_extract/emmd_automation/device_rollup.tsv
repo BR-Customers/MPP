@@ -1,0 +1,23 @@
+ServerName	BasePath	MemberCount	Members
+OmniServer	59B_1_FP_1	9	NET_DataReady, NET_NetWeightUOM, NET_NetWeightValue, NET_PartNumber, NET_TargetWeightMetFlag, TRG_SendMessage, TRG_TargetWeightUOM, TRG_TargetWeightValue, TRG_ToleranceWeightValue
+OmniServer	5G0_Front_Scale	4	NET_DataReady, NET_NetWeightUOM, NET_NetWeightValue, NET_TargetWeightMetFlag
+OmniServer	5G0_Rear_Scale	4	NET_DataReady, NET_NetWeightUOM, NET_NetWeightValue, NET_TargetWeightMetFlag
+OmniServer	5PA_1_FP_1	8	NET_DataReady, NET_NetWeightUOM, NET_NetWeightValue, NET_TargetWeightMetFlag, TRG_SendMessage, TRG_TargetWeightUOM, TRG_TargetWeightValue, TRG_ToleranceWeightValue
+OmniServer	6B2_1_FP_1	8	NET_DataReady, NET_NetWeightUOM, NET_NetWeightValue, NET_TargetWeightMetFlag, TRG_SendMessage, TRG_TargetWeightUOM, TRG_TargetWeightValue, TRG_ToleranceWeightValue
+OmniServer	RPY_1_CB_1	8	NET_DataReady, NET_NetWeightUOM, NET_NetWeightValue, NET_TargetWeightMetFlag, TRG_SendMessage, TRG_TargetWeightUOM, TRG_TargetWeightValue, TRG_ToleranceWeightValue
+OmniServer	RPY_1_FP_1	8	NET_DataReady, NET_NetWeightUOM, NET_NetWeightValue, NET_TargetWeightMetFlag, TRG_SendMessage, TRG_TargetWeightUOM, TRG_TargetWeightValue, TRG_ToleranceWeightValue
+TOP Server	5A2_L1_CamHolderAssy.ProfaceLT_3300	6	DataReady, MESAlarmText, MESAlarmType, PartType, PartValid, TransInProc
+TOP Server	5A2_L1_FuelPumpAssy.ProfaceLT_3300	6	DataReady, MESAlarmText, MESAlarmType, PartType, PartValid, TransInProc
+TOP Server	5A2_L2_CamHolderAssy.ProfaceLT_3300	6	DataReady, MESAlarmText, MESAlarmType, PartType, PartValid, TransInProc
+TOP Server	5A2_L2_FuelPumpAssy.ProfaceLT_3300	6	DataReady, MESAlarmText, MESAlarmType, PartType, PartValid, TransInProc
+TOP Server	5G0_A1.5G0_A1	11	ContainerCount, ContainerCountRequest, DataReady, HardwareInterlockEnforced, MESAlarmText, MESAlarmType, PartComplete, PartSN, PartType, PartValid, TransInProc
+TOP Server	5G0_A2.5G0_A2	11	ContainerCount, ContainerCountRequest, DataReady, HardwareInterlockEnforced, MESAlarmText, MESAlarmType, PartComplete, PartSN, PartType, PartValid, TransInProc
+TOP Server	5J6_OilPanAssy.MicroLogix1400	4	InspectionComplete, PartNumber, TrayLocked, VisionPartNumber
+TOP Server	5K8_64A_OilPanAssy.MicroLogix1400	4	InspectionComplete, PartNumber, TrayLocked, VisionPartNumber
+TOP Server	6B2_CH.MicroLogix1400	23	ContainerName, InspectionComplete, OkToContinue, PartDisposition01, PartDisposition02, PartDisposition03, PartDisposition04, PartDisposition05, PartDisposition06, PartDisposition07, PartDisposition08, PartDisposition09, PartDisposition10, PartDisposition11, PartDisposition12, PartDisposition13, PartDisposition14, PartDisposition15, PartDisposition16, PartDisposition17, PartDisposition18, PartNumber, TrayLocked
+TOP Server	6C2_6MA_OilPanAssy.MicroLogix1400	4	InspectionComplete, PartNumber, TrayLocked, VisionPartNumber
+TOP Server	6FB_CH.MicroLogix1400	4	InspectionComplete, OkToContinue, PartNumber, TrayLocked
+TOP Server	6MA_CH.MicroLogix1400	5	ContainerName, InspectionComplete, OkToContinue, PartNumber, TrayLocked
+TOP Server	RPY_CH.MicroLogix1400	5	InspectionComplete, OkToContinue, PartDisposition01, PartNumber, TrayLocked
+TOP Server	Sort_OilPan.MicroLogix1400	3	InspectionComplete, PartNumber, TrayLocked
+TOP Server	Sort_Totes.MicroLogix1400	3	InspectionComplete, PartNumber, TrayLocked
