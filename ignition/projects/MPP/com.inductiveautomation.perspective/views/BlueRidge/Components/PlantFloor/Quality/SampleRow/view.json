@@ -1,0 +1,195 @@
+{
+  "custom": {},
+  "params": {
+    "sampleId": null,
+    "result": "",
+    "specLabel": "",
+    "trigger": "",
+    "inspector": "",
+    "sampledAt": "",
+    "counts": ""
+  },
+  "propConfig": {
+    "params.sampleId": {
+      "paramDirection": "input"
+    },
+    "params.result": {
+      "paramDirection": "input"
+    },
+    "params.specLabel": {
+      "paramDirection": "input"
+    },
+    "params.trigger": {
+      "paramDirection": "input"
+    },
+    "params.inspector": {
+      "paramDirection": "input"
+    },
+    "params.sampledAt": {
+      "paramDirection": "input"
+    },
+    "params.counts": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 64,
+      "width": 560
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "backgroundColor": "var(--mpp-surface-raised)",
+        "border": "1px solid var(--mpp-border-default)",
+        "borderRadius": "8px",
+        "gap": "12px",
+        "minHeight": "60px",
+        "overflow": "hidden",
+        "padding": "10px 14px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "ResultPill"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.result"
+              }
+            }
+          },
+          "props.style.classes": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "\"pf-pill \" + if({view.params.result} = \"Pass\", \"pf-pill-good\", if({view.params.result} = \"Fail\", \"pf-pill-hold\", \"\"))"
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "classes": "pf-pill",
+            "fontSize": "12px",
+            "fontWeight": "700",
+            "minWidth": "52px",
+            "padding": "4px 10px",
+            "textAlign": "center",
+            "textTransform": "uppercase"
+          }
+        }
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "MainBlock"
+        },
+        "position": {
+          "grow": 1,
+          "basis": "0"
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "2px",
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "SpecLabel"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.specLabel} + if({view.params.trigger} != \"\", \"  ·  \" + {view.params.trigger}, \"\")"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "color": "var(--mpp-text-primary)",
+                "fontSize": "14px",
+                "fontWeight": "600"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "MetaLabel"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.inspector} + \"  ·  \" + {view.params.sampledAt}"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "classes": "pf-kpi-sub",
+                "fontSize": "12px"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "CountsLabel"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.counts"
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "13px",
+            "fontWeight": "600"
+          }
+        }
+      }
+    ]
+  }
+}

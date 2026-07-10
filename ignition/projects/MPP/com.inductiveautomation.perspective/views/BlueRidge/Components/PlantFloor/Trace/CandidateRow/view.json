@@ -1,0 +1,184 @@
+{
+  "custom": {},
+  "params": {
+    "matchType": "",
+    "lotId": null,
+    "lotName": "",
+    "part": "",
+    "detail": ""
+  },
+  "propConfig": {
+    "params.matchType": {
+      "paramDirection": "input"
+    },
+    "params.lotId": {
+      "paramDirection": "input"
+    },
+    "params.lotName": {
+      "paramDirection": "input"
+    },
+    "params.part": {
+      "paramDirection": "input"
+    },
+    "params.detail": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 56,
+      "width": 900
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "events": {
+      "dom": {
+        "onClick": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tsystem.perspective.sendMessage(\"traceCandidatePicked\", payload={\"lotId\": self.view.params.lotId}, scope=\"page\")"
+          }
+        }
+      }
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "backgroundColor": "var(--mpp-surface-raised)",
+        "border": "1px solid var(--mpp-border-default)",
+        "borderRadius": "8px",
+        "cursor": "pointer",
+        "gap": "12px",
+        "minHeight": "52px",
+        "overflow": "hidden",
+        "padding": "8px 14px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "MatchTypePill"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.matchType"
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "background": "var(--mpp-surface-alt)",
+            "borderRadius": "4px",
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "11px",
+            "fontWeight": "600",
+            "letterSpacing": "0.05em",
+            "minWidth": "72px",
+            "padding": "3px 8px",
+            "textAlign": "center",
+            "textTransform": "uppercase"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "LotNameLabel"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.lotName"
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "color": "var(--mpp-text-primary)",
+            "fontFamily": "monospace",
+            "fontSize": "16px",
+            "fontWeight": "600"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "PartLabel"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.part"
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "14px"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "DetailLabel"
+        },
+        "position": {
+          "grow": 1,
+          "basis": "0"
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.detail"
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "color": "var(--mpp-text-tertiary)",
+            "fontSize": "13px",
+            "textAlign": "right"
+          }
+        }
+      }
+    ]
+  }
+}

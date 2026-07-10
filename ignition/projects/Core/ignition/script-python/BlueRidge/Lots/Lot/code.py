@@ -349,6 +349,36 @@ def getByName(lotName):
     return get(lotName=_u(lotName))
 
 
+_EMPTY_LOT = {
+    "Id": None, "LotName": "", "ItemId": None, "ItemPartNumber": "",
+    "PieceCount": 0, "MaxPieceCount": 0, "InventoryAvailable": 0,
+    "TotalInProcess": 0, "LotStatusCode": "", "LotStatusName": "",
+    "LotOriginTypeCode": "", "CurrentLocationId": None,
+    "CurrentLocationName": "", "CrtActive": None, "ToolId": None,
+    "ToolCode": "", "ToolCavityNumber": "",
+}
+
+
+def getOrEmpty(lotId=None, lotName=None, _refreshToken=None):
+    """Binding/summary-safe variant of get(): ALWAYS returns a fully-shaped LOT dict
+       (pre-declared-bound-props rule) so nested-path bindings never Component-Error.
+       Not-found / blank input -> the _EMPTY_LOT shape (Id None). A found row is
+       merged OVER the empty shape, so every display key exists either way.
+       _refreshToken is ignored (runScript re-read arg)."""
+    lotId = _u(lotId)
+    lotName = _u(lotName)
+    if lotName is not None and ("%s" % lotName).strip() == "":
+        lotName = None
+    if lotId is None and lotName is None:
+        return dict(_EMPTY_LOT)
+    row = get(lotId=lotId, lotName=lotName)
+    if not row:
+        return dict(_EMPTY_LOT)
+    out = dict(_EMPTY_LOT)
+    out.update(row)
+    return out
+
+
 def getLineInventoryByPart(locationId, _refreshToken=None):
     """Spec 2 Task I2. On-hand open LOTs at a line location, grouped by part then
        FIFO by arrival, for the inventory check-in popup. Returns list[dict] with
