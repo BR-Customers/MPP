@@ -1,0 +1,146 @@
+SchemaName,TableName,Ord,ColumnName,DataType,Nullable,Identity_,IsPK
+em,Action,1,ActionID,int,NOT NULL,IDENTITY,PK
+em,Action,2,Name,varchar(50),NOT NULL
+em,Action,3,Description,varchar(100),NULL
+em,Action,4,StepNumber,int,NOT NULL
+em,Action,5,EventID,int,NOT NULL
+em,Action,6,OPCWriteID,int,NULL
+em,Action,7,OPCReadID,int,NULL
+em,Action,8,ScriptID,int,NULL
+em,Action,9,Active,bit,NOT NULL
+em,ActionInput,1,ActionInputID,int,NOT NULL,IDENTITY,PK
+em,ActionInput,2,ActionID,int,NOT NULL
+em,ActionInput,3,Name,varchar(1000),NOT NULL
+em,ActionInput,4,Value,varchar(256),NULL
+em,ActionInput,5,ActionOutputID,int,NULL
+em,ActionOutput,1,ActionOutputID,int,NOT NULL,IDENTITY,PK
+em,ActionOutput,2,Name,varchar(1000),NULL
+em,ActionOutput,3,ActionID,int,NULL
+em,ActionOutput,4,EventID,int,NULL
+em,Event,1,EventID,int,NOT NULL,IDENTITY,PK
+em,Event,2,Name,varchar(50),NOT NULL
+em,Event,3,Description,varchar(100),NULL
+em,Event,4,TaskID,int,NOT NULL
+em,Event,5,OPCServerID,int,NULL
+em,Event,6,AccessPath,varchar(1000),NULL
+em,Event,7,OPCItemID,varchar(1000),NULL
+em,Event,8,IsMessageHandler,bit,NOT NULL
+em,Event,9,TriggerOperationID,int,NOT NULL
+em,Event,10,TriggerArg1,varchar(256),NULL
+em,Event,11,TriggerArg2,varchar(256),NULL
+em,Event,12,Active,bit,NOT NULL
+em,Event,13,ReactOnStartup,bit,NOT NULL
+em,FileWatcher,1,FileWatcherID,int,NOT NULL,IDENTITY,PK
+em,FileWatcher,2,Name,varchar(50),NOT NULL
+em,FileWatcher,3,Description,varchar(100),NULL
+em,FileWatcher,4,Enabled,bit,NOT NULL
+em,FileWatcher,5,Path,varchar(256),NOT NULL
+em,FileWatcher,6,FileCheckInterval,int,NOT NULL
+em,FileWatcher,7,RetryDelay,int,NOT NULL
+em,FileWatcher,8,MessageType,varchar(50),NOT NULL
+em,FileWatcher,9,MessageData,varchar(2000),NOT NULL
+em,Line,1,LineID,int,NOT NULL,IDENTITY,PK
+em,Line,2,Name,varchar(50),NOT NULL
+em,Line,3,Description,varchar(100),NULL
+em,Line,4,PlantID,int,NOT NULL
+em,Line,5,Active,bit,NOT NULL
+em,Log_Action,1,Log_ActionID,int,NOT NULL,IDENTITY,PK
+em,Log_Action,2,Log_EventID,int,NOT NULL
+em,Log_Action,3,ActionID,int,NOT NULL
+em,Log_Action,4,Timestamp,datetime,NOT NULL
+em,Log_Action,5,Result,bit,NOT NULL
+em,Log_Action,6,Duration,int,NOT NULL
+em,Log_Action,7,Data,varchar(900),NULL
+em,Log_Event,1,Log_EventID,int,NOT NULL,IDENTITY,PK
+em,Log_Event,2,EventID,int,NOT NULL
+em,Log_Event,3,Timestamp,datetime,NOT NULL
+em,Log_Event,4,Value,varchar(50),NOT NULL
+em,Log_Event,5,OPC_Quality,smallint,NULL
+em,Log_Event,6,OPC_Timestamp,datetime,NULL
+em,Log_Event,7,Result,bit,NULL
+em,Log_Event,8,Duration,int,NULL
+em,Log_Message,1,Log_MessageID,int,NOT NULL,IDENTITY,PK
+em,Log_Message,2,EngineName,varchar(50),NOT NULL
+em,Log_Message,3,Timestamp,datetime,NOT NULL
+em,Log_Message,4,Source,varchar(50),NOT NULL
+em,Log_Message,5,Message,varchar(1024),NOT NULL
+em,OPCRead,1,OPCReadID,int,NOT NULL,IDENTITY,PK
+em,OPCRead,2,OPCServerID,int,NOT NULL
+em,OPCRead,3,AccessPath,varchar(1000),NULL
+em,OPCRead,4,OPCItemID,varchar(1000),NOT NULL
+em,OPCServer,1,OPCServerID,int,NOT NULL,IDENTITY,PK
+em,OPCServer,2,OPCServerName,varchar(100),NOT NULL
+em,OPCServer,3,OPCServerPID,varchar(256),NOT NULL
+em,OPCServer,4,OPCServerCLSID,varchar(38),NULL
+em,OPCServer,5,OPCServerHost,varchar(256),NULL
+em,OPCServer,6,Description,varchar(100),NULL
+em,OPCServer,7,PlantID,int,NOT NULL
+em,OPCServer,8,Active,bit,NOT NULL
+em,OPCWrite,1,OPCWriteID,int,NOT NULL,IDENTITY,PK
+em,OPCWrite,2,OPCServerID,int,NOT NULL
+em,OPCWrite,3,AccessPath,varchar(1000),NULL
+em,OPCWrite,4,OPCItemID,varchar(1000),NOT NULL
+em,OPCWrite,5,Asynchronous,bit,NOT NULL
+em,Plant,1,PlantID,int,NOT NULL,IDENTITY,PK
+em,Plant,2,Name,varchar(50),NOT NULL
+em,Plant,3,Description,varchar(100),NULL
+em,Plant,4,Active,bit,NOT NULL
+em,Script,1,ScriptID,int,NOT NULL,IDENTITY,PK
+em,Script,2,ScriptLanguage,varchar(25),NOT NULL
+em,Script,3,ScriptBody,varchar(8000),NOT NULL
+em,Task,1,TaskID,int,NOT NULL,IDENTITY,PK
+em,Task,2,Name,varchar(50),NOT NULL
+em,Task,3,Description,varchar(100),NULL
+em,Task,4,LineID,int,NOT NULL
+em,Task,5,Active,bit,NOT NULL
+em,TriggerOperation,1,TriggerOperationID,int,NOT NULL,IDENTITY,PK
+em,TriggerOperation,2,Name,varchar(3),NOT NULL
+em,TriggerOperation,3,Description,varchar(50),NOT NULL
+em,TriggerOperation,4,ArgumentCount,tinyint,NOT NULL
+em,TriggerOperation,5,DisplayOrder,smallint,NOT NULL
+emperf,Action,1,ActionPerfID,int,NOT NULL,IDENTITY,PK
+emperf,Action,2,ActionID,int,NOT NULL
+emperf,Action,3,Name,varchar(50),NOT NULL
+emperf,Action,4,EventID,int,NOT NULL
+emperf,ActionData,1,ActionDataID,int,NOT NULL,IDENTITY,PK
+emperf,ActionData,2,Date,datetime,NOT NULL
+emperf,ActionData,3,PlantPerfID,int,NOT NULL
+emperf,ActionData,4,LinePerfID,int,NOT NULL
+emperf,ActionData,5,TaskPerfID,int,NOT NULL
+emperf,ActionData,6,EventPerfID,int,NOT NULL
+emperf,ActionData,7,ActionPerfID,int,NOT NULL
+emperf,ActionData,8,NumOccurrences,int,NULL
+emperf,ActionData,9,AverageDuration,int,NULL
+emperf,ActionData,10,TotalDuration,int,NULL
+emperf,Event,1,EventPerfID,int,NOT NULL,IDENTITY,PK
+emperf,Event,2,EventID,int,NOT NULL
+emperf,Event,3,Name,varchar(50),NOT NULL
+emperf,Event,4,TaskID,int,NOT NULL
+emperf,EventData,1,EventDataID,int,NOT NULL,IDENTITY,PK
+emperf,EventData,2,Date,datetime,NOT NULL
+emperf,EventData,3,PlantPerfID,int,NOT NULL
+emperf,EventData,4,LinePerfID,int,NOT NULL
+emperf,EventData,5,TaskPerfID,int,NOT NULL
+emperf,EventData,6,EventPerfID,int,NOT NULL
+emperf,EventData,7,NumOccurrences,int,NULL
+emperf,EventData,8,AverageDuration,int,NULL
+emperf,EventData,9,TotalDuration,int,NULL
+emperf,Line,1,LinePerfID,int,NOT NULL,IDENTITY,PK
+emperf,Line,2,LineID,int,NOT NULL
+emperf,Line,3,Name,varchar(50),NOT NULL
+emperf,Line,4,PlantID,int,NOT NULL
+emperf,MessageData,1,MessageDataID,int,NOT NULL,IDENTITY,PK
+emperf,MessageData,2,MessageDateTime,datetime,NOT NULL
+emperf,MessageData,3,EngineName,varchar(50),NOT NULL
+emperf,MessageData,4,ServerName,varchar(50),NOT NULL
+emperf,MessageData,5,LineName,varchar(50),NOT NULL
+emperf,MessageData,6,NumOccurrences,int,NULL
+emperf,Plant,1,PlantPerfID,int,NOT NULL,IDENTITY,PK
+emperf,Plant,2,PlantID,int,NOT NULL
+emperf,Plant,3,Name,varchar(50),NOT NULL
+emperf,ProcessingHistory,1,Name,varchar(50),NOT NULL
+emperf,ProcessingHistory,2,Value,datetime,NULL
+emperf,Task,1,TaskPerfID,int,NOT NULL,IDENTITY,PK
+emperf,Task,2,TaskID,int,NOT NULL
+emperf,Task,3,Name,varchar(50),NOT NULL
+emperf,Task,4,LineID,int,NOT NULL,,
