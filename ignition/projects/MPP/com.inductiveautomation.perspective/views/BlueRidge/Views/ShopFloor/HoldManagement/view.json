@@ -60,63 +60,105 @@
       {
         "children": [
           {
-            "meta": {
-              "name": "Header"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "props": {
-              "style": {
-                "fontSize": "22px",
-                "fontWeight": "700"
-              },
-              "text": "Hold Management"
-            },
-            "type": "ia.display.label"
-          },
-          {
             "children": [
               {
                 "meta": {
-                  "name": "Desc"
+                  "name": "Title"
                 },
                 "props": {
+                  "style": {
+                    "fontSize": "22px",
+                    "fontWeight": 700
+                  },
+                  "text": "Hold Management"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Subtitle"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  },
                   "text": "Place and release holds on LOTs / Containers - AD-elevated action"
                 },
                 "type": "ia.display.label"
               }
             ],
             "meta": {
-              "name": "Meta"
+              "name": "TitleBlock"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "direction": "column"
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "RefreshButton",
+              "tooltip": {
+                "text": "Refresh"
+              }
             },
             "position": {
               "shrink": 0
             },
             "props": {
-              "alignItems": "center",
               "style": {
-                "classes": "pf-location-meta",
-                "gap": "8px"
+                "classes": "pf-btn pf-btn-secondary"
               },
-              "wrap": "wrap"
+              "text": "Refresh"
             },
-            "type": "ia.container.flex"
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.navigate(\"/\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseButton"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Close"
+            },
+            "type": "ia.input.button"
           }
         ],
         "meta": {
-          "name": "HeaderBlock"
-        },
-        "position": {
-          "shrink": 0
+          "name": "Header"
         },
         "props": {
-          "direction": "column",
+          "alignItems": "center",
           "style": {
-            "borderBottom": "1px solid var(--mpp-border-subtle)",
-            "classes": "pf-details-header",
-            "gap": "4px",
-            "padding": "16px"
+            "gap": "16px",
+            "overflow": "hidden"
           }
         },
         "type": "ia.container.flex"
@@ -1332,7 +1374,9 @@
     "props": {
       "direction": "column",
       "style": {
-        "classes": "canvas"
+        "classes": "canvas",
+        "gap": "16px",
+        "padding": "24px"
       }
     },
     "scripts": {

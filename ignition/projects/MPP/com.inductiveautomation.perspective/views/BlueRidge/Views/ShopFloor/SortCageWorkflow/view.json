@@ -25,7 +25,7 @@
                 "props": {
                   "style": {
                     "fontSize": "22px",
-                    "fontWeight": "700"
+                    "fontWeight": 700
                   },
                   "text": "Sort Cage Workflow"
                 },
@@ -37,7 +37,7 @@
                 },
                 "props": {
                   "style": {
-                    "classes": "pf-terminal-title-meta pf-kpi-sub"
+                    "classes": "pf-kpi-sub"
                   },
                   "text": "Re-containerization - per-Serial migration (UJ-05 update-in-place)"
                 },
@@ -51,11 +51,7 @@
               "grow": 1
             },
             "props": {
-              "direction": "column",
-              "style": {
-                "classes": "pf-terminal-title",
-                "gap": "2px"
-              }
+              "direction": "column"
             },
             "type": "ia.container.flex"
           },
@@ -73,21 +69,39 @@
               "text": "Container on Hold"
             },
             "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.navigate(\"/\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseButton"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Close"
+            },
+            "type": "ia.input.button"
           }
         ],
         "meta": {
-          "name": "TerminalHeader"
-        },
-        "position": {
-          "shrink": 0
+          "name": "Header"
         },
         "props": {
           "alignItems": "center",
           "style": {
-            "borderBottom": "1px solid var(--mpp-border-subtle)",
-            "classes": "pf-terminal-header",
             "gap": "16px",
-            "padding": "16px"
+            "overflow": "hidden"
           }
         },
         "type": "ia.container.flex"
@@ -748,7 +762,9 @@
     "props": {
       "direction": "column",
       "style": {
-        "classes": "canvas pf-terminal"
+        "classes": "canvas",
+        "gap": "16px",
+        "padding": "24px"
       }
     },
     "type": "ia.container.flex"

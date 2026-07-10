@@ -1,101 +1,9 @@
 {
-  "custom": {
-    "selectedCellId": null
-  },
+  "custom": {},
   "params": {},
-  "propConfig": {
-    "custom.cells": {
-      "binding": {
-        "config": {
-          "expression": "runScript(\"BlueRidge.Location.Terminal.getContextCellsForDropdown\", 0, {session.custom.terminal.terminalLocationId}, \"Trim Press\")"
-        },
-        "type": "expr"
-      }
-    }
-  },
   "props": {},
   "root": {
     "children": [
-      {
-        "children": [
-          {
-            "meta": {
-              "name": "PickerLabel"
-            },
-            "props": {
-              "style": {
-                "classes": "pf-cell-context-label"
-              },
-              "text": "Select press"
-            },
-            "type": "ia.display.label"
-          },
-          {
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "config": {
-                    "script": "\tself.view.rootContainer.applyCell(self.props.value)"
-                  },
-                  "scope": "G",
-                  "type": "script"
-                }
-              }
-            },
-            "meta": {
-              "name": "CellDropdown"
-            },
-            "position": {
-              "basis": "320px"
-            },
-            "propConfig": {
-              "props.options": {
-                "binding": {
-                  "config": {
-                    "path": "view.custom.cells"
-                  },
-                  "transforms": [
-                    {
-                      "code": "\tcells \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\treturn [{\"label\": c.get(\"label\"), \"value\": c.get(\"value\")} for c in cells]",
-                      "type": "script"
-                    }
-                  ],
-                  "type": "property"
-                }
-              },
-              "props.value": {
-                "binding": {
-                  "config": {
-                    "bidirectional": true,
-                    "path": "view.custom.selectedCellId"
-                  },
-                  "type": "property"
-                }
-              }
-            },
-            "props": {
-              "placeholder": {
-                "text": "Scan or pick a cell"
-              }
-            },
-            "type": "ia.input.dropdown"
-          }
-        ],
-        "meta": {
-          "name": "PickerBar"
-        },
-        "position": {
-          "shrink": 0
-        },
-        "props": {
-          "alignItems": "center",
-          "style": {
-            "classes": "pf-terminal-cell-context",
-            "gap": "12px"
-          }
-        },
-        "type": "ia.container.flex"
-      },
       {
         "meta": {
           "name": "BodyEmbed"
@@ -105,6 +13,9 @@
           "grow": 1
         },
         "props": {
+          "params": {
+            "cellPickerEnabled": true
+          },
           "path": "BlueRidge/Views/ShopFloor/TrimBody"
         },
         "type": "ia.display.view"
@@ -114,7 +25,7 @@
       "system": {
         "onStartup": {
           "config": {
-            "script": "\ttry:\n\t\tself.session.custom.presence.policy \u003d \"strict\"\n\texcept:\n\t\tself.session.custom.presence \u003d {\"policy\": \"strict\"}\n\tself.seedSelectedCell()"
+            "script": "\ttry:\n\t\tself.session.custom.presence.policy \u003d \"strict\"\n\texcept:\n\t\tself.session.custom.presence \u003d {\"policy\": \"strict\"}\n\t# Screen-scoped cell guard (2026-07-08): session.custom.cell is shared across process\n\t# screens - a cell picked elsewhere (e.g. a die-cast machine) must not leak into this\n\t# screen. Clear it unless it is one of THIS terminal's Trim Press context cells.\n\ttry:\n\t\tcells \u003d BlueRidge.Location.Terminal.getContextCellsForDropdown(self.session.custom.terminal.terminalLocationId, \"Trim Press\")\n\t\tids \u003d [c.get(\"value\") for c in cells]\n\t\tc \u003d self.session.custom.cell\n\t\tif c and c.get(\"locationId\") not in ids:\n\t\t\tself.session.custom.cell \u003d {\"locationId\": None, \"code\": \"\", \"name\": \"\"}\n\texcept:\n\t\tpass"
           },
           "scope": "G",
           "type": "script"
@@ -129,24 +40,6 @@
       "style": {
         "classes": "canvas"
       }
-    },
-    "scripts": {
-      "customMethods": [
-        {
-          "name": "applyCell",
-          "params": [
-            "cellId"
-          ],
-          "script": "\tcellId \u003d BlueRidge.Common.Util.extractQualifiedValues(cellId)\n\trow \u003d BlueRidge.Location.Location.findCellById(self.view.custom.cells, cellId)\n\tif row is None:\n\t\treturn\n\tself.view.custom.selectedCellId \u003d row.get(\"value\")\n\tself.session.custom.cell \u003d {\"locationId\": row.get(\"value\"), \"code\": row.get(\"code\") or \"\", \"name\": row.get(\"name\") or \"\"}"
-        },
-        {
-          "name": "seedSelectedCell",
-          "params": [],
-          "script": "\tc \u003d self.session.custom.cell\n\tif c and c.get(\"locationId\"):\n\t\tself.view.custom.selectedCellId \u003d c.get(\"locationId\")"
-        }
-      ],
-      "extensionFunctions": null,
-      "messageHandlers": []
     },
     "type": "ia.container.flex"
   }

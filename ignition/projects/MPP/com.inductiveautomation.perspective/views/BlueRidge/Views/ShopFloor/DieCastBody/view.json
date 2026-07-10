@@ -2,6 +2,7 @@
   "custom": {
     "activeLotId": null,
     "activeLotName": null,
+    "cells": [],
     "editDraft": {
       "cavityNote": null,
       "itemId": null,
@@ -18,9 +19,14 @@
     "tallyCavityId": null
   },
   "params": {
-    "areaId": null
+    "areaId": null,
+    "cellPickerEnabled": false
   },
   "propConfig": {
+    "params.cellPickerEnabled": {
+      "paramDirection": "input",
+      "persistent": true
+    },
     "custom.activeTool": {
       "binding": {
         "config": {
@@ -37,10 +43,18 @@
         "type": "expr"
       }
     },
+    "custom.cells": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Location.Terminal.getContextCellsForDropdown\", 0, {session.custom.terminal.terminalLocationId}, \"Die Cast Machine\")"
+        },
+        "type": "expr"
+      }
+    },
     "custom.itemOptions": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Parts.Item.getEligibleForLocationDropdown\", 0, {session.custom.cell.locationId})"
+          "expression": "runScript(\"BlueRidge.Parts.Item.getEligibleForLocationDropdown\", 0, {session.custom.cell.locationId}, \"DieCast\", {view.custom.refreshToken})"
         },
         "type": "expr"
       }
@@ -246,7 +260,109 @@
         },
         "type": "ia.container.flex"
       },
-      
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "ActiveCellLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-cell-context-label"
+              },
+              "text": "Active Cell"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.applyCell(self.props.value)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CellPickerDropdown"
+            },
+            "position": {
+              "basis": "300px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.options": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.cells"
+                  },
+                  "transforms": [
+                    {
+                      "code": "\tcells \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\treturn [{\"label\": c.get(\"label\"), \"value\": c.get(\"value\")} for c in cells]",
+                      "type": "script"
+                    }
+                  ],
+                  "type": "property"
+                }
+              },
+              "props.value": {
+                "binding": {
+                  "config": {
+                    "path": "session.custom.cell.locationId"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "placeholder": {
+                "text": "Scan or pick a cell"
+              },
+              "style": {
+                "width": "300px"
+              }
+            },
+            "type": "ia.input.dropdown"
+          },
+          {
+            "meta": {
+              "name": "Spacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": {
+          "name": "ContextBar"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "path": "view.params.cellPickerEnabled"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "classes": "pf-terminal-cell-context",
+            "gap": "12px",
+            "overflow": "hidden"
+          }
+        },
+        "type": "ia.container.flex"
+      },
       {
         "children": [
           {
@@ -578,6 +694,9 @@
                           "allowCustomOptions": true,
                           "placeholder": {
                             "text": "Select or type a cavity"
+                          },
+                          "style": {
+                            "width": "100%"
                           }
                         },
                         "type": "ia.input.dropdown"
@@ -616,7 +735,8 @@
                 },
                 "props": {
                   "style": {
-                    "gap": "10px"
+                    "gap": "10px",
+                    "overflow": "hidden"
                   }
                 },
                 "type": "ia.container.flex"
@@ -864,6 +984,9 @@
                     "props": {
                       "placeholder": {
                         "text": "Select a cavity"
+                      },
+                      "style": {
+                        "width": "100%"
                       }
                     },
                     "type": "ia.input.dropdown"
@@ -875,7 +998,8 @@
                 "props": {
                   "direction": "column",
                   "style": {
-                    "gap": "8px"
+                    "gap": "8px",
+                    "overflow": "hidden"
                   }
                 },
                 "type": "ia.container.flex"
@@ -902,7 +1026,7 @@
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "toStr(runScript(\"BlueRidge.Lots.Lot.shiftShotsFromTally\", 0, {view.custom.shiftTally}))"
+                            "expression": "toStr(runScript(\"BlueRidge.Lots.Lot.shiftShotsForTool\", 0, {view.custom.activeTool.ToolId}, {view.custom.refreshToken}))"
                           },
                           "type": "expr"
                         }
@@ -935,7 +1059,7 @@
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "toStr(runScript(\"BlueRidge.Lots.Lot.shiftSumForCavity\", 0, {view.custom.shiftTally}, {view.custom.tallyCavityId}))"
+                            "expression": "toStr(runScript(\"BlueRidge.Lots.Lot.shiftSumForCavityOnTool\", 0, {view.custom.activeTool.ToolId}, {view.custom.tallyCavityId}, {view.custom.refreshToken}))"
                           },
                           "type": "expr"
                         }
@@ -968,7 +1092,7 @@
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "toStr(runScript(\"BlueRidge.Lots.Lot.shiftScrapForCavity\", 0, {view.custom.shiftTally}, {view.custom.tallyCavityId}))"
+                            "expression": "toStr(runScript(\"BlueRidge.Lots.Lot.shiftScrapForCavityOnTool\", 0, {view.custom.activeTool.ToolId}, {view.custom.tallyCavityId}, {view.custom.refreshToken}))"
                           },
                           "type": "expr"
                         }
@@ -990,6 +1114,7 @@
                   "style": {
                     "borderTop": "1px solid var(--mpp-border, #e0e0e0)",
                     "gap": "10px",
+                    "overflow": "hidden",
                     "paddingTop": "12px"
                   }
                 },
@@ -1153,7 +1278,14 @@
         {
           "name": "submitCreate",
           "params": [],
-          "script": "\tdraft \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft) or {}\n\ttool \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.activeTool) or {}\n\tcell \u003d BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\t# Cavity: a numeric option value is a real ToolCavityId; a typed (custom) value is a manual cavity note (D2).\n\tcav \u003d draft.get(\"toolCavityId\")\n\ttoolCavityId \u003d None\n\tcavityNote \u003d None\n\tif cav is not None and cav !\u003d \"\":\n\t\ttry:\n\t\t\ttoolCavityId \u003d int(cav)\n\t\texcept (ValueError, TypeError):\n\t\t\tcavityNote \u003d unicode(cav)\n\t# Gate (2026-07-06 Jacques): a part with no die-cast operation template on its route cannot run.\n\ttplId \u003d BlueRidge.Parts.OperationTemplate.getActiveTemplateIdForRoute(draft.get(\"itemId\"), \"DieCast\")\n\tif tplId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No operation template\", \"The route for this part has no die-cast operation template - it cannot run at Die Cast.\", \"error\")\n\t\treturn None\n\tdata \u003d {\n\t\t\"itemId\": draft.get(\"itemId\"),\n\t\t\"lotOriginTypeId\": self.view.custom.manufacturedOriginId,\n\t\t\"currentLocationId\": cell.get(\"locationId\"),\n\t\t\"pieceCount\": BlueRidge.Common.Util.toIntOrNone(draft.get(\"pieceCount\")),\n\t\t\"weight\": BlueRidge.Common.Util.toDecimalOrNone(draft.get(\"weight\")),\n\t\t\"weightUomId\": draft.get(\"weightUomId\"),\n\t\t\"toolId\": tool.get(\"ToolId\"),\n\t\t\"toolCavityId\": toolCavityId,\n\t}\n\tappUserId \u003d self.session.custom.appUserId\n\ttermId \u003d None\n\ttry:\n\t\ttermId \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId \u003d None\n\tresult \u003d BlueRidge.Lots.Lot.create(data, appUserId, termId, None, cavityNote)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle\u003d\"LOT created\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.activeLotId \u003d result.get(\"NewId\")\n\t\tminted \u003d result.get(\"MintedLotName\")\n\t\tscanned \u003d draft.get(\"scannedLtt\")\n\t\tif scanned and minted and scanned !\u003d minted:\n\t\t\tBlueRidge.Common.Notify.toast(\"LTT mismatch\", \"Scanned %s but minted %s\" % (scanned, minted), \"warning\")\n\t\tpeers \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.peersThisSession) or []\n\t\tpeers.append({\"peer\": {\"Cavity\": (toolCavityId if toolCavityId is not None else cavityNote), \"LotName\": minted, \"PieceCount\": data.get(\"pieceCount\"), \"LotId\": result.get(\"NewId\")}})\n\t\tself.view.custom.peersThisSession \u003d peers\n\t\tself.view.custom.selectedLotId \u003d result.get(\"NewId\")\n\t\tself.view.custom.activeLotName \u003d minted\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1\n\treturn result"
+          "script": "\tdraft \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft) or {}\n\ttool \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.activeTool) or {}\n\tcell \u003d BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\t# Cavity: an option pick carries a real ToolCavityId; ANY typed (custom) value - numeric or not -\n\t# is a manual cavity note (D2). Classify by membership in the dropdown options, NOT by int() parse:\n\t# a typed cavity NUMBER arrives as a string and must never be mistaken for a ToolCavityId.\n\tcav \u003d draft.get(\"toolCavityId\")\n\ttoolCavityId \u003d None\n\tcavityNote \u003d None\n\tif cav is not None and cav !\u003d \"\":\n\t\topts \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.cavityOptions) or []\n\t\toptIds \u003d [o.get(\"value\") for o in opts if o]\n\t\ttry:\n\t\t\tcavId \u003d int(cav)\n\t\texcept (ValueError, TypeError):\n\t\t\tcavId \u003d None\n\t\tif cavId is not None and cavId in optIds:\n\t\t\ttoolCavityId \u003d cavId\n\t\telse:\n\t\t\tcavityNote \u003d unicode(cav)\n\t# Gate (2026-07-06 Jacques): a part with no die-cast operation template on its route cannot run.\n\ttplId \u003d BlueRidge.Parts.OperationTemplate.getActiveTemplateIdForRoute(draft.get(\"itemId\"), \"DieCast\")\n\tif tplId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No operation template\", \"The route for this part has no die-cast operation template - it cannot run at Die Cast.\", \"error\")\n\t\treturn None\n\tdata \u003d {\n\t\t\"itemId\": draft.get(\"itemId\"),\n\t\t\"lotOriginTypeId\": self.view.custom.manufacturedOriginId,\n\t\t\"currentLocationId\": cell.get(\"locationId\"),\n\t\t\"pieceCount\": BlueRidge.Common.Util.toIntOrNone(draft.get(\"pieceCount\")),\n\t\t\"weight\": BlueRidge.Common.Util.toDecimalOrNone(draft.get(\"weight\")),\n\t\t\"weightUomId\": draft.get(\"weightUomId\"),\n\t\t\"toolId\": tool.get(\"ToolId\"),\n\t\t\"toolCavityId\": toolCavityId,\n\t}\n\tappUserId \u003d self.session.custom.appUserId\n\ttermId \u003d None\n\ttry:\n\t\ttermId \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId \u003d None\n\tresult \u003d BlueRidge.Lots.Lot.create(data, appUserId, termId, None, cavityNote)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle\u003d\"LOT created\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.activeLotId \u003d result.get(\"NewId\")\n\t\tminted \u003d result.get(\"MintedLotName\")\n\t\tscanned \u003d draft.get(\"scannedLtt\")\n\t\tif scanned and minted and scanned !\u003d minted:\n\t\t\tBlueRidge.Common.Notify.toast(\"LTT mismatch\", \"Scanned %s but minted %s\" % (scanned, minted), \"warning\")\n\t\tpeers \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.peersThisSession) or []\n\t\tpeers.append({\"peer\": {\"Cavity\": (toolCavityId if toolCavityId is not None else cavityNote), \"LotName\": minted, \"PieceCount\": data.get(\"pieceCount\"), \"LotId\": result.get(\"NewId\")}})\n\t\tself.view.custom.peersThisSession \u003d peers\n\t\tself.view.custom.selectedLotId \u003d result.get(\"NewId\")\n\t\tself.view.custom.activeLotName \u003d minted\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1\n\treturn result"
+        },
+        {
+          "name": "applyCell",
+          "params": [
+            "cellId"
+          ],
+          "script": "\tcellId \u003d BlueRidge.Common.Util.extractQualifiedValues(cellId)\n\trow \u003d BlueRidge.Location.Location.findCellById(self.view.custom.cells, cellId)\n\tif row is None:\n\t\treturn\n\tself.session.custom.cell \u003d {\"locationId\": row.get(\"value\"), \"code\": row.get(\"code\") or \"\", \"name\": row.get(\"name\") or \"\"}"
         },
         {
           "name": "cancelDraft",
@@ -1165,7 +1297,7 @@
           "params": [
             "itemId"
           ],
-          "script": "\t# 2026-07-06 Jacques: prefill Piece Count (parts-per-basket \u003d Item.DefaultSubLotQty,\n\t# MaxParts fallback) and\n\t# Weight (UnitWeight x count, when configured) when the operator picks a part.\n\t# Only fills EMPTY fields - never overwrites operator-entered values.\n\titemId \u003d BlueRidge.Common.Util.extractQualifiedValues(itemId)\n\trow \u003d BlueRidge.Parts.Item.getOne(itemId)\n\tif not row:\n\t\treturn\n\td \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft) or {}\n\tperBasket \u003d row.get(\"DefaultSubLotQty\") or row.get(\"MaxParts\")\n\tunitWeight \u003d row.get(\"UnitWeight\")\n\tif perBasket and d.get(\"pieceCount\") in (None, \"\"):\n\t\tself.view.custom.editDraft.pieceCount \u003d perBasket\n\tif perBasket and unitWeight and d.get(\"weight\") in (None, \"\"):\n\t\tself.view.custom.editDraft.weight \u003d round(float(unitWeight) * float(perBasket), 3)\n\tif row.get(\"WeightUomId\") and d.get(\"weightUomId\") is None:\n\t\tself.view.custom.editDraft.weightUomId \u003d row.get(\"WeightUomId\")"
+          "script": "\t# 2026-07-07 Jacques: prefill Piece Count from the part's PARTS-PER-BASKET, which is\n\t# Item.MaxLotSize (repurposed as PartsPerBasket, Data Model v1.9; the Config Tool Item\n\t# screen labels it Parts Per Basket). DefaultSubLotQty kept only as a dev-data fallback.\n\t# Weight (UnitWeight x count, when configured) when the operator picks a part.\n\t# Only fills EMPTY fields - never overwrites operator-entered values.\n\titemId \u003d BlueRidge.Common.Util.extractQualifiedValues(itemId)\n\trow \u003d BlueRidge.Parts.Item.getOne(itemId)\n\tif not row:\n\t\treturn\n\td \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft) or {}\n\tperBasket \u003d row.get(\"MaxLotSize\") or row.get(\"DefaultSubLotQty\")\n\tunitWeight \u003d row.get(\"UnitWeight\")\n\tif perBasket and d.get(\"pieceCount\") in (None, \"\"):\n\t\tself.view.custom.editDraft.pieceCount \u003d perBasket\n\tif perBasket and unitWeight and d.get(\"weight\") in (None, \"\"):\n\t\tself.view.custom.editDraft.weight \u003d round(float(unitWeight) * float(perBasket), 3)\n\tif row.get(\"WeightUomId\") and d.get(\"weightUomId\") is None:\n\t\tself.view.custom.editDraft.weightUomId \u003d row.get(\"WeightUomId\")"
         },
         {
           "name": "startup",

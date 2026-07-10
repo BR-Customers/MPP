@@ -14,6 +14,18 @@
       "ClosureMethod": ""
     },
     "queueByPartText": "",
+    "fgConfig": {
+      "Id": null,
+      "ItemId": null,
+      "TraysPerContainer": 0,
+      "PartsPerTray": 0,
+      "IsSerialized": false,
+      "DunnageCode": "",
+      "CustomerCode": "",
+      "ClosureMethod": "",
+      "TargetWeight": null
+    },
+    "closureRaw": "",
     "draft": {
       "partsCount": "",
       "trayPosition": ""
@@ -37,10 +49,30 @@
         "type": "expr"
       }
     },
+    "custom.fgConfig": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.ContainerConfig.getByItemOrEmpty\", 0, coalesce({view.custom.container.ItemId}, {view.custom.selectedFinishedGoodItemId}))"
+        },
+        "type": "expr"
+      },
+      "onChange": {
+        "enabled": true,
+        "script": "\t# Auto-populate from the part's container config: prefill the parts-in-tray\n\t# field with PartsPerTray (only into an EMPTY field - never overwrite input).\n\tcfg = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fgConfig) or {}\n\tppt = cfg.get(\"PartsPerTray\")\n\td = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.draft) or {}\n\tif ppt and d.get(\"partsCount\") in (None, \"\"):\n\t\tself.view.custom.draft = {\"partsCount\": ppt, \"trayPosition\": d.get(\"trayPosition\") or \"\"}"
+      }
+    },
+    "custom.closureRaw": {
+      "binding": {
+        "config": {
+          "expression": "if(isNull({view.custom.container.Id}), {view.custom.fgConfig.ClosureMethod}, {view.custom.container.ClosureMethod})"
+        },
+        "type": "expr"
+      }
+    },
     "custom.queueByPartText": {
       "binding": {
         "config": {
-          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, false, {view.custom.refreshToken}), \"\")"
+          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}), \"\")"
         },
         "transforms": [
           {
@@ -69,9 +101,8 @@
                 },
                 "props": {
                   "style": {
-                    "classes": "pf-terminal-title",
                     "fontSize": "22px",
-                    "fontWeight": "700"
+                    "fontWeight": 700
                   },
                   "text": "Assembly - Non-Serialized Line"
                 },
@@ -81,11 +112,20 @@
                 "meta": {
                   "name": "Subtitle"
                 },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"No cell bound\", {session.custom.cell.name}) + \"  ·  Dedicated terminal - operator-driven count - no MIP per-piece handshake\""
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
                 "props": {
                   "style": {
-                    "classes": "pf-terminal-title-meta"
-                  },
-                  "text": "Dedicated terminal - operator-driven count - no MIP per-piece handshake"
+                    "classes": "pf-kpi-sub"
+                  }
                 },
                 "type": "ia.display.label"
               }
@@ -97,10 +137,7 @@
               "grow": 1
             },
             "props": {
-              "direction": "column",
-              "style": {
-                "gap": "2px"
-              }
+              "direction": "column"
             },
             "type": "ia.container.flex"
           },
@@ -194,19 +231,97 @@
               }
             },
             "type": "ia.container.flex"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "RefreshButton",
+              "tooltip": {
+                "text": "Refresh"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Refresh"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params={\"locationId\": self.session.custom.cell.locationId}, title=\"Line Inventory\", modal=False, showCloseIcon=True, draggable=True, resizable=True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "InventoryButton",
+              "tooltip": {
+                "text": "Check component / pass-through inventory in to this line"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Inventory"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.navigate(\"/\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseButton"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Close"
+            },
+            "type": "ia.input.button"
           }
         ],
         "meta": {
           "name": "Header"
         },
-        "position": {
-          "shrink": 0
-        },
         "props": {
           "alignItems": "center",
           "style": {
-            "classes": "pf-terminal-header",
-            "gap": "16px"
+            "gap": "16px",
+            "overflow": "hidden"
           }
         },
         "type": "ia.container.flex"
@@ -228,104 +343,6 @@
       },
       {
         "children": [
-          {
-            "children": [
-              {
-                "meta": {
-                  "name": "MachineLabel"
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-cell-context-label"
-                  },
-                  "text": "Assembly Cell"
-                },
-                "type": "ia.display.label"
-              },
-              {
-                "children": [
-                  {
-                    "meta": {
-                      "name": "CtxCellLabel"
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "pf-cell-context-label"
-                      },
-                      "text": "Active Cell"
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "ActiveCellValue"
-                    },
-                    "propConfig": {
-                      "props.text": {
-                        "binding": {
-                          "config": {
-                            "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"No cell bound to this terminal\", {session.custom.cell.name})"
-                          },
-                          "type": "expr"
-                        }
-                      }
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "pf-cell-context-value"
-                      }
-                    },
-                    "type": "ia.display.label"
-                  }
-                ],
-                "meta": {
-                  "name": "ActiveCellBlock"
-                },
-                "props": {
-                  "alignItems": "center",
-                  "style": {
-                    "gap": "8px"
-                  }
-                },
-                "type": "ia.container.flex"
-              },
-              {
-                "meta": {
-                  "name": "Spacer"
-                },
-                "position": {
-                  "grow": 1
-                },
-                "type": "ia.display.label"
-              },
-              {
-                "meta": {
-                  "name": "ContextMeta"
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-kpi-sub"
-                  },
-                  "text": "Per-tray validation, never per-piece. Same Cognex camera as Sort Cage."
-                },
-                "type": "ia.display.label"
-              }
-            ],
-            "meta": {
-              "name": "CellContext"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "props": {
-              "alignItems": "center",
-              "style": {
-                "classes": "pf-terminal-cell-context",
-                "gap": "12px"
-              }
-            },
-            "type": "ia.container.flex"
-          },
           {
             "children": [
               {
@@ -402,7 +419,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "if(isNull({session.custom.cell.locationId}), 'No cell bound to see its open container.', 'No open container at this cell.')"
+                    "expression": "if(isNull({session.custom.cell.locationId}), 'No cell bound to see its open container.', 'No open container - pick a finished good below and complete the first tray to open one.')"
                   },
                   "type": "expr"
                 }
@@ -670,7 +687,7 @@
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "'Per-Tray Close - ByVision - Tray ' + toStr(({view.custom.container.ClosedTrays} + 1)) + ' of ' + toStr({view.custom.container.TraysPerContainer})"
+                            "expression": "if(isNull({view.custom.container.Id}), if({view.custom.fgConfig.TraysPerContainer} > 0, 'Per-Tray Close - first tray opens a container (' + toStr({view.custom.fgConfig.TraysPerContainer}) + ' trays x ' + toStr({view.custom.fgConfig.PartsPerTray}) + ' parts/tray)', 'Per-Tray Close - completing the first tray opens a container'), 'Per-Tray Close - ByVision - Tray ' + toStr(({view.custom.container.ClosedTrays} + 1)) + ' of ' + toStr({view.custom.container.TraysPerContainer}))"
                           },
                           "type": "expr"
                         }
@@ -890,55 +907,6 @@
                               "style": {
                                 "classes": "pf-field-label"
                               },
-                              "text": "Tray position"
-                            },
-                            "type": "ia.display.label"
-                          },
-                          {
-                            "meta": {
-                              "name": "Pos"
-                            },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "config": {
-                                    "bidirectional": true,
-                                    "path": "view.custom.draft.trayPosition"
-                                  },
-                                  "type": "property"
-                                }
-                              }
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "pf-field-input"
-                              }
-                            },
-                            "type": "ia.input.text-field"
-                          }
-                        ],
-                        "meta": {
-                          "name": "PosField"
-                        },
-                        "props": {
-                          "direction": "column",
-                          "style": {
-                            "classes": "pf-field",
-                            "gap": "4px"
-                          }
-                        },
-                        "type": "ia.container.flex"
-                      },
-                      {
-                        "children": [
-                          {
-                            "meta": {
-                              "name": "L"
-                            },
-                            "props": {
-                              "style": {
-                                "classes": "pf-field-label"
-                              },
                               "text": "Parts in tray"
                             },
                             "type": "ia.display.label"
@@ -1000,7 +968,7 @@
                               "props.text": {
                                 "binding": {
                                   "config": {
-                                    "expression": "if({view.custom.container.ClosureMethod} = \"ByCount\", \"By Count\", if({view.custom.container.ClosureMethod} = \"ByWeight\", \"By Weight\", if({view.custom.container.ClosureMethod} = \"ByVision\", \"By Vision\", if(isNull({view.custom.container.ClosureMethod}), \"-\", {view.custom.container.ClosureMethod}))))"
+                                    "expression": "if({view.custom.closureRaw} = \"ByCount\", \"By Count\", if({view.custom.closureRaw} = \"ByWeight\", \"By Weight\", if({view.custom.closureRaw} = \"ByVision\", \"By Vision\", if(isNull({view.custom.closureRaw}) || {view.custom.closureRaw} = \"\", \"-\", {view.custom.closureRaw}))))"
                                   },
                                   "type": "expr"
                                 }
@@ -1101,7 +1069,7 @@
                           "component": {
                             "onActionPerformed": {
                               "config": {
-                                "script": "\tresult = BlueRidge.Workorder.Assembly.handleTrayComplete(self.view.custom.container, self.view.custom.draft, self.view.custom.selectedFinishedGoodItemId, self.session.custom.cell.locationId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tray completed - FG LOT minted\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"trayPosition\": \"\", \"partsCount\": \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1\n\t\tif result.get(\"ContainerFull\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Container full\", \"Press Complete to ship.\", \"info\")"
+                                "script": "\tresult = BlueRidge.Workorder.Assembly.handleTrayComplete(self.view.custom.container, self.view.custom.draft, self.view.custom.selectedFinishedGoodItemId, self.session.custom.cell.locationId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tray completed - FG LOT minted\")\n\tif result and result.get(\"Status\"):\n\t\t# Re-prime the next tray from the part's config (the fgConfig onChange only\n\t\t# fires when the CONFIG changes, so a same-container tray 2 would stay blank).\n\t\tcfg = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fgConfig) or {}\n\t\tself.view.custom.draft = {\"trayPosition\": \"\", \"partsCount\": cfg.get(\"PartsPerTray\") or \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1\n\t\tif result.get(\"ContainerFull\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Container full\", \"Press Complete to ship.\", \"info\")"
                               },
                               "scope": "G",
                               "type": "script"
@@ -1119,32 +1087,6 @@
                             "classes": "pf-btn pf-btn-secondary pf-btn-large"
                           },
                           "text": "Complete Tray"
-                        },
-                        "type": "ia.input.button"
-                      },
-                      {
-                        "events": {
-                          "component": {
-                            "onActionPerformed": {
-                              "config": {
-                                "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params={\"locationId\": self.session.custom.cell.locationId}, title=\"Line Inventory\", modal=False, showCloseIcon=True, draggable=True, resizable=True)"
-                              },
-                              "scope": "G",
-                              "type": "script"
-                            }
-                          }
-                        },
-                        "meta": {
-                          "name": "InventoryButton"
-                        },
-                        "position": {
-                          "shrink": 0
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "pf-btn pf-btn-secondary pf-btn-large"
-                          },
-                          "text": "Inventory"
                         },
                         "type": "ia.input.button"
                       }
@@ -1182,16 +1124,6 @@
             },
             "position": {
               "shrink": 0
-            },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "config": {
-                    "expression": "!isNull({view.custom.container.Id})"
-                  },
-                  "type": "expr"
-                }
-              }
             },
             "props": {
               "direction": "column",
@@ -1425,8 +1357,23 @@
     "props": {
       "direction": "column",
       "style": {
-        "classes": "canvas pf-terminal"
+        "classes": "canvas",
+        "gap": "16px",
+        "padding": "24px"
       }
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "inventoryChanged",
+          "pageScope": true,
+          "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
     },
     "type": "ia.container.flex"
   }

@@ -52,6 +52,59 @@ EXEC test.Assert_IsEqual @TestName = N'[EL] unknown location returns 0 rows', @E
 GO
 
 -- =============================================
+-- Test 2b: @OperationTypeCode route-role filter (v2.1, 2026-07-07)
+--   Filtered result = exactly the unfiltered rows whose non-deprecated route
+--   carries a step of that OperationType role (the no-template-gate predicate).
+-- =============================================
+DECLARE @Loc BIGINT;
+SELECT TOP 1 @Loc = eil.LocationId
+FROM Parts.v_EffectiveItemLocation eil
+INNER JOIN Parts.Item i ON i.Id = eil.ItemId AND i.DeprecatedAt IS NULL
+ORDER BY eil.LocationId, eil.ItemId;
+
+DECLARE @All TABLE (Id BIGINT, PartNumber NVARCHAR(50), Description NVARCHAR(500), MaxLotSize INT, MaxParts INT);
+INSERT INTO @All EXEC Parts.Item_ListEligibleForLocation @LocationId = @Loc;
+
+DECLARE @Filt TABLE (Id BIGINT, PartNumber NVARCHAR(50), Description NVARCHAR(500), MaxLotSize INT, MaxParts INT);
+INSERT INTO @Filt EXEC Parts.Item_ListEligibleForLocation @LocationId = @Loc, @OperationTypeCode = N'DieCast';
+
+-- every filtered row's route really has a DieCast-role step
+DECLARE @BadIn INT = (SELECT COUNT(*) FROM @Filt f WHERE NOT EXISTS (
+    SELECT 1 FROM Parts.RouteTemplate rt
+    INNER JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
+    INNER JOIN Parts.OperationTemplate ot ON ot.Id = rs.OperationTemplateId
+    INNER JOIN Parts.OperationType oty ON oty.Id = ot.OperationTypeId
+    WHERE rt.ItemId = f.Id AND rt.DeprecatedAt IS NULL AND ot.DeprecatedAt IS NULL
+      AND oty.Code = N'DieCast'));
+DECLARE @BadInStr NVARCHAR(10) = CAST(@BadIn AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[EL] role filter: every returned item has a DieCast route step', @Expected = N'0', @Actual = @BadInStr;
+
+-- every unfiltered row NOT in the filtered set really lacks one
+DECLARE @BadOut INT = (SELECT COUNT(*) FROM @All a
+    WHERE a.Id NOT IN (SELECT Id FROM @Filt)
+      AND EXISTS (
+        SELECT 1 FROM Parts.RouteTemplate rt
+        INNER JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
+        INNER JOIN Parts.OperationTemplate ot ON ot.Id = rs.OperationTemplateId
+        INNER JOIN Parts.OperationType oty ON oty.Id = ot.OperationTypeId
+        WHERE rt.ItemId = a.Id AND rt.DeprecatedAt IS NULL AND ot.DeprecatedAt IS NULL
+          AND oty.Code = N'DieCast'));
+DECLARE @BadOutStr NVARCHAR(10) = CAST(@BadOut AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[EL] role filter: no qualifying item was dropped', @Expected = N'0', @Actual = @BadOutStr;
+
+-- filtered is a subset of unfiltered
+DECLARE @NotSubset INT = (SELECT COUNT(*) FROM @Filt WHERE Id NOT IN (SELECT Id FROM @All));
+DECLARE @NotSubsetStr NVARCHAR(10) = CAST(@NotSubset AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[EL] role filter: filtered subset of unfiltered', @Expected = N'0', @Actual = @NotSubsetStr;
+
+-- a bogus role code returns 0 rows
+DECLARE @None TABLE (Id BIGINT, PartNumber NVARCHAR(50), Description NVARCHAR(500), MaxLotSize INT, MaxParts INT);
+INSERT INTO @None EXEC Parts.Item_ListEligibleForLocation @LocationId = @Loc, @OperationTypeCode = N'NoSuchRole';
+DECLARE @CNone NVARCHAR(10) = CAST((SELECT COUNT(*) FROM @None) AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[EL] role filter: unknown role returns 0 rows', @Expected = N'0', @Actual = @CNone;
+GO
+
+-- =============================================
 -- Test 3: Location_ListCellsForArea returns equipment cells, excludes Terminal/Printer
 -- =============================================
 DECLARE @AreaId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'DC1');

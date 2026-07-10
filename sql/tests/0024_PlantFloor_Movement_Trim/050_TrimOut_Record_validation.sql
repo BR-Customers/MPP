@@ -7,6 +7,8 @@
 --                 - non-eligible destination rejects (FDS-02-012)
 --                 - blocked (Hold) LOT rejects (B2)
 --                 - counter regression (< prior cumulative) rejects (D1)
+--                 - counts above the LOT piece count reject; the cap is the
+--                   COMBINED shot + scrap sum (2026-07-07)
 --               Fixture item = 1 (5G0), origin Received.
 -- =============================================
 SET NOCOUNT ON;
@@ -212,6 +214,44 @@ EXEC test.Assert_IsEqual @TestName = N'[TrimOutVal] ScrapCount above LOT piece c
 
 DECLARE @ReasonOk NVARCHAR(10) = CASE WHEN @M LIKE N'%exceeds the LOT piece count%' THEN N'1' ELSE N'0' END;
 EXEC test.Assert_IsEqual @TestName = N'[TrimOutVal] ScrapCount cap rejected for the piece-count reason', @Expected = N'1', @Actual = @ReasonOk;
+GO
+
+-- =============================================
+-- Test 8: COMBINED shot + scrap above the LOT piece count rejects (2026-07-07)
+--   Each counter alone is within the cap (19 <= 20, 2 <= 20) but the sum
+--   (21) exceeds the LOT's 20 pieces -- must reject.
+-- =============================================
+DECLARE @LocA BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'DC1-M05');
+DECLARE @LocB BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'DC1-M06');
+DECLARE @OriginRcv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
+DECLARE @OtId BIGINT = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'TrimOut');
+
+DECLARE @L BIGINT;
+CREATE TABLE #C8 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
+INSERT INTO #C8 EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @OriginRcv, @CurrentLocationId = @LocA, @PieceCount = 20, @AppUserId = 1;
+SELECT @L = NewId FROM #C8; DROP TABLE #C8;
+
+DECLARE @S BIT, @M NVARCHAR(500);
+CREATE TABLE #T8 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #T8 EXEC Workorder.TrimOut_Record
+    @ParentLotId = @L, @OperationTemplateId = @OtId, @ShotCount = 19, @ScrapCount = 2, @DestinationCellLocationId = @LocB,
+    @SourceLocationId = @LocA, @AppUserId = 1;  -- 19 + 2 = 21 > PieceCount 20
+SELECT @S = Status, @M = Message FROM #T8; DROP TABLE #T8;
+DECLARE @SStr NVARCHAR(10) = CAST(@S AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[TrimOutVal] combined shot + scrap above LOT piece count rejected', @Expected = N'0', @Actual = @SStr;
+
+DECLARE @ReasonOk NVARCHAR(10) = CASE WHEN @M LIKE N'%exceeds the LOT piece count%' THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual @TestName = N'[TrimOutVal] combined cap rejected for the piece-count reason', @Expected = N'1', @Actual = @ReasonOk;
+
+-- and the exact boundary passes: 18 + 2 = 20 == PieceCount
+DECLARE @S2 BIT;
+CREATE TABLE #T8b (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #T8b EXEC Workorder.TrimOut_Record
+    @ParentLotId = @L, @OperationTemplateId = @OtId, @ShotCount = 18, @ScrapCount = 2, @DestinationCellLocationId = @LocB,
+    @SourceLocationId = @LocA, @AppUserId = 1;
+SELECT @S2 = Status FROM #T8b; DROP TABLE #T8b;
+DECLARE @S2Str NVARCHAR(10) = CAST(@S2 AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[TrimOutVal] combined sum equal to piece count passes (boundary)', @Expected = N'1', @Actual = @S2Str;
 GO
 
 -- ---- cleanup ----

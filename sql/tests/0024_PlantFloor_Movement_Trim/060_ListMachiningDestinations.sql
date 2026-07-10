@@ -11,6 +11,9 @@
 --                 - a known machining line (MA1-COMPBR) IS present
 --                 - its Machining-In Cell (MA1-COMPBR-MIN) is NOT present
 --                 - a known label Printer Cell (MA1-COMPBR-MIN-P1) is NOT present
+--                 - v2.0 (2026-07-09): optional @ItemId eligibility filter --
+--                   filtered = exactly the unfiltered lines where the item
+--                   resolves via the FDS-03-014 cascade
 --               Read-only -- no fixtures, no cleanup.
 -- =============================================
 SET NOCOUNT ON;
@@ -56,6 +59,42 @@ EXEC test.Assert_RowCount @TestName = N'[MachDest] Machining-In Cell excluded (l
 DECLARE @HasPrinter INT = (SELECT COUNT(*) FROM #D d INNER JOIN Location.Location l ON l.Id = d.Id WHERE l.Code = N'MA1-COMPBR-MIN-P1');
 EXEC test.Assert_RowCount @TestName = N'[MachDest] label printer Cell excluded',
     @ExpectedCount = 0, @ActualCount = @HasPrinter;
+GO
+
+-- =============================================
+-- v2.0 @ItemId eligibility filter (2026-07-09): filtered = exactly the
+-- unfiltered lines where the item resolves via the ancestor cascade.
+-- =============================================
+DECLARE @Item BIGINT = (SELECT TOP 1 ItemId FROM Parts.v_EffectiveItemLocation ORDER BY ItemId);
+
+IF OBJECT_ID(N'tempdb..#F') IS NOT NULL DROP TABLE #F;
+CREATE TABLE #F (Id BIGINT, Code NVARCHAR(50), Name NVARCHAR(200), AreaCode NVARCHAR(50), AreaName NVARCHAR(200));
+INSERT INTO #F EXEC Location.Location_ListMachiningDestinations @ItemId = @Item;
+
+-- every filtered row really is eligible for the item (line or ancestor tier)
+DECLARE @BadIn INT = (SELECT COUNT(*) FROM #F f WHERE NOT EXISTS (
+    SELECT 1 FROM Parts.v_EffectiveItemLocation eil
+    WHERE eil.ItemId = @Item
+      AND eil.LocationId IN (SELECT LocationId FROM Location.ufn_AncestorLocationIds(f.Id))));
+EXEC test.Assert_RowCount @TestName = N'[MachDest] item filter: every returned line is eligible',
+    @ExpectedCount = 0, @ActualCount = @BadIn;
+
+-- no eligible line was dropped (filtered is exactly the eligible subset of unfiltered)
+DECLARE @BadOut INT = (SELECT COUNT(*) FROM #D d
+    WHERE d.Id NOT IN (SELECT Id FROM #F)
+      AND EXISTS (
+        SELECT 1 FROM Parts.v_EffectiveItemLocation eil
+        WHERE eil.ItemId = @Item
+          AND eil.LocationId IN (SELECT LocationId FROM Location.ufn_AncestorLocationIds(d.Id))));
+EXEC test.Assert_RowCount @TestName = N'[MachDest] item filter: no eligible line dropped',
+    @ExpectedCount = 0, @ActualCount = @BadOut;
+
+-- filtered is a subset of unfiltered
+DECLARE @NotSubset INT = (SELECT COUNT(*) FROM #F WHERE Id NOT IN (SELECT Id FROM #D));
+EXEC test.Assert_RowCount @TestName = N'[MachDest] item filter: subset of unfiltered',
+    @ExpectedCount = 0, @ActualCount = @NotSubset;
+
+IF OBJECT_ID(N'tempdb..#F') IS NOT NULL DROP TABLE #F;
 GO
 
 IF OBJECT_ID(N'tempdb..#D') IS NOT NULL DROP TABLE #D;

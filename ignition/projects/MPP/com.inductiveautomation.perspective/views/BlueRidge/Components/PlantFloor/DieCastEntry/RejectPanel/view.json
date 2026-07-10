@@ -92,7 +92,7 @@
             "binding": {
               "type": "expr",
               "config": {
-                "expression": "if(isNull({view.params.toolCavityId}), \"Select a cavity above to target rejects.\", if(isNull({view.custom.targetLot.Id}), \"No open LOT on the selected cavity.\", \"Rejecting against \" + {view.custom.targetLot.LotName} + \" (Cavity \" + toStr({view.custom.targetLot.CavityNumber}) + \")\"))"
+                "expression": "if(isNull({view.params.toolCavityId}), \"Select a cavity above to target rejects.\", if(isNull({view.custom.targetLot.Id}), \"No open LOT on the selected cavity.\", \"Rejecting Cavity \" + toStr({view.custom.targetLot.CavityNumber}) + \" - charges newest open LOT \" + {view.custom.targetLot.LotName}))"
               }
             }
           },

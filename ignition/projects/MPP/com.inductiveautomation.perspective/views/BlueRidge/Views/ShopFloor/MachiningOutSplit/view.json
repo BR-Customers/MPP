@@ -1,6 +1,5 @@
 {
   "custom": {
-    "destOptions": [],
     "parentLot": {
       "Id": null,
       "LotName": "",
@@ -8,21 +7,12 @@
       "ItemPartNumber": ""
     },
     "draft": {
-      "dest": null,
       "qty": ""
     },
     "refreshToken": 0
   },
   "params": {},
   "propConfig": {
-    "custom.destOptions": {
-      "binding": {
-        "config": {
-          "expression": "runScript(\"BlueRidge.Location.Location.getCellsForDropdownByNamePrefix\", 0, \"Assembly\")"
-        },
-        "type": "expr"
-      }
-    },
     "custom.opTemplateId": {
       "binding": {
         "config": {
@@ -34,7 +24,7 @@
     "custom.parentLot": {
       "binding": {
         "config": {
-          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, false, {view.custom.refreshToken}, \"MachiningOut\"), \"\")"
+          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}, \"MachiningOut\"), \"\")"
         },
         "transforms": [
           {
@@ -59,13 +49,12 @@
             "children": [
               {
                 "meta": {
-                  "name": "TitleText"
+                  "name": "Title"
                 },
                 "props": {
                   "style": {
-                    "classes": "pf-terminal-title",
-                    "fontSize": "24px",
-                    "fontWeight": "600"
+                    "fontSize": "22px",
+                    "fontWeight": 700
                   },
                   "text": "Machining OUT - Sub-LOT Split"
                 },
@@ -73,30 +62,34 @@
               },
               {
                 "meta": {
-                  "name": "TitleMeta"
+                  "name": "Subtitle"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"No cell bound\", {session.custom.cell.name}) + \"  ·  Sublotting line (RequiresSubLotSplit = ON) - dedicated Machining OUT terminal\""
+                      },
+                      "type": "expr"
+                    }
+                  }
                 },
                 "props": {
                   "style": {
-                    "classes": "pf-terminal-title-meta"
-                  },
-                  "text": "Sublotting line (RequiresSubLotSplit = ON) - dedicated Machining OUT terminal"
+                    "classes": "pf-kpi-sub"
+                  }
                 },
                 "type": "ia.display.label"
               }
             ],
             "meta": {
-              "name": "Title"
+              "name": "TitleBlock"
             },
             "position": {
-              "basis": "0",
               "grow": 1
             },
             "props": {
-              "direction": "column",
-              "style": {
-                "classes": "pf-terminal-title",
-                "gap": "4px"
-              }
+              "direction": "column"
             },
             "type": "ia.container.flex"
           },
@@ -179,101 +172,98 @@
               }
             },
             "type": "ia.container.flex"
-          }
-        ],
-        "meta": {
-          "name": "Header"
-        },
-        "position": {
-          "shrink": 0
-        },
-        "props": {
-          "alignItems": "flex-end",
-          "justify": "space-between",
-          "style": {
-            "classes": "pf-terminal-header",
-            "gap": "12px",
-            "paddingBottom": "16px"
           },
-          "wrap": "wrap"
-        },
-        "type": "ia.container.flex"
-      },
-      {
-        "children": [
           {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
             "meta": {
-              "name": "CtxLabel"
+              "name": "RefreshButton",
+              "tooltip": {
+                "text": "Refresh"
+              }
             },
             "position": {
               "shrink": 0
             },
             "props": {
               "style": {
-                "classes": "pf-cell-context-label"
+                "classes": "pf-btn pf-btn-secondary"
               },
-              "text": "Machining Cell"
+              "text": "Refresh"
             },
-            "type": "ia.display.label"
+            "type": "ia.input.button"
           },
           {
-            "meta": {
-              "name": "ActiveCellValue"
-            },
-            "propConfig": {
-              "props.text": {
-                "binding": {
+            "events": {
+              "component": {
+                "onActionPerformed": {
                   "config": {
-                    "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"No cell bound to this terminal\", {session.custom.cell.name})"
+                    "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params={\"locationId\": self.session.custom.cell.locationId}, title=\"Line Inventory\", modal=False, showCloseIcon=True, draggable=True, resizable=True)"
                   },
-                  "type": "expr"
+                  "scope": "G",
+                  "type": "script"
                 }
               }
             },
-            "props": {
-              "style": {
-                "classes": "pf-cell-context-value"
+            "meta": {
+              "name": "InventoryButton",
+              "tooltip": {
+                "text": "Check component / pass-through inventory in to this line"
               }
             },
-            "type": "ia.display.label"
-          },
-          {
-            "meta": {
-              "name": "CtxSpacer"
-            },
             "position": {
-              "basis": "0",
-              "grow": 1
-            },
-            "type": "ia.display.label"
-          },
-          {
-            "meta": {
-              "name": "CtxHint"
+              "shrink": 0
             },
             "props": {
               "style": {
-                "classes": "pf-kpi-sub"
+                "classes": "pf-btn pf-btn-secondary"
               },
-              "text": "Splitting the machined LOT - rename already fired at Machining IN. Children are machining-origin sub-LOTs."
+              "text": "Inventory"
             },
-            "type": "ia.display.label"
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.navigate(\"/\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseButton"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Close"
+            },
+            "type": "ia.input.button"
           }
         ],
         "meta": {
-          "name": "CellContext"
-        },
-        "position": {
-          "shrink": 0
+          "name": "Header"
         },
         "props": {
           "alignItems": "center",
           "style": {
-            "classes": "pf-terminal-cell-context",
-            "gap": "12px",
-            "padding": "12px 16px"
-          },
-          "wrap": "wrap"
+            "gap": "16px",
+            "overflow": "hidden"
+          }
         },
         "type": "ia.container.flex"
       },
@@ -502,68 +492,6 @@
                       }
                     },
                     "type": "ia.container.flex"
-                  },
-                  {
-                    "children": [
-                      {
-                        "meta": {
-                          "name": "L"
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "pf-field-label"
-                          },
-                          "text": "Destination"
-                        },
-                        "type": "ia.display.label"
-                      },
-                      {
-                        "meta": {
-                          "name": "Dest"
-                        },
-                        "propConfig": {
-                          "props.options": {
-                            "binding": {
-                              "config": {
-                                "path": "view.custom.destOptions"
-                              },
-                              "type": "property"
-                            }
-                          },
-                          "props.value": {
-                            "binding": {
-                              "config": {
-                                "bidirectional": true,
-                                "path": "view.custom.draft.dest"
-                              },
-                              "type": "property"
-                            }
-                          }
-                        },
-                        "props": {
-                          "placeholder": "Select destination",
-                          "style": {
-                            "classes": "pf-field-select"
-                          }
-                        },
-                        "type": "ia.input.dropdown"
-                      }
-                    ],
-                    "meta": {
-                      "name": "DestField"
-                    },
-                    "position": {
-                      "basis": "320px",
-                      "grow": 1
-                    },
-                    "props": {
-                      "direction": "column",
-                      "style": {
-                        "classes": "pf-field",
-                        "gap": "6px"
-                      }
-                    },
-                    "type": "ia.container.flex"
                   }
                 ],
                 "meta": {
@@ -606,7 +534,7 @@
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\t# Terminal-mint: consume the source casting to MINT a machined SubAssembly LOT\n\t# (line-resident, no destination). Produced part derived via BOM by the proc.\n\tsource = self.view.custom.parentLot\n\totId = self.view.custom.opTemplateId\n\tcellId = self.session.custom.cell.locationId\n\td = self.view.custom.draft\n\tif cellId is None or not source or source.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Select a cell that has a casting ready for Machining OUT.\"}, \"Machining OUT\")\n\t\treturn\n\tif otId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"MachiningOut operation template not found.\"}, \"Machining OUT\")\n\t\treturn\n\tq = BlueRidge.Common.Util.toIntOrNone(d.get(\"qty\"))\n\tif q is None or q <= 0:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a positive quantity to mint.\"}, \"Machining OUT\")\n\t\treturn\n\tresult = BlueRidge.Workorder.Machining.mint(source.get(\"Id\"), otId, q, None, self.session.custom.appUserId, cellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining OUT - Mint\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"qty\": \"\", \"dest\": None}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                        "script": "\t# Terminal-mint: consume the source casting to MINT a machined SubAssembly LOT\n\t# (line-resident, no destination). Produced part derived via BOM by the proc.\n\tsource = self.view.custom.parentLot\n\totId = self.view.custom.opTemplateId\n\tcellId = self.session.custom.cell.locationId\n\td = self.view.custom.draft\n\tif cellId is None or not source or source.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Select a cell that has a casting ready for Machining OUT.\"}, \"Machining OUT\")\n\t\treturn\n\tif otId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"MachiningOut operation template not found.\"}, \"Machining OUT\")\n\t\treturn\n\tq = BlueRidge.Common.Util.toIntOrNone(d.get(\"qty\"))\n\tif q is None or q <= 0:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a positive quantity to mint.\"}, \"Machining OUT\")\n\t\treturn\n\tresult = BlueRidge.Workorder.Machining.mint(source.get(\"Id\"), otId, q, None, self.session.custom.appUserId, cellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining OUT - Mint\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"qty\": \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
                       },
                       "scope": "G",
                       "type": "script"
@@ -704,11 +632,24 @@
     "props": {
       "direction": "column",
       "style": {
-        "classes": "pf-terminal canvas",
+        "classes": "canvas",
         "gap": "16px",
         "overflowY": "auto",
-        "padding": "16px"
+        "padding": "24px"
       }
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "inventoryChanged",
+          "pageScope": true,
+          "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
     },
     "type": "ia.container.flex"
   }

@@ -4,6 +4,10 @@
       "title": "MPP MES",
       "viewPath": "BlueRidge/Views/ShopFloor/HomeRouter"
     },
+    "/dev/launcher": {
+      "title": "Dev Launcher",
+      "viewPath": "BlueRidge/Views/Dev/DevLauncher"
+    },
     "/dev/test-nav": {
       "title": "Dev Nav",
       "viewPath": "BlueRidge/Views/Dev/TestNavHeader"

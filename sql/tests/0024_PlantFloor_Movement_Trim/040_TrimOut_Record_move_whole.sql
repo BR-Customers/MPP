@@ -6,11 +6,14 @@
 --                 - whole LOT moved to destination; CurrentLocationId updated
 --                 - closing ProductionEvent written (TrimOut template)
 --                 - LotMovement row written
+--                 - scrap decrements Lot.PieceCount (2026-07-07: 20 - 2 = 18)
 --                 - parent stays open (Good) -- NO split, NO children
 --                   (LotGenealogyClosure still just the Depth=0 self-row)
 --                 - LOT visible via Lot_GetWipQueueByLocation at destination
 --                 - TrimOutRecorded audit in OperationLog
 --               Fixture item = 1 (5G0); M05 -> M06 (both eligible); Received origin.
+--               2026-07-07: ShotCount fixture 20 -> 18 (combined shot+scrap is now
+--               capped at the LOT's PieceCount; 18 + 2 = 20).
 -- =============================================
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
@@ -40,7 +43,7 @@ DECLARE @S BIT, @PeId BIGINT;
 CREATE TABLE #T (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #T EXEC Workorder.TrimOut_Record
     @ParentLotId = @L, @OperationTemplateId = @OtId,
-    @ShotCount = 20, @ScrapCount = 2, @DestinationCellLocationId = @LocB,
+    @ShotCount = 18, @ScrapCount = 2, @DestinationCellLocationId = @LocB,
     @SourceLocationId = @LocA, @AppUserId = 1;
 SELECT @S = Status, @PeId = NewId FROM #T; DROP TABLE #T;
 
@@ -59,6 +62,10 @@ EXEC test.Assert_IsEqual @TestName = N'[TrimOut] whole LOT moved to destination'
 
 DECLARE @MovCnt NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.LotMovement WHERE LotId = @L AND ToLocationId = @LocB);
 EXEC test.Assert_IsEqual @TestName = N'[TrimOut] LotMovement row to destination', @Expected = N'1', @Actual = @MovCnt;
+
+-- scrap decrements the LOT (2026-07-07): 20 pieces - 2 scrap = 18
+DECLARE @Pc NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id = @L);
+EXEC test.Assert_IsEqual @TestName = N'[TrimOut] scrap decrements Lot.PieceCount (20 - 2 = 18)', @Expected = N'18', @Actual = @Pc;
 
 -- parent stays open (Good) -- no split
 DECLARE @StatusCode NVARCHAR(20) = (SELECT sc.Code FROM Lots.Lot l INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId WHERE l.Id = @L);
