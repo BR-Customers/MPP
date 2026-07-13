@@ -315,7 +315,7 @@ Verified against Ignition 8.3 driver docs:
 
 **Why §3.1's parameterization makes this seamless:** flip `{OpcServer}` from `TopServer` to `Ignition OPC UA Server` and `{Device}` to the native device name on the 11 migrated instances; nothing else in the definition changes.
 
-**Item-path format nuance (confirm at commissioning):** devices on the **Ignition OPC UA Server** (sim + native drivers) address as `ns=1;s=[{Device}]{BasePath}.<Member>` (bracket form, per the sample UDT). External OPC-UA servers (**TopServer/OmniServer**) use raw node-id strings whose namespace index + separators depend on the Kepware/OmniServer config (typically `ns=2;s=<channel>.<device>.<Member>`, no bracket). The member OPC-item-path template is standardized on the Ignition-server bracket form (the sim + Phase-2 end state); Phase-1 external-server instances finalize their exact node-id template once a live endpoint is browsable. Not a design blocker — the parameter set covers both; only the literal template string is TBD for the external path.
+**Item-path is uniform — point at a device connection.** At the tag level, a UDT OPC member just references a **device connection by name** via `{Device}` (modeled exactly on the Programmable Device Simulator). The member's `opcItemPath` is the parameter-bound string `ns=1;s=[{Device}]{BasePath}.<Member>`; `{OpcServer}` names the connection, `{Device}` the device within it. Whether that device is the simulator, a native-driver PLC, or a PLC reached through TopServer/OmniServer, the UDT member is identical — only the parameter *values* differ per instance. The exact namespace string for a given connection is a trivial commissioning fill-in, not a design concern.
 
 ### 6.2 Integration tracking
 
