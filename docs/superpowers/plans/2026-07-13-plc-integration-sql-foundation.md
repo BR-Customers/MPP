@@ -18,7 +18,8 @@
 - **Types:** `BIGINT IDENTITY` surrogate `Id` PKs; `BIGINT` FKs; `NVARCHAR` (never `VARCHAR`); `DATETIME2(3)`; `SYSUTCDATETIME()` for stored timestamps. Every mutating proc takes `@AppUserId BIGINT`.
 - **ASCII-only** string literals in seed/migration data (em-dash/middle-dot become mojibake through `sqlcmd`); the middle-dot in audit prose comes from `Audit.ufn_MidDot()` at runtime, never a literal.
 - **Migration idempotency:** guard object creation (`IF OBJECT_ID(...) IS NULL`, `IF NOT EXISTS`), end with the `dbo.SchemaVersion` insert.
-- **Run tests:** `cd sql/tests; ./Run-Tests.ps1 -Filter "<name>"` (filtered) or `./Run-Tests.ps1` (full). Pass = final summary `Failed: 0` / `Test run PASSED.`
+- **Run tests against a THROWAWAY `MPP_MES_Test` — NEVER the default `MPP_MES_Dev`** (that is Jacques's hand-built validation DB; `Run-Tests.ps1` reset-nukes its target). Every Run step in this plan means: `cd sql/tests; ./Run-Tests.ps1 -DatabaseName MPP_MES_Test -Filter "0037"` (filtered) or `./Run-Tests.ps1 -DatabaseName MPP_MES_Test` (full). Pass = final summary `Failed: 0` / `Test run PASSED`.
+- **Test fixtures are self-contained.** A clean reset seeds Items (`020_seed_items`) but **no LOTs** (`seed_demo` is skipped). Any test needing a producing LOT must **create its own** via `Lots.Lot_Create` and tear it down FK-safe (SerializedPart → LotGenealogyClosure self-row → Lot → ItemLocation → Item) — mirror the proven pattern in `sql/tests/0028_PlantFloor_Assembly/030_ContainerSerial_Add_with_bypass.sql`. This supersedes any "borrow an existing LOT" shortcut written in a task's test.
 
 ---
 
