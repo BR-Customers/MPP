@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the SQL layer that lets a terminal declare which PLC device(s) it drives and lets the MES resolve/validate the line-local PLC part-codes and PLC-reported serial numbers.
+**Goal:** Build the SQL layer that lets a terminal point at its PLC UDT instance(s), lets the MES resolve a part's PLC ID (validated at run time against the assembly-out FIFO queue), and validates PLC-reported serial numbers.
 
-**Architecture:** One versioned migration (`0037`) adds a `Location.PlcDeviceType` code table (4 seeded UDT types), a `Location.TerminalPlcDevice` 1-to-many mapping table (terminal → device instances), and a `Parts.ItemLocation.PlcPartCode` column. Repeatable stored procs provide CRUD over the mapping, resolve/validate the PLC part-code both directions, and extend `SerializedPart_Mint` to accept a PLC-reported serial (plus a `_GetBySerial` lookup). All procs follow the mandated status-row contract (no OUTPUT params) and the readable-audit convention.
+**Architecture:** One versioned migration (`0037`) adds a `Location.PlcDeviceType` code table (4 seeded UDT types), a `Location.TerminalPlcDevice` 1-to-many **thin-pointer** table (terminal → UDT instance path; OPC addressing lives on the instance params, not the DB), and a `Parts.Item.PlcId` column. Repeatable stored procs provide CRUD over the mapping, get/set `Item.PlcId`, and extend `SerializedPart_Mint` to accept a PLC-reported serial (plus a `_GetBySerial` lookup). All procs follow the mandated status-row contract (no OUTPUT params) and the readable-audit convention.
 
 **Tech Stack:** SQL Server 2022, T-SQL. Migrations under `sql/migrations/`, tests under `sql/tests/`, run via `sql/tests/Run-Tests.ps1` (PowerShell). This is the design spec's SQL scope: `docs/superpowers/specs/2026-07-10-plc-udt-terminal-mapping-design.md` §4 + §5 (serial surface).
 
@@ -25,17 +25,16 @@
 ## File Structure
 
 **Created:**
-- `sql/migrations/versioned/0037_plc_integration_foundation.sql` — `PlcDeviceType` (+seed), `TerminalPlcDevice`, `ItemLocation.PlcPartCode`, `LogEntityType` seed row, SchemaVersion.
+- `sql/migrations/versioned/0037_plc_integration_foundation.sql` — `PlcDeviceType` (+seed), `TerminalPlcDevice`, `Item.PlcId`, `LogEntityType` seed row, SchemaVersion.
 - `sql/migrations/repeatable/R__Location_TerminalPlcDevice_Save.sql`
 - `sql/migrations/repeatable/R__Location_TerminalPlcDevice_GetByTerminal.sql`
 - `sql/migrations/repeatable/R__Location_TerminalPlcDevice_Deprecate.sql`
-- `sql/migrations/repeatable/R__Parts_ItemLocation_SetPlcPartCode.sql`
-- `sql/migrations/repeatable/R__Parts_ItemLocation_GetByPlcPartCode.sql`
-- `sql/migrations/repeatable/R__Parts_ItemLocation_GetPlcPartCode.sql`
+- `sql/migrations/repeatable/R__Parts_Item_SetPlcId.sql`
+- `sql/migrations/repeatable/R__Parts_Item_GetPlcId.sql`
 - `sql/migrations/repeatable/R__Lots_SerializedPart_GetBySerial.sql`
 - `sql/tests/0037_PlcIntegration/010_schema.sql`
 - `sql/tests/0037_PlcIntegration/020_TerminalPlcDevice_crud.sql`
-- `sql/tests/0037_PlcIntegration/030_ItemLocation_PlcPartCode.sql`
+- `sql/tests/0037_PlcIntegration/030_Item_PlcId.sql`
 - `sql/tests/0037_PlcIntegration/040_SerializedPart_serial.sql`
 
 **Modified:**
@@ -59,7 +58,7 @@ EXEC Audit.Audit_LogFailure
     @LogEventTypeCode=N'Created', @FailureReason=@Message,
     @ProcedureName=@ProcName, @AttemptedParameters=@Params;
 ```
-`@LogEntityTypeCode` values used here: `N'TerminalPlcDevice'` (new, Id 25), `N'ItemLocation'` (existing 19), `N'SerializedPart'` (existing 24). `@LogEventTypeCode` values `Created`/`Updated`/`Deprecated` already seeded.
+`@LogEntityTypeCode` values used here: `N'TerminalPlcDevice'` (new, Id 25), `N'Item'` (existing 5), `N'SerializedPart'` (existing 24). `@LogEventTypeCode` values `Created`/`Updated`/`Deprecated` already seeded.
 
 **Test pattern** (`sql/tests/0003_Location/010_Location_crud.sql`): each file opens with `EXEC test.BeginTestFile @FileName=N'...';` then per test — `CREATE TABLE #R (Status BIT, Message NVARCHAR(500), NewId BIGINT); INSERT INTO #R EXEC <proc> ...; SELECT @S=Status,... FROM #R; DROP TABLE #R;` then `EXEC test.Assert_IsEqual @TestName=N'...', @Expected=N'...', @Actual=<nvarchar>;`. Each `GO`-separated batch re-declares its locals. Cleanup deletes test rows bottom-up (FK-safe). End with `EXEC test.PrintSummary;`. Assertion procs: `test.Assert_IsEqual`, `test.Assert_IsTrue`, `test.Assert_IsNull`, `test.Assert_IsNotNull`, `test.Assert_RowCount`, `test.Assert_Contains`.
 
@@ -72,7 +71,7 @@ EXEC Audit.Audit_LogFailure
 - Test: `sql/tests/0037_PlcIntegration/010_schema.sql`
 
 **Interfaces:**
-- Produces: table `Location.PlcDeviceType(Id, Code, Name, Description, CreatedAt, DeprecatedAt)` seeded 4 rows (`ScaleStation`, `SerializedMipStation`, `NonSerializedMipStation`, `TrayInspectionStation`); table `Location.TerminalPlcDevice` (columns per DDL below); column `Parts.ItemLocation.PlcPartCode INT NULL`; `Audit.LogEntityType` row `(25, N'TerminalPlcDevice', ...)`.
+- Produces: table `Location.PlcDeviceType(Id, Code, Name, Description, CreatedAt, DeprecatedAt)` seeded 4 rows (`ScaleStation`, `SerializedMipStation`, `NonSerializedMipStation`, `TrayInspectionStation`); table `Location.TerminalPlcDevice` (columns per DDL below); column `Parts.Item.PlcId INT NULL`; `Audit.LogEntityType` row `(25, N'TerminalPlcDevice', ...)`.
 
 - [ ] **Step 1: Write the failing test** — `sql/tests/0037_PlcIntegration/010_schema.sql`
 
@@ -105,10 +104,10 @@ EXEC test.Assert_IsEqual @TestName=N'TerminalPlcDevice has expected columns',
     @Expected=N'1', @Actual=@colOk;
 GO
 
--- ItemLocation.PlcPartCode column
+-- Item.PlcId column
 DECLARE @plcCol NVARCHAR(1) = CASE WHEN
-    COL_LENGTH('Parts.ItemLocation','PlcPartCode') IS NOT NULL THEN N'1' ELSE N'0' END;
-EXEC test.Assert_IsEqual @TestName=N'ItemLocation has PlcPartCode column',
+    COL_LENGTH('Parts.Item','PlcId') IS NOT NULL THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual @TestName=N'Item has PlcId column',
     @Expected=N'1', @Actual=@plcCol;
 GO
 
@@ -140,8 +139,8 @@ Expected: FAIL — `Invalid object name 'Location.PlcDeviceType'` (migration not
 --              * Location.TerminalPlcDevice - 1-to-many thin pointer: terminal ->
 --                UDT instance (UdtInstancePath). OPC addressing lives on the UDT
 --                instance's params in the tag provider, NOT in this table.
---              * Parts.ItemLocation.PlcPartCode - line-local integer part-code
---                (PLC/vision type-code <-> Item, per line).
+--              * Parts.Item.PlcId - stable per-part PLC/vision recipe integer
+--                (validated at run time against the assembly-out FIFO queue).
 --              * Audit.LogEntityType += TerminalPlcDevice (Id 25).
 --              Idempotent-guarded; no explicit transaction (repo convention).
 -- =============================================
@@ -195,15 +194,10 @@ CREATE INDEX IX_TerminalPlcDevice_Terminal
     ON Location.TerminalPlcDevice (TerminalLocationId);
 GO
 
-IF COL_LENGTH(N'Parts.ItemLocation', N'PlcPartCode') IS NULL
-    ALTER TABLE Parts.ItemLocation ADD PlcPartCode INT NULL;
-GO
-
-IF OBJECT_ID(N'Parts.ItemLocation') IS NOT NULL
-   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UQ_ItemLocation_PlcPartCode')
-CREATE UNIQUE INDEX UQ_ItemLocation_PlcPartCode
-    ON Parts.ItemLocation (LocationId, PlcPartCode)
-    WHERE PlcPartCode IS NOT NULL AND DeprecatedAt IS NULL;
+-- Item.PlcId: stable per-part PLC/vision recipe integer. Not globally unique
+-- (FIFO fixes the expected part at run time), so no unique index.
+IF COL_LENGTH(N'Parts.Item', N'PlcId') IS NULL
+    ALTER TABLE Parts.Item ADD PlcId INT NULL;
 GO
 
 IF NOT EXISTS (SELECT 1 FROM Audit.LogEntityType WHERE Code = N'TerminalPlcDevice')
@@ -214,7 +208,7 @@ GO
 IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0037_plc_integration_foundation')
     INSERT INTO dbo.SchemaVersion (MigrationId, Description)
     VALUES (N'0037_plc_integration_foundation',
-        N'PLC integration foundation: PlcDeviceType (+seed), TerminalPlcDevice, ItemLocation.PlcPartCode, TerminalPlcDevice audit entity.');
+        N'PLC integration foundation: PlcDeviceType (+seed), TerminalPlcDevice, Item.PlcId, TerminalPlcDevice audit entity.');
 GO
 ```
 
@@ -227,7 +221,7 @@ Expected: PASS — `010_schema.sql` shows 5 passed, 0 failed. (`Run-Tests.ps1` r
 
 ```bash
 git add sql/migrations/versioned/0037_plc_integration_foundation.sql sql/tests/0037_PlcIntegration/010_schema.sql
-git commit -m "feat(plc): migration 0037 - PlcDeviceType, TerminalPlcDevice, ItemLocation.PlcPartCode"
+git commit -m "feat(plc): migration 0037 - PlcDeviceType, TerminalPlcDevice, Item.PlcId"
 ```
 
 ---
@@ -656,88 +650,62 @@ git commit -m "feat(plc): TerminalPlcDevice_Deprecate"
 
 ---
 
-### Task 4: `Parts.ItemLocation_SetPlcPartCode` + the two resolve reads
+### Task 4: `Parts.Item_SetPlcId` + `Parts.Item_GetPlcId`
 
 **Files:**
-- Create: `sql/migrations/repeatable/R__Parts_ItemLocation_SetPlcPartCode.sql`
-- Create: `sql/migrations/repeatable/R__Parts_ItemLocation_GetByPlcPartCode.sql`
-- Create: `sql/migrations/repeatable/R__Parts_ItemLocation_GetPlcPartCode.sql`
-- Test: `sql/tests/0037_PlcIntegration/030_ItemLocation_PlcPartCode.sql`
+- Create: `sql/migrations/repeatable/R__Parts_Item_SetPlcId.sql`
+- Create: `sql/migrations/repeatable/R__Parts_Item_GetPlcId.sql`
+- Test: `sql/tests/0037_PlcIntegration/030_Item_PlcId.sql`
 
 **Interfaces:**
-- Consumes: `Parts.ItemLocation` (active row per (ItemId, LocationId)), `Parts.Item`.
+- Consumes: `Parts.Item` (with the new `PlcId INT NULL` column from Task 1).
 - Produces:
-  - `Parts.ItemLocation_SetPlcPartCode(@ItemId BIGINT, @LocationId BIGINT, @PlcPartCode INT, @AppUserId BIGINT)` → status row `Status, Message`. Requires an active ItemLocation row; enforces uniqueness of `@PlcPartCode` per location.
-  - `Parts.ItemLocation_GetByPlcPartCode(@LocationId BIGINT, @PlcPartCode INT)` → row `ItemId, PartNumber, Name` (the Item that the PLC integer code maps to at that line — vision-validation read). Empty = unmapped.
-  - `Parts.ItemLocation_GetPlcPartCode(@ItemId BIGINT, @LocationId BIGINT)` → row `PlcPartCode` (write-path read: MES resolves the code to send to the PLC). Empty = unset.
+  - `Parts.Item_SetPlcId(@ItemId BIGINT, @PlcId INT, @AppUserId BIGINT)` → status row `Status, Message`. Requires an active Item. Sets `Item.PlcId` (the stable per-part PLC/vision recipe integer). **No uniqueness constraint** — the assembly-out FIFO queue fixes the expected part at run time (spec §4.3).
+  - `Parts.Item_GetPlcId(@ItemId BIGINT)` → row `PlcId`. Empty = unset / not found.
 
-Assume `Parts.Item` has columns `Id`, `PartNumber`, `Name` (confirm the display-name column name; if it is `Description`, substitute in the SELECT of `GetByPlcPartCode`).
+The watcher's FIFO validation (front-of-assembly-out-queue → expected LOT → `Item_GetPlcId` → compare vision code) is **Plan 3**; the FIFO read (`Lots.Lot_GetWipQueueByLocation`) already exists. This task only adds the column's set/get.
 
-- [ ] **Step 1: Write the failing test** — `sql/tests/0037_PlcIntegration/030_ItemLocation_PlcPartCode.sql`
+- [ ] **Step 1: Write the failing test** — `sql/tests/0037_PlcIntegration/030_Item_PlcId.sql`
 
 ```sql
 -- =============================================
--- File: 0037_PlcIntegration/030_ItemLocation_PlcPartCode.sql
--- Tests SetPlcPartCode + GetByPlcPartCode + GetPlcPartCode.
--- Uses the two lowest-Id active Items + a throwaway Location.
+-- File: 0037_PlcIntegration/030_Item_PlcId.sql
+-- Tests Item_SetPlcId + Item_GetPlcId. Borrows the lowest-Id active Item and
+-- resets its PlcId to NULL at the end (Item is a real seed row, not throwaway).
 -- =============================================
-EXEC test.BeginTestFile @FileName = N'0037_PlcIntegration/030_ItemLocation_PlcPartCode.sql';
+EXEC test.BeginTestFile @FileName = N'0037_PlcIntegration/030_Item_PlcId.sql';
 GO
 
--- Fixture: a throwaway WorkCenter location + two ItemLocation rows for two items.
-DECLARE @rootId BIGINT = (SELECT TOP 1 Id FROM Location.Location WHERE DeprecatedAt IS NULL ORDER BY Id);
-IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'TEST-PPC-LINE')
-    INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code)
-    VALUES (5, @rootId, N'Test PPC Line', N'TEST-PPC-LINE');
-GO
-DECLARE @locId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TEST-PPC-LINE');
-DECLARE @item1 BIGINT = (SELECT Id FROM Parts.Item WHERE DeprecatedAt IS NULL ORDER BY Id OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY);
-DECLARE @item2 BIGINT = (SELECT Id FROM Parts.Item WHERE DeprecatedAt IS NULL ORDER BY Id OFFSET 1 ROWS FETCH NEXT 1 ROWS ONLY);
-INSERT INTO Parts.ItemLocation (ItemId, LocationId) VALUES (@item1, @locId), (@item2, @locId);
-GO
-
--- Test 1: set code 1 on item1
+-- Test 1: set PlcId = 2 on the lowest-Id item
 DECLARE @S BIT, @M NVARCHAR(500);
-DECLARE @locId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TEST-PPC-LINE');
-DECLARE @item1 BIGINT = (SELECT Id FROM Parts.Item WHERE DeprecatedAt IS NULL ORDER BY Id OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY);
+DECLARE @itemId BIGINT = (SELECT TOP 1 Id FROM Parts.Item WHERE DeprecatedAt IS NULL ORDER BY Id);
 CREATE TABLE #R1 (Status BIT, Message NVARCHAR(500));
-INSERT INTO #R1 EXEC Parts.ItemLocation_SetPlcPartCode @ItemId=@item1, @LocationId=@locId, @PlcPartCode=1, @AppUserId=1;
+INSERT INTO #R1 EXEC Parts.Item_SetPlcId @ItemId=@itemId, @PlcId=2, @AppUserId=1;
 SELECT @S=Status, @M=Message FROM #R1; DROP TABLE #R1;
-EXEC test.Assert_IsEqual @TestName=N'SetPlcPartCode item1=1: status 1', @Expected=N'1', @Actual=CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual @TestName=N'SetPlcId=2: status 1', @Expected=N'1', @Actual=CAST(@S AS NVARCHAR(1));
+EXEC test.Assert_IsEqual @TestName=N'SetPlcId=2: column updated', @Expected=N'2',
+    @Actual=CAST((SELECT PlcId FROM Parts.Item WHERE Id=@itemId) AS NVARCHAR(10));
 GO
 
--- Test 2: duplicate code 1 on item2 (same location) rejected
+-- Test 2: GetPlcId returns 2
+DECLARE @itemId BIGINT = (SELECT TOP 1 Id FROM Parts.Item WHERE DeprecatedAt IS NULL ORDER BY Id);
+CREATE TABLE #G (PlcId INT);
+INSERT INTO #G EXEC Parts.Item_GetPlcId @ItemId=@itemId;
+DECLARE @code INT = (SELECT TOP 1 PlcId FROM #G); DROP TABLE #G;
+EXEC test.Assert_IsEqual @TestName=N'GetPlcId = 2', @Expected=N'2', @Actual=CAST(@code AS NVARCHAR(10));
+GO
+
+-- Test 3: set on a non-existent item is rejected
 DECLARE @S BIT, @M NVARCHAR(500);
-DECLARE @locId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TEST-PPC-LINE');
-DECLARE @item2 BIGINT = (SELECT Id FROM Parts.Item WHERE DeprecatedAt IS NULL ORDER BY Id OFFSET 1 ROWS FETCH NEXT 1 ROWS ONLY);
-CREATE TABLE #R2 (Status BIT, Message NVARCHAR(500));
-INSERT INTO #R2 EXEC Parts.ItemLocation_SetPlcPartCode @ItemId=@item2, @LocationId=@locId, @PlcPartCode=1, @AppUserId=1;
-SELECT @S=Status, @M=Message FROM #R2; DROP TABLE #R2;
-EXEC test.Assert_IsEqual @TestName=N'SetPlcPartCode dup code: status 0', @Expected=N'0', @Actual=CAST(@S AS NVARCHAR(1));
+CREATE TABLE #R3 (Status BIT, Message NVARCHAR(500));
+INSERT INTO #R3 EXEC Parts.Item_SetPlcId @ItemId=999999999, @PlcId=1, @AppUserId=1;
+SELECT @S=Status, @M=Message FROM #R3; DROP TABLE #R3;
+EXEC test.Assert_IsEqual @TestName=N'SetPlcId bad item: status 0', @Expected=N'0', @Actual=CAST(@S AS NVARCHAR(1));
 GO
 
--- Test 3: GetByPlcPartCode(loc,1) -> item1
-DECLARE @locId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TEST-PPC-LINE');
-DECLARE @item1 BIGINT = (SELECT Id FROM Parts.Item WHERE DeprecatedAt IS NULL ORDER BY Id OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY);
-CREATE TABLE #G (ItemId BIGINT, PartNumber NVARCHAR(100), Name NVARCHAR(200));
-INSERT INTO #G EXEC Parts.ItemLocation_GetByPlcPartCode @LocationId=@locId, @PlcPartCode=1;
-DECLARE @got BIGINT = (SELECT TOP 1 ItemId FROM #G); DROP TABLE #G;
-EXEC test.Assert_IsEqual @TestName=N'GetByPlcPartCode(1) resolves to item1',
-    @Expected=CAST(@item1 AS NVARCHAR(20)), @Actual=CAST(@got AS NVARCHAR(20));
-GO
-
--- Test 4: GetPlcPartCode(item1,loc) -> 1
-DECLARE @locId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TEST-PPC-LINE');
-DECLARE @item1 BIGINT = (SELECT Id FROM Parts.Item WHERE DeprecatedAt IS NULL ORDER BY Id OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY);
-CREATE TABLE #C (PlcPartCode INT);
-INSERT INTO #C EXEC Parts.ItemLocation_GetPlcPartCode @ItemId=@item1, @LocationId=@locId;
-DECLARE @code INT = (SELECT TOP 1 PlcPartCode FROM #C); DROP TABLE #C;
-EXEC test.Assert_IsEqual @TestName=N'GetPlcPartCode(item1) = 1', @Expected=N'1', @Actual=CAST(@code AS NVARCHAR(10));
-GO
-
--- Cleanup
-DELETE FROM Parts.ItemLocation WHERE LocationId IN (SELECT Id FROM Location.Location WHERE Code=N'TEST-PPC-LINE');
-DELETE FROM Location.Location WHERE Code = N'TEST-PPC-LINE';
+-- Cleanup: reset the borrowed item's PlcId
+DECLARE @itemId BIGINT = (SELECT TOP 1 Id FROM Parts.Item WHERE DeprecatedAt IS NULL ORDER BY Id);
+UPDATE Parts.Item SET PlcId = NULL WHERE Id = @itemId;
 GO
 
 EXEC test.PrintSummary;
@@ -747,81 +715,64 @@ GO
 - [ ] **Step 2: Run to verify it fails**
 
 Run: `cd sql/tests; ./Run-Tests.ps1 -Filter "0037"`
-Expected: FAIL — `Could not find stored procedure 'Parts.ItemLocation_SetPlcPartCode'`.
+Expected: FAIL — `Could not find stored procedure 'Parts.Item_SetPlcId'`.
 
-- [ ] **Step 3: Write `R__Parts_ItemLocation_SetPlcPartCode.sql`**
+- [ ] **Step 3: Write `R__Parts_Item_SetPlcId.sql`**
 
 ```sql
 -- =============================================
--- Procedure:   Parts.ItemLocation_SetPlcPartCode
--- Description: Set the line-local integer PLC part-code on an existing active
---   ItemLocation row. Enforces per-location uniqueness of the code. The PLC/
---   vision reports this integer; the MES resolves it to/from the real Item.
+-- Procedure:   Parts.Item_SetPlcId
+-- Description: Set the stable per-part PLC/vision recipe integer on an Item.
+--   No uniqueness constraint - the assembly-out FIFO queue fixes the expected
+--   part at run time (spec 4.3).
 -- Result set: Status BIT, Message NVARCHAR(500).
 -- =============================================
-CREATE OR ALTER PROCEDURE Parts.ItemLocation_SetPlcPartCode
-    @ItemId      BIGINT,
-    @LocationId  BIGINT,
-    @PlcPartCode INT,
-    @AppUserId   BIGINT
+CREATE OR ALTER PROCEDURE Parts.Item_SetPlcId
+    @ItemId    BIGINT,
+    @PlcId     INT,
+    @AppUserId BIGINT
 AS
 BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
 
     DECLARE @Status BIT = 0, @Message NVARCHAR(500) = N'Unknown error';
-    DECLARE @ProcName NVARCHAR(200) = N'Parts.ItemLocation_SetPlcPartCode';
-    DECLARE @Params NVARCHAR(MAX) = (SELECT @ItemId AS ItemId, @LocationId AS LocationId,
-        @PlcPartCode AS PlcPartCode FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
-    DECLARE @ItemLocationId BIGINT;
+    DECLARE @ProcName NVARCHAR(200) = N'Parts.Item_SetPlcId';
+    DECLARE @Params NVARCHAR(MAX) = (SELECT @ItemId AS ItemId, @PlcId AS PlcId
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
     BEGIN TRY
-        IF @ItemId IS NULL OR @LocationId IS NULL OR @PlcPartCode IS NULL OR @AppUserId IS NULL
+        IF @ItemId IS NULL OR @PlcId IS NULL OR @AppUserId IS NULL
         BEGIN
             SET @Message = N'Required parameter missing.';
-            EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'ItemLocation',
-                @EntityId=NULL, @LogEventTypeCode=N'Updated', @FailureReason=@Message,
+            EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Item',
+                @EntityId=@ItemId, @LogEventTypeCode=N'Updated', @FailureReason=@Message,
                 @ProcedureName=@ProcName, @AttemptedParameters=@Params;
             SELECT @Status AS Status, @Message AS Message; RETURN;
         END
 
-        SELECT @ItemLocationId = Id FROM Parts.ItemLocation
-        WHERE ItemId=@ItemId AND LocationId=@LocationId AND DeprecatedAt IS NULL;
-
-        IF @ItemLocationId IS NULL
+        IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE Id=@ItemId AND DeprecatedAt IS NULL)
         BEGIN
-            SET @Message = N'No active ItemLocation for this Item + Location (add eligibility first).';
-            EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'ItemLocation',
-                @EntityId=NULL, @LogEventTypeCode=N'Updated', @FailureReason=@Message,
-                @ProcedureName=@ProcName, @AttemptedParameters=@Params;
-            SELECT @Status AS Status, @Message AS Message; RETURN;
-        END
-
-        -- Per-location uniqueness (excluding this row)
-        IF EXISTS (SELECT 1 FROM Parts.ItemLocation
-                   WHERE LocationId=@LocationId AND PlcPartCode=@PlcPartCode
-                     AND DeprecatedAt IS NULL AND Id <> @ItemLocationId)
-        BEGIN
-            SET @Message = N'PlcPartCode already assigned to another item at this location.';
-            EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'ItemLocation',
-                @EntityId=@ItemLocationId, @LogEventTypeCode=N'Updated', @FailureReason=@Message,
+            SET @Message = N'Item not found or deprecated.';
+            EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Item',
+                @EntityId=@ItemId, @LogEventTypeCode=N'Updated', @FailureReason=@Message,
                 @ProcedureName=@ProcName, @AttemptedParameters=@Params;
             SELECT @Status AS Status, @Message AS Message; RETURN;
         END
 
         DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(
-            N'ItemLocation ' + CAST(@ItemLocationId AS NVARCHAR(20)) + N' ' + Audit.ufn_MidDot()
-            + N' Set PlcPartCode = ' + CAST(@PlcPartCode AS NVARCHAR(10)));
+            N'Item ' + CAST(@ItemId AS NVARCHAR(20)) + N' ' + Audit.ufn_MidDot()
+            + N' Set PlcId = ' + CAST(@PlcId AS NVARCHAR(10)));
 
         BEGIN TRANSACTION;
-        UPDATE Parts.ItemLocation SET PlcPartCode=@PlcPartCode WHERE Id=@ItemLocationId;
+        UPDATE Parts.Item SET PlcId=@PlcId WHERE Id=@ItemId;
 
-        EXEC Audit.Audit_LogConfigChange @AppUserId=@AppUserId, @LogEntityTypeCode=N'ItemLocation',
-            @EntityId=@ItemLocationId, @LogEventTypeCode=N'Updated', @LogSeverityCode=N'Info',
+        EXEC Audit.Audit_LogConfigChange @AppUserId=@AppUserId, @LogEntityTypeCode=N'Item',
+            @EntityId=@ItemId, @LogEventTypeCode=N'Updated', @LogSeverityCode=N'Info',
             @Description=@Activity, @OldValue=NULL, @NewValue=@Params;
         COMMIT TRANSACTION;
 
-        SET @Status=1; SET @Message=N'PLC part-code set.';
+        SET @Status=1; SET @Message=N'PLC ID set.';
         SELECT @Status AS Status, @Message AS Message;
     END TRY
     BEGIN CATCH
@@ -829,8 +780,8 @@ BEGIN
         DECLARE @ErrMsg NVARCHAR(4000)=ERROR_MESSAGE(), @ErrSev INT=ERROR_SEVERITY(), @ErrState INT=ERROR_STATE();
         SET @Status=0; SET @Message=N'Unexpected error: ' + LEFT(@ErrMsg,400);
         BEGIN TRY
-            EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'ItemLocation',
-                @EntityId=@ItemLocationId, @LogEventTypeCode=N'Updated', @FailureReason=@Message,
+            EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Item',
+                @EntityId=@ItemId, @LogEventTypeCode=N'Updated', @FailureReason=@Message,
                 @ProcedureName=@ProcName, @AttemptedParameters=@Params;
         END TRY BEGIN CATCH END CATCH
         SELECT @Status AS Status, @Message AS Message;
@@ -840,64 +791,40 @@ END;
 GO
 ```
 
-- [ ] **Step 4: Write `R__Parts_ItemLocation_GetByPlcPartCode.sql`**
+- [ ] **Step 4: Write `R__Parts_Item_GetPlcId.sql`**
 
 ```sql
 -- =============================================
--- Procedure:   Parts.ItemLocation_GetByPlcPartCode
--- Description: Resolve a line-local PLC integer part-code to its Item at a
---   location (vision-validation read). Read proc - empty result = unmapped.
+-- Procedure:   Parts.Item_GetPlcId
+-- Description: Read an Item's stable PLC/vision recipe integer. The watcher
+--   resolves the expected LOT from the assembly-out FIFO queue
+--   (Lots.Lot_GetWipQueueByLocation), then reads that LOT's Item PlcId via this
+--   proc. Read proc - empty result = unset / not found.
 -- =============================================
-CREATE OR ALTER PROCEDURE Parts.ItemLocation_GetByPlcPartCode
-    @LocationId  BIGINT,
-    @PlcPartCode INT
+CREATE OR ALTER PROCEDURE Parts.Item_GetPlcId
+    @ItemId BIGINT
 AS
 BEGIN
     SET NOCOUNT ON;
-    SELECT i.Id AS ItemId, i.PartNumber, i.Name
-    FROM Parts.ItemLocation il
-    INNER JOIN Parts.Item i ON i.Id = il.ItemId
-    WHERE il.LocationId = @LocationId
-      AND il.PlcPartCode = @PlcPartCode
-      AND il.DeprecatedAt IS NULL;
+    SELECT PlcId
+    FROM Parts.Item
+    WHERE Id = @ItemId
+      AND DeprecatedAt IS NULL
+      AND PlcId IS NOT NULL;
 END;
 GO
 ```
 
-- [ ] **Step 5: Write `R__Parts_ItemLocation_GetPlcPartCode.sql`**
-
-```sql
--- =============================================
--- Procedure:   Parts.ItemLocation_GetPlcPartCode
--- Description: Resolve an Item + Location to its line-local PLC integer part-code
---   (write-path read - MES sends this code to the PLC). Empty result = unset.
--- =============================================
-CREATE OR ALTER PROCEDURE Parts.ItemLocation_GetPlcPartCode
-    @ItemId     BIGINT,
-    @LocationId BIGINT
-AS
-BEGIN
-    SET NOCOUNT ON;
-    SELECT il.PlcPartCode
-    FROM Parts.ItemLocation il
-    WHERE il.ItemId = @ItemId
-      AND il.LocationId = @LocationId
-      AND il.DeprecatedAt IS NULL
-      AND il.PlcPartCode IS NOT NULL;
-END;
-GO
-```
-
-- [ ] **Step 6: Run to verify it passes**
+- [ ] **Step 5: Run to verify it passes**
 
 Run: `cd sql/tests; ./Run-Tests.ps1 -Filter "0037"`
-Expected: PASS — `030_...` shows 4 passed, 0 failed.
+Expected: PASS — `030_Item_PlcId.sql` shows 4 passed, 0 failed.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
-git add sql/migrations/repeatable/R__Parts_ItemLocation_SetPlcPartCode.sql sql/migrations/repeatable/R__Parts_ItemLocation_GetByPlcPartCode.sql sql/migrations/repeatable/R__Parts_ItemLocation_GetPlcPartCode.sql sql/tests/0037_PlcIntegration/030_ItemLocation_PlcPartCode.sql
-git commit -m "feat(plc): ItemLocation PlcPartCode set + both resolve reads"
+git add sql/migrations/repeatable/R__Parts_Item_SetPlcId.sql sql/migrations/repeatable/R__Parts_Item_GetPlcId.sql sql/tests/0037_PlcIntegration/030_Item_PlcId.sql
+git commit -m "feat(plc): Item.PlcId set + get (FIFO-validated part-code)"
 ```
 
 ---
@@ -1097,14 +1024,14 @@ git commit -m "docs(plc): mark SQL-foundation items built"
 ## Downstream (separate plans — not in this plan)
 
 - **Plan 2 — Ignition tags + sim:** generate the 4 UDT definition JSONs + `MPP_Sim` Programmable Device Simulator program CSV from the §3.3 member catalog; UDT instances; the Sim Panel view (§7.1). Consumes the `TerminalPlcDevice` columns → UDT params. Uses the NQ folder shape (`ignition/projects/Core/ignition/named-query/<domain>/<Proc>/` with `query.sql` + `resource.json`) to expose the Task-2..5 procs.
-- **Plan 3 — Watchers + onStartup + Config-Tool editor:** the 4 gateway watcher modules (edge-subscribed, mapped to procs), `onStartup` resolving `TerminalPlcDevice_GetByTerminal` into `session.custom.plcDevices`, and the Terminal→device mapping editor UI (per-terminal list; ConfirmUnsaved) + `PlcPartCode` on the Item×Location surface.
+- **Plan 3 — Watchers + onStartup + Config-Tool editor:** the 4 gateway watcher modules (edge-subscribed, mapped to procs — incl. the tray-inspection **FIFO validation**: front-of-assembly-out-queue → expected LOT → `Item_GetPlcId` → compare vision code), `onStartup` resolving `TerminalPlcDevice_GetByTerminal` into `session.custom.plcDevices`, and the Terminal→device mapping editor UI (per-terminal list; ConfirmUnsaved) + the `PlcId` field on the Item Master Identity surface.
 
 ---
 
 ## Self-Review
 
-**Spec coverage (spec §4 + §5 SQL scope):** §4.1 PlcDeviceType → Task 1. §4.2 TerminalPlcDevice + Save/Deprecate/GetByTerminal procs → Tasks 1–3. §4.3 ItemLocation.PlcPartCode + resolve/validate → Tasks 1, 4. §5 serial validate surface (`SerializedPart_GetBySerial` + `@SerialNumber` on Mint) → Task 5. `onStartup`, watchers, UDTs, Config editor → explicitly deferred to Plans 2–3.
+**Spec coverage (spec §4 + §5 SQL scope):** §4.1 PlcDeviceType → Task 1. §4.2 TerminalPlcDevice (thin pointer) + Save/Deprecate/GetByTerminal procs → Tasks 1–3. §4.3 `Item.PlcId` + set/get (FIFO-validated) → Tasks 1, 4; the FIFO validation *logic* is Plan 3 (it reuses the existing `Lot_GetWipQueueByLocation`). §5 serial validate surface (`SerializedPart_GetBySerial` + `@SerialNumber` on Mint) → Task 5. `onStartup`, watchers, UDTs, Config editor → deferred to Plans 2–3.
 
-**Placeholder scan:** No TBD/TODO in steps. Two documented assumptions the implementer must confirm against the live schema (not placeholders — verification points): `Parts.Item` display column is `Name` (Task 4 GetByPlcPartCode SELECT — substitute if it is `Description`); and the exact text span in `SerializedPart_Mint` to replace (Task 5 identifies it by its start/end statements).
+**Placeholder scan:** No TBD/TODO in steps. One documented verification point (not a placeholder): the exact text span in `SerializedPart_Mint` to replace (Task 5 identifies it by its start/end statements). Task 4 no longer depends on the `Parts.Item` display-column name (it only touches `Id` + the new `PlcId`).
 
-**Type consistency:** `TerminalPlcDevice_Save` returns `Status,Message,NewId`; `_Deprecate` returns `Status,Message`; reads return the column sets the tests' temp tables declare (matched exactly). `SerializedPart_Mint` keeps its 4-column `Status,Message,NewId,SerialNumber` shape; the test temp tables match. `@PlcDeviceTypeId` (BIGINT FK) used consistently in Save + tests. Audit entity codes `TerminalPlcDevice`/`ItemLocation` match the seeded `Audit.LogEntityType`.
+**Type consistency:** `TerminalPlcDevice_Save` returns `Status,Message,NewId` and takes `@UdtInstancePath` (no addressing params); `_Deprecate` returns `Status,Message`; `_GetByTerminal` returns `Id, TerminalLocationId, PlcDeviceTypeId, DeviceTypeCode, DeviceTypeName, DeviceCode, UdtInstancePath, SortOrder` — matched by the tests' temp tables. `Item_SetPlcId` returns `Status,Message`; `Item_GetPlcId` returns `PlcId`. `SerializedPart_Mint` keeps its 4-column `Status,Message,NewId,SerialNumber` shape; test temp tables match. Audit entity codes `TerminalPlcDevice` (new, Id 25) / `Item` (existing 5) / `SerializedPart` (existing 24) match the seeded `Audit.LogEntityType`.

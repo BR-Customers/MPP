@@ -181,15 +181,18 @@ Procs (mutation procs return `SELECT @Status,@Message,@NewId`; no OUTPUT params 
 - `Location.TerminalPlcDevice_Deprecate`
 - `Location.TerminalPlcDevice_GetByTerminal` (read; ET display where dated)
 
-### 4.3 PLC part-code ↔ Item (D5)
+### 4.3 PLC ID ↔ Item, validated via the assembly-out FIFO queue (D5)
 
-The PLC/vision uses **line-local integer codes** (1/2/3) mapped to Items by the active work order (scripts 75/125/254/292). Store as an **`ItemLocation`-scoped attribute** (Item × Location already exists for eligibility) — e.g. add `ItemLocation.PlcPartCode INT NULL`, unique per (LocationId, PlcPartCode) among active rows.
+**PLC ID is a part-configuration attribute on the Item** — `Parts.Item.PlcId INT NULL` (the vision-recipe / PLC integer for that part). Stable per part (a part runs on its line), so it lives on the Item, not per-line.
 
-- **Write path** (MES → PLC `PartType`/`PartNumber`): resolve the active LOT's Item → its `PlcPartCode` for this line.
-- **Read/validate path** (`VisionPartNumber` R): map the reported code back to an Item on this line and assert it equals the active LOT's Item; mismatch ⇒ alarm + line-stop (FDS-10-005/010).
-- Read proc: `Parts.ItemLocation_GetByPlcPartCode(@LocationId, @PlcPartCode)` and the inverse on the write side.
+**Validation is FIFO-derived** — the same shape as the BOM-derived validation the route-driven queues already do. The PLC session does NOT rely on a per-line code map; it reads its **assembly-out queue** (`Lots.Lot_GetWipQueueByLocation` — the route-driven FIFO from the 2026-07-07 terminal-mint work) to learn the **expected** LOT at that terminal, then reads that LOT's `Item.PlcId`:
 
-> Confirm at build: if `ItemLocation` has no spare attribute mechanism, this is a one-column ALTER. If MPP guarantees a globally-stable code per Item, it may collapse to an `Item` field — but the legacy data is line-local, so `ItemLocation` is the safe default.
+- **Write path** (MES → PLC `PartNumber`/`PartType` recipe select): front-of-FIFO expected LOT → its Item → `Item.PlcId` → write to the PLC before inspection.
+- **Read/validate path** (`VisionPartNumber` R on `InspectionComplete`): compare the vision-reported code against the expected LOT's `Item.PlcId`; mismatch ⇒ wrong-part alarm + line-stop (FDS-10-005/010).
+
+SQL surface: `Parts.Item.PlcId` column + `Parts.Item_SetPlcId` / `Parts.Item_GetPlcId`. The FIFO read is the existing `Lots.Lot_GetWipQueueByLocation`; the watcher (Plan 3) combines front-of-queue → `Item_GetPlcId` → compare. **No per-line mapping table, no `ItemLocation` change.**
+
+> Revised from an earlier `ItemLocation.PlcPartCode` (line-scoped) design. The legacy vision integers *look* line-local, but the line context comes from the **FIFO queue** (which part is expected at this terminal now), not a stored per-line code — so a part's PLC ID is a stable part property and belongs on the Item. `PlcId` is not globally unique (two parts on different lines may share an integer); that's fine, because FIFO already fixes the expected part and PlcId is the secondary recipe/confirmation check.
 
 ### 4.4 `onStartup` resolution
 
@@ -280,7 +283,7 @@ Explicit "carried forward from the old system but not required by the new soluti
 - **Scale:** on `NET_DataReady↑` → read weight/UOM/metFlag → clear them → record weight (proc) → if metFlag, close/label. Target-weight change: write `TRG_*` (zero-padded) + pulse `TRG_SendMessage`.
 - **Serialized MIP (5G0):** on `DataReady↑`/`PartComplete↑` → set `TransInProc` → read `PartSN`+`HardwareInterlockEnforced` → validate (len≥6; blank auto-gen if interlock off) → `SerializedPart_Mint` → `PartValid` + `ContainerCount` + `PartType` → reset `TransInProc`/`PartComplete`. Container close is **scale-coupled** (legacy hardcodes count 60 → our `ContainerConfig` closure).
 - **Non-serialized MIP (5A2):** on `DataReady↑` → `Assembly_CompleteTray` → `PartValid` + `PartType` + alarms → reset.
-- **Tray inspection:** on `TrayLocked↑` → resolve recipe/type from active LOT → write `PartNumber`/`ContainerName` + `OkToContinue`; on `InspectionComplete↑` → read `VisionPartNumber`/`PartDisposition*` → validate vs active LOT Item (§4.3) → close tray.
+- **Tray inspection:** on `TrayLocked↑` → read the **assembly-out FIFO queue** (`Lot_GetWipQueueByLocation`) → front-of-queue expected LOT → write its `Item.PlcId` as `PartNumber` (recipe select) + `ContainerName`/`OkToContinue`; on `InspectionComplete↑` → read `VisionPartNumber`/`PartDisposition*` → validate the vision code against the **expected LOT's `Item.PlcId`** (§4.3) → close tray.
 
 **New validate surface** (readiness-note gap): `Lots.SerializedPart_GetBySerial` + optional `@SerialNumber` on `SerializedPart_Mint` (FDS-10-002/003). Serial rules: min length 6; `HardwareInterlockEnforced=false` ⇒ accept `NoRead`/auto-gen (FDS-06-012).
 
@@ -375,10 +378,10 @@ Gateway **tags live outside the project export** that `scan.ps1` syncs. The tag 
 
 1. **Member catalog + UDT defs** — encode the §3.3 catalog once; generate **4 UDT definitions** (the JSON format of §3.4) + the **`MPP_Sim` simulator program CSV**; commit tag JSON + CSV under `ignition/tags/`.
 2. **Sim device + harness** — load `MPP_Sim` into a Programmable Device Simulator on the Ignition OPC UA Server; instantiate the UDTs against it (`{Device}=MPP_Sim`); prove parameter-swing (same definition binds sim now, real device later).
-3. **SQL** — `PlcDeviceType` seed + `TerminalPlcDevice` table/procs (TDD); `ItemLocation.PlcPartCode` + resolve/validate procs; `SerializedPart_GetBySerial` + mint validate surface.
+3. **SQL** — `PlcDeviceType` seed + `TerminalPlcDevice` thin-pointer table/procs (TDD); `Item.PlcId` + set/get procs; `SerializedPart_GetBySerial` + mint validate surface. (Plan `docs/superpowers/plans/2026-07-13-plc-integration-sql-foundation.md`.)
 4. **onStartup** — resolve `session.custom.plcDevices`.
-5. **Watchers** — one per type, edge-subscribed, mapped to procs; test end-to-end against the simulator.
-6. **Config-Tool editor** — Terminal→device mapping surface (per-terminal list editor; ConfirmUnsaved pattern) + `PlcPartCode` on the Item×Location surface.
+5. **Watchers** — one per type, edge-subscribed, mapped to procs; tray-inspection does FIFO validation (`Lot_GetWipQueueByLocation` → expected LOT → `Item_GetPlcId` → compare); test end-to-end against the simulator.
+6. **Config-Tool editor** — Terminal→device mapping surface (per-terminal list editor; ConfirmUnsaved pattern) + the `PlcId` field on the Item Master Identity surface.
 7. **Manifest + commissioning doc** — device-connection manifest with endpoint/driver fill-ins; tag-namespace + InterfaceLog conventions.
 
 Live PLC binding, real endpoints/drivers, and hardware smoke are **commissioning** (gated on plant network + the Pro-face/Mitsubishi/scale driver decisions).
@@ -394,11 +397,11 @@ MVP per FDS §10 (FDS-10-001..013), FDS-01-008/009/014, FDS-06-005/010/012/013/0
 - ✅ **Resolved this rev:** driver strategy (native AB + Mitsubishi; TopServer/OmniServer via OPC-UA client for Pro-face + scales — §6); sim/real parameter swing (Programmable Device Simulator + parameterized `{OpcServer}`/`{Device}` — §3.1, §7); UDT JSON format (§3.4); obsolete-mechanism audit (§5.3).
 - **OI (endpoints):** pull TopServer `.opf` + OmniServer config for per-device IP/port + the exact external-server OPC-UA node-id template (§6.1 nuance) to fill the manifest.
 - **Confirm (business logic — §5.2):** legacy `SendMessage` consumer set (buried in Flexware DLL); sort-recipe mapping location; `HardwareInterlockEnable` vs `Enforced` semantics; `WatchDog` presence at Madison; auto-gen-SN semantics for `SerializedPart_Mint`.
-- **Confirm:** `ItemLocation` attribute mechanism for `PlcPartCode` (§4.3); whether MPP wants `TrayInspectionStation` split 3 ways; A4 serial etch-vs-completion ordering (deferred) as it affects `SerializedPart_Mint`.
+- **Confirm:** whether MPP wants `TrayInspectionStation` split 3 ways; A4 serial etch-vs-completion ordering (deferred) as it affects `SerializedPart_Mint`. (`Item.PlcId` model resolved §4.3 — FIFO-validated, per-part.)
 - **Confirm (skip list — §5.3):** `NET_PartNumber` scale cross-check and `TRG_TargetWeightUOM` — keep only if MPP confirms they're needed.
 
 ## 12. Testing
 
-- SQL: TDD suites for the new table/procs + `PlcPartCode` resolve/validate (INSERT-EXEC pattern).
+- SQL: TDD suites for the new table/procs + `Item.PlcId` set/get (INSERT-EXEC pattern).
 - Watchers: end-to-end against the simulator harness (§7) — all scenarios green with no hardware.
 - No live-PLC assertion in CI; commissioning smoke is manual.
