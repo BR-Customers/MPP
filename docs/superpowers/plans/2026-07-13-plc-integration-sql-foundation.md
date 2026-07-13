@@ -95,12 +95,11 @@ EXEC test.Assert_IsEqual @TestName=N'PlcDeviceType has TrayInspectionStation',
     @Expected=N'1', @Actual=@hasTray;
 GO
 
--- TerminalPlcDevice table + key columns
+-- TerminalPlcDevice table + key columns (thin pointer)
 DECLARE @colOk NVARCHAR(1) = CASE WHEN
-    COL_LENGTH('Location.TerminalPlcDevice','OpcServerConnection') IS NOT NULL
-    AND COL_LENGTH('Location.TerminalPlcDevice','DeviceName') IS NOT NULL
-    AND COL_LENGTH('Location.TerminalPlcDevice','BasePath') IS NOT NULL
-    AND COL_LENGTH('Location.TerminalPlcDevice','WriteDisplayEnabled') IS NOT NULL
+    COL_LENGTH('Location.TerminalPlcDevice','UdtInstancePath') IS NOT NULL
+    AND COL_LENGTH('Location.TerminalPlcDevice','DeviceCode') IS NOT NULL
+    AND COL_LENGTH('Location.TerminalPlcDevice','PlcDeviceTypeId') IS NOT NULL
     THEN N'1' ELSE N'0' END;
 EXEC test.Assert_IsEqual @TestName=N'TerminalPlcDevice has expected columns',
     @Expected=N'1', @Actual=@colOk;
@@ -138,9 +137,9 @@ Expected: FAIL — `Invalid object name 'Location.PlcDeviceType'` (migration not
 -- Date:        2026-07-13
 -- Description: PLC-integration SQL foundation (spec 2026-07-10 §4).
 --              * Location.PlcDeviceType  - 4 UDT device types (fixed seed).
---              * Location.TerminalPlcDevice - 1-to-many terminal -> PLC device
---                mapping; the 3 OPC columns feed the UDT {OpcServer}/{Device}/
---                {BasePath} params; WriteDisplayEnabled gates HMI-display writes.
+--              * Location.TerminalPlcDevice - 1-to-many thin pointer: terminal ->
+--                UDT instance (UdtInstancePath). OPC addressing lives on the UDT
+--                instance's params in the tag provider, NOT in this table.
 --              * Parts.ItemLocation.PlcPartCode - line-local integer part-code
 --                (PLC/vision type-code <-> Item, per line).
 --              * Audit.LogEntityType += TerminalPlcDevice (Id 25).
@@ -166,17 +165,15 @@ INSERT INTO Location.PlcDeviceType (Code, Name, Description) VALUES
     (N'TrayInspectionStation',  N'Tray Inspection Station',  N'Tray lock/inspection (disposition/vision/sort variants)');
 GO
 
+-- Thin pointer: terminal -> UDT instance. OPC addressing lives on the UDT
+-- instance's params in the MPP tag provider, NOT here.
 IF OBJECT_ID(N'Location.TerminalPlcDevice') IS NULL
 CREATE TABLE Location.TerminalPlcDevice (
     Id                  BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_TerminalPlcDevice PRIMARY KEY,
     TerminalLocationId  BIGINT        NOT NULL CONSTRAINT FK_TerminalPlcDevice_Terminal   REFERENCES Location.Location(Id),
     PlcDeviceTypeId     BIGINT        NOT NULL CONSTRAINT FK_TerminalPlcDevice_DeviceType REFERENCES Location.PlcDeviceType(Id),
     DeviceCode          NVARCHAR(100) NOT NULL,
-    OpcServerConnection NVARCHAR(200) NOT NULL CONSTRAINT DF_TerminalPlcDevice_OpcServer DEFAULT N'Ignition OPC UA Server',
-    DeviceName          NVARCHAR(200) NOT NULL,
-    BasePath            NVARCHAR(400) NOT NULL CONSTRAINT DF_TerminalPlcDevice_BasePath DEFAULT N'',
-    IsSimulated         BIT           NOT NULL CONSTRAINT DF_TerminalPlcDevice_IsSim DEFAULT 0,
-    WriteDisplayEnabled BIT           NOT NULL CONSTRAINT DF_TerminalPlcDevice_WriteDisp DEFAULT 0,
+    UdtInstancePath     NVARCHAR(400) NOT NULL,
     SortOrder           INT           NOT NULL CONSTRAINT DF_TerminalPlcDevice_SortOrder DEFAULT 0,
     CreatedAt           DATETIME2(3)  NOT NULL CONSTRAINT DF_TerminalPlcDevice_CreatedAt DEFAULT SYSUTCDATETIME(),
     UpdatedAt           DATETIME2(3)  NULL,
@@ -245,8 +242,8 @@ git commit -m "feat(plc): migration 0037 - PlcDeviceType, TerminalPlcDevice, Ite
 **Interfaces:**
 - Consumes: `Location.PlcDeviceType`, `Location.TerminalPlcDevice`, `Location.Location` (Terminal = LocationTypeDefinitionId 7), `Audit.Audit_LogConfigChange`/`_LogFailure`.
 - Produces:
-  - `Location.TerminalPlcDevice_Save(@Id BIGINT=NULL, @TerminalLocationId BIGINT, @PlcDeviceTypeId BIGINT, @DeviceCode NVARCHAR(100), @OpcServerConnection NVARCHAR(200)=N'Ignition OPC UA Server', @DeviceName NVARCHAR(200), @BasePath NVARCHAR(400)=N'', @IsSimulated BIT=0, @WriteDisplayEnabled BIT=0, @SortOrder INT=NULL, @AppUserId BIGINT)` → status row `Status,Message,NewId`. `@Id` NULL = insert, non-null = update.
-  - `Location.TerminalPlcDevice_GetByTerminal(@TerminalLocationId BIGINT)` → rows `Id, TerminalLocationId, PlcDeviceTypeId, DeviceTypeCode, DeviceTypeName, DeviceCode, OpcServerConnection, DeviceName, BasePath, IsSimulated, WriteDisplayEnabled, SortOrder` (active only, ordered by SortOrder).
+  - `Location.TerminalPlcDevice_Save(@Id BIGINT=NULL, @TerminalLocationId BIGINT, @PlcDeviceTypeId BIGINT, @DeviceCode NVARCHAR(100), @UdtInstancePath NVARCHAR(400), @SortOrder INT=NULL, @AppUserId BIGINT)` → status row `Status,Message,NewId`. `@Id` NULL = insert, non-null = update.
+  - `Location.TerminalPlcDevice_GetByTerminal(@TerminalLocationId BIGINT)` → rows `Id, TerminalLocationId, PlcDeviceTypeId, DeviceTypeCode, DeviceTypeName, DeviceCode, UdtInstancePath, SortOrder` (active only, ordered by SortOrder).
 
 - [ ] **Step 1: Write the failing test** — `sql/tests/0037_PlcIntegration/020_TerminalPlcDevice_crud.sql`
 
@@ -274,8 +271,7 @@ DECLARE @typeId BIGINT = (SELECT Id FROM Location.PlcDeviceType WHERE Code = N'S
 CREATE TABLE #R1 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R1 EXEC Location.TerminalPlcDevice_Save
     @Id=NULL, @TerminalLocationId=@termId, @PlcDeviceTypeId=@typeId,
-    @DeviceCode=N'5G0_A1', @OpcServerConnection=N'TopServer', @DeviceName=N'5G0_A1',
-    @BasePath=N'5G0_A1.5G0_A1', @IsSimulated=0, @WriteDisplayEnabled=0, @AppUserId=1;
+    @DeviceCode=N'5G0_A1', @UdtInstancePath=N'[MPP]PlcDevices/5G0_A1', @AppUserId=1;
 SELECT @S=Status, @M=Message, @NewId=NewId FROM #R1; DROP TABLE #R1;
 
 EXEC test.Assert_IsEqual @TestName=N'Save insert: status 1', @Expected=N'1', @Actual=CAST(@S AS NVARCHAR(1));
@@ -292,14 +288,14 @@ DECLARE @typeId BIGINT = (SELECT Id FROM Location.PlcDeviceType WHERE Code = N'S
 CREATE TABLE #R2 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R2 EXEC Location.TerminalPlcDevice_Save
     @Id=NULL, @TerminalLocationId=@termId, @PlcDeviceTypeId=@typeId,
-    @DeviceCode=N'5G0_A1', @DeviceName=N'5G0_A1', @AppUserId=1;
+    @DeviceCode=N'5G0_A1', @UdtInstancePath=N'[MPP]PlcDevices/5G0_A1', @AppUserId=1;
 SELECT @S=Status, @M=Message FROM #R2; DROP TABLE #R2;
 EXEC test.Assert_IsEqual @TestName=N'Save dup DeviceCode: status 0', @Expected=N'0', @Actual=CAST(@S AS NVARCHAR(1));
 EXEC test.Assert_Contains @TestName=N'Save dup DeviceCode: message mentions exists',
     @HaystackStr=@M, @NeedleStr=N'already';
 GO
 
--- Test 3: Update existing row (swing sim -> real via @Id)
+-- Test 3: Update existing row (repoint instance path via @Id)
 DECLARE @S BIT, @M NVARCHAR(500);
 DECLARE @termId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TEST-TPD-TERM');
 DECLARE @typeId BIGINT = (SELECT Id FROM Location.PlcDeviceType WHERE Code = N'SerializedMipStation');
@@ -307,20 +303,18 @@ DECLARE @rowId BIGINT = (SELECT Id FROM Location.TerminalPlcDevice WHERE DeviceC
 CREATE TABLE #R3 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R3 EXEC Location.TerminalPlcDevice_Save
     @Id=@rowId, @TerminalLocationId=@termId, @PlcDeviceTypeId=@typeId,
-    @DeviceCode=N'5G0_A1', @OpcServerConnection=N'Ignition OPC UA Server',
-    @DeviceName=N'MPP_Sim', @BasePath=N'5G0_A1', @IsSimulated=1, @AppUserId=1;
+    @DeviceCode=N'5G0_A1', @UdtInstancePath=N'[MPP]PlcDevices/5G0_A1_v2', @AppUserId=1;
 SELECT @S=Status, @M=Message FROM #R3; DROP TABLE #R3;
 EXEC test.Assert_IsEqual @TestName=N'Save update: status 1', @Expected=N'1', @Actual=CAST(@S AS NVARCHAR(1));
-EXEC test.Assert_IsEqual @TestName=N'Save update: DeviceName now MPP_Sim',
-    @Expected=N'MPP_Sim', @Actual=(SELECT DeviceName FROM Location.TerminalPlcDevice WHERE Id=@rowId);
+EXEC test.Assert_IsEqual @TestName=N'Save update: UdtInstancePath repointed',
+    @Expected=N'[MPP]PlcDevices/5G0_A1_v2', @Actual=(SELECT UdtInstancePath FROM Location.TerminalPlcDevice WHERE Id=@rowId);
 GO
 
 -- Test 4: GetByTerminal returns the active row joined to type
 DECLARE @termId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TEST-TPD-TERM');
 CREATE TABLE #G (Id BIGINT, TerminalLocationId BIGINT, PlcDeviceTypeId BIGINT,
     DeviceTypeCode NVARCHAR(50), DeviceTypeName NVARCHAR(100), DeviceCode NVARCHAR(100),
-    OpcServerConnection NVARCHAR(200), DeviceName NVARCHAR(200), BasePath NVARCHAR(400),
-    IsSimulated BIT, WriteDisplayEnabled BIT, SortOrder INT);
+    UdtInstancePath NVARCHAR(400), SortOrder INT);
 INSERT INTO #G EXEC Location.TerminalPlcDevice_GetByTerminal @TerminalLocationId=@termId;
 DECLARE @rc INT = (SELECT COUNT(*) FROM #G);
 DECLARE @tc NVARCHAR(50) = (SELECT TOP 1 DeviceTypeCode FROM #G);
@@ -352,10 +346,11 @@ Expected: FAIL — `Could not find stored procedure 'Location.TerminalPlcDevice_
 -- Procedure:   Location.TerminalPlcDevice_Save
 -- Author:      Blue Ridge Automation
 -- Version:     1.0
--- Description: Upsert a terminal->PLC-device mapping row. @Id NULL = insert,
+-- Description: Upsert a terminal->UDT-instance pointer row. @Id NULL = insert,
 --   non-null = update. Validates terminal exists + is a Terminal (DefId 7),
 --   device type exists, DeviceCode unique among the terminal's active devices.
---   Auto-assigns SortOrder = MAX(active peers)+1 on insert.
+--   Auto-assigns SortOrder = MAX(active peers)+1 on insert. OPC addressing is
+--   NOT stored here - it lives on the UDT instance's params in the tag provider.
 -- Result set: Status BIT, Message NVARCHAR(500), NewId BIGINT.
 -- =============================================
 CREATE OR ALTER PROCEDURE Location.TerminalPlcDevice_Save
@@ -363,11 +358,7 @@ CREATE OR ALTER PROCEDURE Location.TerminalPlcDevice_Save
     @TerminalLocationId  BIGINT,
     @PlcDeviceTypeId     BIGINT,
     @DeviceCode          NVARCHAR(100),
-    @OpcServerConnection NVARCHAR(200) = N'Ignition OPC UA Server',
-    @DeviceName          NVARCHAR(200),
-    @BasePath            NVARCHAR(400) = N'',
-    @IsSimulated         BIT           = 0,
-    @WriteDisplayEnabled BIT           = 0,
+    @UdtInstancePath     NVARCHAR(400),
     @SortOrder           INT           = NULL,
     @AppUserId           BIGINT
 AS
@@ -382,14 +373,12 @@ BEGIN
     DECLARE @ProcName NVARCHAR(200) = N'Location.TerminalPlcDevice_Save';
     DECLARE @Params   NVARCHAR(MAX) =
         (SELECT @Id AS Id, @TerminalLocationId AS TerminalLocationId, @PlcDeviceTypeId AS PlcDeviceTypeId,
-                @DeviceCode AS DeviceCode, @OpcServerConnection AS OpcServerConnection,
-                @DeviceName AS DeviceName, @BasePath AS BasePath, @IsSimulated AS IsSimulated,
-                @WriteDisplayEnabled AS WriteDisplayEnabled
+                @DeviceCode AS DeviceCode, @UdtInstancePath AS UdtInstancePath
          FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
     BEGIN TRY
         IF @TerminalLocationId IS NULL OR @PlcDeviceTypeId IS NULL OR @DeviceCode IS NULL
-           OR @DeviceName IS NULL OR @AppUserId IS NULL
+           OR @UdtInstancePath IS NULL OR @AppUserId IS NULL
         BEGIN
             SET @Message = N'Required parameter missing.';
             EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'TerminalPlcDevice',
@@ -433,7 +422,7 @@ BEGIN
         DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(
             N'Terminal device ' + @DeviceCode + N' ' + Audit.ufn_MidDot()
             + CASE WHEN @Id IS NULL THEN N' Created' ELSE N' Updated' END
-            + N' (' + @DeviceName + N')');
+            + N' (' + @UdtInstancePath + N')');
 
         BEGIN TRANSACTION;
 
@@ -444,11 +433,9 @@ BEGIN
                  WHERE TerminalLocationId=@TerminalLocationId AND DeprecatedAt IS NULL));
 
             INSERT INTO Location.TerminalPlcDevice
-                (TerminalLocationId, PlcDeviceTypeId, DeviceCode, OpcServerConnection, DeviceName,
-                 BasePath, IsSimulated, WriteDisplayEnabled, SortOrder, CreatedAt)
+                (TerminalLocationId, PlcDeviceTypeId, DeviceCode, UdtInstancePath, SortOrder, CreatedAt)
             VALUES
-                (@TerminalLocationId, @PlcDeviceTypeId, @DeviceCode, @OpcServerConnection, @DeviceName,
-                 @BasePath, @IsSimulated, @WriteDisplayEnabled, @Next, SYSUTCDATETIME());
+                (@TerminalLocationId, @PlcDeviceTypeId, @DeviceCode, @UdtInstancePath, @Next, SYSUTCDATETIME());
 
             SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
 
@@ -465,8 +452,7 @@ BEGIN
 
             UPDATE Location.TerminalPlcDevice
             SET PlcDeviceTypeId=@PlcDeviceTypeId, DeviceCode=@DeviceCode,
-                OpcServerConnection=@OpcServerConnection, DeviceName=@DeviceName, BasePath=@BasePath,
-                IsSimulated=@IsSimulated, WriteDisplayEnabled=@WriteDisplayEnabled,
+                UdtInstancePath=@UdtInstancePath,
                 SortOrder=COALESCE(@SortOrder, SortOrder),
                 UpdatedAt=SYSUTCDATETIME(), UpdatedByUserId=@AppUserId
             WHERE Id=@Id;
@@ -521,11 +507,7 @@ BEGIN
         t.Code                  AS DeviceTypeCode,
         t.Name                  AS DeviceTypeName,
         d.DeviceCode,
-        d.OpcServerConnection,
-        d.DeviceName,
-        d.BasePath,
-        d.IsSimulated,
-        d.WriteDisplayEnabled,
+        d.UdtInstancePath,
         d.SortOrder
     FROM Location.TerminalPlcDevice d
     INNER JOIN Location.PlcDeviceType t ON t.Id = d.PlcDeviceTypeId
@@ -575,8 +557,7 @@ EXEC test.Assert_IsNotNull @TestName=N'Deprecate: DeprecatedAt set',
 
 CREATE TABLE #G5 (Id BIGINT, TerminalLocationId BIGINT, PlcDeviceTypeId BIGINT,
     DeviceTypeCode NVARCHAR(50), DeviceTypeName NVARCHAR(100), DeviceCode NVARCHAR(100),
-    OpcServerConnection NVARCHAR(200), DeviceName NVARCHAR(200), BasePath NVARCHAR(400),
-    IsSimulated BIT, WriteDisplayEnabled BIT, SortOrder INT);
+    UdtInstancePath NVARCHAR(400), SortOrder INT);
 INSERT INTO #G5 EXEC Location.TerminalPlcDevice_GetByTerminal @TerminalLocationId=@termId;
 DECLARE @rc5 INT = (SELECT COUNT(*) FROM #G5); DROP TABLE #G5;
 EXEC test.Assert_IsEqual @TestName=N'Deprecate: GetByTerminal now 0 rows', @Expected=N'0', @Actual=CAST(@rc5 AS NVARCHAR(10));

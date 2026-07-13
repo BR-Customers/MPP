@@ -49,7 +49,7 @@ Two orthogonal layers per Ignition 8.3:
 - **Device layer** — Gateway → OPC Connections. Each PLC / scale / OPC-UA-server is a named "device". Ignition addresses tags as `[DeviceName]path/inside/device.tagname`.
 - **Tag layer (UDTs)** — Definitions are per functional pattern (Scale, SerializedMip, NonSerializedMip, TrayInspection). Members' OPC item paths reference **parameters** in `{ParamName}` syntax, substituted at runtime. **One definition services any device that speaks the pattern.**
 
-**Three UDT parameters** (map 1:1 to the SQL columns in §4.2; verified parameterizable incl. `opcServer`):
+**Three UDT parameters** (set on each instance at creation in the `MPP` tag provider — the DB does NOT store these; verified parameterizable incl. `opcServer`):
 
 - **`{OpcServer}`** — the Ignition OPC **server connection** name. Default `Ignition OPC UA Server` (hosts both the Programmable Device Simulator *and* the native AB/Mitsubishi driver devices); `TopServer` / `OmniServer` for the Phase-1 external OPC-UA connections. Bound on each OPC member as `"opcServer": {"bindType": "parameter", "binding": "{OpcServer}"}`.
 - **`{Device}`** — the device name *within* that server (e.g. `MPP_Sim`, `5G0_A1`).
@@ -155,27 +155,26 @@ Tag artifacts are committed under `ignition/tags/` and imported at deploy (Desig
 
 Fixed-seed lookup of the 4 UDT types. `Id, Code, Name, DeprecatedAt`. Codes: `ScaleStation`, `SerializedMipStation`, `NonSerializedMipStation`, `TrayInspectionStation`.
 
-### 4.2 `Location.TerminalPlcDevice` (1-to-many mapping — the heart of D1+D3)
+### 4.2 `Location.TerminalPlcDevice` (thin pointer: terminal → UDT instance, 1-to-many)
 
-One row per PLC device a terminal drives.
+**The DB does not hold OPC addressing.** The UDT *instance* carries its own `{OpcServer}`/`{Device}`/`{BasePath}` parameters (set at instance creation in the `MPP` tag provider; Ignition builds the OPC item path from them, per the reference `SampleUDT.json`/instance). The DB's only job is to answer "which UDT instance(s) does this terminal drive" — a **pointer**, one row per device.
 
 | Column | Type | Notes |
 |---|---|---|
 | `Id` | BIGINT IDENTITY PK | |
 | `TerminalLocationId` | BIGINT FK → Location | the Terminal (DefId 7) |
-| `PlcDeviceTypeId` | BIGINT FK → PlcDeviceType | which UDT type |
-| `DeviceCode` | NVARCHAR | stable logical identity, e.g. `5G0_A1`, `59B_1_FP_1` (does not change sim↔prod) |
-| `OpcServerConnection` | NVARCHAR | → UDT `{OpcServer}` param. `Ignition OPC UA Server` (sim + native drivers) / `TopServer` / `OmniServer`. Default `Ignition OPC UA Server`. |
-| `DeviceName` | NVARCHAR | → UDT `{Device}` param — the device *within* the server. `MPP_Sim` in dev; the real device (e.g. `5G0_A1`) in prod. |
-| `BasePath` | NVARCHAR | → UDT `{BasePath}` param — address inside the device up to (not incl.) the member. |
-| `IsSimulated` | BIT | convenience flag = (`DeviceName` = `MPP_Sim`); lets reads filter dev vs live at a glance |
-| `WriteDisplayEnabled` | BIT | gates the HMI-display writes (§5.1); default 0 (Perspective is the operator surface) |
+| `PlcDeviceTypeId` | BIGINT FK → PlcDeviceType | UDT type — for UI grouping + which sim scenarios apply (stable metadata, not addressing) |
+| `DeviceCode` | NVARCHAR(100) | short human label / per-terminal unique key, e.g. `5G0_A1` |
+| `UdtInstancePath` | NVARCHAR(400) | **the pointer** — full tag path to the UDT instance in the `MPP` provider, e.g. `[MPP]PlcDevices/5G0_A1`. Stable sim↔prod (the instance is re-parameterized, not the pointer). |
 | `SortOrder` | INT | display order per terminal |
 | `CreatedAt/UpdatedAt/UpdatedByUserId/DeprecatedAt` | — | standard |
 
-The three OPC columns (`OpcServerConnection` / `DeviceName` / `BasePath`) feed the three UDT-instance parameters 1:1, so `onStartup` can hand the watcher exactly what it needs to address the instance. (`OpcServerConnection` is the completion of the earlier `OpcServerName`→`DeviceName` rename — the rename split one mislabelled column into the two distinct concepts Ignition actually needs: the server *connection* and the device *within* it.)
+**What moved out of the DB (and where it went):**
+- OPC addressing (`{OpcServer}`/`{Device}`/`{BasePath}`) → the **UDT instance parameters** in the tag provider. Single source of truth; no duplication. Sim vs prod = re-parameterize the instance's `{Device}` (e.g. `MPP_Sim` → `5G0_A1`); the DB pointer never changes.
+- `WriteDisplayEnabled` (HMI-display gating, §5.1) → a **memory-tag member on the UDT** (per-device config that lives with the device), not a DB column.
+- `IsSimulated` → gone; sim state is an instance-parameter concern, not DB.
 
-Rationale for a dedicated table over overloading `LocationAttribute`: `LocationAttribute` is 1 value per (Location, Definition); D3 needs many devices per terminal with several typed columns each. Follows the typed-FK convention (`sql_best_practices_mes.md`).
+Rationale for a dedicated table over `LocationAttribute`: a terminal drives *many* devices (D3), so a 1-to-many child table is the right shape; and the pointer's a stable string, cleanly a column. Follows the typed-FK convention (`sql_best_practices_mes.md`).
 
 Procs (mutation procs return `SELECT @Status,@Message,@NewId`; no OUTPUT params — FDS-11-011):
 - `Location.TerminalPlcDevice_Save` (insert/update)
@@ -194,7 +193,7 @@ The PLC/vision uses **line-local integer codes** (1/2/3) mapped to Items by the 
 
 ### 4.4 `onStartup` resolution
 
-Extend `onStartup.py` after terminal/printer resolution: call `TerminalPlcDevice_GetByTerminal(terminalLocationId)` and populate `session.custom.plcDevices` = list of `{deviceCode, type, opcServer, baseTagPath, isSimulated}`. Views/watchers read from there. (No business logic in Python — pure plumbing.)
+Extend `onStartup.py` after terminal/printer resolution: call `TerminalPlcDevice_GetByTerminal(terminalLocationId)` and populate `session.custom.plcDevices` = list of `{deviceCode, deviceType, udtInstancePath}`. Views/watchers bind directly to the `udtInstancePath` (the instance already carries its OPC params). (No business logic in Python — pure plumbing.)
 
 ---
 
@@ -233,7 +232,7 @@ The legacy write-tag set mixes two purposes; blindly copying it into the new sys
 
 Rationale: the 5A2 lines use Pro-face LT3300 HMIs and the 5G0 lines use dedicated MIP HMIs — legacy MES had to write alarm/display state to the PLC because the operator's screen was the HMI. Under the new architecture, **Perspective is the operator surface** at every PLC-integrated station, so alarm/display state is rendered by Perspective from MES state directly.
 
-**Concrete rule:** each "HMI display" member declared in the UDT gets a per-instance `writeDisplayEnabled` flag (a Boolean column on `TerminalPlcDevice`). Off by default; on only where the legacy HMI is retained. The watchers check the flag before writing.
+**Concrete rule:** the UDT carries a `WriteDisplayEnabled` **memory-tag member** (per-instance config that lives with the device). Off by default; on only where the legacy HMI is retained. The watchers check the member before writing any HMI-display member.
 
 ### 5.2 Legacy business logic worth flagging (things we don't fully have eyes on)
 
