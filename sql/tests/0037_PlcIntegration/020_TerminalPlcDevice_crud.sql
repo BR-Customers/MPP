@@ -34,16 +34,18 @@ EXEC test.Assert_IsEqual @TestName=N'Save insert: SortOrder auto = 1', @Expected
 GO
 
 -- Test 2: Duplicate DeviceCode on same terminal is rejected
-DECLARE @S BIT, @M NVARCHAR(500);
+DECLARE @S BIT, @M NVARCHAR(500), @NewId BIGINT;
 DECLARE @termId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TEST-TPD-TERM');
 DECLARE @typeId BIGINT = (SELECT Id FROM Location.PlcDeviceType WHERE Code = N'SerializedMipStation');
 CREATE TABLE #R2 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R2 EXEC Location.TerminalPlcDevice_Save
     @Id=NULL, @TerminalLocationId=@termId, @PlcDeviceTypeId=@typeId,
     @DeviceCode=N'5G0_A1', @UdtInstancePath=N'[MPP]PlcDevices/5G0_A1', @AppUserId=1;
-SELECT @S=Status, @M=Message FROM #R2; DROP TABLE #R2;
+SELECT @S=Status, @M=Message, @NewId=NewId FROM #R2; DROP TABLE #R2;
 DECLARE @SStr NVARCHAR(1) = CAST(@S AS NVARCHAR(1));
 EXEC test.Assert_IsEqual @TestName=N'Save dup DeviceCode: status 0', @Expected=N'0', @Actual=@SStr;
+DECLARE @NullId NVARCHAR(1) = CASE WHEN @NewId IS NULL THEN N'1' ELSE N'0' END;
+EXEC test.Assert_IsEqual @TestName=N'Save dup DeviceCode: NewId is NULL', @Expected=N'1', @Actual=@NullId;
 EXEC test.Assert_Contains @TestName=N'Save dup DeviceCode: message mentions exists',
     @HaystackStr=@M, @NeedleStr=N'already';
 GO
@@ -56,13 +58,15 @@ DECLARE @rowId BIGINT = (SELECT Id FROM Location.TerminalPlcDevice WHERE DeviceC
 CREATE TABLE #R3 (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R3 EXEC Location.TerminalPlcDevice_Save
     @Id=@rowId, @TerminalLocationId=@termId, @PlcDeviceTypeId=@typeId,
-    @DeviceCode=N'5G0_A1', @UdtInstancePath=N'[MPP]PlcDevices/5G0_A1_v2', @AppUserId=1;
+    @DeviceCode=N'5G0_A1', @UdtInstancePath=N'[MPP]PlcDevices/5G0_A1_v2', @SortOrder=7, @AppUserId=1;
 SELECT @S=Status, @M=Message FROM #R3; DROP TABLE #R3;
 DECLARE @SStr NVARCHAR(1) = CAST(@S AS NVARCHAR(1));
 EXEC test.Assert_IsEqual @TestName=N'Save update: status 1', @Expected=N'1', @Actual=@SStr;
 DECLARE @Path NVARCHAR(400) = (SELECT UdtInstancePath FROM Location.TerminalPlcDevice WHERE Id=@rowId);
 EXEC test.Assert_IsEqual @TestName=N'Save update: UdtInstancePath repointed',
     @Expected=N'[MPP]PlcDevices/5G0_A1_v2', @Actual=@Path;
+DECLARE @SortU NVARCHAR(10) = CAST((SELECT SortOrder FROM Location.TerminalPlcDevice WHERE Id=@rowId) AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName=N'Save update: SortOrder override applied', @Expected=N'7', @Actual=@SortU;
 GO
 
 -- Test 4: GetByTerminal returns the active row joined to type

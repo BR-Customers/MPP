@@ -31,6 +31,8 @@ BEGIN
         (SELECT @Id AS Id, @TerminalLocationId AS TerminalLocationId, @PlcDeviceTypeId AS PlcDeviceTypeId,
                 @DeviceCode AS DeviceCode, @UdtInstancePath AS UdtInstancePath
          FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+    -- Audit event reflects the actual operation (insert vs update) on failure logs too.
+    DECLARE @EvtCode NVARCHAR(20) = CASE WHEN @Id IS NULL THEN N'Created' ELSE N'Updated' END;
 
     BEGIN TRY
         IF @TerminalLocationId IS NULL OR @PlcDeviceTypeId IS NULL OR @DeviceCode IS NULL
@@ -38,7 +40,7 @@ BEGIN
         BEGIN
             SET @Message = N'Required parameter missing.';
             EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'TerminalPlcDevice',
-                @EntityId=NULL, @LogEventTypeCode=N'Created', @FailureReason=@Message,
+                @EntityId=NULL, @LogEventTypeCode=@EvtCode, @FailureReason=@Message,
                 @ProcedureName=@ProcName, @AttemptedParameters=@Params;
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId; RETURN;
         END
@@ -49,7 +51,7 @@ BEGIN
         BEGIN
             SET @Message = N'TerminalLocationId is not an active Terminal location.';
             EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'TerminalPlcDevice',
-                @EntityId=NULL, @LogEventTypeCode=N'Created', @FailureReason=@Message,
+                @EntityId=NULL, @LogEventTypeCode=@EvtCode, @FailureReason=@Message,
                 @ProcedureName=@ProcName, @AttemptedParameters=@Params;
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId; RETURN;
         END
@@ -58,7 +60,7 @@ BEGIN
         BEGIN
             SET @Message = N'PlcDeviceTypeId not found or deprecated.';
             EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'TerminalPlcDevice',
-                @EntityId=NULL, @LogEventTypeCode=N'Created', @FailureReason=@Message,
+                @EntityId=NULL, @LogEventTypeCode=@EvtCode, @FailureReason=@Message,
                 @ProcedureName=@ProcName, @AttemptedParameters=@Params;
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId; RETURN;
         END
@@ -70,7 +72,7 @@ BEGIN
         BEGIN
             SET @Message = N'A device with this DeviceCode already exists on this terminal.';
             EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'TerminalPlcDevice',
-                @EntityId=NULL, @LogEventTypeCode=N'Created', @FailureReason=@Message,
+                @EntityId=NULL, @LogEventTypeCode=@EvtCode, @FailureReason=@Message,
                 @ProcedureName=@ProcName, @AttemptedParameters=@Params;
             SELECT @Status AS Status, @Message AS Message, @NewId AS NewId; RETURN;
         END
@@ -132,7 +134,7 @@ BEGIN
         SET @Status=0; SET @Message=N'Unexpected error: ' + LEFT(@ErrMsg,400); SET @NewId=NULL;
         BEGIN TRY
             EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'TerminalPlcDevice',
-                @EntityId=NULL, @LogEventTypeCode=N'Created', @FailureReason=@Message,
+                @EntityId=NULL, @LogEventTypeCode=@EvtCode, @FailureReason=@Message,
                 @ProcedureName=@ProcName, @AttemptedParameters=@Params;
         END TRY BEGIN CATCH END CATCH
         SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
