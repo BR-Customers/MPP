@@ -105,7 +105,7 @@
       "viewPath": "BlueRidge/Views/ShopFloor/TerminalSelector"
     },
     "/shop-floor/trace": {
-      "title": "Track & Trace",
+      "title": "Track \u0026 Trace",
       "viewPath": "BlueRidge/Views/ShopFloor/GlobalTrace"
     },
     "/shop-floor/trim": {
