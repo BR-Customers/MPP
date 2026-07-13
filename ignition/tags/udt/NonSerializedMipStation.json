@@ -1,0 +1,111 @@
+{
+  "name": "NonSerializedMipStation",
+  "parameters": {
+    "BasePath": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Device": {
+      "dataType": "String",
+      "value": "MPP_Sim"
+    },
+    "OpcServer": {
+      "dataType": "String",
+      "value": "Ignition OPC UA Server"
+    }
+  },
+  "tagType": "UdtType",
+  "tags": [
+    {
+      "dataType": "Boolean",
+      "name": "DataReady",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}DataReady"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Boolean",
+      "name": "TransInProc",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}TransInProc"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Boolean",
+      "name": "PartValid",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}PartValid"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Int4",
+      "name": "PartType",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}PartType"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Int4",
+      "name": "MESAlarmType",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}MESAlarmType"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "String",
+      "name": "MESAlarmText",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}MESAlarmText"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Boolean",
+      "defaultValue": false,
+      "name": "WriteDisplayEnabled",
+      "tagType": "AtomicTag",
+      "valueSource": "memory"
+    }
+  ]
+}

@@ -1,0 +1,363 @@
+{
+  "name": "TrayInspectionStation",
+  "parameters": {
+    "BasePath": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Device": {
+      "dataType": "String",
+      "value": "MPP_Sim"
+    },
+    "OpcServer": {
+      "dataType": "String",
+      "value": "Ignition OPC UA Server"
+    }
+  },
+  "tagType": "UdtType",
+  "tags": [
+    {
+      "dataType": "Boolean",
+      "name": "TrayLocked",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}TrayLocked"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Boolean",
+      "name": "InspectionComplete",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}InspectionComplete"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Int4",
+      "name": "PartNumber",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}PartNumber"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Int4",
+      "name": "VisionPartNumber",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}VisionPartNumber"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Boolean",
+      "name": "PartDisposition01",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}PartDisposition01"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Boolean",
+      "name": "PartDisposition02",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}PartDisposition02"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Boolean",
+      "name": "PartDisposition03",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}PartDisposition03"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Boolean",
+      "name": "PartDisposition04",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}PartDisposition04"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Boolean",
+      "name": "PartDisposition05",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}PartDisposition05"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Boolean",
+      "name": "PartDisposition06",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}PartDisposition06"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Boolean",
+      "name": "PartDisposition07",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}PartDisposition07"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Boolean",
+      "name": "PartDisposition08",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}PartDisposition08"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Boolean",
+      "name": "PartDisposition09",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}PartDisposition09"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Boolean",
+      "name": "PartDisposition10",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}PartDisposition10"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Boolean",
+      "name": "PartDisposition11",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}PartDisposition11"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Boolean",
+      "name": "PartDisposition12",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}PartDisposition12"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Boolean",
+      "name": "PartDisposition13",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}PartDisposition13"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Boolean",
+      "name": "PartDisposition14",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}PartDisposition14"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Boolean",
+      "name": "PartDisposition15",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}PartDisposition15"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Boolean",
+      "name": "PartDisposition16",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}PartDisposition16"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Boolean",
+      "name": "PartDisposition17",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}PartDisposition17"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Boolean",
+      "name": "PartDisposition18",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}PartDisposition18"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Boolean",
+      "name": "OkToContinue",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}OkToContinue"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "String",
+      "name": "ContainerName",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}ContainerName"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Boolean",
+      "defaultValue": false,
+      "name": "WriteDisplayEnabled",
+      "tagType": "AtomicTag",
+      "valueSource": "memory"
+    }
+  ]
+}
