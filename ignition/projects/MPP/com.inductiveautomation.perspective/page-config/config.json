@@ -4,6 +4,10 @@
       "title": "MPP MES",
       "viewPath": "BlueRidge/Views/ShopFloor/HomeRouter"
     },
+    "/dev/launcher": {
+      "title": "Dev Launcher",
+      "viewPath": "BlueRidge/Views/Dev/DevLauncher"
+    },
     "/dev/test-nav": {
       "title": "Dev Nav",
       "viewPath": "BlueRidge/Views/Dev/TestNavHeader"
@@ -56,6 +60,10 @@
       "title": "Hold Management",
       "viewPath": "BlueRidge/Views/ShopFloor/HoldManagement"
     },
+    "/shop-floor/inspection": {
+      "title": "Inspection",
+      "viewPath": "BlueRidge/Views/ShopFloor/InspectionEntry"
+    },
     "/shop-floor/lot-detail/:lotId": {
       "title": "LOT Detail",
       "viewPath": "BlueRidge/Views/ShopFloor/LotDetail"
@@ -95,6 +103,10 @@
     "/shop-floor/terminal-selector": {
       "title": "Select Terminal",
       "viewPath": "BlueRidge/Views/ShopFloor/TerminalSelector"
+    },
+    "/shop-floor/trace": {
+      "title": "Track \u0026 Trace",
+      "viewPath": "BlueRidge/Views/ShopFloor/GlobalTrace"
     },
     "/shop-floor/trim": {
       "title": "Trim Station",

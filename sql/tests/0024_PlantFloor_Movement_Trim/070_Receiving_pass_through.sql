@@ -22,13 +22,18 @@ DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId IN (SELECT Id FROM Lots
 DELETE FROM Lots.Lot WHERE LotName LIKE N'MESL%';
 GO
 
-DECLARE @Dock BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'DC1-M05');
+-- Receiving fixture: a purchased (uncapped) part received with a vendor LOT + serial
+-- range. 21001 pin is eligible at MA1/MA2 (stands in for the Receiving Dock here);
+-- uncapped MaxLotSize lets the 100-pc receipt through.
+DECLARE @ItemId BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'21001 pin');
+DECLARE @Dock BIGINT = (SELECT TOP 1 eil.LocationId FROM Parts.v_EffectiveItemLocation eil
+                        WHERE eil.ItemId = @ItemId ORDER BY eil.LocationId);
 DECLARE @OriginRcv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
 
 DECLARE @S BIT, @L BIGINT;
 CREATE TABLE #C (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
 INSERT INTO #C EXEC Lots.Lot_Create
-    @ItemId = 1, @LotOriginTypeId = @OriginRcv, @CurrentLocationId = @Dock, @PieceCount = 100,
+    @ItemId = @ItemId, @LotOriginTypeId = @OriginRcv, @CurrentLocationId = @Dock, @PieceCount = 100,
     @VendorLotNumber = N'VEND-LOT-7788', @MinSerialNumber = 5000, @MaxSerialNumber = 5099, @AppUserId = 1;
 SELECT @S = Status, @L = NewId FROM #C; DROP TABLE #C;
 

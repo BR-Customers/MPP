@@ -206,6 +206,37 @@
                 "borderRadius": "999px"
               }
             }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "CrtPill"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "coalesce({view.custom.lot.CrtActive}, false)"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "CRT Active",
+              "style": {
+                "classes": "pf-pill pf-pill-hold",
+                "fontSize": "13px",
+                "fontWeight": "700",
+                "padding": "4px 12px",
+                "borderRadius": "999px",
+                "textTransform": "uppercase"
+              }
+            }
           }
         ]
       },
@@ -836,7 +867,7 @@
                           "transforms": [
                             {
                               "type": "script",
-                              "code": "\trows = value or []\n\tout = []\n\tfor r in rows:\n\t\tr = BlueRidge.Common.Util.extractQualifiedValues(r) or {}\n\t\tout.append({'row': r})\n\treturn out"
+                              "code": "\treturn BlueRidge.Lots.Lot.mapHistoryInstances(value)"
                             }
                           ]
                         }
@@ -1207,6 +1238,110 @@
                   "scope": "G",
                   "config": {
                     "script": "\tsystem.perspective.navigate(\"/\")"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "BtnInspections"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Inspections",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "toolTipText": "Open the Inspection terminal to record a quality sample against a LOT."
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.navigate(\"/shop-floor/inspection\")"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "BtnSetCrt"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "!isNull({view.custom.lot.Id}) && !coalesce({view.custom.lot.CrtActive}, false)"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Set CRT",
+              "style": {
+                "classes": "pf-btn pf-btn-elevated"
+              },
+              "toolTipText": "Place this LOT on a Controlled Run Tag (200% downstream inspection prompt)."
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tterm = self.session.custom.terminal\n\tresult = BlueRidge.Quality.Crt.setCrt(self.view.params.lotId, self.session.custom.appUserId, term.terminalLocationId if term else None)\n\tBlueRidge.Common.Ui.notifyResult(result, \"CRT\", result.get(\"Message\"))\n\tself.view.rootContainer.load()"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "BtnClearCrt"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "coalesce({view.custom.lot.CrtActive}, false)"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Clear CRT",
+              "style": {
+                "classes": "pf-btn pf-btn-elevated"
+              },
+              "toolTipText": "Release the Controlled Run Tag (supervisor clearance per FDS-04-007)."
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tterm = self.session.custom.terminal\n\tresult = BlueRidge.Quality.Crt.clearCrt(self.view.params.lotId, self.session.custom.appUserId, term.terminalLocationId if term else None)\n\tBlueRidge.Common.Ui.notifyResult(result, \"CRT\", result.get(\"Message\"))\n\tself.view.rootContainer.load()"
                   }
                 }
               }

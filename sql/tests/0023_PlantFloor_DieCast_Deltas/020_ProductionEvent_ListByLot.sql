@@ -33,7 +33,8 @@ DECLARE @DcsTemplate BIGINT = (SELECT TOP 1 Id FROM Parts.OperationTemplate WHER
 
 DECLARE @LotId BIGINT;
 CREATE TABLE #C (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
-INSERT INTO #C EXEC Lots.Lot_Create @ItemId=@ItemId, @LotOriginTypeId=@OriginRcv, @CurrentLocationId=@CellId, @PieceCount=100, @AppUserId=1;
+-- PieceCount 20 fits the picked die-cast casting's basket cap (5G0-c MaxLotSize 24).
+INSERT INTO #C EXEC Lots.Lot_Create @ItemId=@ItemId, @LotOriginTypeId=@OriginRcv, @CurrentLocationId=@CellId, @PieceCount=20, @AppUserId=1;
 SELECT @LotId = NewId FROM #C; DROP TABLE #C;
 
 -- two checkpoints, increasing cumulative shots

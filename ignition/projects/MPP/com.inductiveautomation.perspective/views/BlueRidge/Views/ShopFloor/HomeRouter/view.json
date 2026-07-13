@@ -159,6 +159,35 @@
                   "text": "Die Cast Entry"
                 },
                 "type": "ia.input.button"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tsystem.perspective.navigate(\"/shop-floor/trace\")"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "TileTrack"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-btn pf-btn-large pf-btn-secondary",
+                    "fontSize": "18px",
+                    "height": "62px",
+                    "minWidth": "220px"
+                  },
+                  "text": "Track & Trace"
+                },
+                "type": "ia.input.button"
               }
             ],
             "meta": {

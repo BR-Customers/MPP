@@ -1,5 +1,5 @@
 -- =============================================
--- Migration:   0037_plc_integration_foundation.sql
+-- Migration:   0038_plc_integration_foundation.sql
 -- Author:      Blue Ridge Automation
 -- Date:        2026-07-13
 -- Description: PLC-integration SQL foundation (spec 2026-07-10 §4).
@@ -71,13 +71,13 @@ IF COL_LENGTH(N'Parts.Item', N'PlcId') IS NULL
     ALTER TABLE Parts.Item ADD PlcId INT NULL;
 GO
 
-IF NOT EXISTS (SELECT 1 FROM Audit.LogEntityType WHERE Code = N'TerminalPlcDevice')
+IF NOT EXISTS (SELECT 1 FROM Audit.LogEntityType WHERE Id = 58 OR Code = N'TerminalPlcDevice')
 INSERT INTO Audit.LogEntityType (Id, Code, Name, Description) VALUES
-    (57, N'TerminalPlcDevice', N'Terminal PLC Device', N'Terminal-to-PLC-device mapping row');
+    (58, N'TerminalPlcDevice', N'Terminal PLC Device', N'Terminal-to-PLC-device mapping row');
 GO
 
-IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0037_plc_integration_foundation')
+IF NOT EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0038_plc_integration_foundation')
     INSERT INTO dbo.SchemaVersion (MigrationId, Description)
-    VALUES (N'0037_plc_integration_foundation',
-        N'PLC integration foundation: PlcDeviceType (+seed), TerminalPlcDevice, Item.PlcId, TerminalPlcDevice audit entity (Id 57).');
+    VALUES (N'0038_plc_integration_foundation',
+        N'PLC integration foundation: PlcDeviceType (+seed), TerminalPlcDevice, Item.PlcId, TerminalPlcDevice audit entity (Id 58).');
 GO

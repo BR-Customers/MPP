@@ -114,6 +114,18 @@
               }
             },
             "type": "ia.input.text-field"
+          },
+          {
+            "children": [],
+            "meta": {
+              "name": "ScanSpacer"
+            },
+            "position": {
+              "basis": "26px",
+              "shrink": 0
+            },
+            "props": {},
+            "type": "ia.container.flex"
           }
         ],
         "meta": {
@@ -157,7 +169,7 @@
           "style": {
             "classes": "pf-field-input",
             "textAlign": "center",
-            "width": "396px"
+            "width": "360px"
           }
         },
         "type": "ia.input.text-field"
@@ -185,7 +197,7 @@
           "props.data": {
             "binding": {
               "config": {
-                "expression": "runScript(\"BlueRidge.Location.Terminal.filterForSelector\", 0, {view.custom.terminals}, {view.custom.searchText})"
+                "expression": "runScript(\"BlueRidge.Location.Terminal.listForSelector\", 0, {view.custom.searchText})"
               },
               "type": "expr"
             }

@@ -1,8 +1,8 @@
 -- =============================================
--- File: 0037_PlcIntegration/010_schema.sql
--- Asserts migration 0037 objects exist + PlcDeviceType seed is correct.
+-- File: 0038_PlcIntegration/010_schema.sql
+-- Asserts migration 0038 objects exist + PlcDeviceType seed is correct.
 -- =============================================
-EXEC test.BeginTestFile @FileName = N'0037_PlcIntegration/010_schema.sql';
+EXEC test.BeginTestFile @FileName = N'0038_PlcIntegration/010_schema.sql';
 GO
 
 -- PlcDeviceType table + 4-row seed

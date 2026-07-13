@@ -11,7 +11,7 @@
       "binding": {
         "type": "expr",
         "config": {
-          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, false, {view.custom.refreshToken}), \"\")"
+          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}), \"\")"
         },
         "transforms": [
           {
@@ -37,6 +37,19 @@
     }
   },
   "root": {
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "inventoryChanged",
+          "pageScope": true,
+          "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
     "type": "ia.container.flex",
     "meta": {
       "name": "root"
@@ -44,7 +57,10 @@
     "props": {
       "direction": "column",
       "style": {
-        "classes": "pf-terminal canvas"
+        "classes": "canvas",
+        "gap": "16px",
+        "overflowY": "auto",
+        "padding": "24px"
       }
     },
     "events": {
@@ -66,19 +82,19 @@
         },
         "props": {
           "style": {
-            "classes": "pf-header"
+            "gap": "16px",
+            "overflow": "hidden"
           },
-          "justify": "space-between",
           "alignItems": "center"
-        },
-        "position": {
-          "shrink": 0
         },
         "children": [
           {
             "type": "ia.container.flex",
             "meta": {
-              "name": "Title"
+              "name": "TitleBlock"
+            },
+            "position": {
+              "grow": 1
             },
             "props": {
               "direction": "column"
@@ -87,24 +103,34 @@
               {
                 "type": "ia.display.label",
                 "meta": {
-                  "name": "TitleText"
+                  "name": "Title"
                 },
                 "props": {
                   "text": "Assembly IN",
                   "style": {
-                    "classes": "pf-title"
+                    "fontSize": "22px",
+                    "fontWeight": 700
                   }
                 }
               },
               {
                 "type": "ia.display.label",
                 "meta": {
-                  "name": "TitleMeta"
+                  "name": "Subtitle"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"No cell bound\", {session.custom.cell.name}) + \"  ·  Scan machined components into this cell's queue\""
+                      }
+                    }
+                  }
                 },
                 "props": {
-                  "text": "Scan machined components into this cell's queue",
                   "style": {
-                    "classes": "pf-subtitle"
+                    "classes": "pf-kpi-sub"
                   }
                 }
               }
@@ -146,58 +172,87 @@
                 }
               }
             }
-          }
-        ]
-      },
-      {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "CellContext"
-        },
-        "props": {
-          "style": {
-            "classes": "pf-panel"
-          },
-          "alignItems": "center",
-          "gap": "10px"
-        },
-        "position": {
-          "shrink": 0
-        },
-        "children": [
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "CtxLabel"
-            },
-            "props": {
-              "text": "Cell",
-              "style": {
-                "classes": "pf-field-label"
-              }
-            }
           },
           {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "ActiveCellValue"
-            },
-            "props": {
-              "text": "",
-              "style": {
-                "classes": "pf-field-input-mono"
-              }
-            },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "expr",
+            "events": {
+              "component": {
+                "onActionPerformed": {
                   "config": {
-                    "expression": "if(isNull({session.custom.cell.name}), '(no cell bound)', {session.custom.cell.name})"
-                  }
+                    "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                  },
+                  "scope": "G",
+                  "type": "script"
                 }
               }
-            }
+            },
+            "meta": {
+              "name": "RefreshButton",
+              "tooltip": {
+                "text": "Refresh"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Refresh"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params={\"locationId\": self.session.custom.cell.locationId}, title=\"Line Inventory\", modal=False, showCloseIcon=True, draggable=True, resizable=True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "InventoryButton",
+              "tooltip": {
+                "text": "Check component / pass-through inventory in to this line"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Inventory"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.navigate(\"/\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseButton"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Close"
+            },
+            "type": "ia.input.button"
           }
         ]
       },
@@ -332,7 +387,7 @@
                 "props": {
                   "text": "Components at this cell",
                   "style": {
-                    "classes": "pf-section-title"
+                    "classes": "pf-panel-header"
                   }
                 }
               },
@@ -401,7 +456,7 @@
             "props": {
               "text": "",
               "style": {
-                "classes": "pf-empty-hint"
+                "classes": "pf-kpi-sub"
               }
             },
             "propConfig": {
@@ -409,7 +464,7 @@
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "if(isNull({session.custom.cell.locationId}), 'No cell is bound to this terminal.', 'No component LOTs at this cell yet — scan one in above.')"
+                    "expression": "if(isNull({session.custom.cell.locationId}), 'No cell is bound to this terminal.', 'No component LOTs at this cell yet - scan one in above.')"
                   }
                 }
               },

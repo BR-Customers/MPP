@@ -1,11 +1,11 @@
 -- =============================================
--- File: 0037_PlcIntegration/020_TerminalPlcDevice_crud.sql
+-- File: 0038_PlcIntegration/020_TerminalPlcDevice_crud.sql
 -- Tests TerminalPlcDevice_Save (insert/update), _GetByTerminal, _Deprecate.
 -- Self-contained: creates a throwaway Terminal location, cleans up at the end.
 -- NOTE: assertion @Actual values are precomputed into @variables -- an inline
 --   CAST()/CASE/subquery in an EXEC parameter is a T-SQL syntax error.
 -- =============================================
-EXEC test.BeginTestFile @FileName = N'0037_PlcIntegration/020_TerminalPlcDevice_crud.sql';
+EXEC test.BeginTestFile @FileName = N'0038_PlcIntegration/020_TerminalPlcDevice_crud.sql';
 GO
 
 -- Fixture: a throwaway Terminal (LocationTypeDefinitionId 7) under the plant root.

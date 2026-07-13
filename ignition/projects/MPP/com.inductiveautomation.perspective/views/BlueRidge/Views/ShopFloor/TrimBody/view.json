@@ -1,23 +1,32 @@
 {
   "custom": {
-    "activeLotId": null,
+    "activeLotId": "",
+    "activeLotName": null,
     "destValue": null,
     "inScan": "",
     "outScan": "",
     "refreshToken": 0,
     "scrapCount": null,
     "shotCount": null,
-    "trimInventory": [],
-    "trimState": "in"
+    "trimState": "out"
   },
   "params": {
-    "areaId": null
+    "areaId": 37,
+    "cellPickerEnabled": false
   },
   "propConfig": {
+    "custom.cells": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Location.Terminal.getContextCellsForDropdown\", 0, {session.custom.terminal.terminalLocationId}, \"Trim Press\")"
+        },
+        "type": "expr"
+      }
+    },
     "custom.destCells": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Location.Location.getMachiningDestinationsForDropdown\", 0)"
+          "expression": "runScript(\"BlueRidge.Location.Location.getMachiningDestinationsForDropdown\", 0, {view.custom.activeLotId}, {view.custom.refreshToken})"
         },
         "type": "expr"
       }
@@ -25,10 +34,14 @@
     "custom.trimInventory": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.terminal.zoneLocationId}, false, {view.custom.refreshToken})"
+          "expression": "if(isNull({session.custom.cell.locationId}), \"\", runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}))"
         },
         "type": "expr"
       }
+    },
+    "params.cellPickerEnabled": {
+      "paramDirection": "input",
+      "persistent": true
     }
   },
   "props": {
@@ -62,10 +75,10 @@
                 "propConfig": {
                   "props.text": {
                     "binding": {
-                      "type": "expr",
                       "config": {
-                        "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"No cell selected  ·  Trim Shop Area\", {session.custom.cell.name} + \"  ·  Trim Shop Area\")"
-                      }
+                        "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} \u003d \"\", \"No cell selected  ·  Trim Shop Area\", {session.custom.cell.name} + \"  ·  Trim Shop Area\")"
+                      },
+                      "type": "expr"
                     }
                   }
                 },
@@ -159,7 +172,109 @@
         },
         "type": "ia.container.flex"
       },
-      
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "ActiveCellLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-cell-context-label"
+              },
+              "text": "Active Cell"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.applyCell(self.props.value)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CellPickerDropdown"
+            },
+            "position": {
+              "basis": "300px",
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.options": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.cells"
+                  },
+                  "transforms": [
+                    {
+                      "code": "\tcells \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\treturn [{\"label\": c.get(\"label\"), \"value\": c.get(\"value\")} for c in cells]",
+                      "type": "script"
+                    }
+                  ],
+                  "type": "property"
+                }
+              },
+              "props.value": {
+                "binding": {
+                  "config": {
+                    "path": "session.custom.cell.locationId"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "placeholder": {
+                "text": "Scan or pick a press"
+              },
+              "style": {
+                "width": "300px"
+              }
+            },
+            "type": "ia.input.dropdown"
+          },
+          {
+            "meta": {
+              "name": "Spacer"
+            },
+            "position": {
+              "grow": 1
+            },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": {
+          "name": "ContextBar"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "path": "view.params.cellPickerEnabled"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "classes": "pf-terminal-cell-context",
+            "gap": "12px",
+            "overflow": "hidden"
+          }
+        },
+        "type": "ia.container.flex"
+      },
       {
         "children": [
           {
@@ -269,248 +384,186 @@
             "type": "ia.display.label"
           },
           {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "InInventoryHeader"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-field-label"
+                      },
+                      "text": "Currently in Trim"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "InInventoryEmpty"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "len({view.custom.trimInventory}) \u003d 0"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      },
+                      "text": "No LOTs checked in at this press. Pick a press above, then scan LOTs in."
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "InInventoryRepeater"
+                    },
+                    "position": {
+                      "basis": "0",
+                      "grow": 1
+                    },
+                    "propConfig": {
+                      "props.instances": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.trimInventory"
+                          },
+                          "transforms": [
+                            {
+                              "code": "\treturn BlueRidge.Lots.Lot.mapTrimInventoryInstances(value)",
+                              "type": "script"
+                            }
+                          ],
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "column",
+                      "elementPosition": {
+                        "basis": "92px",
+                        "shrink": 0
+                      },
+                      "path": "BlueRidge/Components/PlantFloor/Trim/InventoryRow",
+                      "style": {
+                        "gap": "8px",
+                        "overflowY": "auto"
+                      },
+                      "useDefaultViewWidth": false
+                    },
+                    "type": "ia.display.flex-repeater"
+                  }
+                ],
+                "meta": {
+                  "name": "InPickCol"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "gap": "8px",
+                    "overflow": "hidden"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "MovementScan"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.params.destinationLocationId": {
+                        "binding": {
+                          "config": {
+                            "path": "session.custom.cell.locationId"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "params": {
+                        "replyMessage": "trimInMoved"
+                      },
+                      "path": "BlueRidge/Components/PlantFloor/MovementScan"
+                    },
+                    "type": "ia.display.view"
+                  },
+                  {
+                    "meta": {
+                      "name": "InNote"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-field-help"
+                      },
+                      "text": "On scan-in the LOT moves to this Cell. Closing counters are captured on the OUT step."
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "InFormCol"
+                },
+                "position": {
+                  "basis": "420px",
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "gap": "12px",
+                    "overflow": "hidden"
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
             "meta": {
-              "name": "MovementScan"
+              "name": "InColumns"
             },
             "position": {
-              "shrink": 0
+              "grow": 1
             },
-            "propConfig": {
-              "props.params.destinationLocationId": {
-                "binding": {
-                  "config": {
-                    "path": "session.custom.terminal.zoneLocationId"
-                  },
-                  "type": "property"
-                }
+            "props": {
+              "direction": "row-reverse",
+              "style": {
+                "gap": "16px",
+                "overflow": "hidden"
               }
             },
-            "props": {
-              "path": "BlueRidge/Components/PlantFloor/MovementScan"
-            },
-            "type": "ia.display.view"
-          },
-          {
-            "meta": {
-              "name": "InInventoryHeader"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "props": {
-              "style": {
-                "classes": "pf-field-label",
-                "marginTop": "8px"
-              },
-              "text": "Currently in Trim"
-            },
-            "type": "ia.display.label"
-          },
-          {
-            "meta": {
-              "name": "InInventoryTable"
-            },
-            "position": {
-              "basis": "240px",
-              "shrink": 0
-            },
-            "propConfig": {
-              "props.data": {
-                "binding": {
-                  "config": {
-                    "path": "view.custom.trimInventory"
-                  },
-                  "type": "property"
-                }
-              }
-            },
-            "props": {
-              "columns": [
-                {
-                  "align": "left",
-                  "boolean": "checkbox",
-                  "dateFormat": "MM/DD/YYYY",
-                  "editable": false,
-                  "field": "LotName",
-                  "filter": {
-                    "boolean": { "condition": "" },
-                    "date": { "condition": "", "value": "" },
-                    "enabled": false,
-                    "number": { "condition": "", "value": "" },
-                    "string": { "condition": "", "value": "" },
-                    "visible": "on-hover"
-                  },
-                  "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
-                  "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "LOT" },
-                  "justify": "auto",
-                  "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
-                  "number": "value",
-                  "numberFormat": "0,0.##",
-                  "progressBar": {
-                    "bar": { "color": "", "style": { "classes": "" } },
-                    "max": 100,
-                    "min": 0,
-                    "track": { "color": "", "style": { "classes": "" } },
-                    "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
-                  },
-                  "render": "auto",
-                  "resizable": true,
-                  "sort": "none",
-                  "sortable": true,
-                  "strictWidth": false,
-                  "style": { "classes": "" },
-                  "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
-                  "viewParams": {},
-                  "viewPath": "",
-                  "visible": true,
-                  "width": 180
-                },
-                {
-                  "align": "left",
-                  "boolean": "checkbox",
-                  "dateFormat": "MM/DD/YYYY",
-                  "editable": false,
-                  "field": "ItemPartNumber",
-                  "filter": {
-                    "boolean": { "condition": "" },
-                    "date": { "condition": "", "value": "" },
-                    "enabled": false,
-                    "number": { "condition": "", "value": "" },
-                    "string": { "condition": "", "value": "" },
-                    "visible": "on-hover"
-                  },
-                  "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
-                  "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Part" },
-                  "justify": "auto",
-                  "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
-                  "number": "value",
-                  "numberFormat": "0,0.##",
-                  "progressBar": {
-                    "bar": { "color": "", "style": { "classes": "" } },
-                    "max": 100,
-                    "min": 0,
-                    "track": { "color": "", "style": { "classes": "" } },
-                    "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
-                  },
-                  "render": "auto",
-                  "resizable": true,
-                  "sort": "none",
-                  "sortable": true,
-                  "strictWidth": false,
-                  "style": { "classes": "" },
-                  "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
-                  "viewParams": {},
-                  "viewPath": "",
-                  "visible": true,
-                  "width": ""
-                },
-                {
-                  "align": "center",
-                  "boolean": "checkbox",
-                  "dateFormat": "MM/DD/YYYY",
-                  "editable": false,
-                  "field": "PieceCount",
-                  "filter": {
-                    "boolean": { "condition": "" },
-                    "date": { "condition": "", "value": "" },
-                    "enabled": false,
-                    "number": { "condition": "", "value": "" },
-                    "string": { "condition": "", "value": "" },
-                    "visible": "on-hover"
-                  },
-                  "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
-                  "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Pieces" },
-                  "justify": "auto",
-                  "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
-                  "number": "value",
-                  "numberFormat": "0,0",
-                  "progressBar": {
-                    "bar": { "color": "", "style": { "classes": "" } },
-                    "max": 100,
-                    "min": 0,
-                    "track": { "color": "", "style": { "classes": "" } },
-                    "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
-                  },
-                  "render": "auto",
-                  "resizable": true,
-                  "sort": "none",
-                  "sortable": true,
-                  "strictWidth": false,
-                  "style": { "classes": "" },
-                  "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
-                  "viewParams": {},
-                  "viewPath": "",
-                  "visible": true,
-                  "width": 90
-                },
-                {
-                  "align": "center",
-                  "boolean": "checkbox",
-                  "dateFormat": "MM/DD HH:mm",
-                  "editable": false,
-                  "field": "LastMovementAt",
-                  "filter": {
-                    "boolean": { "condition": "" },
-                    "date": { "condition": "", "value": "" },
-                    "enabled": false,
-                    "number": { "condition": "", "value": "" },
-                    "string": { "condition": "", "value": "" },
-                    "visible": "on-hover"
-                  },
-                  "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
-                  "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Arrived" },
-                  "justify": "auto",
-                  "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
-                  "number": "value",
-                  "numberFormat": "0,0.##",
-                  "progressBar": {
-                    "bar": { "color": "", "style": { "classes": "" } },
-                    "max": 100,
-                    "min": 0,
-                    "track": { "color": "", "style": { "classes": "" } },
-                    "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
-                  },
-                  "render": "date",
-                  "resizable": true,
-                  "sort": "none",
-                  "sortable": true,
-                  "strictWidth": false,
-                  "style": { "classes": "" },
-                  "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
-                  "viewParams": {},
-                  "viewPath": "",
-                  "visible": true,
-                  "width": 130
-                }
-              ],
-              "pager": {
-                "enabled": false
-              },
-              "rowHeight": 40,
-              "selection": {
-                "enabled": false
-              },
-              "style": {
-                "classes": "pf-table"
-              }
-            },
-            "type": "ia.display.table"
-          },
-          {
-            "meta": {
-              "name": "InNote"
-            },
-            "props": {
-              "style": {
-                "classes": "pf-field-help"
-              },
-              "text": "On scan-in the LOT moves to this Cell. Closing counters are captured on the OUT step."
-            },
-            "type": "ia.display.label"
+            "type": "ia.container.flex"
           }
         ],
         "meta": {
           "name": "InPanel"
+        },
+        "position": {
+          "grow": 1
         },
         "propConfig": {
           "position.display": {
@@ -558,559 +611,490 @@
             "type": "ia.display.label"
           },
           {
-            "events": {
-              "component": {
-                "onSelectionChange": {
-                  "config": {
-                    "script": "\tsel \u003d self.props.selection.data\n\tif sel:\n\t\tself.view.custom.activeLotId \u003d sel[0].get(\"Id\")"
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "PickHeader"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-field-label"
+                      },
+                      "text": "Trim inventory - tap a card to select the LOT"
+                    },
+                    "type": "ia.display.label"
                   },
-                  "scope": "G",
-                  "type": "script"
-                }
+                  {
+                    "meta": {
+                      "name": "OutInventoryEmpty"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "len({view.custom.trimInventory}) \u003d 0"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      },
+                      "text": "No LOTs checked in at this press. Pick a press above, then scan LOTs in."
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "OutInventoryRepeater"
+                    },
+                    "position": {
+                      "basis": "0",
+                      "grow": 1
+                    },
+                    "propConfig": {
+                      "props.instances": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.trimInventory"
+                          },
+                          "transforms": [
+                            {
+                              "code": "\treturn BlueRidge.Lots.Lot.mapTrimInventoryInstances(value, True, self.view.custom.activeLotId)",
+                              "type": "script"
+                            }
+                          ],
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "column",
+                      "elementPosition": {
+                        "basis": "92px",
+                        "shrink": 0
+                      },
+                      "path": "BlueRidge/Components/PlantFloor/Trim/InventoryRow",
+                      "style": {
+                        "gap": "8px",
+                        "overflowY": "auto"
+                      },
+                      "useDefaultViewWidth": false
+                    },
+                    "type": "ia.display.flex-repeater"
+                  }
+                ],
+                "meta": {
+                  "name": "OutPickCol"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "gap": "8px",
+                    "overflow": "hidden"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "OutScanLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-label"
+                          },
+                          "text": "Scan LTT Barcode"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "events": {
+                          "dom": {
+                            "onBlur": {
+                              "config": {
+                                "script": "\tself.view.rootContainer.resolveOutScan()"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "OutScanInput"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.outScan"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "placeholder": "Scan LOT ticket",
+                          "style": {
+                            "classes": "pf-field-input-mono",
+                            "minHeight": "44px",
+                            "textTransform": "uppercase"
+                          }
+                        },
+                        "type": "ia.input.text-field"
+                      },
+                      {
+                        "meta": {
+                          "name": "ActiveLotLabel"
+                        },
+                        "propConfig": {
+                          "props.style.color": {
+                            "binding": {
+                              "config": {
+                                "expression": "if(isNull({view.custom.activeLotId}), \"var(--mpp-text-secondary)\", \"var(--mpp-accent-70)\")"
+                              },
+                              "type": "expr"
+                            }
+                          },
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "if(isNull({view.custom.activeLotId}), \"No LOT selected - tap a card or scan its LTT\", \"LOT \" + coalesce({view.custom.activeLotName}, \"#\" + toStr({view.custom.activeLotId})) + \" selected\")"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-help",
+                            "fontWeight": 600
+                          }
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "OutScanField"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "classes": "pf-field",
+                        "gap": "4px",
+                        "overflow": "hidden"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "DestLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-label"
+                          },
+                          "text": "Destination (Machining line)"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "DestDropdown"
+                        },
+                        "propConfig": {
+                          "props.options": {
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.destCells"
+                              },
+                              "type": "property"
+                            }
+                          },
+                          "props.value": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.destValue"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "placeholder": "Select the production line",
+                          "style": {
+                            "minHeight": "44px",
+                            "width": "100%"
+                          }
+                        },
+                        "type": "ia.input.dropdown"
+                      }
+                    ],
+                    "meta": {
+                      "name": "DestField"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "classes": "pf-field",
+                        "gap": "4px",
+                        "overflow": "hidden"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "ShotLabel"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-field-label"
+                              },
+                              "text": "Shot count"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "ShotCountInput"
+                            },
+                            "propConfig": {
+                              "props.value": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.shotCount"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-field-input",
+                                "minHeight": "44px"
+                              }
+                            },
+                            "type": "ia.input.numeric-entry-field"
+                          }
+                        ],
+                        "meta": {
+                          "name": "ShotField"
+                        },
+                        "position": {
+                          "grow": 1
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "pf-field",
+                            "gap": "4px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "ScrapLabel"
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-field-label"
+                              },
+                              "text": "Scrap count"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "ScrapCountInput"
+                            },
+                            "propConfig": {
+                              "props.value": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.scrapCount"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-field-input",
+                                "minHeight": "44px"
+                              }
+                            },
+                            "type": "ia.input.numeric-entry-field"
+                          }
+                        ],
+                        "meta": {
+                          "name": "ScrapField"
+                        },
+                        "position": {
+                          "grow": 1
+                        },
+                        "props": {
+                          "direction": "column",
+                          "style": {
+                            "classes": "pf-field",
+                            "gap": "4px"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "CountsRow"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "gap": "12px",
+                        "overflow": "hidden"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "meta": {
+                      "name": "CountsHelp"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-field-help"
+                      },
+                      "text": "Shots + scrap together cannot exceed the LOT\u0027s pieces; scrap is deducted from the LOT."
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "children": [
+                      {
+                        "events": {
+                          "component": {
+                            "onActionPerformed": {
+                              "config": {
+                                "script": "\tself.view.rootContainer.submitTrimOut()"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "BtnTrimOut"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-btn pf-btn-primary pf-btn-large",
+                            "minHeight": "44px",
+                            "minWidth": "160px"
+                          },
+                          "text": "Trim OUT"
+                        },
+                        "type": "ia.input.button"
+                      },
+                      {
+                        "meta": {
+                          "name": "OutActionsNote"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-kpi-sub"
+                          },
+                          "text": "Whole-LOT move - no split at Trim."
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "OutActions"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "style": {
+                        "classes": "pf-actions",
+                        "gap": "12px",
+                        "overflow": "hidden"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "OutFormCol"
+                },
+                "position": {
+                  "basis": "420px",
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "gap": "12px",
+                    "overflow": "hidden"
+                  }
+                },
+                "type": "ia.container.flex"
               }
-            },
+            ],
             "meta": {
-              "name": "OutPickTable"
+              "name": "OutColumns"
             },
             "position": {
-              "basis": "220px",
-              "shrink": 0
-            },
-            "propConfig": {
-              "props.data": {
-                "binding": {
-                  "config": {
-                    "path": "view.custom.trimInventory"
-                  },
-                  "type": "property"
-                }
-              }
+              "grow": 1
             },
             "props": {
-              "columns": [
-                {
-                  "align": "center",
-                  "boolean": "checkbox",
-                  "dateFormat": "MM/DD/YYYY",
-                  "editable": false,
-                  "field": "Id",
-                  "filter": {
-                    "boolean": { "condition": "" },
-                    "date": { "condition": "", "value": "" },
-                    "enabled": false,
-                    "number": { "condition": "", "value": "" },
-                    "string": { "condition": "", "value": "" },
-                    "visible": "on-hover"
-                  },
-                  "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
-                  "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Id" },
-                  "justify": "auto",
-                  "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
-                  "number": "value",
-                  "numberFormat": "0,0.##",
-                  "progressBar": {
-                    "bar": { "color": "", "style": { "classes": "" } },
-                    "max": 100,
-                    "min": 0,
-                    "track": { "color": "", "style": { "classes": "" } },
-                    "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
-                  },
-                  "render": "auto",
-                  "resizable": true,
-                  "sort": "none",
-                  "sortable": false,
-                  "strictWidth": false,
-                  "style": { "classes": "" },
-                  "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
-                  "viewParams": {},
-                  "viewPath": "",
-                  "visible": false,
-                  "width": ""
-                },
-                {
-                  "align": "left",
-                  "boolean": "checkbox",
-                  "dateFormat": "MM/DD/YYYY",
-                  "editable": false,
-                  "field": "LotName",
-                  "filter": {
-                    "boolean": { "condition": "" },
-                    "date": { "condition": "", "value": "" },
-                    "enabled": false,
-                    "number": { "condition": "", "value": "" },
-                    "string": { "condition": "", "value": "" },
-                    "visible": "on-hover"
-                  },
-                  "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
-                  "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "LOT" },
-                  "justify": "auto",
-                  "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
-                  "number": "value",
-                  "numberFormat": "0,0.##",
-                  "progressBar": {
-                    "bar": { "color": "", "style": { "classes": "" } },
-                    "max": 100,
-                    "min": 0,
-                    "track": { "color": "", "style": { "classes": "" } },
-                    "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
-                  },
-                  "render": "auto",
-                  "resizable": true,
-                  "sort": "none",
-                  "sortable": true,
-                  "strictWidth": false,
-                  "style": { "classes": "" },
-                  "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
-                  "viewParams": {},
-                  "viewPath": "",
-                  "visible": true,
-                  "width": 180
-                },
-                {
-                  "align": "left",
-                  "boolean": "checkbox",
-                  "dateFormat": "MM/DD/YYYY",
-                  "editable": false,
-                  "field": "ItemPartNumber",
-                  "filter": {
-                    "boolean": { "condition": "" },
-                    "date": { "condition": "", "value": "" },
-                    "enabled": false,
-                    "number": { "condition": "", "value": "" },
-                    "string": { "condition": "", "value": "" },
-                    "visible": "on-hover"
-                  },
-                  "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
-                  "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Part" },
-                  "justify": "auto",
-                  "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
-                  "number": "value",
-                  "numberFormat": "0,0.##",
-                  "progressBar": {
-                    "bar": { "color": "", "style": { "classes": "" } },
-                    "max": 100,
-                    "min": 0,
-                    "track": { "color": "", "style": { "classes": "" } },
-                    "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
-                  },
-                  "render": "auto",
-                  "resizable": true,
-                  "sort": "none",
-                  "sortable": true,
-                  "strictWidth": false,
-                  "style": { "classes": "" },
-                  "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
-                  "viewParams": {},
-                  "viewPath": "",
-                  "visible": true,
-                  "width": ""
-                },
-                {
-                  "align": "center",
-                  "boolean": "checkbox",
-                  "dateFormat": "MM/DD/YYYY",
-                  "editable": false,
-                  "field": "PieceCount",
-                  "filter": {
-                    "boolean": { "condition": "" },
-                    "date": { "condition": "", "value": "" },
-                    "enabled": false,
-                    "number": { "condition": "", "value": "" },
-                    "string": { "condition": "", "value": "" },
-                    "visible": "on-hover"
-                  },
-                  "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
-                  "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Pieces" },
-                  "justify": "auto",
-                  "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
-                  "number": "value",
-                  "numberFormat": "0,0",
-                  "progressBar": {
-                    "bar": { "color": "", "style": { "classes": "" } },
-                    "max": 100,
-                    "min": 0,
-                    "track": { "color": "", "style": { "classes": "" } },
-                    "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
-                  },
-                  "render": "auto",
-                  "resizable": true,
-                  "sort": "none",
-                  "sortable": true,
-                  "strictWidth": false,
-                  "style": { "classes": "" },
-                  "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
-                  "viewParams": {},
-                  "viewPath": "",
-                  "visible": true,
-                  "width": 90
-                },
-                {
-                  "align": "center",
-                  "boolean": "checkbox",
-                  "dateFormat": "MM/DD HH:mm",
-                  "editable": false,
-                  "field": "LastMovementAt",
-                  "filter": {
-                    "boolean": { "condition": "" },
-                    "date": { "condition": "", "value": "" },
-                    "enabled": false,
-                    "number": { "condition": "", "value": "" },
-                    "string": { "condition": "", "value": "" },
-                    "visible": "on-hover"
-                  },
-                  "footer": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "" },
-                  "header": { "align": "center", "justify": "left", "style": { "classes": "" }, "title": "Arrived" },
-                  "justify": "auto",
-                  "nullFormat": { "includeNullStrings": false, "nullFormatValue": "", "strict": false },
-                  "number": "value",
-                  "numberFormat": "0,0.##",
-                  "progressBar": {
-                    "bar": { "color": "", "style": { "classes": "" } },
-                    "max": 100,
-                    "min": 0,
-                    "track": { "color": "", "style": { "classes": "" } },
-                    "value": { "enabled": true, "format": "0,0.##", "justify": "center", "style": { "classes": "" } }
-                  },
-                  "render": "date",
-                  "resizable": true,
-                  "sort": "none",
-                  "sortable": true,
-                  "strictWidth": false,
-                  "style": { "classes": "" },
-                  "toggleSwitch": { "color": { "selected": "", "unselected": "" } },
-                  "viewParams": {},
-                  "viewPath": "",
-                  "visible": true,
-                  "width": 130
-                }
-              ],
-              "pager": {
-                "enabled": false
-              },
-              "rowHeight": 40,
-              "selection": {
-                "enabled": true
-              },
+              "direction": "row-reverse",
               "style": {
-                "classes": "pf-table"
-              }
-            },
-            "type": "ia.display.table"
-          },
-          {
-            "children": [
-              {
-                "meta": {
-                  "name": "OutScanLabel"
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-field-label"
-                  },
-                  "text": "Scan LTT Barcode"
-                },
-                "type": "ia.display.label"
-              },
-              {
-                "events": {
-                  "dom": {
-                    "onBlur": {
-                      "config": {
-                        "script": "\tself.view.rootContainer.resolveOutScan()"
-                      },
-                      "scope": "G",
-                      "type": "script"
-                    }
-                  }
-                },
-                "meta": {
-                  "name": "OutScanInput"
-                },
-                "propConfig": {
-                  "props.text": {
-                    "binding": {
-                      "config": {
-                        "bidirectional": true,
-                        "path": "view.custom.outScan"
-                      },
-                      "type": "property"
-                    }
-                  }
-                },
-                "props": {
-                  "placeholder": "Scan LOT ticket",
-                  "style": {
-                    "classes": "pf-field-input-mono",
-                    "minHeight": "44px",
-                    "textTransform": "uppercase"
-                  }
-                },
-                "type": "ia.input.text-field"
-              },
-              {
-                "meta": {
-                  "name": "ActiveLotLabel"
-                },
-                "propConfig": {
-                  "props.text": {
-                    "binding": {
-                      "config": {
-                        "expression": "if(isNull({view.custom.activeLotId}), \"No LOT selected\", \"LOT #\" + toStr({view.custom.activeLotId}))"
-                      },
-                      "type": "expr"
-                    }
-                  }
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-field-help"
-                  }
-                },
-                "type": "ia.display.label"
-              }
-            ],
-            "meta": {
-              "name": "OutScanField"
-            },
-            "props": {
-              "direction": "column",
-              "style": {
-                "classes": "pf-field"
-              }
-            },
-            "type": "ia.container.flex"
-          },
-          {
-            "children": [
-              {
-                "meta": {
-                  "name": "DestLabel"
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-field-label"
-                  },
-                  "text": "Destination (Machining)"
-                },
-                "type": "ia.display.label"
-              },
-              {
-                "meta": {
-                  "name": "DestDropdown"
-                },
-                "propConfig": {
-                  "props.options": {
-                    "binding": {
-                      "config": {
-                        "path": "view.custom.destCells"
-                      },
-                      "type": "property"
-                    }
-                  },
-                  "props.value": {
-                    "binding": {
-                      "config": {
-                        "bidirectional": true,
-                        "path": "view.custom.destValue"
-                      },
-                      "type": "property"
-                    }
-                  }
-                },
-                "props": {
-                  "placeholder": "Select destination cell",
-                  "style": {
-                    "minHeight": "44px"
-                  }
-                },
-                "type": "ia.input.dropdown"
-              }
-            ],
-            "meta": {
-              "name": "DestField"
-            },
-            "props": {
-              "direction": "column",
-              "style": {
-                "classes": "pf-field"
-              }
-            },
-            "type": "ia.container.flex"
-          },
-          {
-            "children": [
-              {
-                "children": [
-                  {
-                    "meta": {
-                      "name": "ShotLabel"
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "pf-field-label"
-                      },
-                      "text": "Shot count"
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "ShotCountInput"
-                    },
-                    "propConfig": {
-                      "props.value": {
-                        "binding": {
-                          "config": {
-                            "bidirectional": true,
-                            "path": "view.custom.shotCount"
-                          },
-                          "type": "property"
-                        }
-                      }
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "pf-field-input",
-                        "minHeight": "44px"
-                      }
-                    },
-                    "type": "ia.input.numeric-entry-field"
-                  }
-                ],
-                "meta": {
-                  "name": "ShotField"
-                },
-                "position": {
-                  "grow": 1
-                },
-                "props": {
-                  "direction": "column",
-                  "style": {
-                    "classes": "pf-field"
-                  }
-                },
-                "type": "ia.container.flex"
-              },
-              {
-                "children": [
-                  {
-                    "meta": {
-                      "name": "ScrapLabel"
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "pf-field-label"
-                      },
-                      "text": "Scrap count"
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "ScrapCountInput"
-                    },
-                    "propConfig": {
-                      "props.value": {
-                        "binding": {
-                          "config": {
-                            "bidirectional": true,
-                            "path": "view.custom.scrapCount"
-                          },
-                          "type": "property"
-                        }
-                      }
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "pf-field-input",
-                        "minHeight": "44px"
-                      }
-                    },
-                    "type": "ia.input.numeric-entry-field"
-                  }
-                ],
-                "meta": {
-                  "name": "ScrapField"
-                },
-                "position": {
-                  "grow": 1
-                },
-                "props": {
-                  "direction": "column",
-                  "style": {
-                    "classes": "pf-field"
-                  }
-                },
-                "type": "ia.container.flex"
-              }
-            ],
-            "meta": {
-              "name": "CountsRow"
-            },
-            "props": {
-              "style": {
-                "gap": "12px"
-              }
-            },
-            "type": "ia.container.flex"
-          },
-          {
-            "children": [
-              {
-                "events": {
-                  "component": {
-                    "onActionPerformed": {
-                      "config": {
-                        "script": "\tself.view.rootContainer.submitTrimOut()"
-                      },
-                      "scope": "G",
-                      "type": "script"
-                    }
-                  }
-                },
-                "meta": {
-                  "name": "BtnTrimOut"
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-btn pf-btn-primary pf-btn-large",
-                    "minHeight": "44px",
-                    "minWidth": "160px"
-                  },
-                  "text": "Trim OUT"
-                },
-                "type": "ia.input.button"
-              },
-              {
-                "meta": {
-                  "name": "OutActionsSpacer"
-                },
-                "position": {
-                  "grow": 1
-                },
-                "type": "ia.display.label"
-              },
-              {
-                "meta": {
-                  "name": "OutActionsNote"
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-kpi-sub"
-                  },
-                  "text": "Whole-LOT move - no split at Trim (sub-LOT split is at Machining OUT)."
-                },
-                "type": "ia.display.label"
-              }
-            ],
-            "meta": {
-              "name": "OutActions"
-            },
-            "props": {
-              "alignItems": "center",
-              "style": {
-                "classes": "pf-actions",
-                "gap": "8px"
+                "gap": "16px",
+                "overflow": "hidden"
               }
             },
             "type": "ia.container.flex"
@@ -1118,6 +1102,9 @@
         ],
         "meta": {
           "name": "OutPanel"
+        },
+        "position": {
+          "grow": 1
         },
         "propConfig": {
           "position.display": {
@@ -1164,14 +1151,21 @@
     "scripts": {
       "customMethods": [
         {
+          "name": "applyCell",
+          "params": [
+            "cellId"
+          ],
+          "script": "\tcellId \u003d BlueRidge.Common.Util.extractQualifiedValues(cellId)\n\trow \u003d BlueRidge.Location.Location.findCellById(self.view.custom.cells, cellId)\n\tif row is None:\n\t\treturn\n\tself.session.custom.cell \u003d {\"locationId\": row.get(\"value\"), \"code\": row.get(\"code\") or \"\", \"name\": row.get(\"name\") or \"\"}"
+        },
+        {
           "name": "resolveOutScan",
           "params": [],
-          "script": "\tcode \u003d self.view.custom.outScan\n\tif not code:\n\t\treturn\n\tr \u003d BlueRidge.Lots.Lot.getByName(code)\n\tif r:\n\t\tself.view.custom.activeLotId \u003d r.get(\"Id\")\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"LOT not found\", \"No LOT matches \u0027%s\u0027.\" % code, \"warning\")"
+          "script": "\tcode \u003d self.view.custom.outScan\n\tif not code:\n\t\treturn\n\tr \u003d BlueRidge.Lots.Lot.getByName(code)\n\tif r:\n\t\tself.view.custom.activeLotId \u003d r.get(\"Id\")\n\t\tself.view.custom.activeLotName \u003d r.get(\"LotName\")\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"LOT not found\", \"No LOT matches \u0027%s\u0027.\" % code, \"warning\")"
         },
         {
           "name": "submitTrimOut",
           "params": [],
-          "script": "\tlotId \u003d self.view.custom.activeLotId\n\tif lotId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT\", \"Scan or select a LOT before recording Trim OUT.\", \"warning\")\n\t\treturn\n\toperationTemplateId \u003d BlueRidge.Parts.OperationTemplate.getActiveTemplateIdByCode(\"TrimOut\")\n\tif operationTemplateId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Template missing\", \"No active \u0027TrimOut\u0027 operation template is published.\", \"error\")\n\t\treturn\n\tdest \u003d self.view.custom.destValue\n\tif dest is None or dest \u003d\u003d \"\":\n\t\tBlueRidge.Common.Notify.toast(\"No destination\", \"Scan or pick a Machining destination.\", \"warning\")\n\t\treturn\n\tdata \u003d {\n\t\t\"parentLotId\": lotId,\n\t\t\"operationTemplateId\": operationTemplateId,\n\t\t\"shotCount\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.shotCount),\n\t\t\"scrapCount\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.scrapCount),\n\t\t\"destinationCellLocationId\": dest,\n\t\t\"sourceLocationId\": self.session.custom.terminal.zoneLocationId,\n\t}\n\tres \u003d BlueRidge.Workorder.TrimOut.record(data)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Trim OUT recorded\")\n\tif res.get(\"Status\"):\n\t\t# Stay on the Trim OUT screen (2026-07-06 Jacques): clear the form for the next LOT.\n\t\tself.view.custom.activeLotId \u003d None\n\t\tself.view.custom.outScan \u003d \"\"\n\t\tself.view.custom.shotCount \u003d None\n\t\tself.view.custom.scrapCount \u003d None\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
+          "script": "\tlotId \u003d self.view.custom.activeLotId\n\tif lotId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT\", \"Scan or select a LOT before recording Trim OUT.\", \"warning\")\n\t\treturn\n\toperationTemplateId \u003d BlueRidge.Parts.OperationTemplate.getActiveTemplateIdByCode(\"TrimOut\")\n\tif operationTemplateId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Template missing\", \"No active \u0027TrimOut\u0027 operation template is published.\", \"error\")\n\t\treturn\n\tdest \u003d self.view.custom.destValue\n\tif dest is None or dest \u003d\u003d \"\":\n\t\tBlueRidge.Common.Notify.toast(\"No destination\", \"Scan or pick a Machining destination.\", \"warning\")\n\t\treturn\n\tdata \u003d {\n\t\t\"parentLotId\": lotId,\n\t\t\"operationTemplateId\": operationTemplateId,\n\t\t\"shotCount\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.shotCount),\n\t\t\"scrapCount\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.scrapCount),\n\t\t\"destinationCellLocationId\": dest,\n\t\t\"sourceLocationId\": self.session.custom.terminal.zoneLocationId,\n\t}\n\tres \u003d BlueRidge.Workorder.TrimOut.record(data)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Trim OUT recorded\")\n\tif res.get(\"Status\"):\n\t\t# Stay on the Trim OUT screen (2026-07-06 Jacques): clear the form for the next LOT.\n\t\tself.view.custom.activeLotId \u003d None\n\t\tself.view.custom.activeLotName \u003d None\n\t\tself.view.custom.outScan \u003d \"\"\n\t\tself.view.custom.shotCount \u003d None\n\t\tself.view.custom.scrapCount \u003d None\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
         },
         {
           "name": "startup",
@@ -1182,9 +1176,16 @@
       "extensionFunctions": null,
       "messageHandlers": [
         {
+          "messageType": "trimLotSelected",
+          "pageScope": true,
+          "script": "\tself.view.custom.activeLotId \u003d payload.get(\"lotId\")\n\tself.view.custom.activeLotName \u003d payload.get(\"lotName\")\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
           "messageType": "trimInMoved",
           "pageScope": true,
-          "script": "\tself.view.custom.activeLotId \u003d payload.get(\"lotId\")\n\tself.view.custom.trimState \u003d \"out\"\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1\n\t# TODO(phase4): record the TrimIn checkpoint via ProductionEvent.record once cumulative inputs exist.",
+          "script": "\ttry:\n\t\ttermId \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId \u003d None\n\t# TrimIn checkpoint (route Advance step; Phase-4 TODO closed 2026-07-08): without it the\n\t# route-driven queues hold the LOT pending at TrimIn and it never reaches Machining IN.\n\tBlueRidge.Workorder.ProductionEvent.recordTrimInCheckpoint(payload.get(\"lotId\"), self.session.custom.appUserId, termId)\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1",
           "sessionScope": false,
           "viewScope": false
         }

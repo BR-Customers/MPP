@@ -4,8 +4,9 @@
 --               SubAssembly LOT by consuming the casting; Consumption genealogy
 --               (RelationshipTypeId=3), NOT Split; flexible qty; casting stays open
 --               on a partial mint, closes when fully consumed; over-mint rejected.
---               Fixture: casting 6MA-C, SubAssembly 6MA-M, 1-line BOM 6MA-M<-6MA-C,
---               at line cell MA1-FPRPY-MOUT (6MA-M eligible there).
+--               Fixture: casting 5G0-c, SubAssembly 5G0-SA, seed BOM 5G0-SA<-5G0-c
+--               (020_seed_items), at line cell MA1-5GOF-MOUT (both eligible via the
+--               5G0 line). Casting basket cap = 24, so the fixture places 24 pcs.
 -- =============================================
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
@@ -13,10 +14,10 @@ EXEC test.BeginTestFile @FileName = N'0027_PlantFloor_Machining/070_MachiningOut
 GO
 
 DECLARE @U BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
-DECLARE @Uom BIGINT = (SELECT Id FROM Parts.Uom WHERE Code = N'EA');
-DECLARE @Casting BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'6MA-C');
-DECLARE @Machined BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'6MA-M');
-DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FPRPY-MOUT');
+DECLARE @Uom BIGINT = (SELECT Id FROM Parts.Uom WHERE Code = N'PCS');
+DECLARE @Casting BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
+DECLARE @Machined BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-SA');
+DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MOUT');
 DECLARE @Origin BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
 DECLARE @MoTpl BIGINT = (SELECT TOP 1 ot.Id FROM Parts.OperationTemplate ot
     JOIN Parts.OperationType oty ON oty.Id = ot.OperationTypeId
@@ -91,9 +92,9 @@ DECLARE @overStatus NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @m)
 EXEC test.Assert_IsEqual @TestName = N'[MoMint] over-mint rejected', @Expected = N'0', @Actual = @overStatus;
 GO
 
--- ---- teardown (FK-safe): all LOTs of the fixture items 6MA-C / 6MA-M + the fixture BOM ----
-DECLARE @Cast BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'6MA-C');
-DECLARE @Mach BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'6MA-M');
+-- ---- teardown (FK-safe): all LOTs of the fixture items 5G0-c / 5G0-SA ----
+DECLARE @Cast BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
+DECLARE @Mach BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-SA');
 DECLARE @Lots TABLE (Id BIGINT);
 INSERT INTO @Lots SELECT Id FROM Lots.Lot WHERE ItemId IN (@Cast, @Mach);
 DELETE FROM Workorder.ConsumptionEvent WHERE SourceLotId IN (SELECT Id FROM @Lots) OR ProducedLotId IN (SELECT Id FROM @Lots);
@@ -104,6 +105,6 @@ DELETE FROM Lots.LotEventLog WHERE LotId IN (SELECT Id FROM @Lots);
 DELETE FROM Lots.LotMovement WHERE LotId IN (SELECT Id FROM @Lots);
 DELETE FROM Lots.LotStatusHistory WHERE LotId IN (SELECT Id FROM @Lots);
 DELETE FROM Lots.Lot WHERE Id IN (SELECT Id FROM @Lots);
-DELETE bl FROM Parts.BomLine bl JOIN Parts.Bom b ON b.Id = bl.BomId WHERE b.ParentItemId = @Mach;
-DELETE FROM Parts.Bom WHERE ParentItemId = @Mach;
+-- NOTE: 5G0-SA <- 5G0-c is a SEED BOM (020_seed_items) this test relies on -- do NOT
+-- delete it in teardown; it must survive for the seed + later suites.
 GO

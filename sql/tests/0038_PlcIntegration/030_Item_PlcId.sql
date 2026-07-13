@@ -1,11 +1,11 @@
 -- =============================================
--- File: 0037_PlcIntegration/030_Item_PlcId.sql
+-- File: 0038_PlcIntegration/030_Item_PlcId.sql
 -- Tests Item_SetPlcId + Item_GetPlcId. Borrows the lowest-Id active Item
 -- (seed 020 always provides Items) and resets its PlcId to NULL at the end.
 -- Assertion @Actual values are precomputed into @vars (inline CAST in an EXEC
 -- param is a T-SQL syntax error).
 -- =============================================
-EXEC test.BeginTestFile @FileName = N'0037_PlcIntegration/030_Item_PlcId.sql';
+EXEC test.BeginTestFile @FileName = N'0038_PlcIntegration/030_Item_PlcId.sql';
 GO
 
 -- Test 1: set PlcId = 2 on the lowest-Id item

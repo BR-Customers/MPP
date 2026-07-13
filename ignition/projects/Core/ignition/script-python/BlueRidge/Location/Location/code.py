@@ -274,12 +274,19 @@ def getCellsForDropdown():
     return out
 
 
-def getMachiningDestinationsForDropdown():
+def getMachiningDestinationsForDropdown(activeLotId=None, _refreshToken=None):
     """Machining PRODUCTION LINES shaped for ia.input.dropdown -- the valid
     whole-LOT destinations for Trim OUT (line-resident, Jacques 2026-07-06).
     WorkCenter-tier lines that have a 'Machining In%' Cell child; printers /
     terminals / machines are structurally excluded (wrong tier). Wraps
-    Location.Location_ListMachiningDestinations v1.1.
+    Location.Location_ListMachiningDestinations v2.0.
+
+    activeLotId (optional, 2026-07-09 smoke finding): when the Trim OUT screen
+    has an active LOT, the list is ELIGIBILITY-FILTERED to lines where that
+    LOT's item resolves via the FDS-03-014 cascade -- the same predicate
+    TrimOut_Record enforces, so the dropdown never offers a destination the
+    commit would reject. None = all machining lines (no LOT selected yet).
+    _refreshToken is ignored - runScript bindings pass a bumped token.
 
     Returns:
         list[dict]: [{label: '<Code> - <Name>', value: Id, code: Code,
@@ -287,11 +294,21 @@ def getMachiningDestinationsForDropdown():
                       None) so a runScript-bound dropdown default ([]) is never
                       overwritten with null. Empty if none exist.
     """
-    BlueRidge.Common.Util.log("loading machining destinations for dropdown")
+    activeLotId = BlueRidge.Common.Util.extractQualifiedValues(activeLotId)
+    BlueRidge.Common.Util.log("loading machining destinations, activeLotId=%s" % activeLotId)
+    itemId = None
+    if activeLotId is not None:
+        lot = BlueRidge.Lots.Lot.get(lotId=activeLotId)
+        itemId = lot.get("ItemId") if lot else None
     try:
-        rows = BlueRidge.Common.Db.execList(
-            "location/Location_ListMachiningDestinations", {}
-        ) or []
+        if itemId is not None:
+            rows = BlueRidge.Common.Db.execList(
+                "location/Location_ListMachiningDestinationsForItem", {"itemId": itemId}
+            ) or []
+        else:
+            rows = BlueRidge.Common.Db.execList(
+                "location/Location_ListMachiningDestinations", {}
+            ) or []
     except Exception as e:
         BlueRidge.Common.Util.log("getMachiningDestinationsForDropdown failed: %s" % str(e))
         BlueRidge.Common.Notify.toast("Could not load machining destinations", str(e), "error")

@@ -1,0 +1,1181 @@
+{
+  "custom": {
+    "candidates": [],
+    "events": [],
+    "genealogy": [],
+    "history": [],
+    "lot": {
+      "CrtActive": null,
+      "CurrentLocationId": null,
+      "CurrentLocationName": "",
+      "Id": null,
+      "InventoryAvailable": 0,
+      "ItemId": null,
+      "ItemPartNumber": "",
+      "LotName": "",
+      "LotOriginTypeCode": "",
+      "LotStatusCode": "",
+      "LotStatusName": "",
+      "PieceCount": 0
+    },
+    "refreshToken": 0,
+    "scrap": {
+      "CounterScrap": 0,
+      "RejectedTotal": 0,
+      "TotalScrap": 0
+    },
+    "searchInput": "",
+    "searchText": "",
+    "selectedLotId": null
+  },
+  "params": {},
+  "propConfig": {
+    "custom.candidates": {
+      "binding": {
+        "config": {
+          "expression": "if({view.custom.refreshToken} >= 0, runScript(\"BlueRidge.Lots.GlobalTrace.resolveForTable\", 0, {view.custom.searchText}, {view.custom.refreshToken}), \"\")"
+        },
+        "transforms": [
+          {
+            "code": "\treturn value or []",
+            "type": "script"
+          }
+        ],
+        "type": "expr"
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 1280
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Title"
+                },
+                "props": {
+                  "style": {
+                    "fontSize": "22px",
+                    "fontWeight": 700
+                  },
+                  "text": "Track & Trace"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Subtitle"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  },
+                  "text": "Global trace - scan or type any LOT name, serial number, container id, or AIM shipper id - read-only"
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "TitleBlock"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "direction": "column"
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=True, overlayDismiss=True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "OperatorLabel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub",
+                "cursor": "pointer"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1\n\tif self.view.custom.selectedLotId:\n\t\tself.view.rootContainer.loadTrace(self.view.custom.selectedLotId)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "RefreshButton",
+              "tooltip": {
+                "text": "Refresh"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Refresh"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.navigate(\"/\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseButton"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Close"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "gap": "16px",
+            "overflow": "hidden"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "SearchLabel"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-field-label"
+                  },
+                  "text": "Identifier"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "events": {
+                  "dom": {
+                    "onBlur": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.search(self.props.text)"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "SearchInput"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.searchInput"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "Scan or type LOT / serial / container / shipper id",
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                },
+                "type": "ia.input.text-field"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.search(self.view.custom.searchInput)"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "SearchButton"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-btn pf-btn-primary"
+                  },
+                  "text": "Search"
+                },
+                "type": "ia.input.button"
+              }
+            ],
+            "meta": {
+              "name": "SearchRow"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "alignItems": "center",
+              "style": {
+                "classes": "pf-field",
+                "gap": "12px",
+                "overflow": "hidden"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "NoMatchHint"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.custom.searchText} != \"\" && len({view.custom.candidates}) = 0"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub"
+              },
+              "text": "No match - nothing resolves to that identifier."
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "CandidateHint"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "len({view.custom.candidates}) > 0"
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "toStr(len({view.custom.candidates})) + ' candidate LOT(s) - tap one to open its trace'"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "CandidateRepeater"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "len({view.custom.candidates}) > 0"
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.instances": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.candidates"
+                  },
+                  "transforms": [
+                    {
+                      "code": "\treturn value or []",
+                      "type": "script"
+                    }
+                  ],
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "elementPosition": {
+                "basis": "56px",
+                "shrink": 0
+              },
+              "path": "BlueRidge/Components/PlantFloor/Trace/CandidateRow",
+              "style": {
+                "gap": "8px",
+                "maxHeight": "244px",
+                "overflowY": "auto"
+              },
+              "useDefaultViewHeight": true,
+              "useDefaultViewWidth": false
+            },
+            "type": "ia.display.flex-repeater"
+          }
+        ],
+        "meta": {
+          "name": "SearchPanel"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "pf-panel",
+            "gap": "12px",
+            "padding": "14px 16px"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "meta": {
+          "name": "NoSelectionHint"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "isNull({view.custom.selectedLotId})"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-kpi-sub"
+          },
+          "text": "Search for an identifier and pick a candidate LOT to render its full trace."
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "SummaryTitle"
+                    },
+                    "props": {
+                      "style": {
+                        "color": "var(--mpp-text-secondary)",
+                        "fontSize": "14px",
+                        "fontWeight": "600",
+                        "letterSpacing": "0.06em",
+                        "textTransform": "uppercase"
+                      },
+                      "text": "LOT Summary"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "SummaryHeader"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-panel-header",
+                    "overflow": "hidden"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "SummaryLotName"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.lot.LotName"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-value",
+                        "fontFamily": "monospace",
+                        "fontSize": "22px",
+                        "fontWeight": "700"
+                      },
+                      "text": ""
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "SummaryStatusPill"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "path": "view.custom.lot.LotStatusName"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-pill pf-pill-good",
+                        "fontSize": "12px",
+                        "fontWeight": "600",
+                        "padding": "3px 10px"
+                      },
+                      "text": ""
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "SummaryCrtPill"
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "coalesce({view.custom.lot.CrtActive}, false)"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-pill pf-pill-hold",
+                        "fontSize": "12px",
+                        "fontWeight": "700",
+                        "padding": "3px 10px",
+                        "textTransform": "uppercase"
+                      },
+                      "text": "CRT Active"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "SummaryTitleRow"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "alignItems": "center",
+                  "style": {
+                    "gap": "12px",
+                    "overflow": "hidden"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "SummaryMeta"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.lot.ItemPartNumber} + \"  ·  \" + toStr({view.custom.lot.PieceCount}) + \" pcs  ·  \" + {view.custom.lot.LotOriginTypeCode} + \"  ·  at \" + {view.custom.lot.CurrentLocationName}"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  },
+                  "text": ""
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "SummaryScrap"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.style.color": {
+                    "binding": {
+                      "config": {
+                        "expression": "if({view.custom.scrap.TotalScrap} > 0, \"var(--mpp-error, #f85149)\", \"var(--mpp-text-secondary)\")"
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "\"Total Scrap: \" + toStr(coalesce({view.custom.scrap.TotalScrap}, 0)) + \"  (rejected \" + toStr(coalesce({view.custom.scrap.RejectedTotal}, 0)) + \" + counter scrap \" + toStr(coalesce({view.custom.scrap.CounterScrap}, 0)) + \")\""
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "fontSize": "14px",
+                    "fontWeight": "600"
+                  },
+                  "text": "Total Scrap: 0"
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "SummaryPanel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-panel",
+                "gap": "8px",
+                "padding": "14px 16px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "TimelineTitle"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "'History Timeline - ' + toStr(len({view.custom.history})) + ' events'"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "color": "var(--mpp-text-secondary)",
+                        "fontSize": "14px",
+                        "fontWeight": "600",
+                        "letterSpacing": "0.06em",
+                        "textTransform": "uppercase"
+                      },
+                      "text": "History Timeline"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "TimelineHeader"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-panel-header",
+                    "overflow": "hidden"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "TimelineEmptyHint"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "len({view.custom.history}) = 0"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  },
+                  "text": "No history events for this LOT."
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "TimelineRepeater"
+                },
+                "position": {
+                  "basis": "auto",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "props.instances": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.history"
+                      },
+                      "transforms": [
+                        {
+                          "code": "\treturn BlueRidge.Lots.Lot.mapHistoryInstances(value)",
+                          "type": "script"
+                        }
+                      ],
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "elementPosition": {
+                    "basis": "auto",
+                    "grow": 0,
+                    "shrink": 0
+                  },
+                  "elementStyle": {
+                    "classes": "",
+                    "maxHeight": "80px"
+                  },
+                  "path": "BlueRidge/Components/PlantFloor/LotDetail/HistoryRow",
+                  "style": {
+                    "gap": "6px"
+                  },
+                  "useDefaultViewHeight": false,
+                  "useDefaultViewWidth": false
+                },
+                "type": "ia.display.flex-repeater"
+              }
+            ],
+            "meta": {
+              "name": "TimelinePanel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-panel",
+                "gap": "12px",
+                "padding": "14px 16px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "EventsTitle"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "'Production Events - ' + toStr(len({view.custom.events}))"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "color": "var(--mpp-text-secondary)",
+                        "fontSize": "14px",
+                        "fontWeight": "600",
+                        "letterSpacing": "0.06em",
+                        "textTransform": "uppercase"
+                      },
+                      "text": "Production Events"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "EventsHeader"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-panel-header",
+                    "overflow": "hidden"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "EventsEmptyHint"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "len({view.custom.events}) = 0"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  },
+                  "text": "No production events recorded against this LOT."
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "EventsTable"
+                },
+                "position": {
+                  "basis": "260px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "len({view.custom.events}) > 0"
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.data": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.events"
+                      },
+                      "transforms": [
+                        {
+                          "code": "\treturn value or []",
+                          "type": "script"
+                        }
+                      ],
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "columns": [
+                    {
+                      "field": "Event",
+                      "header": {
+                        "title": "Event"
+                      }
+                    },
+                    {
+                      "field": "At",
+                      "header": {
+                        "title": "At (ET)"
+                      }
+                    },
+                    {
+                      "field": "Shots",
+                      "header": {
+                        "title": "Shots"
+                      }
+                    },
+                    {
+                      "field": "Scrap",
+                      "header": {
+                        "title": "Scrap"
+                      }
+                    },
+                    {
+                      "field": "Weight",
+                      "header": {
+                        "title": "Weight"
+                      }
+                    },
+                    {
+                      "field": "By",
+                      "header": {
+                        "title": "By"
+                      }
+                    },
+                    {
+                      "field": "Remarks",
+                      "header": {
+                        "title": "Remarks"
+                      }
+                    }
+                  ]
+                },
+                "type": "ia.display.table"
+              }
+            ],
+            "meta": {
+              "name": "EventsPanel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-panel",
+                "gap": "12px",
+                "padding": "14px 16px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "GenealogyTitle"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "'Genealogy - ' + toStr(len({view.custom.genealogy})) + ' linked LOTs'"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "color": "var(--mpp-text-secondary)",
+                        "fontSize": "14px",
+                        "fontWeight": "600",
+                        "letterSpacing": "0.06em",
+                        "textTransform": "uppercase"
+                      },
+                      "text": "Genealogy"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "GenealogyHeader"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-panel-header",
+                    "overflow": "hidden"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "GenealogyEmptyHint"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "len({view.custom.genealogy}) = 0"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  },
+                  "text": "No genealogy links (no parents or children recorded)."
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "GenealogyTable"
+                },
+                "position": {
+                  "basis": "220px",
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "len({view.custom.genealogy}) > 0"
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.data": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.genealogy"
+                      },
+                      "transforms": [
+                        {
+                          "code": "\treturn value or []",
+                          "type": "script"
+                        }
+                      ],
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "columns": [
+                    {
+                      "field": "Relation",
+                      "header": {
+                        "title": "Relation"
+                      }
+                    },
+                    {
+                      "field": "LotName",
+                      "header": {
+                        "title": "LOT"
+                      }
+                    },
+                    {
+                      "field": "Item",
+                      "header": {
+                        "title": "Item"
+                      }
+                    },
+                    {
+                      "field": "Depth",
+                      "header": {
+                        "title": "Depth"
+                      }
+                    }
+                  ]
+                },
+                "type": "ia.display.table"
+              }
+            ],
+            "meta": {
+              "name": "GenealogyPanel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-panel",
+                "gap": "12px",
+                "padding": "14px 16px"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "TraceBody"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "!isNull({view.custom.selectedLotId})"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "16px"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "events": {
+      "system": {
+        "onStartup": {
+          "config": {
+            "script": "\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
+          },
+          "scope": "G",
+          "type": "script"
+        }
+      }
+    },
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "canvas",
+        "gap": "16px",
+        "overflowY": "auto",
+        "padding": "24px"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "search",
+          "params": [
+            "text"
+          ],
+          "script": "\tself.view.custom.searchText = (text or \"\").strip()\n\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+        },
+        {
+          "name": "loadTrace",
+          "params": [
+            "lotId"
+          ],
+          "script": "\tif not lotId:\n\t\treturn\n\tself.view.custom.selectedLotId = lotId\n\tself.view.custom.lot = BlueRidge.Lots.Lot.getOrEmpty(lotId=lotId)\n\tself.view.custom.history = BlueRidge.Lots.Lot.getHistory(lotId)\n\tself.view.custom.scrap = BlueRidge.Lots.Lot.getScrapSummaryOrEmpty(lotId)\n\tself.view.custom.events = BlueRidge.Lots.GlobalTrace.productionEventRows(lotId)\n\tself.view.custom.genealogy = BlueRidge.Lots.GlobalTrace.genealogyRows(lotId)"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "traceCandidatePicked",
+          "pageScope": true,
+          "script": "\tself.view.rootContainer.loadTrace(payload.get(\"lotId\"))",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

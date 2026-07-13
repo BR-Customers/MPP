@@ -35,7 +35,8 @@ CREATE OR ALTER PROCEDURE Parts.DataCollectionField_Create
     @Code        NVARCHAR(50),
     @Name        NVARCHAR(100),
     @Description NVARCHAR(500)  = NULL,
-    @AppUserId   BIGINT
+    @AppUserId   BIGINT,
+    @DataTypeId  BIGINT         = NULL   -- migration 0023: FK -> Parts.DataCollectionFieldDataType. Defaults to 'String' when unspecified.
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -83,10 +84,31 @@ BEGIN
             RETURN;
         END
 
+        -- DataTypeId (migration 0023, NOT NULL): default to 'String' when the caller
+        -- omits it, then validate the FK BEFORE opening the transaction (a rejection
+        -- here returns cleanly with no open txn -- a ROLLBACK inside a proc invoked via
+        -- INSERT-EXEC would throw Msg 3915).
+        IF @DataTypeId IS NULL
+            SET @DataTypeId = (SELECT Id FROM Parts.DataCollectionFieldDataType WHERE Code = N'String');
+        IF NOT EXISTS (SELECT 1 FROM Parts.DataCollectionFieldDataType WHERE Id = @DataTypeId)
+        BEGIN
+            SET @Message = N'Invalid DataTypeId.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId           = @AppUserId,
+                @LogEntityTypeCode   = N'DataCollectionField',
+                @EntityId            = NULL,
+                @LogEventTypeCode    = N'Created',
+                @FailureReason       = @Message,
+                @ProcedureName       = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+            RETURN;
+        END
+
         BEGIN TRANSACTION;
 
-        INSERT INTO Parts.DataCollectionField (Code, Name, Description, CreatedAt)
-        VALUES (@Code, @Name, @Description, SYSUTCDATETIME());
+        INSERT INTO Parts.DataCollectionField (Code, Name, Description, DataTypeId, CreatedAt)
+        VALUES (@Code, @Name, @Description, @DataTypeId, SYSUTCDATETIME());
 
         SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
 

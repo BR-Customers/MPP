@@ -7,7 +7,7 @@
 --   Tests for Quality schema reference code tables (Phase 3 read-only).
 --   Covers 4 tables, each with _List and _Get procs:
 --     - Quality.InspectionResultCode  (3 seeded rows)
---     - Quality.SampleTriggerCode     (4 seeded rows)
+--     - Quality.SampleTriggerCode     (9 seeded rows: 4 from 0004 + 5 FDS-08-014 triggers from 0037)
 --     - Quality.HoldTypeCode          (3 seeded rows)
 --     - Quality.DispositionCode       (4 seeded rows)
 --
@@ -56,8 +56,8 @@ INSERT INTO #R EXEC Quality.SampleTriggerCode_List;
 SELECT @Count = COUNT(*) FROM #R;
 DROP TABLE #R;
 EXEC test.Assert_RowCount
-    @TestName      = N'SampleTriggerCode_List: 4 rows returned by proc',
-    @ExpectedCount = 4,
+    @TestName      = N'SampleTriggerCode_List: 9 rows returned by proc (4 from 0004 + 5 from 0037)',
+    @ExpectedCount = 9,
     @ActualCount   = @Count;
 GO
 

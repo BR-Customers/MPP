@@ -1,12 +1,12 @@
 -- =============================================
--- File: 0037_PlcIntegration/040_SerializedPart_serial.sql
+-- File: 0038_PlcIntegration/040_SerializedPart_serial.sql
 -- Tests SerializedPart_Mint with a supplied serial + auto-gen + GetBySerial.
 -- Self-contained: creates a throwaway Item + producing LOT (via Lot_Create,
 -- mirroring 0028/030's fixture) since a clean reset seeds no LOTs. Tears down
 -- FK-safe: SerializedPart -> LotGenealogyClosure self-row -> Lot -> ItemLocation
 -- -> Item. Assertion @Actual values are precomputed into @vars.
 -- =============================================
-EXEC test.BeginTestFile @FileName = N'0037_PlcIntegration/040_SerializedPart_serial.sql';
+EXEC test.BeginTestFile @FileName = N'0038_PlcIntegration/040_SerializedPart_serial.sql';
 GO
 
 -- Fixture: throwaway Item + eligibility + a Manufactured LOT at a seed cell.
