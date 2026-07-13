@@ -49,18 +49,19 @@ Two orthogonal layers per Ignition 8.3:
 - **Device layer** — Gateway → OPC Connections. Each PLC / scale / OPC-UA-server is a named "device". Ignition addresses tags as `[DeviceName]path/inside/device.tagname`.
 - **Tag layer (UDTs)** — Definitions are per functional pattern (Scale, SerializedMip, NonSerializedMip, TrayInspection). Members' OPC item paths reference **parameters** in `{ParamName}` syntax, substituted at runtime. **One definition services any device that speaks the pattern.**
 
-**Our two UDT parameters** (map 1:1 to the SQL columns in §4.2):
+**Three UDT parameters** (map 1:1 to the SQL columns in §4.2; verified parameterizable incl. `opcServer`):
 
-- **`{DeviceName}`** — the Ignition OPC device connection name (e.g. `TopServer`, `Device_5G0_A1`, `MPP_Sim`).
-- **`{BasePath}`** — the address inside the device up to but not including the member (e.g. `5G0_A1.5G0_A1`, or empty for direct-driver instances that have no sub-path).
+- **`{OpcServer}`** — the Ignition OPC **server connection** name. Default `Ignition OPC UA Server` (hosts both the Programmable Device Simulator *and* the native AB/Mitsubishi driver devices); `TopServer` / `OmniServer` for the Phase-1 external OPC-UA connections. Bound on each OPC member as `"opcServer": {"bindType": "parameter", "binding": "{OpcServer}"}`.
+- **`{Device}`** — the device name *within* that server (e.g. `MPP_Sim`, `5G0_A1`).
+- **`{BasePath}`** — the address inside the device up to but not including the member.
 
-Every member's OPC item path is `ns=1;s=[{DeviceName}]{BasePath}.MemberName`.
+Each OPC member's item path is a parameter binding, e.g. `ns=1;s=[{Device}]{BasePath}.PartSN` (mirrors the sample UDT's `ns=1;s=[{Device}]{BasePath}1`).
 
-**Simulation is a separate device connection** — Ignition's Programmable Device Simulator, or memory tags exposed via Ignition's internal OPC-UA server. A UDT instance points at `MPP_Sim` in dev and at the real device in production — **the same UDT definition serves both**, one parameter value swaps it, no fork, no drift. The application and watchers see identical tag paths under the instance either way.
+**Simulation uses Inductive Automation's Programmable Device Simulator** (the tool behind the sample `csv.csv`). We generate a simulator **program CSV** from the member catalog — one **writeable** tag per member per device (`Time Interval, Browse Path, Value Source, Data Type`; Value Source = a literal default = writeable) — and load it into a simulator device named `MPP_Sim` on the `Ignition OPC UA Server`. A UDT instance sets `{OpcServer}=Ignition OPC UA Server`, `{Device}=MPP_Sim` in dev; the **same definition** sets the real server/device in prod. No separate Sim UDT, no memory-tag mirror — one definition, parameters swap it, zero drift.
 
-**Member catalog is the single source of truth** — the 4 UDT definitions are generated from the §3.3 catalog once, so member-set / datatype / direction cannot drift between real and sim.
+**Member catalog is the single source of truth** — the 4 UDT definitions *and* the simulator program CSV are generated from the §3.3 catalog, so member-set / datatype / direction cannot diverge between real and sim.
 
-**Concrete count:** 4 UDT definitions, ~22 UDT instances (one per physical device, listed in §6 + `integration_manifest.csv`), plus one Sim instance per active device we want exercised without hardware.
+**Concrete count:** 4 UDT definitions, ~22 UDT instances (one per physical device — §6 + `integration_manifest.csv`), one `MPP_Sim` simulator device carrying the writeable tags for the devices we exercise without hardware.
 
 ### 3.2 The four UDT types
 
@@ -132,6 +133,20 @@ Directions: **R** = MES reads from PLC, **W** = MES writes to PLC, **trig** = wa
 
 Events fire on **data-change** and `SkipToAction("")` when the flag is 0 ⇒ watcher must act on the **rising edge** (durable-guard concern from the 2026-07-09 readiness note).
 
+### 3.4 Ignition tag JSON format (from the reference `SampleUDT.json` / instance)
+
+The generated UDT definitions follow the reference sample exactly:
+
+- **Definition** — `{"name", "tagType": "UdtType", "parameters": {...}, "tags": [...]}`. Parameters are `{"<Name>": {"dataType": "String|Integer", "value": <default>}}`.
+- **OPC member** — `{"name", "dataType": "<IgnitionType>", "valueSource": "opc", "opcServer": {"bindType":"parameter","binding":"{OpcServer}"}, "opcItemPath": {"bindType":"parameter","binding":"ns=1;s=[{Device}]{BasePath}.<Member>"}}`. (`=`/`;` serialize as `=` etc. — the Designer-unicode-escape gotcha; author with that in mind.)
+- **`valueSource` values used:** `opc` (real/sim device tags), `memory` (local state — e.g. the `writeDisplayEnabled` flag, edge-guard latches), `expr` (derived/computed — e.g. a human-readable handshake-state string), `reference` (mirror a sibling via `"sourceTagPath": "[.]<Member>"`).
+- **Ignition datatypes:** `Boolean`, `Int2`(Int16)/`Int4`(Int32)/`Int8`(Int64), `Float4`/`Float8`, `String`. Our catalog maps BOOL→`Boolean`, INT→`Int4`, REAL→`Float8`, STRING→`String`.
+- **Expression tags** reference siblings as `{[.]<Member>}`, e.g. `round({[.]NetWeightValue},2)`; C-style operators only (per project expr-language memory — `!`/`&&`/`if(c,a,b)`, no Python keywords, no `\u` escapes in string literals).
+- **Event scripts** (if any member needs onChange logic) — `"eventScripts":[{"eventid":"valueChanged","script":"\t<body>"}]`, **tab-indented** (Jython), using `system.tag.readBlocking`/`writeBlocking`.
+- **Instance** — `{"name", "tagType": "UdtInstance", "typeId": "<DefName>", "parameters": {<overrides only>}, "tags": [{"name","tagType":"AtomicTag"} ...]}`. Instances list member names (values optional) and override only the parameters that differ.
+
+Tag artifacts are committed under `ignition/tags/` and imported at deploy (Designer tag import / `system.tag.configure`) — they live outside the project export `scan.ps1` syncs (§8).
+
 ---
 
 ## 4. SQL Data Model
@@ -149,12 +164,16 @@ One row per PLC device a terminal drives.
 | `Id` | BIGINT IDENTITY PK | |
 | `TerminalLocationId` | BIGINT FK → Location | the Terminal (DefId 7) |
 | `PlcDeviceTypeId` | BIGINT FK → PlcDeviceType | which UDT type |
-| `DeviceCode` | NVARCHAR | logical device name, e.g. `5G0_A1`, `59B_1_FP_1` |
-| `DeviceName` | NVARCHAR | Ignition OPC device connection name (matches the UDT's `{DeviceName}` parameter). Commissioning value. `MPP_Sim` in dev. |
-| `BaseTagPath` | NVARCHAR | UDT instance root — commissioning value; in dev points at `Sim/<instance>` |
-| `IsSimulated` | BIT | dev/sim vs live source selector |
+| `DeviceCode` | NVARCHAR | stable logical identity, e.g. `5G0_A1`, `59B_1_FP_1` (does not change sim↔prod) |
+| `OpcServerConnection` | NVARCHAR | → UDT `{OpcServer}` param. `Ignition OPC UA Server` (sim + native drivers) / `TopServer` / `OmniServer`. Default `Ignition OPC UA Server`. |
+| `DeviceName` | NVARCHAR | → UDT `{Device}` param — the device *within* the server. `MPP_Sim` in dev; the real device (e.g. `5G0_A1`) in prod. |
+| `BasePath` | NVARCHAR | → UDT `{BasePath}` param — address inside the device up to (not incl.) the member. |
+| `IsSimulated` | BIT | convenience flag = (`DeviceName` = `MPP_Sim`); lets reads filter dev vs live at a glance |
+| `WriteDisplayEnabled` | BIT | gates the HMI-display writes (§5.1); default 0 (Perspective is the operator surface) |
 | `SortOrder` | INT | display order per terminal |
 | `CreatedAt/UpdatedAt/UpdatedByUserId/DeprecatedAt` | — | standard |
+
+The three OPC columns (`OpcServerConnection` / `DeviceName` / `BasePath`) feed the three UDT-instance parameters 1:1, so `onStartup` can hand the watcher exactly what it needs to address the instance. (`OpcServerConnection` is the completion of the earlier `OpcServerName`→`DeviceName` rename — the rename split one mislabelled column into the two distinct concepts Ignition actually needs: the server *connection* and the device *within* it.)
 
 Rationale for a dedicated table over overloading `LocationAttribute`: `LocationAttribute` is 1 value per (Location, Definition); D3 needs many devices per terminal with several typed columns each. Follows the typed-FK convention (`sql_best_practices_mes.md`).
 
@@ -227,6 +246,36 @@ From the `#N` script bodies — legacy behavior that isn't obvious from just the
 5. **`WatchDog`** (heartbeat, FDS-10-013) is **absent from the EMMD extract**. Either not implemented at Madison, or on a different plant. Confirm at commissioning.
 6. **Auto-generated serial numbers** when `HardwareInterlockEnable=False` — legacy calls `ProcessSerializedItemAtEndOfLine(..., serialNumber="")` and MESCore internally generates a serial. Confirm `SerializedPart_Mint` handles the empty-`@SerialNumber` case with equivalent auto-generation.
 
+### 5.3 Obsolete legacy mechanisms — noted, NOT built
+
+Explicit "carried forward from the old system but not required by the new solution" list. These are **documented and deliberately skipped** — do not build them unless a listed condition holds.
+
+**Tag members declared in the UDT but NOT written/consumed by default:**
+
+| Member(s) | Legacy purpose | Why obsolete | Build? |
+|---|---|---|---|
+| `MESAlarmText`, `MESAlarmType` | Push alarm text to the PLC's local HMI | Perspective at the terminal renders alarms from MES state | **Skip** — gated by `WriteDisplayEnabled` (default 0) |
+| `PartType` (write) | Show running part # on the HMI | Perspective shows it | **Skip** — gated |
+| `ContainerName` (write, 6B2/6MA) | Show in-process container id on the HMI | Perspective shows it | **Skip** — gated |
+| `ContainerCount` (write) + `ContainerCountRequest` | Physical button → MES writes count to HMI for display | Perspective shows live count; request/echo loop is dead weight | **Skip** the request handling + display write; count logic lives in procs |
+| `NET_PartNumber` (read, 59B) | Scale-reported part # cross-checked vs active WO (legacy script 82 "Verify Part") | MES already knows the active LOT's Item; cross-check is optional | **Skip** unless MPP wants scale-part cross-validation |
+| `TRG_TargetWeightUOM` (write) | Send target UOM to scale each change | If UOM is standardized system-wide, redundant | **Confirm** — skip if UOM never varies per part |
+
+**Mechanisms NOT reimplemented:**
+
+| Legacy mechanism | New-system replacement |
+|---|---|
+| `SendMessage` XML message bus (`*_NetWeightUpdate`, `*_TrayLockSet`, `*_InspectionComplete`) | Direct stored-proc calls from the watcher. **No message bus.** (Enumerate legacy consumers first — §5.2 item 1.) |
+| Hardcoded `ContainerCount = 60` completion | Data-driven `ContainerConfig` closure |
+| 5G0 "deactivate DataReady event so the scale triggers labels" dual-path hack | One completion path driven by our proc on the correct trigger |
+| EMMD "message-handler" events (`050 Target Weight Change`, `150 Set In-Process Container`) | Part of the normal proc/handshake flow — not modelled as OPC events |
+| EMMD engine scaffolding — `Initialize Local Variables`, `[BEGIN]/[END]`, `SkipToAction`, `Bail on reset` | Watcher control flow in Python; engine mechanics N/A |
+
+**Explicitly KEPT (look skippable, but are control-plane, not display):**
+`PartNumber` write on tray-inspection lines (selects the **vision recipe** in the PLC before `InspectionComplete`); `OkToContinue`; scale `TRG_TargetWeightValue`/`TRG_ToleranceWeightValue`/`TRG_SendMessage`; `PartValid`; `TransInProc`; `DataReady`/`PartComplete` resets.
+
+**Net effect on the member catalog (§3.3):** every member is still *declared* in the UDT (cheap, and keeps the sim/real contract complete), but the watchers only *write* the control-plane members by default; display members are inert unless `WriteDisplayEnabled=1`. Nothing above is built as active behavior in MVP.
+
 **Handshake archetypes** (from `#U4` + `#N`):
 
 - **Scale:** on `NET_DataReady↑` → read weight/UOM/metFlag → clear them → record weight (proc) → if metFlag, close/label. Target-weight change: write `TRG_*` (zero-padded) + pulse `TRG_SendMessage`.
@@ -257,20 +306,22 @@ Verified against Ignition 8.3 driver docs:
 - TopServer is Kepware `SWToolbox.TOPServer.V5` — natively hosts an OPC-UA server. Add it as a Gateway → OPC Connections → Servers → **OPC-UA client** connection (typical endpoint `opc.tcp://<topserver-host>:49320`; trust certificates in TopServer's OPC UA Configuration Manager → Trusted Clients).
 - OmniServer likewise exposes an OPC-UA server for Ignition to consume.
 - **Result: zero PLC-side rework; all 22 devices reachable through 2 OPC-UA client connections.** TopServer and OmniServer stay under IT ownership as they are today; we don't have to maintain them.
-- UDT instance `{DeviceName}` = `TopServer` or `OmniServer`; `{BasePath}` = the device path inside that server (e.g. `5G0_A1.5G0_A1`).
+- UDT instance params: `{OpcServer}` = `TopServer` / `OmniServer`; `{Device}` + `{BasePath}` = the node path inside that server.
 
 **Phase 2 (optional, post-cutover) — migrate to direct Ignition drivers where native support exists:**
 - 9 AB MicroLogix → Ignition Allen-Bradley Ethernet driver → 9 individual device connections; eliminates TopServer dependency for those devices.
 - 2 Mitsubishi → Ignition Mitsubishi TCP Driver → 2 individual device connections; eliminates TopServer dependency for 5G0.
 - Pro-face (4) and scales (7) stay via TopServer/OmniServer — no native driver exists.
 
-**Why §3.1's parameterization makes this seamless:** flip `{DeviceName}` on 11 UDT instances from `TopServer` to `Device_5G0_A1` (etc.); nothing else in the definition changes.
+**Why §3.1's parameterization makes this seamless:** flip `{OpcServer}` from `TopServer` to `Ignition OPC UA Server` and `{Device}` to the native device name on the 11 migrated instances; nothing else in the definition changes.
+
+**Item-path format nuance (confirm at commissioning):** devices on the **Ignition OPC UA Server** (sim + native drivers) address as `ns=1;s=[{Device}]{BasePath}.<Member>` (bracket form, per the sample UDT). External OPC-UA servers (**TopServer/OmniServer**) use raw node-id strings whose namespace index + separators depend on the Kepware/OmniServer config (typically `ns=2;s=<channel>.<device>.<Member>`, no bracket). The member OPC-item-path template is standardized on the Ignition-server bracket form (the sim + Phase-2 end state); Phase-1 external-server instances finalize their exact node-id template once a live endpoint is browsable. Not a design blocker — the parameter set covers both; only the literal template string is TBD for the external path.
 
 ### 6.2 Integration tracking
 
 `reference/legacy_mes_extract/emmd_automation/integration_manifest.csv` tracks all 22 devices with:
 
-`DeviceCode, DeviceType, Line, LegacyServer, LegacyBasePath, IgnitionNativeDriver, MigrationStrategy, IgnitionDeviceName, ValidatedConnected, ValidatedHandshake, Notes`.
+`DeviceCode, DeviceType, Line, LegacyServer, LegacyBasePath, IgnitionNativeDriver, MigrationStrategy, IgnitionOpcServer, IgnitionDeviceName, ValidatedConnected, ValidatedHandshake, Notes` (the last two feed the UDT `{OpcServer}`/`{Device}` params).
 
 Two validation columns (`ValidatedConnected` — OPC connection green in Ignition; `ValidatedHandshake` — a live trigger successfully round-tripped through the watcher) start at `0` and get flipped to `1` as commissioning progresses. The CSV is the checkoff sheet.
 
@@ -278,16 +329,19 @@ Two validation columns (`ValidatedConnected` — OPC connection green in Ignitio
 
 ## 7. Simulation Layer & Harness
 
-- **`Sim/<Type>` instances** for every device in dev (memory tags), generated from the same member catalog as the real types.
-- **PLC-simulator harness** — a gateway script (and optional small Perspective "sim panel") that drives the `Sim/*` tags through the real handshake sequences: assert `DataReady`/`TrayLocked`, feed a `PartSN`/`VisionPartNumber`, pulse `PartComplete`, and read back what the MES wrote (`PartValid`, `ContainerCount`, alarms). Enables end-to-end watcher tests with **no hardware**.
+Simulation uses **Inductive Automation's Programmable Device Simulator** — no custom mirror, no separate Sim UDT.
+
+- **`MPP_Sim` simulator device** on the `Ignition OPC UA Server`, loaded with a **program CSV** generated from the member catalog (§3.3): one row per member per simulated device — `Time Interval=0, Browse Path=<device>/<member>, Value Source=<writeable literal default>, Data Type=<Ignition type>` (writeable = a plain literal like `false`/`0`/`""`, exactly as in the sample `csv.csv`'s `Writeable/*` rows). Writeable tags are read **and** written over OPC, so the harness can set PLC-side signals and read back what the MES wrote.
+- **UDT instances point at the sim**: `{OpcServer}=Ignition OPC UA Server`, `{Device}=MPP_Sim`, `{BasePath}=<device>`. The **same UDT definition** the watchers bind to in production; only the parameters differ. Watcher + app code is identical dev vs prod.
+- **Harness** drives the `MPP_Sim` tags through the real handshake sequences: assert `DataReady`/`TrayLocked`, feed a `PartSN`/`VisionPartNumber`, pulse `PartComplete`, and read back what the MES wrote (`PartValid`, `ContainerCount`, alarms). End-to-end watcher tests with **no hardware**.
 - Sim scenarios cover: happy path, invalid SN (<6), NoRead bypass (interlock off), vision mismatch (wrong `VisionPartNumber`), container-full closure, disposition fail.
 
 ### 7.1 Sim Panel with scenario tracker (flex repeater)
 
 Perspective view `Sim/PlcSimulator` at `/dev/sim/plc`. Layout:
 
-- **Left rail — device selector**: dropdown of `Sim/*` UDT instances grouped by type.
-- **Center — device control panel**: buttons/inputs specific to the selected UDT type that write directly to the Sim UDT members. Examples:
+- **Left rail — device selector**: dropdown of the `MPP_Sim` UDT instances grouped by type.
+- **Center — device control panel**: buttons/inputs specific to the selected UDT type that write to the instance's members (→ the `MPP_Sim` writeable tags). Examples:
   - Scale: input `NetWeightValue` + checkbox `MetFlag` + [Fire NET_DataReady] button.
   - SerializedMip: input `PartSN`, toggle `HardwareInterlockEnforced`, [Fire DataReady], [Fire PartComplete], [Fire ContainerCountRequest] buttons.
   - NonSerializedMip: [Fire DataReady] button.
@@ -314,14 +368,14 @@ State is transient (view-scoped custom props); [Reset scenarios] repopulates. Fa
 
 ## 8. Versioning of UDT / Tag Artifacts
 
-Gateway **tags live outside the project export** that `scan.ps1` syncs. UDT definitions + instances are therefore a **new tracked artifact**: exported tag JSON committed under `ignition/tags/` (e.g. `udt_definitions.json`, `sim_instances.json`), imported at deploy via Designer tag import / `system.tag.configure`. The repo↔gateway sync doc (`ignition-context-pack/09`) is updated to cover the tag-import step. Generation of the member JSON for both real + Sim types comes from one catalog file (a small script or the SQL device manifest), preventing drift.
+Gateway **tags live outside the project export** that `scan.ps1` syncs. The tag artifacts are therefore **new tracked files** under `ignition/tags/`: the **4 UDT definition** JSONs, the **UDT-instance** JSONs, and the **`MPP_Sim` simulator program CSV** — imported at deploy via Designer tag import / `system.tag.configure` (definitions/instances) and the simulator device's CSV load (sim). The repo↔gateway sync doc (`ignition-context-pack/09`) is updated to cover the tag-import step. All three are **generated from the one §3.3 member catalog**, so real UDTs and the sim device cannot drift.
 
 ---
 
 ## 9. Build Phasing (for the implementation plan)
 
-1. **Member catalog + UDT defs** — encode the §3.3 catalog once; generate the 4 real UDTs + 4 Sim UDTs; commit tag JSON.
-2. **Sim instances + harness** — instantiate `Sim/*` per active device; build the simulator; prove parameter-swing (consumer binds sim).
+1. **Member catalog + UDT defs** — encode the §3.3 catalog once; generate **4 UDT definitions** (the JSON format of §3.4) + the **`MPP_Sim` simulator program CSV**; commit tag JSON + CSV under `ignition/tags/`.
+2. **Sim device + harness** — load `MPP_Sim` into a Programmable Device Simulator on the Ignition OPC UA Server; instantiate the UDTs against it (`{Device}=MPP_Sim`); prove parameter-swing (same definition binds sim now, real device later).
 3. **SQL** — `PlcDeviceType` seed + `TerminalPlcDevice` table/procs (TDD); `ItemLocation.PlcPartCode` + resolve/validate procs; `SerializedPart_GetBySerial` + mint validate surface.
 4. **onStartup** — resolve `session.custom.plcDevices`.
 5. **Watchers** — one per type, edge-subscribed, mapped to procs; test end-to-end against the simulator.
@@ -338,10 +392,11 @@ MVP per FDS §10 (FDS-10-001..013), FDS-01-008/009/014, FDS-06-005/010/012/013/0
 
 ## 11. Open items / follow-ups
 
-- **OI (driver):** Pro-face LT3300 + Mitsubishi + OmniServer-scale connection strategy (native vs retained-middleware-over-UA) — commissioning.
-- **OI (endpoints):** pull TOPServer `.opf` + OmniServer config for per-device IP/port to fill the manifest.
-- **Confirm:** `ItemLocation` attribute mechanism for `PlcPartCode` (§4.3); whether MPP wants `TrayInspectionStation` split 3 ways; A4 serial etch-vs-completion ordering (already deferred) as it affects `SerializedPart_Mint`.
-- **Confirm:** exact 8.3 tag-plumbing for the sim/real parameter swing (§3.1).
+- ✅ **Resolved this rev:** driver strategy (native AB + Mitsubishi; TopServer/OmniServer via OPC-UA client for Pro-face + scales — §6); sim/real parameter swing (Programmable Device Simulator + parameterized `{OpcServer}`/`{Device}` — §3.1, §7); UDT JSON format (§3.4); obsolete-mechanism audit (§5.3).
+- **OI (endpoints):** pull TopServer `.opf` + OmniServer config for per-device IP/port + the exact external-server OPC-UA node-id template (§6.1 nuance) to fill the manifest.
+- **Confirm (business logic — §5.2):** legacy `SendMessage` consumer set (buried in Flexware DLL); sort-recipe mapping location; `HardwareInterlockEnable` vs `Enforced` semantics; `WatchDog` presence at Madison; auto-gen-SN semantics for `SerializedPart_Mint`.
+- **Confirm:** `ItemLocation` attribute mechanism for `PlcPartCode` (§4.3); whether MPP wants `TrayInspectionStation` split 3 ways; A4 serial etch-vs-completion ordering (deferred) as it affects `SerializedPart_Mint`.
+- **Confirm (skip list — §5.3):** `NET_PartNumber` scale cross-check and `TRG_TargetWeightUOM` — keep only if MPP confirms they're needed.
 
 ## 12. Testing
 
