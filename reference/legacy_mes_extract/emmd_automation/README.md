@@ -29,6 +29,7 @@ scripts, then *right-click grid → Save Results As… → CSV*:
 | #H | `topology.tsv` | Plant → Line → Task tree (Active flags) |
 | #I | `events.tsv` | Each Event: watched OPC item + trigger operation/args |
 | #M | `trigger_ops.tsv` | TriggerOperation code table (EQ/NEQ/GT/…/ALL=data-change) |
+| — | `integration_manifest.csv` | **The commissioning checkoff sheet.** All 22 devices with legacy source, native driver availability, migration strategy, and two validation columns (`ValidatedConnected`, `ValidatedHandshake`) that flip 0→1 as each device is exercised. Referenced from spec §6.2. |
 
 **`station_chain.tsv` is a representative capture:** the scale + MIP lines
 (59B / 5A2 / 5G0 / 5J6 / 5K8 / 5PA) carry their full step sequences; the tray-inspection

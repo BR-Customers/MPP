@@ -33,7 +33,7 @@ Legacy connected via OPC-DA bridges (**TOPServer**, **OmniServer**). Ignition co
 | # | Decision | Choice | Rationale |
 |---|---|---|---|
 | D1 | Which location tier carries the device pointer | **Terminal** (`LocationTypeDefinition` DefId 7) | The active operator **session** owns its acceptance handshake; the terminal is already resolved in `onStartup` → `session.custom.terminal`, so zero extra resolution. |
-| D2 | UDT granularity | **One UDT per unique station type** (4 types) | Ignition connects OPC UA per PLC; distinct member signatures per family. No dead members. |
+| D2 | UDT granularity | **One UDT definition per functional pattern** (4 defs), parameterized by `{DeviceName}` + `{BasePath}`; ~22 instances (one per device) | Ignition device connections are a **separate layer** from tag UDTs (Gateway → OPC Connections vs Tag Provider → UDTs). A UDT definition is purely functional — the `{DeviceName}` parameter substitutes into every member's OPC item path at runtime, so one definition services *any* device that speaks the pattern. Verified against Ignition 8.3 UDT-parameters docs. |
 | D3 | Terminal→device multiplicity | **Many** (a terminal can bind several devices) | 5G0 front uses MIP `5G0_A1` **and** scale `5G0_Front_Scale` on one line. Requires a 1-to-many child mapping, not flat attributes. |
 | D4 | Build scope | **Build it** (UDT defs + SQL + onStartup + watchers) **plus a simulation layer** | Real PLCs unreachable in dev; sim makes the handshake logic testable. |
 | D5 | PLC integer part-code ↔ Item mapping | **Item attribute, scoped to `ItemLocation`** (per line) | Codes are line-local (see §6). `ItemLocation` (Item×Location) already exists for eligibility. |
@@ -42,24 +42,25 @@ Legacy connected via OPC-DA bridges (**TOPServer**, **OmniServer**). Ignition co
 
 ## 3. UDT Architecture
 
-### 3.1 Two-layer, single-consumer-contract model
+### 3.1 The Ignition model: UDTs are functional; devices are a separate layer
 
-The application and watchers bind to **one logical consumer UDT per type**; whether it is sourced from a real PLC or the simulator swings by a **parameter**, so no consumer code knows the difference.
+Two orthogonal layers per Ignition 8.3:
 
-```
-  Sim/<Type>            (memory-tag mirror = the FAKE PLC, dev only)
-        ▲  source swings by {BasePath} / {OpcServer} parameter
-        │
-  <Type>  (consumer UDT)  ← app bindings + gateway watcher bind HERE only
-        │
-        ▼  in production, {BasePath}/{OpcServer} point at the OPC-UA device
-  [OPC-UA device]        (native AB driver, or retained middleware over UA)
-```
+- **Device layer** — Gateway → OPC Connections. Each PLC / scale / OPC-UA-server is a named "device". Ignition addresses tags as `[DeviceName]path/inside/device.tagname`.
+- **Tag layer (UDTs)** — Definitions are per functional pattern (Scale, SerializedMip, NonSerializedMip, TrayInspection). Members' OPC item paths reference **parameters** in `{ParamName}` syntax, substituted at runtime. **One definition services any device that speaks the pattern.**
 
-- **`Sim/<Type>`** — a UDT whose members are **memory tags** with identical names/datatypes/direction to the real type. One instance per device in dev (`Sim/5G0_A1`, `Sim/59B_Scale`…). Writable, driven by the simulator harness (§8).
-- **`<Type>`** (consumer) — parameters `{OpcServer}`, `{BasePath}`. Production: point at the real device path. Dev: point at the matching `Sim/<instance>`.
-- **Single source of truth for members:** the Sim mirror and the real type are **generated from one member catalog** (§3.3) so they cannot drift. A drifted simulator gives false confidence.
-- **Tag-plumbing mechanism** (reference tags vs. parameterized OPC path vs. exposing sim tags on Ignition's internal OPC-UA server) has 8.3-specific tradeoffs; the exact choice is pinned in the implementation plan, not here. Requirement: swinging **one parameter** re-sources real↔sim with no change to consumers.
+**Our two UDT parameters** (map 1:1 to the SQL columns in §4.2):
+
+- **`{DeviceName}`** — the Ignition OPC device connection name (e.g. `TopServer`, `Device_5G0_A1`, `MPP_Sim`).
+- **`{BasePath}`** — the address inside the device up to but not including the member (e.g. `5G0_A1.5G0_A1`, or empty for direct-driver instances that have no sub-path).
+
+Every member's OPC item path is `ns=1;s=[{DeviceName}]{BasePath}.MemberName`.
+
+**Simulation is a separate device connection** — Ignition's Programmable Device Simulator, or memory tags exposed via Ignition's internal OPC-UA server. A UDT instance points at `MPP_Sim` in dev and at the real device in production — **the same UDT definition serves both**, one parameter value swaps it, no fork, no drift. The application and watchers see identical tag paths under the instance either way.
+
+**Member catalog is the single source of truth** — the 4 UDT definitions are generated from the §3.3 catalog once, so member-set / datatype / direction cannot drift between real and sim.
+
+**Concrete count:** 4 UDT definitions, ~22 UDT instances (one per physical device, listed in §6 + `integration_manifest.csv`), plus one Sim instance per active device we want exercised without hardware.
 
 ### 3.2 The four UDT types
 
@@ -149,7 +150,7 @@ One row per PLC device a terminal drives.
 | `TerminalLocationId` | BIGINT FK → Location | the Terminal (DefId 7) |
 | `PlcDeviceTypeId` | BIGINT FK → PlcDeviceType | which UDT type |
 | `DeviceCode` | NVARCHAR | logical device name, e.g. `5G0_A1`, `59B_1_FP_1` |
-| `OpcServerName` | NVARCHAR | Ignition device/connection name (or retained middleware over UA) — commissioning value |
+| `DeviceName` | NVARCHAR | Ignition OPC device connection name (matches the UDT's `{DeviceName}` parameter). Commissioning value. `MPP_Sim` in dev. |
 | `BaseTagPath` | NVARCHAR | UDT instance root — commissioning value; in dev points at `Sim/<instance>` |
 | `IsSimulated` | BIT | dev/sim vs live source selector |
 | `SortOrder` | INT | display order per terminal |
@@ -193,6 +194,39 @@ One gateway module per UDT type (extends the established `DowntimePlc` / `Assemb
 | `ProcessTrayInspectionComplete` (254/292) | tray-inspection close (existing Assembly/Hold procs) |
 | `GetInProcessContainerSortRecipe` (88/110) | sort-recipe read (Sort workflow) |
 
+### 5.1 Write-tag audit — separating handshake from HMI-display carry-forward
+
+The legacy write-tag set mixes two purposes; blindly copying it into the new system carries vestigial signals. Split by intent:
+
+**Handshake / control (essential — MES must write to PLC):**
+- `TransInProc` — MES transaction interlock; PLC uses it to know the MES is processing.
+- `PartValid` — MES release signal; PLC uses this to route the part / release the tray.
+- `DataReady` / `PartComplete` / `ContainerCountRequest` (reset only) — MES acknowledging consumed triggers.
+- `OkToContinue` (tray inspection) — MES release signal.
+- `PartNumber` (tray inspection) — drives vision-system recipe selection *inside the PLC* before `InspectionComplete` fires. **Control, not display.**
+- `TRG_TargetWeightValue` / `TRG_TargetWeightUOM` / `TRG_ToleranceWeightValue` / `TRG_SendMessage` (scale) — MES configuring the scale hardware.
+
+**HMI display carry-forward (vestigial with Perspective at the terminal — mark OPTIONAL in the UDT):**
+- `PartType` — currently-running part on the local HMI screen.
+- `MESAlarmText` / `MESAlarmType` — MES alarm text on the local HMI.
+- `ContainerCount` (when written purely for display, not for handshake seeding).
+- `ContainerName` (6B2 / 6MA cam-holder lines — displayed on the local HMI).
+
+Rationale: the 5A2 lines use Pro-face LT3300 HMIs and the 5G0 lines use dedicated MIP HMIs — legacy MES had to write alarm/display state to the PLC because the operator's screen was the HMI. Under the new architecture, **Perspective is the operator surface** at every PLC-integrated station, so alarm/display state is rendered by Perspective from MES state directly.
+
+**Concrete rule:** each "HMI display" member declared in the UDT gets a per-instance `writeDisplayEnabled` flag (a Boolean column on `TerminalPlcDevice`). Off by default; on only where the legacy HMI is retained. The watchers check the flag before writing.
+
+### 5.2 Legacy business logic worth flagging (things we don't fully have eyes on)
+
+From the `#N` script bodies — legacy behavior that isn't obvious from just the tag list:
+
+1. **`SendMessage` internal message bus.** Every script broadcasts XML-payload messages like `59B_1_FP_1_NetWeightUpdate`, `6B2_CH_TrayLockSet`, `SORT_OP_InspectionComplete`. These are not PLC writes — they flow to `MESCore` consumers (label printers, downstream cell notifications, database loggers). **The full consumer set is buried in the legacy `Flexware.MES.EMInterface.dll`**, source not available. The new architecture replaces the bus with direct proc calls, but enumerate consumers before assuming nothing else listens.
+2. **Container completion hardcoded at 60** in the 5G0 scripts (`If ContainerCount = 60 Then trigger completion`). Business rule, not a constant. Moves to `ContainerConfig` (data-driven closure).
+3. **Sort recipes.** `GetInProcessContainerSortRecipe` returns an integer written as `PartNumber` to the sort PLC. Where is the mapping data today? Attribute on Item? Separate table? Confirm it survives.
+4. **`HardwareInterlockEnable` (FDS) vs `HardwareInterlockEnforced` (EMMD).** FDS-10 says R/W (MES-controllable); EMMD only reads. Verify new-system semantics.
+5. **`WatchDog`** (heartbeat, FDS-10-013) is **absent from the EMMD extract**. Either not implemented at Madison, or on a different plant. Confirm at commissioning.
+6. **Auto-generated serial numbers** when `HardwareInterlockEnable=False` — legacy calls `ProcessSerializedItemAtEndOfLine(..., serialNumber="")` and MESCore internally generates a serial. Confirm `SerializedPart_Mint` handles the empty-`@SerialNumber` case with equivalent auto-generation.
+
 **Handshake archetypes** (from `#U4` + `#N`):
 
 - **Scale:** on `NET_DataReady↑` → read weight/UOM/metFlag → clear them → record weight (proc) → if metFlag, close/label. Target-weight change: write `TRG_*` (zero-padded) + pulse `TRG_SendMessage`.
@@ -206,18 +240,39 @@ One gateway module per UDT type (extends the established `DowntimePlc` / `Assemb
 
 ---
 
-## 6. Device Connection Manifest
+## 6. Device Connections — driver reality (verified 2026-07-10)
 
-Generated from the EMMD data — the skeleton of the Ignition OPC-UA connections. **Endpoints (IP/port/driver) are NOT in EMMD** (they live in the TOPServer `.opf` / OmniServer config); those columns are commissioning fill-ins.
+Verified against Ignition 8.3 driver docs:
 
-| Device | Type | New driver | Endpoint | Notes |
-|---|---|---|---|---|
-| 6B2_CH, 6MA_CH, 6FB_CH, RPY_CH, 5J6, 5K8_64A, 6C2_6MA, Sort_OilPan, Sort_Totes | TrayInspection | ✅ native AB MicroLogix | _TBD_ | 9 MicroLogix 1400 — clean OPC-UA |
-| 5A2_L1/L2 × CamHolder/FuelPump | NonSerializedMip | ⚠️ no native driver | _TBD_ | Pro-face LT3300 — driver decision |
-| 5G0_A1, 5G0_A2 | SerializedMip | ⚠️ no native driver | _TBD_ | Mitsubishi — driver decision |
-| 59B_1_FP_1, 5PA_1_FP_1, 6B2_1_FP_1, RPY_1_FP_1, RPY_1_CB_1, 5G0_Front_Scale, 5G0_Rear_Scale | Scale | ⚠️ serial/ASCII | _TBD_ | OmniServer bridges serial — keep-middleware-over-UA or reimplement |
+| Family | Devices | Native Ignition driver? | Path forward |
+|---|---|---|---|
+| **Allen-Bradley MicroLogix 1400** | 9 (6B2_CH, 6MA_CH, 6FB_CH, RPY_CH, 5J6, 5K8_64A, 6C2_6MA, Sort_OilPan, Sort_Totes) | ✅ **Yes** — AB Ethernet driver, MicroLogix 1100/1400 fully supported | Direct Ignition device connection possible |
+| **Mitsubishi PLC** | 2 (5G0_A1, 5G0_A2) | ✅ **Yes** — Mitsubishi TCP Driver (iQ-R / iQ-F / Q / L series) | Direct Ignition device connection possible *(confirm series at commissioning)* |
+| **Pro-face LT3300 HMI/PLC** | 4 (5A2 CamHolder/FuelPump × L1/L2) | ⚠️ **No native driver** | Connect via TopServer (already deployed as OPC-UA server) |
+| **Serial ASCII scales via OmniServer** | 7 (59B, 5PA, 6B2, RPY_FP, RPY_CB, 5G0_Front, 5G0_Rear) | ⚠️ **No native ASCII-pattern driver** | Keep OmniServer as OPC-UA server (already deployed); Ignition connects as OPC-UA client |
 
-**Driver decision per non-AB family** (commissioning): (a) retain a middleware OPC server (Kepware/TOPServer-equiv) and have Ignition consume it over OPC-UA — the `OpcServerName` column simply points there; or (b) native/third-party driver module. The UDT's free-form `{OpcServer}` parameter accommodates either.
+### 6.1 Migration strategy (staged — day-one working, cutover-friendly)
+
+**Phase 1 — connect to existing servers as OPC-UA clients** (recommended for MVP):
+- TopServer is Kepware `SWToolbox.TOPServer.V5` — natively hosts an OPC-UA server. Add it as a Gateway → OPC Connections → Servers → **OPC-UA client** connection (typical endpoint `opc.tcp://<topserver-host>:49320`; trust certificates in TopServer's OPC UA Configuration Manager → Trusted Clients).
+- OmniServer likewise exposes an OPC-UA server for Ignition to consume.
+- **Result: zero PLC-side rework; all 22 devices reachable through 2 OPC-UA client connections.** TopServer and OmniServer stay under IT ownership as they are today; we don't have to maintain them.
+- UDT instance `{DeviceName}` = `TopServer` or `OmniServer`; `{BasePath}` = the device path inside that server (e.g. `5G0_A1.5G0_A1`).
+
+**Phase 2 (optional, post-cutover) — migrate to direct Ignition drivers where native support exists:**
+- 9 AB MicroLogix → Ignition Allen-Bradley Ethernet driver → 9 individual device connections; eliminates TopServer dependency for those devices.
+- 2 Mitsubishi → Ignition Mitsubishi TCP Driver → 2 individual device connections; eliminates TopServer dependency for 5G0.
+- Pro-face (4) and scales (7) stay via TopServer/OmniServer — no native driver exists.
+
+**Why §3.1's parameterization makes this seamless:** flip `{DeviceName}` on 11 UDT instances from `TopServer` to `Device_5G0_A1` (etc.); nothing else in the definition changes.
+
+### 6.2 Integration tracking
+
+`reference/legacy_mes_extract/emmd_automation/integration_manifest.csv` tracks all 22 devices with:
+
+`DeviceCode, DeviceType, Line, LegacyServer, LegacyBasePath, IgnitionNativeDriver, MigrationStrategy, IgnitionDeviceName, ValidatedConnected, ValidatedHandshake, Notes`.
+
+Two validation columns (`ValidatedConnected` — OPC connection green in Ignition; `ValidatedHandshake` — a live trigger successfully round-tripped through the watcher) start at `0` and get flipped to `1` as commissioning progresses. The CSV is the checkoff sheet.
 
 ---
 
@@ -226,6 +281,34 @@ Generated from the EMMD data — the skeleton of the Ignition OPC-UA connections
 - **`Sim/<Type>` instances** for every device in dev (memory tags), generated from the same member catalog as the real types.
 - **PLC-simulator harness** — a gateway script (and optional small Perspective "sim panel") that drives the `Sim/*` tags through the real handshake sequences: assert `DataReady`/`TrayLocked`, feed a `PartSN`/`VisionPartNumber`, pulse `PartComplete`, and read back what the MES wrote (`PartValid`, `ContainerCount`, alarms). Enables end-to-end watcher tests with **no hardware**.
 - Sim scenarios cover: happy path, invalid SN (<6), NoRead bypass (interlock off), vision mismatch (wrong `VisionPartNumber`), container-full closure, disposition fail.
+
+### 7.1 Sim Panel with scenario tracker (flex repeater)
+
+Perspective view `Sim/PlcSimulator` at `/dev/sim/plc`. Layout:
+
+- **Left rail — device selector**: dropdown of `Sim/*` UDT instances grouped by type.
+- **Center — device control panel**: buttons/inputs specific to the selected UDT type that write directly to the Sim UDT members. Examples:
+  - Scale: input `NetWeightValue` + checkbox `MetFlag` + [Fire NET_DataReady] button.
+  - SerializedMip: input `PartSN`, toggle `HardwareInterlockEnforced`, [Fire DataReady], [Fire PartComplete], [Fire ContainerCountRequest] buttons.
+  - NonSerializedMip: [Fire DataReady] button.
+  - TrayInspection: input `VisionPartNumber`, 18-checkbox grid `PartDisposition01..18`, [Fire TrayLocked], [Fire InspectionComplete] buttons.
+- **Right rail — scenario tracker (flex repeater)** bound to `view.custom.pendingScenarios` (a list of `{title, expectedOutcome, deviceType}` dicts). Each row shows:
+  - Scenario title
+  - Expected outcome text
+  - **[Passed]** button → removes the row from the array (visual check-off)
+  - **[Failed]** button → removes the row and appends `{title, timestamp, note}` to `view.custom.failedScenarios` for follow-up
+- **Header buttons**: [Reset scenarios] (repopulates from `Sim.getScenariosForDeviceType(type)`), [Copy failed list].
+
+**Scenario seeds** (Python module `Sim.py.getScenariosForDeviceType(type)` — hard-coded, no persistence needed):
+
+| UDT type | Scenarios |
+|---|---|
+| **ScaleStation** | Target-weight set + `TRG_SendMessage` echo; DataReady rising edge with `MetFlag=False` → weight recorded no close; same with `MetFlag=True` → container close + label; UOM mismatch handled; simultaneous scale + MIP DataReady on 5G0 → correct ordering |
+| **SerializedMipStation** | Happy path valid PartSN (≥6) → `PartValid=True`, count increments; invalid PartSN (<6) → `PartValid=False`, alarm text set; `HardwareInterlockEnforced=False` → auto-generated SN accepted; duplicate SN rejected; `ContainerCountRequest` rising edge → count written back; container reaches configured limit → `Container_Complete` fires |
+| **NonSerializedMipStation** | Happy path — `Assembly_CompleteTray` mints FG LOT + `PartValid=True`; BOM shortage → alarm; tray container full → new container opens |
+| **TrayInspectionStation** | `TrayLocked` → `PartNumber` written for vision recipe; `InspectionComplete` all-pass disposition → container adds; some-fail disposition → per-slot pass/fail recorded, passes only added; `VisionPartNumber` mismatches active LOT Item → line-stop; disposition read while `InspectionComplete=0` → bail (edge-guard test) |
+
+State is transient (view-scoped custom props); [Reset scenarios] repopulates. Failed scenarios accumulate for the session — enough state for a debug pass without a database table.
 
 ---
 
