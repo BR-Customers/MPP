@@ -1,107 +1,85 @@
 -- ============================================================
 -- Seed:        029_seed_item_routes.sql
 -- Author:      Blue Ridge Automation
--- Date:        2026-07-07 (terminal-mint re-author)
--- Description: Continuous Demo Seed Dataset (Task 1). Published RouteTemplate
---              + RouteStep rows for the processed items, authored to the
---              TERMINAL-MINT model (spec 2026-07-07, Model Y + decision C):
+-- Date:        2026-07-13 (rewritten from the correct DB configuration)
+-- Description: Published RouteTemplate + RouteStep rows for the 13-part Honda
+--              matrix (020_seed_items.sql), matching the Config-Tool setup in
+--              MPP_MES_Dev. Terminal-mint model: a casting's route carries the
+--              chain THROUGH its consume-mint step; a machined SubAssembly/FG
+--              picks up its route after birth.
+--                * 5G0-c   : DieCast -> TrimIn -> TrimOut -> MachiningIn -> MachiningOut
+--                * 5G0-SA  : MachiningOut
+--                * 5G0-FG  : AssemblyOut
+--                * 12231/12232/12241-59B-0000 : DieCast -> TrimIn -> TrimOut -> MachiningIn -> AssemblyOut
+--                * 1223A-59B -A0002 : AssemblyOut
+--                * 12270-6NA   : DieCast -> TrimIn -> TrimOut -> MachiningIn -> MachiningOut
+--                * 12270-6NA-M : MachiningOut
+--                * 12270-6NA -0001 : AssemblyOut
 --
---                * A CASTING's route carries the full chain THROUGH its
---                  consume-mint. The casting is consumed at Machining OUT
---                  (mints the machined SubAssembly), so MachiningIn + MachiningOut
---                  live on the CASTING's route -- not the machined part's.
---                    6MA-C: DieCast -> TrimIn -> TrimOut -> MachiningIn -> MachiningOut
---                    5G0-C: DieCast -> MachiningIn -> MachiningOut   (5G0 skips trim)
---                * A SubAssembly picks up its route AFTER birth (it is born at the
---                  casting's Machining OUT); it is consumed at Assembly OUT (mints
---                  the finished good).
---                    6MA-M: AssemblyIn -> AssemblyOut
---                    5G0-M: AssemblyOut                (serialized line, no Assembly-In terminal)
---                * A FINISHED GOOD is the OUTPUT of Assembly OUT -- it has NO route
---                  of its own (born there, then packaged/shipped). 6MA / 5G0 get none.
+--              Steps resolve the OperationTemplate BY OperationType ROLE (via
+--              Parts.OperationType.Code) -- robust to the specific template Code
+--              (DieCastShot vs DC-A etc.); it binds to whichever active template
+--              carries that role. Direct-INSERT (published v1), idempotent
+--              (natural-key by PartNumber + VersionNumber / SequenceNumber).
+--              ASCII-only.
 --
---              Route legality (spec §4.2) holds: each non-FG route ends at a single
---              ConsumeMint step (Machining/Assembly OUT), an OriginMint (DieCast) is
---              first. Direct-INSERT (published), idempotent (IF NOT EXISTS guards,
---              natural-key by PartNumber / Code / Initials). ASCII-only.
---
---              Dependencies: 020_seed_items.sql (Items), 022/024/026/027
---              (OperationTemplate Codes: DieCastShot, TrimIn/Out, MachiningIn/Out,
---              AssemblyIn/Out).
+--              Dependencies: 020_seed_items.sql (Items); 022/024/026/027
+--              (one active OperationTemplate per role: DieCast, TrimIn, TrimOut,
+--              MachiningIn, MachiningOut, AssemblyIn, AssemblyOut).
 -- ============================================================
+SET NOCOUNT ON;
 
--- ---- 6MA-C (casting): DieCast -> TrimIn -> TrimOut -> MachiningIn -> MachiningOut ----
-DECLARE @RtId BIGINT;
-IF NOT EXISTS (SELECT 1 FROM Parts.RouteTemplate rt INNER JOIN Parts.Item i ON i.Id = rt.ItemId WHERE i.PartNumber = N'6MA-C' AND rt.VersionNumber = 1)
-    INSERT INTO Parts.RouteTemplate (ItemId, VersionNumber, Name, EffectiveFrom, PublishedAt, DeprecatedAt, CreatedByUserId, CreatedAt)
-    SELECT i.Id, 1, N'6MA-C Cast->Trim->Machine Route v1', '2026-01-15', '2026-01-14', NULL, u.Id, SYSUTCDATETIME()
-    FROM Parts.Item i, Location.AppUser u WHERE i.PartNumber = N'6MA-C' AND u.Initials = N'DEV';
-SET @RtId = (SELECT rt.Id FROM Parts.RouteTemplate rt INNER JOIN Parts.Item i ON i.Id = rt.ItemId WHERE i.PartNumber = N'6MA-C' AND rt.VersionNumber = 1);
-IF NOT EXISTS (SELECT 1 FROM Parts.RouteStep WHERE RouteTemplateId = @RtId AND SequenceNumber = 1)
-    INSERT INTO Parts.RouteStep (RouteTemplateId, OperationTemplateId, SequenceNumber, IsRequired, Description)
-    SELECT @RtId, ot.Id, 1, 1, N'Die cast shot' FROM Parts.OperationTemplate ot WHERE ot.Code = N'DieCastShot';
-IF NOT EXISTS (SELECT 1 FROM Parts.RouteStep WHERE RouteTemplateId = @RtId AND SequenceNumber = 2)
-    INSERT INTO Parts.RouteStep (RouteTemplateId, OperationTemplateId, SequenceNumber, IsRequired, Description)
-    SELECT @RtId, ot.Id, 2, 1, N'Trim in' FROM Parts.OperationTemplate ot WHERE ot.Code = N'TrimIn';
-IF NOT EXISTS (SELECT 1 FROM Parts.RouteStep WHERE RouteTemplateId = @RtId AND SequenceNumber = 3)
-    INSERT INTO Parts.RouteStep (RouteTemplateId, OperationTemplateId, SequenceNumber, IsRequired, Description)
-    SELECT @RtId, ot.Id, 3, 1, N'Trim out' FROM Parts.OperationTemplate ot WHERE ot.Code = N'TrimOut';
-IF NOT EXISTS (SELECT 1 FROM Parts.RouteStep WHERE RouteTemplateId = @RtId AND SequenceNumber = 4)
-    INSERT INTO Parts.RouteStep (RouteTemplateId, OperationTemplateId, SequenceNumber, IsRequired, Description)
-    SELECT @RtId, ot.Id, 4, 1, N'Machining in' FROM Parts.OperationTemplate ot WHERE ot.Code = N'MachiningIn';
-IF NOT EXISTS (SELECT 1 FROM Parts.RouteStep WHERE RouteTemplateId = @RtId AND SequenceNumber = 5)
-    INSERT INTO Parts.RouteStep (RouteTemplateId, OperationTemplateId, SequenceNumber, IsRequired, Description)
-    SELECT @RtId, ot.Id, 5, 1, N'Machining out (mints 6MA-M)' FROM Parts.OperationTemplate ot WHERE ot.Code = N'MachiningOut';
+DECLARE @Dev BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
+
+-- one published v1 RouteTemplate per processed item
+DECLARE @R TABLE (Pn NVARCHAR(60), Name NVARCHAR(120));
+INSERT INTO @R (Pn, Name) VALUES
+ (N'5G0-c',            N'5G0-c Cast->Trim->Machine Route v1'),
+ (N'5G0-SA',           N'5G0-SA Machining-Out Route v1'),
+ (N'5G0-FG',           N'5G0-FG Assembly-Out Route v1'),
+ (N'12231-59B-0000',   N'12231 Cast->Machine->Assembly Route v1'),
+ (N'12232-59B-0000',   N'12232 Cast->Machine->Assembly Route v1'),
+ (N'12241-59B-0000',   N'12241 Cast->Machine->Assembly Route v1'),
+ (N'1223A-59B -A0002', N'1223A Assembly-Out Route v1'),
+ (N'12270-6NA',        N'12270-6NA Cast->Trim->Machine Route v1'),
+ (N'12270-6NA-M',      N'12270-6NA-M Machining-Out Route v1'),
+ (N'12270-6NA -0001',  N'12270-6NA-0001 Assembly-Out Route v1');
+
+-- ordered route steps, keyed by OperationType role
+DECLARE @S TABLE (Pn NVARCHAR(60), Seq INT, Role NVARCHAR(30), Descr NVARCHAR(120));
+INSERT INTO @S (Pn, Seq, Role, Descr) VALUES
+ (N'5G0-c',1,N'DieCast',N'Die cast'),(N'5G0-c',2,N'TrimIn',N'Trim in'),(N'5G0-c',3,N'TrimOut',N'Trim out'),(N'5G0-c',4,N'MachiningIn',N'Machining in'),(N'5G0-c',5,N'MachiningOut',N'Machining out (mints 5G0-SA)'),
+ (N'5G0-SA',1,N'MachiningOut',N'Machining out'),
+ (N'5G0-FG',1,N'AssemblyOut',N'Assembly out'),
+ (N'12231-59B-0000',1,N'DieCast',N'Die cast'),(N'12231-59B-0000',2,N'TrimIn',N'Trim in'),(N'12231-59B-0000',3,N'TrimOut',N'Trim out'),(N'12231-59B-0000',4,N'MachiningIn',N'Machining in'),(N'12231-59B-0000',5,N'AssemblyOut',N'Assembly out'),
+ (N'12232-59B-0000',1,N'DieCast',N'Die cast'),(N'12232-59B-0000',2,N'TrimIn',N'Trim in'),(N'12232-59B-0000',3,N'TrimOut',N'Trim out'),(N'12232-59B-0000',4,N'MachiningIn',N'Machining in'),(N'12232-59B-0000',5,N'AssemblyOut',N'Assembly out'),
+ (N'12241-59B-0000',1,N'DieCast',N'Die cast'),(N'12241-59B-0000',2,N'TrimIn',N'Trim in'),(N'12241-59B-0000',3,N'TrimOut',N'Trim out'),(N'12241-59B-0000',4,N'MachiningIn',N'Machining in'),(N'12241-59B-0000',5,N'AssemblyOut',N'Assembly out'),
+ (N'1223A-59B -A0002',1,N'AssemblyOut',N'Assembly out'),
+ (N'12270-6NA',1,N'DieCast',N'Die cast'),(N'12270-6NA',2,N'TrimIn',N'Trim in'),(N'12270-6NA',3,N'TrimOut',N'Trim out'),(N'12270-6NA',4,N'MachiningIn',N'Machining in'),(N'12270-6NA',5,N'MachiningOut',N'Machining out (mints 12270-6NA-M)'),
+ (N'12270-6NA-M',1,N'MachiningOut',N'Machining out'),
+ (N'12270-6NA -0001',1,N'AssemblyOut',N'Assembly out');
+
+-- 1) RouteTemplate (published v1) per item
+INSERT INTO Parts.RouteTemplate (ItemId, VersionNumber, Name, EffectiveFrom, PublishedAt, DeprecatedAt, CreatedByUserId, CreatedAt)
+SELECT i.Id, 1, r.Name, '2026-01-15', '2026-01-14', NULL, @Dev, SYSUTCDATETIME()
+FROM @R r JOIN Parts.Item i ON i.PartNumber = r.Pn
+WHERE NOT EXISTS (SELECT 1 FROM Parts.RouteTemplate rt WHERE rt.ItemId = i.Id AND rt.VersionNumber = 1);
+
+-- 2) RouteStep, resolving OperationTemplate by role (skips a role with no template)
+INSERT INTO Parts.RouteStep (RouteTemplateId, OperationTemplateId, SequenceNumber, IsRequired, Description)
+SELECT rt.Id, op.Id, s.Seq, 1, s.Descr
+FROM @S s
+JOIN Parts.Item i ON i.PartNumber = s.Pn
+JOIN Parts.RouteTemplate rt ON rt.ItemId = i.Id AND rt.VersionNumber = 1
+CROSS APPLY (
+    SELECT TOP 1 o.Id
+    FROM Parts.OperationTemplate o
+    JOIN Parts.OperationType oty ON oty.Id = o.OperationTypeId
+    WHERE oty.Code = s.Role AND o.DeprecatedAt IS NULL
+    ORDER BY o.Id
+) op
+WHERE NOT EXISTS (SELECT 1 FROM Parts.RouteStep x WHERE x.RouteTemplateId = rt.Id AND x.SequenceNumber = s.Seq);
 GO
 
--- ---- 6MA-M (sub-assembly): AssemblyIn -> AssemblyOut ----
-DECLARE @RtId BIGINT;
-IF NOT EXISTS (SELECT 1 FROM Parts.RouteTemplate rt INNER JOIN Parts.Item i ON i.Id = rt.ItemId WHERE i.PartNumber = N'6MA-M' AND rt.VersionNumber = 1)
-    INSERT INTO Parts.RouteTemplate (ItemId, VersionNumber, Name, EffectiveFrom, PublishedAt, DeprecatedAt, CreatedByUserId, CreatedAt)
-    SELECT i.Id, 1, N'6MA-M Assembly Route v1', '2026-01-15', '2026-01-14', NULL, u.Id, SYSUTCDATETIME()
-    FROM Parts.Item i, Location.AppUser u WHERE i.PartNumber = N'6MA-M' AND u.Initials = N'DEV';
-SET @RtId = (SELECT rt.Id FROM Parts.RouteTemplate rt INNER JOIN Parts.Item i ON i.Id = rt.ItemId WHERE i.PartNumber = N'6MA-M' AND rt.VersionNumber = 1);
-IF NOT EXISTS (SELECT 1 FROM Parts.RouteStep WHERE RouteTemplateId = @RtId AND SequenceNumber = 1)
-    INSERT INTO Parts.RouteStep (RouteTemplateId, OperationTemplateId, SequenceNumber, IsRequired, Description)
-    SELECT @RtId, ot.Id, 1, 1, N'Assembly in' FROM Parts.OperationTemplate ot WHERE ot.Code = N'AssemblyIn';
-IF NOT EXISTS (SELECT 1 FROM Parts.RouteStep WHERE RouteTemplateId = @RtId AND SequenceNumber = 2)
-    INSERT INTO Parts.RouteStep (RouteTemplateId, OperationTemplateId, SequenceNumber, IsRequired, Description)
-    SELECT @RtId, ot.Id, 2, 1, N'Assembly out (mints 6MA)' FROM Parts.OperationTemplate ot WHERE ot.Code = N'AssemblyOut';
-GO
-
--- ---- 6MA (finished good): NO route (born at 6MA-M's Assembly OUT; packaged/shipped) ----
-
--- ---- 5G0-C (casting): DieCast -> MachiningIn -> MachiningOut ----
-DECLARE @RtId BIGINT;
-IF NOT EXISTS (SELECT 1 FROM Parts.RouteTemplate rt INNER JOIN Parts.Item i ON i.Id = rt.ItemId WHERE i.PartNumber = N'5G0-C' AND rt.VersionNumber = 1)
-    INSERT INTO Parts.RouteTemplate (ItemId, VersionNumber, Name, EffectiveFrom, PublishedAt, DeprecatedAt, CreatedByUserId, CreatedAt)
-    SELECT i.Id, 1, N'5G0-C Cast->Machine Route v1', '2026-01-15', '2026-01-14', NULL, u.Id, SYSUTCDATETIME()
-    FROM Parts.Item i, Location.AppUser u WHERE i.PartNumber = N'5G0-C' AND u.Initials = N'DEV';
-SET @RtId = (SELECT rt.Id FROM Parts.RouteTemplate rt INNER JOIN Parts.Item i ON i.Id = rt.ItemId WHERE i.PartNumber = N'5G0-C' AND rt.VersionNumber = 1);
-IF NOT EXISTS (SELECT 1 FROM Parts.RouteStep WHERE RouteTemplateId = @RtId AND SequenceNumber = 1)
-    INSERT INTO Parts.RouteStep (RouteTemplateId, OperationTemplateId, SequenceNumber, IsRequired, Description)
-    SELECT @RtId, ot.Id, 1, 1, N'Die cast shot' FROM Parts.OperationTemplate ot WHERE ot.Code = N'DieCastShot';
-IF NOT EXISTS (SELECT 1 FROM Parts.RouteStep WHERE RouteTemplateId = @RtId AND SequenceNumber = 2)
-    INSERT INTO Parts.RouteStep (RouteTemplateId, OperationTemplateId, SequenceNumber, IsRequired, Description)
-    SELECT @RtId, ot.Id, 2, 1, N'Machining in' FROM Parts.OperationTemplate ot WHERE ot.Code = N'MachiningIn';
-IF NOT EXISTS (SELECT 1 FROM Parts.RouteStep WHERE RouteTemplateId = @RtId AND SequenceNumber = 3)
-    INSERT INTO Parts.RouteStep (RouteTemplateId, OperationTemplateId, SequenceNumber, IsRequired, Description)
-    SELECT @RtId, ot.Id, 3, 1, N'Machining out (mints 5G0-M)' FROM Parts.OperationTemplate ot WHERE ot.Code = N'MachiningOut';
-GO
-
--- ---- 5G0-M (sub-assembly): AssemblyOut (serialized line, no Assembly-In terminal) ----
-DECLARE @RtId BIGINT;
-IF NOT EXISTS (SELECT 1 FROM Parts.RouteTemplate rt INNER JOIN Parts.Item i ON i.Id = rt.ItemId WHERE i.PartNumber = N'5G0-M' AND rt.VersionNumber = 1)
-    INSERT INTO Parts.RouteTemplate (ItemId, VersionNumber, Name, EffectiveFrom, PublishedAt, DeprecatedAt, CreatedByUserId, CreatedAt)
-    SELECT i.Id, 1, N'5G0-M Serialized Assembly Route v1', '2026-01-15', '2026-01-14', NULL, u.Id, SYSUTCDATETIME()
-    FROM Parts.Item i, Location.AppUser u WHERE i.PartNumber = N'5G0-M' AND u.Initials = N'DEV';
-SET @RtId = (SELECT rt.Id FROM Parts.RouteTemplate rt INNER JOIN Parts.Item i ON i.Id = rt.ItemId WHERE i.PartNumber = N'5G0-M' AND rt.VersionNumber = 1);
-IF NOT EXISTS (SELECT 1 FROM Parts.RouteStep WHERE RouteTemplateId = @RtId AND SequenceNumber = 1)
-    INSERT INTO Parts.RouteStep (RouteTemplateId, OperationTemplateId, SequenceNumber, IsRequired, Description)
-    SELECT @RtId, ot.Id, 1, 1, N'Assembly out (serialized; mints 5G0)' FROM Parts.OperationTemplate ot WHERE ot.Code = N'AssemblyOut';
-GO
-
--- ---- 5G0 (finished good): NO route (born at 5G0-M's Assembly OUT; packaged/shipped) ----
-
-PRINT 'seed_item_routes: terminal-mint routes loaded (6MA-C x5, 6MA-M x2, 5G0-C x3, 5G0-M x1 steps; FGs 6MA/5G0 unrouted).';
+PRINT 'seed_item_routes: 10 published routes (5G0/59B/6NA chains) with role-resolved steps loaded.';
 GO
