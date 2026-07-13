@@ -34,9 +34,12 @@ GO
 
 DECLARE @OriginRcv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
 DECLARE @ItemId BIGINT, @CellId BIGINT;
+-- Constrain to an uncapped (MaxLotSize IS NULL) item so the fixture's
+-- PieceCount (100) fits -- the realistic seed castings cap at 24-30 pcs/basket.
 SELECT TOP 1 @ItemId = eil.ItemId, @CellId = eil.LocationId
 FROM Parts.v_EffectiveItemLocation eil
-WHERE NOT EXISTS (SELECT 1 FROM Tools.ToolAssignment ta
+WHERE eil.ItemId IN (SELECT Id FROM Parts.Item WHERE MaxLotSize IS NULL)
+  AND NOT EXISTS (SELECT 1 FROM Tools.ToolAssignment ta
                   WHERE ta.CellLocationId = eil.LocationId AND ta.ReleasedAt IS NULL)
 ORDER BY eil.LocationId;
 
