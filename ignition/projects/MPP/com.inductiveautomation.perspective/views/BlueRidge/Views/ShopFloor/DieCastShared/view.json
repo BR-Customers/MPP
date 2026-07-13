@@ -1,19 +1,7 @@
 {
-  "custom": {
-    "cells": [],
-    "selectedCellId": null
-  },
+  "custom": {},
   "params": {},
-  "propConfig": {
-    "custom.cells": {
-      "binding": {
-        "config": {
-          "expression": "runScript(\"BlueRidge.Location.Terminal.getContextCellsForDropdown\", 0, {session.custom.terminal.terminalLocationId}, \"Die Cast Machine\")"
-        },
-        "type": "expr"
-      }
-    }
-  },
+  "propConfig": {},
   "props": {},
   "root": {
     "type": "ia.container.flex",
@@ -28,87 +16,6 @@
     },
     "children": [
       {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "PickerBar"
-        },
-        "position": {
-          "shrink": 0
-        },
-        "props": {
-          "direction": "row",
-          "alignItems": "center",
-          "style": {
-            "classes": "pf-terminal-cell-context",
-            "gap": "12px"
-          }
-        },
-        "children": [
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "PickerLabel"
-            },
-            "props": {
-              "text": "Select cell",
-              "style": {
-                "classes": "pf-cell-context-label"
-              }
-            }
-          },
-          {
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "config": {
-                    "script": "\tself.view.rootContainer.applyCell(self.props.value)"
-                  },
-                  "scope": "G",
-                  "type": "script"
-                }
-              }
-            },
-            "meta": {
-              "name": "CellDropdown"
-            },
-            "position": {
-              "basis": "320px"
-            },
-            "propConfig": {
-              "props.options": {
-                "binding": {
-                  "config": {
-                    "path": "view.custom.cells"
-                  },
-                  "transforms": [
-                    {
-                      "code": "\tcells = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\treturn [{\"label\": c.get(\"label\"), \"value\": c.get(\"value\")} for c in cells]",
-                      "type": "script"
-                    }
-                  ],
-                  "type": "property"
-                }
-              },
-              "props.value": {
-                "binding": {
-                  "config": {
-                    "bidirectional": true,
-                    "path": "view.custom.selectedCellId"
-                  },
-                  "type": "property"
-                }
-              }
-            },
-            "props": {
-              "placeholder": {
-                "text": "Scan or pick a cell"
-              }
-            },
-            "type": "ia.input.dropdown"
-          }
-        ]
-      },
-      {
         "type": "ia.display.view",
         "meta": {
           "name": "BodyEmbed"
@@ -118,25 +25,15 @@
           "basis": "0"
         },
         "props": {
+          "params": {
+            "cellPickerEnabled": true
+          },
           "path": "BlueRidge/Views/ShopFloor/DieCastBody"
         }
       }
     ],
     "scripts": {
-      "customMethods": [
-        {
-          "name": "applyCell",
-          "params": [
-            "cellId"
-          ],
-          "script": "\tcellId = BlueRidge.Common.Util.extractQualifiedValues(cellId)\n\trow = BlueRidge.Location.Location.findCellById(self.view.custom.cells, cellId)\n\tif row is None:\n\t\treturn\n\tself.view.custom.selectedCellId = row.get(\"value\")\n\tself.session.custom.cell = {\"locationId\": row.get(\"value\"), \"code\": row.get(\"code\") or \"\", \"name\": row.get(\"name\") or \"\"}"
-        },
-        {
-          "name": "seedSelectedCell",
-          "params": [],
-          "script": "\tc = self.session.custom.cell\n\tif c and c.get(\"locationId\"):\n\t\tself.view.custom.selectedCellId = c.get(\"locationId\")"
-        }
-      ],
+      "customMethods": [],
       "messageHandlers": [],
       "extensionFunctions": null
     },
@@ -146,7 +43,7 @@
           "type": "script",
           "scope": "G",
           "config": {
-            "script": "\ttry:\n\t\tself.session.custom.presence.policy = \"strict\"\n\texcept:\n\t\tself.session.custom.presence = {\"policy\": \"strict\"}\n\tself.seedSelectedCell()"
+            "script": "\ttry:\n\t\tself.session.custom.presence.policy = \"strict\"\n\texcept:\n\t\tself.session.custom.presence = {\"policy\": \"strict\"}\n\t# Screen-scoped cell guard (2026-07-08): session.custom.cell is shared across process\n\t# screens - a cell picked elsewhere (e.g. a die-cast machine) must not leak into this\n\t# screen. Clear it unless it is one of THIS terminal's Die Cast Machine context cells.\n\ttry:\n\t\tcells = BlueRidge.Location.Terminal.getContextCellsForDropdown(self.session.custom.terminal.terminalLocationId, \"Die Cast Machine\")\n\t\tids = [c.get(\"value\") for c in cells]\n\t\tc = self.session.custom.cell\n\t\tif c and c.get(\"locationId\") not in ids:\n\t\t\tself.session.custom.cell = {\"locationId\": None, \"code\": \"\", \"name\": \"\"}\n\texcept:\n\t\tpass"
           }
         }
       }

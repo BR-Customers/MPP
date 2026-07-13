@@ -1,6 +1,6 @@
 EXEC Parts.OperationTemplate_Create
     @Code           = :code,
     @Name           = :name,
-    @AreaLocationId = :areaLocationId,
+    @OperationTypeId = :operationTypeId,
     @Description    = :description,
     @AppUserId      = :appUserId

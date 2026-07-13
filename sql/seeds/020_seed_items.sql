@@ -1,350 +1,245 @@
 -- ============================================================
--- Seed:        seed_items.sql
+-- Seed:        020_seed_items.sql
 -- Author:      Blue Ridge Automation
--- Date:        2026-05-20
--- Description: Dummy Parts data for the Item Master Configuration
---              Tool screen. Idempotent (IF NOT EXISTS guards).
+-- Date:        2026-07-13 (rewritten from the correct DB configuration)
+-- Description: Continuous Demo Seed Dataset -- the 13-part Honda matrix as
+--              configured in MPP_MES_Dev via the Config Tool (the canonical
+--              setup). Replaces the earlier 6MA/5G0-M/RD-BRKT synthetic matrix.
+--              Three finished-good chains:
+--                * 5G0 Front Cover (serialized):
+--                    5G0-c (casting) -> 5G0-SA (machined) -> 5G0-FG + 21001 pin
+--                * 59B Cam-Rocker Holder Set (non-serialized):
+--                    12231/12232/12241-59B-0000 (3 castings) -> 1223A-59B -A0002
+--                    + 90701-5R0-3000 (dowel)
+--                * 6NA Fuel Pump (non-serialized):
+--                    12270-6NA (casting) -> 12270-6NA-M (machined)
+--                    -> 12270-6NA -0001 + 92900-06014-1B, 94301-08100 (fasteners)
 --
---              Seeds:
---                - AppUser Id 2 (dev user, matches Common.Util
---                  ._currentAppUserId fallback)
---                - 4 OperationTemplates (Die Cast, Trim, CNC, Assembly)
---                - 6 Items: 5G0, 5G0-C, PNA, 6MA-HSG, RPY, 5G0-MACH
---                - ContainerConfig per Item (5G0-MACH is an intermediate, no config)
---                - Published RouteTemplate + 4 RouteSteps for 5G0
---                - Published Boms: 5G0 <- 5G0-MACH + 2x PNA (assembly);
---                  5G0-MACH <- 5G0-C (machining rename, FDS-05-033)
---                - 2 QualitySpecs linked to 5G0
+--              Seeds: dev AppUser Id 2; 13 Items; 3 ContainerConfigs; 5 published
+--              BOMs; 25 Parts.ItemLocation eligibility rows (Area + WorkCenter
+--              tiers only -- no cell/terminal/printer rows, per the 2026-07-06
+--              eligibility-tier decision; the FDS-03-014 cascade resolves cell
+--              scans up to these tiers). Idempotent (IF NOT EXISTS on natural
+--              keys -- PartNumber / Code -- never a hardcoded Id). ASCII-only.
 --
---              Dependencies:
---                - 011_seed_locations_mpp_plant.sql (areas resolved by
---                  Code: DC1, TRIM1, MA1)
+--              Routes (RouteTemplate/RouteStep) live in 029_seed_item_routes.sql
+--              (numbered after the OperationTemplate seeds 022/024/026/027 so the
+--              role templates exist). Quality specs are not part of this seed.
+--
+--              Dependencies: 011_seed_locations_mpp_plant.sql (Location.Code:
+--              DC1/DC2/DC3, TRIM1, MA1/MA2, MA1-5GOF, MA2-59B, MA1-FP6NA).
 -- ============================================================
 
 SET NOCOUNT ON;
 
-DECLARE @Now DATETIME2(3) = SYSUTCDATETIME();
-
 -- ============================================================
--- AppUser Id 2 (dev user)
+-- AppUser Id 2 (dev user, matches Common.Util._currentAppUserId fallback)
 -- ============================================================
-
+DECLARE @Now0 DATETIME2(3) = SYSUTCDATETIME();
 IF NOT EXISTS (SELECT 1 FROM Location.AppUser WHERE Id = 2)
 BEGIN
     SET IDENTITY_INSERT Location.AppUser ON;
     INSERT INTO Location.AppUser (Id, AdAccount, DisplayName, IgnitionRole, Initials, CreatedAt)
-    VALUES (2, N'dev.user', N'Dev User', N'Admin', N'DEV', @Now);
+    VALUES (2, N'dev.user', N'Dev User', N'Admin', N'DEV', @Now0);
     SET IDENTITY_INSERT Location.AppUser OFF;
 END
+GO
 
 -- ============================================================
--- OperationTemplates (need AreaLocationId)
---   Areas resolved by Code from 011_seed_locations_mpp_plant.sql: DC1, TRIM1, MA1
+-- Parts.Item -- 13-part Honda matrix.
+--   ItemType (Code, migration 0004): Component/SubAssembly/FinishedGood
+--   Uom (Code): PCS (5G0 family) / EA (59B, 6NA families)
+--   MaxLotSize column = "Parts Per Basket" (Config Tool label); DefaultSubLotQty
+--   = machining-out sub-lot split qty.
 -- ============================================================
+DECLARE @Now DATETIME2(3) = SYSUTCDATETIME();
+DECLARE @Dev BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
+DECLARE @TComp BIGINT = (SELECT Id FROM Parts.ItemType WHERE Code = N'Component');
+DECLARE @TSub  BIGINT = (SELECT Id FROM Parts.ItemType WHERE Code = N'SubAssembly');
+DECLARE @TFG   BIGINT = (SELECT Id FROM Parts.ItemType WHERE Code = N'FinishedGood');
+DECLARE @PCS BIGINT = (SELECT Id FROM Parts.Uom WHERE Code = N'PCS');
+DECLARE @EA  BIGINT = (SELECT Id FROM Parts.Uom WHERE Code = N'EA');
 
-SET IDENTITY_INSERT Parts.OperationTemplate ON;
+-- ---- 5G0 Front Cover family ----
+IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'5G0-c')
+    INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, DefaultSubLotQty, MaxLotSize, UomId, CreatedAt, CreatedByUserId)
+    VALUES (@TComp, N'5G0-c', N'5G0 Front Cover Casting', 12, 24, @PCS, @Now, @Dev);
+IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'5G0-SA')
+    INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, DefaultSubLotQty, MaxLotSize, UomId, CreatedAt, CreatedByUserId)
+    VALUES (@TSub, N'5G0-SA', N'5G0 Front Cover Sub-Assembly', 12, 24, @PCS, @Now, @Dev);
+IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'5G0-FG')
+    INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, WeightUomId, CreatedAt, CreatedByUserId)
+    VALUES (@TFG, N'5G0-FG', N'5G0 Front Cover Finished Good', @PCS, @EA, @Now, @Dev);
+IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'21001 pin')
+    INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, CreatedAt, CreatedByUserId)
+    VALUES (@TComp, N'21001 pin', N'Pin 21001', @PCS, @Now, @Dev);
 
-IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Id = 1)
-    INSERT INTO Parts.OperationTemplate (Id, Code, VersionNumber, Name, AreaLocationId, Description, CreatedAt)
-    VALUES (1, N'DC-5G0', 1, N'Die Cast 5G0 Front Cover', (SELECT Id FROM Location.Location WHERE Code = N'DC1'), N'Die cast operation for the 5G0 front cover assembly.', @Now);
+-- ---- 59B Cam Holder family ----
+IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'12231-59B-0000')
+    INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, DefaultSubLotQty, MaxLotSize, UomId, CreatedAt, CreatedByUserId)
+    VALUES (@TComp, N'12231-59B-0000', N'59B Cam Holder IN #1 Casting', 15, 30, @EA, @Now, @Dev);
+IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'12232-59B-0000')
+    INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, DefaultSubLotQty, MaxLotSize, UomId, CreatedAt, CreatedByUserId)
+    VALUES (@TComp, N'12232-59B-0000', N'59B Cam Holder IN #2 Casting', 15, 30, @EA, @Now, @Dev);
+IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'12241-59B-0000')
+    INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, DefaultSubLotQty, MaxLotSize, UomId, CreatedAt, CreatedByUserId)
+    VALUES (@TComp, N'12241-59B-0000', N'59B Cam Holder EX #1 Casting', 15, 30, @EA, @Now, @Dev);
+IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'90701-5R0-3000')
+    INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, CreatedAt, CreatedByUserId)
+    VALUES (@TComp, N'90701-5R0-3000', N'Dowel Pin 9x10 (purchased)', @EA, @Now, @Dev);
+IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'1223A-59B -A0002')
+    INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, CreatedAt, CreatedByUserId)
+    VALUES (@TFG, N'1223A-59B -A0002', N'59B Cam-Rocker Holder Set', @EA, @Now, @Dev);
 
-IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Id = 2)
-    INSERT INTO Parts.OperationTemplate (Id, Code, VersionNumber, Name, AreaLocationId, Description, CreatedAt)
-    VALUES (2, N'TRIM-5G0', 1, N'Trim 5G0 Front Cover', (SELECT Id FROM Location.Location WHERE Code = N'TRIM1'), N'Trim/deflash operation for the 5G0 front cover.', @Now);
-
-IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Id = 3)
-    INSERT INTO Parts.OperationTemplate (Id, Code, VersionNumber, Name, AreaLocationId, Description, CreatedAt)
-    VALUES (3, N'CNC-5G0', 1, N'CNC Machining 5G0', (SELECT Id FROM Location.Location WHERE Code = N'MA1'), N'CNC machining operation for the 5G0 front cover.', @Now);
-
-IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Id = 4)
-    INSERT INTO Parts.OperationTemplate (Id, Code, VersionNumber, Name, AreaLocationId, Description, CreatedAt)
-    VALUES (4, N'ASSY-FRONT', 1, N'Assembly Front Cover', (SELECT Id FROM Location.Location WHERE Code = N'MA1'), N'Final assembly of the 5G0 front cover.', @Now);
-
-SET IDENTITY_INSERT Parts.OperationTemplate OFF;
-
--- ============================================================
--- Parts.Item (6 items: 5 mockup items + 5G0-MACH machining intermediate)
---   ItemType:  1=RawMaterial 2=Component 3=SubAssembly 4=FinishedGood 5=PassThrough
---   Uom:       1=EA 2=LB 3=KG
--- ============================================================
-
-SET IDENTITY_INSERT Parts.Item ON;
-
-IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE Id = 1)
-    INSERT INTO Parts.Item (Id, ItemTypeId, PartNumber, Description, MacolaPartNumber, DefaultSubLotQty, MaxLotSize, UomId, UnitWeight, WeightUomId, CountryOfOrigin, MaxParts, CreatedAt, CreatedByUserId)
-    VALUES (1, 4, N'5G0',     N'5G0 Front Cover Assembly',    N'5G0-FC-001', 24, NULL, 1, 3.25, 2, N'US', 500, @Now, 2);
-
-IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE Id = 2)
-    INSERT INTO Parts.Item (Id, ItemTypeId, PartNumber, Description, MacolaPartNumber, DefaultSubLotQty, MaxLotSize, UomId, UnitWeight, WeightUomId, CountryOfOrigin, MaxParts, CreatedAt, CreatedByUserId)
-    VALUES (2, 2, N'5G0-C',   N'5G0 Front Cover Casting',     N'5G0-CST-001', 48, NULL, 1, 2.80, 2, N'US', NULL, @Now, 2);
-
-IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE Id = 3)
-    INSERT INTO Parts.Item (Id, ItemTypeId, PartNumber, Description, MacolaPartNumber, DefaultSubLotQty, MaxLotSize, UomId, UnitWeight, WeightUomId, CountryOfOrigin, MaxParts, CreatedAt, CreatedByUserId)
-    VALUES (3, 2, N'PNA',     N'Mounting Pin',                N'PIN-A-002',   100, NULL, 1, 0.05, 2, N'US', NULL, @Now, 2);
-
-IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE Id = 4)
-    INSERT INTO Parts.Item (Id, ItemTypeId, PartNumber, Description, MacolaPartNumber, DefaultSubLotQty, MaxLotSize, UomId, UnitWeight, WeightUomId, CountryOfOrigin, MaxParts, CreatedAt, CreatedByUserId)
-    VALUES (4, 5, N'6MA-HSG', N'Cam Holder Housing',          N'HSG-6MA-001', 50, NULL, 1, 1.10, 2, N'JP', NULL, @Now, 2);
-
-IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE Id = 5)
-    INSERT INTO Parts.Item (Id, ItemTypeId, PartNumber, Description, MacolaPartNumber, DefaultSubLotQty, MaxLotSize, UomId, UnitWeight, WeightUomId, CountryOfOrigin, MaxParts, CreatedAt, CreatedByUserId)
-    VALUES (5, 4, N'RPY',     N'Assembly Set',                N'RPY-SET-001', 12, NULL, 1, 5.50, 2, N'US', 300, @Now, 2);
-
-IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE Id = 6)
-    INSERT INTO Parts.Item (Id, ItemTypeId, PartNumber, Description, MacolaPartNumber, DefaultSubLotQty, MaxLotSize, UomId, UnitWeight, WeightUomId, CountryOfOrigin, MaxParts, CreatedAt, CreatedByUserId)
-    VALUES (6, 3, N'5G0-MACH', N'5G0 Machined Front Cover',    N'5G0-MCH-001', 24, NULL, 1, 2.90, 2, N'US', NULL, @Now, 2);
-
-SET IDENTITY_INSERT Parts.Item OFF;
-
--- ============================================================
--- Parts.ContainerConfig (one per Item)
--- ============================================================
-
-SET IDENTITY_INSERT Parts.ContainerConfig ON;
-
-IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE Id = 1)
-    INSERT INTO Parts.ContainerConfig (Id, ItemId, TraysPerContainer, PartsPerTray, IsSerialized, DunnageCode, CustomerCode, ClosureMethod, TargetWeight, CreatedAt)
-    VALUES (1, 1, 4,  12,  1, N'RD-5G0F',  N'HONDA-5G0',  N'ByCount',  NULL,  @Now);
-
-IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE Id = 2)
-    INSERT INTO Parts.ContainerConfig (Id, ItemId, TraysPerContainer, PartsPerTray, IsSerialized, DunnageCode, CustomerCode, ClosureMethod, TargetWeight, CreatedAt)
-    VALUES (2, 2, 6,  24,  0, N'RD-5G0C',  NULL,           N'ByCount',  NULL,  @Now);
-
-IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE Id = 3)
-    INSERT INTO Parts.ContainerConfig (Id, ItemId, TraysPerContainer, PartsPerTray, IsSerialized, DunnageCode, CustomerCode, ClosureMethod, TargetWeight, CreatedAt)
-    VALUES (3, 3, 10, 100, 0, N'BAG-PIN',  NULL,           N'ByCount',  NULL,  @Now);
-
-IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE Id = 4)
-    INSERT INTO Parts.ContainerConfig (Id, ItemId, TraysPerContainer, PartsPerTray, IsSerialized, DunnageCode, CustomerCode, ClosureMethod, TargetWeight, CreatedAt)
-    VALUES (4, 4, 4,  25,  0, N'RD-6MA',   N'HONDA-6MA',   N'ByCount',  NULL,  @Now);
-
-IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE Id = 5)
-    INSERT INTO Parts.ContainerConfig (Id, ItemId, TraysPerContainer, PartsPerTray, IsSerialized, DunnageCode, CustomerCode, ClosureMethod, TargetWeight, CreatedAt)
-    VALUES (5, 5, 2,  6,   1, N'RD-RPY',   N'HONDA-RPY',   N'ByCount',  NULL,  @Now);
-
-SET IDENTITY_INSERT Parts.ContainerConfig OFF;
+-- ---- 6NA Fuel Pump family ----
+IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'12270-6NA')
+    INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, DefaultSubLotQty, MaxLotSize, UomId, CreatedAt, CreatedByUserId)
+    VALUES (@TComp, N'12270-6NA', N'6NA Fuel Pump Base Casting (raw)', 6, 12, @EA, @Now, @Dev);
+IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'12270-6NA-M')
+    INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, DefaultSubLotQty, MaxLotSize, UomId, CreatedAt, CreatedByUserId)
+    VALUES (@TSub, N'12270-6NA-M', N'6NA Fuel Pump Base Machined (synth SA)', 6, 12, @EA, @Now, @Dev);
+IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'92900-06014-1B')
+    INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, CreatedAt, CreatedByUserId)
+    VALUES (@TComp, N'92900-06014-1B', N'Stud Bolt 6x14 (purchased)', @EA, @Now, @Dev);
+IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'94301-08100')
+    INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, CreatedAt, CreatedByUserId)
+    VALUES (@TComp, N'94301-08100', N'Dowel Pin 8x10 (purchased)', @EA, @Now, @Dev);
+IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'12270-6NA -0001')
+    INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, CreatedAt, CreatedByUserId)
+    VALUES (@TFG, N'12270-6NA -0001', N'6NA Fuel Pump', @EA, @Now, @Dev);
+GO
 
 -- ============================================================
--- Parts.RouteTemplate (published) for Item 1 (5G0) and 5 (RPY)
+-- Parts.ContainerConfig -- one per finished good.
 -- ============================================================
+IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig cc INNER JOIN Parts.Item i ON i.Id = cc.ItemId WHERE i.PartNumber = N'5G0-FG' AND cc.DeprecatedAt IS NULL)
+    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, TargetWeight, CreatedAt)
+    SELECT Id, 4, 12, 1, N'ByCount', NULL, SYSUTCDATETIME() FROM Parts.Item WHERE PartNumber = N'5G0-FG';
 
-SET IDENTITY_INSERT Parts.RouteTemplate ON;
+IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig cc INNER JOIN Parts.Item i ON i.Id = cc.ItemId WHERE i.PartNumber = N'1223A-59B -A0002' AND cc.DeprecatedAt IS NULL)
+    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, TargetWeight, CreatedAt)
+    SELECT Id, 4, 15, 0, N'ByWeight', 75.0, SYSUTCDATETIME() FROM Parts.Item WHERE PartNumber = N'1223A-59B -A0002';
 
-IF NOT EXISTS (SELECT 1 FROM Parts.RouteTemplate WHERE Id = 1)
-    INSERT INTO Parts.RouteTemplate (Id, ItemId, VersionNumber, Name, EffectiveFrom, PublishedAt, DeprecatedAt, CreatedByUserId, CreatedAt)
-    VALUES (1, 1, 2, N'5G0 Production Route v2', '2026-01-15', '2026-01-14', NULL, 2, @Now);
-
-IF NOT EXISTS (SELECT 1 FROM Parts.RouteTemplate WHERE Id = 2)
-    INSERT INTO Parts.RouteTemplate (Id, ItemId, VersionNumber, Name, EffectiveFrom, PublishedAt, DeprecatedAt, CreatedByUserId, CreatedAt)
-    VALUES (2, 5, 1, N'RPY Assembly Route v1', '2026-02-01', '2026-01-30', NULL, 2, @Now);
-
-SET IDENTITY_INSERT Parts.RouteTemplate OFF;
-
--- ============================================================
--- Parts.RouteStep (steps for Route Id 1 and Route Id 2)
--- ============================================================
-
-SET IDENTITY_INSERT Parts.RouteStep ON;
-
-IF NOT EXISTS (SELECT 1 FROM Parts.RouteStep WHERE Id = 1)
-    INSERT INTO Parts.RouteStep (Id, RouteTemplateId, OperationTemplateId, SequenceNumber, IsRequired, Description)
-    VALUES (1, 1, 1, 1, 1, N'DieInfo, CavityInfo, Weight, GoodCount, BadCount');
-
-IF NOT EXISTS (SELECT 1 FROM Parts.RouteStep WHERE Id = 2)
-    INSERT INTO Parts.RouteStep (Id, RouteTemplateId, OperationTemplateId, SequenceNumber, IsRequired, Description)
-    VALUES (2, 1, 2, 2, 1, N'Weight, GoodCount, BadCount');
-
-IF NOT EXISTS (SELECT 1 FROM Parts.RouteStep WHERE Id = 3)
-    INSERT INTO Parts.RouteStep (Id, RouteTemplateId, OperationTemplateId, SequenceNumber, IsRequired, Description)
-    VALUES (3, 1, 3, 3, 1, N'GoodCount, BadCount');
-
-IF NOT EXISTS (SELECT 1 FROM Parts.RouteStep WHERE Id = 4)
-    INSERT INTO Parts.RouteStep (Id, RouteTemplateId, OperationTemplateId, SequenceNumber, IsRequired, Description)
-    VALUES (4, 1, 4, 4, 1, N'SerialNumber, MaterialVerification, GoodCount, BadCount');
-
-IF NOT EXISTS (SELECT 1 FROM Parts.RouteStep WHERE Id = 5)
-    INSERT INTO Parts.RouteStep (Id, RouteTemplateId, OperationTemplateId, SequenceNumber, IsRequired, Description)
-    VALUES (5, 2, 4, 1, 1, N'SerialNumber, GoodCount, BadCount');
-
-SET IDENTITY_INSERT Parts.RouteStep OFF;
+IF NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig cc INNER JOIN Parts.Item i ON i.Id = cc.ItemId WHERE i.PartNumber = N'12270-6NA -0001' AND cc.DeprecatedAt IS NULL)
+    INSERT INTO Parts.ContainerConfig (ItemId, TraysPerContainer, PartsPerTray, IsSerialized, ClosureMethod, TargetWeight, CreatedAt)
+    SELECT Id, 4, 6, 0, N'ByVision', NULL, SYSUTCDATETIME() FROM Parts.Item WHERE PartNumber = N'12270-6NA -0001';
+GO
 
 -- ============================================================
--- Parts.Bom (published): Item 1 (5G0 assembly) + Item 6 (5G0-MACH machining rename)
+-- Parts.Bom + Parts.BomLine (published v1).
+--   5G0-SA <- 5G0-c x1                        (machining rename)
+--   5G0-FG <- 5G0-SA x1 + 21001 pin x6
+--   1223A-59B -A0002 <- 12231 x1 + 12232 x1 + 12241 x1 + 90701-5R0-3000 x19
+--   12270-6NA-M <- 12270-6NA x1               (machining rename)
+--   12270-6NA -0001 <- 12270-6NA-M x1 + 92900-06014-1B x1 + 94301-08100 x2
 -- ============================================================
+DECLARE @Bom BIGINT, @P NVARCHAR(60);
 
-SET IDENTITY_INSERT Parts.Bom ON;
-
-IF NOT EXISTS (SELECT 1 FROM Parts.Bom WHERE Id = 1)
-    INSERT INTO Parts.Bom (Id, ParentItemId, VersionNumber, EffectiveFrom, PublishedAt, DeprecatedAt, CreatedByUserId, CreatedAt)
-    VALUES (1, 1, 1, '2026-01-15', '2026-01-14', NULL, 2, @Now);
-
-IF NOT EXISTS (SELECT 1 FROM Parts.Bom WHERE Id = 2)
-    INSERT INTO Parts.Bom (Id, ParentItemId, VersionNumber, EffectiveFrom, PublishedAt, DeprecatedAt, CreatedByUserId, CreatedAt)
-    VALUES (2, 6, 1, '2026-01-15', '2026-01-14', NULL, 2, @Now);   -- machining rename BOM: 5G0-MACH <- 5G0-C (FDS-05-033)
-
-SET IDENTITY_INSERT Parts.Bom OFF;
-
--- ============================================================
--- Parts.BomLine
--- ============================================================
-
-SET IDENTITY_INSERT Parts.BomLine ON;
-
-IF NOT EXISTS (SELECT 1 FROM Parts.BomLine WHERE Id = 1)
-    INSERT INTO Parts.BomLine (Id, BomId, ChildItemId, QtyPer, UomId, SortOrder)
-    VALUES (1, 1, 6, 1.0, 1, 1);   -- 5G0 needs 1x 5G0-MACH (machined front cover, per cast->machine->assemble chain)
-
-IF NOT EXISTS (SELECT 1 FROM Parts.BomLine WHERE Id = 2)
-    INSERT INTO Parts.BomLine (Id, BomId, ChildItemId, QtyPer, UomId, SortOrder)
-    VALUES (2, 1, 3, 2.0, 1, 2);   -- 5G0 needs 2x PNA (Mounting Pin)
-
-IF NOT EXISTS (SELECT 1 FROM Parts.BomLine WHERE Id = 3)
-    INSERT INTO Parts.BomLine (Id, BomId, ChildItemId, QtyPer, UomId, SortOrder)
-    VALUES (3, 2, 2, 1.0, 1, 1);   -- 5G0-MACH (rename) <- 1x 5G0-C (FDS-05-033 single-child rename)
-
-SET IDENTITY_INSERT Parts.BomLine OFF;
-
--- ============================================================
--- Quality.QualitySpec for Item 1 (5G0)
--- ============================================================
-
-SET IDENTITY_INSERT Quality.QualitySpec ON;
-
-IF NOT EXISTS (SELECT 1 FROM Quality.QualitySpec WHERE Id = 1)
-    INSERT INTO Quality.QualitySpec (Id, Name, ItemId, OperationTemplateId, Description, CreatedAt)
-    VALUES (1, N'5G0 Dimensional Spec', 1, NULL, N'Dimensional tolerances for the 5G0 front cover assembly.', @Now);
-
-IF NOT EXISTS (SELECT 1 FROM Quality.QualitySpec WHERE Id = 2)
-    INSERT INTO Quality.QualitySpec (Id, Name, ItemId, OperationTemplateId, Description, CreatedAt)
-    VALUES (2, N'5G0 Visual Inspection', 1, NULL, N'Visual inspection criteria for the 5G0 front cover.', @Now);
-
-SET IDENTITY_INSERT Quality.QualitySpec OFF;
-
--- ============================================================
--- Quality.QualitySpecVersion (one published version each)
--- ============================================================
-
-SET IDENTITY_INSERT Quality.QualitySpecVersion ON;
-
-IF NOT EXISTS (SELECT 1 FROM Quality.QualitySpecVersion WHERE Id = 1)
-    INSERT INTO Quality.QualitySpecVersion (Id, QualitySpecId, VersionNumber, EffectiveFrom, PublishedAt, DeprecatedAt, CreatedByUserId, CreatedAt)
-    VALUES (1, 1, 2, '2026-01-15', '2026-01-14', NULL, 2, @Now);
-
-IF NOT EXISTS (SELECT 1 FROM Quality.QualitySpecVersion WHERE Id = 2)
-    INSERT INTO Quality.QualitySpecVersion (Id, QualitySpecId, VersionNumber, EffectiveFrom, PublishedAt, DeprecatedAt, CreatedByUserId, CreatedAt)
-    VALUES (2, 2, 1, '2026-01-15', '2026-01-14', NULL, 2, @Now);
-
-SET IDENTITY_INSERT Quality.QualitySpecVersion OFF;
-
--- ============================================================
--- Parts.OperationTemplateField -- data-collection fields per OT
---   Fully configures the 4 OperationTemplates the 5G0 route uses, so the
---   Routes tab steps map onto real data-collection field sets.
---   DataCollectionField: 1=MaterialVerification 2=SerialNumber 3=DieInfo
---     4=CavityInfo 5=Weight 6=GoodCount 7=BadCount
--- ============================================================
-
-SET IDENTITY_INSERT Parts.OperationTemplateField ON;
-
--- OT 1 (DC-5G0, Die Cast): DieInfo, CavityInfo, Weight, GoodCount, BadCount
-IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplateField WHERE Id = 1)
-    INSERT INTO Parts.OperationTemplateField (Id, OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt) VALUES (1, 1, 3, 1, @Now);
-IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplateField WHERE Id = 2)
-    INSERT INTO Parts.OperationTemplateField (Id, OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt) VALUES (2, 1, 4, 1, @Now);
-IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplateField WHERE Id = 3)
-    INSERT INTO Parts.OperationTemplateField (Id, OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt) VALUES (3, 1, 5, 1, @Now);
-IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplateField WHERE Id = 4)
-    INSERT INTO Parts.OperationTemplateField (Id, OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt) VALUES (4, 1, 6, 1, @Now);
-IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplateField WHERE Id = 5)
-    INSERT INTO Parts.OperationTemplateField (Id, OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt) VALUES (5, 1, 7, 1, @Now);
-
--- OT 2 (TRIM-5G0, Trim): Weight, GoodCount, BadCount
-IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplateField WHERE Id = 6)
-    INSERT INTO Parts.OperationTemplateField (Id, OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt) VALUES (6, 2, 5, 1, @Now);
-IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplateField WHERE Id = 7)
-    INSERT INTO Parts.OperationTemplateField (Id, OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt) VALUES (7, 2, 6, 1, @Now);
-IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplateField WHERE Id = 8)
-    INSERT INTO Parts.OperationTemplateField (Id, OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt) VALUES (8, 2, 7, 1, @Now);
-
--- OT 3 (CNC-5G0, CNC): GoodCount, BadCount
-IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplateField WHERE Id = 9)
-    INSERT INTO Parts.OperationTemplateField (Id, OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt) VALUES (9, 3, 6, 1, @Now);
-IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplateField WHERE Id = 10)
-    INSERT INTO Parts.OperationTemplateField (Id, OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt) VALUES (10, 3, 7, 1, @Now);
-
--- OT 4 (ASSY-FRONT, Assembly): SerialNumber, MaterialVerification, GoodCount, BadCount
-IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplateField WHERE Id = 11)
-    INSERT INTO Parts.OperationTemplateField (Id, OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt) VALUES (11, 4, 2, 1, @Now);
-IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplateField WHERE Id = 12)
-    INSERT INTO Parts.OperationTemplateField (Id, OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt) VALUES (12, 4, 1, 1, @Now);
-IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplateField WHERE Id = 13)
-    INSERT INTO Parts.OperationTemplateField (Id, OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt) VALUES (13, 4, 6, 1, @Now);
-IF NOT EXISTS (SELECT 1 FROM Parts.OperationTemplateField WHERE Id = 14)
-    INSERT INTO Parts.OperationTemplateField (Id, OperationTemplateId, DataCollectionFieldId, IsRequired, CreatedAt) VALUES (14, 4, 7, 1, @Now);
-
-SET IDENTITY_INSERT Parts.OperationTemplateField OFF;
+-- helper pattern repeated per BOM (direct-insert, resolve child by PartNumber)
+-- 5G0-SA <- 5G0-c
+IF NOT EXISTS (SELECT 1 FROM Parts.Bom b JOIN Parts.Item i ON i.Id=b.ParentItemId WHERE i.PartNumber=N'5G0-SA' AND b.VersionNumber=1)
+    INSERT INTO Parts.Bom (ParentItemId, VersionNumber, EffectiveFrom, PublishedAt, CreatedByUserId, CreatedAt)
+    SELECT i.Id, 1, '2026-01-15', '2026-01-14', u.Id, SYSUTCDATETIME() FROM Parts.Item i, Location.AppUser u WHERE i.PartNumber=N'5G0-SA' AND u.Initials=N'DEV';
+SET @Bom = (SELECT b.Id FROM Parts.Bom b JOIN Parts.Item i ON i.Id=b.ParentItemId WHERE i.PartNumber=N'5G0-SA' AND b.VersionNumber=1);
+IF NOT EXISTS (SELECT 1 FROM Parts.BomLine bl JOIN Parts.Item c ON c.Id=bl.ChildItemId WHERE bl.BomId=@Bom AND c.PartNumber=N'5G0-c')
+    INSERT INTO Parts.BomLine (BomId, ChildItemId, QtyPer, UomId, SortOrder)
+    SELECT @Bom, c.Id, 1.0, c.UomId, 1 FROM Parts.Item c WHERE c.PartNumber=N'5G0-c';
+GO
+DECLARE @Bom BIGINT;
+-- 5G0-FG <- 5G0-SA x1 + 21001 pin x6
+IF NOT EXISTS (SELECT 1 FROM Parts.Bom b JOIN Parts.Item i ON i.Id=b.ParentItemId WHERE i.PartNumber=N'5G0-FG' AND b.VersionNumber=1)
+    INSERT INTO Parts.Bom (ParentItemId, VersionNumber, EffectiveFrom, PublishedAt, CreatedByUserId, CreatedAt)
+    SELECT i.Id, 1, '2026-01-15', '2026-01-14', u.Id, SYSUTCDATETIME() FROM Parts.Item i, Location.AppUser u WHERE i.PartNumber=N'5G0-FG' AND u.Initials=N'DEV';
+SET @Bom = (SELECT b.Id FROM Parts.Bom b JOIN Parts.Item i ON i.Id=b.ParentItemId WHERE i.PartNumber=N'5G0-FG' AND b.VersionNumber=1);
+IF NOT EXISTS (SELECT 1 FROM Parts.BomLine bl JOIN Parts.Item c ON c.Id=bl.ChildItemId WHERE bl.BomId=@Bom AND c.PartNumber=N'5G0-SA')
+    INSERT INTO Parts.BomLine (BomId, ChildItemId, QtyPer, UomId, SortOrder) SELECT @Bom, c.Id, 1.0, c.UomId, 1 FROM Parts.Item c WHERE c.PartNumber=N'5G0-SA';
+IF NOT EXISTS (SELECT 1 FROM Parts.BomLine bl JOIN Parts.Item c ON c.Id=bl.ChildItemId WHERE bl.BomId=@Bom AND c.PartNumber=N'21001 pin')
+    INSERT INTO Parts.BomLine (BomId, ChildItemId, QtyPer, UomId, SortOrder) SELECT @Bom, c.Id, 6.0, c.UomId, 2 FROM Parts.Item c WHERE c.PartNumber=N'21001 pin';
+GO
+DECLARE @Bom BIGINT;
+-- 1223A-59B -A0002 <- 12231 + 12232 + 12241 + 90701-5R0-3000 x19
+IF NOT EXISTS (SELECT 1 FROM Parts.Bom b JOIN Parts.Item i ON i.Id=b.ParentItemId WHERE i.PartNumber=N'1223A-59B -A0002' AND b.VersionNumber=1)
+    INSERT INTO Parts.Bom (ParentItemId, VersionNumber, EffectiveFrom, PublishedAt, CreatedByUserId, CreatedAt)
+    SELECT i.Id, 1, '2026-01-15', '2026-01-14', u.Id, SYSUTCDATETIME() FROM Parts.Item i, Location.AppUser u WHERE i.PartNumber=N'1223A-59B -A0002' AND u.Initials=N'DEV';
+SET @Bom = (SELECT b.Id FROM Parts.Bom b JOIN Parts.Item i ON i.Id=b.ParentItemId WHERE i.PartNumber=N'1223A-59B -A0002' AND b.VersionNumber=1);
+IF NOT EXISTS (SELECT 1 FROM Parts.BomLine bl JOIN Parts.Item c ON c.Id=bl.ChildItemId WHERE bl.BomId=@Bom AND c.PartNumber=N'12231-59B-0000')
+    INSERT INTO Parts.BomLine (BomId, ChildItemId, QtyPer, UomId, SortOrder) SELECT @Bom, c.Id, 1.0, c.UomId, 1 FROM Parts.Item c WHERE c.PartNumber=N'12231-59B-0000';
+IF NOT EXISTS (SELECT 1 FROM Parts.BomLine bl JOIN Parts.Item c ON c.Id=bl.ChildItemId WHERE bl.BomId=@Bom AND c.PartNumber=N'12232-59B-0000')
+    INSERT INTO Parts.BomLine (BomId, ChildItemId, QtyPer, UomId, SortOrder) SELECT @Bom, c.Id, 1.0, c.UomId, 2 FROM Parts.Item c WHERE c.PartNumber=N'12232-59B-0000';
+IF NOT EXISTS (SELECT 1 FROM Parts.BomLine bl JOIN Parts.Item c ON c.Id=bl.ChildItemId WHERE bl.BomId=@Bom AND c.PartNumber=N'12241-59B-0000')
+    INSERT INTO Parts.BomLine (BomId, ChildItemId, QtyPer, UomId, SortOrder) SELECT @Bom, c.Id, 1.0, c.UomId, 3 FROM Parts.Item c WHERE c.PartNumber=N'12241-59B-0000';
+IF NOT EXISTS (SELECT 1 FROM Parts.BomLine bl JOIN Parts.Item c ON c.Id=bl.ChildItemId WHERE bl.BomId=@Bom AND c.PartNumber=N'90701-5R0-3000')
+    INSERT INTO Parts.BomLine (BomId, ChildItemId, QtyPer, UomId, SortOrder) SELECT @Bom, c.Id, 19.0, c.UomId, 4 FROM Parts.Item c WHERE c.PartNumber=N'90701-5R0-3000';
+GO
+DECLARE @Bom BIGINT;
+-- 12270-6NA-M <- 12270-6NA
+IF NOT EXISTS (SELECT 1 FROM Parts.Bom b JOIN Parts.Item i ON i.Id=b.ParentItemId WHERE i.PartNumber=N'12270-6NA-M' AND b.VersionNumber=1)
+    INSERT INTO Parts.Bom (ParentItemId, VersionNumber, EffectiveFrom, PublishedAt, CreatedByUserId, CreatedAt)
+    SELECT i.Id, 1, '2026-01-15', '2026-01-14', u.Id, SYSUTCDATETIME() FROM Parts.Item i, Location.AppUser u WHERE i.PartNumber=N'12270-6NA-M' AND u.Initials=N'DEV';
+SET @Bom = (SELECT b.Id FROM Parts.Bom b JOIN Parts.Item i ON i.Id=b.ParentItemId WHERE i.PartNumber=N'12270-6NA-M' AND b.VersionNumber=1);
+IF NOT EXISTS (SELECT 1 FROM Parts.BomLine bl JOIN Parts.Item c ON c.Id=bl.ChildItemId WHERE bl.BomId=@Bom AND c.PartNumber=N'12270-6NA')
+    INSERT INTO Parts.BomLine (BomId, ChildItemId, QtyPer, UomId, SortOrder) SELECT @Bom, c.Id, 1.0, c.UomId, 1 FROM Parts.Item c WHERE c.PartNumber=N'12270-6NA';
+GO
+DECLARE @Bom BIGINT;
+-- 12270-6NA -0001 <- 12270-6NA-M x1 + 92900-06014-1B x1 + 94301-08100 x2
+IF NOT EXISTS (SELECT 1 FROM Parts.Bom b JOIN Parts.Item i ON i.Id=b.ParentItemId WHERE i.PartNumber=N'12270-6NA -0001' AND b.VersionNumber=1)
+    INSERT INTO Parts.Bom (ParentItemId, VersionNumber, EffectiveFrom, PublishedAt, CreatedByUserId, CreatedAt)
+    SELECT i.Id, 1, '2026-01-15', '2026-01-14', u.Id, SYSUTCDATETIME() FROM Parts.Item i, Location.AppUser u WHERE i.PartNumber=N'12270-6NA -0001' AND u.Initials=N'DEV';
+SET @Bom = (SELECT b.Id FROM Parts.Bom b JOIN Parts.Item i ON i.Id=b.ParentItemId WHERE i.PartNumber=N'12270-6NA -0001' AND b.VersionNumber=1);
+IF NOT EXISTS (SELECT 1 FROM Parts.BomLine bl JOIN Parts.Item c ON c.Id=bl.ChildItemId WHERE bl.BomId=@Bom AND c.PartNumber=N'12270-6NA-M')
+    INSERT INTO Parts.BomLine (BomId, ChildItemId, QtyPer, UomId, SortOrder) SELECT @Bom, c.Id, 1.0, c.UomId, 1 FROM Parts.Item c WHERE c.PartNumber=N'12270-6NA-M';
+IF NOT EXISTS (SELECT 1 FROM Parts.BomLine bl JOIN Parts.Item c ON c.Id=bl.ChildItemId WHERE bl.BomId=@Bom AND c.PartNumber=N'92900-06014-1B')
+    INSERT INTO Parts.BomLine (BomId, ChildItemId, QtyPer, UomId, SortOrder) SELECT @Bom, c.Id, 1.0, c.UomId, 2 FROM Parts.Item c WHERE c.PartNumber=N'92900-06014-1B';
+IF NOT EXISTS (SELECT 1 FROM Parts.BomLine bl JOIN Parts.Item c ON c.Id=bl.ChildItemId WHERE bl.BomId=@Bom AND c.PartNumber=N'94301-08100')
+    INSERT INTO Parts.BomLine (BomId, ChildItemId, QtyPer, UomId, SortOrder) SELECT @Bom, c.Id, 2.0, c.UomId, 3 FROM Parts.Item c WHERE c.PartNumber=N'94301-08100';
+GO
 
 -- ============================================================
--- Quality.QualitySpecAttribute -- measurement attributes for 5G0's specs
---   Version 1 (Id=1) = Dimensional (Numeric attrs w/ UOM + target/limits)
---   Version 2 (Id=2) = Visual (Text / Boolean attrs, no numeric limits)
---   Uom: 3=KG 4=IN 5=MM   DataType: Numeric / Text / Boolean
+-- Parts.ItemLocation -- eligibility at Area + WorkCenter tiers (no cells).
+--   Reusable inline block: (PartNumber, LocationCode, IsConsumptionPoint,
+--   MinQuantity, MaxQuantity, DefaultQuantity). Resolved by Location.Code;
+--   a code that resolves to no row is skipped (SELECT yields nothing).
 -- ============================================================
+DECLARE @IL TABLE (Pn NVARCHAR(60), Lc NVARCHAR(50), Cp BIT, MnQ INT, MxQ INT, DfQ INT);
+INSERT INTO @IL (Pn, Lc, Cp, MnQ, MxQ, DfQ) VALUES
+ -- 5G0 family
+ (N'5G0-c', N'DC1', 0, NULL, NULL, NULL),
+ (N'5G0-c', N'TRIM1', 0, NULL, NULL, NULL),
+ (N'5G0-c', N'MA1-5GOF', 0, NULL, NULL, NULL),
+ (N'5G0-SA', N'MA1-5GOF', 0, NULL, NULL, NULL),
+ (N'5G0-FG', N'MA1-5GOF', 0, NULL, NULL, NULL),
+ (N'21001 pin', N'MA1', 0, NULL, NULL, NULL),
+ (N'21001 pin', N'MA2', 0, NULL, NULL, NULL),
+ -- 59B family
+ (N'12231-59B-0000', N'DC2', 0, NULL, NULL, NULL),
+ (N'12231-59B-0000', N'TRIM1', 0, NULL, NULL, NULL),
+ (N'12231-59B-0000', N'MA2-59B', 1, 15, 100, 50),
+ (N'12232-59B-0000', N'DC2', 0, NULL, NULL, NULL),
+ (N'12232-59B-0000', N'TRIM1', 0, NULL, NULL, NULL),
+ (N'12232-59B-0000', N'MA2-59B', 1, 15, 100, 50),
+ (N'12241-59B-0000', N'DC2', 0, NULL, NULL, NULL),
+ (N'12241-59B-0000', N'TRIM1', 0, NULL, NULL, NULL),
+ (N'12241-59B-0000', N'MA2-59B', 1, 15, 100, 50),
+ (N'90701-5R0-3000', N'MA2-59B', 1, NULL, NULL, NULL),
+ (N'1223A-59B -A0002', N'MA2-59B', 0, NULL, NULL, NULL),
+ -- 6NA family
+ (N'12270-6NA', N'DC3', 0, NULL, NULL, NULL),
+ (N'12270-6NA', N'TRIM1', 0, NULL, NULL, NULL),
+ (N'12270-6NA', N'MA1-FP6NA', 1, 15, 100, 50),
+ (N'12270-6NA-M', N'MA1-FP6NA', 1, 12, 96, 48),
+ (N'92900-06014-1B', N'MA1-FP6NA', 1, NULL, NULL, NULL),
+ (N'94301-08100', N'MA1-FP6NA', 1, NULL, NULL, NULL),
+ (N'12270-6NA -0001', N'MA1-FP6NA', 0, NULL, NULL, NULL);
 
-SET IDENTITY_INSERT Quality.QualitySpecAttribute ON;
+INSERT INTO Parts.ItemLocation (ItemId, LocationId, IsConsumptionPoint, MinQuantity, MaxQuantity, DefaultQuantity, CreatedAt)
+SELECT i.Id, l.Id, il.Cp, il.MnQ, il.MxQ, il.DfQ, SYSUTCDATETIME()
+FROM @IL il
+JOIN Parts.Item i ON i.PartNumber = il.Pn
+JOIN Location.Location l ON l.Code = il.Lc
+WHERE NOT EXISTS (
+    SELECT 1 FROM Parts.ItemLocation x
+    WHERE x.ItemId = i.Id AND x.LocationId = l.Id AND x.DeprecatedAt IS NULL);
+GO
 
--- Spec version 1: Dimensional
-IF NOT EXISTS (SELECT 1 FROM Quality.QualitySpecAttribute WHERE Id = 1)
-    INSERT INTO Quality.QualitySpecAttribute (Id, QualitySpecVersionId, AttributeName, DataType, UomId, TargetValue, LowerLimit, UpperLimit, IsRequired, SortOrder)
-    VALUES (1, 1, N'Overall Length', N'Numeric', 5, 120.0, 119.5, 120.5, 1, 1);
-IF NOT EXISTS (SELECT 1 FROM Quality.QualitySpecAttribute WHERE Id = 2)
-    INSERT INTO Quality.QualitySpecAttribute (Id, QualitySpecVersionId, AttributeName, DataType, UomId, TargetValue, LowerLimit, UpperLimit, IsRequired, SortOrder)
-    VALUES (2, 1, N'Bore Diameter', N'Numeric', 5, 25.0, 24.9, 25.1, 1, 2);
-IF NOT EXISTS (SELECT 1 FROM Quality.QualitySpecAttribute WHERE Id = 3)
-    INSERT INTO Quality.QualitySpecAttribute (Id, QualitySpecVersionId, AttributeName, DataType, UomId, TargetValue, LowerLimit, UpperLimit, IsRequired, SortOrder)
-    VALUES (3, 1, N'Flatness', N'Numeric', 5, 0.0, 0.0, 0.05, 0, 3);
-IF NOT EXISTS (SELECT 1 FROM Quality.QualitySpecAttribute WHERE Id = 4)
-    INSERT INTO Quality.QualitySpecAttribute (Id, QualitySpecVersionId, AttributeName, DataType, UomId, TargetValue, LowerLimit, UpperLimit, IsRequired, SortOrder)
-    VALUES (4, 1, N'Net Weight', N'Numeric', 3, 3.25, 3.10, 3.40, 1, 4);
-
--- Spec version 2: Visual
-IF NOT EXISTS (SELECT 1 FROM Quality.QualitySpecAttribute WHERE Id = 5)
-    INSERT INTO Quality.QualitySpecAttribute (Id, QualitySpecVersionId, AttributeName, DataType, UomId, TargetValue, LowerLimit, UpperLimit, IsRequired, SortOrder)
-    VALUES (5, 2, N'Surface Finish', N'Text', NULL, NULL, NULL, NULL, 1, 1);
-IF NOT EXISTS (SELECT 1 FROM Quality.QualitySpecAttribute WHERE Id = 6)
-    INSERT INTO Quality.QualitySpecAttribute (Id, QualitySpecVersionId, AttributeName, DataType, UomId, TargetValue, LowerLimit, UpperLimit, IsRequired, SortOrder)
-    VALUES (6, 2, N'Visible Porosity', N'Boolean', NULL, NULL, NULL, NULL, 1, 2);
-IF NOT EXISTS (SELECT 1 FROM Quality.QualitySpecAttribute WHERE Id = 7)
-    INSERT INTO Quality.QualitySpecAttribute (Id, QualitySpecVersionId, AttributeName, DataType, UomId, TargetValue, LowerLimit, UpperLimit, IsRequired, SortOrder)
-    VALUES (7, 2, N'Label Legible', N'Boolean', NULL, NULL, NULL, NULL, 1, 3);
-
-SET IDENTITY_INSERT Quality.QualitySpecAttribute OFF;
-
--- ============================================================
--- Parts.ItemLocation -- eligibility for Item 1 (5G0)
---   Locations resolved by Code from 011_seed_locations_mpp_plant.sql so the
---   Eligibility tab shows real plant cells. Codes that resolve to no row are
---   skipped (SELECT yields zero rows). The consumption-point row carries
---   Min/Max/Default qty metadata; production rows leave it NULL.
--- ============================================================
-
-SET IDENTITY_INSERT Parts.ItemLocation ON;
-
-IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE Id = 1)
-    INSERT INTO Parts.ItemLocation (Id, ItemId, LocationId, IsConsumptionPoint, MinQuantity, MaxQuantity, DefaultQuantity, CreatedAt)
-    SELECT 1, 1, Id, 0, NULL, NULL, NULL, @Now FROM Location.Location WHERE Code = N'DC1-M05';
-IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE Id = 2)
-    INSERT INTO Parts.ItemLocation (Id, ItemId, LocationId, IsConsumptionPoint, MinQuantity, MaxQuantity, DefaultQuantity, CreatedAt)
-    SELECT 2, 1, Id, 0, NULL, NULL, NULL, @Now FROM Location.Location WHERE Code = N'DC1-M06';
-IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE Id = 3)
-    INSERT INTO Parts.ItemLocation (Id, ItemId, LocationId, IsConsumptionPoint, MinQuantity, MaxQuantity, DefaultQuantity, CreatedAt)
-    SELECT 3, 1, Id, 0, NULL, NULL, NULL, @Now FROM Location.Location WHERE Code = N'DC1-M07';
-IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE Id = 4)
-    INSERT INTO Parts.ItemLocation (Id, ItemId, LocationId, IsConsumptionPoint, MinQuantity, MaxQuantity, DefaultQuantity, CreatedAt)
-    SELECT 4, 1, Id, 1, 10, 500, 100, @Now FROM Location.Location WHERE Code = N'DC1-M08';
-
-SET IDENTITY_INSERT Parts.ItemLocation OFF;
-
-PRINT 'seed_items: 5 items, 5 container configs, 2 routes (5 steps), 1 BOM (2 lines), 2 quality specs loaded.';
-PRINT 'seed_items: Item 1 (5G0) fully configured -- 14 OperationTemplateFields, 7 QualitySpecAttributes, 4 eligibility locations.';
+PRINT 'seed_items: 13 Honda parts (5G0 / 59B cam holder / 6NA fuel pump chains), 3 container configs, 5 BOMs, 25 eligibility rows (Area + WorkCenter tiers). Routes in 029_seed_item_routes.sql.';
 GO

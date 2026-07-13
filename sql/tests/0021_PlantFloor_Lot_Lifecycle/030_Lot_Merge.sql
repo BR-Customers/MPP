@@ -45,7 +45,8 @@ DECLARE @OriginRcv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Re
 DECLARE @ItemId BIGINT, @CellId BIGINT;
 SELECT TOP 1 @ItemId = eil.ItemId, @CellId = eil.LocationId
 FROM Parts.v_EffectiveItemLocation eil
-WHERE NOT EXISTS (SELECT 1 FROM Tools.ToolAssignment ta
+WHERE eil.ItemId IN (SELECT Id FROM Parts.Item WHERE MaxLotSize IS NULL)   -- uncapped: fixture PieceCounts exceed the 24-30 seed basket caps
+  AND NOT EXISTS (SELECT 1 FROM Tools.ToolAssignment ta
                   WHERE ta.CellLocationId = eil.LocationId AND ta.ReleasedAt IS NULL)
 ORDER BY eil.LocationId;
 
@@ -323,7 +324,8 @@ DECLARE @OriginRcv2 BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'R
 DECLARE @ItemId2 BIGINT, @CellId2 BIGINT;
 SELECT TOP 1 @ItemId2 = eil.ItemId, @CellId2 = eil.LocationId
 FROM Parts.v_EffectiveItemLocation eil
-WHERE NOT EXISTS (SELECT 1 FROM Tools.ToolAssignment ta
+WHERE eil.ItemId IN (SELECT Id FROM Parts.Item WHERE MaxLotSize IS NULL)   -- uncapped: fixture PieceCounts exceed the 24-30 seed basket caps
+  AND NOT EXISTS (SELECT 1 FROM Tools.ToolAssignment ta
                   WHERE ta.CellLocationId = eil.LocationId AND ta.ReleasedAt IS NULL)
 ORDER BY eil.LocationId;
 
@@ -388,7 +390,8 @@ DECLARE @OriginRcv3 BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'R
 DECLARE @ItemId3 BIGINT, @CellId3 BIGINT;
 SELECT TOP 1 @ItemId3 = eil.ItemId, @CellId3 = eil.LocationId
 FROM Parts.v_EffectiveItemLocation eil
-WHERE NOT EXISTS (SELECT 1 FROM Tools.ToolAssignment ta
+WHERE eil.ItemId IN (SELECT Id FROM Parts.Item WHERE MaxLotSize IS NULL)   -- uncapped: fixture PieceCounts exceed the 24-30 seed basket caps
+  AND NOT EXISTS (SELECT 1 FROM Tools.ToolAssignment ta
                   WHERE ta.CellLocationId = eil.LocationId AND ta.ReleasedAt IS NULL)
 ORDER BY eil.LocationId;
 
@@ -412,6 +415,7 @@ DECLARE @ItemB BIGINT, @CellB BIGINT;
 SELECT TOP 1 @ItemB = eil.ItemId, @CellB = eil.LocationId
 FROM Parts.v_EffectiveItemLocation eil
 WHERE eil.ItemId <> @ItemId3
+  AND eil.ItemId IN (SELECT Id FROM Parts.Item WHERE MaxLotSize IS NULL)
   AND NOT EXISTS (SELECT 1 FROM Tools.ToolAssignment ta
                   WHERE ta.CellLocationId = eil.LocationId AND ta.ReleasedAt IS NULL)
 ORDER BY eil.LocationId;

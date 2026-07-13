@@ -1,0 +1,3 @@
+Id,Name,Format,StartingCounterValue,EndingCounterValue,ResetIntervalInMinutes
+1,Lot Format,MESL{0:D7},1,9999999,
+2,Serialized Item Format,MESI{0:D7},1,9999999,

@@ -1,0 +1,254 @@
+Tier,TierName,Id,Name,ParentTier,ParentId,ParentName,Extra
+1,Site,1,Madison,NULL,NULL,NULL,NULL
+2,Area,1,5G0 Area,Site,1,Madison,NULL
+2,Area,2,5A2 Area,Site,1,Madison,NULL
+2,Area,17,5A2/5G0 Tumbling Area,Site,1,Madison,NULL
+2,Area,18,RPY Area,Site,1,Madison,NULL
+2,Area,19,59B Area,Site,1,Madison,NULL
+2,Area,20,5K8/64A Area,Site,1,Madison,NULL
+2,Area,22,5BA Area,Site,1,Madison,NULL
+2,Area,23,5PA Area,Site,1,Madison,NULL
+2,Area,24,6B2 Area,Site,1,Madison,NULL
+2,Area,25,6C2/6MA Area,Site,1,Madison,NULL
+2,Area,26,Sort Area,Site,1,Madison,NULL
+2,Area,27,Shipping,Site,1,Madison,NULL
+2,Area,28,Offsite,Site,1,Madison,NULL
+2,Area,29,6MA Area,Site,1,Madison,NULL
+2,Area,30,5J6 Area,Site,1,Madison,NULL
+2,Area,33,6FB Area,Site,1,Madison,NULL
+2,Area,36,6MD Area,Site,1,Madison,NULL
+2,Area,37,Astemo Area,Site,1,Madison,NULL
+3,ProductionLine,1,5G0 Front Assembly Line,Area,1,5G0 Area,NULL
+3,ProductionLine,14,5G0 Machining Line 1,Area,1,5G0 Area,NULL
+3,ProductionLine,23,5G0 Casting Line 1,Area,1,5G0 Area,NULL
+3,ProductionLine,25,5G0 Rear Assembly Line,Area,1,5G0 Area,NULL
+3,ProductionLine,2,5A2 Assembly Line 1,Area,2,5A2 Area,NULL
+3,ProductionLine,17,5A2 Machining Line 1,Area,2,5A2 Area,NULL
+3,ProductionLine,18,5A2 Machining Line 2,Area,2,5A2 Area,NULL
+3,ProductionLine,19,5A2 Machining Line 3,Area,2,5A2 Area,NULL
+3,ProductionLine,20,5A2 Assembly Line 2,Area,2,5A2 Area,NULL
+3,ProductionLine,21,5A2 Casting Line 1,Area,2,5A2 Area,NULL
+3,ProductionLine,27,5A2 Line 2 Camholder Machining,Area,2,5A2 Area,NULL
+3,ProductionLine,28,5A2 Line 2 EX 1-2 Machining,Area,2,5A2 Area,NULL
+3,ProductionLine,29,5A2 Line 2 Rocker Shaft 5 - Fuel Pump Machining,Area,2,5A2 Area,NULL
+3,ProductionLine,30,5A2 Line 2 Camholder Assembly,Area,2,5A2 Area,NULL
+3,ProductionLine,31,5A2 Line 2 Fuel Pump Assembly,Area,2,5A2 Area,NULL
+3,ProductionLine,32,5A2 Line 2 Rocker Shaft 1-4 Machining,Area,2,5A2 Area,NULL
+3,ProductionLine,24,5A2/5G0 Tumbling Line 1,Area,17,5A2/5G0 Tumbling Area,NULL
+3,ProductionLine,33,RPY Line 1 Fuel Pump Assembly,Area,18,RPY Area,NULL
+3,ProductionLine,34,RPY / 5BA Line 1 Rocker Shaft 5 Machining,Area,18,RPY Area,NULL
+3,ProductionLine,35,RPY Line 1 Rocker Shaft 1-4 Machining,Area,18,RPY Area,NULL
+3,ProductionLine,36,RPY Line 1 Camholder Machining,Area,18,RPY Area,NULL
+3,ProductionLine,37,RPY Line 1 Fuel Pump/5BA Side Cover Machining,Area,18,RPY Area,NULL
+3,ProductionLine,38,RPY Line 1 Set Assembly,Area,18,RPY Area,NULL
+3,ProductionLine,54,RPY Compressor Bracket Machining,Area,18,RPY Area,NULL
+3,ProductionLine,59,RPY Compressor Bracket Assembly,Area,18,RPY Area,NULL
+3,ProductionLine,39,59B Line 1 Fuel Pump Assembly,Area,19,59B Area,NULL
+3,ProductionLine,44,59B Cam Holder Assembly,Area,19,59B Area,NULL
+3,ProductionLine,46,59B Line 2 Cam Holder Assembly,Area,19,59B Area,NULL
+3,ProductionLine,55,59B Line 3 Assembly,Area,19,59B Area,NULL
+3,ProductionLine,56,59B Line 3 Machining,Area,19,59B Area,NULL
+3,ProductionLine,76,59B Line 1 Machining,Area,19,59B Area,NULL
+3,ProductionLine,40,5K8 Machining,Area,20,5K8/64A Area,NULL
+3,ProductionLine,41,5K8/64A Assembly,Area,20,5K8/64A Area,NULL
+3,ProductionLine,42,5BA Side Cover Assembly,Area,22,5BA Area,NULL
+3,ProductionLine,43,5BA Side Cover Machining,Area,22,5BA Area,NULL
+3,ProductionLine,45,5PA Assembly,Area,23,5PA Area,NULL
+3,ProductionLine,47,5PA Fuel Pump Line 2 Machining,Area,23,5PA Area,NULL
+3,ProductionLine,52,5PA Fuel Pump Line 3 Machining,Area,23,5PA Area,NULL
+3,ProductionLine,60,5PA Oil Pan Machining,Area,23,5PA Area,NULL
+3,ProductionLine,48,6B2 Cam Holder Machining,Area,24,6B2 Area,NULL
+3,ProductionLine,49,6B2 Cam Holder Assembly,Area,24,6B2 Area,NULL
+3,ProductionLine,50,6B2 Fuel Pump Machining,Area,24,6B2 Area,NULL
+3,ProductionLine,51,6B2 Fuel Pump Assembly,Area,24,6B2 Area,NULL
+3,ProductionLine,53,6C2/6MA Oil Pan Assembly,Area,25,6C2/6MA Area,NULL
+3,ProductionLine,80,6C2/6MA Machining Line,Area,25,6C2/6MA Area,NULL
+3,ProductionLine,57,Sort Line 1,Area,26,Sort Area,NULL
+3,ProductionLine,58,Shipping 1,Area,27,Shipping,NULL
+3,ProductionLine,61,Offsite,Area,28,Offsite,NULL
+3,ProductionLine,62,6MA Cam Holder Machining,Area,29,6MA Area,NULL
+3,ProductionLine,63,6MA Cam Holder Assembly,Area,29,6MA Area,NULL
+3,ProductionLine,75,6MA Cam Holder Final Assembly - DO NOT USE,Area,29,6MA Area,NULL
+3,ProductionLine,66,5J6 Oil Pan Assembly,Area,30,5J6 Area,NULL
+3,ProductionLine,67,5J6 Machining,Area,30,5J6 Area,NULL
+3,ProductionLine,69,6FB Machining,Area,33,6FB Area,NULL
+3,ProductionLine,71,6FB Assembly,Area,33,6FB Area,NULL
+3,ProductionLine,83,6MD Int Manifold Final Inpection,Area,36,6MD Area,NULL
+3,ProductionLine,84,Inner Housing Weigh Station,Area,37,Astemo Area,NULL
+3,ProductionLine,85,Single Cover Weigh Station,Area,37,Astemo Area,NULL
+3,ProductionLine,86,Single Case Weigh Station,Area,37,Astemo Area,NULL
+3,ProductionLine,87,Dual Cover Weigh Station,Area,37,Astemo Area,NULL
+3,ProductionLine,88,Dual Case Weigh Station,Area,37,Astemo Area,NULL
+4,WorkCell,36,5G0 Front Assembly Work Cell,ProductionLine,1,5G0 Front Assembly Line,TrackingMode=0
+4,WorkCell,38,5A2 Assembly 1 Work Cell,ProductionLine,2,5A2 Assembly Line 1,TrackingMode=1
+4,WorkCell,32,5G0 Machining 1 Work Cell,ProductionLine,14,5G0 Machining Line 1,TrackingMode=1
+4,WorkCell,42,5A2 Machining 1 Work Cell,ProductionLine,17,5A2 Machining Line 1,TrackingMode=1
+4,WorkCell,43,5A2 Machining 2 Work Cell,ProductionLine,18,5A2 Machining Line 2,TrackingMode=1
+4,WorkCell,45,5A2 Machining 3 Work Cell,ProductionLine,19,5A2 Machining Line 3,TrackingMode=1
+4,WorkCell,39,5A2 Assembly 2 Work Cell,ProductionLine,20,5A2 Assembly Line 2,TrackingMode=1
+4,WorkCell,1,5A2 Casting 1 Work Cell,ProductionLine,21,5A2 Casting Line 1,TrackingMode=1
+4,WorkCell,2,5G0 Casting Work Cell 1,ProductionLine,23,5G0 Casting Line 1,TrackingMode=1
+4,WorkCell,56,5A2/5G0 Tumbling 1 Work Cell,ProductionLine,24,5A2/5G0 Tumbling Line 1,TrackingMode=1
+4,WorkCell,57,5G0 Rear Assembly Work Cell,ProductionLine,25,5G0 Rear Assembly Line,TrackingMode=0
+4,WorkCell,59,5A2 Line 2 Cam Holder Machining Work Cell,ProductionLine,27,5A2 Line 2 Camholder Machining,TrackingMode=1
+4,WorkCell,60,5A2 Line 2 EX 1-2 Machining Work Cell,ProductionLine,28,5A2 Line 2 EX 1-2 Machining,TrackingMode=1
+4,WorkCell,61,5A2 Line 2 Rocker Shaft 5 - Fuel Pump Machining Work Cell,ProductionLine,29,5A2 Line 2 Rocker Shaft 5 - Fuel Pump Machining,TrackingMode=1
+4,WorkCell,62,5A2 Line 2 Camholder Assembly Work Cell,ProductionLine,30,5A2 Line 2 Camholder Assembly,TrackingMode=1
+4,WorkCell,63,5A2 Line 2 Fuel Pump Assembly Work Cell,ProductionLine,31,5A2 Line 2 Fuel Pump Assembly,TrackingMode=1
+4,WorkCell,64,5A2 Line 2 Rocker Shaft 1-4 Machining Work Cell,ProductionLine,32,5A2 Line 2 Rocker Shaft 1-4 Machining,TrackingMode=1
+4,WorkCell,65,RPY Line 1 Fuel Pump Assembly 1 Work Cell,ProductionLine,33,RPY Line 1 Fuel Pump Assembly,TrackingMode=1
+4,WorkCell,67,RPY / 5BA Line 1 Rocker Shaft 5 Machining Work Cell,ProductionLine,34,RPY / 5BA Line 1 Rocker Shaft 5 Machining,TrackingMode=1
+4,WorkCell,68,RPY Line 1 Rocker Shaft 1-4 Machining Work Cell,ProductionLine,35,RPY Line 1 Rocker Shaft 1-4 Machining,TrackingMode=1
+4,WorkCell,69,RPY Line 1 Camholder Machining Work Cell,ProductionLine,36,RPY Line 1 Camholder Machining,TrackingMode=1
+4,WorkCell,70,RPY Line 1 Fuel Pump/5BA Side Cover Machining Work Cell,ProductionLine,37,RPY Line 1 Fuel Pump/5BA Side Cover Machining,TrackingMode=1
+4,WorkCell,71,RPY Line 1 Set Assembly Work Cell,ProductionLine,38,RPY Line 1 Set Assembly,TrackingMode=1
+4,WorkCell,72,59B Line 1 Fuel Pump Assembly 1 Work Cell,ProductionLine,39,59B Line 1 Fuel Pump Assembly,TrackingMode=1
+4,WorkCell,74,5K8 Machining Work Cell,ProductionLine,40,5K8 Machining,TrackingMode=1
+4,WorkCell,75,DO NOT USE - 5K8 Assembly Work Cell,ProductionLine,41,5K8/64A Assembly,TrackingMode=1
+4,WorkCell,107,5K8/64A Assembly Work Cell,ProductionLine,41,5K8/64A Assembly,TrackingMode=1
+4,WorkCell,76,5BA Assembly Work Cell,ProductionLine,42,5BA Side Cover Assembly,TrackingMode=1
+4,WorkCell,77,5BA Side Cover Machining Work Cell,ProductionLine,43,5BA Side Cover Machining,TrackingMode=1
+4,WorkCell,78,59B Cam Holder Assembly Work Cell,ProductionLine,44,59B Cam Holder Assembly,TrackingMode=1
+4,WorkCell,79,5PA Oil Pan Assembly Work Cell,ProductionLine,45,5PA Assembly,TrackingMode=1
+4,WorkCell,93,5PA Fuel Pump Assembly Work Cell,ProductionLine,45,5PA Assembly,TrackingMode=1
+4,WorkCell,135,12270-6VJ -A000,ProductionLine,45,5PA Assembly,TrackingMode=1
+4,WorkCell,80,59B Line 2 Cam Holder Assembly Work Cell,ProductionLine,46,59B Line 2 Cam Holder Assembly,TrackingMode=1
+4,WorkCell,81,59B Line 2 Cam Holder Machining Work Cell,ProductionLine,46,59B Line 2 Cam Holder Assembly,TrackingMode=1
+4,WorkCell,82,5PA Fuel Pump Line 2 Machining Work Cell,ProductionLine,47,5PA Fuel Pump Line 2 Machining,TrackingMode=1
+4,WorkCell,83,RPY Manual Camholder Machining Work Cell (DO NOT USE),ProductionLine,48,6B2 Cam Holder Machining,TrackingMode=1
+4,WorkCell,85,RPY 6B2 CH Machining Work Cell,ProductionLine,48,6B2 Cam Holder Machining,TrackingMode=1
+4,WorkCell,86,RPY 6B2 RS 1-4 Machining Work Cell,ProductionLine,48,6B2 Cam Holder Machining,TrackingMode=1
+4,WorkCell,87,RPY 6B2 RS 5 Machining Work Cell,ProductionLine,48,6B2 Cam Holder Machining,TrackingMode=1
+4,WorkCell,84,RPY 6B2 Camholder Assembly Work Cell,ProductionLine,49,6B2 Cam Holder Assembly,TrackingMode=1
+4,WorkCell,91,6B2 Fuel Pump Machining Work Cell,ProductionLine,50,6B2 Fuel Pump Machining,TrackingMode=1
+4,WorkCell,92,6B2 Fuel Pump Assembly Work Cell,ProductionLine,51,6B2 Fuel Pump Assembly,TrackingMode=1
+4,WorkCell,94,5PA Fuel Pump Line 3 Machining Work Cell,ProductionLine,52,5PA Fuel Pump Line 3 Machining,TrackingMode=1
+4,WorkCell,95,6C2/6MA Oil Pan Assembly Work Cell,ProductionLine,53,6C2/6MA Oil Pan Assembly,TrackingMode=1
+4,WorkCell,96,RPY Compressor Bracket Machining Work Cell,ProductionLine,54,RPY Compressor Bracket Machining,TrackingMode=1
+4,WorkCell,99,59B Line 3 Assembly Work Cell,ProductionLine,55,59B Line 3 Assembly,TrackingMode=1
+4,WorkCell,100,59B Line 3 RS 1/5 Machining Work Cell,ProductionLine,56,59B Line 3 Machining,TrackingMode=1
+4,WorkCell,101,59B Line 3 RS 2/3/4 Machining Work Cell,ProductionLine,56,59B Line 3 Machining,TrackingMode=1
+4,WorkCell,102,Oil Pan Work Cell,ProductionLine,57,Sort Line 1,TrackingMode=1
+4,WorkCell,103,Totes Work Cell,ProductionLine,57,Sort Line 1,TrackingMode=1
+4,WorkCell,104,Shipping 1 Work Cell,ProductionLine,58,Shipping 1,TrackingMode=1
+4,WorkCell,105,RPY Compressor Bracket Assembly Work Cell,ProductionLine,59,RPY Compressor Bracket Assembly,TrackingMode=1
+4,WorkCell,106,5PA Oil Pan Machining Work Cell,ProductionLine,60,5PA Oil Pan Machining,TrackingMode=1
+4,WorkCell,108,Offsite,ProductionLine,61,Offsite,TrackingMode=1
+4,WorkCell,109,6MA CH Machining IN Work Cell,ProductionLine,62,6MA Cam Holder Machining,TrackingMode=1
+4,WorkCell,110,6MA Cam Holder Assembly Work Cell,ProductionLine,63,6MA Cam Holder Assembly,TrackingMode=1
+4,WorkCell,115,5J6 Oil Pan Assembly Work Cell,ProductionLine,66,5J6 Oil Pan Assembly,TrackingMode=1
+4,WorkCell,116,5J6 Machining Work Cell,ProductionLine,67,5J6 Machining,TrackingMode=1
+4,WorkCell,120,6FB Machining Work Cell,ProductionLine,69,6FB Machining,TrackingMode=1
+4,WorkCell,122,6FB Assembly Work Cell,ProductionLine,71,6FB Assembly,TrackingMode=1
+4,WorkCell,126,6MA Cam Holder Final Assembly Work Cell,ProductionLine,75,6MA Cam Holder Final Assembly - DO NOT USE,TrackingMode=1
+4,WorkCell,127,59B Line 1 Machining In Work Cell,ProductionLine,76,59B Line 1 Machining,TrackingMode=1
+4,WorkCell,131,6C2/6MA Machining Line Work Cell,ProductionLine,80,6C2/6MA Machining Line,TrackingMode=1
+4,WorkCell,136,Inner Housing Weigh Station Work Cell,ProductionLine,84,Inner Housing Weigh Station,TrackingMode=1
+4,WorkCell,137,Single Cover Weigh Station Work Cell,ProductionLine,85,Single Cover Weigh Station,TrackingMode=1
+4,WorkCell,138,Single Case Weigh Station Work Cell,ProductionLine,86,Single Case Weigh Station,TrackingMode=1
+4,WorkCell,139,Dual Cover Weigh Station Work Cell,ProductionLine,87,Dual Cover Weigh Station,TrackingMode=1
+4,WorkCell,140,Dual Case Weigh Station Work Cell,ProductionLine,88,Dual Case Weigh Station,TrackingMode=1
+5,Workstation,1,5A2 Casting Machine 1 Workstation,WorkCell,1,5A2 Casting 1 Work Cell,Machine=424ACER
+5,Workstation,17,5G0 Casting 1 Workstation,WorkCell,2,5G0 Casting Work Cell 1,Machine=5G001
+5,Workstation,14,5G0 Machining 1 In Workstation,WorkCell,32,5G0 Machining 1 Work Cell,Machine=5G002
+5,Workstation,39,5G0 Machining 1 Out Workstation,WorkCell,32,5G0 Machining 1 Work Cell,Machine=5G003
+5,Workstation,43,5G0 Assembly Front Out Workstation,WorkCell,36,5G0 Front Assembly Work Cell,Machine=TEMP-5G0-ASSEMBLY-FRONT
+5,Workstation,30,5A2 Assembly 1 In Workstation 1,WorkCell,38,5A2 Assembly 1 Work Cell,Machine=hpf4ce46257e4e
+5,Workstation,31,5A2 Assembly 1 Out Workstation,WorkCell,38,5A2 Assembly 1 Work Cell,Machine=5A207
+5,Workstation,41,5A2 Assembly 1 In Workstation 2,WorkCell,38,5A2 Assembly 1 Work Cell,Machine=hpf4ce46258210
+5,Workstation,42,5A2 Assembly 1 In Workstation 3,WorkCell,38,5A2 Assembly 1 Work Cell,Machine=hpf4ce4625802d
+5,Workstation,32,5A2 Assembly 2 In Workstation,WorkCell,39,5A2 Assembly 2 Work Cell,Machine=ARM-DEV01-W7
+5,Workstation,33,5A2 Assembly 2 Out Workstation,WorkCell,39,5A2 Assembly 2 Work Cell,Machine=hptc3
+5,Workstation,24,5A2 Machining 1 In Workstation,WorkCell,42,5A2 Machining 1 Work Cell,Machine=hpf4ce462581c5
+5,Workstation,25,5A2 Machining 1 Out Workstation,WorkCell,42,5A2 Machining 1 Work Cell,Machine=hpf4ce46257c6e
+5,Workstation,26,5A2 Machining 2 In Workstation 1,WorkCell,43,5A2 Machining 2 Work Cell,Machine=hpf4ce462581f3
+5,Workstation,28,5A2 Machining 2 Out Workstation,WorkCell,43,5A2 Machining 2 Work Cell,Machine=hpf4ce462581bc
+5,Workstation,40,5A2 Machining 2 In Workstation 2,WorkCell,43,5A2 Machining 2 Work Cell,Machine=hpf4ce46257f66
+5,Workstation,27,5A2 Machining 3 In Workstation,WorkCell,45,5A2 Machining 3 Work Cell,Machine=hpf4ce46258499
+5,Workstation,29,5A2 Machining 3 Out Workstation,WorkCell,45,5A2 Machining 3 Work Cell,Machine=5A208
+5,Workstation,35,5A2/5G0 Tumbling Workstation,WorkCell,56,5A2/5G0 Tumbling 1 Work Cell,Machine=1075dell
+5,Workstation,44,Dock Scanning System IN,WorkCell,56,5A2/5G0 Tumbling 1 Work Cell,Machine=462MD
+5,Workstation,45,Dock Scanning System Out,WorkCell,56,5A2/5G0 Tumbling 1 Work Cell,Machine=461MD
+5,Workstation,23,5G0 Assembly Rear Out Workstation,WorkCell,57,5G0 Rear Assembly Work Cell,Machine=5G004
+5,Workstation,47,5A2 Line 2 Cam Holder Machining IN Workstation,WorkCell,59,5A2 Line 2 Cam Holder Machining Work Cell,Machine=
+5,Workstation,48,5A2 Line 2 Cam Holder Machining OUT Workstation 1,WorkCell,59,5A2 Line 2 Cam Holder Machining Work Cell,Machine=556HELIOS
+5,Workstation,49,5A2 Line 2 Cam Holder Machining OUT Workstation 2,WorkCell,59,5A2 Line 2 Cam Holder Machining Work Cell,Machine=561helios
+5,Workstation,50,5A2 Line 2 EX 1-2 Machining IN Workstation,WorkCell,60,5A2 Line 2 EX 1-2 Machining Work Cell,Machine=
+5,Workstation,51,5A2 Line 2 EX 1-2 Machining OUT Workstation,WorkCell,60,5A2 Line 2 EX 1-2 Machining Work Cell,Machine=559HELIOS
+5,Workstation,52,5A2 Line 2 Rocker Shaft 5 - Fuel Pump Machining IN Workstation,WorkCell,61,5A2 Line 2 Rocker Shaft 5 - Fuel Pump Machining Work Cell,Machine=565HELIOS
+5,Workstation,53,5A2 Line 2 Rocker Shaft 5 Machining OUT Workstation,WorkCell,61,5A2 Line 2 Rocker Shaft 5 - Fuel Pump Machining Work Cell,Machine=
+5,Workstation,54,5A2 Line 2 Fuel Pump Machining OUT Workstation,WorkCell,61,5A2 Line 2 Rocker Shaft 5 - Fuel Pump Machining Work Cell,Machine=566HELIOS
+5,Workstation,55,5A2 Line 2 Cam Holder Assembly IN Workstation 1,WorkCell,62,5A2 Line 2 Camholder Assembly Work Cell,Machine=560Helios
+5,Workstation,56,5A2 Line 2 Cam Holder Assembly IN Workstation 2,WorkCell,62,5A2 Line 2 Camholder Assembly Work Cell,Machine=
+5,Workstation,57,5A2 Line 2 Cam Holder Assembly OUT Workstation,WorkCell,62,5A2 Line 2 Camholder Assembly Work Cell,Machine=562HELIOS
+5,Workstation,58,5A2 Line 2 Fuel Pump Assembly IN Workstation,WorkCell,63,5A2 Line 2 Fuel Pump Assembly Work Cell,Machine=TBD2
+5,Workstation,59,5A2 Line 2 Fuel Pump Assembly OUT Workstation,WorkCell,63,5A2 Line 2 Fuel Pump Assembly Work Cell,Machine=564helios
+5,Workstation,60,5A2 Line 2 Rocker Shaft 1-4 Machining IN Workstation,WorkCell,64,5A2 Line 2 Rocker Shaft 1-4 Machining Work Cell,Machine=567HELIOS
+5,Workstation,61,5A2 Line 2 Rocker Shaft 1-4 Machining OUT Workstation,WorkCell,64,5A2 Line 2 Rocker Shaft 1-4 Machining Work Cell,Machine=563HELIOS
+5,Workstation,62,RPY Fuel Pump Assembly OUT Workstation,WorkCell,65,RPY Line 1 Fuel Pump Assembly 1 Work Cell,Machine=
+5,Workstation,63,RPY / 5BA Rocker Shaft 5 Machining IN Workstation,WorkCell,67,RPY / 5BA Line 1 Rocker Shaft 5 Machining Work Cell,Machine=882Intel
+5,Workstation,64,RPY / 5BA Rocker Shaft 5 Machining OUT Workstation,WorkCell,67,RPY / 5BA Line 1 Rocker Shaft 5 Machining Work Cell,Machine=879Intel
+5,Workstation,65,RPY Rocker Shaft 1-4 Machining IN Workstation,WorkCell,68,RPY Line 1 Rocker Shaft 1-4 Machining Work Cell,Machine=883Intel
+5,Workstation,66,RPY Rocker Shaft 1-4 Machining OUT Workstation,WorkCell,68,RPY Line 1 Rocker Shaft 1-4 Machining Work Cell,Machine=884Intel
+5,Workstation,67,RPY Camholder Machining IN Workstation,WorkCell,69,RPY Line 1 Camholder Machining Work Cell,Machine=886intel
+5,Workstation,68,RPY Camholder Machining OUT Workstation,WorkCell,69,RPY Line 1 Camholder Machining Work Cell,Machine=885Intel
+5,Workstation,69,RPY Fuel Pump/5BA side cover Machining IN Workstation,WorkCell,70,RPY Line 1 Fuel Pump/5BA Side Cover Machining Work Cell,Machine=
+5,Workstation,70,RPY Fuel Pump/5BA Side Cover Machining OUT Workstation,WorkCell,70,RPY Line 1 Fuel Pump/5BA Side Cover Machining Work Cell,Machine=605Lenovo
+5,Workstation,74,59B Fuel Pump / 5BA Side Cover Lot Creation,WorkCell,70,RPY Line 1 Fuel Pump/5BA Side Cover Machining Work Cell,Machine=
+5,Workstation,71,RPY CH Assembly OUT Workstation,WorkCell,71,RPY Line 1 Set Assembly Work Cell,Machine=905Intel
+5,Workstation,114,RPY CH Assembly IN Workstation,WorkCell,71,RPY Line 1 Set Assembly Work Cell,Machine=881Intel
+5,Workstation,115,RPY RS 1-5 Assembly IN Workstation,WorkCell,71,RPY Line 1 Set Assembly Work Cell,Machine=880Intel
+5,Workstation,72,59B Fuel Pump Assembly OUT Workstation,WorkCell,72,59B Line 1 Fuel Pump Assembly 1 Work Cell,Machine=
+5,Workstation,76,5K8 Machining Workstation,WorkCell,74,5K8 Machining Work Cell,Machine=616Lenovo
+5,Workstation,75,DO NOT USE - 5K8 Assembly Workstation,WorkCell,75,DO NOT USE - 5K8 Assembly Work Cell,Machine=
+5,Workstation,73,5BA Side Cover Assembly Out Work Station,WorkCell,76,5BA Assembly Work Cell,Machine=
+5,Workstation,78,59B Cam Holder Assembly Workstation,WorkCell,78,59B Cam Holder Assembly Work Cell,Machine=636Lenovo
+5,Workstation,80,5PA Oil Pan Assembly Workstation,WorkCell,79,5PA Oil Pan Assembly Work Cell,Machine=736Lenovo
+5,Workstation,82,59B Line 2 Cam Holder Assembly Workstation,WorkCell,80,59B Line 2 Cam Holder Assembly Work Cell,Machine=
+5,Workstation,81,59B Line 2 Machining IN Workstation (1/5),WorkCell,81,59B Line 2 Cam Holder Machining Work Cell,Machine=722MS
+5,Workstation,86,59B Line 2 Machining IN Workstation (2/3/4),WorkCell,81,59B Line 2 Cam Holder Machining Work Cell,Machine=
+5,Workstation,84,5PA Fuel Pump Line 2 Machining OUT Workstation,WorkCell,82,5PA Fuel Pump Line 2 Machining Work Cell,Machine=835dell
+5,Workstation,96,5PA Fuel Pump Line 2 Machining IN Workstation,WorkCell,82,5PA Fuel Pump Line 2 Machining Work Cell,Machine=833dell
+5,Workstation,93,RPY 6B2 RS 5 Assembly IN Workstation,WorkCell,84,RPY 6B2 Camholder Assembly Work Cell,Machine=784lenovo
+5,Workstation,94,RPY 6B2 CH & RS 1-4 Assembly IN Workstation,WorkCell,84,RPY 6B2 Camholder Assembly Work Cell,Machine=TODO
+5,Workstation,95,RPY 6B2 Set Assembly OUT Workstation,WorkCell,84,RPY 6B2 Camholder Assembly Work Cell,Machine=1073dell
+5,Workstation,88,RPY 6B2 CH Machining IN Workstation,WorkCell,85,RPY 6B2 CH Machining Work Cell,Machine=6B2MI2
+5,Workstation,92,RPY 6B2 CH Machining OUT Workstation,WorkCell,85,RPY 6B2 CH Machining Work Cell,Machine=
+5,Workstation,87,RPY 6B2 RS 1-4 Machining IN Workstation,WorkCell,86,RPY 6B2 RS 1-4 Machining Work Cell,Machine=6B2MI1
+5,Workstation,91,RPY 6B2 RS 1-4 Machining OUT Workstation,WorkCell,86,RPY 6B2 RS 1-4 Machining Work Cell,Machine=604lenovo
+5,Workstation,89,RPY 6B2 RS 5 Machining IN Workstation,WorkCell,87,RPY 6B2 RS 5 Machining Work Cell,Machine=6B2MI3
+5,Workstation,90,RPY 6B2 RS 5 Machining OUT Workstation,WorkCell,87,RPY 6B2 RS 5 Machining Work Cell,Machine=782lenovo
+5,Workstation,97,6B2 Fuel Pump Machining IN,WorkCell,91,6B2 Fuel Pump Machining Work Cell,Machine=778lenovo
+5,Workstation,98,6B2 Fuel Pump,WorkCell,92,6B2 Fuel Pump Assembly Work Cell,Machine=769lenovo
+5,Workstation,99,5PA Fuel Pump Assembly OUT Workstation,WorkCell,93,5PA Fuel Pump Assembly Work Cell,Machine=922intel
+5,Workstation,102,5PA Fuel Pump Assembly IN Workstation,WorkCell,93,5PA Fuel Pump Assembly Work Cell,Machine=837dell
+5,Workstation,100,5PA Fuel Pump Line 3 Machining IN Workstation,WorkCell,94,5PA Fuel Pump Line 3 Machining Work Cell,Machine=735Lenovo
+5,Workstation,101,5PA Fuel Pump Line 3 Machining OUT Workstation,WorkCell,94,5PA Fuel Pump Line 3 Machining Work Cell,Machine=828dell
+5,Workstation,103,6C2/6MA Assembly IN Workstation,WorkCell,95,6C2/6MA Oil Pan Assembly Work Cell,Machine=766lenovo
+5,Workstation,104,6C2/6MA Assembly OUT Workstation,WorkCell,95,6C2/6MA Oil Pan Assembly Work Cell,Machine=927Intel
+5,Workstation,105,RPY Compressor Bracket Machining IN Workstation,WorkCell,96,RPY Compressor Bracket Machining Work Cell,Machine=888Intel
+5,Workstation,109,59B Line 3 Inspection Assembly Workstation,WorkCell,99,59B Line 3 Assembly Work Cell,Machine=773ais
+5,Workstation,110,59B Line 3 Printing Assembly Workstation,WorkCell,99,59B Line 3 Assembly Work Cell,Machine=866DELL
+5,Workstation,107,59B Line 3 Machining IN Workstation (1/5),WorkCell,100,59B Line 3 RS 1/5 Machining Work Cell,Machine=864DELL
+5,Workstation,108,59B Line 3 Machining IN Workstation (2/3/4),WorkCell,101,59B Line 3 RS 2/3/4 Machining Work Cell,Machine=865DELL
+5,Workstation,111,Oil Pan Sort Workstation,WorkCell,102,Oil Pan Work Cell,Machine=848DELL
+5,Workstation,112,Totes Sort Workstation,WorkCell,103,Totes Work Cell,Machine=849DELL
+5,Workstation,113,Shipping 1 Workstation,WorkCell,104,Shipping 1 Work Cell,Machine=SHIPPING1
+5,Workstation,116,RPY Compressor Bracket Assembly OUT Workstation,WorkCell,105,RPY Compressor Bracket Assembly Work Cell,Machine=887Intel
+5,Workstation,85,5PA Oil Pan Machining IN,WorkCell,106,5PA Oil Pan Machining Work Cell,Machine=
+5,Workstation,117,5K8/64A Assembly,WorkCell,107,5K8/64A Assembly Work Cell,Machine=615lenovo-pc
+5,Workstation,118,6MA CH Machining IN Work Cell,WorkCell,109,6MA CH Machining IN Work Cell,Machine=807alenovo
+5,Workstation,128,6MA Final Assembly Out Workstation,WorkCell,110,6MA Cam Holder Assembly Work Cell,Machine=834dell
+5,Workstation,133,6MA Assembly A Printing Workstation,WorkCell,110,6MA Cam Holder Assembly Work Cell,Machine=824DELL
+5,Workstation,137,6MA Assembly B Printing Workstation,WorkCell,110,6MA Cam Holder Assembly Work Cell,Machine=825DELL
+5,Workstation,124,5J6 Assembly,WorkCell,115,5J6 Oil Pan Assembly Work Cell,Machine=767lenovo
+5,Workstation,123,5J6 Machining Workstation,WorkCell,116,5J6 Machining Work Cell,Machine=923intel
+5,Workstation,127,Machining,WorkCell,120,6FB Machining Work Cell,Machine=982dell
+5,Workstation,126,6FB Assembly Out,WorkCell,122,6FB Assembly Work Cell,Machine=985Dell
+5,Workstation,131,59B Line 1 Machining In,WorkCell,127,59B Line 1 Machining In Work Cell,Machine=
+5,Workstation,140,6C2/6MA Machining,WorkCell,131,6C2/6MA Machining Line Work Cell,Machine=826DELL
+5,Workstation,146,Inner Housing Weigh Station,WorkCell,136,Inner Housing Weigh Station Work Cell,Machine=633lenovo
+5,Workstation,147,Single Cover Weigh Station,WorkCell,137,Single Cover Weigh Station Work Cell,Machine=Test
+5,Workstation,148,Single Case Weigh Station,WorkCell,138,Single Case Weigh Station Work Cell,Machine=Test SC
+5,Workstation,149,Dual Cover Weigh Station,WorkCell,139,Dual Cover Weigh Station Work Cell,Machine=Test DCRV
+5,Workstation,150,Dual Case Weigh Station,WorkCell,140,Dual Case Weigh Station Work Cell,Machine=Test DCase

@@ -20,11 +20,11 @@
     "custom.activeMachined": {
       "binding": {
         "config": {
-          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, false, {view.custom.refreshToken}), \"\")"
+          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}, \"MachiningOut\"), \"\")"
         },
         "transforms": [
           {
-            "code": "\tmachined = [r for r in (value or []) if not r.get(\"HasRenameBom\")]\n\tr = machined[-1] if machined else {}\n\treturn {\"Id\": r.get(\"Id\"), \"lotName\": r.get(\"LotName\") or \"\", \"itemPartNumber\": r.get(\"ItemPartNumber\") or \"\", \"pieceCount\": r.get(\"PieceCount\") or 0}",
+            "code": "\tmachined = value or []\n\tr = machined[-1] if machined else {}\n\treturn {\"Id\": r.get(\"Id\"), \"lotName\": r.get(\"LotName\") or \"\", \"itemPartNumber\": r.get(\"ItemPartNumber\") or \"\", \"pieceCount\": r.get(\"PieceCount\") or 0}",
             "type": "script"
           }
         ],
@@ -48,11 +48,11 @@
     "custom.queue": {
       "binding": {
         "config": {
-          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, false, {view.custom.refreshToken}), \"\")"
+          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}, \"MachiningIn\"), \"\")"
         },
         "transforms": [
           {
-            "code": "\trows = [r for r in (value or []) if r.get(\"HasRenameBom\")]\n\treturn [{\"sourceLotId\": r.get(\"Id\"), \"lotName\": r.get(\"LotName\") or \"\", \"sourceItem\": r.get(\"ItemPartNumber\") or \"\", \"pieceCount\": r.get(\"PieceCount\") or 0, \"arrival\": str(r.get(\"LastMovementAt\") or \"\"), \"position\": i + 1, \"lotStatusCode\": r.get(\"LotStatusCode\") or \"\"} for i, r in enumerate(rows)]",
+            "code": "\trows = value or []\n\treturn [{\"sourceLotId\": r.get(\"Id\"), \"lotName\": r.get(\"LotName\") or \"\", \"sourceItem\": r.get(\"ItemPartNumber\") or \"\", \"pieceCount\": r.get(\"PieceCount\") or 0, \"arrival\": str(r.get(\"LastMovementAt\") or \"\"), \"position\": i + 1, \"lotStatusCode\": r.get(\"LotStatusCode\") or \"\"} for i, r in enumerate(rows)]",
             "type": "script"
           }
         ],
@@ -73,13 +73,12 @@
             "children": [
               {
                 "meta": {
-                  "name": "TitleText"
+                  "name": "Title"
                 },
                 "props": {
                   "style": {
-                    "classes": "pf-terminal-title",
-                    "fontSize": "24px",
-                    "fontWeight": "600"
+                    "fontSize": "22px",
+                    "fontWeight": 700
                   },
                   "text": "Machining IN"
                 },
@@ -87,30 +86,34 @@
               },
               {
                 "meta": {
-                  "name": "TitleMeta"
+                  "name": "Subtitle"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"No cell bound\", {session.custom.cell.name}) + \"  ·  5G0 Machining WC - dedicated terminal - whole-LOT FIFO pick\""
+                      },
+                      "type": "expr"
+                    }
+                  }
                 },
                 "props": {
                   "style": {
-                    "classes": "pf-terminal-title-meta"
-                  },
-                  "text": "5G0 Machining WC - dedicated terminal - whole-LOT FIFO pick"
+                    "classes": "pf-kpi-sub"
+                  }
                 },
                 "type": "ia.display.label"
               }
             ],
             "meta": {
-              "name": "Title"
+              "name": "TitleBlock"
             },
             "position": {
-              "basis": "0",
               "grow": 1
             },
             "props": {
-              "direction": "column",
-              "style": {
-                "classes": "pf-terminal-title",
-                "gap": "4px"
-              }
+              "direction": "column"
             },
             "type": "ia.container.flex"
           },
@@ -212,91 +215,97 @@
               }
             },
             "type": "ia.container.flex"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "RefreshButton",
+              "tooltip": {
+                "text": "Refresh"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Refresh"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params={\"locationId\": self.session.custom.cell.locationId}, title=\"Line Inventory\", modal=False, showCloseIcon=True, draggable=True, resizable=True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "InventoryButton",
+              "tooltip": {
+                "text": "Check component / pass-through inventory in to this line"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Inventory"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.navigate(\"/\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseButton"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Close"
+            },
+            "type": "ia.input.button"
           }
         ],
         "meta": {
           "name": "Header"
         },
-        "position": {
-          "shrink": 0
-        },
-        "props": {
-          "alignItems": "flex-end",
-          "justify": "space-between",
-          "style": {
-            "classes": "pf-terminal-header",
-            "gap": "12px",
-            "paddingBottom": "16px"
-          },
-          "wrap": "wrap"
-        },
-        "type": "ia.container.flex"
-      },
-      {
-        "children": [
-          {
-            "meta": {
-              "name": "CtxLabel"
-            },
-            "props": {
-              "style": {
-                "classes": "pf-cell-context-label"
-              },
-              "text": "Active Cell"
-            },
-            "type": "ia.display.label"
-          },
-          {
-            "meta": {
-              "name": "ActiveCellValue"
-            },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "config": {
-                    "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"No cell bound to this terminal\", {session.custom.cell.name})"
-                  },
-                  "type": "expr"
-                }
-              }
-            },
-            "props": {
-              "style": {
-                "classes": "pf-cell-context-value"
-              }
-            },
-            "type": "ia.display.label"
-          },
-          {
-            "meta": {
-              "name": "CtxSpacer"
-            },
-            "position": {
-              "grow": 1
-            },
-            "type": "ia.display.label"
-          },
-          {
-            "meta": {
-              "name": "CtxHint"
-            },
-            "props": {
-              "style": {
-                "classes": "pf-kpi-sub"
-              },
-              "text": "Dedicated terminal - cell fixed by terminal binding."
-            },
-            "type": "ia.display.label"
-          }
-        ],
-        "meta": {
-          "name": "CellContext"
-        },
         "props": {
           "alignItems": "center",
           "style": {
-            "classes": "pf-terminal-cell-context",
-            "gap": "12px"
+            "gap": "16px",
+            "overflow": "hidden"
           }
         },
         "type": "ia.container.flex"
@@ -646,10 +655,10 @@
     "props": {
       "direction": "column",
       "style": {
-        "classes": "pf-terminal canvas",
+        "classes": "canvas",
         "gap": "16px",
         "overflowY": "auto",
-        "padding": "16px"
+        "padding": "24px"
       }
     },
     "scripts": {
@@ -659,14 +668,21 @@
         {
           "messageType": "machiningPick",
           "pageScope": true,
-          "script": "\tself.view.custom.pending = {\"sourceLotId\": payload.get(\"sourceLotId\"), \"lotName\": payload.get(\"lotName\") or \"\", \"sourceItem\": payload.get(\"sourceItem\") or \"\"}\n\tmsg = \"Pick LOT \" + (payload.get(\"lotName\") or \"\") + \" (\" + (payload.get(\"sourceItem\") or \"\") + \") and rename via its machining BOM?\"\n\tsystem.perspective.openPopup(\"mpp-bom-rename\", \"BlueRidge/Components/Popups/BomRenameConfirm\", params={\"title\": \"Machining IN - Pick & Rename\", \"message\": msg, \"replyMessage\": \"bomRenameResult\", \"popupId\": \"mpp-bom-rename\"}, modal=True)",
+          "script": "\tself.view.custom.pending = {\"sourceLotId\": payload.get(\"sourceLotId\"), \"lotName\": payload.get(\"lotName\") or \"\", \"sourceItem\": payload.get(\"sourceItem\") or \"\"}\n\tmsg = \"Start machining LOT \" + (payload.get(\"lotName\") or \"\") + \" (\" + (payload.get(\"sourceItem\") or \"\") + \")?\"\n\tsystem.perspective.openPopup(\"mpp-bom-rename\", \"BlueRidge/Components/Popups/BomRenameConfirm\", params={\"title\": \"Machining IN - Start Machining\", \"message\": msg, \"replyMessage\": \"bomRenameResult\", \"popupId\": \"mpp-bom-rename\"}, modal=True)",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "bomRenameResult",
           "pageScope": true,
-          "script": "\tif payload.get(\"action\") != \"confirm\":\n\t\treturn\n\tp = self.view.custom.pending\n\tcellId = self.session.custom.cell.locationId\n\tif not p or p.get(\"sourceLotId\") is None or cellId is None:\n\t\treturn\n\tresult = BlueRidge.Workorder.Machining.pickAndConsume(p.get(\"sourceLotId\"), cellId, None, self.session.custom.appUserId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining IN\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.pending = {\"sourceLotId\": None, \"lotName\": \"\", \"sourceItem\": \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
+          "script": "\tif payload.get(\"action\") != \"confirm\":\n\t\treturn\n\tp = self.view.custom.pending\n\tcellId = self.session.custom.cell.locationId\n\tterminalId = self.session.custom.terminal.terminalLocationId\n\tif not p or p.get(\"sourceLotId\") is None or cellId is None:\n\t\treturn\n\tresult = BlueRidge.Workorder.Machining.recordPick(p.get(\"sourceLotId\"), cellId, self.session.custom.appUserId, terminalId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining IN\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.pending = {\"sourceLotId\": None, \"lotName\": \"\", \"sourceItem\": \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "inventoryChanged",
+          "pageScope": true,
+          "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
           "sessionScope": false,
           "viewScope": false
         }

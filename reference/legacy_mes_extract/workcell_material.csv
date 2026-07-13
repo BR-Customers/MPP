@@ -1,0 +1,549 @@
+Id,WorkCell,ProductionLine,Area,Material,MaterialClass,IsFinishedGood,IsConsumptionPoint,MinQuantity,MaxQuantity,DefaultQuantity,IsDeleted
+306,59B Cam Holder Assembly Work Cell,59B Cam Holder Assembly,59B Area,12231-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+307,59B Cam Holder Assembly Work Cell,59B Cam Holder Assembly,59B Area,12232-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+308,59B Cam Holder Assembly Work Cell,59B Cam Holder Assembly,59B Area,12233-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+309,59B Cam Holder Assembly Work Cell,59B Cam Holder Assembly,59B Area,12234-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+310,59B Cam Holder Assembly Work Cell,59B Cam Holder Assembly,59B Area,12235-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+303,59B Cam Holder Assembly Work Cell,59B Cam Holder Assembly,59B Area,12241-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+311,59B Cam Holder Assembly Work Cell,59B Cam Holder Assembly,59B Area,12242-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+312,59B Cam Holder Assembly Work Cell,59B Cam Holder Assembly,59B Area,12243-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+313,59B Cam Holder Assembly Work Cell,59B Cam Holder Assembly,59B Area,12244-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+314,59B Cam Holder Assembly Work Cell,59B Cam Holder Assembly,59B Area,12245-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+304,59B Cam Holder Assembly Work Cell,59B Cam Holder Assembly,59B Area,1223A-59B -A0002,59B Finished Goods,1,0,NULL,NULL,NULL,0
+277,59B Line 1 Fuel Pump Assembly 1 Work Cell,59B Line 1 Fuel Pump Assembly,59B Area,12270-59B,59B Components,0,1,NULL,NULL,NULL,0
+296,59B Line 1 Fuel Pump Assembly 1 Work Cell,59B Line 1 Fuel Pump Assembly,59B Area,12270-59B -0000A,59B Finished Goods,1,1,NULL,NULL,NULL,0
+440,59B Line 1 Fuel Pump Assembly 1 Work Cell,59B Line 1 Fuel Pump Assembly,59B Area,12270-5PA,5PA Components,0,1,NULL,NULL,6.000000,0
+315,59B Line 1 Fuel Pump Assembly 1 Work Cell,59B Line 1 Fuel Pump Assembly,59B Area,12270-5PA -A0001,5PA Finished Goods,1,1,NULL,NULL,6.000000,0
+947,59B Line 1 Fuel Pump Assembly 1 Work Cell,59B Line 1 Fuel Pump Assembly,59B Area,12270-6NA -0100,59B Finished Goods,1,1,NULL,NULL,6.000000,0
+298,59B Line 1 Fuel Pump Assembly 1 Work Cell,59B Line 1 Fuel Pump Assembly,59B Area,92900-06014-1B,59B Components,0,1,NULL,NULL,NULL,0
+297,59B Line 1 Fuel Pump Assembly 1 Work Cell,59B Line 1 Fuel Pump Assembly,59B Area,94301-08100,59B Components,0,1,NULL,NULL,NULL,0
+293,59B Line 1 Fuel Pump Assembly 1 Work Cell,59B Line 1 Fuel Pump Assembly,59B Area,12270-5BA,5BA Components,0,0,NULL,NULL,NULL,0
+948,59B Line 1 Fuel Pump Assembly 1 Work Cell,59B Line 1 Fuel Pump Assembly,59B Area,12270-6NA,59B Components,0,0,NULL,NULL,6.000000,0
+762,59B Line 1 Machining In Work Cell,59B Line 1 Machining,59B Area,12270-59B,59B Components,0,1,NULL,NULL,NULL,0
+945,59B Line 1 Machining In Work Cell,59B Line 1 Machining,59B Area,12270-6NA,59B Components,0,0,NULL,NULL,6.000000,0
+328,59B Line 2 Cam Holder Assembly Work Cell,59B Line 2 Cam Holder Assembly,59B Area,12231-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+330,59B Line 2 Cam Holder Assembly Work Cell,59B Line 2 Cam Holder Assembly,59B Area,12232-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+332,59B Line 2 Cam Holder Assembly Work Cell,59B Line 2 Cam Holder Assembly,59B Area,12233-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+334,59B Line 2 Cam Holder Assembly Work Cell,59B Line 2 Cam Holder Assembly,59B Area,12234-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+336,59B Line 2 Cam Holder Assembly Work Cell,59B Line 2 Cam Holder Assembly,59B Area,12235-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+338,59B Line 2 Cam Holder Assembly Work Cell,59B Line 2 Cam Holder Assembly,59B Area,12241-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+340,59B Line 2 Cam Holder Assembly Work Cell,59B Line 2 Cam Holder Assembly,59B Area,12242-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+342,59B Line 2 Cam Holder Assembly Work Cell,59B Line 2 Cam Holder Assembly,59B Area,12243-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+344,59B Line 2 Cam Holder Assembly Work Cell,59B Line 2 Cam Holder Assembly,59B Area,12244-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+346,59B Line 2 Cam Holder Assembly Work Cell,59B Line 2 Cam Holder Assembly,59B Area,12245-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+349,59B Line 2 Cam Holder Assembly Work Cell,59B Line 2 Cam Holder Assembly,59B Area,90701-5A2-A000,5A2 Components,0,1,NULL,NULL,2.000000,0
+348,59B Line 2 Cam Holder Assembly Work Cell,59B Line 2 Cam Holder Assembly,59B Area,90701-5R0-3000,59B Components,0,1,NULL,NULL,NULL,0
+329,59B Line 2 Cam Holder Machining Work Cell,59B Line 2 Cam Holder Assembly,59B Area,12231-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+331,59B Line 2 Cam Holder Machining Work Cell,59B Line 2 Cam Holder Assembly,59B Area,12232-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+333,59B Line 2 Cam Holder Machining Work Cell,59B Line 2 Cam Holder Assembly,59B Area,12233-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+335,59B Line 2 Cam Holder Machining Work Cell,59B Line 2 Cam Holder Assembly,59B Area,12234-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+337,59B Line 2 Cam Holder Machining Work Cell,59B Line 2 Cam Holder Assembly,59B Area,12235-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+339,59B Line 2 Cam Holder Machining Work Cell,59B Line 2 Cam Holder Assembly,59B Area,12241-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+341,59B Line 2 Cam Holder Machining Work Cell,59B Line 2 Cam Holder Assembly,59B Area,12242-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+343,59B Line 2 Cam Holder Machining Work Cell,59B Line 2 Cam Holder Assembly,59B Area,12243-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+345,59B Line 2 Cam Holder Machining Work Cell,59B Line 2 Cam Holder Assembly,59B Area,12244-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+347,59B Line 2 Cam Holder Machining Work Cell,59B Line 2 Cam Holder Assembly,59B Area,12245-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+531,59B Line 3 Assembly Work Cell,59B Line 3 Assembly,59B Area,12231-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+532,59B Line 3 Assembly Work Cell,59B Line 3 Assembly,59B Area,12232-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+533,59B Line 3 Assembly Work Cell,59B Line 3 Assembly,59B Area,12233-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+534,59B Line 3 Assembly Work Cell,59B Line 3 Assembly,59B Area,12234-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+535,59B Line 3 Assembly Work Cell,59B Line 3 Assembly,59B Area,12235-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+536,59B Line 3 Assembly Work Cell,59B Line 3 Assembly,59B Area,12241-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+537,59B Line 3 Assembly Work Cell,59B Line 3 Assembly,59B Area,12242-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+538,59B Line 3 Assembly Work Cell,59B Line 3 Assembly,59B Area,12243-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+539,59B Line 3 Assembly Work Cell,59B Line 3 Assembly,59B Area,12244-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+540,59B Line 3 Assembly Work Cell,59B Line 3 Assembly,59B Area,12245-59B-0000,59B Components,0,1,NULL,NULL,NULL,0
+564,59B Line 3 Assembly Work Cell,59B Line 3 Assembly,59B Area,90701-5A2-A000,5A2 Components,0,1,NULL,NULL,NULL,0
+563,59B Line 3 Assembly Work Cell,59B Line 3 Assembly,59B Area,90701-5R0-3000,59B Components,0,1,NULL,NULL,NULL,0
+541,59B Line 3 RS 1/5 Machining Work Cell,59B Line 3 Machining,59B Area,12231-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+545,59B Line 3 RS 1/5 Machining Work Cell,59B Line 3 Machining,59B Area,12235-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+546,59B Line 3 RS 1/5 Machining Work Cell,59B Line 3 Machining,59B Area,12241-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+550,59B Line 3 RS 1/5 Machining Work Cell,59B Line 3 Machining,59B Area,12245-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+542,59B Line 3 RS 2/3/4 Machining Work Cell,59B Line 3 Machining,59B Area,12232-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+543,59B Line 3 RS 2/3/4 Machining Work Cell,59B Line 3 Machining,59B Area,12233-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+544,59B Line 3 RS 2/3/4 Machining Work Cell,59B Line 3 Machining,59B Area,12234-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+547,59B Line 3 RS 2/3/4 Machining Work Cell,59B Line 3 Machining,59B Area,12242-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+548,59B Line 3 RS 2/3/4 Machining Work Cell,59B Line 3 Machining,59B Area,12243-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+549,59B Line 3 RS 2/3/4 Machining Work Cell,59B Line 3 Machining,59B Area,12244-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+97,5A2 Assembly 1 Work Cell,5A2 Assembly Line 1,5A2 Area,12231-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+63,5A2 Assembly 1 Work Cell,5A2 Assembly Line 1,5A2 Area,12232-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+65,5A2 Assembly 1 Work Cell,5A2 Assembly Line 1,5A2 Area,12233-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+67,5A2 Assembly 1 Work Cell,5A2 Assembly Line 1,5A2 Area,12234-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+69,5A2 Assembly 1 Work Cell,5A2 Assembly Line 1,5A2 Area,12235-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+71,5A2 Assembly 1 Work Cell,5A2 Assembly Line 1,5A2 Area,12241-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+73,5A2 Assembly 1 Work Cell,5A2 Assembly Line 1,5A2 Area,12243-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+75,5A2 Assembly 1 Work Cell,5A2 Assembly Line 1,5A2 Area,12244-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+99,5A2 Assembly 1 Work Cell,5A2 Assembly Line 1,5A2 Area,12245-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+100,5A2 Assembly 1 Work Cell,5A2 Assembly Line 1,5A2 Area,12246-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+51,5A2 Assembly 1 Work Cell,5A2 Assembly Line 1,5A2 Area,12261-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+53,5A2 Assembly 1 Work Cell,5A2 Assembly Line 1,5A2 Area,12262-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+55,5A2 Assembly 1 Work Cell,5A2 Assembly Line 1,5A2 Area,12263-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+150,5A2 Assembly 1 Work Cell,5A2 Assembly Line 1,5A2 Area,12264-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+153,5A2 Assembly 1 Work Cell,5A2 Assembly Line 1,5A2 Area,12265-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+87,5A2 Assembly 1 Work Cell,5A2 Assembly Line 1,5A2 Area,12265-5B0,5A2 Components,0,1,NULL,NULL,NULL,0
+81,5A2 Assembly 1 Work Cell,5A2 Assembly Line 1,5A2 Area,90701-5A2-A000,5A2 Components,0,1,NULL,NULL,2.000000,0
+83,5A2 Assembly 1 Work Cell,5A2 Assembly Line 1,5A2 Area,90702-5A2-A000,5A2 Components,0,1,NULL,NULL,NULL,0
+85,5A2 Assembly 1 Work Cell,5A2 Assembly Line 1,5A2 Area,96211-08000,5A2 Components,0,1,NULL,NULL,NULL,0
+102,5A2 Assembly 1 Work Cell,5A2 Assembly Line 1,5A2 Area,1226A-5A2 -A000,5A2 Finished Goods,1,0,NULL,NULL,NULL,0
+182,5A2 Assembly 2 Work Cell,5A2 Assembly Line 2,5A2 Area,12270-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+101,5A2 Assembly 2 Work Cell,5A2 Assembly Line 2,5A2 Area,92900-06012-0B,5A2 Components,0,1,NULL,NULL,NULL,0
+92,5A2 Assembly 2 Work Cell,5A2 Assembly Line 2,5A2 Area,94301-10120,5A2 Components,0,1,NULL,NULL,NULL,0
+951,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,0079-2020,Astemo Components,0,0,NULL,NULL,NULL,0
+637,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,11200-5J6 -A100,5J6 Components,0,0,NULL,NULL,NULL,0
+590,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,11200-5K8,5K8 Components,0,0,NULL,NULL,NULL,0
+592,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,11200-64AA,64A Components,0,0,NULL,NULL,NULL,0
+670,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,11200-6FBA,6FB Components,0,0,NULL,NULL,NULL,0
+867,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,11200-6MAA-J010,6C2/6MA Components,0,0,NULL,NULL,NULL,0
+589,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,1120A-5AA -A010,5K8 Finished Goods,1,0,NULL,NULL,NULL,0
+572,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,1120A-5PA,5PA Components,0,0,NULL,NULL,NULL,0
+104,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12231-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+715,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12231-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+105,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12232-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+717,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12232-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+106,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12233-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+768,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12233-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+107,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12234-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+719,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12234-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+108,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12235-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+660,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12235-6FBA-A000,6FB Components,0,0,NULL,NULL,NULL,0
+721,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12235-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+109,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12241-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+723,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12241-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+725,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12242-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+110,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12243-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+727,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12243-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+111,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12244-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+729,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12244-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+112,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12245-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+731,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12245-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+113,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12246-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+114,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12261-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+115,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12262-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+116,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12263-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+117,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12264-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+154,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12265-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+157,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12265-5B0,5A2 Components,0,0,NULL,NULL,NULL,0
+441,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12265-6B2 -A000,RPY Components,0,0,NULL,NULL,12.000000,0
+292,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12270-5BA,5BA Components,0,0,NULL,NULL,NULL,0
+442,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12270-6B2,6B2 Components,0,0,NULL,NULL,NULL,0
+875,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12270-6NAA,5PA Components,0,0,NULL,NULL,6.000000,0
+921,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12270-6VJA,5PA Components,0,0,NULL,NULL,6.000000,0
+661,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,12431-6FBA-A000,6FB Components,0,0,NULL,NULL,NULL,0
+566,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,38930-RPY,RPY Components,0,0,NULL,NULL,NULL,0
+568,5A2 Casting 1 Work Cell,5A2 Casting Line 1,5A2 Area,38930-RPYX,Offsite Components,0,0,NULL,NULL,NULL,0
+191,5A2 Line 2 Camholder Assembly Work Cell,5A2 Line 2 Camholder Assembly,5A2 Area,12231-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+192,5A2 Line 2 Camholder Assembly Work Cell,5A2 Line 2 Camholder Assembly,5A2 Area,12232-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+193,5A2 Line 2 Camholder Assembly Work Cell,5A2 Line 2 Camholder Assembly,5A2 Area,12233-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+194,5A2 Line 2 Camholder Assembly Work Cell,5A2 Line 2 Camholder Assembly,5A2 Area,12234-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+195,5A2 Line 2 Camholder Assembly Work Cell,5A2 Line 2 Camholder Assembly,5A2 Area,12235-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+196,5A2 Line 2 Camholder Assembly Work Cell,5A2 Line 2 Camholder Assembly,5A2 Area,12241-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+197,5A2 Line 2 Camholder Assembly Work Cell,5A2 Line 2 Camholder Assembly,5A2 Area,12243-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+198,5A2 Line 2 Camholder Assembly Work Cell,5A2 Line 2 Camholder Assembly,5A2 Area,12244-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+199,5A2 Line 2 Camholder Assembly Work Cell,5A2 Line 2 Camholder Assembly,5A2 Area,12245-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+200,5A2 Line 2 Camholder Assembly Work Cell,5A2 Line 2 Camholder Assembly,5A2 Area,12246-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+186,5A2 Line 2 Camholder Assembly Work Cell,5A2 Line 2 Camholder Assembly,5A2 Area,12261-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+187,5A2 Line 2 Camholder Assembly Work Cell,5A2 Line 2 Camholder Assembly,5A2 Area,12262-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+188,5A2 Line 2 Camholder Assembly Work Cell,5A2 Line 2 Camholder Assembly,5A2 Area,12263-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+189,5A2 Line 2 Camholder Assembly Work Cell,5A2 Line 2 Camholder Assembly,5A2 Area,12264-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+190,5A2 Line 2 Camholder Assembly Work Cell,5A2 Line 2 Camholder Assembly,5A2 Area,12265-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+204,5A2 Line 2 Camholder Assembly Work Cell,5A2 Line 2 Camholder Assembly,5A2 Area,12265-5B0,5A2 Components,0,1,NULL,NULL,NULL,0
+201,5A2 Line 2 Camholder Assembly Work Cell,5A2 Line 2 Camholder Assembly,5A2 Area,90701-5A2-A000,5A2 Components,0,1,NULL,NULL,2.000000,0
+202,5A2 Line 2 Camholder Assembly Work Cell,5A2 Line 2 Camholder Assembly,5A2 Area,90702-5A2-A000,5A2 Components,0,1,NULL,NULL,NULL,0
+203,5A2 Line 2 Camholder Assembly Work Cell,5A2 Line 2 Camholder Assembly,5A2 Area,96211-08000,5A2 Components,0,1,NULL,NULL,NULL,0
+205,5A2 Line 2 Camholder Assembly Work Cell,5A2 Line 2 Camholder Assembly,5A2 Area,1226A-5A2 -A000,5A2 Finished Goods,1,0,NULL,NULL,NULL,0
+209,5A2 Line 2 Cam Holder Machining Work Cell,5A2 Line 2 Camholder Machining,5A2 Area,12231-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+212,5A2 Line 2 Cam Holder Machining Work Cell,5A2 Line 2 Camholder Machining,5A2 Area,12232-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+213,5A2 Line 2 Cam Holder Machining Work Cell,5A2 Line 2 Camholder Machining,5A2 Area,12233-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+214,5A2 Line 2 Cam Holder Machining Work Cell,5A2 Line 2 Camholder Machining,5A2 Area,12234-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+215,5A2 Line 2 Cam Holder Machining Work Cell,5A2 Line 2 Camholder Machining,5A2 Area,12235-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+217,5A2 Line 2 Cam Holder Machining Work Cell,5A2 Line 2 Camholder Machining,5A2 Area,12243-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+218,5A2 Line 2 Cam Holder Machining Work Cell,5A2 Line 2 Camholder Machining,5A2 Area,12244-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+219,5A2 Line 2 Cam Holder Machining Work Cell,5A2 Line 2 Camholder Machining,5A2 Area,12245-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+220,5A2 Line 2 Cam Holder Machining Work Cell,5A2 Line 2 Camholder Machining,5A2 Area,12246-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+216,5A2 Line 2 EX 1-2 Machining Work Cell,5A2 Line 2 EX 1-2 Machining,5A2 Area,12241-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+206,5A2 Line 2 Fuel Pump Assembly Work Cell,5A2 Line 2 Fuel Pump Assembly,5A2 Area,12270-5A2,5A2 Components,0,1,NULL,NULL,NULL,0
+207,5A2 Line 2 Fuel Pump Assembly Work Cell,5A2 Line 2 Fuel Pump Assembly,5A2 Area,92900-06012-0B,5A2 Components,0,1,NULL,NULL,NULL,0
+208,5A2 Line 2 Fuel Pump Assembly Work Cell,5A2 Line 2 Fuel Pump Assembly,5A2 Area,94301-10120,5A2 Components,0,1,NULL,NULL,NULL,0
+221,5A2 Line 2 Rocker Shaft 1-4 Machining Work Cell,5A2 Line 2 Rocker Shaft 1-4 Machining,5A2 Area,12261-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+222,5A2 Line 2 Rocker Shaft 1-4 Machining Work Cell,5A2 Line 2 Rocker Shaft 1-4 Machining,5A2 Area,12262-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+223,5A2 Line 2 Rocker Shaft 1-4 Machining Work Cell,5A2 Line 2 Rocker Shaft 1-4 Machining,5A2 Area,12263-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+224,5A2 Line 2 Rocker Shaft 1-4 Machining Work Cell,5A2 Line 2 Rocker Shaft 1-4 Machining,5A2 Area,12264-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+211,5A2 Line 2 Rocker Shaft 5 - Fuel Pump Machining Work Cell,5A2 Line 2 Rocker Shaft 5 - Fuel Pump Machining,5A2 Area,12265-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+225,5A2 Line 2 Rocker Shaft 5 - Fuel Pump Machining Work Cell,5A2 Line 2 Rocker Shaft 5 - Fuel Pump Machining,5A2 Area,12265-5B0,5A2 Components,0,0,NULL,NULL,NULL,0
+210,5A2 Line 2 Rocker Shaft 5 - Fuel Pump Machining Work Cell,5A2 Line 2 Rocker Shaft 5 - Fuel Pump Machining,5A2 Area,12270-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+124,5A2 Machining 1 Work Cell,5A2 Machining Line 1,5A2 Area,12261-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+145,5A2 Machining 1 Work Cell,5A2 Machining Line 1,5A2 Area,12262-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+147,5A2 Machining 1 Work Cell,5A2 Machining Line 1,5A2 Area,12263-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+149,5A2 Machining 1 Work Cell,5A2 Machining Line 1,5A2 Area,12264-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+136,5A2 Machining 2 Work Cell,5A2 Machining Line 2,5A2 Area,12241-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+156,5A2 Machining 2 Work Cell,5A2 Machining Line 2,5A2 Area,12265-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+158,5A2 Machining 2 Work Cell,5A2 Machining Line 2,5A2 Area,12265-5B0,5A2 Components,0,0,NULL,NULL,NULL,0
+181,5A2 Machining 2 Work Cell,5A2 Machining Line 2,5A2 Area,12270-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+127,5A2 Machining 3 Work Cell,5A2 Machining Line 3,5A2 Area,12231-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+128,5A2 Machining 3 Work Cell,5A2 Machining Line 3,5A2 Area,12232-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+130,5A2 Machining 3 Work Cell,5A2 Machining Line 3,5A2 Area,12233-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+132,5A2 Machining 3 Work Cell,5A2 Machining Line 3,5A2 Area,12234-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+134,5A2 Machining 3 Work Cell,5A2 Machining Line 3,5A2 Area,12235-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+138,5A2 Machining 3 Work Cell,5A2 Machining Line 3,5A2 Area,12243-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+140,5A2 Machining 3 Work Cell,5A2 Machining Line 3,5A2 Area,12244-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+142,5A2 Machining 3 Work Cell,5A2 Machining Line 3,5A2 Area,12245-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+152,5A2 Machining 3 Work Cell,5A2 Machining Line 3,5A2 Area,12246-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+485,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,11200-5K8,5K8 Components,0,0,NULL,NULL,NULL,0
+868,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,11200-6MAA-J010,6C2/6MA Components,0,0,NULL,NULL,NULL,0
+498,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,1120A-5PA,5PA Components,0,0,NULL,NULL,NULL,0
+491,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12231-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+126,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12231-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+161,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12231-5G0,5G0 Components,0,0,NULL,NULL,NULL,0
+627,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12231-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+455,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12231-RPY -G000,RPY Components,0,0,NULL,NULL,NULL,0
+492,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12232-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+125,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12232-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+167,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12232-5G0,5G0 Components,0,0,NULL,NULL,NULL,0
+628,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12232-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+456,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12232-RPY -G000,RPY Components,0,0,NULL,NULL,NULL,0
+495,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12233-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+129,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12233-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+174,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12233-5G0,5G0 Components,0,0,NULL,NULL,NULL,0
+629,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12233-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+457,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12233-RPY -G000,RPY Components,0,0,NULL,NULL,NULL,0
+493,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12234-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+131,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12234-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+630,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12234-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+458,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12234-RPY -G000,RPY Components,0,0,NULL,NULL,NULL,0
+494,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12235-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+133,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12235-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+843,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12235-6FBA-A000,6FB Components,0,0,NULL,NULL,NULL,0
+631,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12235-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+459,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12235-RPY -G000,RPY Components,0,0,NULL,NULL,NULL,0
+486,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12241-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+135,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12241-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+632,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12241-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+460,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12241-RPY -G000,RPY Components,0,0,NULL,NULL,NULL,0
+487,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12242-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+633,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12242-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+461,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12242-RPY -G000,RPY Components,0,0,NULL,NULL,NULL,0
+488,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12243-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+137,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12243-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+634,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12243-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+462,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12243-RPY -G000,RPY Components,0,0,NULL,NULL,NULL,0
+489,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12244-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+139,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12244-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+635,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12244-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+463,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12244-RPY -G000,RPY Components,0,0,NULL,NULL,NULL,0
+490,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12245-59B-0000,59B Components,0,0,NULL,NULL,NULL,0
+141,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12245-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+636,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12245-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+464,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12245-RPY -G000,RPY Components,0,0,NULL,NULL,NULL,0
+151,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12246-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+465,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12246-RPY -G000,RPY Components,0,0,NULL,NULL,NULL,0
+143,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12261-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+466,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12261-RPY -G000,RPY Components,0,0,NULL,NULL,NULL,0
+144,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12262-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+467,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12262-RPY -G000,RPY Components,0,0,NULL,NULL,NULL,0
+146,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12263-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+468,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12263-RPY -G000,RPY Components,0,0,NULL,NULL,NULL,0
+148,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12264-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+469,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12264-RPY -G000,RPY Components,0,0,NULL,NULL,NULL,0
+155,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12265-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+159,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12265-5B0,5A2 Components,0,0,NULL,NULL,NULL,0
+477,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12265-5BA -A000,RPY Components,0,0,NULL,NULL,NULL,0
+449,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12265-6B2 -A000,RPY Components,0,0,NULL,NULL,NULL,0
+470,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12265-RPY -G000,RPY Components,0,0,NULL,NULL,NULL,0
+830,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12270-59B,59B Components,0,0,NULL,NULL,NULL,0
+180,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12270-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+448,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12270-5BA,5BA Components,0,0,NULL,NULL,NULL,0
+479,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12270-5BAA,RPY Components,0,0,NULL,NULL,NULL,0
+393,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12270-5PA,5PA Components,0,0,NULL,NULL,6.000000,0
+450,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12270-6B2,6B2 Components,0,0,NULL,NULL,NULL,0
+944,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12270-6NA,59B Components,0,0,NULL,NULL,6.000000,0
+871,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12270-6NAA,5PA Components,0,0,NULL,NULL,6.000000,0
+922,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12270-6VJA,5PA Components,0,0,NULL,NULL,6.000000,0
+476,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12270-RPY,RPY Components,0,0,NULL,NULL,NULL,0
+471,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12271-RPY -G000,RPY Components,0,0,NULL,NULL,NULL,0
+472,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12272-RPY -G000,RPY Components,0,0,NULL,NULL,NULL,0
+473,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12273-RPY -G000,RPY Components,0,0,NULL,NULL,NULL,0
+474,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12274-RPY -G000,RPY Components,0,0,NULL,NULL,NULL,0
+844,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,12431-6FBA-A000,6FB Components,0,0,NULL,NULL,NULL,0
+567,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,38930-RPY,RPY Components,0,0,NULL,NULL,NULL,0
+571,5A2/5G0 Tumbling 1 Work Cell,5A2/5G0 Tumbling Line 1,5A2/5G0 Tumbling Area,38930-RPYX,Offsite Components,0,0,NULL,NULL,NULL,0
+294,5BA Assembly Work Cell,5BA Side Cover Assembly,5BA Area,12270-5BA,5BA Components,0,1,NULL,NULL,NULL,0
+299,5BA Assembly Work Cell,5BA Side Cover Assembly,5BA Area,12270-5BA-A010,5BA Finished Goods,1,1,NULL,NULL,NULL,0
+295,5BA Side Cover Machining Work Cell,5BA Side Cover Machining,5BA Area,12270-5BA,5BA Components,0,0,NULL,NULL,NULL,0
+170,5G0 Casting Work Cell 1,5G0 Casting Line 1,5G0 Area,12231-5G0,5G0 Components,0,0,NULL,NULL,NULL,0
+166,5G0 Casting Work Cell 1,5G0 Casting Line 1,5G0 Area,12232-5G0,5G0 Components,0,0,NULL,NULL,NULL,0
+172,5G0 Casting Work Cell 1,5G0 Casting Line 1,5G0 Area,12233-5G0,5G0 Components,0,0,NULL,NULL,NULL,0
+179,5G0 Casting Work Cell 1,5G0 Casting Line 1,5G0 Area,12270-5A2,5A2 Components,0,0,NULL,NULL,NULL,0
+16,5G0 Front Assembly Work Cell,5G0 Front Assembly Line,5G0 Area,12231-5G0,5G0 Components,0,1,NULL,NULL,NULL,0
+17,5G0 Front Assembly Work Cell,5G0 Front Assembly Line,5G0 Area,12232-5G0,5G0 Components,0,1,NULL,NULL,NULL,0
+49,5G0 Front Assembly Work Cell,5G0 Front Assembly Line,5G0 Area,12233-5G0,5G0 Components,0,1,NULL,NULL,NULL,0
+25,5G0 Front Assembly Work Cell,5G0 Front Assembly Line,5G0 Area,146315G0 A000   ,5G0 Components,0,1,NULL,NULL,NULL,0
+27,5G0 Front Assembly Work Cell,5G0 Front Assembly Line,5G0 Area,146325G0 A000   ,5G0 Components,0,1,NULL,NULL,NULL,0
+37,5G0 Front Assembly Work Cell,5G0 Front Assembly Line,5G0 Area,14646R70 A000  ,5G0 Components,0,1,NULL,NULL,NULL,0
+33,5G0 Front Assembly Work Cell,5G0 Front Assembly Line,5G0 Area,90004PE2 0050  ,5G0 Components,0,1,NULL,NULL,NULL,0
+177,5G0 Front Assembly Work Cell,5G0 Front Assembly Line,5G0 Area,90701-5G0 -A000,5G0 Components,0,1,NULL,NULL,NULL,0
+21,5G0 Front Assembly Work Cell,5G0 Front Assembly Line,5G0 Area,P146125G0 A000,5G0 Components,0,1,NULL,NULL,NULL,0
+23,5G0 Front Assembly Work Cell,5G0 Front Assembly Line,5G0 Area,P146145G0 A000,5G0 Components,0,1,NULL,NULL,NULL,0
+19,5G0 Front Assembly Work Cell,5G0 Front Assembly Line,5G0 Area,P146405G0 A000,5G0 Components,0,1,NULL,NULL,NULL,0
+35,5G0 Front Assembly Work Cell,5G0 Front Assembly Line,5G0 Area,P146455G0 A000,5G0 Components,0,1,NULL,NULL,NULL,0
+176,5G0 Front Assembly Work Cell,5G0 Front Assembly Line,5G0 Area,P90002-5G0-A000,5G0 Components,0,1,NULL,NULL,NULL,0
+169,5G0 Machining 1 Work Cell,5G0 Machining Line 1,5G0 Area,12231-5G0,5G0 Components,0,0,NULL,NULL,NULL,0
+168,5G0 Machining 1 Work Cell,5G0 Machining Line 1,5G0 Area,12232-5G0,5G0 Components,0,0,NULL,NULL,NULL,0
+173,5G0 Machining 1 Work Cell,5G0 Machining Line 1,5G0 Area,12233-5G0,5G0 Components,0,0,NULL,NULL,NULL,0
+160,5G0 Rear Assembly Work Cell,5G0 Rear Assembly Line,5G0 Area,12231-5G0,5G0 Components,0,1,NULL,NULL,NULL,0
+165,5G0 Rear Assembly Work Cell,5G0 Rear Assembly Line,5G0 Area,12232-5G0,5G0 Components,0,1,NULL,NULL,NULL,0
+171,5G0 Rear Assembly Work Cell,5G0 Rear Assembly Line,5G0 Area,12233-5G0,5G0 Components,0,1,NULL,NULL,NULL,0
+45,5G0 Rear Assembly Work Cell,5G0 Rear Assembly Line,5G0 Area,146335G0 A000  ,5G0 Components,0,1,NULL,NULL,NULL,0
+47,5G0 Rear Assembly Work Cell,5G0 Rear Assembly Line,5G0 Area,146345G0 A000  ,5G0 Components,0,1,NULL,NULL,NULL,0
+31,5G0 Rear Assembly Work Cell,5G0 Rear Assembly Line,5G0 Area,90701-5G0 -A000,5G0 Components,0,1,NULL,NULL,NULL,0
+39,5G0 Rear Assembly Work Cell,5G0 Rear Assembly Line,5G0 Area,P146205G0 A000,5G0 Components,0,1,NULL,NULL,NULL,0
+41,5G0 Rear Assembly Work Cell,5G0 Rear Assembly Line,5G0 Area,P146245G0 A000,5G0 Components,0,1,NULL,NULL,NULL,0
+43,5G0 Rear Assembly Work Cell,5G0 Rear Assembly Line,5G0 Area,P146275G0 A000,5G0 Components,0,1,NULL,NULL,NULL,0
+29,5G0 Rear Assembly Work Cell,5G0 Rear Assembly Line,5G0 Area,P90002-5G0-A000,5G0 Components,0,1,NULL,NULL,NULL,0
+642,5J6 Machining Work Cell,5J6 Machining,5J6 Area,11200-5J6 -A100,5J6 Components,0,0,NULL,NULL,NULL,0
+671,5J6 Machining Work Cell,5J6 Machining,5J6 Area,11200-6FBA,6FB Components,0,0,NULL,NULL,NULL,0
+638,5J6 Oil Pan Assembly Work Cell,5J6 Oil Pan Assembly,5J6 Area,11200-5J6 -A100,5J6 Components,0,1,NULL,NULL,NULL,0
+677,5J6 Oil Pan Assembly Work Cell,5J6 Oil Pan Assembly,5J6 Area,11200-6FB -A000,6FB Finished Goods,1,1,NULL,NULL,NULL,0
+676,5J6 Oil Pan Assembly Work Cell,5J6 Oil Pan Assembly,5J6 Area,11200-6FBA,6FB Components,0,1,NULL,NULL,NULL,0
+639,5J6 Oil Pan Assembly Work Cell,5J6 Oil Pan Assembly,5J6 Area,90009-R70-A000,5K8 Components,0,1,NULL,NULL,NULL,0
+640,5J6 Oil Pan Assembly Work Cell,5J6 Oil Pan Assembly,5J6 Area,94109-14000,5K8 Components,0,1,NULL,NULL,NULL,0
+641,5J6 Oil Pan Assembly Work Cell,5J6 Oil Pan Assembly,5J6 Area,94301-08140,Offsite Components,0,1,NULL,NULL,NULL,0
+643,5J6 Oil Pan Assembly Work Cell,5J6 Oil Pan Assembly,5J6 Area,11200-5J6 -A110,5J6 Finished Goods,1,0,NULL,NULL,NULL,0
+282,5K8 Machining Work Cell,5K8 Machining,5K8/64A Area,11200-5K8,5K8 Components,0,0,NULL,NULL,NULL,0
+318,5K8 Machining Work Cell,5K8 Machining,5K8/64A Area,1120A-5PA,5PA Components,0,0,NULL,NULL,NULL,0
+579,5K8/64A Assembly Work Cell,5K8/64A Assembly,5K8/64A Area,11200-5K8,5K8 Components,0,1,NULL,NULL,NULL,0
+575,5K8/64A Assembly Work Cell,5K8/64A Assembly,5K8/64A Area,11200-64AA,64A Components,0,1,NULL,NULL,NULL,0
+588,5K8/64A Assembly Work Cell,5K8/64A Assembly,5K8/64A Area,1120A-5AA -A010,5K8 Finished Goods,1,1,NULL,NULL,NULL,0
+574,5K8/64A Assembly Work Cell,5K8/64A Assembly,5K8/64A Area,1120A-64A -A000,64A Finished Goods,1,1,NULL,NULL,NULL,0
+580,5K8/64A Assembly Work Cell,5K8/64A Assembly,5K8/64A Area,11221-59B-0000,5K8 Components,0,1,NULL,NULL,NULL,0
+576,5K8/64A Assembly Work Cell,5K8/64A Assembly,5K8/64A Area,11221-64AA-A010,64A Components,0,1,NULL,NULL,NULL,0
+577,5K8/64A Assembly Work Cell,5K8/64A Assembly,5K8/64A Area,11222-64AA-A001,64A Components,0,1,NULL,NULL,NULL,0
+581,5K8/64A Assembly Work Cell,5K8/64A Assembly,5K8/64A Area,19517-PD6-3000,5K8 Components,0,1,NULL,NULL,NULL,0
+582,5K8/64A Assembly Work Cell,5K8/64A Assembly,5K8/64A Area,90009-R70-A000,5K8 Components,0,1,NULL,NULL,NULL,0
+583,5K8/64A Assembly Work Cell,5K8/64A Assembly,5K8/64A Area,90015-PH1-0130,5K8 Components,0,1,NULL,NULL,NULL,0
+584,5K8/64A Assembly Work Cell,5K8/64A Assembly,5K8/64A Area,90703-59B-0000,5K8 Components,0,1,NULL,NULL,NULL,0
+585,5K8/64A Assembly Work Cell,5K8/64A Assembly,5K8/64A Area,91301-RNAA-A001,5K8 Components,0,1,NULL,NULL,NULL,0
+586,5K8/64A Assembly Work Cell,5K8/64A Assembly,5K8/64A Area,94109-14000,5K8 Components,0,1,NULL,NULL,NULL,0
+587,5K8/64A Assembly Work Cell,5K8/64A Assembly,5K8/64A Area,94301-12160,5K8 Components,0,1,NULL,NULL,NULL,0
+578,5K8/64A Assembly Work Cell,5K8/64A Assembly,5K8/64A Area,95701-06020-08,64A Components,0,1,NULL,NULL,NULL,0
+436,5PA Fuel Pump Assembly Work Cell,5PA Assembly,5PA Area,12270-5PA,5PA Components,0,1,NULL,NULL,6.000000,0
+852,5PA Fuel Pump Assembly Work Cell,5PA Assembly,5PA Area,12270-6NA -A000 DNU,5PA Finished Goods,1,1,NULL,NULL,NULL,0
+870,5PA Fuel Pump Assembly Work Cell,5PA Assembly,5PA Area,12270-6NAA,5PA Components,0,1,NULL,NULL,6.000000,0
+923,5PA Fuel Pump Assembly Work Cell,5PA Assembly,5PA Area,12270-6VJA,5PA Components,0,1,NULL,NULL,6.000000,0
+437,5PA Fuel Pump Assembly Work Cell,5PA Assembly,5PA Area,92900-06014-1B,59B Components,0,1,NULL,NULL,NULL,0
+438,5PA Fuel Pump Assembly Work Cell,5PA Assembly,5PA Area,94301-08100,59B Components,0,1,NULL,NULL,NULL,0
+319,5PA Oil Pan Assembly Work Cell,5PA Assembly,5PA Area,1120A-5PA,5PA Components,0,1,NULL,NULL,NULL,0
+323,5PA Oil Pan Assembly Work Cell,5PA Assembly,5PA Area,11221-59B-0000,5K8 Components,0,1,NULL,NULL,NULL,0
+327,5PA Oil Pan Assembly Work Cell,5PA Assembly,5PA Area,15123-PCX-0030-H1,5PA Components,0,1,NULL,NULL,NULL,0
+322,5PA Oil Pan Assembly Work Cell,5PA Assembly,5PA Area,19517-PD6-3000,5K8 Components,0,1,NULL,NULL,NULL,0
+326,5PA Oil Pan Assembly Work Cell,5PA Assembly,5PA Area,90009-R70-A000,5K8 Components,0,1,NULL,NULL,NULL,0
+324,5PA Oil Pan Assembly Work Cell,5PA Assembly,5PA Area,90015-PH1-0130,5K8 Components,0,1,NULL,NULL,NULL,0
+325,5PA Oil Pan Assembly Work Cell,5PA Assembly,5PA Area,91301-RNA-A020-M2,5PA Components,0,1,NULL,NULL,NULL,0
+321,5PA Oil Pan Assembly Work Cell,5PA Assembly,5PA Area,94109-14000,5K8 Components,0,1,NULL,NULL,NULL,0
+743,5PA Oil Pan Assembly Work Cell,5PA Assembly,5PA Area,94301-08100,59B Components,0,1,NULL,NULL,NULL,0
+742,5PA Oil Pan Assembly Work Cell,5PA Assembly,5PA Area,94301-08140,Offsite Components,0,1,NULL,NULL,NULL,0
+320,5PA Oil Pan Assembly Work Cell,5PA Assembly,5PA Area,94301-12160,5K8 Components,0,1,NULL,NULL,NULL,0
+446,5PA Fuel Pump Line 2 Machining Work Cell,5PA Fuel Pump Line 2 Machining,5PA Area,1120A-5PA,5PA Components,0,0,NULL,NULL,NULL,0
+350,5PA Fuel Pump Line 2 Machining Work Cell,5PA Fuel Pump Line 2 Machining,5PA Area,12270-5PA,5PA Components,0,0,NULL,NULL,16.000000,0
+873,5PA Fuel Pump Line 2 Machining Work Cell,5PA Fuel Pump Line 2 Machining,5PA Area,12270-6NAA,5PA Components,0,0,NULL,NULL,16.000000,0
+924,5PA Fuel Pump Line 2 Machining Work Cell,5PA Fuel Pump Line 2 Machining,5PA Area,12270-6VJA,5PA Components,0,0,NULL,NULL,16.000000,0
+445,5PA Fuel Pump Line 3 Machining Work Cell,5PA Fuel Pump Line 3 Machining,5PA Area,12270-5PA,5PA Components,0,0,NULL,NULL,16.000000,0
+874,5PA Fuel Pump Line 3 Machining Work Cell,5PA Fuel Pump Line 3 Machining,5PA Area,12270-6NAA,5PA Components,0,0,NULL,NULL,16.000000,0
+925,5PA Fuel Pump Line 3 Machining Work Cell,5PA Fuel Pump Line 3 Machining,5PA Area,12270-6VJA,5PA Components,0,0,NULL,NULL,16.000000,0
+573,5PA Oil Pan Machining Work Cell,5PA Oil Pan Machining,5PA Area,1120A-5PA,5PA Components,0,0,NULL,NULL,NULL,0
+373,RPY 6B2 Camholder Assembly Work Cell,6B2 Cam Holder Assembly,6B2 Area,12231-RPY -G000,RPY Components,0,1,NULL,NULL,117.000000,0
+374,RPY 6B2 Camholder Assembly Work Cell,6B2 Cam Holder Assembly,6B2 Area,12232-RPY -G000,RPY Components,0,1,NULL,NULL,240.000000,0
+375,RPY 6B2 Camholder Assembly Work Cell,6B2 Cam Holder Assembly,6B2 Area,12233-RPY -G000,RPY Components,0,1,NULL,NULL,240.000000,0
+376,RPY 6B2 Camholder Assembly Work Cell,6B2 Cam Holder Assembly,6B2 Area,12234-RPY -G000,RPY Components,0,1,NULL,NULL,240.000000,0
+377,RPY 6B2 Camholder Assembly Work Cell,6B2 Cam Holder Assembly,6B2 Area,12235-RPY -G000,RPY Components,0,1,NULL,NULL,240.000000,0
+378,RPY 6B2 Camholder Assembly Work Cell,6B2 Cam Holder Assembly,6B2 Area,12241-RPY -G000,RPY Components,0,1,NULL,NULL,78.000000,0
+379,RPY 6B2 Camholder Assembly Work Cell,6B2 Cam Holder Assembly,6B2 Area,12242-RPY -G000,RPY Components,0,1,NULL,NULL,240.000000,0
+381,RPY 6B2 Camholder Assembly Work Cell,6B2 Cam Holder Assembly,6B2 Area,12243-RPY -G000,RPY Components,0,1,NULL,NULL,144.000000,0
+380,RPY 6B2 Camholder Assembly Work Cell,6B2 Cam Holder Assembly,6B2 Area,12244-RPY -G000,RPY Components,0,1,NULL,NULL,240.000000,0
+382,RPY 6B2 Camholder Assembly Work Cell,6B2 Cam Holder Assembly,6B2 Area,12245-RPY -G000,RPY Components,0,1,NULL,NULL,240.000000,0
+383,RPY 6B2 Camholder Assembly Work Cell,6B2 Cam Holder Assembly,6B2 Area,12246-RPY -G000,RPY Components,0,1,NULL,NULL,180.000000,0
+406,RPY 6B2 Camholder Assembly Work Cell,6B2 Cam Holder Assembly,6B2 Area,12261-RPY -G000,RPY Components,0,1,NULL,NULL,40.000000,0
+407,RPY 6B2 Camholder Assembly Work Cell,6B2 Cam Holder Assembly,6B2 Area,12262-RPY -G000,RPY Components,0,1,NULL,NULL,80.000000,0
+408,RPY 6B2 Camholder Assembly Work Cell,6B2 Cam Holder Assembly,6B2 Area,12263-RPY -G000,RPY Components,0,1,NULL,NULL,80.000000,0
+409,RPY 6B2 Camholder Assembly Work Cell,6B2 Cam Holder Assembly,6B2 Area,12264-RPY -G000,RPY Components,0,1,NULL,NULL,80.000000,0
+645,RPY 6B2 Camholder Assembly Work Cell,6B2 Cam Holder Assembly,6B2 Area,12265-5BA -A000,RPY Components,0,1,NULL,NULL,NULL,0
+439,RPY 6B2 Camholder Assembly Work Cell,6B2 Cam Holder Assembly,6B2 Area,12265-6B2 -A000,RPY Components,0,1,NULL,NULL,12.000000,0
+388,RPY 6B2 Camholder Assembly Work Cell,6B2 Cam Holder Assembly,6B2 Area,12265-RPY -G000,RPY Components,0,1,NULL,NULL,12.000000,0
+389,RPY 6B2 Camholder Assembly Work Cell,6B2 Cam Holder Assembly,6B2 Area,12271-RPY -G000,RPY Components,0,1,NULL,NULL,117.000000,0
+390,RPY 6B2 Camholder Assembly Work Cell,6B2 Cam Holder Assembly,6B2 Area,12272-RPY -G000,RPY Components,0,1,NULL,NULL,240.000000,0
+391,RPY 6B2 Camholder Assembly Work Cell,6B2 Cam Holder Assembly,6B2 Area,12273-RPY -G000,RPY Components,0,1,NULL,NULL,198.000000,0
+392,RPY 6B2 Camholder Assembly Work Cell,6B2 Cam Holder Assembly,6B2 Area,12274-RPY -G000,RPY Components,0,1,NULL,NULL,240.000000,0
+427,RPY 6B2 Camholder Assembly Work Cell,6B2 Cam Holder Assembly,6B2 Area,90701-5A2-A000,5A2 Components,0,1,NULL,NULL,2.000000,0
+426,RPY 6B2 Camholder Assembly Work Cell,6B2 Cam Holder Assembly,6B2 Area,96211-09000,RPY Components,0,1,NULL,NULL,NULL,0
+644,RPY 6B2 Camholder Assembly Work Cell,6B2 Cam Holder Assembly,6B2 Area,1223A-5BA -A000,RPY Finished Goods,1,0,NULL,NULL,NULL,0
+444,RPY 6B2 Camholder Assembly Work Cell,6B2 Cam Holder Assembly,6B2 Area,1223A-6B2- A000,RPY Finished Goods,1,0,NULL,NULL,NULL,0
+411,RPY 6B2 CH Machining Work Cell,6B2 Cam Holder Machining,6B2 Area,12231-RPY -G000,RPY Components,0,0,NULL,NULL,117.000000,0
+412,RPY 6B2 CH Machining Work Cell,6B2 Cam Holder Machining,6B2 Area,12232-RPY -G000,RPY Components,0,0,NULL,NULL,240.000000,0
+413,RPY 6B2 CH Machining Work Cell,6B2 Cam Holder Machining,6B2 Area,12233-RPY -G000,RPY Components,0,0,NULL,NULL,240.000000,0
+414,RPY 6B2 CH Machining Work Cell,6B2 Cam Holder Machining,6B2 Area,12234-RPY -G000,RPY Components,0,0,NULL,NULL,240.000000,0
+415,RPY 6B2 CH Machining Work Cell,6B2 Cam Holder Machining,6B2 Area,12235-RPY -G000,RPY Components,0,0,NULL,NULL,240.000000,0
+416,RPY 6B2 CH Machining Work Cell,6B2 Cam Holder Machining,6B2 Area,12241-RPY -G000,RPY Components,0,0,NULL,NULL,78.000000,0
+417,RPY 6B2 CH Machining Work Cell,6B2 Cam Holder Machining,6B2 Area,12242-RPY -G000,RPY Components,0,0,NULL,NULL,240.000000,0
+418,RPY 6B2 CH Machining Work Cell,6B2 Cam Holder Machining,6B2 Area,12243-RPY -G000,RPY Components,0,0,NULL,NULL,144.000000,0
+419,RPY 6B2 CH Machining Work Cell,6B2 Cam Holder Machining,6B2 Area,12244-RPY -G000,RPY Components,0,0,NULL,NULL,240.000000,0
+420,RPY 6B2 CH Machining Work Cell,6B2 Cam Holder Machining,6B2 Area,12245-RPY -G000,RPY Components,0,0,NULL,NULL,240.000000,0
+421,RPY 6B2 CH Machining Work Cell,6B2 Cam Holder Machining,6B2 Area,12246-RPY -G000,RPY Components,0,0,NULL,NULL,180.000000,0
+646,RPY 6B2 CH Machining Work Cell,6B2 Cam Holder Machining,6B2 Area,12265-5BA -A000,RPY Components,0,0,NULL,NULL,6.000000,0
+422,RPY 6B2 CH Machining Work Cell,6B2 Cam Holder Machining,6B2 Area,12271-RPY -G000,RPY Components,0,0,NULL,NULL,117.000000,0
+423,RPY 6B2 CH Machining Work Cell,6B2 Cam Holder Machining,6B2 Area,12272-RPY -G000,RPY Components,0,0,NULL,NULL,240.000000,0
+424,RPY 6B2 CH Machining Work Cell,6B2 Cam Holder Machining,6B2 Area,12273-RPY -G000,RPY Components,0,0,NULL,NULL,198.000000,0
+425,RPY 6B2 CH Machining Work Cell,6B2 Cam Holder Machining,6B2 Area,12274-RPY -G000,RPY Components,0,0,NULL,NULL,240.000000,0
+394,RPY 6B2 RS 1-4 Machining Work Cell,6B2 Cam Holder Machining,6B2 Area,12261-RPY -G000,RPY Components,0,0,NULL,NULL,40.000000,0
+397,RPY 6B2 RS 1-4 Machining Work Cell,6B2 Cam Holder Machining,6B2 Area,12262-RPY -G000,RPY Components,0,0,NULL,NULL,80.000000,0
+400,RPY 6B2 RS 1-4 Machining Work Cell,6B2 Cam Holder Machining,6B2 Area,12263-RPY -G000,RPY Components,0,0,NULL,NULL,80.000000,0
+403,RPY 6B2 RS 1-4 Machining Work Cell,6B2 Cam Holder Machining,6B2 Area,12264-RPY -G000,RPY Components,0,0,NULL,NULL,80.000000,0
+647,RPY 6B2 RS 5 Machining Work Cell,6B2 Cam Holder Machining,6B2 Area,12265-5BA -A000,RPY Components,0,0,NULL,NULL,6.000000,0
+443,RPY 6B2 RS 5 Machining Work Cell,6B2 Cam Holder Machining,6B2 Area,12265-6B2 -A000,RPY Components,0,0,NULL,NULL,18.000000,0
+410,RPY 6B2 RS 5 Machining Work Cell,6B2 Cam Holder Machining,6B2 Area,12265-RPY -G000,RPY Components,0,0,NULL,NULL,12.000000,0
+429,6B2 Fuel Pump Assembly Work Cell,6B2 Fuel Pump Assembly,6B2 Area,12270-6B2,6B2 Components,0,1,NULL,NULL,NULL,0
+433,6B2 Fuel Pump Assembly Work Cell,6B2 Fuel Pump Assembly,6B2 Area,12270-RPY,RPY Components,0,1,NULL,NULL,NULL,0
+430,6B2 Fuel Pump Assembly Work Cell,6B2 Fuel Pump Assembly,6B2 Area,92900-06012-0B,5A2 Components,0,1,NULL,NULL,NULL,0
+434,6B2 Fuel Pump Assembly Work Cell,6B2 Fuel Pump Assembly,6B2 Area,92900-06050-0B,6B2 Components,0,1,NULL,NULL,NULL,0
+431,6B2 Fuel Pump Assembly Work Cell,6B2 Fuel Pump Assembly,6B2 Area,94301-10120,5A2 Components,0,1,NULL,NULL,NULL,0
+428,6B2 Fuel Pump Machining Work Cell,6B2 Fuel Pump Machining,6B2 Area,12270-6B2,6B2 Components,0,0,NULL,NULL,NULL,0
+432,6B2 Fuel Pump Machining Work Cell,6B2 Fuel Pump Machining,6B2 Area,12270-RPY,RPY Components,0,0,NULL,NULL,NULL,0
+435,6B2 Fuel Pump Machining Work Cell,6B2 Fuel Pump Machining,6B2 Area,92900-06050-0B,6B2 Components,0,0,NULL,NULL,NULL,0
+869,6C2/6MA Machining Line Work Cell,6C2/6MA Machining Line,6C2/6MA Area,11200-6MAA-J010,6C2/6MA Components,0,0,NULL,NULL,NULL,0
+527,6C2/6MA Oil Pan Assembly Work Cell,6C2/6MA Oil Pan Assembly,6C2/6MA Area,11200-5WJ-A000,6C2/6MA Components,0,1,NULL,NULL,NULL,0
+526,6C2/6MA Oil Pan Assembly Work Cell,6C2/6MA Oil Pan Assembly,6C2/6MA Area,11200-6C1-A000,6C2/6MA Components,0,1,NULL,NULL,NULL,0
+866,6C2/6MA Oil Pan Assembly Work Cell,6C2/6MA Oil Pan Assembly,6C2/6MA Area,11200-6MAA-J010,6C2/6MA Components,0,1,NULL,NULL,NULL,0
+528,6C2/6MA Oil Pan Assembly Work Cell,6C2/6MA Oil Pan Assembly,6C2/6MA Area,11203-PWA-0031,6C2/6MA Components,0,1,NULL,NULL,NULL,0
+529,6C2/6MA Oil Pan Assembly Work Cell,6C2/6MA Oil Pan Assembly,6C2/6MA Area,11221-5R0-0000,6C2/6MA Components,0,1,NULL,NULL,NULL,0
+838,6C2/6MA Oil Pan Assembly Work Cell,6C2/6MA Oil Pan Assembly,6C2/6MA Area,15123-PCX-0030-H1,5PA Components,0,1,NULL,NULL,NULL,0
+865,6C2/6MA Oil Pan Assembly Work Cell,6C2/6MA Oil Pan Assembly,6C2/6MA Area,900009-R70-A000,6C2/6MA Components,0,1,NULL,NULL,NULL,0
+524,6C2/6MA Oil Pan Assembly Work Cell,6C2/6MA Oil Pan Assembly,6C2/6MA Area,90015-PH1-0130,5K8 Components,0,1,NULL,NULL,NULL,0
+836,6C2/6MA Oil Pan Assembly Work Cell,6C2/6MA Oil Pan Assembly,6C2/6MA Area,90701-5A2A-A00,6MA Components,0,1,NULL,NULL,NULL,0
+525,6C2/6MA Oil Pan Assembly Work Cell,6C2/6MA Oil Pan Assembly,6C2/6MA Area,91301-RNA-A020-M2,5PA Components,0,1,NULL,NULL,NULL,0
+861,6C2/6MA Oil Pan Assembly Work Cell,6C2/6MA Oil Pan Assembly,6C2/6MA Area,91302-RZP-0000,6C2/6MA Components,0,1,NULL,NULL,NULL,0
+839,6C2/6MA Oil Pan Assembly Work Cell,6C2/6MA Oil Pan Assembly,6C2/6MA Area,94109-14000,5K8 Components,0,1,NULL,NULL,NULL,0
+837,6C2/6MA Oil Pan Assembly Work Cell,6C2/6MA Oil Pan Assembly,6C2/6MA Area,94301-08100,59B Components,0,1,NULL,NULL,NULL,0
+530,6C2/6MA Oil Pan Assembly Work Cell,6C2/6MA Oil Pan Assembly,6C2/6MA Area,95701-06012-08,Offsite Components,0,1,NULL,NULL,NULL,0
+766,6FB Assembly Work Cell,6FB Assembly,6FB Area,12235-6FB -A000,6FB Finished Goods,1,1,NULL,NULL,88.000000,0
+832,6FB Assembly Work Cell,6FB Assembly,6FB Area,12235-6FBA-A000,6FB Components,0,1,NULL,NULL,270.000000,0
+764,6FB Assembly Work Cell,6FB Assembly,6FB Area,12431-6FB -A000,6FB Finished Goods,1,1,NULL,NULL,44.000000,0
+833,6FB Assembly Work Cell,6FB Assembly,6FB Area,12431-6FBA-A000,6FB Components,0,1,NULL,NULL,500.000000,0
+859,6FB Assembly Work Cell,6FB Assembly,6FB Area,94301-08100,59B Components,0,1,NULL,NULL,4.000000,0
+767,6FB Machining Work Cell,6FB Machining,6FB Area,12235-6FBA-A000,6FB Components,0,0,NULL,NULL,270.000000,0
+763,6FB Machining Work Cell,6FB Machining,6FB Area,12431-6FBA-A000,6FB Components,0,0,NULL,NULL,500.000000,0
+773,6MA Cam Holder Assembly Work Cell,6MA Cam Holder Assembly,6MA Area,12231-6MA-0000,6MA Components,0,1,NULL,NULL,NULL,0
+775,6MA Cam Holder Assembly Work Cell,6MA Cam Holder Assembly,6MA Area,12232-6MA-0000,6MA Components,0,1,NULL,NULL,NULL,0
+779,6MA Cam Holder Assembly Work Cell,6MA Cam Holder Assembly,6MA Area,12233-6MA-0000,6MA Components,0,1,NULL,NULL,NULL,0
+782,6MA Cam Holder Assembly Work Cell,6MA Cam Holder Assembly,6MA Area,12234-6MA-0000,6MA Components,0,1,NULL,NULL,NULL,0
+785,6MA Cam Holder Assembly Work Cell,6MA Cam Holder Assembly,6MA Area,12235-6MA-0000,6MA Components,0,1,NULL,NULL,NULL,0
+788,6MA Cam Holder Assembly Work Cell,6MA Cam Holder Assembly,6MA Area,12241-6MA-0000,6MA Components,0,1,NULL,NULL,NULL,0
+704,6MA Cam Holder Assembly Work Cell,6MA Cam Holder Assembly,6MA Area,12242-6MA -J000,6MA Finished Goods,1,1,NULL,NULL,NULL,0
+791,6MA Cam Holder Assembly Work Cell,6MA Cam Holder Assembly,6MA Area,12242-6MA-0000,6MA Components,0,1,NULL,NULL,NULL,0
+794,6MA Cam Holder Assembly Work Cell,6MA Cam Holder Assembly,6MA Area,12243-6MA-0000,6MA Components,0,1,NULL,NULL,NULL,0
+797,6MA Cam Holder Assembly Work Cell,6MA Cam Holder Assembly,6MA Area,12244-6MA-0000,6MA Components,0,1,NULL,NULL,NULL,0
+801,6MA Cam Holder Assembly Work Cell,6MA Cam Holder Assembly,6MA Area,12245-6MA-0000,6MA Components,0,1,NULL,NULL,NULL,0
+841,6MA Cam Holder Assembly Work Cell,6MA Cam Holder Assembly,6MA Area,90701-5A2A-A00,6MA Components,0,1,NULL,NULL,NULL,0
+593,6MA Cam Holder Assembly Work Cell,6MA Cam Holder Assembly,6MA Area,90701-5R0-3000,59B Components,0,1,NULL,NULL,NULL,0
+821,6MA Cam Holder Assembly Work Cell,6MA Cam Holder Assembly,6MA Area,1223A-6MA -J000,6MA Finished Goods,1,0,NULL,NULL,NULL,0
+828,6MA CH Machining IN Work Cell,6MA Cam Holder Machining,6MA Area,12231-6MA -J000,6MA Finished Goods,1,0,NULL,NULL,NULL,0
+599,6MA CH Machining IN Work Cell,6MA Cam Holder Machining,6MA Area,12231-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+602,6MA CH Machining IN Work Cell,6MA Cam Holder Machining,6MA Area,12232-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+605,6MA CH Machining IN Work Cell,6MA Cam Holder Machining,6MA Area,12233-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+608,6MA CH Machining IN Work Cell,6MA Cam Holder Machining,6MA Area,12234-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+611,6MA CH Machining IN Work Cell,6MA Cam Holder Machining,6MA Area,12235-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+614,6MA CH Machining IN Work Cell,6MA Cam Holder Machining,6MA Area,12241-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+617,6MA CH Machining IN Work Cell,6MA Cam Holder Machining,6MA Area,12242-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+620,6MA CH Machining IN Work Cell,6MA Cam Holder Machining,6MA Area,12243-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+623,6MA CH Machining IN Work Cell,6MA Cam Holder Machining,6MA Area,12244-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+626,6MA CH Machining IN Work Cell,6MA Cam Holder Machining,6MA Area,12245-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+950,Inner Housing Weigh Station Work Cell,Inner Housing Weigh Station,Astemo Area,0079-2020,Astemo Components,0,1,NULL,NULL,1.000000,0
+265,RPY / 5BA Line 1 Rocker Shaft 5 Machining Work Cell,RPY / 5BA Line 1 Rocker Shaft 5 Machining,RPY Area,12265-5BA -A000,RPY Components,0,0,NULL,NULL,6.000000,0
+226,RPY / 5BA Line 1 Rocker Shaft 5 Machining Work Cell,RPY / 5BA Line 1 Rocker Shaft 5 Machining,RPY Area,12265-RPY -G000,RPY Components,0,0,NULL,NULL,12.000000,0
+570,RPY Compressor Bracket Assembly Work Cell,RPY Compressor Bracket Assembly,RPY Area,38930-RPYX,Offsite Components,0,1,NULL,NULL,NULL,0
+569,RPY Compressor Bracket Machining Work Cell,RPY Compressor Bracket Machining,RPY Area,38930-RPYX,Offsite Components,0,0,NULL,NULL,NULL,0
+251,RPY Line 1 Camholder Machining Work Cell,RPY Line 1 Camholder Machining,RPY Area,12231-RPY -G000,RPY Components,0,0,NULL,NULL,117.000000,0
+252,RPY Line 1 Camholder Machining Work Cell,RPY Line 1 Camholder Machining,RPY Area,12232-RPY -G000,RPY Components,0,0,NULL,NULL,240.000000,0
+253,RPY Line 1 Camholder Machining Work Cell,RPY Line 1 Camholder Machining,RPY Area,12233-RPY -G000,RPY Components,0,0,NULL,NULL,240.000000,0
+254,RPY Line 1 Camholder Machining Work Cell,RPY Line 1 Camholder Machining,RPY Area,12234-RPY -G000,RPY Components,0,0,NULL,NULL,240.000000,0
+255,RPY Line 1 Camholder Machining Work Cell,RPY Line 1 Camholder Machining,RPY Area,12235-RPY -G000,RPY Components,0,0,NULL,NULL,240.000000,0
+256,RPY Line 1 Camholder Machining Work Cell,RPY Line 1 Camholder Machining,RPY Area,12241-RPY -G000,RPY Components,0,0,NULL,NULL,78.000000,0
+257,RPY Line 1 Camholder Machining Work Cell,RPY Line 1 Camholder Machining,RPY Area,12242-RPY -G000,RPY Components,0,0,NULL,NULL,240.000000,0
+258,RPY Line 1 Camholder Machining Work Cell,RPY Line 1 Camholder Machining,RPY Area,12243-RPY -G000,RPY Components,0,0,NULL,NULL,144.000000,0
+259,RPY Line 1 Camholder Machining Work Cell,RPY Line 1 Camholder Machining,RPY Area,12244-RPY -G000,RPY Components,0,0,NULL,NULL,240.000000,0
+260,RPY Line 1 Camholder Machining Work Cell,RPY Line 1 Camholder Machining,RPY Area,12245-RPY -G000,RPY Components,0,0,NULL,NULL,240.000000,0
+261,RPY Line 1 Camholder Machining Work Cell,RPY Line 1 Camholder Machining,RPY Area,12246-RPY -G000,RPY Components,0,0,NULL,NULL,180.000000,0
+266,RPY Line 1 Camholder Machining Work Cell,RPY Line 1 Camholder Machining,RPY Area,12271-RPY -G000,RPY Components,0,0,NULL,NULL,117.000000,0
+267,RPY Line 1 Camholder Machining Work Cell,RPY Line 1 Camholder Machining,RPY Area,12272-RPY -G000,RPY Components,0,0,NULL,NULL,240.000000,0
+268,RPY Line 1 Camholder Machining Work Cell,RPY Line 1 Camholder Machining,RPY Area,12273-RPY -G000,RPY Components,0,0,NULL,NULL,198.000000,0
+269,RPY Line 1 Camholder Machining Work Cell,RPY Line 1 Camholder Machining,RPY Area,12274-RPY -G000,RPY Components,0,0,NULL,NULL,240.000000,0
+274,RPY Line 1 Fuel Pump Assembly 1 Work Cell,RPY Line 1 Fuel Pump Assembly,RPY Area,12270-5BAA,RPY Components,0,1,NULL,NULL,NULL,0
+270,RPY Line 1 Fuel Pump Assembly 1 Work Cell,RPY Line 1 Fuel Pump Assembly,RPY Area,12270-RPY,RPY Components,0,1,NULL,NULL,NULL,0
+300,RPY Line 1 Fuel Pump Assembly 1 Work Cell,RPY Line 1 Fuel Pump Assembly,RPY Area,92900-06012-0B,5A2 Components,0,1,NULL,NULL,NULL,0
+250,RPY Line 1 Fuel Pump Assembly 1 Work Cell,RPY Line 1 Fuel Pump Assembly,RPY Area,94301-10120,5A2 Components,0,1,NULL,NULL,NULL,0
+275,RPY Line 1 Fuel Pump Assembly 1 Work Cell,RPY Line 1 Fuel Pump Assembly,RPY Area,12270-5BA -A000,RPY Finished Goods,1,0,NULL,NULL,NULL,0
+271,RPY Line 1 Fuel Pump Assembly 1 Work Cell,RPY Line 1 Fuel Pump Assembly,RPY Area,12270-RPY -G001,RPY Finished Goods,1,0,NULL,NULL,NULL,0
+273,RPY Line 1 Fuel Pump/5BA Side Cover Machining Work Cell,RPY Line 1 Fuel Pump/5BA Side Cover Machining,RPY Area,12270-5BAA,RPY Components,0,0,NULL,NULL,NULL,0
+447,RPY Line 1 Fuel Pump/5BA Side Cover Machining Work Cell,RPY Line 1 Fuel Pump/5BA Side Cover Machining,RPY Area,12270-5PA,5PA Components,0,0,NULL,NULL,6.000000,0
+272,RPY Line 1 Fuel Pump/5BA Side Cover Machining Work Cell,RPY Line 1 Fuel Pump/5BA Side Cover Machining,RPY Area,12270-RPY,RPY Components,0,0,NULL,NULL,NULL,0
+227,RPY Line 1 Rocker Shaft 1-4 Machining Work Cell,RPY Line 1 Rocker Shaft 1-4 Machining,RPY Area,12261-RPY -G000,RPY Components,0,0,NULL,NULL,40.000000,0
+262,RPY Line 1 Rocker Shaft 1-4 Machining Work Cell,RPY Line 1 Rocker Shaft 1-4 Machining,RPY Area,12262-RPY -G000,RPY Components,0,0,NULL,NULL,80.000000,0
+263,RPY Line 1 Rocker Shaft 1-4 Machining Work Cell,RPY Line 1 Rocker Shaft 1-4 Machining,RPY Area,12263-RPY -G000,RPY Components,0,0,NULL,NULL,80.000000,0
+264,RPY Line 1 Rocker Shaft 1-4 Machining Work Cell,RPY Line 1 Rocker Shaft 1-4 Machining,RPY Area,12264-RPY -G000,RPY Components,0,0,NULL,NULL,80.000000,0
+228,RPY Line 1 Set Assembly Work Cell,RPY Line 1 Set Assembly,RPY Area,12231-RPY -G000,RPY Components,0,1,NULL,NULL,117.000000,0
+229,RPY Line 1 Set Assembly Work Cell,RPY Line 1 Set Assembly,RPY Area,12232-RPY -G000,RPY Components,0,1,NULL,NULL,240.000000,0
+230,RPY Line 1 Set Assembly Work Cell,RPY Line 1 Set Assembly,RPY Area,12233-RPY -G000,RPY Components,0,1,NULL,NULL,240.000000,0
+231,RPY Line 1 Set Assembly Work Cell,RPY Line 1 Set Assembly,RPY Area,12234-RPY -G000,RPY Components,0,1,NULL,NULL,240.000000,0
+232,RPY Line 1 Set Assembly Work Cell,RPY Line 1 Set Assembly,RPY Area,12235-RPY -G000,RPY Components,0,1,NULL,NULL,240.000000,0
+233,RPY Line 1 Set Assembly Work Cell,RPY Line 1 Set Assembly,RPY Area,12241-RPY -G000,RPY Components,0,1,NULL,NULL,78.000000,0
+234,RPY Line 1 Set Assembly Work Cell,RPY Line 1 Set Assembly,RPY Area,12242-RPY -G000,RPY Components,0,1,NULL,NULL,240.000000,0
+235,RPY Line 1 Set Assembly Work Cell,RPY Line 1 Set Assembly,RPY Area,12243-RPY -G000,RPY Components,0,1,NULL,NULL,144.000000,0
+236,RPY Line 1 Set Assembly Work Cell,RPY Line 1 Set Assembly,RPY Area,12244-RPY -G000,RPY Components,0,1,NULL,NULL,240.000000,0
+237,RPY Line 1 Set Assembly Work Cell,RPY Line 1 Set Assembly,RPY Area,12245-RPY -G000,RPY Components,0,1,NULL,NULL,240.000000,0
+238,RPY Line 1 Set Assembly Work Cell,RPY Line 1 Set Assembly,RPY Area,12246-RPY -G000,RPY Components,0,1,NULL,NULL,180.000000,0
+239,RPY Line 1 Set Assembly Work Cell,RPY Line 1 Set Assembly,RPY Area,12261-RPY -G000,RPY Components,0,1,NULL,NULL,40.000000,0
+240,RPY Line 1 Set Assembly Work Cell,RPY Line 1 Set Assembly,RPY Area,12262-RPY -G000,RPY Components,0,1,NULL,NULL,80.000000,0
+241,RPY Line 1 Set Assembly Work Cell,RPY Line 1 Set Assembly,RPY Area,12263-RPY -G000,RPY Components,0,1,NULL,NULL,80.000000,0
+242,RPY Line 1 Set Assembly Work Cell,RPY Line 1 Set Assembly,RPY Area,12264-RPY -G000,RPY Components,0,1,NULL,NULL,80.000000,0
+281,RPY Line 1 Set Assembly Work Cell,RPY Line 1 Set Assembly,RPY Area,12265-5BA -A000,RPY Components,0,1,NULL,NULL,NULL,0
+243,RPY Line 1 Set Assembly Work Cell,RPY Line 1 Set Assembly,RPY Area,12265-RPY -G000,RPY Components,0,1,NULL,NULL,12.000000,0
+244,RPY Line 1 Set Assembly Work Cell,RPY Line 1 Set Assembly,RPY Area,12271-RPY -G000,RPY Components,0,1,NULL,NULL,117.000000,0
+245,RPY Line 1 Set Assembly Work Cell,RPY Line 1 Set Assembly,RPY Area,12272-RPY -G000,RPY Components,0,1,NULL,NULL,240.000000,0
+246,RPY Line 1 Set Assembly Work Cell,RPY Line 1 Set Assembly,RPY Area,12273-RPY -G000,RPY Components,0,1,NULL,NULL,198.000000,0
+247,RPY Line 1 Set Assembly Work Cell,RPY Line 1 Set Assembly,RPY Area,12274-RPY -G000,RPY Components,0,1,NULL,NULL,240.000000,0
+249,RPY Line 1 Set Assembly Work Cell,RPY Line 1 Set Assembly,RPY Area,90701-5A2-A000,5A2 Components,0,1,NULL,NULL,2.000000,0
+248,RPY Line 1 Set Assembly Work Cell,RPY Line 1 Set Assembly,RPY Area,96211-09000,RPY Components,0,1,NULL,NULL,NULL,0
+911,RPY Line 1 Set Assembly Work Cell,RPY Line 1 Set Assembly,RPY Area,1223A-RPY -G000,RPY Finished Goods,1,0,NULL,NULL,NULL,0
+876,Oil Pan Work Cell,Sort Line 1,Sort Area,11200-6FBA,6FB Components,0,0,NULL,NULL,NULL,0
+895,Oil Pan Work Cell,Sort Line 1,Sort Area,11200-6MAA-J010,6C2/6MA Components,0,0,NULL,NULL,NULL,0
+897,Oil Pan Work Cell,Sort Line 1,Sort Area,11203-PWA-0031,6C2/6MA Components,0,0,NULL,NULL,NULL,0
+899,Oil Pan Work Cell,Sort Line 1,Sort Area,11221-5R0-0000,6C2/6MA Components,0,0,NULL,NULL,NULL,0
+879,Oil Pan Work Cell,Sort Line 1,Sort Area,12235-6FBA-A000,6FB Components,0,0,NULL,NULL,NULL,0
+905,Oil Pan Work Cell,Sort Line 1,Sort Area,12270-6NAA,5PA Components,0,0,NULL,NULL,NULL,0
+926,Oil Pan Work Cell,Sort Line 1,Sort Area,12270-6VJA,5PA Components,0,0,NULL,NULL,NULL,0
+880,Oil Pan Work Cell,Sort Line 1,Sort Area,12431-6FBA-A000,6FB Components,0,0,NULL,NULL,NULL,0
+907,Oil Pan Work Cell,Sort Line 1,Sort Area,15123-PCX-0030-H1,5PA Components,0,0,NULL,NULL,NULL,0
+901,Oil Pan Work Cell,Sort Line 1,Sort Area,900009-R70-A000,6C2/6MA Components,0,0,NULL,NULL,NULL,0
+893,Oil Pan Work Cell,Sort Line 1,Sort Area,90701-5A2A-A00,6MA Components,0,0,NULL,NULL,NULL,0
+909,Oil Pan Work Cell,Sort Line 1,Sort Area,91301-RNA-A020-M2,5PA Components,0,0,NULL,NULL,NULL,0
+903,Oil Pan Work Cell,Sort Line 1,Sort Area,91302-RZP-0000,6C2/6MA Components,0,0,NULL,NULL,NULL,0
+878,Totes Work Cell,Sort Line 1,Sort Area,11200-6FBA,6FB Components,0,0,NULL,NULL,NULL,0
+896,Totes Work Cell,Sort Line 1,Sort Area,11200-6MAA-J010,6C2/6MA Components,0,0,NULL,NULL,NULL,0
+898,Totes Work Cell,Sort Line 1,Sort Area,11203-PWA-0031,6C2/6MA Components,0,0,NULL,NULL,NULL,0
+900,Totes Work Cell,Sort Line 1,Sort Area,11221-5R0-0000,6C2/6MA Components,0,0,NULL,NULL,NULL,0
+883,Totes Work Cell,Sort Line 1,Sort Area,12231-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+884,Totes Work Cell,Sort Line 1,Sort Area,12232-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+885,Totes Work Cell,Sort Line 1,Sort Area,12233-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+886,Totes Work Cell,Sort Line 1,Sort Area,12234-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+877,Totes Work Cell,Sort Line 1,Sort Area,12235-6FBA-A000,6FB Components,0,0,NULL,NULL,NULL,0
+887,Totes Work Cell,Sort Line 1,Sort Area,12235-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+888,Totes Work Cell,Sort Line 1,Sort Area,12241-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+889,Totes Work Cell,Sort Line 1,Sort Area,12242-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+890,Totes Work Cell,Sort Line 1,Sort Area,12243-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+891,Totes Work Cell,Sort Line 1,Sort Area,12244-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+892,Totes Work Cell,Sort Line 1,Sort Area,12245-6MA-0000,6MA Components,0,0,NULL,NULL,NULL,0
+906,Totes Work Cell,Sort Line 1,Sort Area,12270-6NAA,5PA Components,0,0,NULL,NULL,NULL,0
+927,Totes Work Cell,Sort Line 1,Sort Area,12270-6VJA,5PA Components,0,0,NULL,NULL,NULL,0
+881,Totes Work Cell,Sort Line 1,Sort Area,12431-6FBA-A000,6FB Components,0,0,NULL,NULL,NULL,0
+908,Totes Work Cell,Sort Line 1,Sort Area,15123-PCX-0030-H1,5PA Components,0,0,NULL,NULL,NULL,0
+902,Totes Work Cell,Sort Line 1,Sort Area,900009-R70-A000,6C2/6MA Components,0,0,NULL,NULL,NULL,0
+894,Totes Work Cell,Sort Line 1,Sort Area,90701-5A2A-A00,6MA Components,0,0,NULL,NULL,NULL,0
+910,Totes Work Cell,Sort Line 1,Sort Area,91301-RNA-A020-M2,5PA Components,0,0,NULL,NULL,NULL,0
+904,Totes Work Cell,Sort Line 1,Sort Area,91302-RZP-0000,6C2/6MA Components,0,0,NULL,NULL,NULL,0

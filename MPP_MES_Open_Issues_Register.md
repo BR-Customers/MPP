@@ -1,8 +1,8 @@
 # MPP MES — Open Issues Register
 
 **Document:** FDS-MPP-MES-OIR-001
-**Version:** 2.19 — Working Draft
-**Date:** 2026-06-15
+**Version:** 2.20 — Working Draft
+**Date:** 2026-07-06
 **Prepared By:** Blue Ridge Automation
 **Prepared For:** Madison Precision Products, Inc. (Madison, IN)
 
@@ -14,6 +14,7 @@ This register consolidates all open items and design decisions that gate Perspec
 
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
+| 2.20 | 2026-07-06 | Blue Ridge Automation | **OI-32 RESOLVED / Closed — lineside check-in IS the allocation.** Closed on the "not-reproduced" framing logged in the OI-32 clarification exchange (2026-04-24), now embodied concretely by the reusable **line inventory check-in / on-hand popup** built in the machining/assembly plant-floor flow plan (`docs/superpowers/plans/2026-07-02-machining-assembly-plant-floor-flow.md`, Task I1/I2): the operator scans a LOT into the lineside Cell via `Lots.Lot_MoveToValidated` (that `LotMovement` IS the allocation), on-hand is read via `Lots.Lot_GetLineInventoryByPart`, and consumption against it is captured by `Workorder.ConsumptionEvent` with full genealogy. No `Workorder.MaterialAllocation` table and no separate Allocate-Material screen. **Count shifts:** Part A MEDIUM Resolved 16 → 17, MEDIUM Open 3 → 2; Part A Resolved 31 → 32, Open 4 → 3; grand total resolved 48 → 49, open 6 → 5. Companion docs same effort: FDS v1.6, Data Model rev 1.9u (assembly finished-good LOT + `ContainerTray.FinishedGoodLotId`). |
 | 2.19 | 2026-06-15 | Blue Ridge Automation | **OI-36 NEW / ⬜ Open / MEDIUM — Timestamp display timezone (UTC stored, ET displayed).** Codified the convention that all timestamps are persisted UTC (`GETUTCDATETIME()`) and displayed in Eastern Time, converted at the read boundary via `CAST(col AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3))` (now in CLAUDE.md § SQL design). The Audit Browser + `Lot_GetAttributeHistory` already convert; OI-36 tracks the refactor sweep of the remaining Arc 2 plant-floor read procs that still surface raw UTC. Count shifts: Part A MEDIUM Open 2 → 3, Part A Open 3 → 4, Part A total 35 → 36; grand total 54 → 55, open 5 → 6. |
 | 2.18 | 2026-06-09 | Blue Ridge Automation | **OI-35 RESOLVED — Phase 0 architecture gate cleared (Arc-2 Phase-1 SQL unblocked).** Track B (OI-35 B1–B8) signed off 2026-06-08 (`Meeting_Notes/2026-06-08_Phase0_Decision_Log.md`); decisions baked into migration `0020` (design spec `docs/superpowers/specs/2026-06-09-arc2-phase1-sql-foundation-design.md`): B2 monthly partitioning + `TRUNCATE` sliding-window (singleton `Id` PK preserved), B3 columnstore deferred, B4 `LotGenealogyClosure`, B5 materialized qty + fallback view, B6 row-locked `IdentifierSequence_Next` (seed ≈3M, MESL/MESI), B7 `OperationLog`→`LotEventLog` split, B8 filtered indexes, B1 retention → FDS §11. Track A = build-on-assumed-defaults (A4 ShotCount cumulative locked; A1/A2/A5/A6/A7 MPP-confirm in parallel; A8 close-as-not-reproduced; A9 hard-fail). **UJ-03 ⚠️ changed** (Phase 0 T008): no auto even-split default — operator enters all split quantities; FDS §5/§6 even-split-default prose to be removed at next FDS pass. **UJ-05** build default locked to update-in-place + `ContainerSerialHistory` (B10), stays Open pending Quality/Honda affirmation. **Count shifts:** Part A Resolved 30 → 31, Open 4 → 3 (OI-32/-34 + OI-33 remain; OI-35 → Resolved). Grand total: 48 resolved, 0 in review, 5 open, 1 superseded. Companion edits applied same pass: Data Model § "Scaling Decisions" (rev 1.9s), FDS-11-009 retention table, Plant Floor plan B10. |
 | 2.17 | 2026-05-01 | Blue Ridge Automation | **Nine items closed from Jacques's 2026-05-01 markup of the Outstanding Items extract.** OI-07 (Production-only WO seed confirmed → ✅ Resolved). OI-24 (legacy Automation tile not reproduced; covered by `Audit.InterfaceLog` + OPC tag management → ✅ Resolved). OI-25 (Notifications module out-of-MVP; banner notifications already covered via terminal context per FDS-07-006a/b; text/email notifications a future change order or follow-on project → ✅ Resolved). OI-27 (Supply-part flag covered by existing component-part modeling — `Parts.Item` + `Parts.Bom` + `Parts.ItemType` Cast/Machined/Assembled/Received → ✅ Resolved). OI-28 (Cast-override flag covered by `LocationAttribute` system; no new BIT column on Cell → ✅ Resolved). OI-29 (Workstation Category covered by ISA-95 hierarchy; no `WorkstationCategory` LocationAttribute → ✅ Resolved). OI-30 (Legacy Reports-tile contents not mirrored 1:1; the four named PD reports stay MVP via UJ-19; additional Ignition reports beyond those four = post-deployment change order → ✅ Resolved). OI-31 (Proposed direction confirmed + new business rule: cutover seed at **+10,000 above current Flexware `LastCounterValue`** — or MPP-agreed delta — to avoid LTT collisions during partial-cutover windows. Format `MESL{0:D7}` / `MESI{0:D7}` retained, no reset policy, rollover deferred ~30 yrs → ✅ Resolved). UJ-03 (Per-Operation `Parts.OperationTemplate.RequiresSubLotSplit BIT` flag confirmed; mockup verified at Trim OUT with `+ Add sub-LOT` button toggling 1 vs N destination rows; Configuration Tool surfaces this as "may split for machining" toggle on the per-Operation row of the Item edit screen → ✅ Resolved). UJ-19 confirmed in MVP scope: the four named PD reports are deliverables for this project; the post-deployment change-order comment in OI-30 was about reports BEYOND the four. **Count shifts:** Part A Resolved 22 → 30, In Review 1 → 0, Open 11 → 4 (only OI-32, OI-33, OI-34, OI-35 remain); Part B Resolved 16 → 17, In Review 1 → 0, Open 2 → 2 (UJ-05, UJ-19). Grand total: 54 items, 47 resolved, 0 in review, 6 open, 1 superseded. **Companion FDS amendments queued separately:** §16 cutover-offset rule (FDS-16-003) + §12 banners-only / text-out one-liner; FDS embedded Open Items Register trimmed to the 6 remaining items. No data model / SQL changes this revision — register entries + FDS prose only. |
@@ -38,21 +39,21 @@ This register consolidates all open items and design decisions that gate Perspec
 
 ## Summary
 
-**Part A counts (35 items — updated v2.18):**
+**Part A counts (35 items — updated v2.20):**
 
 | Priority | ✅ Resolved | 🔶 In Review | ⬜ Open | Superseded | **Total** |
 |---|---|---|---|---|---|
 | HIGH | 5 (OI-01, OI-02, OI-05, OI-07, OI-35) | 0 | 1 (OI-33) | 0 | **6** |
-| MEDIUM | 16 (OI-03, OI-04, OI-06, OI-08, OI-09, OI-11, OI-12, OI-16, OI-17, OI-18, OI-21, OI-22, OI-24, OI-28, OI-30, OI-31) | 0 | 3 (OI-32, OI-34, OI-36) | 0 | **19** |
+| MEDIUM | 17 (OI-03, OI-04, OI-06, OI-08, OI-09, OI-11, OI-12, OI-16, OI-17, OI-18, OI-21, OI-22, OI-24, OI-28, OI-30, OI-31, OI-32) | 0 | 2 (OI-34, OI-36) | 0 | **19** |
 | LOW | 10 (OI-13, OI-14, OI-15, OI-19, OI-20, OI-23, OI-25, OI-27, OI-29, OI-32b) | 0 | 0 | 0 | **10** |
 | — | 0 | 0 | 0 | 1 (OI-10) | **1** |
-| **Total** | **31** | **0** | **4** | **1** | **36** |
+| **Total** | **32** | **0** | **3** | **1** | **36** |
 
 > **Authoritative row lists (after v2.18 sync):**
 >
-> - Resolved (31) = OI-01, -02, -03, -04, -05, -06, -07, -08, -09, -11, -12, -13, -14, -15, -16, -17, -18, -19, -20, -21, -22, -23, -24, -25, -27, -28, -29, -30, -31, -32b, -35
+> - Resolved (32) = OI-01, -02, -03, -04, -05, -06, -07, -08, -09, -11, -12, -13, -14, -15, -16, -17, -18, -19, -20, -21, -22, -23, -24, -25, -27, -28, -29, -30, -31, -32, -32b, -35
 > - In Review (0) = —
-> - Open (4) = OI-32, -33, -34, -36
+> - Open (3) = OI-33, -34, -36
 > - Superseded (1) = OI-10
 
 **Part B counts (19 items) — updated v2.17:**
@@ -64,7 +65,7 @@ This register consolidates all open items and design decisions that gate Perspec
 | LOW | 1 (UJ-06) | 0 | 0 | **1** |
 | **Total** | **17** | **0** | **2** | **19** |
 
-**Grand total:** 55 items (36 Part A + 19 Part B). **48 resolved, 0 in review, 6 open, 1 superseded.**
+**Grand total:** 55 items (36 Part A + 19 Part B). **49 resolved, 0 in review, 5 open, 1 superseded.**
 
 > **Note on UJ descriptions:** Jacques flagged 2026-04-24 that UJ entries lack the options/impact/reference depth of the OI entries. A separate enrichment pass is queued before the next MPP review — not addressed in v2.10.
 
@@ -770,7 +771,7 @@ Rollout shape (single-line vs full-cutover vs shadow) still couples to Ben's dep
 
 ---
 
-### OI-32 — Material Allocation operator screen — ⬜ Open (new, 2026-04-24)
+### OI-32 — Material Allocation operator screen — ✅ Resolved / Closed (2026-07-06)
 
 **Priority:** MEDIUM
 **Owner:** Blue Ridge / Ben
@@ -805,11 +806,11 @@ Under our design:
 
 **Revised resolution:** Close OI-32 as **not-reproduced** on the same grounds as OI-32b. No new `Workorder.MaterialAllocation` table needed. No separate Allocate-Material Perspective screen needed. The Flexware concept collapses cleanly into our existing LOT-at-location + ConsumptionEvent model.
 
-**Decision pending:** Jacques to confirm the revised "close as not-reproduced" framing before flipping the status tag. Status stays ⬜ Open until explicit confirmation.
+**Decision (2026-07-06):** Closed. The revised "close as not-reproduced" framing is confirmed and embodied concretely by the reusable **line inventory check-in / on-hand popup** built in the machining/assembly plant-floor flow plan (`docs/superpowers/plans/2026-07-02-machining-assembly-plant-floor-flow.md`, Tasks I1/I2). The operator scans a LOT into the lineside Cell (a `LocationTypeDefinition` under Cell) via `Lots.Lot_MoveToValidated` - that `LotMovement` IS the allocation - on-hand is read grouped part->lot FIFO via `Lots.Lot_GetLineInventoryByPart`, and consumption against it is captured by `Workorder.ConsumptionEvent` with full genealogy. No `Workorder.MaterialAllocation` table and no separate Allocate-Material Perspective screen are needed; the Flexware concept collapses into the existing LOT-at-location + ConsumptionEvent model.
 
-**Integration queued (once closed):**
-- **Review report** (`reference/NewInput/REVIEW_2026-04-24.md` §4 Gap 1) — add strike-through + closure note.
-- No data model / FDS additions required.
+**Integration:**
+- **Review report** (`reference/NewInput/REVIEW_2026-04-24.md` §4 Gap 1) — add strike-through + closure note (queued).
+- No data model / FDS additions required — the inventory popup reuses existing procs.
 
 ---
 

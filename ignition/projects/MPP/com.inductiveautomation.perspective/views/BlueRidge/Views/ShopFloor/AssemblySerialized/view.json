@@ -33,7 +33,7 @@
     "custom.queueByPartText": {
       "binding": {
         "config": {
-          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, false, {view.custom.refreshToken}), \"\")"
+          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}), \"\")"
         },
         "transforms": [
           {
@@ -62,9 +62,8 @@
                 },
                 "props": {
                   "style": {
-                    "classes": "pf-terminal-title",
                     "fontSize": "22px",
-                    "fontWeight": "700"
+                    "fontWeight": 700
                   },
                   "text": "Assembly - Serialized Line"
                 },
@@ -74,11 +73,20 @@
                 "meta": {
                   "name": "Subtitle"
                 },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"No cell bound\", {session.custom.cell.name}) + \"  ·  Dedicated terminal - MIP integrated - operator monitoring\""
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
                 "props": {
                   "style": {
-                    "classes": "pf-terminal-title-meta"
-                  },
-                  "text": "Dedicated terminal - MIP integrated - operator monitoring"
+                    "classes": "pf-kpi-sub"
+                  }
                 },
                 "type": "ia.display.label"
               }
@@ -90,10 +98,7 @@
               "grow": 1
             },
             "props": {
-              "direction": "column",
-              "style": {
-                "gap": "2px"
-              }
+              "direction": "column"
             },
             "type": "ia.container.flex"
           },
@@ -187,19 +192,97 @@
               }
             },
             "type": "ia.container.flex"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "RefreshButton",
+              "tooltip": {
+                "text": "Refresh"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Refresh"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params={\"locationId\": self.session.custom.cell.locationId}, title=\"Line Inventory\", modal=False, showCloseIcon=True, draggable=True, resizable=True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "InventoryButton",
+              "tooltip": {
+                "text": "Check component / pass-through inventory in to this line"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Inventory"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.navigate(\"/\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseButton"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Close"
+            },
+            "type": "ia.input.button"
           }
         ],
         "meta": {
           "name": "Header"
         },
-        "position": {
-          "shrink": 0
-        },
         "props": {
           "alignItems": "center",
           "style": {
-            "classes": "pf-terminal-header",
-            "gap": "16px"
+            "gap": "16px",
+            "overflow": "hidden"
           }
         },
         "type": "ia.container.flex"
@@ -221,104 +304,6 @@
       },
       {
         "children": [
-          {
-            "children": [
-              {
-                "meta": {
-                  "name": "MachineLabel"
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-cell-context-label"
-                  },
-                  "text": "Assembly Cell"
-                },
-                "type": "ia.display.label"
-              },
-              {
-                "children": [
-                  {
-                    "meta": {
-                      "name": "CtxCellLabel"
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "pf-cell-context-label"
-                      },
-                      "text": "Active Cell"
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "ActiveCellValue"
-                    },
-                    "propConfig": {
-                      "props.text": {
-                        "binding": {
-                          "config": {
-                            "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"No cell bound to this terminal\", {session.custom.cell.name})"
-                          },
-                          "type": "expr"
-                        }
-                      }
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "pf-cell-context-value"
-                      }
-                    },
-                    "type": "ia.display.label"
-                  }
-                ],
-                "meta": {
-                  "name": "ActiveCellBlock"
-                },
-                "props": {
-                  "alignItems": "center",
-                  "style": {
-                    "gap": "8px"
-                  }
-                },
-                "type": "ia.container.flex"
-              },
-              {
-                "meta": {
-                  "name": "Spacer"
-                },
-                "position": {
-                  "grow": 1
-                },
-                "type": "ia.display.label"
-              },
-              {
-                "meta": {
-                  "name": "ContextMeta"
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-kpi-sub"
-                  },
-                  "text": "ByVision - camera scans each tray as a whole - 1 validation event per tray"
-                },
-                "type": "ia.display.label"
-              }
-            ],
-            "meta": {
-              "name": "CellContext"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "props": {
-              "alignItems": "center",
-              "style": {
-                "classes": "pf-terminal-cell-context",
-                "gap": "12px"
-              }
-            },
-            "type": "ia.container.flex"
-          },
           {
             "children": [
               {
@@ -1423,8 +1408,23 @@
     "props": {
       "direction": "column",
       "style": {
-        "classes": "canvas pf-terminal"
+        "classes": "canvas",
+        "gap": "16px",
+        "padding": "24px"
       }
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "inventoryChanged",
+          "pageScope": true,
+          "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
     },
     "type": "ia.container.flex"
   }

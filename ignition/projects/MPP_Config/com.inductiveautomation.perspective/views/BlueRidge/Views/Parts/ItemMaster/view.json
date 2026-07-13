@@ -318,17 +318,17 @@
                 "props": {
                   "direction": "column",
                   "elementPosition": {
-                    "basis": "auto"
+                    "basis": "45px",
+                    "shrink": 0
                   },
                   "elementStyle": {
-                    "maxHeight": "60px"
+                    "overflow": "hidden"
                   },
                   "path": "BlueRidge/Components/Parts/ItemMaster/ItemRow",
                   "style": {
                     "overflowY": "auto",
                     "padding": "4px 0"
                   },
-                  "useDefaultViewHeight": false,
                   "useDefaultViewWidth": false
                 },
                 "type": "ia.display.flex-repeater"

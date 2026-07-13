@@ -56,7 +56,11 @@ def _mapSteps(rows):
             templateLabel = opCode or opName
         out.append({
             "seq":           r.get("SequenceNumber"),
-            "areaName":      r.get("OperationAreaName") or "",
+            # 2026-07-07: Area was dropped from OperationTemplate by the operation-type
+            # restructure; RouteStep_ListByRoute v4.1 emits Category/Type instead. The
+            # old "areaName": r.get("OperationAreaName") read was always "" (dead column).
+            "categoryName":  r.get("OperationCategoryName") or "",
+            "operationType": r.get("OperationTypeName") or "",
             "templateLabel": templateLabel,
             "isRequired":    bool(r.get("IsRequired")),
             "dataFields":    r.get("DataCollectionSummary") or "",
@@ -218,20 +222,42 @@ def getSteps(routeTemplateId):
     )
 
 
-def getOperationTemplatesByArea(areaLocationId, includeDeprecated=False):
-    """Returns active OperationTemplate rows in the given Area, ordered by
-    Code + VersionNumber. Powers the per-step Area -> OpTemplate
-    cascading dropdown on the Draft step editor.
+def getOperationTemplatesByType(operationTypeId=None, includeDeprecated=False):
+    """Returns active OperationTemplate rows for the given OperationType (or all
+    active templates when operationTypeId is None), ordered by the List proc.
     """
-    areaLocationId = _u(areaLocationId)
+    operationTypeId = _u(operationTypeId)
     includeDeprecated = _u(includeDeprecated)
-    if not areaLocationId:
-        return []
     activeOnly = 0 if includeDeprecated else 1
     return BlueRidge.Common.Db.execList(
-        "parts/OperationTemplate_ListByArea",
-        {"areaLocationId": areaLocationId, "activeOnly": activeOnly},
+        "parts/OperationTemplate_List",
+        {"operationTypeId": operationTypeId, "operationCategoryId": None,
+         "activeOnly": activeOnly},
     )
+
+
+def getOperationTemplatesByCategory(operationCategoryId=None, includeDeprecated=False):
+    """Returns active OperationTemplate rows for the given OperationCategory (or
+    all active templates when operationCategoryId is None). Powers the per-step
+    template picker on the Routes draft editor - steps are grouped by the coarser
+    CATEGORY (Die Cast / Trim / Machining & Assembly) per Jacques 2026-07-06.
+    Rows carry OperationTypeId/Name + OperationCategoryId/Name projections."""
+    operationCategoryId = _u(operationCategoryId)
+    includeDeprecated = _u(includeDeprecated)
+    activeOnly = 0 if includeDeprecated else 1
+    return BlueRidge.Common.Db.execList(
+        "parts/OperationTemplate_List",
+        {"operationTypeId": None, "operationCategoryId": operationCategoryId,
+         "activeOnly": activeOnly},
+    )
+
+
+def getOperationTemplatesByArea(areaLocationId=None, includeDeprecated=False):
+    """DEPRECATED (operation-type restructure, 2026-07-02): the Area -> OpTemplate
+    cascade is retired -- operation templates are area-agnostic now. Returns all
+    active templates so the (pending-rework) Routes step editor keeps functioning;
+    prefer getOperationTemplatesByType. The areaLocationId arg is ignored."""
+    return getOperationTemplatesByType(None, includeDeprecated)
 
 
 def createInitial(itemId, name=None, effectiveFrom=None):

@@ -322,6 +322,89 @@ def emptyAttribute():
             "sortOrder": None}
 
 
+# ---------- plant-floor inspection reads (Arc 2 Phase 9) ----------
+
+_EMPTY_ACTIVE_SPEC = {
+    "specId": None, "specName": "", "versionId": None, "versionNumber": None,
+    "attributes": [],
+}
+
+
+def _fmtNum(v):
+    """DECIMAL -> compact display string ('' for None). BigDecimal str() shows
+       trailing zeros ('1.000000'); route through float + %g."""
+    if v is None:
+        return ""
+    try:
+        return "%g" % float(v)
+    except Exception:
+        return "%s" % v
+
+
+def getActiveVersionForItemOrEmpty(itemId, _refreshToken=None):
+    """The ACTIVE (published, non-deprecated, effective) quality spec version for an
+       ITEM, resolved via QualitySpec_ListForItem -> QualitySpecVersion_GetActiveForSpec
+       (first linked spec with an active version wins). ALWAYS returns the fully
+       shaped dict {specId, specName, versionId, versionNumber, attributes[]}
+       (pre-declared-bound-props rule); specId None = no published spec for the part.
+
+       attributes[] rows are the InspectionEntry AttributeRow param dicts:
+       {qualitySpecAttributeId, attributeName, dataType, uom, targetValue,
+        lowerLimit, upperLimit, isRequired, limitHint, clearToken}. limitHint is the
+       'LSL x / T y / USL z' string, precomputed here. clearToken echoes
+       _refreshToken so a post-record token bump re-mounts the rows (clears inputs).
+
+       _refreshToken doubles as the runScript re-read arg."""
+    itemId = _u(itemId)
+    token = _u(_refreshToken) or 0
+    if not itemId:
+        return dict(_EMPTY_ACTIVE_SPEC)
+    try:
+        specs = BlueRidge.Common.Db.execList(
+            "quality/QualitySpec_ListForItem", {"itemId": itemId}) or []
+    except Exception as e:
+        BlueRidge.Common.Util.log("getActiveVersionForItemOrEmpty failed: %s" % str(e))
+        return dict(_EMPTY_ACTIVE_SPEC)
+    for s in specs:
+        v = BlueRidge.Common.Db.execOne(
+            "quality/QualitySpecVersion_GetActiveForSpec",
+            {"qualitySpecId": s.get("Id")})
+        if v is None:
+            continue
+        attrs = BlueRidge.Common.Db.execList(
+            "quality/QualitySpecAttribute_ListByVersion",
+            {"qualitySpecVersionId": v.get("Id")}) or []
+        rows = []
+        for a in attrs:
+            hintParts = []
+            if a.get("LowerLimit") is not None:
+                hintParts.append("LSL " + _fmtNum(a.get("LowerLimit")))
+            if a.get("TargetValue") is not None:
+                hintParts.append("T " + _fmtNum(a.get("TargetValue")))
+            if a.get("UpperLimit") is not None:
+                hintParts.append("USL " + _fmtNum(a.get("UpperLimit")))
+            rows.append({
+                "qualitySpecAttributeId": a.get("Id"),
+                "attributeName": a.get("AttributeName") or "",
+                "dataType":      a.get("DataType") or "Numeric",
+                "uom":           a.get("Uom") or a.get("UomCode") or "",
+                "targetValue":   _fmtNum(a.get("TargetValue")),
+                "lowerLimit":    _fmtNum(a.get("LowerLimit")),
+                "upperLimit":    _fmtNum(a.get("UpperLimit")),
+                "isRequired":    bool(a.get("IsRequired")),
+                "limitHint":     " / ".join(hintParts),
+                "clearToken":    token,
+            })
+        return {
+            "specId":        s.get("Id"),
+            "specName":      s.get("Name") or "",
+            "versionId":     v.get("Id"),
+            "versionNumber": v.get("VersionNumber"),
+            "attributes":    rows,
+        }
+    return dict(_EMPTY_ACTIVE_SPEC)
+
+
 # ---------- mutations ----------
 
 def createSpec(data):

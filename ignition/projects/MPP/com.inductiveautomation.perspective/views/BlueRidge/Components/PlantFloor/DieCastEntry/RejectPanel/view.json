@@ -6,13 +6,30 @@
       "chargeToArea": null,
       "remarks": null
     },
-    "defectOptions": []
+    "defectOptions": [],
+    "targetLot": {
+      "CavityNumber": null,
+      "Id": null,
+      "InventoryAvailable": 0,
+      "LotName": "",
+      "PieceCount": 0
+    }
   },
   "params": {
-    "lotId": null
+    "refreshToken": 0,
+    "toolCavityId": null,
+    "toolId": null
   },
   "propConfig": {
-    "params.lotId": {
+    "params.refreshToken": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.toolCavityId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.toolId": {
       "paramDirection": "input",
       "persistent": true
     },
@@ -21,6 +38,14 @@
         "type": "expr",
         "config": {
           "expression": "runScript(\"BlueRidge.Quality.DefectCode.getForDropdown\", 0)"
+        }
+      }
+    },
+    "custom.targetLot": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "runScript(\"BlueRidge.Lots.Lot.getLatestForToolCavityOrEmpty\", 0, {view.params.toolId}, {view.params.toolCavityId}, {view.params.refreshToken})"
         }
       }
     }
@@ -39,9 +64,9 @@
     "props": {
       "direction": "column",
       "style": {
-        "classes": "pf-panel",
+        "borderTop": "1px solid var(--mpp-border, #e0e0e0)",
         "gap": "12px",
-        "padding": "16px"
+        "paddingTop": "12px"
       }
     },
     "children": [
@@ -54,6 +79,36 @@
           "text": "Reject Entry",
           "style": {
             "classes": "pf-panel-header"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "TargetLotLabel"
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if(isNull({view.params.toolCavityId}), \"Select a cavity above to target rejects.\", if(isNull({view.custom.targetLot.Id}), \"No open LOT on the selected cavity.\", \"Rejecting Cavity \" + toStr({view.custom.targetLot.CavityNumber}) + \" - charges newest open LOT \" + {view.custom.targetLot.LotName}))"
+              }
+            }
+          },
+          "props.style.color": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if(isNull({view.custom.targetLot.Id}), \"var(--mpp-text-secondary, #757575)\", \"var(--mpp-warning, #b26a00)\")"
+              }
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-kpi-sub",
+            "fontWeight": 600
           }
         }
       },
@@ -182,7 +237,7 @@
             "binding": {
               "type": "expr",
               "config": {
-                "expression": "!isNull({view.params.lotId}) && !isNull({view.custom.draft.defectCodeId}) && {view.custom.draft.quantity} > 0"
+                "expression": "!isNull({view.custom.targetLot.Id}) && !isNull({view.custom.draft.defectCodeId}) && {view.custom.draft.quantity} > 0"
               }
             }
           }
@@ -205,7 +260,7 @@
         {
           "name": "submitReject",
           "params": [],
-          "script": "\tlotId = self.view.params.lotId\n\tif lotId is None:\n\t\treturn\n\tdraft = dict(self.view.custom.draft)\n\tdraft[\"lotId\"] = lotId\n\tdraft[\"quantity\"] = BlueRidge.Common.Util.toIntOrNone(draft.get(\"quantity\"))\n\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tresult = BlueRidge.Workorder.RejectEvent.record(draft, appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle=\"Reject recorded\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"defectCodeId\": None, \"quantity\": 0, \"chargeToArea\": None, \"remarks\": None}\n\t\tsystem.perspective.sendMessage(\"rejectRecorded\", {\"lotId\": lotId}, scope=\"page\")"
+          "script": "\t# Cavity-scoped reject (Jacques 2026-07-06): charge the newest open LOT on the selected cavity.\n\ttarget = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.targetLot) or {}\n\tlotId = target.get(\"Id\")\n\tif lotId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No target LOT\", \"No open LOT on the selected cavity - nothing to reject against.\", \"warning\")\n\t\treturn\n\tdraft = dict(self.view.custom.draft)\n\tdraft[\"lotId\"] = lotId\n\tdraft[\"quantity\"] = BlueRidge.Common.Util.toIntOrNone(draft.get(\"quantity\"))\n\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tresult = BlueRidge.Workorder.RejectEvent.record(draft, appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle=\"Reject recorded\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"defectCodeId\": None, \"quantity\": 0, \"chargeToArea\": None, \"remarks\": None}\n\t\tsystem.perspective.sendMessage(\"rejectRecorded\", {\"lotId\": lotId}, scope=\"page\")"
         }
       ]
     }

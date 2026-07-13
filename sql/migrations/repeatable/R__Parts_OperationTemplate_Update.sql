@@ -2,11 +2,11 @@
 -- Procedure:   Parts.OperationTemplate_Update
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     2.0
+-- Version:     3.0
 --
 -- Description:
 --   Updates mutable fields of an active OperationTemplate. Code and
---   VersionNumber are IMMUTABLE — to change either, use
+--   VersionNumber are IMMUTABLE -- to change either, use
 --   OperationTemplate_CreateNewVersion (for VersionNumber) or create
 --   a new family via OperationTemplate_Create (for Code).
 --
@@ -16,7 +16,7 @@
 -- Parameters (input):
 --   @Id BIGINT                    - Required.
 --   @Name NVARCHAR(100)           - Required.
---   @AreaLocationId BIGINT        - FK → Location.Location. Required.
+--   @OperationTypeId BIGINT       - FK -> Parts.OperationType (role). Required.
 --   @Description NVARCHAR(500) NULL
 --   @AppUserId BIGINT             - Required for audit.
 --
@@ -27,13 +27,14 @@
 -- Change Log:
 --   2026-04-14 - 1.0 - Initial version (OUTPUT params)
 --   2026-04-15 - 2.0 - SELECT result for Named Query compatibility
+--   2026-07-02 - 3.0 - AreaLocationId -> OperationTypeId (operation-type restructure)
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.OperationTemplate_Update
-    @Id             BIGINT,
-    @Name           NVARCHAR(100),
-    @AreaLocationId BIGINT,
-    @Description    NVARCHAR(500) = NULL,
-    @AppUserId      BIGINT
+    @Id              BIGINT,
+    @Name            NVARCHAR(100),
+    @OperationTypeId BIGINT,
+    @Description     NVARCHAR(500) = NULL,
+    @AppUserId       BIGINT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -45,12 +46,12 @@ BEGIN
     DECLARE @ProcName NVARCHAR(200) = N'Parts.OperationTemplate_Update';
     DECLARE @Params   NVARCHAR(MAX) =
         (SELECT @Id AS Id, @Name AS Name,
-                @AreaLocationId AS AreaLocationId, @Description AS Description
+                @OperationTypeId AS OperationTypeId, @Description AS Description
          FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
     BEGIN TRY
         -- Parameter validation
-        IF @Id IS NULL OR @Name IS NULL OR @AreaLocationId IS NULL OR @AppUserId IS NULL
+        IF @Id IS NULL OR @Name IS NULL OR @OperationTypeId IS NULL OR @AppUserId IS NULL
         BEGIN
             SET @Message = N'Required parameter missing.';
             EXEC Audit.Audit_LogFailure
@@ -75,10 +76,10 @@ BEGIN
             RETURN;
         END
 
-        -- Business rule: AreaLocationId must exist and be active
-        IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Id = @AreaLocationId AND DeprecatedAt IS NULL)
+        -- Business rule: OperationTypeId must exist and be active
+        IF NOT EXISTS (SELECT 1 FROM Parts.OperationType WHERE Id = @OperationTypeId AND DeprecatedAt IS NULL)
         BEGIN
-            SET @Message = N'Invalid or deprecated AreaLocationId.';
+            SET @Message = N'Invalid or deprecated OperationTypeId.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'OperationTemplate',
                 @EntityId = @Id, @LogEventTypeCode = N'Updated',
@@ -90,16 +91,16 @@ BEGIN
 
         -- Capture OldValue for audit BEFORE the UPDATE
         DECLARE @OldValue NVARCHAR(MAX) =
-            (SELECT Name, AreaLocationId, Description
+            (SELECT Name, OperationTypeId, Description
              FROM Parts.OperationTemplate WHERE Id = @Id
              FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
         BEGIN TRANSACTION;
 
         UPDATE Parts.OperationTemplate
-        SET Name           = @Name,
-            AreaLocationId = @AreaLocationId,
-            Description    = @Description
+        SET Name            = @Name,
+            OperationTypeId = @OperationTypeId,
+            Description     = @Description
         WHERE Id = @Id;
 
         EXEC Audit.Audit_LogConfigChange

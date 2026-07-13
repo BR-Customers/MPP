@@ -89,9 +89,9 @@ BEGIN
         FROM Parts.OperationTemplate
         WHERE Code = @ParentCode;
 
-        -- Insert the clone: same Code, Name, AreaLocationId, Description; new VersionNumber
-        INSERT INTO Parts.OperationTemplate (Code, VersionNumber, Name, AreaLocationId, Description, CreatedAt)
-        SELECT Code, @NextVersion, Name, AreaLocationId, Description, SYSUTCDATETIME()
+        -- Insert the clone: same Code, Name, OperationTypeId, Description; new VersionNumber
+        INSERT INTO Parts.OperationTemplate (Code, VersionNumber, Name, OperationTypeId, Description, CreatedAt)
+        SELECT Code, @NextVersion, Name, OperationTypeId, Description, SYSUTCDATETIME()
         FROM Parts.OperationTemplate
         WHERE Id = @ParentOperationTemplateId;
 

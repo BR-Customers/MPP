@@ -34,7 +34,8 @@ param(
     [string]$ServerInstance = "localhost",
     [string]$DatabaseName  = "MPP_MES_Dev",
     [string]$Username      = "",
-    [string]$Password      = ""
+    [string]$Password      = "",
+    [switch]$SkipDemoSeed
 )
 
 # Build SQL auth args if credentials were supplied
@@ -201,7 +202,7 @@ if ($repeatables.Count -eq 0) {
 # ============================================================
 # STEP 6: Run seed scripts (auto-discovered)
 # ============================================================
-Write-Host "[6/6] Running seed scripts..." -ForegroundColor Cyan
+Write-Host "[6/7] Running seed scripts..." -ForegroundColor Cyan
 if (Test-Path $Seeds) {
     $seeds = @(Get-ChildItem -Path $Seeds -Filter "*.sql" | Sort-Object Name)
     if ($seeds.Count -eq 0) {
@@ -214,6 +215,27 @@ if (Test-Path $Seeds) {
     }
 } else {
     Write-Host "  (seeds directory not found - skipping)" -ForegroundColor DarkYellow
+}
+
+# ============================================================
+# STEP 7: Seed the continuous demo threads (transactional golden thread)
+# ------------------------------------------------------------
+# Runs the idempotent demo-thread builder by default so a plain reset
+# yields a coherent end-to-end dataset (WIP at every terminal + completed
+# threads). Pass -SkipDemoSeed to keep the DB LOT-free -- Run-Tests.ps1
+# does this so the suite runs against config only.
+# ============================================================
+if (-not $SkipDemoSeed) {
+    $demo = Join-Path $SqlRoot "scratch\seed_demo.sql"
+    if (Test-Path $demo) {
+        Write-Host "[7/7] Seeding demo threads (seed_demo.sql)..." -ForegroundColor Cyan
+        Invoke-SqlFile -FilePath $demo   # Invoke-SqlFile already passes -b -I -C
+        Write-Host "  demo threads seeded." -ForegroundColor Green
+    } else {
+        Write-Host "[7/7] seed_demo.sql not found - skipping demo threads." -ForegroundColor DarkYellow
+    }
+} else {
+    Write-Host "[7/7] -SkipDemoSeed set: config only, no demo threads (LOT-free)." -ForegroundColor DarkYellow
 }
 
 # ============================================================

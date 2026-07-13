@@ -142,6 +142,47 @@ BEGIN
             RETURN;
         END
 
+        -- ===== Route-legality structural validation (terminal-mint spec §4.2 option C) =====
+        DECLARE @ItemTypeCode NVARCHAR(20) = (
+            SELECT it.Code FROM Parts.RouteTemplate rt
+            JOIN Parts.Item i ON i.Id = rt.ItemId JOIN Parts.ItemType it ON it.Id = i.ItemTypeId WHERE rt.Id = @Id);
+        DECLARE @Steps TABLE (SequenceNumber INT, KindCode NVARCHAR(20));
+        INSERT INTO @Steps (SequenceNumber, KindCode)
+        SELECT rs.SequenceNumber, rk.Code
+        FROM Parts.RouteStep rs
+        JOIN Parts.OperationTemplate ot ON ot.Id = rs.OperationTemplateId
+        JOIN Parts.OperationType oty ON oty.Id = ot.OperationTypeId
+        JOIN Parts.OperationRoleKind rk ON rk.Id = oty.OperationRoleKindId
+        WHERE rs.RouteTemplateId = @Id;
+        DECLARE @MaxSeq INT = (SELECT MAX(SequenceNumber) FROM @Steps);
+        DECLARE @MinSeq INT = (SELECT MIN(SequenceNumber) FROM @Steps);
+        DECLARE @LastKind NVARCHAR(20) = (SELECT KindCode FROM @Steps WHERE SequenceNumber = @MaxSeq);
+        DECLARE @ConsumeCount INT = (SELECT COUNT(*) FROM @Steps WHERE KindCode = N'ConsumeMint');
+        DECLARE @OriginMinSeq INT = (SELECT MIN(SequenceNumber) FROM @Steps WHERE KindCode = N'OriginMint');
+
+        -- V1: a non-FinishedGood part must be consumed -- its last step is a ConsumeMint.
+        IF @ItemTypeCode <> N'FinishedGood' AND @LastKind <> N'ConsumeMint'
+        BEGIN
+            SET @Message = N'Route must end at a consume-mint step (Machining/Assembly OUT) for a '
+                         + @ItemTypeCode + N' part; only a Finished Good may terminate without one.';
+            EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Route', @EntityId=@Id, @LogEventTypeCode=N'Updated', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params;
+            SELECT @Status AS Status, @Message AS Message; RETURN;
+        END
+        -- V2: at most one consume-mint, and it must be the last step (a part is consumed once, at the end).
+        IF @ConsumeCount > 1 OR (@ConsumeCount = 1 AND @LastKind <> N'ConsumeMint')
+        BEGIN
+            SET @Message = N'A route may contain at most one consume-mint step, and it must be the final step.';
+            EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Route', @EntityId=@Id, @LogEventTypeCode=N'Updated', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params;
+            SELECT @Status AS Status, @Message AS Message; RETURN;
+        END
+        -- V3: an origin-mint (Die Cast), if present, must be the first step.
+        IF @OriginMinSeq IS NOT NULL AND @OriginMinSeq <> @MinSeq
+        BEGIN
+            SET @Message = N'An origin-mint step (Die Cast) must be the first step of the route.';
+            EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Route', @EntityId=@Id, @LogEventTypeCode=N'Updated', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params;
+            SELECT @Status AS Status, @Message AS Message; RETURN;
+        END
+
         -- ===== Audit narrative + resolved JSON (built from PRE-mutation state) =====
 
         -- Subject + version resolution (convention SUBJECT = parent Item PartNumber)

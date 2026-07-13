@@ -46,6 +46,32 @@ def getByItem(itemId):
         return {}
 
 
+_CONFIG_SHAPE = {
+    "Id": None, "ItemId": None,
+    "TraysPerContainer": 0, "PartsPerTray": 0,
+    "IsSerialized": False,
+    "DunnageCode": "", "CustomerCode": "",
+    "ClosureMethod": "", "TargetWeight": None,
+}
+
+
+def getByItemOrEmpty(itemId, _refreshToken=None):
+    """Binding-safe getByItem: ALWAYS returns the full ContainerConfig key
+       shape (zeros/blanks when the item has no config) so nested binding
+       reads like {view.custom.fgConfig.PartsPerTray} never traverse a
+       missing key (pre-declared-bound-props rule). Used by the assembly
+       screens to surface/prefill the selected finished good's container
+       config before any container is open (2026-07-08).
+       _refreshToken is ignored - runScript bindings pass a bumped token."""
+    out = dict(_CONFIG_SHAPE)
+    row = getByItem(itemId)
+    if row:
+        for k in out.keys():
+            if row.get(k) is not None:
+                out[k] = row.get(k)
+    return out
+
+
 def add(data):
     """Create a new active ContainerConfig for an Item.
 

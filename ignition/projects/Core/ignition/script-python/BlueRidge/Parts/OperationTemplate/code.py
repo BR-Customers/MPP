@@ -19,7 +19,7 @@
 #   getOne(id)                           -> dict | None
 #   getVersionsForCode(code)             -> [{version: <row>}, ...]
 #   getFieldsForTemplate(templateId)     -> [{field: <row>}, ...]
-#   getAreasForDropdown()                -> [{label, value}, ...]
+#   getOperationTypesForDropdown()       -> [{label, value}, ...]
 #   getAvailableDataCollectionFields(templateId) -> [{label, value}, ...]
 #   add(data)                            -> {Status, Message, NewId}
 #   update(data)                         -> {Status, Message}
@@ -55,7 +55,8 @@ def _toRailRow(meta):
         "code":          meta.get("Code"),
         "name":          meta.get("Name"),
         "version":       meta.get("VersionNumber"),
-        "area":          meta.get("AreaName"),
+        "category":      meta.get("OperationCategoryName"),
+        "operationType": meta.get("OperationTypeName"),
         "deprecated":    meta.get("DeprecatedAt") is not None,
     }
 
@@ -64,17 +65,22 @@ def _toRailRow(meta):
 # List feeds
 # -----------------------------------------------------------------------------
 
-def getAllForList(includeDeprecated=False, areaLocationId=None):
-    """Returns all OperationTemplate rows joined with AreaName. Empty list
-    on failure (errors toast and log; we do not propagate)."""
-    BlueRidge.Common.Util.log("includeDeprecated=%s areaLocationId=%s"
-                              % (includeDeprecated, areaLocationId))
+def getAllForList(includeDeprecated=False, operationTypeId=None, operationCategoryId=None):
+    """Returns all OperationTemplate rows joined with OperationType + Category.
+    Empty list on failure (errors toast and log; we do not propagate).
+
+    Filters are AND-composed by OperationTemplate_List: operationTypeId (a
+    single OperationType role) and/or operationCategoryId (the coarser
+    grouping the management screen filters on -- Jacques 2026-07-06)."""
+    BlueRidge.Common.Util.log("includeDeprecated=%s operationTypeId=%s operationCategoryId=%s"
+                              % (includeDeprecated, operationTypeId, operationCategoryId))
     try:
         return BlueRidge.Common.Db.execList(
             "parts/OperationTemplate_List",
             {
-                "areaLocationId": areaLocationId,
-                "activeOnly":     0 if includeDeprecated else 1,
+                "operationTypeId":     operationTypeId,
+                "operationCategoryId": operationCategoryId,
+                "activeOnly":          0 if includeDeprecated else 1,
             },
         )
     except Exception as e:
@@ -105,16 +111,17 @@ def search(filter=None):
 
     filter keys (all optional):
         searchText      string  -- case-insensitive substring on Code or Name
-        areaLocationId  BIGINT  -- or None for All Areas
+        operationTypeId BIGINT  -- or None for All Types
         includeDeprecated bool  -- default False
     """
     BlueRidge.Common.Util.log("filter=%s" % filter)
     f = _u(filter) or {}
-    searchText        = (f.get("searchText") or "").strip().lower()
-    areaLocationId    = f.get("areaLocationId")
-    includeDeprecated = bool(f.get("includeDeprecated", False))
+    searchText          = (f.get("searchText") or "").strip().lower()
+    operationTypeId     = f.get("operationTypeId")
+    operationCategoryId = f.get("operationCategoryId")
+    includeDeprecated   = bool(f.get("includeDeprecated", False))
 
-    rows = getAllForList(includeDeprecated, areaLocationId)
+    rows = getAllForList(includeDeprecated, operationTypeId, operationCategoryId)
 
     # Keep only the highest-version row per Code (mockup pattern).
     latestByCode = {}
@@ -135,18 +142,23 @@ def search(filter=None):
                 continue
         visible.append(r)
 
-    # Group by AreaName (preserve a deterministic order: alpha by area).
-    byArea = {}
+    # Group by OperationCategory, ordered by the category's natural process-flow
+    # order (Parts.OperationCategory.Id: 1=Die Cast, 2=Trim, 3=Machining & Assembly
+    # -- Jacques 2026-07-06), NOT alphabetically. Uncategorized sinks to the bottom.
+    byCategory = {}
+    catSortKey = {}
     for r in visible:
-        area = r.get("AreaName") or "(no area)"
-        byArea.setdefault(area, []).append(r)
+        category = r.get("OperationCategoryName") or "(no category)"
+        byCategory.setdefault(category, []).append(r)
+        cid = r.get("OperationCategoryId")
+        catSortKey[category] = cid if cid is not None else 9999
 
     instances = []
-    for area in sorted(byArea.keys()):
-        instances.append({"sectionHeader": {"label": area}, "templateRow": None})
-        # Sort within area by Code.
-        rowsInArea = sorted(byArea[area], key=lambda r: (r.get("Code") or ""))
-        for r in rowsInArea:
+    for category in sorted(byCategory.keys(), key=lambda c: (catSortKey.get(c, 9999), c)):
+        instances.append({"sectionHeader": {"label": category}, "templateRow": None})
+        # Sort within category by Code.
+        rowsInCategory = sorted(byCategory[category], key=lambda r: (r.get("Code") or ""))
+        for r in rowsInCategory:
             instances.append({"sectionHeader": None, "templateRow": _toRailRow(r)})
     return instances
 
@@ -185,7 +197,7 @@ def getVersionsForCode(code, includeDeprecated=True):
         # Hit the full list with ActiveOnly=0 to include deprecated rows.
         rows = BlueRidge.Common.Db.execList(
             "parts/OperationTemplate_List",
-            {"areaLocationId": None, "activeOnly": 0},
+            {"operationTypeId": None, "activeOnly": 0},
         )
     except Exception as e:
         BlueRidge.Common.Util.log("getVersionsForCode failed: %s" % str(e))
@@ -310,6 +322,27 @@ def getActiveTemplateIdByCode(code):
     return None
 
 
+def getActiveTemplateIdForRoute(itemId, operationTypeCode):
+    """Resolve the active OperationTemplate Id for a part's route step of the given
+    OperationType role, or None (Spec 2 Task M3). Terminals know their role
+    ('MachiningOut', 'AssemblyOut', ...) and resolve the right template for the
+    SCANNED part off its active route -- area-agnostic, per the Spec 1 OperationType
+    restructure. Prefer this over getActiveTemplateIdByCode, which resolves a template
+    by its own Code regardless of the part's route."""
+    if itemId is None or operationTypeCode is None:
+        return None
+    try:
+        rows = BlueRidge.Common.Db.execList(
+            "parts/OperationTemplate_GetForRouteRole",
+            {"itemId": itemId, "operationTypeCode": operationTypeCode})
+    except Exception as e:
+        BlueRidge.Common.Util.log("getActiveTemplateIdForRoute failed: %s" % str(e))
+        return None
+    for r in rows or []:
+        return r.get("OperationTemplateId")
+    return None
+
+
 def getDieCastShotFields():
     """The typed data-collection fields for the active DieCastShot OperationTemplate
     (the die-cast checkpoint screen, D5). Returns [{'field': {... DataTypeCode}}], or
@@ -320,23 +353,87 @@ def getDieCastShotFields():
     return getDieCastFieldsWithType(tid)
 
 
+def getFieldSummary(operationTemplateId):
+    """Comma-joined data-collection field names for a template - the same
+    summary RouteStep_ListByRoute composes in SQL. '' when none / no template.
+    Drives the Routes draft-step Data Collection column at pick time
+    (Jacques 2026-07-06: the draft column stayed blank until save/publish)."""
+    tid = _u(operationTemplateId)
+    if tid is None:
+        return ""
+    try:
+        rows = BlueRidge.Common.Db.execList(
+            "parts/OperationTemplateField_ListByTemplate",
+            {"operationTemplateId": tid},
+        ) or []
+    except Exception as e:
+        BlueRidge.Common.Util.log("getFieldSummary failed: %s" % str(e))
+        return ""
+    names = [r.get("Name") or r.get("Code") or "" for r in rows]
+    return ", ".join([n for n in names if n])
+
+
 # -----------------------------------------------------------------------------
 # Dropdown lookups
 # -----------------------------------------------------------------------------
 
-def getAreasForDropdown():
-    """Returns [{label, value}, ...] for the Area filter + Detail Area
-    dropdowns. Value is the Area Location.Id (BIGINT)."""
+def getOperationTypesForDropdown():
+    """Returns [{label, value}, ...] for the OperationType filter + Detail
+    OperationType dropdowns. Label is 'Category -- Type Name'; value is the
+    Parts.OperationType.Id (BIGINT)."""
     try:
-        rows = BlueRidge.Location.Location.listByTier("Area")
+        rows = BlueRidge.Common.Db.execList("parts/OperationType_ListForDropdown", {})
     except Exception as e:
-        BlueRidge.Common.Util.log("getAreasForDropdown failed: %s" % str(e))
+        BlueRidge.Common.Util.log("getOperationTypesForDropdown failed: %s" % str(e))
         return []
     out = []
     for r in rows or []:
-        if r.get("DeprecatedAt") is not None:
+        label = "%s -- %s" % (r.get("CategoryName") or "", r.get("Name") or "")
+        out.append({"label": label, "value": r.get("Id")})
+    return out
+
+
+def getOperationCategoriesForDropdown():
+    """Returns [{label, value}, ...] of distinct OperationCategories (value =
+    Parts.OperationCategory.Id), derived from OperationType_ListForDropdown
+    (which carries CategoryId). Drives the Routes step Category picker
+    (Jacques 2026-07-06: steps group by CATEGORY, not OperationType)."""
+    try:
+        rows = BlueRidge.Common.Db.execList("parts/OperationType_ListForDropdown", {})
+    except Exception as e:
+        BlueRidge.Common.Util.log("getOperationCategoriesForDropdown failed: %s" % str(e))
+        return []
+    seen = {}
+    out = []
+    for r in rows or []:
+        cid = r.get("CategoryId")
+        if cid is None or cid in seen:
             continue
-        out.append({"label": r.get("Name") or r.get("Code"), "value": r.get("Id")})
+        seen[cid] = True
+        out.append({"label": r.get("CategoryName") or "", "value": cid})
+    return out
+
+
+def getOperationTypesByCategory(operationCategoryId=None):
+    """Returns [{label, value}, ...] of the OperationTypes in a single category
+    (value = Parts.OperationType.Id). Drives the SECOND dropdown of the
+    creation-popup cascade (Category -> Type; Jacques 2026-07-06): pick a
+    category, then choose the operation within it. Label is the bare Type Name
+    (the category is already chosen upstream). Empty list when no category is
+    selected. Die Cast has one type, Trim two, Machining & Assembly five."""
+    operationCategoryId = _u(operationCategoryId)
+    if operationCategoryId is None:
+        return []
+    try:
+        rows = BlueRidge.Common.Db.execList("parts/OperationType_ListForDropdown", {})
+    except Exception as e:
+        BlueRidge.Common.Util.log("getOperationTypesByCategory failed: %s" % str(e))
+        return []
+    out = []
+    for r in rows or []:
+        if r.get("CategoryId") != operationCategoryId:
+            continue
+        out.append({"label": r.get("Name") or "", "value": r.get("Id")})
     return out
 
 
@@ -388,27 +485,27 @@ def add(data):
     if not name:
         return {"Status": 0, "Message": "Name is required", "NewId": None}
 
-    areaLocationId = data.get("AreaLocationId")
-    if areaLocationId is None:
+    operationTypeId = data.get("OperationTypeId")
+    if operationTypeId is None:
         return {"Status": 0,
-                "Message": "Area is required",
+                "Message": "Operation type is required",
                 "NewId":   None}
 
     return BlueRidge.Common.Db.execMutation(
         "parts/OperationTemplate_Create",
         {
-            "code":           code,
-            "name":           name,
-            "areaLocationId": areaLocationId,
-            "description":    data.get("Description"),
-            "appUserId":      BlueRidge.Common.Util._currentAppUserId(),
+            "code":            code,
+            "name":            name,
+            "operationTypeId": operationTypeId,
+            "description":     data.get("Description"),
+            "appUserId":       BlueRidge.Common.Util._currentAppUserId(),
         },
     )
 
 
 def update(data):
     """Update an existing OperationTemplate. data: {Id, Name,
-    AreaLocationId, Description}. Code + VersionNumber are immutable.
+    OperationTypeId, Description}. Code + VersionNumber are immutable.
     Returns {Status, Message}."""
     data = _u(data) or {}
     BlueRidge.Common.Util.log("data=%s" % data)
@@ -420,11 +517,11 @@ def update(data):
     return BlueRidge.Common.Db.execMutation(
         "parts/OperationTemplate_Update",
         {
-            "id":             templateId,
-            "name":           data.get("Name"),
-            "areaLocationId": data.get("AreaLocationId"),
-            "description":    data.get("Description"),
-            "appUserId":      BlueRidge.Common.Util._currentAppUserId(),
+            "id":              templateId,
+            "name":            data.get("Name"),
+            "operationTypeId": data.get("OperationTypeId"),
+            "description":     data.get("Description"),
+            "appUserId":       BlueRidge.Common.Util._currentAppUserId(),
         },
     )
 

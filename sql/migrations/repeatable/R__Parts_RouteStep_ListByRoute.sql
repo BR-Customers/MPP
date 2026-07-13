@@ -2,12 +2,12 @@
 -- Procedure:   Parts.RouteStep_ListByRoute
 -- Author:      Blue Ridge Automation
 -- Created:     2026-04-14
--- Version:     3.0
+-- Version:     4.1
 --
 -- Description:
 --   Returns the ordered list of RouteStep rows for a given RouteTemplate,
 --   joined to Parts.OperationTemplate for Code/Name + the OperationTemplate's
---   Area (via Location.Location) for OperationAreaName, plus a comma-joined
+--   OperationType (role) + OperationCategory (grouping), plus a comma-joined
 --   summary of the OperationTemplate's active data-collection fields.
 --   Ordered by SequenceNumber ascending.
 --
@@ -18,12 +18,13 @@
 --   Zero or more RouteStep rows ordered by SequenceNumber, with:
 --     Id, RouteTemplateId, SequenceNumber, OperationTemplateId,
 --     OperationCode, OperationName, OperationVersionNumber,
---     OperationAreaLocationId, OperationAreaName,
---     DataCollectionSummary, IsRequired, Description
+--     OperationTypeId, OperationTypeCode, OperationTypeName,
+--     OperationCategoryName, DataCollectionSummary, IsRequired, Description
 --
 -- Dependencies:
---   Tables: Parts.RouteStep, Parts.OperationTemplate, Location.Location,
---           Parts.OperationTemplateField, Parts.DataCollectionField
+--   Tables: Parts.RouteStep, Parts.OperationTemplate, Parts.OperationType,
+--           Parts.OperationCategory, Parts.OperationTemplateField,
+--           Parts.DataCollectionField
 --
 -- Change Log:
 --   2026-04-14 - 1.0 - Initial version (OUTPUT params)
@@ -31,6 +32,9 @@
 --   2026-05-20 - 3.0 - Added OperationAreaName + DataCollectionSummary +
 --                      OperationAreaLocationId + OperationVersionNumber
 --                      projections to drive the Item Master Routes tab.
+--   2026-07-02 - 4.0 - Area -> OperationType + Category (operation-type restructure)
+--   2026-07-07 - 4.1 - OperationCategoryId projected (Routes step picker groups
+--                      by CATEGORY per Jacques 2026-07-06)
 -- =============================================
 CREATE OR ALTER PROCEDURE Parts.RouteStep_ListByRoute
     @RouteTemplateId BIGINT
@@ -46,8 +50,11 @@ BEGIN
         ot.Code          AS OperationCode,
         ot.Name          AS OperationName,
         ot.VersionNumber AS OperationVersionNumber,
-        ot.AreaLocationId AS OperationAreaLocationId,
-        areaLoc.Name     AS OperationAreaName,
+        ot.OperationTypeId,
+        typ.Code         AS OperationTypeCode,
+        typ.Name         AS OperationTypeName,
+        typ.OperationCategoryId,
+        cat.Name         AS OperationCategoryName,
         ISNULL((
             SELECT STRING_AGG(dcf.Code, N', ') WITHIN GROUP (ORDER BY dcf.Code)
             FROM Parts.OperationTemplateField otf
@@ -58,8 +65,9 @@ BEGIN
         rs.IsRequired,
         rs.Description
     FROM Parts.RouteStep rs
-    INNER JOIN Parts.OperationTemplate ot ON ot.Id = rs.OperationTemplateId
-    INNER JOIN Location.Location areaLoc ON areaLoc.Id = ot.AreaLocationId
+    INNER JOIN Parts.OperationTemplate ot  ON ot.Id  = rs.OperationTemplateId
+    INNER JOIN Parts.OperationType     typ ON typ.Id = ot.OperationTypeId
+    INNER JOIN Parts.OperationCategory cat ON cat.Id = typ.OperationCategoryId
     WHERE rs.RouteTemplateId = @RouteTemplateId
     ORDER BY rs.SequenceNumber;
 END;

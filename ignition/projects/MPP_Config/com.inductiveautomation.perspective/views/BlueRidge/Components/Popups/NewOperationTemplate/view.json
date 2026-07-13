@@ -1,13 +1,15 @@
 {
   "custom": {
     "editDraft": {
-      "AreaLocationId": null,
+      "OperationCategoryId": null,
+      "OperationTypeId": null,
       "Code": "",
       "Description": "",
       "Name": ""
     },
     "selected": {
-      "AreaLocationId": null,
+      "OperationCategoryId": null,
+      "OperationTypeId": null,
       "Code": "",
       "Description": "",
       "Name": ""
@@ -15,10 +17,18 @@
   },
   "params": {},
   "propConfig": {
-    "custom.areaOptions": {
+    "custom.categoryOptions": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.getAreasForDropdown\", 0)"
+          "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.getOperationCategoriesForDropdown\", 0)"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.typeOptions": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.getOperationTypesByCategory\", 0, {view.custom.editDraft.OperationCategoryId})"
         },
         "type": "expr"
       }
@@ -246,11 +256,22 @@
                   "style": {
                     "classes": "field-label"
                   },
-                  "text": "Area"
+                  "text": "Category"
                 },
                 "type": "ia.display.label"
               },
               {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tnewCatId = self.props.value\n\tdraft = dict(self.view.custom.editDraft or {})\n\tdraft['OperationCategoryId'] = newCatId\n\t# Category drives the Operation dropdown; changing it clears the prior pick.\n\tdraft['OperationTypeId'] = None\n\t# Auto-select when the category has exactly one operation (e.g. Die Cast).\n\ttypes = BlueRidge.Parts.OperationTemplate.getOperationTypesByCategory(newCatId)\n\tif types and len(types) == 1:\n\t\tdraft['OperationTypeId'] = types[0].get('value')\n\tself.view.custom.editDraft = draft"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
                 "meta": {
                   "name": "Input"
                 },
@@ -258,7 +279,7 @@
                   "props.options": {
                     "binding": {
                       "config": {
-                        "path": "view.custom.areaOptions"
+                        "path": "view.custom.categoryOptions"
                       },
                       "type": "property"
                     }
@@ -267,13 +288,81 @@
                     "binding": {
                       "config": {
                         "bidirectional": true,
-                        "path": "view.custom.editDraft.AreaLocationId"
+                        "path": "view.custom.editDraft.OperationCategoryId"
                       },
                       "type": "property"
                     }
                   }
                 },
                 "props": {
+                  "noSelectionText": "Select a category...",
+                  "style": {
+                    "boxSizing": "border-box",
+                    "classes": "select",
+                    "width": "100%"
+                  }
+                },
+                "type": "ia.input.dropdown"
+              }
+            ],
+            "meta": {
+              "name": "CategoryField"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "4px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "style": {
+                    "classes": "field-label"
+                  },
+                  "text": "Operation"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Input"
+                },
+                "propConfig": {
+                  "props.enabled": {
+                    "binding": {
+                      "config": {
+                        "expression": "{view.custom.editDraft.OperationCategoryId} != null"
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.options": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.typeOptions"
+                      },
+                      "type": "property"
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.editDraft.OperationTypeId"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "noSelectionText": "Select an operation...",
                   "style": {
                     "boxSizing": "border-box",
                     "classes": "select",
@@ -456,7 +545,7 @@
         {
           "name": "handleCreate",
           "params": [],
-          "script": "\tdraft \u003d self.view.custom.editDraft or {}\n\tif not (draft.get(\u0027Code\u0027) or \u0027\u0027).strip():\n\t\tBlueRidge.Common.Notify.toast(\u0027Code required\u0027, \u0027Enter a code before creating.\u0027, \u0027warning\u0027)\n\t\treturn\n\tif not (draft.get(\u0027Name\u0027) or \u0027\u0027).strip():\n\t\tBlueRidge.Common.Notify.toast(\u0027Name required\u0027, \u0027Enter a name before creating.\u0027, \u0027warning\u0027)\n\t\treturn\n\tif draft.get(\u0027AreaLocationId\u0027) is None:\n\t\tBlueRidge.Common.Notify.toast(\u0027Area required\u0027, \u0027Pick an area before creating.\u0027, \u0027warning\u0027)\n\t\treturn\n\tresult \u003d BlueRidge.Parts.OperationTemplate.add(draft)\n\tBlueRidge.Common.Ui.notifyResult(result, \u0027Template created\u0027)\n\tif result and result.get(\u0027Status\u0027):\n\t\tnewId \u003d result.get(\u0027NewId\u0027)\n\t\tsystem.perspective.sendMessage(\u0027templateListRefresh\u0027, scope\u003d\u0027page\u0027)\n\t\tif newId:\n\t\t\tsystem.perspective.sendMessage(\u0027templateSelectId\u0027, payload\u003d{\u0027id\u0027: newId}, scope\u003d\u0027page\u0027)\n\t\tsystem.perspective.closePopup(id\u003d\u0027mpp-new-operation-template\u0027)"
+          "script": "\tdraft \u003d self.view.custom.editDraft or {}\n\tif not (draft.get(\u0027Code\u0027) or \u0027\u0027).strip():\n\t\tBlueRidge.Common.Notify.toast(\u0027Code required\u0027, \u0027Enter a code before creating.\u0027, \u0027warning\u0027)\n\t\treturn\n\tif not (draft.get(\u0027Name\u0027) or \u0027\u0027).strip():\n\t\tBlueRidge.Common.Notify.toast(\u0027Name required\u0027, \u0027Enter a name before creating.\u0027, \u0027warning\u0027)\n\t\treturn\n\tif draft.get(\u0027OperationTypeId\u0027) is None:\n\t\tBlueRidge.Common.Notify.toast(\u0027Operation type required\u0027, \u0027Pick an operation type before creating.\u0027, \u0027warning\u0027)\n\t\treturn\n\tresult \u003d BlueRidge.Parts.OperationTemplate.add(draft)\n\tBlueRidge.Common.Ui.notifyResult(result, \u0027Template created\u0027)\n\tif result and result.get(\u0027Status\u0027):\n\t\tnewId \u003d result.get(\u0027NewId\u0027)\n\t\tsystem.perspective.sendMessage(\u0027templateListRefresh\u0027, scope\u003d\u0027page\u0027)\n\t\tif newId:\n\t\t\tsystem.perspective.sendMessage(\u0027templateSelectId\u0027, payload\u003d{\u0027id\u0027: newId}, scope\u003d\u0027page\u0027)\n\t\tsystem.perspective.closePopup(id\u003d\u0027mpp-new-operation-template\u0027)"
         },
         {
           "name": "handleClose",

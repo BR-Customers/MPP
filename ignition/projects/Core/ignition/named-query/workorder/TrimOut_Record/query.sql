@@ -4,5 +4,6 @@ EXEC Workorder.TrimOut_Record
     @ShotCount                 = :shotCount,
     @ScrapCount                = :scrapCount,
     @DestinationCellLocationId = :destinationCellLocationId,
+    @SourceLocationId          = :sourceLocationId,
     @AppUserId                 = :appUserId,
     @TerminalLocationId        = :terminalLocationId

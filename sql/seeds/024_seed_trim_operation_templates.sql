@@ -13,24 +13,17 @@
 -- ============================================================
 DECLARE @Now DATETIME2(3) = SYSUTCDATETIME();
 
-DECLARE @TrimAreaId BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1' AND DeprecatedAt IS NULL);
-IF @TrimAreaId IS NULL
-    SET @TrimAreaId = (
-        SELECT TOP 1 l.Id
-        FROM Location.Location l
-        INNER JOIN Location.LocationTypeDefinition ltd ON ltd.Id = l.LocationTypeDefinitionId
-        INNER JOIN Location.LocationType lt ON lt.Id = ltd.LocationTypeId
-        WHERE l.DeprecatedAt IS NULL AND lt.Code = N'Area'
-        ORDER BY l.Id);
+DECLARE @OpTypeTrimIn  BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'TrimIn'  AND DeprecatedAt IS NULL);
+DECLARE @OpTypeTrimOut BIGINT = (SELECT Id FROM Parts.OperationType WHERE Code = N'TrimOut' AND DeprecatedAt IS NULL);
 
-IF @TrimAreaId IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Code = N'TrimIn')
-    INSERT INTO Parts.OperationTemplate (Code, VersionNumber, Name, AreaLocationId, Description, CreatedAt)
-    VALUES (N'TrimIn', 1, N'Trim In', @TrimAreaId,
+IF @OpTypeTrimIn IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Code = N'TrimIn')
+    INSERT INTO Parts.OperationTemplate (Code, VersionNumber, Name, OperationTypeId, Description, CreatedAt)
+    VALUES (N'TrimIn', 1, N'Trim In', @OpTypeTrimIn,
             N'Trim-station IN checkpoint template (Arc 2 Phase 4). Carried-forward cumulative shot/scrap counters; yield-loss only, no rename.', @Now);
 
-IF @TrimAreaId IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Code = N'TrimOut')
-    INSERT INTO Parts.OperationTemplate (Code, VersionNumber, Name, AreaLocationId, Description, CreatedAt)
-    VALUES (N'TrimOut', 1, N'Trim Out', @TrimAreaId,
+IF @OpTypeTrimOut IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Parts.OperationTemplate WHERE Code = N'TrimOut')
+    INSERT INTO Parts.OperationTemplate (Code, VersionNumber, Name, OperationTypeId, Description, CreatedAt)
+    VALUES (N'TrimOut', 1, N'Trim Out', @OpTypeTrimOut,
             N'Trim-station OUT template (Arc 2 Phase 4). Closing checkpoint for a 1:1 whole-LOT move into a Machining-line FIFO queue.', @Now);
 GO
 PRINT 'Seed 024 (Trim IN/OUT OperationTemplates) loaded.';

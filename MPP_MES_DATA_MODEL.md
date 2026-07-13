@@ -1,7 +1,7 @@
 # MPP MES — Data Model Reference
 
-**Version:** v1.9 working draft (rev 2026-06-09s — **Scaling Decisions (OI-35)** section added; OI-35 architecture gate signed off 2026-06-08 (B2 monthly partitioning + TRUNCATE sliding-window, B4 closure, B5 materialized qty, B6 row-locked sequence, B7 OperationLog split, B8 filtered indexes; B1 retention → FDS §11); rev 2026-06-08q - **section 3 `Lot.CrtActive BIT`** added (FDS-10-012 Controlled Run Tag hook, MVP-ratified 2026-06-08); rev 2026-06-08p - Location `CoupledDownstreamCellLocationId` typed-FK promotion + `QualityResult.NumericValue`; rev 2026-06-05o — **§7 `Tools.ToolType.CompatibleLocationTypeDefinitionId`** added (migration `0018`) for the Mount-to-Cell tool-type→cell-kind dropdown filter; `Die → DieCastMachine` seeded. Earlier: rev 2026-06-04n — sub-LOT split relocated from Trim OUT to **Machining OUT** per FDS v1.3 / Phased Plan v1.1; `Parts.OperationTemplate.RequiresSubLotSplit` now controls the Machining OUT outbound flow (FDS-05-009), and the ALTER lands in Phase 5 migration `0018` rather than Phase 4 `0017`. v1.9m (2026-04-29) had added the column under the prior Trim-OUT design. See revision history.)
-**Schemas:** 8 | **Tables:** ~73
+**Version:** v1.9 working draft (rev 2026-07-06u — **assembly finished-good LOT: `Lots.ContainerTray.FinishedGoodLotId` added (BIGINT NULL FK → Lot.Id, filtered-unique; tray = LOT, 1:1); assembly-out consumption now targets the finished-good LOT via `Workorder.ConsumptionEvent.ProducedLotId`**; rev 2026-07-02t — **operation-type restructure: `OperationTemplate.AreaLocationId` dropped, `OperationTypeId` FK added; new `Parts.OperationType` + `Parts.OperationCategory` code tables (migrations 0032/0033)**; rev 2026-06-09s — **Scaling Decisions (OI-35)** section added; OI-35 architecture gate signed off 2026-06-08 (B2 monthly partitioning + TRUNCATE sliding-window, B4 closure, B5 materialized qty, B6 row-locked sequence, B7 OperationLog split, B8 filtered indexes; B1 retention → FDS §11); rev 2026-06-08q - **section 3 `Lot.CrtActive BIT`** added (FDS-10-012 Controlled Run Tag hook, MVP-ratified 2026-06-08); rev 2026-06-08p - Location `CoupledDownstreamCellLocationId` typed-FK promotion + `QualityResult.NumericValue`; rev 2026-06-05o — **§7 `Tools.ToolType.CompatibleLocationTypeDefinitionId`** added (migration `0018`) for the Mount-to-Cell tool-type→cell-kind dropdown filter; `Die → DieCastMachine` seeded. Earlier: rev 2026-06-04n — sub-LOT split relocated from Trim OUT to **Machining OUT** per FDS v1.3 / Phased Plan v1.1; `Parts.OperationTemplate.RequiresSubLotSplit` now controls the Machining OUT outbound flow (FDS-05-009), and the ALTER lands in Phase 5 migration `0018` rather than Phase 4 `0017`. v1.9m (2026-04-29) had added the column under the prior Trim-OUT design. See revision history.)
+**Schemas:** 8 | **Tables:** ~75
 **Target:** Microsoft SQL Server 2022 Standard Edition
 
 ---
@@ -10,6 +10,9 @@
 
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
+| 1.9u | 2026-07-06 | Blue Ridge Automation | **Assembly finished-good LOT (Spec 2).** `Lots.ContainerTray` gains **`FinishedGoodLotId BIGINT NULL FK → Lots.Lot.Id`** with a filtered UNIQUE index (non-NULL) - `tray = LOT`, 1:1. Non-serialized AND serialized assembly-out now mint a finished-good LOT and consume `BomLine.QtyPer x PieceCount` FIFO (oldest-first by `Lot.CreatedAt`, tie-broken by `Id`) from eligible component LOTs at the line; each `Workorder.ConsumptionEvent` sets **`ProducedLotId` = the finished-good LOT** (the primary consumption target), with `ProducedContainerId` demoted to secondary/denormalized - the Container is retained as the wrapper. Genealogy resolves `Container -> ContainerTray -> FinishedGoodLot -> component LOTs`. Column nullable during transition; tightened to NOT NULL once all trays route through `Workorder.Assembly_CompleteTray`. Migration `0032` (number confirmed at build). Companion to FDS v1.6 (FDS-06-013 / -06-020 / -06-021). No other shipped table changed. |
+| 2.0 | 2026-07-07 | Blue Ridge Automation | **Terminal-mint model — rename-BOM thread unwound; route becomes the single source of truth for terminal FIFO + part identity.** (spec `docs/superpowers/specs/2026-07-07-terminal-mint-model-and-rename-bom-removal-design.md`) (1) **New `Parts.OperationRoleKind` code table** (Advance / OriginMint / ConsumeMint) + `Parts.OperationType.OperationRoleKindId NOT NULL FK` (migration `0035`) — drives the route-driven WIP queue's per-step "pending" rule (documented in §2). (2) **`Location.CoupledDownstreamCellLocationId` DROPPED** (+FK) and `Workorder.MachiningOut_AutoComplete` retired (migration `0036`) — cell-coupling is gone; mints are line-resident (no cell→cell auto-move). The §1 Location column + its two callouts (below) are **now stale and pending prose reconciliation.** (3) **Machining OUT is a consume-MINT, not a split**: `Workorder.MachiningOut_RecordSplit` → `Workorder.MachiningOut_Mint` (consumes the casting per the SubAssembly's BOM, `Consumption` genealogy cast→machined, flexible operator qty). `Lots.Lot_Split` + `Split` genealogy demoted to **exception-only** (holds/quality/logistics). `Lots.Lot_GetWipQueueByLocation` v3.0 is route-driven (`@OperationTypeCode` role param; dropped `HasRenameBom`/`HasLineEvent`). New `Parts.Item_ListEligibleFinishedGoodsRanked` for the ranked Assembly-OUT default. (4) **`Item.DefaultSubLotQty` reinterpreted** as the default *mint* quantity (operator-overridable; input LOT size irrelevant) and **`OperationTemplate.RequiresSubLotSplit`** no longer gates a Machining-OUT split — both descriptions (§2) are pending prose reconciliation. All SQL landed + validated (full suite 1887/1887). **Pending doc prose reconciliation:** the §1 Location `CoupledDownstreamCellLocationId` rows, `DefaultSubLotQty`, and `RequiresSubLotSplit` descriptions still describe the old split/coupling model. |
+| 1.9t | 2026-07-02 | Blue Ridge Automation | **Operation-type model restructure (Spec 1).** `Parts.OperationTemplate.AreaLocationId` (per-area FK) **dropped**; new `OperationTypeId BIGINT NOT NULL FK → Parts.OperationType` added — templates are now area-agnostic and reusable across all areas of a kind, resolved by operation role at the terminal. Two new read-only code tables: **`Parts.OperationCategory`** (3 rows: Die Cast / Trim / Machining & Assembly) and **`Parts.OperationType`** (8 roles: DieCast, TrimIn/Out, MachiningIn/Out, AssemblyIn/Out, CNC). Migrations `0032` (expand) + `0033` (contract). `RequiresSubLotSplit` now correlates to `OperationType.Code='MachiningOut'`. Defect/downtime area filtering is unaffected (those tables keep their own `AreaLocationId`; screens filter by the terminal's runtime area, not the template). |
 | 1.9s | 2026-06-09 | Blue Ridge Automation | **Scaling Decisions (OI-35) section added — Phase 0 architecture gate signed off.** New top-level "Scaling Decisions (OI-35)" section captures the ratified Track-B architecture decisions governing migration `0020_arc2_phase1_shop_floor_foundation.sql`: B2 monthly RANGE-RIGHT partitioning + **`TRUNCATE`-based sliding-window** (singleton `Id` PK preserved — see design spec `docs/superpowers/specs/2026-06-09-arc2-phase1-sql-foundation-design.md`); B3 columnstore deferred (partition-compatible); B4 `LotGenealogyClosure` table; B5 materialized `TotalInProcess`/`InventoryAvailable` + `v_LotDerivedQuantities` fallback; B6 row-locked `IdentifierSequence_Next` (seed ≈3,000,000, MESL/MESI); B7 `OperationLog`→`LotEventLog` split; B8 known filtered indexes; B1 retention per FDS §11. Spec-only (governs the unbuilt `0020`); no shipped table changed. |
 | 1.9r | 2026-06-08 | Blue Ridge Automation | **§5 Quality doc-sync — three migration-`0017` columns back-filled into the spec (were live in the DB but missing from this doc and the ERD).** `Quality.QualitySpec` gains `DeprecatedAt DATETIME2(3) NULL` + `DeprecatedByUserId BIGINT NULL FK → AppUser.Id` (header-level soft-delete). `Quality.QualitySpecAttribute` gains `UomId BIGINT NULL FK → Parts.Uom.Id` (replaces free-text `Uom` usage by the Config Tool QualitySpec editor; legacy `Uom NVARCHAR(20)` retained for back-compat). All three shipped in versioned migration `0017_qualityspec_attribute_uom_fk` (applied) but were never reflected in the data model §5 or `MPP_MES_ERD.html` — surfaced by the 2026-06-08 ERD-vs-DM parallel audit. No SQL change (migration already live); spec + ERD Quality tab updated to match the built schema. |
 | 1.9q | 2026-06-08 | Blue Ridge Automation | **section 3 Lot - `CrtActive BIT NOT NULL DEFAULT 0` added (FDS-10-012 Controlled Run Tag).** CRT workflow ratified for MVP 2026-06-08: a CRT-active LOT forces 200% downstream inspection (via `Quality.QualitySample`) with a supervisor-elevated release path and a `MissedCrtInspect` re-run rule. The column lands in the Arc 2 Phase 1 `Lots.Lot` CREATE; the workflow procs + audit event types build in the Arc 2 Quality phase. No other shipped table affected. |
@@ -382,9 +385,55 @@ Ordered steps within a route.
 | IsRequired | BIT | NOT NULL, DEFAULT 1 | |
 | Description | NVARCHAR(500) | NULL | |
 
+### OperationCategory
+
+Read-only code table grouping operation roles for Config-Tool display. Seeded (3 rows): `DieCast` (Die Cast), `Trim` (Trim), `MachiningAssembly` (Machining & Assembly). Added 2026-07-02 (operation-type restructure, migration `0032`).
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| Code | NVARCHAR(20) | NOT NULL, UNIQUE | DieCast, Trim, MachiningAssembly |
+| Name | NVARCHAR(100) | NOT NULL | |
+| Description | NVARCHAR(500) | NULL | |
+| CreatedAt | DATETIME2(3) | NOT NULL, DEFAULT SYSUTCDATETIME() | |
+| DeprecatedAt | DATETIME2(3) | NULL | |
+
+### OperationType
+
+Read-only code table of operation **roles** — the stable identity a terminal binds to (via its default view / tab focus) so the scanned LOT's route resolves the right `OperationTemplate`, and the axis that lets one template be reused across all areas of a kind (e.g. one die-cast template for DC1–DC4). Seeded (8 rows). Added 2026-07-02 (migration `0032`).
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| Code | NVARCHAR(20) | NOT NULL, UNIQUE | DieCast, TrimIn, TrimOut, MachiningIn, MachiningOut, AssemblyIn, AssemblyOut, CNC |
+| Name | NVARCHAR(100) | NOT NULL | |
+| OperationCategoryId | BIGINT | FK → Parts.OperationCategory.Id, NOT NULL | Grouping category |
+| OperationRoleKindId | BIGINT | FK → Parts.OperationRoleKind.Id, NOT NULL | Advance / OriginMint / ConsumeMint (see below). Added 2026-07-07 (migration `0035`, terminal-mint model). |
+| Description | NVARCHAR(500) | NULL | |
+| CreatedAt | DATETIME2(3) | NOT NULL, DEFAULT SYSUTCDATETIME() | |
+| DeprecatedAt | DATETIME2(3) | NULL | |
+
+### OperationRoleKind
+
+Read-only code table classifying each `OperationType` role by how the route-driven WIP queue treats a LOT sitting on a step of that role (terminal-mint model, spec `2026-07-07-terminal-mint-model-and-rename-bom-removal-design.md` §3.2/§4.1). Seeded 3 rows (migration `0035`).
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| Id | BIGINT | PK | |
+| Code | NVARCHAR(20) | NOT NULL, UNIQUE | `Advance` / `OriginMint` / `ConsumeMint` |
+| Name | NVARCHAR(100) | NOT NULL | |
+| Description | NVARCHAR(500) | NULL | |
+| CreatedAt | DATETIME2(3) | NOT NULL, DEFAULT SYSUTCDATETIME() | |
+| DeprecatedAt | DATETIME2(3) | NULL | |
+
+Semantics (drives `Lots.Lot_GetWipQueueByLocation` "next pending step" resolution):
+- **`Advance`** (Trim, MachiningIn, AssemblyIn, CNC) — the step is satisfied once a `Workorder.ProductionEvent` exists for the LOT on that step's `OperationTemplateId`; the LOT then advances to its next route step.
+- **`OriginMint`** (DieCast) — produces this part; always satisfied for an existing LOT (it was minted there).
+- **`ConsumeMint`** (MachiningOut, AssemblyOut) — the LOT's terminal step; it stays in that terminal's queue until it is fully consumed (`Closed`). A consume-mint mints a **new** part-number LOT by consuming input(s) per the produced part's BOM (`Consumption` genealogy). Machining OUT: `Workorder.MachiningOut_Mint`; Assembly OUT: `Workorder.Assembly_CompleteTray`.
+
 ### OperationTemplate
 
-Defines what data to collect at a type of operation. Reusable across products. **Versioned** via `Code` + `VersionNumber` — multiple rows share a Code to represent the evolution of one operation over time. See the clone-to-modify workflow in the Phase 5 `_CreateNewVersion` proc.
+Defines what data to collect at a type of operation. **Area-agnostic and reusable across products and areas** — classified by `OperationTypeId` (operation role); a terminal resolves the right template by role, so one die-cast template serves all four die-cast areas (2026-07-02 restructure; the former per-area `AreaLocationId` was dropped). **Versioned** via `Code` + `VersionNumber` — multiple rows share a Code to represent the evolution of one operation over time. See the clone-to-modify workflow in the Phase 5 `_CreateNewVersion` proc.
 
 | Column | Type | Constraints | Description |
 |---|---|---|---|
@@ -392,7 +441,7 @@ Defines what data to collect at a type of operation. Reusable across products. *
 | Code | NVARCHAR(20) | NOT NULL | Operation family code (e.g., DIE-CAST-801T). Multiple rows may share this value across versions. |
 | VersionNumber | INT | NOT NULL, DEFAULT 1 | Version within the Code family. UNIQUE(Code, VersionNumber) enforces one row per version. |
 | Name | NVARCHAR(100) | NOT NULL | |
-| AreaLocationId | BIGINT | FK → Location.Id, NOT NULL | Area (ISA-95 Area, organizational grouping) |
+| OperationTypeId | BIGINT | FK → Parts.OperationType.Id, NOT NULL | Operation role (see OperationType). Replaces the former `AreaLocationId` — templates are area-agnostic as of the 2026-07-02 restructure; the executing terminal supplies the area at runtime. `RequiresSubLotSplit` now correlates to `OperationType.Code = 'MachiningOut'`. |
 | Description | NVARCHAR(500) | NULL | |
 | RequiresSubLotSplit | BIT | NOT NULL, DEFAULT 0 | **Added v1.9m; relocated to Machining OUT in v1.9n.** Control flag for outbound flows that split a LOT across multiple downstream destinations (used at **Machining OUT** per FDS-05-009 — the physical correlate is a line with a dedicated Machining OUT terminal). When `1`, the Machining OUT screen presents a multi-destination split UX (one sub-LOT per destination, N total); the closing proc (`MachiningOut_RecordSplit`) calls `Lot_Split` and `Lot_MoveTo` per child. When `0` (default), Machining OUT is the PLC-driven auto-move (coupled) or a manual whole-move (uncoupled) — no split. Engineering authors per Item per Cell via the Configuration Tool. Versioned with the rest of the row per the clone-to-modify pattern. Operations with no outbound-split branch — Die Cast, Receiving, **Trim OUT** (now a 1:1 whole-LOT move), Machining IN, Assembly — ignore the column. The ALTER lands in Phase 5 migration `0018`. |
 | CreatedAt | DATETIME2(3) | NOT NULL, DEFAULT GETDATE() | |
@@ -706,6 +755,9 @@ Shipping containers for finished goods.
 | ContainerId | BIGINT | FK → Container.Id, NOT NULL | |
 | TrayNumber | INT | NOT NULL | |
 | PieceCount | INT | NOT NULL | |
+| FinishedGoodLotId | BIGINT | FK → Lot.Id, NULL, UNIQUE (filtered on non-NULL) | Finished-good LOT minted at tray closure - `tray = LOT`, 1:1. Assembly-out consumption targets this LOT via `ConsumptionEvent.ProducedLotId` (see below), and container genealogy resolves `Container -> ContainerTray -> FinishedGoodLot -> component LOTs`. Nullable during transition; tightened to NOT NULL once all trays route through `Workorder.Assembly_CompleteTray`. |
+
+**Assembly consumption targets the finished-good LOT (v-bump 2026-07-06).** Non-serialized AND serialized assembly-out mint a finished-good LOT (`tray = LOT`) and consume `BomLine.QtyPer x PieceCount` FIFO (oldest-first by `Lot.CreatedAt`, tie-broken by `Id`) from eligible component LOTs at the line. Each draw's `Workorder.ConsumptionEvent` sets **`ProducedLotId` = the finished-good LOT** (the primary consumption target), not only `ProducedContainerId`; the Container is retained as the wrapper. See FDS-06-013 / FDS-06-020 / FDS-06-021.
 
 ### SerializedPart
 
@@ -1019,8 +1071,8 @@ Records which source LOTs were consumed to produce output.
 | Id | BIGINT | PK | |
 | WorkOrderOperationId | BIGINT | FK → WorkOrderOperation.Id, NULL | |
 | SourceLotId | BIGINT | FK → Lot.Id, NOT NULL | What was consumed |
-| ProducedLotId | BIGINT | FK → Lot.Id, NULL | Output LOT (if applicable) |
-| ProducedContainerId | BIGINT | FK → Container.Id, NULL | Output container (if applicable) |
+| ProducedLotId | BIGINT | FK → Lot.Id, NULL | Output LOT - the **primary consumption target** for machining renames and assembly-out (the minted finished-good LOT). |
+| ProducedContainerId | BIGINT | FK → Container.Id, NULL | Output container (secondary/denormalized; the Container is retained as the wrapper but consumption targets `ProducedLotId`). |
 | ConsumedItemId | BIGINT | FK → Item.Id, NOT NULL | |
 | ProducedItemId | BIGINT | FK → Item.Id, NOT NULL | |
 | PieceCount | INT | NOT NULL | |

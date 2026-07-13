@@ -1,3 +1,4 @@
 EXEC Parts.OperationTemplate_List
-    @AreaLocationId = :areaLocationId,
+    @OperationTypeId     = :operationTypeId,
+    @OperationCategoryId = :operationCategoryId,
     @ActiveOnly     = :activeOnly

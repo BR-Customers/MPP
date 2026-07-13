@@ -3,6 +3,8 @@
   "params": {
     "row": {
       "EventAt": "",
+      "EventAtDisplay": "",
+      "EventAgo": "",
       "EventKind": "",
       "Detail": "",
       "ByUserName": ""
@@ -51,7 +53,7 @@
             "binding": {
               "type": "expr",
               "config": {
-                "expression": "if({view.params.row.EventKind}=\"Movement\",\"material/swap_horiz\",if({view.params.row.EventKind}=\"Status\",\"material/flag\",if({view.params.row.EventKind}=\"Attribute\",\"material/edit\",if({view.params.row.EventKind}=\"Pause\",\"material/pause\",if({view.params.row.EventKind}=\"Resume\",\"material/play_arrow\",if({view.params.row.EventKind}=\"Genealogy\",\"material/call_split\",if({view.params.row.EventKind}=\"Label\",\"material/label\",\"material/circle\")))))))"
+                "expression": "if({view.params.row.EventKind}=\"Movement\",\"material/swap_horiz\",if({view.params.row.EventKind}=\"Status\",\"material/flag\",if({view.params.row.EventKind}=\"Attribute\",\"material/edit\",if({view.params.row.EventKind}=\"Pause\",\"material/pause\",if({view.params.row.EventKind}=\"Resume\",\"material/play_arrow\",if({view.params.row.EventKind}=\"Genealogy\",\"material/call_split\",if({view.params.row.EventKind}=\"Label\",\"material/label\",if({view.params.row.EventKind}=\"Production\",\"material/build\",if({view.params.row.EventKind}=\"Reject\",\"material/warning\",\"material/circle\")))))))))"
               }
             }
           },
@@ -59,7 +61,7 @@
             "binding": {
               "type": "expr",
               "config": {
-                "expression": "if({view.params.row.EventKind}=\"Movement\",\"#5b8def\",if({view.params.row.EventKind}=\"Status\",\"#3fb950\",if({view.params.row.EventKind}=\"Attribute\",\"#d29922\",if({view.params.row.EventKind}=\"Pause\",\"#db8b3a\",if({view.params.row.EventKind}=\"Resume\",\"#2dd4bf\",if({view.params.row.EventKind}=\"Genealogy\",\"#a371f7\",\"#8b949e\"))))))"
+                "expression": "if({view.params.row.EventKind}=\"Movement\",\"#5b8def\",if({view.params.row.EventKind}=\"Status\",\"#3fb950\",if({view.params.row.EventKind}=\"Attribute\",\"#d29922\",if({view.params.row.EventKind}=\"Pause\",\"#db8b3a\",if({view.params.row.EventKind}=\"Resume\",\"#2dd4bf\",if({view.params.row.EventKind}=\"Genealogy\",\"#a371f7\",if({view.params.row.EventKind}=\"Production\",\"#0d9488\",if({view.params.row.EventKind}=\"Reject\",\"#f85149\",\"#8b949e\"))))))))"
               }
             }
           }
@@ -94,7 +96,7 @@
             "binding": {
               "type": "expr",
               "config": {
-                "expression": "if({view.params.row.EventKind}=\"Movement\",\"#5b8def\",if({view.params.row.EventKind}=\"Status\",\"#3fb950\",if({view.params.row.EventKind}=\"Attribute\",\"#d29922\",if({view.params.row.EventKind}=\"Pause\",\"#db8b3a\",if({view.params.row.EventKind}=\"Resume\",\"#2dd4bf\",if({view.params.row.EventKind}=\"Genealogy\",\"#a371f7\",\"#8b949e\"))))))"
+                "expression": "if({view.params.row.EventKind}=\"Movement\",\"#5b8def\",if({view.params.row.EventKind}=\"Status\",\"#3fb950\",if({view.params.row.EventKind}=\"Attribute\",\"#d29922\",if({view.params.row.EventKind}=\"Pause\",\"#db8b3a\",if({view.params.row.EventKind}=\"Resume\",\"#2dd4bf\",if({view.params.row.EventKind}=\"Genealogy\",\"#a371f7\",if({view.params.row.EventKind}=\"Production\",\"#0d9488\",if({view.params.row.EventKind}=\"Reject\",\"#f85149\",\"#8b949e\"))))))))"
               }
             }
           }
@@ -152,7 +154,7 @@
             "binding": {
               "type": "expr",
               "config": {
-                "expression": "if(dateDiff({view.params.row.EventAt}, now(60000), \"minute\") < 1, \"just now\", if(dateDiff({view.params.row.EventAt}, now(60000), \"minute\") < 60, toStr(dateDiff({view.params.row.EventAt}, now(60000), \"minute\")) + \"m ago\", if(dateDiff({view.params.row.EventAt}, now(60000), \"hour\") < 24, toStr(dateDiff({view.params.row.EventAt}, now(60000), \"hour\")) + \"h ago\", toStr(dateDiff({view.params.row.EventAt}, now(60000), \"day\")) + \"d ago\"))) + \"  ·  \" + toStr({view.params.row.ByUserName}) + \"  ·  \" + dateFormat({view.params.row.EventAt}, \"MM/dd HH:mm\")"
+                "expression": "coalesce({view.params.row.EventAgo}, \"\") + \"  ·  \" + toStr({view.params.row.ByUserName}) + \"  ·  \" + coalesce({view.params.row.EventAtDisplay}, \"\")"
               }
             }
           }

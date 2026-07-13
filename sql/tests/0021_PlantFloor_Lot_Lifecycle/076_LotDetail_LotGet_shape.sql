@@ -4,7 +4,7 @@ EXEC test.BeginTestFile @FileName = N'0021_PlantFloor_Lot_Lifecycle/076_LotDetai
 GO
 DECLARE @OriginRcv BIGINT=(SELECT Id FROM Lots.LotOriginType WHERE Code=N'Received');
 DECLARE @ItemId BIGINT, @CellA BIGINT;
-SELECT TOP 1 @ItemId=eil.ItemId, @CellA=eil.LocationId FROM Parts.v_EffectiveItemLocation eil ORDER BY eil.LocationId;
+SELECT TOP 1 @ItemId=eil.ItemId, @CellA=eil.LocationId FROM Parts.v_EffectiveItemLocation eil WHERE eil.ItemId IN (SELECT Id FROM Parts.Item WHERE MaxLotSize IS NULL) ORDER BY eil.LocationId;
 DECLARE @cr TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
 INSERT INTO @cr EXEC Lots.Lot_Create @ItemId=@ItemId, @LotOriginTypeId=@OriginRcv, @CurrentLocationId=@CellA, @PieceCount=30, @AppUserId=1;
 DECLARE @Lot BIGINT=(SELECT NewId FROM @cr);

@@ -12,6 +12,28 @@ def _u(value):
     return BlueRidge.Common.Util.extractQualifiedValues(value)
 
 
+def _tallyRows(tally):
+    """The die-cast shift tally is cached in view.custom.shiftTally and read back
+       by the card's display bindings as an array of QualifiedValue wrapping
+       ImmutableMap rows. extractQualifiedValues (_u) unwraps the QualifiedValue
+       layer but NOT ImmutableMap, so r.get(...) raises AttributeError
+       (feedback_ignition_immutable_map_unwrap). Round-trip the unwrapped rows
+       through JSON to get plain dicts. Returns list[dict] ([] on empty/None)."""
+    rows = _u(tally) or []
+    if not rows:
+        return []
+    try:
+        return system.util.jsonDecode(system.util.jsonEncode(rows)) or []
+    except:
+        return rows
+
+
+def shiftTallyCavityIds(tally):
+    """ToolCavityId list from the shift tally (plain values), for the card's
+       cavity-selection guard. Robust to the view.custom ImmutableMap wrapping."""
+    return [r.get("ToolCavityId") for r in _tallyRows(tally)]
+
+
 def create(data, appUserId=None, terminalLocationId=None, lotName=None, cavityNote=None):
     """Mint a new LOT. data carries every Lot_Create field (itemId,
        lotOriginTypeId, currentLocationId, pieceCount, weight, weightUomId,
@@ -148,6 +170,113 @@ def getHistory(lotId):
     return BlueRidge.Common.Db.execList("lots/Lot_GetAttributeHistory", {"lotId": lotId})
 
 
+def mapHistoryInstances(rows):
+    """LOT Detail history repeater instances: one {'row': {...}} per history row
+       with EventAtDisplay ('MM/dd HH:mm') and EventAgo ('3h ago') precomputed in
+       Python. The HistoryRow view consumes the precomputed strings verbatim --
+       date math in expression bindings proved unreliable for repeater params
+       (the Date serializes to a string on the param hop; dateFormat/dateDiff
+       then pass the raw value through), which surfaced as over-precise
+       timestamps on the 2026-07-07 smoke."""
+    rows = BlueRidge.Common.Util.extractQualifiedValues(rows) or []
+    out = []
+    for r in rows:
+        r = dict(r or {})
+        ev = r.get("EventAt")
+        disp = ""
+        ago = ""
+        if ev is not None:
+            try:
+                disp = system.date.format(ev, "MM/dd HH:mm")
+                mins = system.date.minutesBetween(ev, system.date.now())
+                if mins < 1:
+                    ago = "just now"
+                elif mins < 60:
+                    ago = "%dm ago" % mins
+                elif mins < 1440:
+                    ago = "%dh ago" % (mins // 60)
+                else:
+                    ago = "%dd ago" % (mins // 1440)
+            except:
+                # ev arrived as a pre-serialized string -- truncate to the same
+                # 'yyyy-MM-dd HH:mm' precision rather than showing millis.
+                disp = ("%s" % ev)[:16]
+        r["EventAtDisplay"] = disp
+        r["EventAgo"] = ago
+        out.append({"row": r})
+    return out
+
+
+def mapTrimInventoryInstances(rows, selectable=False, selectedLotId=None):
+    """TrimBody 'Currently in Trim' card-repeater instances (machining QueueRow
+       styling, Jacques 2026-07-07). One instance per Lot_GetWipQueueByLocation
+       row with the arrival display + FIFO position precomputed in Python.
+       selectable=True renders the Select action (the Trim OUT pick list);
+       selectedLotId highlights the active pick. Property-binding transform
+       callers re-run this via the refreshToken bump on selection."""
+    rows = BlueRidge.Common.Util.extractQualifiedValues(rows) or []
+    selectable = bool(BlueRidge.Common.Util.extractQualifiedValues(selectable))
+    selectedLotId = BlueRidge.Common.Util.extractQualifiedValues(selectedLotId)
+    out = []
+    pos = 0
+    for r in rows:
+        r = r or {}
+        pos += 1
+        arr = r.get("LastMovementAt")
+        arrival = ""
+        if arr is not None:
+            try:
+                arrival = system.date.format(arr, "MM/dd HH:mm")
+            except:
+                arrival = ("%s" % arr)[:16]
+        out.append({
+            "lotId":         r.get("Id"),
+            "lotName":       r.get("LotName") or "",
+            "item":          r.get("ItemPartNumber") or "",
+            "pieceCount":    r.get("PieceCount") or 0,
+            "arrival":       arrival,
+            "position":      pos,
+            "lotStatusCode": r.get("LotStatusCode") or "",
+            "isSelected":    (selectedLotId is not None and r.get("Id") == selectedLotId),
+            "selectable":    selectable,
+        })
+    return out
+
+
+def getLatestForToolCavityOrEmpty(toolId, toolCavityId, _refreshToken=None):
+    """The cavity-scoped reject target (Jacques 2026-07-06): the newest open
+       LOT cast on (tool, cavity). Always returns the fully-shaped dict
+       {Id, LotName, PieceCount, InventoryAvailable, CavityNumber} with None/0
+       values when nothing resolves (pre-declared-bound-props rule).
+       _refreshToken is ignored - runScript bindings pass a bumped token to
+       force a re-read after a create/reject."""
+    toolId = _u(toolId)
+    toolCavityId = _u(toolCavityId)
+    BlueRidge.Common.Util.log("toolId=%s toolCavityId=%s" % (toolId, toolCavityId))
+    empty = {"Id": None, "LotName": "", "PieceCount": 0,
+             "InventoryAvailable": 0, "CavityNumber": None}
+    if not toolId or not toolCavityId:
+        return empty
+    row = BlueRidge.Common.Db.execOne(
+        "lots/Lot_GetLatestForToolCavity",
+        {"toolId": toolId, "toolCavityId": toolCavityId},
+    )
+    return row if row else empty
+
+
+def getScrapSummaryOrEmpty(lotId):
+    """LOT Detail Total Scrap card (Jacques 2026-07-06). Always returns the
+       fully-shaped dict {RejectedTotal, CounterScrap, TotalScrap} (zeros when
+       no scrap / no lot) per the pre-declared-bound-props rule."""
+    lotId = _u(lotId)
+    BlueRidge.Common.Util.log("lotId=%s" % lotId)
+    empty = {"RejectedTotal": 0, "CounterScrap": 0, "TotalScrap": 0}
+    if lotId is None or lotId == "":
+        return empty
+    row = BlueRidge.Common.Db.execOne("lots/Lot_GetScrapSummary", {"lotId": lotId})
+    return row if row else empty
+
+
 def getPauses(lotId):
     BlueRidge.Common.Util.log("lotId=%s" % lotId)
     return BlueRidge.Common.Db.execList("lots/LotPause_GetByLot", {"lotId": lotId})
@@ -193,19 +322,74 @@ def getCellLineQuantity(locationId, itemId):
     )
 
 
-def getWipQueueByLocation(locationId, includeDescendants=False, _refreshToken=None):
-    """Arc 2 Phase 4 / Phase 5. The FIFO WIP queue at a location (open LOTs in
-       arrival order). Returns list[dict]."""
-    BlueRidge.Common.Util.log("locationId=%s includeDescendants=%s" % (locationId, includeDescendants))
+def getWipQueueByLocation(locationId, includeDescendants=False, _refreshToken=None, operationTypeCode=None):
+    """Route-driven WIP queue at a location (terminal-mint spec §3.2): open LOTs whose
+       next PENDING route step carries operationTypeCode (the terminal's OperationType
+       role, e.g. 'MachiningIn' / 'MachiningOut' / 'AssemblyOut'), in arrival order.
+       When operationTypeCode is empty/None every open LOT at the location is returned
+       with its resolved next-step role (NextOperationTypeCode / NextSequenceNumber) so
+       the caller can slice by role in a transform.
+
+       operationTypeCode is the LAST arg so existing positional bindings
+       (locationId, includeDescendants, refreshToken) keep working; pass a 4th arg to
+       filter by role. Returns list[dict]."""
+    otc = _u(operationTypeCode)
+    otc = otc if otc else None   # "" (from an expression binding) -> None -> all roles
+    BlueRidge.Common.Util.log("locationId=%s includeDescendants=%s operationTypeCode=%s"
+                              % (locationId, includeDescendants, otc))
     return BlueRidge.Common.Db.execList(
         "lots/Lot_GetWipQueueByLocation",
-        {"locationId": _u(locationId), "includeDescendants": bool(includeDescendants)},
+        {"locationId": _u(locationId), "operationTypeCode": otc,
+         "includeDescendants": bool(includeDescendants)},
     )
 
 
 def getByName(lotName):
     """Convenience alias: fetch one LOT by its LTT name. Returns a dict or None."""
     return get(lotName=_u(lotName))
+
+
+_EMPTY_LOT = {
+    "Id": None, "LotName": "", "ItemId": None, "ItemPartNumber": "",
+    "PieceCount": 0, "MaxPieceCount": 0, "InventoryAvailable": 0,
+    "TotalInProcess": 0, "LotStatusCode": "", "LotStatusName": "",
+    "LotOriginTypeCode": "", "CurrentLocationId": None,
+    "CurrentLocationName": "", "CrtActive": None, "ToolId": None,
+    "ToolCode": "", "ToolCavityNumber": "",
+}
+
+
+def getOrEmpty(lotId=None, lotName=None, _refreshToken=None):
+    """Binding/summary-safe variant of get(): ALWAYS returns a fully-shaped LOT dict
+       (pre-declared-bound-props rule) so nested-path bindings never Component-Error.
+       Not-found / blank input -> the _EMPTY_LOT shape (Id None). A found row is
+       merged OVER the empty shape, so every display key exists either way.
+       _refreshToken is ignored (runScript re-read arg)."""
+    lotId = _u(lotId)
+    lotName = _u(lotName)
+    if lotName is not None and ("%s" % lotName).strip() == "":
+        lotName = None
+    if lotId is None and lotName is None:
+        return dict(_EMPTY_LOT)
+    row = get(lotId=lotId, lotName=lotName)
+    if not row:
+        return dict(_EMPTY_LOT)
+    out = dict(_EMPTY_LOT)
+    out.update(row)
+    return out
+
+
+def getLineInventoryByPart(locationId, _refreshToken=None):
+    """Spec 2 Task I2. On-hand open LOTs at a line location, grouped by part then
+       FIFO by arrival, for the inventory check-in popup. Returns list[dict] with
+       ItemId, PartNumber, Description, LotId, LotName, InventoryAvailable, ArrivedAt.
+       _refreshToken is unused server-side; it lets a view's expression binding
+       re-run the read after a check-in by referencing a bumped token."""
+    if locationId is None:
+        return []
+    BlueRidge.Common.Util.log("getLineInventoryByPart locationId=%s" % locationId)
+    return BlueRidge.Common.Db.execList(
+        "lots/Lot_GetLineInventoryByPart", {"locationId": _u(locationId)})
 
 
 def getStatusOptions():
@@ -216,11 +400,14 @@ def getOriginOptions():
     return [{"label": r["Name"], "value": r["Id"]} for r in BlueRidge.Common.Db.execList("lots/LotOriginType_List")]
 
 
-def getShiftCavityTally(toolId):
+def getShiftCavityTally(toolId, _refreshToken=None):
     """Arc 2 Phase 3 die-cast right rail. One row per active (configured) cavity of
-       the mounted die: PieceSum = sum of as-cast PieceCount for LOTs Created this
-       OEE shift on that tool+cavity, and ShiftShots = max(PieceSum) across cavities
-       (both computed in SQL). Returns list[dict]; [] when no die is mounted."""
+       the mounted die: PieceSum = sum of as-cast pieces this OEE shift (live
+       PieceCount + rejected qty added back, v1.1 2026-07-06), RejectSum = the
+       per-cavity scrapped qty, ShiftShots = max(PieceSum) across cavities (all
+       computed in SQL). Returns list[dict]; [] when no die is mounted.
+       _refreshToken is ignored - runScript bindings pass a bumped token to force
+       a re-read (runScript caches on args)."""
     toolId = _u(toolId)
     BlueRidge.Common.Util.log("toolId=%s" % toolId)
     if toolId is None or toolId == "":
@@ -231,14 +418,14 @@ def getShiftCavityTally(toolId):
 def shiftCavityOptions(tally):
     """[{label, value}] for the right-rail cavity dropdown, built from a tally list
        so every configured cavity appears (value = ToolCavityId). Presentation only."""
-    rows = _u(tally) or []
+    rows = _tallyRows(tally)
     return [{"label": r.get("CavityLabel") or ("Cavity %s" % r.get("CavityNumber")),
              "value": r.get("ToolCavityId")} for r in rows]
 
 
 def shiftSumForCavity(tally, toolCavityId):
     """The selected cavity's shift piece sum from a tally list. Int (0 if absent)."""
-    rows = _u(tally) or []
+    rows = _tallyRows(tally)
     cid = _u(toolCavityId)
     for r in rows:
         if r.get("ToolCavityId") == cid:
@@ -246,11 +433,54 @@ def shiftSumForCavity(tally, toolCavityId):
     return 0
 
 
+def shiftScrapForCavity(tally, toolCavityId):
+    """The selected cavity's shift scrapped quantity (RejectSum) from a tally
+       list. Int (0 if absent). Jacques 2026-07-06: the shift card surfaces scrap."""
+    rows = _tallyRows(tally)
+    cid = _u(toolCavityId)
+    for r in rows:
+        if r.get("ToolCavityId") == cid:
+            return r.get("RejectSum") or 0
+    return 0
+
+
+def shiftShotsFromTally(tally):
+    """ShiftShots (the busiest cavity's as-cast piece total this shift) from a
+       tally list - identical on every row, so read the first. Int (0 when
+       empty). This is the actual 'Shots this shift' number for the card; it was
+       computed in SQL but never displayed before 2026-07-06."""
+    rows = _tallyRows(tally)
+    for r in rows:
+        return r.get("ShiftShots") or 0
+    return 0
+
+
+def shiftShotsForTool(toolId, _refreshToken=None):
+    """'Shots this shift' KPI value, fetched-and-computed from SCALAR args only
+       (toolId + ignored refresh token). runScript expression bindings must not
+       pass container props -- re-evaluations receive them as ImmutableList,
+       which neither extractQualifiedValues nor the JSON round-trip survive
+       (feedback_ignition_immutable_map_unwrap). The tally query is cheap."""
+    return shiftShotsFromTally(getShiftCavityTally(toolId))
+
+
+def shiftSumForCavityOnTool(toolId, toolCavityId, _refreshToken=None):
+    """'Pieces this shift (selected cavity)' KPI value from scalar args --
+       see shiftShotsForTool for why the tally is fetched here."""
+    return shiftSumForCavity(getShiftCavityTally(toolId), toolCavityId)
+
+
+def shiftScrapForCavityOnTool(toolId, toolCavityId, _refreshToken=None):
+    """'Scrap this shift (selected cavity)' KPI value from scalar args --
+       see shiftShotsForTool for why the tally is fetched here."""
+    return shiftScrapForCavity(getShiftCavityTally(toolId), toolCavityId)
+
+
 def defaultShiftCavityId(tally):
     """ToolCavityId of the busiest cavity this shift (highest PieceSum) -> the
        default right-rail selection so the card opens on the most accurate shot
        count. None when the tally is empty."""
-    rows = _u(tally) or []
+    rows = _tallyRows(tally)
     best = None
     bestSum = -1
     for r in rows:

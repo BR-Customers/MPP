@@ -210,7 +210,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tself.view.rootContainer.handleDeprecate()"
+                    "script": "\titemId = (self.view.custom.state.editDraft or {}).get('Id') or (self.view.custom.state.selected or {}).get('Id')\n\tif not itemId:\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid='mpp-confirm-destructive',\n\t\tview='BlueRidge/Components/Popups/ConfirmDestructive',\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t'title': 'Deprecate Part',\n\t\t\t'message': 'Deprecating this part also deprecates its routes, BOMs, eligibility, and container config. Active LOTs of the part will block this. Continue?',\n\t\t\t'confirmLabel': 'Deprecate',\n\t\t\t'replyMessage': 'itemDeprecateConfirmed'\n\t\t}\n\t)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -927,6 +927,13 @@
           "messageType": "sectionDiscardRequested",
           "pageScope": true,
           "script": "\tif payload and payload.get(\"section\") \u003d\u003d \"identity\":\n\t\tself.handleDiscard()",
+          "sessionScope": false,
+          "viewScope": false
+        },
+        {
+          "messageType": "itemDeprecateConfirmed",
+          "pageScope": true,
+          "script": "\taction = (payload or {}).get('action')\n\tif action != 'confirm':\n\t\treturn\n\tself.handleDeprecate()",
           "sessionScope": false,
           "viewScope": false
         }

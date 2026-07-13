@@ -769,3 +769,13 @@ def convertWrapperObjectToJson(obj):
              dirty detection. Returns "null" for None.
     """
     return system.util.jsonEncode(extractQualifiedValues(obj))
+
+# NOTE (2026-07-07): a toPlain(obj) JSON-round-trip helper briefly lived here
+# as an attempted rescue for container props passed as runScript EXPRESSION
+# args. It was removed: re-evaluations receive ImmutableList (which jsonEncode
+# yields nothing useful for), and transform-context wrapped values can send
+# jsonEncode into infinite recursion (Java StackOverflowError). The rule is to
+# never pass container props through runScript args at all -- pass scalars and
+# fetch rows inside the entity function, or use a property-binding script
+# transform (JavaMap; extractQualifiedValues handles it). See
+# feedback_ignition_immutable_map_unwrap.

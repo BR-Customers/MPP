@@ -1,0 +1,472 @@
+SchemaName,TableName,Ord,ColumnName,DataType,Nullable,Identity_,IsPK
+dbo,ActiveDirectoryGroup,1,ActiveDirectoryGroupID,int,NOT NULL,IDENTITY,PK
+dbo,ActiveDirectoryGroup,2,Name,nvarchar(260),NOT NULL
+dbo,ActiveDirectoryGroup,3,RoleID,int,NOT NULL
+dbo,Area,1,AreaID,int,NOT NULL,IDENTITY,PK
+dbo,Area,2,Name,nvarchar(100),NOT NULL
+dbo,Area,3,Description,nvarchar(max),NULL
+dbo,Area,4,CreatedTimestamp,datetime,NOT NULL
+dbo,Area,5,ModifiedTimestamp,datetime,NOT NULL
+dbo,Area,6,SiteID,int,NOT NULL
+dbo,Bom,1,BomID,int,NOT NULL,IDENTITY,PK
+dbo,Bom,2,MaterialID,int,NOT NULL
+dbo,Bom,3,CreatedTimestamp,datetime,NOT NULL
+dbo,Bom,4,ModifiedTimestamp,datetime,NOT NULL
+dbo,Bom,5,Version,nvarchar(100),NOT NULL
+dbo,BomComponent,1,BomComponentID,int,NOT NULL,IDENTITY,PK
+dbo,BomComponent,2,CreatedTimestamp,datetime,NOT NULL
+dbo,BomComponent,3,ModifiedTimestamp,datetime,NOT NULL
+dbo,BomComponent,4,BomID,int,NOT NULL
+dbo,BomComponent,5,ParentBomComponentID,int,NULL
+dbo,BomComponent,6,MaterialID,int,NOT NULL
+dbo,BomComponent,7,Quantity,"decimal(18,6)",NOT NULL
+dbo,BomComponent,8,UnitOfMeasure,nvarchar(100),NULL
+dbo,ClientConfiguration,1,ClientConfigurationID,int,NOT NULL,IDENTITY,PK
+dbo,ClientConfiguration,2,Name,nvarchar(100),NOT NULL
+dbo,ClientConfiguration,3,Description,nvarchar(max),NULL
+dbo,ClientConfiguration,4,InternalName,nvarchar(100),NOT NULL
+dbo,ClientConfiguration,5,InServiceTimestamp,datetime,NOT NULL
+dbo,ClientConfiguration,6,Version,nvarchar(50),NOT NULL
+dbo,ClientState,1,ClientStateID,int,NOT NULL,IDENTITY,PK
+dbo,ClientState,2,MachineName,varchar(100),NOT NULL
+dbo,ClientState,3,ProcessID,int,NOT NULL
+dbo,ClientState,4,StartupTimestamp,datetime,NOT NULL
+dbo,ClientState,5,LastReportTimestamp,datetime,NOT NULL
+dbo,ClientState,6,WorkstationID,int,NULL
+dbo,ClientState,7,WorkCellID,int,NULL
+dbo,ClientState,8,URL,varchar(500),NOT NULL
+dbo,ClientState,9,ClientVersion,varchar(30),NOT NULL
+dbo,ClientState,10,IpAddress,varchar(max),NOT NULL
+dbo,ClientState,11,ScreenSize,varchar(500),NULL
+dbo,ClientState,12,OperatingSystem,varchar(max),NULL
+dbo,ClientState,13,Browser,varchar(max),NULL
+dbo,ClientState,14,LoggedOnUser,varchar(500),NULL
+dbo,ClientState,15,RestartRequest,bit,NOT NULL
+dbo,Configuration,1,ConfigurationID,int,NOT NULL,IDENTITY,PK
+dbo,Configuration,2,Name,nvarchar(100),NOT NULL
+dbo,Configuration,3,Description,nvarchar(max),NULL
+dbo,Configuration,4,Value,nvarchar(max),NOT NULL
+dbo,Configuration,5,TakeEffectNote,nvarchar(max),NULL
+dbo,Container,1,ContainerID,int,NOT NULL,IDENTITY,PK
+dbo,Container,2,Name,nvarchar(100),NOT NULL
+dbo,Container,3,Description,nvarchar(max),NULL
+dbo,Container,4,ContainerStateID,int,NOT NULL
+dbo,Container,6,DispositionReason,nvarchar(max),NULL
+dbo,Container,7,OriginalQuantity,"decimal(18,6)",NOT NULL
+dbo,Container,8,Quantity,"decimal(18,6)",NOT NULL
+dbo,Container,9,CreatedTimestamp,datetime,NOT NULL
+dbo,Container,10,ModifiedTimestamp,datetime,NOT NULL
+dbo,Container,11,FinishedTimestamp,datetime,NULL
+dbo,Container,12,TrackingMode,tinyint,NOT NULL
+dbo,Container,13,BomID,int,NULL
+dbo,Container,14,DispositionID,int,NOT NULL
+dbo,Container,15,IsDeleted,bit,NOT NULL
+dbo,Container,16,WorkCellID,int,NOT NULL
+dbo,Container,17,DispositionTimestamp,datetime,NULL
+dbo,Container,18,PriorContainerID,int,NULL
+dbo,ContainerLot,1,ContainerLotID,int,NOT NULL,IDENTITY,PK
+dbo,ContainerLot,2,ContainerID,int,NOT NULL
+dbo,ContainerLot,3,LotID,int,NOT NULL
+dbo,ContainerLot,5,AddedTimestamp,datetime,NOT NULL
+dbo,ContainerLot_Historical,1,ContainerLotID,int,NOT NULL
+dbo,ContainerLot_Historical,2,ContainerID,int,NOT NULL
+dbo,ContainerLot_Historical,3,LotID,int,NOT NULL
+dbo,ContainerLot_Historical,4,AddedTimestamp,datetime,NOT NULL
+dbo,ContainerSerializedItem,1,ContainerSerializedItemID,int,NOT NULL,IDENTITY,PK
+dbo,ContainerSerializedItem,2,ContainerID,int,NOT NULL
+dbo,ContainerSerializedItem,3,SerializedItemID,int,NOT NULL
+dbo,ContainerSerializedItem,4,AddedTimestamp,datetime,NOT NULL
+dbo,ContainerState,1,ContainerStateID,int,NOT NULL,IDENTITY,PK
+dbo,ContainerState,2,Name,nvarchar(100),NOT NULL
+dbo,ContainerState,3,Description,nvarchar(max),NULL
+dbo,ContainerState,4,DisplayName,nvarchar(100),NOT NULL
+dbo,CreateAllocationDashboardConfiguration,1,CreateAllocationDashboardConfigurationID,int,NOT NULL,IDENTITY,PK
+dbo,CreateAllocationDashboardConfiguration,2,FullLotScanningIsEnabled,bit,NOT NULL
+dbo,Disposition,1,DispositionID,int,NOT NULL,IDENTITY,PK
+dbo,Disposition,2,Name,nvarchar(100),NOT NULL
+dbo,Disposition,3,DisplayName,nvarchar(100),NOT NULL
+dbo,FinalAssemblyDashboardConfiguration,1,FinalAssemblyDashboardConfigurationID,int,NOT NULL,IDENTITY,PK
+dbo,FinalAssemblyDashboardConfiguration,2,RefreshInterval,int,NOT NULL
+dbo,FinalAssemblyDashboardConfiguration,3,LotHistoryDisplayCount,int,NOT NULL
+dbo,FinalAssemblyDashboardConfiguration,4,ContainerCreationIsSupported,bit,NOT NULL
+dbo,FinalAssemblyDashboardConfiguration,5,CameraImageDisplayMode,tinyint,NULL
+dbo,FinalAssemblyDashboardConfiguration,6,CameraIPAddresses,varchar(500),NULL
+dbo,FinalAssemblyDashboardConfiguration,7,IsVisionModeEnabled,bit,NOT NULL
+dbo,FinalAssemblyDashboardConfiguration,8,IsScaleModeEnabled,bit,NOT NULL
+dbo,FinalAssemblyDashboardConfiguration,9,EMLineName,varchar(50),NULL
+dbo,FinalAssemblyDashboardConfiguration,10,EMTaskName,varchar(50),NULL
+dbo,FinalAssemblyDashboardConfiguration,11,EMTargetWeightChangeEvent,varchar(50),NULL
+dbo,FinalAssemblyDashboardConfiguration,12,MessageType,varchar(250),NULL
+dbo,FinalAssemblyDashboardConfiguration,13,VisionInterface,varchar(100),NULL
+dbo,FinalAssemblyDashboardConfiguration,14,CameraImageRotations,varchar(100),NULL
+dbo,FinalAssemblyDashboardConfiguration,15,BeforeContainerCreateScriptID,int,NULL
+dbo,FinalAssemblyDashboardConfiguration,16,PLCPort,varchar(25),NULL
+dbo,IdentifierFormat,1,IdentifierFormatID,int,NOT NULL,IDENTITY,PK
+dbo,IdentifierFormat,2,Name,nvarchar(100),NOT NULL
+dbo,IdentifierFormat,3,Description,nvarchar(max),NULL
+dbo,IdentifierFormat,4,Format,nvarchar(50),NOT NULL
+dbo,IdentifierFormat,5,StartingCounterValue,int,NULL
+dbo,IdentifierFormat,6,EndingCounterValue,int,NULL
+dbo,IdentifierFormat,7,LastCounterValue,int,NULL
+dbo,IdentifierFormat,8,StartTimestamp,datetime,NULL
+dbo,IdentifierFormat,9,ResetIntervalInMinutes,int,NULL
+dbo,IdentifierFormat,10,LastResetTimestamp,datetime,NULL
+dbo,LabelPrinter,1,LabelPrinterID,int,NOT NULL,IDENTITY,PK
+dbo,LabelPrinter,2,Name,nvarchar(100),NOT NULL
+dbo,LabelPrinter,3,Description,nvarchar(max),NULL
+dbo,LabelPrinter,4,CreatedTimestamp,datetime,NOT NULL
+dbo,LabelPrinter,5,ModifiedTimestamp,datetime,NOT NULL
+dbo,LabelPrinter,6,WorkCellID,int,NOT NULL
+dbo,LabelPrinter,7,Path,nvarchar(900),NOT NULL
+dbo,LabelPrinterLabelTemplate,1,LabelPrinterID,int,NOT NULL,,PK
+dbo,LabelPrinterLabelTemplate,2,LabelTemplateID,int,NOT NULL,,PK
+dbo,LabelTemplate,1,LabelTemplateID,int,NOT NULL,IDENTITY,PK
+dbo,LabelTemplate,2,Name,nvarchar(100),NOT NULL
+dbo,LabelTemplate,3,Description,nvarchar(max),NULL
+dbo,LabelTemplate,7,DisplayName,nvarchar(100),NOT NULL
+dbo,LabelTemplate,8,CreatedTimestamp,datetime,NOT NULL
+dbo,LabelTemplate,9,ModifiedTimestamp,datetime,NOT NULL
+dbo,LabelTemplate,10,TemplatePath,nvarchar(900),NOT NULL
+dbo,LblParts,1,STRADINGPARTNER,char(8),NOT NULL,,PK
+dbo,LblParts,2,SPARTNBR,char(30),NOT NULL,,PK
+dbo,LblParts,3,SSUPPLIERPART,char(30),NOT NULL
+dbo,LblParts,4,SDESCRIPTION,char(64),NULL
+dbo,LblParts,5,SUNITOFMEASURE,char(3),NULL
+dbo,LblParts,6,RUNITPRICE,float,NULL
+dbo,LblParts,7,RUNITWT,float,NULL
+dbo,LblParts,8,RQTYPERPACKAGE,float,NULL
+dbo,LblParts,9,IQTYPERMASTER,int,NULL
+dbo,LblParts,10,SCONTAINERTYPE,char(10),NULL
+dbo,LblParts,11,BPRINTMASTER,tinyint,NULL
+dbo,LblParts,12,SPARTTYPE,char(4),NOT NULL
+dbo,LblParts,13,RPARTWT,float,NULL
+dbo,LblParts,14,SSUPPLIERCODE,char(17),NULL
+dbo,LblParts,35,DTLASTPRINTED_SQL,datetime2,NULL
+dbo,LblParts,41,DTCUMSTART_SQL,datetime2,NULL
+dbo,LblParts,53,DTCREATED_SQL,datetime2,NULL
+dbo,LblParts,56,DTMODIFIED_SQL,datetime2,NULL
+dbo,Lot,1,LotID,int,NOT NULL,IDENTITY,PK
+dbo,Lot,2,Name,nvarchar(100),NOT NULL
+dbo,Lot,3,Description,nvarchar(max),NULL
+dbo,Lot,5,LotStateID,int,NOT NULL
+dbo,Lot,7,DispositionReason,nvarchar(max),NULL
+dbo,Lot,8,OriginalQuantity,"decimal(18,6)",NOT NULL
+dbo,Lot,9,Quantity,"decimal(18,6)",NOT NULL
+dbo,Lot,10,CreatedTimestamp,datetime,NOT NULL
+dbo,Lot,11,ModifiedTimestamp,datetime,NOT NULL
+dbo,Lot,12,FinishedTimestamp,datetime,NULL
+dbo,Lot,14,WorkOrderID,int,NOT NULL
+dbo,Lot,17,DispositionID,int,NOT NULL
+dbo,Lot,18,IsDeleted,bit,NOT NULL
+dbo,Lot,23,CreatedByUsername,nvarchar(100),NULL
+dbo,Lot,25,InProcessQuantity,"decimal(18,0)",NOT NULL
+dbo,LotAttribute,1,LotAttributeID,int,NOT NULL,IDENTITY,PK
+dbo,LotAttribute,2,Name,nvarchar(100),NOT NULL
+dbo,LotAttribute,5,DisplayName,nvarchar(100),NOT NULL
+dbo,LotAttributeValue,1,LotAttributeValueID,int,NOT NULL,IDENTITY,PK
+dbo,LotAttributeValue,2,LotAttributeID,int,NOT NULL
+dbo,LotAttributeValue,3,LotID,int,NOT NULL
+dbo,LotAttributeValue,4,Value,nvarchar(100),NULL
+dbo,LotBomComponent,1,LotBomComponentID,int,NOT NULL,IDENTITY,PK
+dbo,LotBomComponent,2,CreatedTimestamp,datetime,NOT NULL
+dbo,LotBomComponent,3,LotID,int,NOT NULL
+dbo,LotBomComponent,4,BomComponentID,int,NOT NULL
+dbo,LotBomComponent,5,LotIdentifier,nvarchar(100),NOT NULL
+dbo,LotBomComponent,6,Quantity,int,NOT NULL
+dbo,LotState,1,LotStateID,int,NOT NULL,IDENTITY,PK
+dbo,LotState,2,Name,nvarchar(100),NOT NULL
+dbo,LotState,3,Description,nvarchar(max),NULL
+dbo,LotState,4,DisplayName,nvarchar(100),NOT NULL
+dbo,LotTransaction,1,LotTransactionID,int,NOT NULL,IDENTITY,PK
+dbo,LotTransaction,2,LotID,int,NOT NULL
+dbo,LotTransaction,3,WorkCellID,int,NULL
+dbo,LotTransaction,4,TransactionQuantity,"decimal(18,6)",NOT NULL
+dbo,LotTransaction,5,TotalStartedQuantity,"decimal(18,6)",NOT NULL
+dbo,LotTransaction,6,TotalCompletedQuantity,"decimal(18,6)",NOT NULL
+dbo,LotTransaction,7,TotalScrappedQuantity,"decimal(18,6)",NOT NULL
+dbo,LotTransaction,8,Timestamp,datetime,NOT NULL
+dbo,LotTransaction,9,LotTransactionTypeID,int,NOT NULL
+dbo,LotTransaction,10,TotalAdjustedQuantity,"decimal(18,6)",NOT NULL
+dbo,LotTransaction,11,InProcessQuantity,"decimal(20,6)",NOT NULL
+dbo,LotTransactionType,1,LotTransactionTypeID,int,NOT NULL,IDENTITY,PK
+dbo,LotTransactionType,2,Name,nvarchar(100),NOT NULL
+dbo,LotTransactionType,3,DisplayName,nvarchar(100),NOT NULL
+dbo,LotTransactionType,4,Description,nvarchar(max),NULL
+dbo,Material,1,MaterialID,int,NOT NULL,IDENTITY,PK
+dbo,Material,2,Name,nvarchar(100),NOT NULL
+dbo,Material,3,Description,nvarchar(max),NULL
+dbo,Material,4,CreatedTimestamp,datetime,NOT NULL
+dbo,Material,5,ModifiedTimestamp,datetime,NOT NULL
+dbo,Material,6,MaterialClassID,int,NOT NULL
+dbo,Material,7,Weight,"decimal(9,3)",NULL
+dbo,Material,8,UnitOfMeasureID,int,NULL
+dbo,Material,10,IsSupplyPart,bit,NOT NULL
+dbo,Material,11,SortRecipeNumber,int,NULL
+dbo,Material,12,CountryOfOrigin,nvarchar(2),NULL
+dbo,MaterialClass,1,MaterialClassID,int,NOT NULL,IDENTITY,PK
+dbo,MaterialClass,2,Name,nvarchar(100),NOT NULL
+dbo,MaterialClass,3,Description,nvarchar(max),NULL
+dbo,MaterialClass,4,CreatedTimestamp,datetime,NOT NULL
+dbo,MaterialClass,5,ModifiedTimestamp,datetime,NOT NULL
+dbo,MaterialClass,6,IsFinishedGood,bit,NOT NULL
+dbo,NavigationLevel,1,NavigationLevelID,int,NOT NULL,IDENTITY,PK
+dbo,NavigationLevel,2,Name,nvarchar(100),NOT NULL
+dbo,NavigationLevel,3,Description,nvarchar(max),NULL
+dbo,NavigationLevel,4,CreatedTimestamp,datetime,NOT NULL
+dbo,NavigationLevel,5,ModifiedTimestamp,datetime,NOT NULL
+dbo,NavigationLevel,6,ParentNavigationLevelID,int,NULL
+dbo,NavigationLevel,7,Level,tinyint,NOT NULL
+dbo,NavigationLevel,8,DisplayOrder,tinyint,NULL
+dbo,OpcItem,1,OpcItemID,int,NOT NULL,IDENTITY,PK
+dbo,OpcItem,2,Name,nvarchar(100),NOT NULL
+dbo,OpcItem,3,Description,nvarchar(max),NULL
+dbo,OpcItem,4,CreatedTimestamp,datetime,NOT NULL
+dbo,OpcItem,5,ModifiedTimestamp,datetime,NOT NULL
+dbo,OpcItem,6,OpcServerID,int,NOT NULL
+dbo,OpcItem,7,AccessPath,nvarchar(900),NULL
+dbo,OpcItem,8,ItemID,nvarchar(900),NULL
+dbo,OpcItem,9,Writability,tinyint,NOT NULL
+dbo,OpcItem,10,UpdateRate,int,NOT NULL
+dbo,OpcItem,11,DataType,nvarchar(100),NOT NULL
+dbo,OpcServer,1,OpcServerID,int,NOT NULL,IDENTITY,PK
+dbo,OpcServer,2,Name,nvarchar(100),NOT NULL
+dbo,OpcServer,3,Description,nvarchar(max),NULL
+dbo,OpcServer,4,CreatedTimestamp,datetime,NOT NULL
+dbo,OpcServer,5,ModifiedTimestamp,datetime,NOT NULL
+dbo,OpcServer,6,Host,nvarchar(100),NOT NULL
+dbo,OpcServer,7,ProgramID,nvarchar(260),NOT NULL
+dbo,Privilege,1,PrivilegeID,int,NOT NULL,IDENTITY,PK
+dbo,Privilege,2,Name,nvarchar(100),NOT NULL
+dbo,Privilege,3,Description,nvarchar(max),NULL
+dbo,Privilege,4,DisplayName,nvarchar(100),NOT NULL
+dbo,ProductionLine,1,ProductionLineID,int,NOT NULL,IDENTITY,PK
+dbo,ProductionLine,2,Name,nvarchar(100),NOT NULL
+dbo,ProductionLine,3,Description,nvarchar(max),NULL
+dbo,ProductionLine,4,CreatedTimestamp,datetime,NOT NULL
+dbo,ProductionLine,5,ModifiedTimestamp,datetime,NOT NULL
+dbo,ProductionLine,6,AreaID,int,NOT NULL
+dbo,ProductionOrder,1,ProductionOrderID,int,NOT NULL,IDENTITY,PK
+dbo,ProductionOrder,2,Name,nvarchar(100),NOT NULL
+dbo,ProductionOrder,3,Description,nvarchar(max),NULL
+dbo,ProductionOrder,4,CreatedTimestamp,datetime,NOT NULL
+dbo,ProductionOrder,5,ModifiedTimestamp,datetime,NOT NULL
+dbo,ProductionOrder,6,ProductionLineID,int,NOT NULL
+dbo,ProductionOrder,7,BomID,int,NOT NULL
+dbo,ProductionOrder,8,ProductionOrderStateID,int,NOT NULL
+dbo,ProductionOrder,9,Sequence,int,NOT NULL
+dbo,ProductionOrder,10,RequiredQuantity,"decimal(18,6)",NOT NULL
+dbo,ProductionOrder,11,AdjustedQuantity,"decimal(18,6)",NOT NULL
+dbo,ProductionOrder,12,SuspendAtQuantity,"decimal(18,6)",NOT NULL
+dbo,ProductionOrder,13,CompletedQuantity,"decimal(18,6)",NULL
+dbo,ProductionOrder,14,RemainingQuantity,"decimal(19,6)",NOT NULL
+dbo,ProductionOrder,15,IdentifierFormatID,int,NULL
+dbo,ProductionOrderState,1,ProductionOrderStateID,int,NOT NULL,IDENTITY,PK
+dbo,ProductionOrderState,2,Name,nvarchar(100),NOT NULL
+dbo,ProductionOrderState,3,Description,nvarchar(max),NULL
+dbo,ProductionOrderState,4,DisplayName,nvarchar(100),NOT NULL
+dbo,Report,1,ReportID,int,NOT NULL,IDENTITY,PK
+dbo,Report,2,Name,nvarchar(100),NOT NULL
+dbo,Report,3,Description,nvarchar(max),NULL
+dbo,Report,4,Url,nvarchar(150),NOT NULL
+dbo,Role,1,RoleID,int,NOT NULL,IDENTITY,PK
+dbo,Role,2,Name,nvarchar(100),NOT NULL
+dbo,Role,3,Description,nvarchar(max),NULL
+dbo,RolePrivilege,1,RolePrivilegeID,int,NOT NULL,IDENTITY,PK
+dbo,RolePrivilege,2,RoleID,int,NOT NULL
+dbo,RolePrivilege,3,PrivilegeID,int,NOT NULL
+dbo,SerializedItem,1,SerializedItemID,int,NOT NULL,IDENTITY,PK
+dbo,SerializedItem,2,Name,nvarchar(100),NOT NULL
+dbo,SerializedItem,3,Description,nvarchar(max),NULL
+dbo,SerializedItem,4,CreatedTimestamp,datetime,NOT NULL
+dbo,SerializedItem,5,ModifiedTimestamp,datetime,NOT NULL
+dbo,SerializedItem,7,WorkOrderID,int,NOT NULL
+dbo,SerializedItem,8,SerializedItemStateID,int,NOT NULL
+dbo,SerializedItem,10,DispositionReason,nvarchar(max),NULL
+dbo,SerializedItem,11,DispositionID,int,NULL
+dbo,SerializedItemBomComponent,1,SerializedItemBomComponentID,int,NOT NULL,IDENTITY,PK
+dbo,SerializedItemBomComponent,2,CreatedTimestamp,datetime,NOT NULL
+dbo,SerializedItemBomComponent,3,SerializedItemID,int,NOT NULL
+dbo,SerializedItemBomComponent,4,BomComponentID,int,NOT NULL
+dbo,SerializedItemBomComponent,5,LotIdentifier,nvarchar(50),NOT NULL
+dbo,SerializedItemBomComponent,6,Quantity,int,NOT NULL
+dbo,SerializedItemState,1,SerializedItemStateID,int,NOT NULL,IDENTITY,PK
+dbo,SerializedItemState,2,Name,nvarchar(100),NOT NULL
+dbo,SerializedItemState,3,Description,nvarchar(max),NULL
+dbo,SerializedItemState,4,DisplayName,nvarchar(100),NOT NULL
+dbo,SerializedItemTransaction,1,SerializedItemTransactionID,int,NOT NULL,IDENTITY,PK
+dbo,SerializedItemTransaction,2,SerializedItemID,int,NOT NULL
+dbo,SerializedItemTransaction,3,WorkCellID,int,NOT NULL
+dbo,SerializedItemTransaction,5,BeginTimestamp,datetime,NOT NULL
+dbo,SerializedItemTransaction,6,EndTimestamp,datetime,NULL
+dbo,SerializedItemTransaction,7,SerializedItemTransactionTypeID,int,NOT NULL
+dbo,SerializedItemTransactionType,1,SerializedItemTransactionTypeID,int,NOT NULL,IDENTITY,PK
+dbo,SerializedItemTransactionType,2,Name,nvarchar(100),NOT NULL
+dbo,SerializedItemTransactionType,3,DisplayName,nvarchar(100),NOT NULL
+dbo,SerializedItemTransactionType,4,Description,nvarchar(max),NULL
+dbo,Site,1,SiteID,int,NOT NULL,IDENTITY,PK
+dbo,Site,2,Name,nvarchar(100),NOT NULL
+dbo,Site,3,Description,nvarchar(max),NULL
+dbo,Site,4,CreatedTimestamp,datetime,NOT NULL
+dbo,Site,5,ModifiedTimestamp,datetime,NOT NULL
+dbo,SubLot,1,SubLotID,int,NOT NULL,IDENTITY,PK
+dbo,SubLot,2,LotID,int,NOT NULL
+dbo,SubLot,3,Number,int,NOT NULL
+dbo,SubLot,4,Name,nvarchar(100),NOT NULL
+dbo,SubLot,5,Quantity,"decimal(18,6)",NOT NULL
+dbo,SubLot,6,IsAllocated,bit,NOT NULL
+dbo,SubLotTransaction,1,SubLotTransactionID,int,NOT NULL,IDENTITY,PK
+dbo,SubLotTransaction,2,SubLotID,int,NOT NULL
+dbo,SubLotTransaction,3,WorkCellID,int,NOT NULL
+dbo,SubLotTransaction,4,Timestamp,datetime,NOT NULL
+dbo,SubLotTransaction,5,SubLotTransactionTypeID,int,NOT NULL
+dbo,SubLotTransactionType,1,SubLotTransactionTypeID,int,NOT NULL,IDENTITY,PK
+dbo,SubLotTransactionType,2,Name,nvarchar(100),NOT NULL
+dbo,SubLotTransactionType,3,DisplayName,nvarchar(100),NOT NULL
+dbo,SubLotTransactionType,4,Description,nvarchar(max),NULL
+dbo,SystemLog,1,SystemLogID,int,NOT NULL,IDENTITY,PK
+dbo,SystemLog,2,Level,char(1),NOT NULL
+dbo,SystemLog,3,Timestamp,datetime,NOT NULL
+dbo,SystemLog,4,Source,nvarchar(100),NOT NULL
+dbo,SystemLog,5,EventID,nvarchar(100),NULL
+dbo,SystemLog,6,Category,nvarchar(100),NULL
+dbo,SystemLog,7,MachineName,nvarchar(256),NOT NULL
+dbo,SystemLog,8,User,nvarchar(50),NULL
+dbo,SystemLog,9,Details,nvarchar(max),NULL
+dbo,SystemLog,10,Location,nvarchar(100),NULL
+dbo,UnitOfMeasure,1,UnitOfMeasureID,int,NOT NULL,IDENTITY,PK
+dbo,UnitOfMeasure,2,Name,nvarchar(100),NOT NULL
+dbo,UnitOfMeasure,3,Description,nvarchar(max),NULL
+dbo,UnitOfMeasure,6,PluralName,nvarchar(100),NOT NULL
+dbo,UnitOfMeasure,7,Abbreviation,nvarchar(100),NOT NULL
+dbo,UnitOfMeasure,8,DisplayOrder,tinyint,NOT NULL
+dbo,UserInterfaceScript,1,UserInterfaceScriptID,int,NOT NULL,IDENTITY,PK
+dbo,UserInterfaceScript,2,Name,nvarchar(100),NOT NULL
+dbo,UserInterfaceScript,3,Description,nvarchar(max),NULL
+dbo,UserInterfaceScript,4,Script,nvarchar(max),NULL
+dbo,UserInterfaceScript,6,IsDeleted,bit,NOT NULL
+dbo,UserInterfaceScriptReference,1,UserInterfaceScriptReferenceID,int,NOT NULL,IDENTITY,PK
+dbo,UserInterfaceScriptReference,2,UserInterfaceScriptID,int,NOT NULL
+dbo,UserInterfaceScriptReference,3,Reference,nvarchar(260),NOT NULL
+dbo,Version,1,Id,int,NOT NULL,IDENTITY,PK
+dbo,Version,2,Version,nvarchar(100),NOT NULL
+dbo,Version,3,Timestamp,datetime,NOT NULL
+dbo,Version,4,Name,nvarchar(100),NULL
+dbo,VisionSystemEventLog,1,VisionSystemEventLogID,int,NOT NULL,IDENTITY,PK
+dbo,VisionSystemEventLog,2,Timestamp,datetime,NOT NULL
+dbo,VisionSystemEventLog,3,VisionSystemEventTypeID,int,NOT NULL
+dbo,VisionSystemEventLog,4,WorkCellID,int,NOT NULL
+dbo,VisionSystemEventLog,5,ContainerNumber,nvarchar(100),NULL
+dbo,VisionSystemEventLog,6,PartNumber,nvarchar(100),NOT NULL
+dbo,VisionSystemEventLog,7,ImageFileNames,nvarchar(100),NULL
+dbo,VisionSystemEventLog,8,TrayUnlockOverrideUser,nvarchar(50),NULL
+dbo,VisionSystemEventLog,9,Details,nvarchar(max),NULL
+dbo,VisionSystemEventType,1,VisionSystemEventTypeID,int,NOT NULL,IDENTITY,PK
+dbo,VisionSystemEventType,2,Name,nvarchar(100),NOT NULL
+dbo,VisionSystemEventType,3,DisplayName,nvarchar(100),NOT NULL
+dbo,WorkCell,1,WorkCellID,int,NOT NULL,IDENTITY,PK
+dbo,WorkCell,2,Name,nvarchar(100),NOT NULL
+dbo,WorkCell,3,Description,nvarchar(max),NULL
+dbo,WorkCell,4,CreatedTimestamp,datetime,NOT NULL
+dbo,WorkCell,5,ModifiedTimestamp,datetime,NOT NULL
+dbo,WorkCell,6,ProductionLineID,int,NOT NULL
+dbo,WorkCell,7,TrackingMode,tinyint,NOT NULL
+dbo,WorkCell,8,RequireCastPartAllocationOverride,bit,NOT NULL
+dbo,WorkCellLotAttribute,1,WorkCellLotAttributeID,int,NOT NULL,IDENTITY,PK
+dbo,WorkCellLotAttribute,2,WorkCellID,int,NOT NULL
+dbo,WorkCellLotAttribute,3,LotAttributeID,int,NOT NULL
+dbo,WorkCellMaterial,1,WorkCellMaterialID,int,NOT NULL,IDENTITY,PK
+dbo,WorkCellMaterial,2,WorkCellID,int,NOT NULL
+dbo,WorkCellMaterial,3,MaterialID,int,NOT NULL
+dbo,WorkCellMaterial,4,MinQuantity,"decimal(18,6)",NULL
+dbo,WorkCellMaterial,5,MaxQuantity,"decimal(18,6)",NULL
+dbo,WorkCellMaterial,6,DefaultQuantity,"decimal(18,6)",NULL
+dbo,WorkCellMaterial,7,IsConsumptionPoint,bit,NOT NULL
+dbo,WorkCellMaterial,8,IsDeleted,bit,NOT NULL
+dbo,WorkCellMaterialLot,1,WorkCellMaterialLotID,int,NOT NULL,IDENTITY,PK
+dbo,WorkCellMaterialLot,2,WorkCellMaterialID,int,NOT NULL
+dbo,WorkCellMaterialLot,4,State,nvarchar(50),NOT NULL
+dbo,WorkCellMaterialLot,5,Sequence,int,NOT NULL
+dbo,WorkCellMaterialLot,6,AddedTimestamp,datetime,NOT NULL
+dbo,WorkCellMaterialLot,7,ModifiedTimestamp,datetime,NOT NULL
+dbo,WorkCellMaterialLot,8,ModifiedByUsername,nvarchar(100),NULL
+dbo,WorkCellMaterialLot,9,Quantity,"decimal(18,6)",NOT NULL
+dbo,WorkCellMaterialLot,10,OriginalQuantity,"decimal(18,6)",NOT NULL
+dbo,WorkCellMaterialLot,11,LotIdentifier,nvarchar(100),NOT NULL
+dbo,WorkOrder,1,WorkOrderID,int,NOT NULL,IDENTITY,PK
+dbo,WorkOrder,2,CreatedTimestamp,datetime,NOT NULL
+dbo,WorkOrder,3,ModifiedTimestamp,datetime,NOT NULL
+dbo,WorkOrder,4,ProductionOrderID,int,NOT NULL
+dbo,WorkOrder,5,BomComponentID,int,NOT NULL
+dbo,WorkOrder,6,WorkCellID,int,NOT NULL
+dbo,WorkOrder,7,WorkOrderStateID,int,NOT NULL
+dbo,WorkOrder,8,Sequence,int,NOT NULL
+dbo,WorkOrder,9,IsActive,bit,NOT NULL
+dbo,WorkOrder,10,RequiredQuantity,"decimal(18,6)",NOT NULL
+dbo,WorkOrder,11,AdjustedQuantity,"decimal(18,6)",NOT NULL
+dbo,WorkOrder,12,SuspendAtQuantity,"decimal(18,6)",NOT NULL
+dbo,WorkOrder,13,CompletedQuantity,"decimal(18,6)",NOT NULL
+dbo,WorkOrder,14,RemainingQuantity,"decimal(19,6)",NOT NULL
+dbo,WorkOrder,15,GroupTargetQuantity,int,NULL
+dbo,WorkOrder,16,IdentifierFormatID,int,NULL
+dbo,WorkOrder,17,Customer,nvarchar(8),NULL
+dbo,WorkOrder,18,ReturnableDunnageCode,nvarchar(64),NULL
+dbo,WorkOrder,19,TrayQuantity,int,NULL
+dbo,WorkOrder,20,IsCameraProcessingEnabled,bit,NOT NULL
+dbo,WorkOrder,21,IsScaleProcessingEnabled,bit,NOT NULL
+dbo,WorkOrder,22,GroupTargetWeight,"decimal(9,2)",NULL
+dbo,WorkOrder,23,GroupTargetWeightTolerance,"decimal(9,2)",NULL
+dbo,WorkOrder,24,TargetWeightUnitOfMeasureID,int,NULL
+dbo,WorkOrder,25,RecipeNumber,int,NULL
+dbo,WorkOrderState,1,WorkOrderStateID,int,NOT NULL,IDENTITY,PK
+dbo,WorkOrderState,2,Name,nvarchar(100),NOT NULL
+dbo,WorkOrderState,3,Description,nvarchar(max),NULL
+dbo,WorkOrderState,4,DisplayName,nvarchar(100),NOT NULL
+dbo,Workstation,1,WorkstationID,int,NOT NULL,IDENTITY,PK
+dbo,Workstation,2,Name,nvarchar(100),NOT NULL
+dbo,Workstation,3,Description,nvarchar(max),NULL
+dbo,Workstation,4,CreatedTimestamp,datetime,NOT NULL
+dbo,Workstation,5,ModifiedTimestamp,datetime,NOT NULL
+dbo,Workstation,6,WorkCellID,int,NOT NULL
+dbo,Workstation,7,MachineName,nvarchar(100),NOT NULL
+dbo,Workstation,8,AutoLogonUsername,nvarchar(100),NULL
+dbo,Workstation,9,AutoLogonPassword,nvarchar(100),NULL
+dbo,Workstation,10,AutomationViewConfigurationID,int,NULL
+dbo,Workstation,11,NavigationLevelID,int,NULL
+dbo,Workstation,12,DisplayOrder,tinyint,NULL
+dbo,Workstation,13,MaterialAllocationLotLookupEnabled,bit,NOT NULL
+dbo,WorkstationDashboardConfiguration,1,WorkstationDashboardConfigurationID,int,NOT NULL,IDENTITY,PK
+dbo,WorkstationDashboardConfiguration,2,WorkstationID,int,NOT NULL
+dbo,WorkstationDashboardConfiguration,3,DisplayOrder,tinyint,NOT NULL
+dbo,WorkstationDashboardConfiguration,4,LotCreateDashboardConfigurationID,int,NULL
+dbo,WorkstationDashboardConfiguration,5,LotTrackingDashboardConfigurationID,int,NULL
+dbo,WorkstationDashboardConfiguration,6,WorkOrderDashboardConfigurationID,int,NULL
+dbo,WorkstationDashboardConfiguration,8,FinalAssemblyDashboardConfigurationID,int,NULL
+dbo,WorkstationDashboardConfiguration,9,CreateAllocationDashboardConfigurationID,int,NULL
+dbo,WorkstationDashboardConfiguration,10,SortDashboardConfigurationID,int,NULL
+dbo,WorkstationDashboardConfiguration,11,MaterialLabelPrintDashboardConfigurationID,int,NULL
+mro,flx_ClientConfiguration,1,ClientConfigurationID,int,NOT NULL,IDENTITY,PK
+mro,flx_ClientConfiguration,2,Name,varchar(100),NOT NULL
+mro,flx_ClientConfiguration,3,Description,varchar(max),NULL
+mro,flx_ClientConfiguration,4,InternalName,varchar(100),NOT NULL
+mro,flx_ClientConfiguration,5,InServiceTimestamp,datetime,NOT NULL
+mro,flx_ClientConfiguration,6,Version,varchar(50),NOT NULL
+mro,flx_IMTRXDST_SQL,26,A4GLIdentity,"numeric(9,0)",NOT NULL,IDENTITY
+mro,flx_Online_Mode,4,A4GLIdentity,"numeric(9,0)",NOT NULL,IDENTITY
+mro,flx_SystemLog,1,SystemLogID,int,NOT NULL,IDENTITY,PK
+offsite,Container,1,ContainerID,int,NOT NULL,IDENTITY,PK
+offsite,Container,2,Name,nvarchar(100),NOT NULL
+offsite,Container,3,MaterialName,nvarchar(100),NOT NULL
+offsite,Container,4,Quantity,"decimal(18,6)",NOT NULL
+offsite,Container,5,CreatedTimestamp,datetime,NOT NULL
+offsite,Customer,1,CustomerID,int,NOT NULL,IDENTITY,PK
+offsite,Customer,2,Name,nvarchar(100),NOT NULL
+offsite,Customer,3,DisplayName,nvarchar(100),NOT NULL
+offsite,Customer,4,CreatedTimestamp,datetime,NOT NULL
+offsite,Customer,5,ModifiedTimestamp,datetime,NOT NULL
+offsite,LabelPrintingConfiguration,1,LabelPrintingConfigurationID,int,NOT NULL,IDENTITY,PK
+offsite,Workstation,1,WorkstationID,int,NOT NULL,IDENTITY,PK
+ui,AutomationViewConfiguration,1,AutomationViewConfigurationID,int,NOT NULL,IDENTITY,PK
+ui,AutomationViewGroup,1,AutomationViewGroupID,int,NOT NULL,IDENTITY,PK
+ui,AutomationViewItem,1,AutomationViewItemID,int,NOT NULL,IDENTITY
+ui,AutomationViewItem,2,AutomationViewGroupID,int,NOT NULL,,PK
+ui,AutomationViewItem,3,OPCItemID,int,NOT NULL,,PK
