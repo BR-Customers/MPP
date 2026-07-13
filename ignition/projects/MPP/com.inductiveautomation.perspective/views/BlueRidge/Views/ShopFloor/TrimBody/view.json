@@ -1,6 +1,6 @@
 {
   "custom": {
-    "activeLotId": null,
+    "activeLotId": "",
     "activeLotName": null,
     "destValue": null,
     "inScan": "",
@@ -8,10 +8,10 @@
     "refreshToken": 0,
     "scrapCount": null,
     "shotCount": null,
-    "trimState": "in"
+    "trimState": "out"
   },
   "params": {
-    "areaId": null,
+    "areaId": 37,
     "cellPickerEnabled": false
   },
   "propConfig": {
@@ -75,10 +75,10 @@
                 "propConfig": {
                   "props.text": {
                     "binding": {
-                      "type": "expr",
                       "config": {
-                        "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"No cell selected  ·  Trim Shop Area\", {session.custom.cell.name} + \"  ·  Trim Shop Area\")"
-                      }
+                        "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} \u003d \"\", \"No cell selected  ·  Trim Shop Area\", {session.custom.cell.name} + \"  ·  Trim Shop Area\")"
+                      },
+                      "type": "expr"
                     }
                   }
                 },
