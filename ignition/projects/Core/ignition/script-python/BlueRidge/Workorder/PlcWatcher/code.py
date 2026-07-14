@@ -107,13 +107,15 @@ def isRisingEdge(previousValue, currentValue):
 
 # ---- interface logging (FDS-01-014) -----------------------------------------
 def logInterface(deviceCode, description, requestPayload=None,
-                 responsePayload=None, ok=True, errorDescription=None):
+                 responsePayload=None, ok=True, errorDescription=None,
+                 logEventTypeCode="PlcHandshake"):
     """Log one handshake transaction to Audit.InterfaceLog. Best-effort -- never
-       raises into the watcher."""
+       raises into the watcher. logEventTypeCode defaults to PlcHandshake; the
+       tray watcher passes PlcLineStop on a vision mismatch (FDS-10-005/010)."""
     params = {
         "systemName":       "%s:%s" % (_SYSTEM_NAME, deviceCode or "?"),
         "direction":        "Inbound",
-        "logEventTypeCode": "PlcHandshake",
+        "logEventTypeCode": logEventTypeCode,
         "description":      description,
         "requestPayload":   requestPayload,
         "responsePayload":  responsePayload,
