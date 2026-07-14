@@ -1,0 +1,592 @@
+{
+  "custom": {
+    "selectedTerminalId": "",
+    "mappings": [],
+    "mode": "view",
+    "editDraft": {
+      "id": null,
+      "plcDeviceTypeId": null,
+      "deviceCode": "",
+      "udtInstancePath": "",
+      "sortOrder": null
+    }
+  },
+  "params": {},
+  "props": {
+    "defaultSize": {
+      "width": 1100,
+      "height": 720
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "gap": "10px",
+        "padding": "12px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "justify": "space-between",
+          "style": {
+            "gap": "12px",
+            "padding": "8px 4px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "Title"
+            },
+            "props": {
+              "style": {
+                "classes": "screen-title"
+              },
+              "text": "PLC Device Mapping"
+            }
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "TerminalPick"
+            },
+            "props": {
+              "direction": "row",
+              "alignItems": "center",
+              "style": {
+                "gap": "8px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "TerminalLbl"
+                },
+                "props": {
+                  "text": "Terminal:"
+                }
+              },
+              {
+                "type": "ia.input.dropdown",
+                "version": 0,
+                "meta": {
+                  "name": "TerminalDropdown"
+                },
+                "props": {
+                  "placeholder": {
+                    "text": "Select a terminal...",
+                    "color": "",
+                    "icon": {
+                      "path": "",
+                      "color": ""
+                    }
+                  }
+                },
+                "propConfig": {
+                  "props.options": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "runScript(\"BlueRidge.Location.TerminalPlcDevice.getTerminalsForDropdown\", 0)"
+                      }
+                    }
+                  }
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "script",
+                      "scope": "G",
+                      "config": {
+                        "script": "\tself.view.rootContainer.selectTerminal(self.props.value)"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "grow": 1,
+          "basis": "0"
+        },
+        "props": {
+          "direction": "row",
+          "style": {
+            "gap": "12px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "MappingsPanel"
+            },
+            "position": {
+              "grow": 1,
+              "basis": "0"
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "8px",
+                "padding": "8px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "MappingsHdr"
+                },
+                "props": {
+                  "style": {
+                    "classes": "screen-subtitle"
+                  },
+                  "text": "Mappings for the selected terminal"
+                }
+              },
+              {
+                "type": "ia.display.flex-repeater",
+                "meta": {
+                  "name": "MappingsRepeater"
+                },
+                "position": {
+                  "grow": 1,
+                  "basis": "0"
+                },
+                "propConfig": {
+                  "props.instances": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "path": "view.custom.mappings"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "elementPosition": {
+                    "basis": "auto"
+                  },
+                  "path": "BlueRidge/Components/PlcDeviceMappingRow",
+                  "style": {
+                    "gap": "6px",
+                    "overflowY": "auto"
+                  },
+                  "useDefaultViewHeight": false,
+                  "useDefaultViewWidth": false
+                }
+              },
+              {
+                "type": "ia.input.button",
+                "version": 0,
+                "meta": {
+                  "name": "AddMappingBtn"
+                },
+                "props": {
+                  "text": "+ Add mapping",
+                  "style": {
+                    "classes": "btn"
+                  }
+                },
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "type": "script",
+                      "scope": "G",
+                      "config": {
+                        "script": "\tself.view.rootContainer.newDraft()"
+                      }
+                    }
+                  }
+                },
+                "propConfig": {
+                  "props.enabled": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.selectedTerminalId} != \"\""
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "EditForm"
+            },
+            "position": {
+              "basis": "340px",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "10px",
+                "padding": "8px"
+              }
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.custom.mode} != \"view\""
+                  }
+                }
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "FormHdr"
+                },
+                "props": {
+                  "style": {
+                    "classes": "screen-subtitle"
+                  },
+                  "text": "Mapping"
+                }
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "TypeField"
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "gap": "4px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "TypeFieldLbl"
+                    },
+                    "props": {
+                      "text": "Device Type"
+                    }
+                  },
+                  {
+                    "type": "ia.input.dropdown",
+                    "version": 0,
+                    "meta": {
+                      "name": "TypeDropdown"
+                    },
+                    "props": {
+                      "placeholder": {
+                        "text": "Select...",
+                        "color": "",
+                        "icon": {
+                          "path": "",
+                          "color": ""
+                        }
+                      }
+                    },
+                    "propConfig": {
+                      "props.value": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.editDraft.plcDeviceTypeId",
+                            "bidirectional": true
+                          }
+                        }
+                      },
+                      "props.options": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "runScript(\"BlueRidge.Location.TerminalPlcDevice.getDeviceTypesForDropdown\", 0)"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "DeviceCodeField"
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "gap": "4px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "DeviceCodeFieldLbl"
+                    },
+                    "props": {
+                      "text": "Device Code"
+                    }
+                  },
+                  {
+                    "type": "ia.input.text-field",
+                    "version": 0,
+                    "meta": {
+                      "name": "DeviceCodeInput"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.editDraft.deviceCode",
+                            "bidirectional": true
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "InstanceField"
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "gap": "4px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "InstanceFieldLbl"
+                    },
+                    "props": {
+                      "text": "UDT Instance Path"
+                    }
+                  },
+                  {
+                    "type": "ia.input.dropdown",
+                    "version": 0,
+                    "meta": {
+                      "name": "InstanceDropdown"
+                    },
+                    "props": {
+                      "placeholder": {
+                        "text": "Select...",
+                        "color": "",
+                        "icon": {
+                          "path": "",
+                          "color": ""
+                        }
+                      }
+                    },
+                    "propConfig": {
+                      "props.value": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.editDraft.udtInstancePath",
+                            "bidirectional": true
+                          }
+                        }
+                      },
+                      "props.options": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "runScript(\"BlueRidge.Location.TerminalPlcDevice.getInstancePathOptions\", 0)"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "SortField"
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "gap": "4px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "SortFieldLbl"
+                    },
+                    "props": {
+                      "text": "Sort Order"
+                    }
+                  },
+                  {
+                    "type": "ia.input.text-field",
+                    "version": 0,
+                    "meta": {
+                      "name": "SortInput"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.editDraft.sortOrder",
+                            "bidirectional": true
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "FormActions"
+                },
+                "props": {
+                  "direction": "row",
+                  "style": {
+                    "gap": "8px"
+                  }
+                },
+                "children": [
+                  {
+                    "type": "ia.input.button",
+                    "version": 0,
+                    "meta": {
+                      "name": "SaveBtn"
+                    },
+                    "props": {
+                      "text": "Save",
+                      "style": {
+                        "classes": "btn btn-primary"
+                      }
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.rootContainer.save()"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.input.button",
+                    "version": 0,
+                    "meta": {
+                      "name": "CancelBtn"
+                    },
+                    "props": {
+                      "text": "Cancel",
+                      "style": {
+                        "classes": "btn"
+                      }
+                    },
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "type": "script",
+                          "scope": "G",
+                          "config": {
+                            "script": "\tself.view.rootContainer.cancel()"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "selectTerminal",
+          "params": [
+            "terminalId"
+          ],
+          "script": "\tself.view.custom.selectedTerminalId = terminalId\n\tself.view.custom.mappings = BlueRidge.Location.TerminalPlcDevice.getMappingsForTerminal(terminalId)\n\tself.view.custom.mode = \"view\""
+        },
+        {
+          "name": "newDraft",
+          "params": [],
+          "script": "\tself.view.custom.editDraft = {\"id\": None, \"plcDeviceTypeId\": None, \"deviceCode\": \"\", \"udtInstancePath\": \"\", \"sortOrder\": None}\n\tself.view.custom.mode = \"create\""
+        },
+        {
+          "name": "cancel",
+          "params": [],
+          "script": "\tself.view.custom.mode = \"view\""
+        },
+        {
+          "name": "save",
+          "params": [],
+          "script": "\td = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft) or {}\n\td[\"terminalLocationId\"] = self.view.custom.selectedTerminalId\n\tresult = BlueRidge.Location.TerminalPlcDevice.save(d)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle=\"Mapping saved\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.mode = \"view\"\n\t\tself.view.custom.mappings = BlueRidge.Location.TerminalPlcDevice.getMappingsForTerminal(self.view.custom.selectedTerminalId)"
+        }
+      ],
+      "messageHandlers": [
+        {
+          "messageType": "plcMappingEdit",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tp = payload or {}\n\tself.view.custom.editDraft = {\"id\": p.get(\"id\"), \"plcDeviceTypeId\": p.get(\"plcDeviceTypeId\"), \"deviceCode\": p.get(\"deviceCode\"), \"udtInstancePath\": p.get(\"udtInstancePath\"), \"sortOrder\": p.get(\"sortOrder\")}\n\tself.view.custom.mode = \"edit\""
+        },
+        {
+          "messageType": "plcMappingDeprecate",
+          "pageScope": true,
+          "sessionScope": false,
+          "viewScope": false,
+          "script": "\tp = payload or {}\n\tresult = BlueRidge.Location.TerminalPlcDevice.deprecate(p.get(\"id\"))\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle=\"Mapping removed\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.mappings = BlueRidge.Location.TerminalPlcDevice.getMappingsForTerminal(self.view.custom.selectedTerminalId)"
+        }
+      ]
+    }
+  }
+}
