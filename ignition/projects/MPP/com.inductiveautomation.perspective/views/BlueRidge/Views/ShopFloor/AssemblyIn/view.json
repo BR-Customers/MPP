@@ -1,95 +1,81 @@
 {
   "custom": {
-    "queue": [],
     "refreshToken": 0,
-    "scanInput": "",
-    "queueByPartText": ""
+    "scanInput": ""
   },
   "params": {},
   "propConfig": {
     "custom.queue": {
       "binding": {
-        "type": "expr",
         "config": {
-          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}), \"\")"
+          "expression": "if({view.custom.refreshToken} \u003e\u003d 0 \u0026\u0026 !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}), \"\")"
         },
         "transforms": [
           {
-            "type": "script",
-            "code": "\treturn [{\"sourceLotId\": r.get(\"Id\"), \"lotName\": r.get(\"LotName\") or \"\", \"sourceItem\": r.get(\"ItemPartNumber\") or \"\", \"pieceCount\": r.get(\"PieceCount\") or 0, \"arrival\": str(r.get(\"LastMovementAt\") or \"\"), \"position\": i + 1, \"lotStatusCode\": r.get(\"LotStatusCode\") or \"\"} for i, r in enumerate(value or [])]"
+            "code": "\treturn [{\"sourceLotId\": r.get(\"Id\"), \"lotName\": r.get(\"LotName\") or \"\", \"sourceItem\": r.get(\"ItemPartNumber\") or \"\", \"pieceCount\": r.get(\"PieceCount\") or 0, \"arrival\": str(r.get(\"LastMovementAt\") or \"\"), \"position\": i + 1, \"lotStatusCode\": r.get(\"LotStatusCode\") or \"\"} for i, r in enumerate(value or [])]",
+            "type": "script"
           }
-        ]
+        ],
+        "type": "expr"
       }
     },
     "custom.queueByPartText": {
       "binding": {
-        "type": "property",
         "config": {
           "path": "view.custom.queue"
         },
         "transforms": [
           {
-            "type": "script",
-            "code": "\ttotals = {}\n\torder = []\n\tfor r in (value or []):\n\t\tk = r.get(\"sourceItem\") or \"?\"\n\t\tif k not in totals:\n\t\t\ttotals[k] = 0\n\t\t\torder.append(k)\n\t\ttotals[k] = totals[k] + (r.get(\"pieceCount\") or 0)\n\treturn \"   |   \".join([\"%s: %d pcs\" % (k, totals[k]) for k in order])"
+            "code": "\ttotals \u003d {}\n\torder \u003d []\n\tfor r in (value or []):\n\t\tk \u003d r.get(\"sourceItem\") or \"?\"\n\t\tif k not in totals:\n\t\t\ttotals[k] \u003d 0\n\t\t\torder.append(k)\n\t\ttotals[k] \u003d totals[k] + (r.get(\"pieceCount\") or 0)\n\treturn \"   |   \".join([\"%s: %d pcs\" % (k, totals[k]) for k in order])",
+            "type": "script"
           }
-        ]
+        ],
+        "type": "property"
       }
     }
   },
+  "props": {},
   "root": {
-    "scripts": {
-      "customMethods": [],
-      "extensionFunctions": null,
-      "messageHandlers": [
-        {
-          "messageType": "inventoryChanged",
-          "pageScope": true,
-          "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
-          "sessionScope": false,
-          "viewScope": false
-        }
-      ]
-    },
-    "type": "ia.container.flex",
-    "meta": {
-      "name": "root"
-    },
-    "props": {
-      "direction": "column",
-      "style": {
-        "classes": "canvas",
-        "gap": "16px",
-        "overflowY": "auto",
-        "padding": "24px"
-      }
-    },
-    "events": {
-      "system": {
-        "onStartup": {
-          "type": "script",
-          "scope": "G",
-          "config": {
-            "script": "\t# Dedicated-flavor context (FDS-02-010): bind the cell to the terminal's parent line.\n\tt = self.session.custom.terminal\n\tif t and t.get(\"zoneLocationId\"):\n\t\tself.session.custom.cell = {\"locationId\": t.get(\"zoneLocationId\"), \"code\": t.get(\"zoneName\") or \"\", \"name\": t.get(\"zoneName\") or \"\"}\n\ttry:\n\t\tself.session.custom.presence.policy = \"confirm\"\n\texcept:\n\t\tself.session.custom.presence = {\"policy\": \"confirm\"}\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
-          }
-        }
-      }
-    },
     "children": [
       {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "Header"
-        },
-        "props": {
-          "style": {
-            "gap": "16px",
-            "overflow": "hidden"
-          },
-          "alignItems": "center"
-        },
         "children": [
           {
-            "type": "ia.container.flex",
+            "children": [
+              {
+                "meta": {
+                  "name": "Title"
+                },
+                "props": {
+                  "style": {
+                    "fontSize": "22px",
+                    "fontWeight": 700
+                  },
+                  "text": "Assembly IN"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Subtitle"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} \u003d \"\", \"No cell bound\", {session.custom.cell.name}) + \"  ·  Scan machined components into this cell\u0027s queue\""
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  }
+                },
+                "type": "ia.display.label"
+              }
+            ],
             "meta": {
               "name": "TitleBlock"
             },
@@ -99,54 +85,22 @@
             "props": {
               "direction": "column"
             },
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "Title"
-                },
-                "props": {
-                  "text": "Assembly IN",
-                  "style": {
-                    "fontSize": "22px",
-                    "fontWeight": 700
-                  }
-                }
-              },
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "Subtitle"
-                },
-                "propConfig": {
-                  "props.text": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"No cell bound\", {session.custom.cell.name}) + \"  ·  Scan machined components into this cell's queue\""
-                      }
-                    }
-                  }
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-kpi-sub"
-                  }
-                }
-              }
-            ]
+            "type": "ia.container.flex"
           },
           {
-            "type": "ia.display.label",
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dTrue, overlayDismiss\u003dTrue)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
             "meta": {
               "name": "OperatorLabel"
-            },
-            "props": {
-              "text": "",
-              "style": {
-                "classes": "pf-kpi-sub",
-                "cursor": "pointer"
-              }
             },
             "position": {
               "shrink": 0
@@ -154,31 +108,27 @@
             "propConfig": {
               "props.text": {
                 "binding": {
-                  "type": "expr",
                   "config": {
-                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
-                  }
+                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} \u003d \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
+                  },
+                  "type": "expr"
                 }
               }
             },
-            "events": {
-              "dom": {
-                "onClick": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=True, overlayDismiss=True)"
-                  }
-                }
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub",
+                "cursor": "pointer"
               }
-            }
+            },
+            "type": "ia.display.label"
           },
           {
             "events": {
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                    "script": "\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
                   },
                   "scope": "G",
                   "type": "script"
@@ -207,7 +157,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params={\"locationId\": self.session.custom.cell.locationId}, title=\"Line Inventory\", modal=False, showCloseIcon=True, draggable=True, resizable=True)"
+                    "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params\u003d{\"locationId\": self.session.custom.cell.locationId}, title\u003d\"Line Inventory\", modal\u003dFalse, showCloseIcon\u003dTrue, draggable\u003dTrue, resizable\u003dTrue)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -254,56 +204,41 @@
             },
             "type": "ia.input.button"
           }
-        ]
-      },
-      {
-        "type": "ia.container.flex",
+        ],
         "meta": {
-          "name": "ScanPanel"
-        },
-        "props": {
-          "style": {
-            "classes": "pf-panel"
-          },
-          "direction": "column",
-          "gap": "8px"
+          "name": "Header"
         },
         "position": {
           "shrink": 0
         },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "gap": "16px",
+            "overflow": "visible"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
         "children": [
           {
-            "type": "ia.display.label",
             "meta": {
               "name": "ScanTitle"
             },
             "props": {
-              "text": "Scan a machined component LTT to add it to this cell",
               "style": {
                 "classes": "pf-field-label"
-              }
-            }
+              },
+              "text": "Scan a machined component LTT to add it to this cell"
+            },
+            "type": "ia.display.label"
           },
           {
-            "type": "ia.container.flex",
-            "meta": {
-              "name": "ScanRow"
-            },
-            "props": {
-              "gap": "10px",
-              "alignItems": "center"
-            },
             "children": [
               {
-                "type": "ia.input.text-field",
                 "meta": {
                   "name": "ScanInput"
-                },
-                "props": {
-                  "placeholder": "Scan / enter LTT (LotName)",
-                  "style": {
-                    "classes": "pf-field-input"
-                  }
                 },
                 "position": {
                   "grow": 1
@@ -311,203 +246,265 @@
                 "propConfig": {
                   "props.text": {
                     "binding": {
-                      "type": "property",
                       "config": {
-                        "path": "view.custom.scanInput",
-                        "bidirectional": true
-                      }
+                        "bidirectional": true,
+                        "path": "view.custom.scanInput"
+                      },
+                      "type": "property"
                     }
                   }
-                }
-              },
-              {
-                "type": "ia.input.button",
-                "meta": {
-                  "name": "ScanButton"
                 },
                 "props": {
-                  "text": "Scan In",
+                  "placeholder": "Scan / enter LTT (LotName)",
                   "style": {
-                    "classes": "pf-btn pf-btn-primary"
+                    "classes": "pf-field-input"
                   }
+                },
+                "type": "ia.input.text-field"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tcell \u003d self.session.custom.cell.locationId\n\tname \u003d self.view.custom.scanInput\n\tif cell is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No cell is bound to this terminal.\"}, \"Assembly IN\")\n\t\treturn\n\tif not name:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Scan or enter a LOT LTT.\"}, \"Assembly IN\")\n\t\treturn\n\tresult \u003d BlueRidge.Workorder.Assembly.scanIn(cell, lotName\u003dname)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Assembly IN\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.scanInput \u003d \"\"\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "ScanButton"
                 },
                 "position": {
                   "shrink": 0
                 },
-                "events": {
-                  "component": {
-                    "onActionPerformed": {
-                      "type": "script",
-                      "scope": "G",
-                      "config": {
-                        "script": "\tcell = self.session.custom.cell.locationId\n\tname = self.view.custom.scanInput\n\tif cell is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No cell is bound to this terminal.\"}, \"Assembly IN\")\n\t\treturn\n\tif not name:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Scan or enter a LOT LTT.\"}, \"Assembly IN\")\n\t\treturn\n\tresult = BlueRidge.Workorder.Assembly.scanIn(cell, lotName=name)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Assembly IN\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.scanInput = \"\"\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
-                      }
-                    }
-                  }
-                }
+                "props": {
+                  "style": {
+                    "classes": "pf-btn pf-btn-primary"
+                  },
+                  "text": "Scan In"
+                },
+                "type": "ia.input.button"
               }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "QueuePanel"
-        },
-        "props": {
-          "style": {
-            "classes": "pf-panel"
-          },
-          "direction": "column",
-          "gap": "8px"
-        },
-        "position": {
-          "grow": 1
-        },
-        "children": [
-          {
-            "type": "ia.container.flex",
+            ],
             "meta": {
-              "name": "QueueHeader"
+              "name": "ScanRow"
             },
             "props": {
-              "justify": "space-between",
-              "alignItems": "center"
+              "alignItems": "center",
+              "gap": "10px"
             },
-            "position": {
-              "shrink": 0
-            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "ScanPanel"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "direction": "column",
+          "gap": "8px",
+          "style": {
+            "classes": "pf-panel"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
             "children": [
               {
-                "type": "ia.display.label",
                 "meta": {
                   "name": "QueueTitle"
                 },
                 "props": {
-                  "text": "Components at this cell",
                   "style": {
                     "classes": "pf-panel-header"
-                  }
-                }
+                  },
+                  "text": "Components at this cell"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.display.label",
                 "meta": {
                   "name": "QueueSub"
-                },
-                "props": {
-                  "text": "",
-                  "style": {
-                    "classes": "pf-kpi-sub"
-                  }
                 },
                 "propConfig": {
                   "props.text": {
                     "binding": {
-                      "type": "expr",
                       "config": {
                         "expression": "toStr(len({view.custom.queue})) + \" LOT(s)\""
-                      }
+                      },
+                      "type": "expr"
                     }
                   }
-                }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  }
+                },
+                "type": "ia.display.label"
               }
-            ]
-          },
-          {
-            "type": "ia.display.label",
+            ],
             "meta": {
-              "name": "PartTotals"
+              "name": "QueueHeader"
+            },
+            "position": {
+              "shrink": 0
             },
             "props": {
-              "text": "",
-              "style": {
-                "classes": "pf-kpi-sub"
-              }
+              "alignItems": "center",
+              "justify": "space-between"
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "meta": {
+              "name": "PartTotals"
             },
             "position": {
               "shrink": 0
             },
             "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "property",
-                  "config": {
-                    "path": "view.custom.queueByPartText"
-                  }
-                }
-              },
               "position.display": {
                 "binding": {
-                  "type": "expr",
                   "config": {
-                    "expression": "len({view.custom.queue}) > 0"
-                  }
+                    "expression": "len({view.custom.queue}) \u003e 0"
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.queueByPartText"
+                  },
+                  "type": "property"
                 }
               }
-            }
-          },
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "EmptyHint"
             },
             "props": {
-              "text": "",
               "style": {
                 "classes": "pf-kpi-sub"
               }
             },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "if(isNull({session.custom.cell.locationId}), 'No cell is bound to this terminal.', 'No component LOTs at this cell yet - scan one in above.')"
-                  }
-                }
-              },
-              "position.display": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "len({view.custom.queue}) = 0"
-                  }
-                }
-              }
-            }
+            "type": "ia.display.label"
           },
           {
-            "type": "ia.display.flex-repeater",
+            "meta": {
+              "name": "EmptyHint"
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "len({view.custom.queue}) \u003d 0"
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if(isNull({session.custom.cell.locationId}), \u0027No cell is bound to this terminal.\u0027, \u0027No component LOTs at this cell yet - scan one in above.\u0027)"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
             "meta": {
               "name": "QueueRepeater"
             },
             "position": {
               "grow": 1
             },
-            "props": {
-              "path": "BlueRidge/Components/PlantFloor/Assembly/ScanQueueRow",
-              "direction": "column",
-              "useDefaultViewHeight": true,
-              "elementPosition": {
-                "basis": "92px",
-                "shrink": 0
-              }
-            },
             "propConfig": {
               "props.instances": {
                 "binding": {
-                  "type": "property",
                   "config": {
                     "path": "view.custom.queue"
-                  }
+                  },
+                  "type": "property"
                 }
               }
-            }
+            },
+            "props": {
+              "direction": "column",
+              "elementPosition": {
+                "basis": "92px",
+                "shrink": 0
+              },
+              "path": "BlueRidge/Components/PlantFloor/Assembly/ScanQueueRow"
+            },
+            "type": "ia.display.flex-repeater"
           }
-        ]
+        ],
+        "meta": {
+          "name": "QueuePanel"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "gap": "8px",
+          "style": {
+            "classes": "pf-panel"
+          }
+        },
+        "type": "ia.container.flex"
       }
-    ]
+    ],
+    "events": {
+      "system": {
+        "onStartup": {
+          "config": {
+            "script": "\t# Dedicated-flavor context (FDS-02-010): bind the cell to the terminal\u0027s parent line.\n\tt \u003d self.session.custom.terminal\n\tif t and t.get(\"zoneLocationId\"):\n\t\tself.session.custom.cell \u003d {\"locationId\": t.get(\"zoneLocationId\"), \"code\": t.get(\"zoneName\") or \"\", \"name\": t.get(\"zoneName\") or \"\"}\n\ttry:\n\t\tself.session.custom.presence.policy \u003d \"confirm\"\n\texcept:\n\t\tself.session.custom.presence \u003d {\"policy\": \"confirm\"}\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dFalse, overlayDismiss\u003dFalse)"
+          },
+          "scope": "G",
+          "type": "script"
+        }
+      }
+    },
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "canvas",
+        "gap": "16px",
+        "overflowY": "auto",
+        "padding": "24px"
+      }
+    },
+    "scripts": {
+      "customMethods": [],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "inventoryChanged",
+          "pageScope": true,
+          "script": "\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
   }
 }

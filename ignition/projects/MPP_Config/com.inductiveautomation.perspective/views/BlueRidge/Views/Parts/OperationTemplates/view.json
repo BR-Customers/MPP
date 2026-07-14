@@ -30,6 +30,14 @@
   },
   "params": {},
   "propConfig": {
+    "custom.categoryOptions": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.getOperationCategoriesForDropdown\", 0)"
+        },
+        "type": "expr"
+      }
+    },
     "custom.dirty": {
       "binding": {
         "config": {
@@ -50,14 +58,6 @@
       "binding": {
         "config": {
           "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.fieldsState.editDraft.rows}) !\u003d runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.fieldsState.selected.rows})"
-        },
-        "type": "expr"
-      }
-    },
-    "custom.categoryOptions": {
-      "binding": {
-        "config": {
-          "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.getOperationCategoriesForDropdown\", 0)"
         },
         "type": "expr"
       }

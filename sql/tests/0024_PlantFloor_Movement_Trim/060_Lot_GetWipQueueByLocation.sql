@@ -4,8 +4,10 @@
 --               Route-driven queue: a LOT surfaces at the terminal whose role = its
 --               next PENDING route step; an Advance ProductionEvent advances it; a
 --               ConsumeMint terminal step keeps it queued until Closed; empty loc -> 0.
---               Fixture item = 6MA-M (route MachiningIn[Advance] -> MachiningOut
---               [ConsumeMint]) at MA1-FPRPY-MOUT.
+--               Fixture: casting 5G0-c (route DieCast->TrimIn->TrimOut->MachiningIn
+--               [Advance]->MachiningOut[ConsumeMint]) at MA1-5GOF-MOUT. The DieCast/
+--               Trim steps are pre-stamped so the LOT's next pending step is MachiningIn
+--               (mirrors a casting that has already reached the machining line).
 -- =============================================
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
@@ -13,14 +15,25 @@ EXEC test.BeginTestFile @FileName = N'0024_PlantFloor_Movement_Trim/060_Lot_GetW
 GO
 
 DECLARE @U BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
-DECLARE @Item BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'6MA-M');
-DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FPRPY-MOUT');
+DECLARE @Item BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
+DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MOUT');
 DECLARE @Origin BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
 
 DECLARE @Lot BIGINT;
 CREATE TABLE #C (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
 INSERT INTO #C EXEC Lots.Lot_Create @ItemId = @Item, @LotOriginTypeId = @Origin, @CurrentLocationId = @Line, @PieceCount = 10, @AppUserId = @U;
 SELECT @Lot = NewId FROM #C; DROP TABLE #C;
+
+-- Pre-advance past the casting's DieCast/TrimIn/TrimOut steps (a casting reaches the
+-- machining line only after those) so its next PENDING route step is MachiningIn.
+INSERT INTO Workorder.ProductionEvent (LotId, OperationTemplateId, EventAt, ShotCount, AppUserId)
+SELECT @Lot, rs.OperationTemplateId, SYSUTCDATETIME(), 10, @U
+FROM Parts.RouteTemplate rt
+JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
+JOIN Parts.OperationTemplate ot ON ot.Id = rs.OperationTemplateId
+JOIN Parts.OperationType oty ON oty.Id = ot.OperationTypeId
+WHERE rt.ItemId = @Item AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL
+  AND oty.Code IN (N'DieCast', N'TrimIn', N'TrimOut');
 
 -- Result-shape temp table matches v3.0 columns.
 CREATE TABLE #Q (Id BIGINT, LotName NVARCHAR(50), ItemId BIGINT, ItemPartNumber NVARCHAR(50), ItemDescription NVARCHAR(500),
@@ -69,8 +82,8 @@ DROP TABLE #Q2;
 GO
 
 -- ---- cleanup (by the fixture LOT id) ----
-DECLARE @Item2 BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'6MA-M');
-DECLARE @Line2 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-FPRPY-MOUT');
+DECLARE @Item2 BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
+DECLARE @Line2 BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MOUT');
 DECLARE @Lot2 BIGINT = (SELECT TOP 1 Id FROM Lots.Lot WHERE ItemId = @Item2 AND CurrentLocationId = @Line2 AND PieceCount = 10 ORDER BY Id DESC);
 DELETE FROM Workorder.ProductionEvent WHERE LotId = @Lot2;
 DELETE FROM Lots.LotEventLog WHERE LotId = @Lot2;

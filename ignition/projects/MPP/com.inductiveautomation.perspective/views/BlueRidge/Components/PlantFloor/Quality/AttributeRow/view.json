@@ -1,0 +1,228 @@
+{
+  "custom": {},
+  "params": {
+    "qualitySpecAttributeId": null,
+    "attributeName": "",
+    "dataType": "Numeric",
+    "uom": "",
+    "targetValue": "",
+    "lowerLimit": "",
+    "upperLimit": "",
+    "isRequired": false,
+    "limitHint": "",
+    "clearToken": 0
+  },
+  "propConfig": {
+    "params.qualitySpecAttributeId": {
+      "paramDirection": "input"
+    },
+    "params.attributeName": {
+      "paramDirection": "input"
+    },
+    "params.dataType": {
+      "paramDirection": "input"
+    },
+    "params.uom": {
+      "paramDirection": "input"
+    },
+    "params.targetValue": {
+      "paramDirection": "input"
+    },
+    "params.lowerLimit": {
+      "paramDirection": "input"
+    },
+    "params.upperLimit": {
+      "paramDirection": "input"
+    },
+    "params.isRequired": {
+      "paramDirection": "input"
+    },
+    "params.limitHint": {
+      "paramDirection": "input"
+    },
+    "params.clearToken": {
+      "paramDirection": "input",
+      "onChange": {
+        "enabled": true,
+        "script": "\tself.rootContainer.getChild(\"ValueField\").props.text = \"\""
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 56,
+      "width": 720
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "gap": "12px",
+        "minHeight": "56px",
+        "overflow": "hidden",
+        "padding": "6px 12px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "NameBlock"
+        },
+        "position": {
+          "grow": 1,
+          "basis": "0"
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "2px",
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "NameLabel"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.attributeName} + if({view.params.uom} != \"\", \" (\" + {view.params.uom} + \")\", \"\") + if({view.params.isRequired}, \" *\", \"\")"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "classes": "pf-field-label",
+                "color": "var(--mpp-text-primary)",
+                "fontSize": "15px",
+                "fontWeight": "600"
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "LimitHint"
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.limitHint} != \"\""
+                  }
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": {
+                    "path": "view.params.limitHint"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "",
+              "style": {
+                "classes": "pf-kpi-sub",
+                "fontSize": "12px"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "DataTypeBadge"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.dataType"
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "background": "var(--mpp-surface-alt)",
+            "borderRadius": "4px",
+            "color": "var(--mpp-text-secondary)",
+            "fontSize": "11px",
+            "fontWeight": "600",
+            "letterSpacing": "0.05em",
+            "padding": "2px 8px",
+            "textTransform": "uppercase"
+          }
+        }
+      },
+      {
+        "type": "ia.input.text-field",
+        "meta": {
+          "name": "ValueField"
+        },
+        "position": {
+          "basis": "200px",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.style.textAlign": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.dataType} = \"Numeric\", \"right\", \"left\")"
+              }
+            }
+          },
+          "props.placeholder": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "if({view.params.dataType} = \"Numeric\", if({view.params.targetValue} != \"\", {view.params.targetValue}, \"0\"), \"value\")"
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "classes": "pf-field-input"
+          }
+        },
+        "events": {
+          "dom": {
+            "onBlur": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"inspectionValueChanged\", payload={\"qualitySpecAttributeId\": self.view.params.qualitySpecAttributeId, \"measuredValue\": self.props.text or \"\"}, scope=\"page\")"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

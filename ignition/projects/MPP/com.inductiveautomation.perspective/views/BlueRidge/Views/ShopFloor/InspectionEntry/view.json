@@ -1,0 +1,942 @@
+{
+  "custom": {
+    "entries": {},
+    "lot": {
+      "CrtActive": null,
+      "CurrentLocationId": null,
+      "CurrentLocationName": "",
+      "Id": null,
+      "InventoryAvailable": 0,
+      "ItemId": null,
+      "ItemPartNumber": "",
+      "LotName": "",
+      "LotStatusCode": "",
+      "LotStatusName": "",
+      "PieceCount": 0
+    },
+    "lotQuery": "",
+    "refreshToken": 0,
+    "samples": [],
+    "spec": {
+      "attributes": [],
+      "specId": null,
+      "specName": "",
+      "versionId": null,
+      "versionNumber": null
+    },
+    "triggerCodeId": null,
+    "triggerOptions": []
+  },
+  "params": {},
+  "propConfig": {
+    "custom.samples": {
+      "binding": {
+        "config": {
+          "expression": "if({view.custom.refreshToken} >= 0, runScript(\"BlueRidge.Quality.QualitySample.listByLotInstances\", 0, {view.custom.lot.Id}, {view.custom.refreshToken}), \"\")"
+        },
+        "transforms": [
+          {
+            "code": "\treturn value or []",
+            "type": "script"
+          }
+        ],
+        "type": "expr"
+      }
+    },
+    "custom.spec": {
+      "binding": {
+        "config": {
+          "expression": "if({view.custom.refreshToken} >= 0, runScript(\"BlueRidge.Quality.QualitySpec.getActiveVersionForItemOrEmpty\", 0, {view.custom.lot.ItemId}, {view.custom.refreshToken}), \"\")"
+        },
+        "transforms": [
+          {
+            "code": "\treturn value or {\"specId\": None, \"specName\": \"\", \"versionId\": None, \"versionNumber\": None, \"attributes\": []}",
+            "type": "script"
+          }
+        ],
+        "type": "expr"
+      }
+    },
+    "custom.triggerOptions": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Quality.QualitySample.getTriggerOptions\", 0, {view.custom.refreshToken})"
+        },
+        "transforms": [
+          {
+            "code": "\treturn value or []",
+            "type": "script"
+          }
+        ],
+        "type": "expr"
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 1280
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "meta": {
+                  "name": "Title"
+                },
+                "props": {
+                  "style": {
+                    "fontSize": "22px",
+                    "fontWeight": 700
+                  },
+                  "text": "Inspection"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Subtitle"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "if(isNull({session.custom.terminal.terminalName}) || {session.custom.terminal.terminalName} = \"\", \"Shared terminal\", {session.custom.terminal.terminalName}) + \"  ·  Quality capture - measurements record against the part's active spec - a Fail does NOT auto-hold\""
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  }
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "TitleBlock"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "direction": "column"
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=True, overlayDismiss=True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "OperatorLabel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-kpi-sub",
+                "cursor": "pointer"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "RefreshButton",
+              "tooltip": {
+                "text": "Refresh"
+              }
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Refresh"
+            },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tsystem.perspective.navigate(\"/\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "CloseButton"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "text": "Close"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "center",
+          "style": {
+            "gap": "16px",
+            "overflow": "hidden"
+          }
+        },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "LotTitle"
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "14px",
+                            "fontWeight": "600",
+                            "letterSpacing": "0.06em",
+                            "textTransform": "uppercase"
+                          },
+                          "text": "LOT"
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "LotHeader"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-panel-header",
+                        "overflow": "hidden"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "LotFieldLabel"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-label"
+                          },
+                          "text": "LOT / LTT"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "events": {
+                          "dom": {
+                            "onBlur": {
+                              "config": {
+                                "script": "\tself.view.rootContainer.resolveLot(self.props.text)"
+                              },
+                              "scope": "G",
+                              "type": "script"
+                            }
+                          }
+                        },
+                        "meta": {
+                          "name": "LotInput"
+                        },
+                        "position": {
+                          "grow": 1
+                        },
+                        "props": {
+                          "placeholder": "Scan or type a LOT name",
+                          "style": {
+                            "classes": "pf-field-input"
+                          },
+                          "text": ""
+                        },
+                        "type": "ia.input.text-field"
+                      }
+                    ],
+                    "meta": {
+                      "name": "LotFieldRow"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "style": {
+                        "classes": "pf-field",
+                        "gap": "12px",
+                        "overflow": "hidden"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "meta": {
+                      "name": "LotSummary"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "!isNull({view.custom.lot.Id})"
+                          },
+                          "type": "expr"
+                        }
+                      },
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "{view.custom.lot.LotName} + \"  ·  \" + {view.custom.lot.ItemPartNumber} + \"  ·  \" + toStr({view.custom.lot.PieceCount}) + \" pcs  ·  \" + {view.custom.lot.LotStatusName} + \" at \" + {view.custom.lot.CurrentLocationName}"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "LotNotFoundHint"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "isNull({view.custom.lot.Id}) && {view.custom.lotQuery} != \"\""
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      },
+                      "text": "LOT not found - check the LTT and try again."
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "LotPanel"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-panel",
+                    "gap": "12px",
+                    "padding": "14px 16px"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "SpecTitle"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "expression": "if(isNull({view.custom.spec.versionId}), \"Inspection Form\", {view.custom.spec.specName} + \"  v\" + toStr({view.custom.spec.versionNumber}))"
+                              },
+                              "type": "expr"
+                            }
+                          }
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-secondary)",
+                            "fontSize": "14px",
+                            "fontWeight": "600",
+                            "letterSpacing": "0.06em",
+                            "textTransform": "uppercase"
+                          },
+                          "text": "Inspection Form"
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "SpecHeader"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-panel-header",
+                        "overflow": "hidden"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "meta": {
+                      "name": "NoLotHint"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "isNull({view.custom.lot.Id})"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      },
+                      "text": "Scan or enter a LOT above to load its inspection form."
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "NoSpecHint"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "!isNull({view.custom.lot.Id}) && isNull({view.custom.spec.versionId})"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      },
+                      "text": "No published quality spec for this part."
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "TriggerLabel"
+                            },
+                            "position": {
+                              "shrink": 0
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-field-label"
+                              },
+                              "text": "Trigger"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "meta": {
+                              "name": "TriggerDropdown"
+                            },
+                            "position": {
+                              "basis": "260px",
+                              "shrink": 0
+                            },
+                            "propConfig": {
+                              "props.options": {
+                                "binding": {
+                                  "config": {
+                                    "path": "view.custom.triggerOptions"
+                                  },
+                                  "type": "property"
+                                }
+                              },
+                              "props.value": {
+                                "binding": {
+                                  "config": {
+                                    "bidirectional": true,
+                                    "path": "view.custom.triggerCodeId"
+                                  },
+                                  "type": "property"
+                                }
+                              }
+                            },
+                            "props": {
+                              "placeholder": "Select trigger...",
+                              "style": {
+                                "classes": "pf-field-input"
+                              }
+                            },
+                            "type": "ia.input.dropdown"
+                          }
+                        ],
+                        "meta": {
+                          "name": "TriggerRow"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "alignItems": "center",
+                          "style": {
+                            "classes": "pf-field",
+                            "gap": "12px",
+                            "overflow": "hidden"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      },
+                      {
+                        "meta": {
+                          "name": "AttrRepeater"
+                        },
+                        "position": {
+                          "basis": "0",
+                          "grow": 1
+                        },
+                        "propConfig": {
+                          "props.instances": {
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.spec.attributes"
+                              },
+                              "transforms": [
+                                {
+                                  "code": "\treturn value or []",
+                                  "type": "script"
+                                }
+                              ],
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "direction": "column",
+                          "elementPosition": {
+                            "basis": "56px",
+                            "shrink": 0
+                          },
+                          "path": "BlueRidge/Components/PlantFloor/Quality/AttributeRow",
+                          "style": {
+                            "gap": "4px",
+                            "overflowY": "auto"
+                          },
+                          "useDefaultViewHeight": true,
+                          "useDefaultViewWidth": false
+                        },
+                        "type": "ia.display.flex-repeater"
+                      },
+                      {
+                        "children": [
+                          {
+                            "meta": {
+                              "name": "RequiredHint"
+                            },
+                            "position": {
+                              "grow": 1
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-kpi-sub"
+                              },
+                              "text": "* required attribute - empty required values are rejected"
+                            },
+                            "type": "ia.display.label"
+                          },
+                          {
+                            "events": {
+                              "component": {
+                                "onActionPerformed": {
+                                  "config": {
+                                    "script": "\tself.view.rootContainer.record()"
+                                  },
+                                  "scope": "G",
+                                  "type": "script"
+                                }
+                              }
+                            },
+                            "meta": {
+                              "name": "RecordButton"
+                            },
+                            "position": {
+                              "shrink": 0
+                            },
+                            "props": {
+                              "style": {
+                                "classes": "pf-btn pf-btn-primary"
+                              },
+                              "text": "RECORD INSPECTION"
+                            },
+                            "type": "ia.input.button"
+                          }
+                        ],
+                        "meta": {
+                          "name": "FormFooter"
+                        },
+                        "position": {
+                          "shrink": 0
+                        },
+                        "props": {
+                          "alignItems": "center",
+                          "style": {
+                            "gap": "12px",
+                            "overflow": "hidden"
+                          }
+                        },
+                        "type": "ia.container.flex"
+                      }
+                    ],
+                    "meta": {
+                      "name": "FormBlock"
+                    },
+                    "position": {
+                      "basis": "0",
+                      "grow": 1
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "!isNull({view.custom.lot.Id}) && !isNull({view.custom.spec.versionId})"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "12px",
+                        "overflow": "hidden"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  }
+                ],
+                "meta": {
+                  "name": "SpecPanel"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-panel",
+                    "gap": "12px",
+                    "overflow": "hidden",
+                    "padding": "14px 16px"
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": {
+              "name": "LeftColumn"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 3
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "16px",
+                "overflow": "hidden"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "HistoryTitle"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "'Inspection History - ' + toStr(len({view.custom.samples})) + ' samples'"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "color": "var(--mpp-text-secondary)",
+                        "fontSize": "14px",
+                        "fontWeight": "600",
+                        "letterSpacing": "0.06em",
+                        "textTransform": "uppercase"
+                      },
+                      "text": "Inspection History"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "HistoryHeader"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-panel-header",
+                    "overflow": "hidden"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "HistoryEmptyHint"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "len({view.custom.samples}) = 0"
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "if(isNull({view.custom.lot.Id}), 'No LOT selected.', 'No inspections recorded for this LOT yet.')"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  }
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "SamplesRepeater"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "propConfig": {
+                  "props.instances": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.samples"
+                      },
+                      "transforms": [
+                        {
+                          "code": "\treturn value or []",
+                          "type": "script"
+                        }
+                      ],
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "elementPosition": {
+                    "basis": "64px",
+                    "shrink": 0
+                  },
+                  "path": "BlueRidge/Components/PlantFloor/Quality/SampleRow",
+                  "style": {
+                    "gap": "8px",
+                    "overflowY": "auto"
+                  },
+                  "useDefaultViewHeight": true,
+                  "useDefaultViewWidth": false
+                },
+                "type": "ia.display.flex-repeater"
+              }
+            ],
+            "meta": {
+              "name": "HistoryPanel"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 2
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-panel",
+                "gap": "12px",
+                "overflow": "hidden",
+                "padding": "14px 16px"
+              }
+            },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "style": {
+            "gap": "16px",
+            "overflow": "hidden"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
+    "events": {
+      "system": {
+        "onStartup": {
+          "config": {
+            "script": "\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
+          },
+          "scope": "G",
+          "type": "script"
+        }
+      }
+    },
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "canvas",
+        "gap": "16px",
+        "overflowY": "auto",
+        "padding": "24px"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "resolveLot",
+          "params": [
+            "lotName"
+          ],
+          "script": "\tquery = (lotName or \"\").strip()\n\tself.view.custom.lotQuery = query\n\tself.view.custom.lot = BlueRidge.Lots.Lot.getOrEmpty(lotName=query)\n\tself.view.custom.entries = {}\n\tself.view.custom.triggerCodeId = None\n\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+        },
+        {
+          "name": "record",
+          "params": [],
+          "script": "\tterm = self.session.custom.terminal\n\tterminalId = term.terminalLocationId if term else None\n\tresult = BlueRidge.Quality.QualitySample.recordFromEntries(self.view.custom.lot, self.view.custom.spec, self.view.custom.entries, self.view.custom.triggerCodeId, self.session.custom.appUserId, terminalId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Inspection\", result.get(\"Message\"))\n\tif result and result.get(\"Status\"):\n\t\tif \"Fail\" in (result.get(\"Message\") or \"\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Inspection FAILED - no hold placed automatically\", result.get(\"Message\") or \"\", \"warning\")\n\t\tself.view.custom.entries = {}\n\t\tself.view.custom.triggerCodeId = None\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": [
+        {
+          "messageType": "inspectionValueChanged",
+          "pageScope": true,
+          "script": "\tentries = dict(self.view.custom.entries or {})\n\tentries[\"%s\" % payload.get(\"qualitySpecAttributeId\")] = payload.get(\"measuredValue\") or \"\"\n\tself.view.custom.entries = entries",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
+    },
+    "type": "ia.container.flex"
+  }
+}

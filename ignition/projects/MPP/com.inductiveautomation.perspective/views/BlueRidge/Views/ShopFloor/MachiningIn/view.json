@@ -1,13 +1,5 @@
 {
   "custom": {
-    "activeMachined": {
-      "Id": null,
-      "lotName": "",
-      "itemPartNumber": "",
-      "pieceCount": 0
-    },
-    "holdCount": 0,
-    "queue": [],
     "pending": {
       "lotName": "",
       "sourceItem": "",
@@ -20,11 +12,11 @@
     "custom.activeMachined": {
       "binding": {
         "config": {
-          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}, \"MachiningOut\"), \"\")"
+          "expression": "if({view.custom.refreshToken} \u003e\u003d 0 \u0026\u0026 !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}, \"MachiningOut\"), \"\")"
         },
         "transforms": [
           {
-            "code": "\tmachined = value or []\n\tr = machined[-1] if machined else {}\n\treturn {\"Id\": r.get(\"Id\"), \"lotName\": r.get(\"LotName\") or \"\", \"itemPartNumber\": r.get(\"ItemPartNumber\") or \"\", \"pieceCount\": r.get(\"PieceCount\") or 0}",
+            "code": "\tmachined \u003d value or []\n\tr \u003d machined[-1] if machined else {}\n\treturn {\"Id\": r.get(\"Id\"), \"lotName\": r.get(\"LotName\") or \"\", \"itemPartNumber\": r.get(\"ItemPartNumber\") or \"\", \"pieceCount\": r.get(\"PieceCount\") or 0}",
             "type": "script"
           }
         ],
@@ -38,7 +30,7 @@
         },
         "transforms": [
           {
-            "code": "\treturn len([r for r in (value or []) if (r.get(\"lotStatusCode\") or \"\") != \"Good\"])",
+            "code": "\treturn len([r for r in (value or []) if (r.get(\"lotStatusCode\") or \"\") !\u003d \"Good\"])",
             "type": "script"
           }
         ],
@@ -48,11 +40,11 @@
     "custom.queue": {
       "binding": {
         "config": {
-          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}, \"MachiningIn\"), \"\")"
+          "expression": "if({view.custom.refreshToken} \u003e\u003d 0, runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, 4, true, {view.custom.refreshToken}, \"MachiningIn\"), \"\")"
         },
         "transforms": [
           {
-            "code": "\trows = value or []\n\treturn [{\"sourceLotId\": r.get(\"Id\"), \"lotName\": r.get(\"LotName\") or \"\", \"sourceItem\": r.get(\"ItemPartNumber\") or \"\", \"pieceCount\": r.get(\"PieceCount\") or 0, \"arrival\": str(r.get(\"LastMovementAt\") or \"\"), \"position\": i + 1, \"lotStatusCode\": r.get(\"LotStatusCode\") or \"\"} for i, r in enumerate(rows)]",
+            "code": "\treturn value\n\t#rows \u003d value or []\n\t#return [{\"sourceLotId\": r.get(\"Id\"), \"lotName\": r.get(\"LotName\") or \"\", \"sourceItem\": r.get(\"ItemPartNumber\") or \"\", \"pieceCount\": r.get(\"PieceCount\") or 0, \"arrival\": str(r.get(\"LastMovementAt\") or \"\"), \"position\": i + 1, \"lotStatusCode\": r.get(\"LotStatusCode\") or \"\"} for i, r in enumerate(rows)]",
             "type": "script"
           }
         ],
@@ -92,7 +84,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"No cell bound\", {session.custom.cell.name}) + \"  ·  5G0 Machining WC - dedicated terminal - whole-LOT FIFO pick\""
+                        "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} \u003d \"\", \"No cell bound\", {session.custom.cell.name}) + \"  ·  5G0 Machining WC - dedicated terminal - whole-LOT FIFO pick\""
                       },
                       "type": "expr"
                     }
@@ -122,7 +114,7 @@
               "dom": {
                 "onClick": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=True, overlayDismiss=True)"
+                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dTrue, overlayDismiss\u003dTrue)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -139,7 +131,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
+                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} \u003d \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
                   },
                   "type": "expr"
                 }
@@ -200,7 +192,7 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "{view.custom.holdCount} > 0"
+                    "expression": "{view.custom.holdCount} \u003e 0"
                   },
                   "type": "expr"
                 }
@@ -221,7 +213,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                    "script": "\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
                   },
                   "scope": "G",
                   "type": "script"
@@ -250,7 +242,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params={\"locationId\": self.session.custom.cell.locationId}, title=\"Line Inventory\", modal=False, showCloseIcon=True, draggable=True, resizable=True)"
+                    "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params\u003d{\"locationId\": self.session.custom.cell.locationId}, title\u003d\"Line Inventory\", modal\u003dFalse, showCloseIcon\u003dTrue, draggable\u003dTrue, resizable\u003dTrue)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -322,7 +314,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "'FIFO Queue - ' + toStr(len({view.custom.queue})) + ' LOTs awaiting'"
+                        "expression": "\u0027FIFO Queue - \u0027 + toStr(len({view.custom.queue})) + \u0027 LOTs awaiting\u0027"
                       },
                       "type": "expr"
                     }
@@ -379,7 +371,7 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "len({view.custom.queue}) = 0"
+                    "expression": "len({view.custom.queue}) \u003d 0"
                   },
                   "type": "expr"
                 }
@@ -387,7 +379,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "if(isNull({session.custom.cell.locationId}), 'No cell is bound to this terminal.', 'This cell has no LOTs queued.')"
+                    "expression": "if(isNull({session.custom.cell.locationId}), \u0027No cell is bound to this terminal.\u0027, \u0027This cell has no LOTs queued.\u0027)"
                   },
                   "type": "expr"
                 }
@@ -556,7 +548,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "if(isNull({view.custom.activeMachined.lotName}) || {view.custom.activeMachined.lotName} = \"\", \"(machined LOT)\", {view.custom.activeMachined.lotName})"
+                        "expression": "if(isNull({view.custom.activeMachined.lotName}) || {view.custom.activeMachined.lotName} \u003d \"\", \"(machined LOT)\", {view.custom.activeMachined.lotName})"
                       },
                       "type": "expr"
                     }
@@ -641,11 +633,11 @@
     "events": {
       "system": {
         "onStartup": {
-          "type": "script",
-          "scope": "G",
           "config": {
-            "script": "\t# Dedicated-flavor context (FDS-02-010): bind the cell to the terminal's parent line.\n\tt = self.session.custom.terminal\n\tif t and t.get(\"zoneLocationId\"):\n\t\tself.session.custom.cell = {\"locationId\": t.get(\"zoneLocationId\"), \"code\": t.get(\"zoneName\") or \"\", \"name\": t.get(\"zoneName\") or \"\"}\n\ttry:\n\t\tself.session.custom.presence.policy = \"confirm\"\n\texcept:\n\t\tself.session.custom.presence = {\"policy\": \"confirm\"}\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
-          }
+            "script": "\t# Dedicated-flavor context (FDS-02-010): bind the cell to the terminal\u0027s parent line.\n\tt \u003d self.session.custom.terminal\n\tif t and t.get(\"zoneLocationId\"):\n\t\tself.session.custom.cell \u003d {\"locationId\": t.get(\"zoneLocationId\"), \"code\": t.get(\"zoneName\") or \"\", \"name\": t.get(\"zoneName\") or \"\"}\n\ttry:\n\t\tself.session.custom.presence.policy \u003d \"confirm\"\n\texcept:\n\t\tself.session.custom.presence \u003d {\"policy\": \"confirm\"}\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dFalse, overlayDismiss\u003dFalse)"
+          },
+          "scope": "G",
+          "type": "script"
         }
       }
     },
@@ -668,21 +660,21 @@
         {
           "messageType": "machiningPick",
           "pageScope": true,
-          "script": "\tself.view.custom.pending = {\"sourceLotId\": payload.get(\"sourceLotId\"), \"lotName\": payload.get(\"lotName\") or \"\", \"sourceItem\": payload.get(\"sourceItem\") or \"\"}\n\tmsg = \"Start machining LOT \" + (payload.get(\"lotName\") or \"\") + \" (\" + (payload.get(\"sourceItem\") or \"\") + \")?\"\n\tsystem.perspective.openPopup(\"mpp-bom-rename\", \"BlueRidge/Components/Popups/BomRenameConfirm\", params={\"title\": \"Machining IN - Start Machining\", \"message\": msg, \"replyMessage\": \"bomRenameResult\", \"popupId\": \"mpp-bom-rename\"}, modal=True)",
+          "script": "\tself.view.custom.pending \u003d {\"sourceLotId\": payload.get(\"sourceLotId\"), \"lotName\": payload.get(\"lotName\") or \"\", \"sourceItem\": payload.get(\"sourceItem\") or \"\"}\n\tmsg \u003d \"Start machining LOT \" + (payload.get(\"lotName\") or \"\") + \" (\" + (payload.get(\"sourceItem\") or \"\") + \")?\"\n\tsystem.perspective.openPopup(\"mpp-bom-rename\", \"BlueRidge/Components/Popups/BomRenameConfirm\", params\u003d{\"title\": \"Machining IN - Start Machining\", \"message\": msg, \"replyMessage\": \"bomRenameResult\", \"popupId\": \"mpp-bom-rename\"}, modal\u003dTrue)",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "bomRenameResult",
           "pageScope": true,
-          "script": "\tif payload.get(\"action\") != \"confirm\":\n\t\treturn\n\tp = self.view.custom.pending\n\tcellId = self.session.custom.cell.locationId\n\tterminalId = self.session.custom.terminal.terminalLocationId\n\tif not p or p.get(\"sourceLotId\") is None or cellId is None:\n\t\treturn\n\tresult = BlueRidge.Workorder.Machining.recordPick(p.get(\"sourceLotId\"), cellId, self.session.custom.appUserId, terminalId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining IN\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.pending = {\"sourceLotId\": None, \"lotName\": \"\", \"sourceItem\": \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
+          "script": "\tif payload.get(\"action\") !\u003d \"confirm\":\n\t\treturn\n\tp \u003d self.view.custom.pending\n\tcellId \u003d self.session.custom.cell.locationId\n\tterminalId \u003d self.session.custom.terminal.terminalLocationId\n\tif not p or p.get(\"sourceLotId\") is None or cellId is None:\n\t\treturn\n\tresult \u003d BlueRidge.Workorder.Machining.recordPick(p.get(\"sourceLotId\"), cellId, self.session.custom.appUserId, terminalId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining IN\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.pending \u003d {\"sourceLotId\": None, \"lotName\": \"\", \"sourceItem\": \"\"}\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "inventoryChanged",
           "pageScope": true,
-          "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
+          "script": "\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1",
           "sessionScope": false,
           "viewScope": false
         }

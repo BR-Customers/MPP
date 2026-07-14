@@ -1,11 +1,5 @@
 {
   "custom": {
-    "parentLot": {
-      "Id": null,
-      "LotName": "",
-      "PieceCount": 0,
-      "ItemPartNumber": ""
-    },
     "draft": {
       "qty": ""
     },
@@ -24,11 +18,11 @@
     "custom.parentLot": {
       "binding": {
         "config": {
-          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}, \"MachiningOut\"), \"\")"
+          "expression": "if({view.custom.refreshToken} \u003e\u003d 0 \u0026\u0026 !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}, \"MachiningOut\"), \"\")"
         },
         "transforms": [
           {
-            "code": "\t# Terminal-mint: the source is the casting whose next route step is MachiningOut (the read is role-filtered).\n\tsources = value or []\n\tr = sources[-1] if sources else {}\n\treturn {\"Id\": r.get(\"Id\"), \"LotName\": r.get(\"LotName\") or \"\", \"PieceCount\": r.get(\"PieceCount\") or 0, \"ItemPartNumber\": r.get(\"ItemPartNumber\") or \"\"}",
+            "code": "\t# Terminal-mint: the source is the casting whose next route step is MachiningOut (the read is role-filtered).\n\tsources \u003d value or []\n\tr \u003d sources[-1] if sources else {}\n\treturn {\"Id\": r.get(\"Id\"), \"LotName\": r.get(\"LotName\") or \"\", \"PieceCount\": r.get(\"PieceCount\") or 0, \"ItemPartNumber\": r.get(\"ItemPartNumber\") or \"\"}",
             "type": "script"
           }
         ],
@@ -68,7 +62,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"No cell bound\", {session.custom.cell.name}) + \"  ·  Sublotting line (RequiresSubLotSplit = ON) - dedicated Machining OUT terminal\""
+                        "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} \u003d \"\", \"No cell bound\", {session.custom.cell.name}) + \"  ·  Sublotting line (RequiresSubLotSplit \u003d ON) - dedicated Machining OUT terminal\""
                       },
                       "type": "expr"
                     }
@@ -98,7 +92,7 @@
               "dom": {
                 "onClick": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=True, overlayDismiss=True)"
+                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dTrue, overlayDismiss\u003dTrue)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -115,7 +109,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
+                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} \u003d \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
                   },
                   "type": "expr"
                 }
@@ -178,7 +172,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                    "script": "\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
                   },
                   "scope": "G",
                   "type": "script"
@@ -207,7 +201,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params={\"locationId\": self.session.custom.cell.locationId}, title=\"Line Inventory\", modal=False, showCloseIcon=True, draggable=True, resizable=True)"
+                    "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params\u003d{\"locationId\": self.session.custom.cell.locationId}, title\u003d\"Line Inventory\", modal\u003dFalse, showCloseIcon\u003dTrue, draggable\u003dTrue, resizable\u003dTrue)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -327,7 +321,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "if(isNull({view.custom.parentLot.Id}), 'No machined LOT at this cell.', 'Parent LOT: ' + {view.custom.parentLot.LotName} + '  (' + {view.custom.parentLot.ItemPartNumber} + ')  -  ' + toStr({view.custom.parentLot.PieceCount}) + ' pcs')"
+                    "expression": "if(isNull({view.custom.parentLot.Id}), \u0027No machined LOT at this cell.\u0027, \u0027Parent LOT: \u0027 + {view.custom.parentLot.LotName} + \u0027  (\u0027 + {view.custom.parentLot.ItemPartNumber} + \u0027)  -  \u0027 + toStr({view.custom.parentLot.PieceCount}) + \u0027 pcs\u0027)"
                   },
                   "type": "expr"
                 }
@@ -390,7 +384,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "'Extract: ' + toStr(toInt({view.custom.draft.qty}, 0)) + ' / ' + toStr({view.custom.parentLot.PieceCount}) + ' pcs remaining'"
+                        "expression": "\u0027Extract: \u0027 + toStr(toInt({view.custom.draft.qty}, 0)) + \u0027 / \u0027 + toStr({view.custom.parentLot.PieceCount}) + \u0027 pcs remaining\u0027"
                       },
                       "type": "expr"
                     }
@@ -432,7 +426,7 @@
               "style": {
                 "classes": "pf-kpi-sub"
               },
-              "text": "Extract one machining-origin sub-LOT from the parent. Enter a piece count up to the parent's remaining count and a destination. The parent stays open with its reduced count and can be extracted again until it reaches zero. LTT labels print showing child + parent LotName."
+              "text": "Extract one machining-origin sub-LOT from the parent. Enter a piece count up to the parent\u0027s remaining count and a destination. The parent stays open with its reduced count and can be extracted again until it reaches zero. LTT labels print showing child + parent LotName."
             },
             "type": "ia.display.label"
           },
@@ -534,7 +528,7 @@
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\t# Terminal-mint: consume the source casting to MINT a machined SubAssembly LOT\n\t# (line-resident, no destination). Produced part derived via BOM by the proc.\n\tsource = self.view.custom.parentLot\n\totId = self.view.custom.opTemplateId\n\tcellId = self.session.custom.cell.locationId\n\td = self.view.custom.draft\n\tif cellId is None or not source or source.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Select a cell that has a casting ready for Machining OUT.\"}, \"Machining OUT\")\n\t\treturn\n\tif otId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"MachiningOut operation template not found.\"}, \"Machining OUT\")\n\t\treturn\n\tq = BlueRidge.Common.Util.toIntOrNone(d.get(\"qty\"))\n\tif q is None or q <= 0:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a positive quantity to mint.\"}, \"Machining OUT\")\n\t\treturn\n\tresult = BlueRidge.Workorder.Machining.mint(source.get(\"Id\"), otId, q, None, self.session.custom.appUserId, cellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining OUT - Mint\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"qty\": \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                        "script": "\t# Terminal-mint: consume the source casting to MINT a machined SubAssembly LOT\n\t# (line-resident, no destination). Produced part derived via BOM by the proc.\n\tsource \u003d self.view.custom.parentLot\n\totId \u003d self.view.custom.opTemplateId\n\tcellId \u003d self.session.custom.cell.locationId\n\td \u003d self.view.custom.draft\n\tif cellId is None or not source or source.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Select a cell that has a casting ready for Machining OUT.\"}, \"Machining OUT\")\n\t\treturn\n\tif otId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"MachiningOut operation template not found.\"}, \"Machining OUT\")\n\t\treturn\n\tq \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"qty\"))\n\tif q is None or q \u003c\u003d 0:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a positive quantity to mint.\"}, \"Machining OUT\")\n\t\treturn\n\tresult \u003d BlueRidge.Workorder.Machining.mint(source.get(\"Id\"), otId, q, None, self.session.custom.appUserId, cellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining OUT - Mint\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft \u003d {\"qty\": \"\"}\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
                       },
                       "scope": "G",
                       "type": "script"
@@ -618,11 +612,11 @@
     "events": {
       "system": {
         "onStartup": {
-          "type": "script",
-          "scope": "G",
           "config": {
-            "script": "\t# Dedicated-flavor context (FDS-02-010): bind the cell to the terminal's parent line.\n\tt = self.session.custom.terminal\n\tif t and t.get(\"zoneLocationId\"):\n\t\tself.session.custom.cell = {\"locationId\": t.get(\"zoneLocationId\"), \"code\": t.get(\"zoneName\") or \"\", \"name\": t.get(\"zoneName\") or \"\"}\n\ttry:\n\t\tself.session.custom.presence.policy = \"confirm\"\n\texcept:\n\t\tself.session.custom.presence = {\"policy\": \"confirm\"}\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
-          }
+            "script": "\t# Dedicated-flavor context (FDS-02-010): bind the cell to the terminal\u0027s parent line.\n\tt \u003d self.session.custom.terminal\n\tif t and t.get(\"zoneLocationId\"):\n\t\tself.session.custom.cell \u003d {\"locationId\": t.get(\"zoneLocationId\"), \"code\": t.get(\"zoneName\") or \"\", \"name\": t.get(\"zoneName\") or \"\"}\n\ttry:\n\t\tself.session.custom.presence.policy \u003d \"confirm\"\n\texcept:\n\t\tself.session.custom.presence \u003d {\"policy\": \"confirm\"}\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dFalse, overlayDismiss\u003dFalse)"
+          },
+          "scope": "G",
+          "type": "script"
         }
       }
     },
@@ -645,7 +639,7 @@
         {
           "messageType": "inventoryChanged",
           "pageScope": true,
-          "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
+          "script": "\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1",
           "sessionScope": false,
           "viewScope": false
         }

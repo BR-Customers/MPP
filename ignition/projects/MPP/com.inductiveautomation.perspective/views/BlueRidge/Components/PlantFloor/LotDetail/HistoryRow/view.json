@@ -2,12 +2,12 @@
   "custom": {},
   "params": {
     "row": {
+      "ByUserName": "",
+      "Detail": "",
+      "EventAgo": "",
       "EventAt": "",
       "EventAtDisplay": "",
-      "EventAgo": "",
-      "EventKind": "",
-      "Detail": "",
-      "ByUserName": ""
+      "EventKind": ""
     }
   },
   "propConfig": {
@@ -17,87 +17,66 @@
   },
   "props": {
     "defaultSize": {
-      "height": 44,
-      "width": 800
+      "height": 44
     }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": {
-      "name": "root"
-    },
-    "props": {
-      "alignItems": "center",
-      "style": {
-        "borderBottom": "1px solid var(--mpp-border-subtle)",
-        "gap": "12px",
-        "minHeight": "44px",
-        "paddingLeft": "12px",
-        "paddingRight": "12px",
-        "paddingTop": "8px",
-        "paddingBottom": "8px"
-      }
-    },
     "children": [
       {
-        "type": "ia.display.icon",
         "meta": {
           "name": "KindIcon"
         },
         "position": {
-          "basis": "auto",
           "shrink": 0
         },
         "propConfig": {
-          "props.path": {
-            "binding": {
-              "type": "expr",
-              "config": {
-                "expression": "if({view.params.row.EventKind}=\"Movement\",\"material/swap_horiz\",if({view.params.row.EventKind}=\"Status\",\"material/flag\",if({view.params.row.EventKind}=\"Attribute\",\"material/edit\",if({view.params.row.EventKind}=\"Pause\",\"material/pause\",if({view.params.row.EventKind}=\"Resume\",\"material/play_arrow\",if({view.params.row.EventKind}=\"Genealogy\",\"material/call_split\",if({view.params.row.EventKind}=\"Label\",\"material/label\",if({view.params.row.EventKind}=\"Production\",\"material/build\",if({view.params.row.EventKind}=\"Reject\",\"material/warning\",\"material/circle\")))))))))"
-              }
-            }
-          },
           "props.color": {
             "binding": {
-              "type": "expr",
               "config": {
-                "expression": "if({view.params.row.EventKind}=\"Movement\",\"#5b8def\",if({view.params.row.EventKind}=\"Status\",\"#3fb950\",if({view.params.row.EventKind}=\"Attribute\",\"#d29922\",if({view.params.row.EventKind}=\"Pause\",\"#db8b3a\",if({view.params.row.EventKind}=\"Resume\",\"#2dd4bf\",if({view.params.row.EventKind}=\"Genealogy\",\"#a371f7\",if({view.params.row.EventKind}=\"Production\",\"#0d9488\",if({view.params.row.EventKind}=\"Reject\",\"#f85149\",\"#8b949e\"))))))))"
-              }
+                "expression": "if({view.params.row.EventKind}\u003d\"Movement\",\"#5b8def\",if({view.params.row.EventKind}\u003d\"Status\",\"#3fb950\",if({view.params.row.EventKind}\u003d\"Attribute\",\"#d29922\",if({view.params.row.EventKind}\u003d\"Pause\",\"#db8b3a\",if({view.params.row.EventKind}\u003d\"Resume\",\"#2dd4bf\",if({view.params.row.EventKind}\u003d\"Genealogy\",\"#a371f7\",if({view.params.row.EventKind}\u003d\"Production\",\"#0d9488\",if({view.params.row.EventKind}\u003d\"Reject\",\"#f85149\",\"#8b949e\"))))))))"
+              },
+              "type": "expr"
+            }
+          },
+          "props.path": {
+            "binding": {
+              "config": {
+                "expression": "if({view.params.row.EventKind}\u003d\"Movement\",\"material/swap_horiz\",if({view.params.row.EventKind}\u003d\"Status\",\"material/flag\",if({view.params.row.EventKind}\u003d\"Attribute\",\"material/edit\",if({view.params.row.EventKind}\u003d\"Pause\",\"material/pause\",if({view.params.row.EventKind}\u003d\"Resume\",\"material/play_arrow\",if({view.params.row.EventKind}\u003d\"Genealogy\",\"material/call_split\",if({view.params.row.EventKind}\u003d\"Label\",\"material/label\",if({view.params.row.EventKind}\u003d\"Production\",\"material/build\",if({view.params.row.EventKind}\u003d\"Reject\",\"material/warning\",\"material/circle\")))))))))"
+              },
+              "type": "expr"
             }
           }
         },
         "props": {
-          "path": "material/circle",
           "style": {
-            "width": "18px",
-            "height": "18px"
+            "height": "18px",
+            "width": "18px"
           }
-        }
+        },
+        "type": "ia.display.icon"
       },
       {
-        "type": "ia.display.label",
         "meta": {
           "name": "EventKindBadge"
         },
         "position": {
-          "basis": "auto",
           "shrink": 0
         },
         "propConfig": {
-          "props.text": {
-            "binding": {
-              "type": "property",
-              "config": {
-                "path": "view.params.row.EventKind"
-              }
-            }
-          },
           "props.style.color": {
             "binding": {
-              "type": "expr",
               "config": {
-                "expression": "if({view.params.row.EventKind}=\"Movement\",\"#5b8def\",if({view.params.row.EventKind}=\"Status\",\"#3fb950\",if({view.params.row.EventKind}=\"Attribute\",\"#d29922\",if({view.params.row.EventKind}=\"Pause\",\"#db8b3a\",if({view.params.row.EventKind}=\"Resume\",\"#2dd4bf\",if({view.params.row.EventKind}=\"Genealogy\",\"#a371f7\",if({view.params.row.EventKind}=\"Production\",\"#0d9488\",if({view.params.row.EventKind}=\"Reject\",\"#f85149\",\"#8b949e\"))))))))"
-              }
+                "expression": "if({view.params.row.EventKind}\u003d\"Movement\",\"#5b8def\",if({view.params.row.EventKind}\u003d\"Status\",\"#3fb950\",if({view.params.row.EventKind}\u003d\"Attribute\",\"#d29922\",if({view.params.row.EventKind}\u003d\"Pause\",\"#db8b3a\",if({view.params.row.EventKind}\u003d\"Resume\",\"#2dd4bf\",if({view.params.row.EventKind}\u003d\"Genealogy\",\"#a371f7\",if({view.params.row.EventKind}\u003d\"Production\",\"#0d9488\",if({view.params.row.EventKind}\u003d\"Reject\",\"#f85149\",\"#8b949e\"))))))))"
+              },
+              "type": "expr"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.row.EventKind"
+              },
+              "type": "property"
             }
           }
         },
@@ -105,7 +84,6 @@
           "style": {
             "background": "var(--mpp-surface-alt)",
             "borderRadius": "4px",
-            "color": "var(--mpp-text-secondary)",
             "fontSize": "11px",
             "fontWeight": "600",
             "letterSpacing": "0.05em",
@@ -113,10 +91,10 @@
             "textTransform": "uppercase",
             "width": "80px"
           }
-        }
+        },
+        "type": "ia.display.label"
       },
       {
-        "type": "ia.display.label",
         "meta": {
           "name": "DetailLabel"
         },
@@ -126,10 +104,10 @@
         "propConfig": {
           "props.text": {
             "binding": {
-              "type": "property",
               "config": {
                 "path": "view.params.row.Detail"
-              }
+              },
+              "type": "property"
             }
           }
         },
@@ -138,24 +116,23 @@
             "color": "var(--mpp-text-primary)",
             "fontSize": "14px"
           }
-        }
+        },
+        "type": "ia.display.label"
       },
       {
-        "type": "ia.display.label",
         "meta": {
           "name": "MetaLabel"
         },
         "position": {
-          "basis": "auto",
           "shrink": 0
         },
         "propConfig": {
           "props.text": {
             "binding": {
-              "type": "expr",
               "config": {
                 "expression": "coalesce({view.params.row.EventAgo}, \"\") + \"  ·  \" + toStr({view.params.row.ByUserName}) + \"  ·  \" + coalesce({view.params.row.EventAtDisplay}, \"\")"
-              }
+              },
+              "type": "expr"
             }
           }
         },
@@ -164,8 +141,25 @@
             "color": "var(--mpp-text-secondary)",
             "fontSize": "12px"
           }
-        }
+        },
+        "type": "ia.display.label"
       }
-    ]
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "gap": "12px",
+        "minHeight": "44px",
+        "paddingBottom": "8px",
+        "paddingLeft": "12px",
+        "paddingRight": "12px",
+        "paddingTop": "8px"
+      }
+    },
+    "type": "ia.container.flex"
   }
 }

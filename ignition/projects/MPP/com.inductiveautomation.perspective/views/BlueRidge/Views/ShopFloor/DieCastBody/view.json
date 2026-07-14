@@ -2,7 +2,6 @@
   "custom": {
     "activeLotId": null,
     "activeLotName": null,
-    "cells": [],
     "editDraft": {
       "cavityNote": null,
       "itemId": null,
@@ -15,7 +14,6 @@
     "peersThisSession": [],
     "refreshToken": 0,
     "selectedLotId": null,
-    "shiftTally": [],
     "tallyCavityId": null
   },
   "params": {
@@ -23,10 +21,6 @@
     "cellPickerEnabled": false
   },
   "propConfig": {
-    "params.cellPickerEnabled": {
-      "paramDirection": "input",
-      "persistent": true
-    },
     "custom.activeTool": {
       "binding": {
         "config": {
@@ -76,8 +70,12 @@
       },
       "onChange": {
         "enabled": true,
-        "script": "\tids = BlueRidge.Lots.Lot.shiftTallyCavityIds(self.view.custom.shiftTally)\n\tcur = self.view.custom.tallyCavityId\n\tif cur is None or cur not in ids:\n\t\tself.view.custom.tallyCavityId = BlueRidge.Lots.Lot.defaultShiftCavityId(self.view.custom.shiftTally)"
+        "script": "\tids \u003d BlueRidge.Lots.Lot.shiftTallyCavityIds(self.view.custom.shiftTally)\n\tcur \u003d self.view.custom.tallyCavityId\n\tif cur is None or cur not in ids:\n\t\tself.view.custom.tallyCavityId \u003d BlueRidge.Lots.Lot.defaultShiftCavityId(self.view.custom.shiftTally)"
       }
+    },
+    "params.cellPickerEnabled": {
+      "paramDirection": "input",
+      "persistent": true
     }
   },
   "props": {
@@ -250,6 +248,9 @@
         ],
         "meta": {
           "name": "HeaderBand"
+        },
+        "position": {
+          "shrink": 0
         },
         "props": {
           "alignItems": "center",
@@ -1297,7 +1298,7 @@
           "params": [
             "itemId"
           ],
-          "script": "\t# 2026-07-07 Jacques: prefill Piece Count from the part's PARTS-PER-BASKET, which is\n\t# Item.MaxLotSize (repurposed as PartsPerBasket, Data Model v1.9; the Config Tool Item\n\t# screen labels it Parts Per Basket). DefaultSubLotQty kept only as a dev-data fallback.\n\t# Weight (UnitWeight x count, when configured) when the operator picks a part.\n\t# Only fills EMPTY fields - never overwrites operator-entered values.\n\titemId \u003d BlueRidge.Common.Util.extractQualifiedValues(itemId)\n\trow \u003d BlueRidge.Parts.Item.getOne(itemId)\n\tif not row:\n\t\treturn\n\td \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft) or {}\n\tperBasket \u003d row.get(\"MaxLotSize\") or row.get(\"DefaultSubLotQty\")\n\tunitWeight \u003d row.get(\"UnitWeight\")\n\tif perBasket and d.get(\"pieceCount\") in (None, \"\"):\n\t\tself.view.custom.editDraft.pieceCount \u003d perBasket\n\tif perBasket and unitWeight and d.get(\"weight\") in (None, \"\"):\n\t\tself.view.custom.editDraft.weight \u003d round(float(unitWeight) * float(perBasket), 3)\n\tif row.get(\"WeightUomId\") and d.get(\"weightUomId\") is None:\n\t\tself.view.custom.editDraft.weightUomId \u003d row.get(\"WeightUomId\")"
+          "script": "\t# 2026-07-07 Jacques: prefill Piece Count from the part\u0027s PARTS-PER-BASKET, which is\n\t# Item.MaxLotSize (repurposed as PartsPerBasket, Data Model v1.9; the Config Tool Item\n\t# screen labels it Parts Per Basket). DefaultSubLotQty kept only as a dev-data fallback.\n\t# Weight (UnitWeight x count, when configured) when the operator picks a part.\n\t# Only fills EMPTY fields - never overwrites operator-entered values.\n\titemId \u003d BlueRidge.Common.Util.extractQualifiedValues(itemId)\n\trow \u003d BlueRidge.Parts.Item.getOne(itemId)\n\tif not row:\n\t\treturn\n\td \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft) or {}\n\tperBasket \u003d row.get(\"MaxLotSize\") or row.get(\"DefaultSubLotQty\")\n\tunitWeight \u003d row.get(\"UnitWeight\")\n\tif perBasket and d.get(\"pieceCount\") in (None, \"\"):\n\t\tself.view.custom.editDraft.pieceCount \u003d perBasket\n\tif perBasket and unitWeight and d.get(\"weight\") in (None, \"\"):\n\t\tself.view.custom.editDraft.weight \u003d round(float(unitWeight) * float(perBasket), 3)\n\tif row.get(\"WeightUomId\") and d.get(\"weightUomId\") is None:\n\t\tself.view.custom.editDraft.weightUomId \u003d row.get(\"WeightUomId\")"
         },
         {
           "name": "startup",

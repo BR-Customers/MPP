@@ -298,7 +298,6 @@ def getMachiningDestinationsForDropdown(activeLotId=None, _refreshToken=None):
     BlueRidge.Common.Util.log("loading machining destinations, activeLotId=%s" % activeLotId)
     itemId = None
     if activeLotId is not None:
-        import BlueRidge.Lots.Lot
         lot = BlueRidge.Lots.Lot.get(lotId=activeLotId)
         itemId = lot.get("ItemId") if lot else None
     try:

@@ -1,5 +1,11 @@
 {
-  "custom": {},
+  "custom": {
+    "activeCategory": "",
+    "activeScreen": "BlueRidge/Views/Landing",
+    "navPanelOpen": false,
+    "qsIncomingSpecId": "",
+    "toastInstances": []
+  },
   "propConfig": {
     "props.auth": {
       "access": "PRIVATE",
