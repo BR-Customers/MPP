@@ -14,9 +14,10 @@ against `MPP_Sim` (Step C), then against real devices (Step D).
 
 ---
 
-## A. Owed Designer edits (existing views — file-edit boundary)
+## A. Wiring edits
 
-These four are Designer edits (existing views / gateway config), not file authoring:
+**A1–A3 are DONE in files** (committed `06117aaa`; Designer was closed). **A4 is the
+one remaining Designer step.** A1–A3 recorded here for reference.
 
 ### A1. Declare the session prop `custom.plcDevices`
 `MPP` session-props → add `custom.plcDevices` with default `[]` (list). Needed
@@ -36,23 +37,36 @@ to `editDraft.identity.plcId` (seed the empty-shape default per
 update, or call `BlueRidge.Parts.Item.setPlcId(itemId, plcId)` directly. This is the
 per-part vision/recipe code the tray watcher validates against.
 
-### A4. Wire the durable edge triggers (project Tag Change scripts)
-For each UDT instance's **trigger** members, add a **project** Tag Change script
-(Designer → Project → Scripting → Tag Change) — durable across gateway restart.
-One line each:
+### A4. Wire the durable edge triggers (gateway Tag Change script) — the one owed step
+
+This is the only step that stays in Designer: the gateway Tag Change script's
+tag-path binding depends on your actual imported tag paths, and the 8.3 gateway
+tag-change resource schema isn't safely hand-authored. It's a 2-minute
+point-and-click.
+
+**Simplest (recommended): one folder-watch script.** Add a **gateway** Tag Change
+script (Designer → Project → Scripting → Gateway Event Scripts → Tag Change) on the
+**whole folder** `[MPP]PlcDevices` (recursive). Body (one line):
 ```python
 BlueRidge.Workorder.PlcWatcher.dispatch(str(event.tagPath), event.previousValue, event.currentValue)
 ```
-Trigger members per type:
+Why one folder-watch script is safe: `dispatch` rising-edge-guards and routes by
+device type; each watcher's `handleEdge` ignores any member that isn't one of its
+triggers. So firing on non-trigger members is harmless (a cheap no-op) — you don't
+need to enumerate members. `dispatch` resolves the instance's terminal + type via
+`TerminalPlcDevice_GetByInstancePath` (so a mapping row must exist — Step B).
+
+**Alternative: list the trigger paths explicitly.** If you'd rather bind exact
+paths, the 33 trigger-member paths are in `ignition/tags/plc_trigger_tag_paths.txt`
+(regenerate if devices change). Trigger members per type:
 - **ScaleStation:** `NET_DataReady`
 - **SerializedMipStation:** `DataReady`, `PartComplete`
 - **NonSerializedMipStation:** `DataReady`
 - **TrayInspectionStation:** `TrayLocked`, `InspectionComplete`
 
-`dispatch` rising-edge-guards, resolves the instance's terminal + device type
-(`TerminalPlcDevice_GetByInstancePath`), and routes to the right watcher. Tip: a
-single tag-change script can target `[MPP]PlcDevices/*/<member>` if the provider
-supports wildcard change scripts; otherwise one per instance member.
+Adjust the `[MPP]` provider prefix if you imported into a differently-named provider
+(and update `PROVIDER` in `BlueRidge.Sim` + `_INSTANCE_ROOT` in
+`BlueRidge.Location.TerminalPlcDevice` to match).
 
 ---
 
