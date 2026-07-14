@@ -6,6 +6,7 @@
       "locationId": null,
       "name": ""
     },
+    "plcDevices": [],
     "presence": {
       "policy": "strict"
     },
