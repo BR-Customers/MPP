@@ -143,62 +143,83 @@
                 "fontWeight": "600",
                 "padding": "4px 12px"
               }
-            },
-            "type": "ia.display.label"
+            }
           },
           {
+            "type": "ia.display.label",
             "meta": {
               "name": "CrtPill"
             },
             "position": {
+              "basis": "auto",
               "shrink": 0
             },
             "propConfig": {
               "position.display": {
                 "binding": {
+                  "type": "expr",
                   "config": {
                     "expression": "coalesce({view.custom.lot.CrtActive}, false)"
-                  },
-                  "type": "expr"
+                  }
                 }
               }
             },
             "props": {
+              "text": "CRT Active",
               "style": {
-                "borderRadius": "999px",
                 "classes": "pf-pill pf-pill-hold",
                 "fontSize": "13px",
                 "fontWeight": "700",
                 "padding": "4px 12px",
+                "borderRadius": "999px",
                 "textTransform": "uppercase"
-              },
-              "text": "CRT Active"
-            },
-            "type": "ia.display.label"
+              }
+            }
           }
-        ],
+        ]
+      },
+      {
+        "type": "ia.container.flex",
         "meta": {
-          "name": "Header"
+          "name": "KpiStrip"
         },
         "position": {
+          "basis": "auto",
           "shrink": 0
         },
         "props": {
-          "alignItems": "center",
+          "direction": "row",
+          "alignItems": "stretch",
           "style": {
-            "classes": "pf-terminal-header",
-            "flexShrink": 0,
-            "gap": "16px",
-            "padding": "20px 24px"
+            "classes": "pf-kpis",
+            "gap": "0px",
+            "padding": "0px 24px 0px 24px",
+            "flexWrap": "wrap"
           }
         },
-        "type": "ia.container.flex"
-      },
-      {
         "children": [
           {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "KpiLotName"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "flex-start",
+              "style": {
+                "classes": "pf-kpi",
+                "gap": "2px",
+                "padding": "16px 20px",
+                "minWidth": "160px"
+              }
+            },
             "children": [
               {
+                "type": "ia.display.label",
                 "meta": {
                   "name": "Label"
                 },
@@ -1221,33 +1242,114 @@
                   "type": "script"
                 }
               }
-            },
+            }
+          },
+          {
+            "type": "ia.input.button",
             "meta": {
-              "name": "BtnClearCrt"
+              "name": "BtnInspections"
             },
             "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Inspections",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "toolTipText": "Open the Inspection terminal to record a quality sample against a LOT."
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.navigate(\"/shop-floor/inspection\")"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "BtnSetCrt"
+            },
+            "position": {
+              "basis": "auto",
               "shrink": 0
             },
             "propConfig": {
               "position.display": {
                 "binding": {
+                  "type": "expr",
                   "config": {
-                    "expression": "coalesce({view.custom.lot.CrtActive}, false)"
-                  },
-                  "type": "expr"
+                    "expression": "!isNull({view.custom.lot.Id}) && !coalesce({view.custom.lot.CrtActive}, false)"
+                  }
                 }
               }
             },
             "props": {
+              "text": "Set CRT",
               "style": {
                 "classes": "pf-btn pf-btn-elevated"
               },
-              "text": "Clear CRT",
-              "toolTipText": "Release the Controlled Run Tag (supervisor clearance per FDS-04-007)."
+              "toolTipText": "Place this LOT on a Controlled Run Tag (200% downstream inspection prompt)."
             },
-            "type": "ia.input.button"
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tterm = self.session.custom.terminal\n\tresult = BlueRidge.Quality.Crt.setCrt(self.view.params.lotId, self.session.custom.appUserId, term.terminalLocationId if term else None)\n\tBlueRidge.Common.Ui.notifyResult(result, \"CRT\", result.get(\"Message\"))\n\tself.view.rootContainer.load()"
+                  }
+                }
+              }
+            }
           },
           {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "BtnClearCrt"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "coalesce({view.custom.lot.CrtActive}, false)"
+                  }
+                }
+              }
+            },
+            "props": {
+              "text": "Clear CRT",
+              "style": {
+                "classes": "pf-btn pf-btn-elevated"
+              },
+              "toolTipText": "Release the Controlled Run Tag (supervisor clearance per FDS-04-007)."
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tterm = self.session.custom.terminal\n\tresult = BlueRidge.Quality.Crt.clearCrt(self.view.params.lotId, self.session.custom.appUserId, term.terminalLocationId if term else None)\n\tBlueRidge.Common.Ui.notifyResult(result, \"CRT\", result.get(\"Message\"))\n\tself.view.rootContainer.load()"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
             "meta": {
               "name": "BtnPlaceHold"
             },
