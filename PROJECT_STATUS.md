@@ -1,8 +1,92 @@
 # MPP MES — Project Status
 
-**Last updated:** 2026-07-08 — **Streams converged on `hunter/explore`: main's terminal-mint model redesign (Jacques, ~24 commits — route-driven queues, `MachiningOut_Mint` consume-mint, OperatorBar, Category cascades, `seed_demo` auto-run in Reset-DevDatabase) MERGED with the 2026-07-07 smoke-findings fix pass + follow-ups (Hunter — see that stream's header note below). Merge resolutions: shared-terminal cell picker kept as a picker-only ContextBar hidden on dedicated flavors (reconciles main's ContextBar removal with the picker requirement); die-cast tally readers unified on main's `_tallyRows`; `seed_demo.sql` taken from main (mint model). Full suite + gateway scan re-run post-merge.**
+**Last updated:** 2026-07-14 — **PLC integration built end-to-end (Plans 1–3) on `jacques/working`; `hunter/explore` merged in (Phase 9 quality capture).** SQL: migration `0038` (`PlcDeviceType` / `TerminalPlcDevice` / `Item.PlcId`, audit entity Id 58) + `0039` (handshake audit LogEventTypes 67/68). Ignition: 4 UDT defs + `MPP_Sim` Programmable-Device-Simulator + 22 instances (generated from one member catalog); Sim Panel `/dev/sim/plc`; Core NQs; gateway watchers (Scale / SerializedMip / NonSerializedMip / TrayInspection) + rising-edge `PlcWatcher.dispatch`; `/plc-devices` mapping editor; `onStartup` → `session.custom.plcDevices`; Item Master `PlcId` field. Full SQL reset green (39 migrations + 349 repeatables; `0039` test 2/2); `scan.ps1` clean; pushed to `origin/jacques/working` (`d5d8a332`). **Owed (only):** one folder-watch gateway Tag Change script in Designer + the simulator smoke pass — see `notes/2026-07-14_plc-commissioning-runbook.md`. Migration-collision note: the Hunter merge renumbered the PLC migration `0037→0038` (Phase 9 keeps `0037`) and bumped the `TerminalPlcDevice` audit entity Id `57→58`. Detail in the 2026-07-14 section below.
+
+**Prior header note (2026-07-08):** **Streams converged on `hunter/explore`: main's terminal-mint model redesign (Jacques, ~24 commits — route-driven queues, `MachiningOut_Mint` consume-mint, OperatorBar, Category cascades, `seed_demo` auto-run in Reset-DevDatabase) MERGED with the 2026-07-07 smoke-findings fix pass + follow-ups (Hunter — see that stream's header note below). Merge resolutions: shared-terminal cell picker kept as a picker-only ContextBar hidden on dedicated flavors (reconciles main's ContextBar removal with the picker requirement); die-cast tally readers unified on main's `_tallyRows`; `seed_demo.sql` taken from main (mint model). Full suite + gateway scan re-run post-merge.**
+
+> **See the `## 🔖 2026-07-14 — PLC Integration` section directly below for the full PLC writeup.**
 
 **Prior header note (hunter/explore, 2026-07-07):** **Smoke-findings fix pass on `hunter/explore`: all 14 items from `notes/2026-07-07_smoke_findings.md` addressed (full suite 1945/1945, only the pre-existing `010_Parts_codes_crud` thrower). Per-item ✅/⚠️ annotations live in the findings file. Re-smoke owed — see the section directly below.** Prior header note (2026-07-06 second session): **Jacques 2026-07-06 meeting task list worked on `hunter/explore`: 21 of 24 items fixed, tested, committed (full suite 1934/1934, only the pre-existing `010_Parts_codes_crud` thrower). 3 items open pending live repro / Jacques's call.** Prior header note (earlier 2026-07-06):
+
+---
+
+## 🔖 2026-07-14 — PLC Integration built end-to-end (Plans 1–3) + `hunter/explore` merged
+
+Executed the three PLC-integration plans on `jacques/working` (spec
+`docs/superpowers/specs/2026-07-10-plc-udt-terminal-mapping-design.md`; plans
+`…-plc-integration-plan1/2/3-*`). Ignition file-authoring; validated against the
+`MPP_Sim` simulator, not live PLCs. **Everything committed + pushed to
+`origin/jacques/working` (`d5d8a332`).**
+
+### Merge reconciliation (`hunter/explore` → `jacques/working`, `3b58ad40`)
+Clean auto-merge that brought in Hunter's **Phase 9 quality capture / CRT / global
+trace** (migration `0037`). Two collisions resolved:
+- **Migration number:** our PLC migration `0037` → **`0038`** (file + `MigrationId`
+  + test dir `0037_PlcIntegration` → `0038_PlcIntegration`). Phase 9 keeps `0037`.
+- **Audit Id:** both inserted `Audit.LogEntityType` Id 57 (Hunter=`QualitySample`,
+  ours=`TerminalPlcDevice`). PLC bumped to **Id 58** + Id-or-Code guard added.
+- Verified: full suite on a throwaway `MPP_MES_Test` = **2087/2087**, both
+  migrations apply in sequence.
+
+### Plan 1 — SQL foundation (pre-existing + reconciled)
+Migration `0038` (`Location.PlcDeviceType` fixed-seed of 4 types, `Location.
+TerminalPlcDevice` thin pointer terminal→UDT-instance, `Parts.Item.PlcId`) + 8
+procs (`TerminalPlcDevice_Save/_GetByTerminal/_Deprecate/_GetByInstancePath`,
+`Item_SetPlcId/_GetPlcId`, `SerializedPart_Mint @SerialNumber/_GetBySerial`) +
+migration `0039` (audit LogEventType 67 `PlcHandshake`, 68 `PlcLineStop`).
+`GetByInstancePath` (reverse lookup) + `0039` were added in Plan 3.
+
+### Plan 2 — UDTs / simulator / Sim Panel / NQs
+**`ignition/tags/`** (import-managed, NOT scan-synced): `generate_tags.py` (one
+member catalog + the device manifest → all 3 artifacts, so real UDTs and the sim
+can't drift) → **4 UDT defs**, **22 instances** (`PlcDevices.json`, all → `MPP_Sim`),
+**`MPP_Sim_program.csv`** (325 writeable rows). Addressing scheme locked: member
+appended directly to `{BasePath}`; separator lives in `{BasePath}` (dev `<device>/`),
+so one def serves sim + every real device by swapping only params. **6 Core NQs**
+(all `type:"Query"`). **Sim Panel** `/dev/sim/plc` (`BlueRidge.Sim` + `ScenarioRow`)
+— device dropdown, per-type control panel (incl. 18-checkbox disposition grid),
+scenario tracker. Jacques imported the tags/UDTs/CSV into the gateway.
+
+### Plan 3 — watchers + dispatch + config editor + wiring
+- **Entity layer:** `Common.Util.systemAppUserId()`, `Location.TerminalPlcDevice`
+  wrapper, `Parts.Item.getPlcId/setPlcId`, `Lots.SerializedPart.getBySerial` +
+  `@serialNumber` mint.
+- **`Workorder.PlcWatcher`:** instance-member tag I/O, rising-edge guard,
+  `WriteDisplayEnabled` gating (spec §5.1), `logInterface` (FDS-01-014), and
+  `dispatch(tagPath, prev, cur)` → resolve terminal → route to the per-type watcher.
+- **4 watchers** (`ScaleWatcher`, `SerializedMipWatcher`, `NonSerializedMipWatcher`,
+  `TrayInspectionWatcher`), pure choreography over the procs (no business logic in
+  Python). SerializedMip (mint against the FIFO front LOT) and TrayInspection
+  (vision `VisionPartNumber` vs `Item.PlcId`; mismatch → line-stop) are the concrete
+  ones; Scale weight-persistence/coupling + NonSerialized FG/count resolution are
+  **flagged commissioning hooks, not faked**.
+- **Config-Tool `/plc-devices`** editor (MPP_Config) + `PlcDeviceType_List`.
+- **Wiring (Designer closed, edits done in files, `06117aaa`):** `onStartup` →
+  `session.custom.plcDevices`; session prop declared; **Item Master → Identity**
+  gains the `PlcId` field (loads via `getPlcId`, saves via `setPlcId` — separate
+  procs, so no `Item_Get/_Update` change / no INSERT-EXEC test impact).
+
+**Verification:** full SQL reset green (39 migrations + 349 repeatables deploy
+clean; `0039` test 2/2); `scan.ps1` clean.
+
+### ⚠️ Owed — the ONLY remaining steps (see `notes/2026-07-14_plc-commissioning-runbook.md`)
+1. **A4 — one gateway Tag Change script** (Designer): watch the `[MPP]PlcDevices`
+   folder, body `BlueRidge.Workorder.PlcWatcher.dispatch(str(event.tagPath),
+   event.previousValue, event.currentValue)`. Safe as a folder-watch because
+   `dispatch` + each `handleEdge` ignore non-trigger members. (Explicit path list:
+   `ignition/tags/plc_trigger_tag_paths.txt`.) NOT hand-authored — the 8.3
+   tag-change resource schema + the real tag paths are import-specific.
+2. **Seed ≥1 mapping** via `/plc-devices` (so `dispatch` resolves).
+3. **Simulator acceptance pass** — run the `/dev/sim/plc` scenarios against the live
+   watchers on `MPP_Sim` (the no-hardware acceptance gate).
+4. **Hardware commissioning** (gated on plant network + driver decisions): per-device
+   OPC connections, flip instance params sim→real, tick `integration_manifest.csv`.
+
+**Flagged open decisions** (spec §5.2/§11, watcher hooks): NonSerialized FG/PieceCount
+source; scale raw-weight persistence + 5G0 scale↔MIP completion coupling; the
+`len(PartSN)≥6`/interlock serial rule (proc-level); tray-close bookkeeping;
+line-stop-vs-formal-Hold policy; Mitsubishi series / Pro-face / OmniServer-scale
+driver specifics.
 
 ---
 
