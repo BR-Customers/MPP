@@ -20,6 +20,16 @@ def getByTerminal(terminalLocationId):
         {"terminalLocationId": terminalLocationId})
 
 
+def getByInstancePath(udtInstancePath):
+    """Reverse lookup: the active mapping row(s) for a UDT instance path. The
+       watcher derives the instance path from a fired trigger member and calls
+       this to resolve the driving terminal + device type. list[dict]."""
+    BlueRidge.Common.Util.log("udtInstancePath=%s" % udtInstancePath)
+    return BlueRidge.Common.Db.execList(
+        "location/TerminalPlcDevice_GetByInstancePath",
+        {"udtInstancePath": udtInstancePath})
+
+
 def save(data, appUserId=None):
     """Insert (Id None) or update a mapping row. Returns {Status, Message, NewId}."""
     if appUserId is None:
