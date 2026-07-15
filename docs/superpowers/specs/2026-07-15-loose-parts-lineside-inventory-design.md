@@ -1,276 +1,135 @@
-# Loose-Parts (Non-LOT) Lineside Inventory — Design Spec
+# Loose-Parts Lineside Inventory — Receive-as-LOT — Design Spec
 
 **Date:** 2026-07-15
 **Status:** Draft — awaiting Hunter review
 **Author:** Blue Ridge (with Claude)
-**Arc / Phase:** Arc 2 (Plant Floor) — extends the Spec 2 machining/assembly flow. Adds a second, non-LOT inventory representation for purchased/loose components and folds a "receive by part# + qty" path into the lineside inventory check-in popup.
-**Related:** `docs/superpowers/specs/2026-07-02-machining-assembly-plant-floor-flow-design.md` (I1/I2 — the `InventoryManager` popup + `Lot_GetLineInventoryByPart`), `docs/superpowers/specs/2026-07-07-terminal-mint-model-and-rename-bom-removal-design.md` (assembly consume-mint). Reference impl reused: `Views/ShopFloor/ReceivingDock` (part#-scan → `Received` LOT mint).
+**Arc / Phase:** Arc 2 (Plant Floor) — extends the Spec 2 machining/assembly flow. Adds a "receive by part# + qty" path to the lineside inventory check-in popup by **minting a `Received`-origin LOT** at the line.
+**Related:** `docs/superpowers/specs/2026-07-02-machining-assembly-plant-floor-flow-design.md` (I1/I2 — the `InventoryManager` popup + `Lot_GetLineInventoryByPart`). Reference impl reused nearly verbatim: `Views/ShopFloor/ReceivingDock` (part#-scan → `Received` LOT mint).
+
+> **History:** an earlier draft of this spec modeled loose parts as a **non-LOT count bucket** (new `Parts.InventoryTrackingMode` flag, `Lots.LineInventory` balance + ledger, `Assembly_CompleteTray` auto-decrement). That was reversed in dialogue (2026-07-15): loose parts are now **minted as normal LOTs** so they behave exactly like every other parts lot. All of that data-model / proc work is dropped. This spec reflects the minted-LOT design only.
 
 ---
 
 ## 1. Motivation
 
-The lineside inventory check-in popup (`Components/PlantFloor/InventoryManager`) today has a single input — **scan an LTT** — which resolves an *existing* LOT by name and moves it onto the line (`Lots.Lot_MoveToValidated`). It cannot handle the common plant-floor reality that MPP raised: **operators frequently receive a box of loose parts that has no LTT** — they have a part number and a piece count, nothing more.
+The lineside inventory check-in popup (`Components/PlantFloor/InventoryManager`) today has a single input — **scan an LTT** — which resolves an *existing* LOT by name and moves it onto the line (`Lots.Lot_MoveToValidated`). It cannot handle the common case MPP raised: an operator receives **a box of loose parts with no LTT** — they have only a part number and a piece count.
 
-Today the only way such parts enter the system is as a `Received`-origin LOT (the Receiving Dock flow), which then feeds Assembly BOM consumption with full LOT genealogy. For the components in question — generic purchased hardware (pins, studs, dowels, fasteners) — MPP does **not** want per-part LOT genealogy; they want a simple **on-hand count per part per line** that Assembly draws down automatically as finished goods are built.
-
-This spec adds that second, deliberately-lighter inventory representation and threads it through the check-in popup and `Assembly_CompleteTray`, **without disturbing** the LOT/genealogy path that castings, sub-assemblies, and traceable components continue to use.
+The fix is to let the operator scan/pick the **part number**, enter the **piece count**, and have the system **mint a `Received`-origin LOT** for that part+qty at the line — the same thing the Receiving Dock already does. Because it is a normal LOT, it immediately behaves like every other parts lot: it appears in the on-hand table, and Assembly consumes it via the existing BOM-FIFO path (`Workorder.Assembly_CompleteTray`) into finished-good genealogy. Nothing downstream needs to change.
 
 ---
 
 ## 2. Decisions locked (from brainstorming)
 
-Resolved in dialogue; these are the foundation of the design:
-
-1. **Non-LOT count bucket.** A box of loose parts scanned in by part# + qty is stored as a plain **on-hand count** keyed by `(ItemId, LocationId)` — **not** a LOT. It carries no `LotGenealogy`, no LTT, no genealogy edge into the finished good.
-2. **Auto-decrement at Assembly.** When a tray/FG is completed, each **count-tracked** BOM component's on-hand count is reduced by `QtyPer × PieceCount` at the cell. `Workorder.Assembly_CompleteTray` is modified.
-3. **Two explicit sections in the popup.** The `InventoryManager` popup gets a **Check in LTT** section (today's scan → move) and a distinct **Receive loose parts** section (part# scan/pick + qty + Add). No auto-detection of LTT-vs-part#.
-4. **Per-item tracking mode (blast-radius containment).** A part is *either* LOT-tracked *or* Count-tracked, decided by a new per-`Item` flag. All existing items default to LOT-tracked, so nothing about castings / sub-assemblies / traceable components changes. Only parts an engineer explicitly marks Count-tracked lose genealogy.
-
-### Decisions A–E (confirmed 2026-07-15)
-
-| # | Decision | Resolution |
-|---|---|---|
-| A | Insufficient count stock at tray completion | **Reject** the completion with a business-rule `Status=0` (mirrors the existing LOT "insufficient component stock" pre-check). No negative balances, no backflush. |
-| B | Vendor-lot capture on loose-parts receive | **Optional**, nullable. Hidden/collapsed by default in the popup; stored on the `Receive` ledger row when supplied. |
-| C | Soft `ProducedLotId` / `ContainerTrayId` reference on `Consume` ledger rows | **Included.** Not a `LotGenealogy` edge, but records *which FG tray drew down the count* for recall traceability. |
-| D | Item Master tracking-mode field | **Included now** — a small addition to the Identity section of Item Master. |
-| E | Manual Adjust UI in the popup | **Included** as a minimal per-row adjust affordance (proc + popup) for corrections / box-empty. |
-
-### 2.1 Accepted tradeoff — genealogy
-
-Count-tracked components **do not appear in finished-good `LotGenealogy`**. This is a deliberate, MPP-directed departure from the "Honda requires full genealogy for every part" default, scoped to parts an engineer explicitly marks Count-tracked (generic purchased hardware). The soft reference on `Consume` ledger rows (decision C) preserves a *coarse* audit trail ("40 pins consumed by FG LOT `6NA-000123` on tray 2") without a formal genealogy edge. If a component ever needs true genealogy, it stays LOT-tracked and this feature does not touch it.
+1. **Mint a LOT, don't track loose.** A box of loose parts scanned by part# + qty is **minted as a `Received`-origin LOT** at the line (`Lots.Lot_Create`), identical to the Receiving Dock flow. It is a first-class LOT with full genealogy participation — no separate non-LOT representation.
+2. **Two explicit sections in the popup.** `InventoryManager` gets a **Check in LTT** section (today's scan → move, unchanged) and a distinct **Receive loose parts** section (part# scan/pick + qty + Add).
+3. **No LTT print (silent mint).** The receive mints the LOT and it appears in the on-hand table; **no label is printed** and there is no navigation away (it's a popup). The box stays physically unlabeled. *(Consequence to accept: a later manual move/hold of that box has no printed barcode to scan; Assembly BOM-FIFO consumption needs none. If MPP later wants labels, add the Receiving Dock's print + reprint-on-failure path — a self-contained follow-up.)*
+4. **Vendor LOT optional.** A nullable, collapsed **Vendor LOT** field is available on the receive form (carried on `Lot.VendorLotNumber`), but the minimal flow is just part# + qty.
 
 ---
 
-## 3. Data model (migration `0038_loose_parts_line_inventory.sql`)
+## 3. Scope of change
 
-`0038` is the next free versioned migration (highest today is `0037`).
+**This is an Ignition front-end change with no new SQL.** Every server-side building block already exists and is used by the Receiving Dock:
 
-### 3.1 Per-item tracking mode
+| Building block | Status |
+|---|---|
+| `Lots.Lot_Create` (mint, server-generated LTT name when `@LotName` NULL) | exists |
+| `BlueRidge.Lots.Lot.create(data, appUserId, terminalLocationId)` | exists |
+| `BlueRidge.Lots.Lot.getOriginTypeIdByCode("Received")` | exists |
+| `BlueRidge.Parts.Item.getForDropdown()` / `getByPartNumber(partNumber)` | exists |
+| `Lots.Lot_GetLineInventoryByPart` + `Lot.getLineInventoryByPart` (on-hand table) | exists — **unchanged**, already lists these LOTs |
+| `Lots.Lot_MoveToValidated` (the existing LTT check-in) | exists — **unchanged** |
 
-```sql
--- Parts.InventoryTrackingMode — fixed-seed code table (FK-backed enum; no magic ints)
-CREATE TABLE Parts.InventoryTrackingMode (
-    Id           BIGINT        NOT NULL IDENTITY(1,1) PRIMARY KEY,
-    Code         NVARCHAR(20)  NOT NULL,
-    Name         NVARCHAR(50)  NOT NULL,
-    Description  NVARCHAR(200) NULL,
-    CreatedAt    DATETIME2(3)  NOT NULL DEFAULT SYSUTCDATETIME(),
-    DeprecatedAt DATETIME2(3)  NULL,
-    CONSTRAINT UQ_InventoryTrackingMode_Code UNIQUE (Code)
-);
--- seed: (1,'Lot','LOT-tracked'), (2,'Count','Count-tracked (loose parts)')
-
--- Parts.Item gains the FK; every existing row defaults to Lot (behavior preserved)
-ALTER TABLE Parts.Item
-    ADD InventoryTrackingModeId BIGINT NOT NULL
-        CONSTRAINT DF_Item_InventoryTrackingModeId DEFAULT 1
-        CONSTRAINT FK_Item_InventoryTrackingMode
-            REFERENCES Parts.InventoryTrackingMode(Id);
-CREATE INDEX IX_Item_InventoryTrackingModeId ON Parts.Item (InventoryTrackingModeId);
-```
-
-The `NOT NULL DEFAULT 1` backfills existing rows to `Lot` in the same ALTER; no separate backfill statement needed.
-
-### 3.2 Count bucket — materialized balance + append-only ledger (`lots` schema)
-
-Placed in the `lots` schema: it is material-state at a location, sibling to `Lot`/`LotMovement`/`Container`. It follows the project's B5 "materialized qty + append-only events" pattern — a fast, lockable balance for the tray-completion decrement, plus a full ledger for audit.
-
-```sql
--- Lots.LineInventory — materialized on-hand balance, one row per (ItemId, LocationId)
-CREATE TABLE Lots.LineInventory (
-    Id              BIGINT       NOT NULL IDENTITY(1,1) PRIMARY KEY,
-    ItemId          BIGINT       NOT NULL REFERENCES Parts.Item(Id),
-    LocationId      BIGINT       NOT NULL REFERENCES Location.Location(Id),
-    OnHandQty       INT          NOT NULL DEFAULT 0,
-    RowVersion      BIGINT       NOT NULL DEFAULT 0,   -- optimistic lock for manual Adjust
-    CreatedAt       DATETIME2(3) NOT NULL DEFAULT SYSUTCDATETIME(),
-    UpdatedAt       DATETIME2(3) NULL,
-    CreatedByUserId BIGINT       NOT NULL REFERENCES Location.AppUser(Id),
-    UpdatedByUserId BIGINT       NULL     REFERENCES Location.AppUser(Id),
-    CONSTRAINT CK_LineInventory_OnHand_NonNeg CHECK (OnHandQty >= 0)
-);
-CREATE UNIQUE INDEX UQ_LineInventory_Item_Location ON Lots.LineInventory (ItemId, LocationId);
-
--- Lots.LineInventoryTxnType — fixed-seed code table (same shape as the code
---   tables above: Id/Code/Name/Description/CreatedAt/DeprecatedAt + UQ on Code)
---   seed: (1,'Receive'), (2,'Consume'), (3,'Adjust')
-CREATE TABLE Lots.LineInventoryTxnType ( /* Id, Code, Name, Description, CreatedAt, DeprecatedAt */ );
-
--- Lots.LineInventoryTxn — append-only ledger; every balance change writes one row
-CREATE TABLE Lots.LineInventoryTxn (
-    Id                 BIGINT       NOT NULL IDENTITY(1,1) PRIMARY KEY,
-    LineInventoryId    BIGINT       NOT NULL REFERENCES Lots.LineInventory(Id),
-    TxnTypeId          BIGINT       NOT NULL REFERENCES Lots.LineInventoryTxnType(Id),
-    QtyDelta           INT          NOT NULL,           -- signed: + receive, - consume, ± adjust
-    BalanceAfter       INT          NOT NULL,
-    Reason             NVARCHAR(200) NULL,
-    VendorLotNumber    NVARCHAR(50) NULL,               -- Receive only (decision B)
-    ProducedLotId      BIGINT       NULL REFERENCES Lots.Lot(Id),          -- Consume soft ref (C)
-    ProducedContainerTrayId BIGINT  NULL REFERENCES Lots.ContainerTray(Id),-- Consume soft ref (C)
-    AppUserId          BIGINT       NOT NULL REFERENCES Location.AppUser(Id),
-    TerminalLocationId BIGINT       NULL REFERENCES Location.Location(Id),
-    CreatedAt          DATETIME2(3) NOT NULL DEFAULT SYSUTCDATETIME()
-);
-CREATE INDEX IX_LineInventoryTxn_LineInventoryId ON Lots.LineInventoryTxn (LineInventoryId);
-```
-
-`CK_LineInventory_OnHand_NonNeg` is the structural backstop for decision A — a decrement that would go negative is rejected in-proc *before* it hits the constraint, but the constraint guarantees no path can leave a negative balance.
-
-### 3.3 Audit code tables
-
-Add `Audit.LogEntityType` row for `LineInventory` and `Audit.LogEventType` rows for `LineInventoryReceived`, `LineInventoryConsumed`, `LineInventoryAdjusted` (next free ids — confirm high-water at build). Receive/Adjust write `Audit.Audit_LogOperation`; the tray-completion Consume path is audited by the *existing* `Assembly_CompleteTray` `TrayClosed` operation row (the ledger row carries the per-component detail), so no separate Consume audit row per component.
+No migration. No new/changed stored procs. No named-query changes (all needed NQs — `lots/Lot_Create`, `lots/LotOriginType_List`, `parts/Item_List`, `lots/Lot_GetLineInventoryByPart` — already exist).
 
 ---
 
-## 4. `Workorder.Assembly_CompleteTray` → v2.0
+## 4. `InventoryManager` popup (edit — new section added)
 
-The proc's BOM-consume loop (block B4) currently FIFO-consumes **every** BOM line from LOTs at the cell and writes genealogy edges. v2.0 branches per BOM line on the child item's tracking mode.
+Root stays `pf-*` plant-floor styling and `meta.name: "root"`. The current popup is a single flex column (Header, scan label, scan field, on-hand label, on-hand table). The change restructures the top into two labeled sections and adds the receive form; the on-hand table is untouched.
 
-### 4.1 Per-line branch (block B4)
+### 4.1 New view state (`view.custom`)
 
-For each `Parts.BomLine` of the active BOM, resolve `child.InventoryTrackingModeId`:
+Added alongside the existing `scanCode` / `refreshToken`:
+- `receiveDraft: { "partItemId": null, "qty": "", "vendorLotNumber": "" }` — **fully-shaped default** (pre-declared-bound-props + editDraft-shape rules: every bound key seeded so the form doesn't render `"null"`/error borders before first load).
+- `partOptions` — bound to `runScript("BlueRidge.Parts.Item.getForDropdown", 0)` (all active parts, matching the Receiving Dock). *Scope note: this can later be narrowed to line-eligible parts via a scoped read; kept broad + zero-SQL for v1.*
+- `receivedOriginId` — bound to `runScript("BlueRidge.Lots.Lot.getOriginTypeIdByCode", 0, "Received")`.
 
-- **`Lot` (unchanged):** existing FIFO LOT consumption — `ConsumptionEvent`, `Lot` decrement/close, `LotGenealogy` edge (`RelationshipTypeId=3`), closure ancestors → FG LOT. Verbatim today's logic.
-- **`Count` (new, inlined):** decrement `Lots.LineInventory.OnHandQty` for `(ChildItemId, @CellLocationId)` by `CAST(QtyPer * @PieceCount AS INT)` under `UPDLOCK`, bump `RowVersion`/`UpdatedAt`, and insert one `Lots.LineInventoryTxn` `Consume` row (`QtyDelta` negative, `BalanceAfter` = new balance, `ProducedLotId=@FinishedGoodLotId`, `ProducedContainerTrayId=@ContainerTrayId`). **No** `ConsumptionEvent`, **no** `LotGenealogy`, **no** closure rows. There is **no standalone `LineInventory_Consume` proc** — the decrement lives only inline here, because `Assembly_CompleteTray` is captured via INSERT-EXEC and cannot EXEC a status-row sub-proc (same rule that forces the FG-mint / container-open blocks to be inlined). The inline block carries a comment describing the receive/consume ledger invariant it upholds.
+### 4.2 New custom method `receiveLoose()`
 
-### 4.2 Pre-transaction sufficiency check (block 7)
+A view `customMethod` mirroring `ReceivingDock.createLot` **minus the print + navigate tail** (matching the existing `InventoryManager.checkIn` house style of multi-line orchestration customMethods). Logic:
 
-The existing advisory pre-check (LOT `SUM(InventoryAvailable)` per BOM line) gains a parallel branch: for **Count** lines, compare `Lots.LineInventory.OnHandQty` at the cell against `CAST(QtyPer * @PieceCount AS INT)`. If any line — LOT or Count — is short, reject before `BEGIN TRANSACTION` with `Status=0` and message `Insufficient component stock at the line for one or more BOM lines.` (decision A). The in-transaction re-check for Count lines is the `UPDLOCK`'d read + a `RAISERROR` if the balance would go negative (mirrors the LOT "drained mid-consume" `RAISERROR` → CATCH → clean `Status=0`).
+1. Unwrap `receiveDraft` + `partItemId` (`extractQualifiedValues`).
+2. Resolve the part: a numeric option value is a real `Item.Id`; a free-text (custom-option) value is a part-number string → `Parts.Item.getByPartNumber` → `Id`. Unknown part → warning toast, return.
+3. Coerce `qty` to a positive int (blank/invalid → warning toast, return).
+4. Resolve `appUserId` (`session.custom.appUserId`) and `terminalLocationId` (`session.custom.terminal.terminalLocationId`, best-effort).
+5. `BlueRidge.Lots.Lot.create({ itemId, lotOriginTypeId: receivedOriginId, currentLocationId: params.locationId, pieceCount: qty, vendorLotNumber: (draft.vendorLotNumber or None) }, appUserId, terminalLocationId)`.
+6. `Common.Ui.notifyResult(res, "Parts received")`. On success: reset `receiveDraft` to its empty shape, bump `refreshToken` (re-reads the on-hand table), and `system.perspective.sendMessage(params.replyMessage, {"lotId": res.NewId}, scope="page")` so the embedding view refreshes (same contract the LTT check-in already uses).
 
-### 4.3 Invariants preserved
+If `params.locationId` is null, toast "No line selected" and return (same guard as `checkIn`).
 
-- Still a single status-row SELECT (`Status, Message, FinishedGoodLotId, ContainerId, ContainerTrayId, ContainerFull`) — FDS-11-011.
-- All rejecting validations before `BEGIN TRANSACTION`; the only in-proc `ROLLBACK` site is the CATCH (INSERT-EXEC / Msg 3915 rule).
-- `SET XACT_ABORT ON`, `RAISERROR` (not `THROW`) in CATCH.
+### 4.3 New children (between the LTT scan and the on-hand table)
 
----
+A **Receive loose parts** section (`pf-panel`, `overflow:hidden` on single-line rows):
+- Part# **dropdown** (`ia.input.dropdown`, `allowCustomOptions: true`, `search.enabled: true`) bound to `partOptions`, value bidirectional to `receiveDraft.partItemId`, 44px min height.
+- **Piece Count** text-field (`inputType: "tel"`), value bidirectional to `receiveDraft.qty`.
+- Optional collapsed **Vendor LOT** text-field, value bidirectional to `receiveDraft.vendorLotNumber` (decision 4).
+- **Add** button → `self.view.rootContainer.receiveLoose()`.
 
-## 5. Procs + read layer (all `Lots` schema, repeatable)
+The existing **Check in LTT** scan field is relabeled into its own section header for symmetry; its behavior (`onBlur → checkIn()`) is unchanged. `defaultSize.height` grows (~560 → ~720) to fit the new section.
 
-Per FDS-11-011: no OUTPUT params; mutation procs end every exit path with `SELECT @Status AS Status, @Message AS Message[, @NewId AS NewId]`. Audit Description follows the `<SUBJECT> · <CATEGORY> · <ACTION>` convention via `Audit.ufn_MidDot()` / `Audit.ufn_TruncateActivity()`, with resolved-name FK sub-objects in Old/New JSON.
+### 4.4 On-hand table — unchanged
 
-| Proc | Kind | Contract |
-|---|---|---|
-| `Lots.LineInventory_Receive` | mutation | `@ItemId, @LocationId, @Qty, @VendorLotNumber=NULL, @AppUserId, @TerminalLocationId=NULL`. **Rejects** if the item is not `Count`-tracked (`Status=0`, "This part is LOT-tracked — check in its LTT instead."), if `@Qty <= 0`, or if the item is not eligible at the location. Optional OI-12 `Item.MaxParts` cap check (reject if `OnHand + @Qty > MaxParts`). Upserts the `LineInventory` balance under `UPDLOCK` (insert row if none), inserts a `Receive` ledger row, writes `LineInventoryReceived` audit. Returns `Status, Message, NewId` (`NewId` = `LineInventory.Id`). |
-| `Lots.LineInventory_Adjust` | mutation | `@LineInventoryId, @NewOnHandQty, @Reason, @RowVersion, @AppUserId, @TerminalLocationId=NULL`. Optimistic-locked (RowVersion mismatch → the standard "modified by another user" `Status=0`). Sets the absolute balance, writes an `Adjust` ledger row (`QtyDelta` = new − old), `LineInventoryAdjusted` audit. Returns `Status, Message`. |
-| `Lots.Inventory_GetOnHandByLocation` | read | `@LocationId`. **Unified** on-hand read — UNIONs LOT rows and Count rows with a `Source` discriminator column. **Supersedes `Lots.Lot_GetLineInventoryByPart`** (only the popup calls it). Columns: `Source` (`'LOT'`\|`'Count'`), `ItemId`, `PartNumber`, `Description`, `LotName` (NULL for Count), `LineInventoryId` (NULL for LOT), `OnHand` (LOT `InventoryAvailable` / Count `OnHandQty`), `RowVersion` (NULL for LOT), `ArrivedAt` (ET-converted: LOT last-arrival / Count `UpdatedAt`). Ordered `PartNumber ASC, Source, ArrivedAt ASC`. ET conversion at the read boundary via `CAST(... AT TIME ZONE 'UTC' AT TIME ZONE 'Eastern Standard Time' AS DATETIME2(3))` (OI-36). |
+`InventoryTable` keeps its current binding to `Lot.getLineInventoryByPart` (grouped by part, FIFO by arrival). A freshly-minted Received LOT lands with `CurrentLocationId = the line`, so it appears in the table on the next `refreshToken` bump with its server-minted LTT name, available qty, and arrival time — no read change needed.
 
-`Lots.Lot_GetLineInventoryByPart` is retired in the same migration (its NQ + entity method removed) once the popup repoints to the unified read. (Grep confirmed the popup is its only caller.)
+### 4.5 Embedding — unchanged
 
----
-
-## 6. Ignition layer (Core project — file-authored + `scan.ps1`)
-
-### 6.1 Entity script — `BlueRidge.Lots.LineInventory` (new module)
-
-```
-script-python/BlueRidge/Lots/LineInventory/code.py
-```
-Standard entity shape, all access via `BlueRidge.Common.Db.*`, `_currentAppUserId()` for attribution:
-- `receive(itemId, locationId, qty, vendorLot=None, appUserId=None, terminalLocationId=None)` → `execMutation("lots/LineInventory_Receive", ...)`
-- `adjust(data, appUserId=None, terminalLocationId=None)` → `execMutation("lots/LineInventory_Adjust", ...)`
-- `getOnHandByLocation(locationId, _refreshToken=None)` → `execList("lots/Inventory_GetOnHandByLocation", ...)` (ignored refresh-token arg so the popup's `runScript` binding re-reads after a receive/adjust — the refreshToken-as-arg rule).
-
-### 6.2 `BlueRidge.Parts.Item` additions
-
-- `getCountTrackedForDropdown(locationId=None)` → `[{label: PartNumber, value: Id}]` scoped to `Count`-tracked active items (optionally further scoped to items eligible at the line). Backs the "Receive loose parts" picker so a LOT-tracked part cannot be received as a count. Reuses the existing `getByPartNumber` for typed/scanned resolution of a free-text entry.
-- Item Identity read/update already round-trips the full row; add `InventoryTrackingModeId` to the Identity save contract (§7) and an options helper `getTrackingModeOptions()`.
-
-### 6.3 Named queries (new, `lots/` + `parts/`)
-
-`lots/LineInventory_Receive` (UpdateQuery), `lots/LineInventory_Adjust` (UpdateQuery), `lots/Inventory_GetOnHandByLocation` (Query), `parts/Item_ListCountTrackedForLocation` (Query), `parts/InventoryTrackingMode_List` (Query). `sqlType` per Designer's enum (Id params = `3`, NVARCHAR = `7`); v2 resource.json shape.
+`AssemblyIn` / `AssemblyNonSerialized` / `AssemblySerialized` / `MachiningIn` / `MachiningOutSplit` already open `mpp-inventory` with `params={locationId: session.custom.cell.locationId, replyMessage: "inventoryChanged"}`. The button tooltip ("Check component / pass-through inventory in to this line") already fits.
 
 ---
 
-## 7. `InventoryManager` popup (rewrite — new-file authorable)
+## 5. Testing / verification
 
-The popup is restructured enough (new sections + a `state`/refresh model + a unified table) that it is authored as a fresh `view.json` and picked up via `scan.ps1` — it is not a surgical Designer-only edit. Root stays `pf-*` plant-floor styling (`canvas`/`pf-panel`/`pf-field`/`pf-btn`, 44px touch targets), `meta.name: "root"`.
+No SQL tests (no SQL change). Verification is a **Designer smoke** of the popup (the CLI-impossible step), against a demo-seeded, gateway-restarted dev DB:
 
-**Custom state:** `scanCode` (LTT field), `receiveDraft: {partItemId, qty, vendorLotNumber}` (fully-shaped default per the pre-declared-bound-props / editDraft-shape rules), `refreshToken`, `countOptions` (bound to `Item.getCountTrackedForDropdown`).
+1. Open the popup from an assembly line (`session.custom.cell.locationId` set, operator resolved).
+2. **Receive loose parts:** pick/scan a part number, enter a qty, Add → success toast; the on-hand table shows a new Received LOT row for that part+qty; the form clears; the embedding view's inventory refreshes.
+3. Free-text part number (type a part# not in the list) resolves via `getByPartNumber`; unknown part# → warning toast, no LOT minted.
+4. Blank/zero/negative qty → warning toast, no LOT minted.
+5. **Check in LTT** still works unchanged (scan an existing LTT → LOT moves onto the line).
+6. Optional Vendor LOT flows onto the minted `Lot.VendorLotNumber` (verify via LOT Detail).
+7. Received LOT is consumable: complete an assembly tray whose BOM includes that part → it draws down via the existing FIFO path (proves "behaves like any other lot").
 
-**Sections (top→bottom):**
-1. **Header** — "Line Inventory" + cell name.
-2. **Check in LTT** (`pf-panel`) — the existing scan field; `onBlur` → `checkIn()` → `Lot.moveToValidated` (verbatim today). Single-line rows get explicit `overflow:hidden`.
-3. **Receive loose parts** (`pf-panel`) — part# dropdown (`allowCustomOptions`, bound to `countOptions`) + qty text-field (`inputType:"tel"`) + optional collapsed Vendor LOT field (decision B) + **Add** button → `receiveLoose()` → `LineInventory.receive`; on success clears the draft + bumps `refreshToken`.
-4. **On hand** (`ia.display.table`, full column schema per the table-column rule) — bound via `runScript("BlueRidge.Lots.LineInventory.getOnHandByLocation", 0, {locationId}, {refreshToken})`. Columns: **Type** (LOT/Count), **Part**, **LOT** (blank for counts), **On hand**, **Updated (ET)**. Count rows expose a minimal **Adjust** action (decision E) — opens a small qty popup → `LineInventory.adjust` (RowVersion-guarded), bumps `refreshToken`.
-
-Both check-in paths bump the shared `refreshToken` and send the existing `replyMessage` (`inventoryChanged`) page message so the embedding assembly/machining view refreshes.
-
-**Embedding unchanged** — `AssemblyIn/NonSerialized/Serialized` + `MachiningIn/MachiningOutSplit` already open `mpp-inventory` with `params={locationId: session.custom.cell.locationId}`; the tooltip ("Check component / pass-through inventory in to this line") already fits.
+File-author the view edit + `scan.ps1`; keep Designer closed on `InventoryManager` until the scan is picked up (open-view reconciliation caution). Because the popup is substantially restructured (new sections + state), authoring the whole `view.json` fresh is acceptable — but confirm no stale Designer cache exists first (it's an existing view).
 
 ---
 
-## 8. Config Tool — Item Master Identity tab (decision D)
+## 6. Change inventory
 
-Add an **Inventory Tracking** dropdown (`Lot` / `Count`) to the Identity section, bound into `editDraft.identity.inventoryTrackingModeId`, options from `Item.getTrackingModeOptions()`. Follows the per-section-ownership + atomic-state-write conventions (single `view.custom.state = {...}` write on load; `sectionDirtyChanged` broadcast). The Item Identity update proc (`Parts.Item_Update`) takes a new `@InventoryTrackingModeId` param; audit Old/New JSON resolves it to `{Id, Code, Name}`.
+**SQL:** none.
 
-**Guard:** changing a part from `Count` → `Lot` (or vice-versa) while it has a non-zero `LineInventory` balance or open `Received` LOTs is a state hazard. v1 rule: the Item_Update proc **rejects** a tracking-mode change while the part has a non-zero on-hand count at any location (`Status=0`, clear message). Broadened reconciliation (migrating existing on-hand between representations) is out of scope.
+**Ignition (MPP project, file-authored + scanned):**
+- `Components/PlantFloor/InventoryManager/view.json` — add `receiveDraft` / `partOptions` / `receivedOriginId` state, the `receiveLoose()` custom method, and the **Receive loose parts** section; relabel the LTT scan into its own section; grow `defaultSize.height`. On-hand table + `checkIn` unchanged.
 
----
+**Ignition entity scripts:** none required — `Lot.create`, `Lot.getOriginTypeIdByCode`, `Item.getForDropdown`, `Item.getByPartNumber` all exist. *(Optional, only if we later scope the picker to line-eligible parts: a `Parts.Item.get…ForLocation` helper + read — deferred.)*
 
-## 9. Seed / demo
-
-`sql/scratch/seed_demo.sql` currently receives pins/studs/dowels as `Received` LOTs consumed by assembly. Update the demo so **one** purchased component (the 21001 pin) is marked `Count`-tracked and seeded with a `Lots.LineInventory` balance at its assembly line, so the demo exercises a **mixed BOM** (LOT sub-assembly + Count pin) through `Assembly_CompleteTray`. The other purchased parts stay `Received` LOTs to keep both paths demonstrated. Internal code-table seeds (`InventoryTrackingMode`, `LineInventoryTxnType`) bake into migration `0038`, not the seeding registry.
-
----
-
-## 10. Testing (TDD)
-
-**New suite `sql/tests/0038_PlantFloor_LineInventory/`:**
-- `LineInventory_Receive`: happy path (new balance row + Receive ledger + audit); reject LOT-tracked part; reject qty ≤ 0; reject not-eligible-at-location; MaxParts cap; second receive accumulates.
-- `LineInventory_Adjust`: absolute set + ledger row; RowVersion mismatch rejects; non-negative constraint.
-- `Inventory_GetOnHandByLocation`: unified UNION shape (LOT + Count rows, `Source` column, ET `ArrivedAt`); empty rowset when nothing on hand.
-
-**Extend `sql/tests/0028_PlantFloor_Assembly/` (`092_Assembly_CompleteTray`):**
-- Mixed BOM (one `Lot` child, one `Count` child): FG mint consumes the LOT via FIFO+genealogy **and** decrements the count + writes a `Consume` ledger row with `ProducedLotId`/`ProducedContainerTrayId`; **no** `LotGenealogy` edge for the count child.
-- Insufficient count stock → `Status=0`, no partial mutation (transaction rolled back).
-- Count child with exactly-enough stock (boundary).
-
-Re-run the **full suite** after the proc-shape + precondition changes (INSERT-EXEC fixed-shape captures + the Assembly test fixtures) per the "re-run suite after proc shape / precondition change" rule; grep both `ERROR running` and `FAIL:`.
+**Docs:** a short FDS note under the Assembly/Inventory section — the lineside inventory popup can receive loose parts by part# + qty, minted as a `Received` LOT (no label). Data Model unchanged. OIR: close/track any related open item. Regenerate `.docx` if FDS text changes.
 
 ---
 
-## 11. Change inventory
+## 7. Open items / risks
 
-**SQL — migration `0038` (versioned):**
-- `Parts.InventoryTrackingMode` table + seed; `Parts.Item.InventoryTrackingModeId` FK + index + default backfill.
-- `Lots.LineInventory`, `Lots.LineInventoryTxnType` (+seed), `Lots.LineInventoryTxn`.
-- `Audit.LogEntityType` (+1) / `LogEventType` (+3) seeds.
-
-**SQL — repeatable procs:**
-- New: `Lots.LineInventory_Receive`, `Lots.LineInventory_Adjust`, `Lots.Inventory_GetOnHandByLocation`, `Parts.Item_ListCountTrackedForLocation`, `Parts.InventoryTrackingMode_List`.
-- Modified: `Workorder.Assembly_CompleteTray` → **v2.0** (per-line LOT/Count branch + count sufficiency pre-check); `Parts.Item_Update` (+`@InventoryTrackingModeId`, tracking-mode change guard); `Parts.Item_Get`/`_List` (+`InventoryTrackingModeId`/Code in SELECT — widen any INSERT-EXEC capture temp tables).
-- Retired: `Lots.Lot_GetLineInventoryByPart`.
-
-**Ignition (Core + MPP + MPP_Config, file-authored + scanned):**
-- New entity module `BlueRidge.Lots.LineInventory`; `Parts.Item` additions.
-- 5 new NQs (§6.3); retire `lots/Lot_GetLineInventoryByPart` NQ + `Lot.getLineInventoryByPart`.
-- `Components/PlantFloor/InventoryManager` view rewrite (§7).
-- Item Master Identity tab + Item entity tracking-mode field (§8).
-
-**Docs:** Data Model (new tables + `Item.InventoryTrackingModeId`, changelog row); FDS (a short subsection under the Assembly/Inventory section describing the two inventory representations + the count-decrement rule + the genealogy tradeoff of §2.1); OIR (close/track any related open item). Regenerate `.docx` per the doc-generation convention.
+1. **Unlabeled boxes (decision 3).** Minted LOTs get no printed LTT, so a later *manual* move/hold of that physical box has no barcode. Accepted; Assembly consumption doesn't need one. Revisit if MPP wants labels (drop-in Receiving Dock print path).
+2. **Part-picker scope.** v1 lists all active parts (matches Receiving Dock). If mis-picks are a concern, scope to line-eligible parts — small follow-up (one scoped read + entity method).
+3. **No eligibility gate at mint.** `Lot_Create` does not check that the item is eligible at the line (Receiving mints anywhere). A loose-parts receipt therefore trusts the operator's part pick. Consistent with today's Receiving Dock; flag to MPP if they want a mint-time eligibility check at assembly lines.
+4. **Duplicate/rapid Add.** The Add button should debounce or the operator could mint two LOTs on a double-tap; a minor UX guard (disable-while-inflight) is worth including in the build.
 
 ---
 
-## 12. Open items / risks
+## 8. Build order (feeds writing-plans, or direct build — small scope)
 
-1. **Genealogy tradeoff (§2.1)** — accepted by MPP for explicitly Count-tracked parts. Surface in the FDS so it is a documented decision, not a silent gap.
-2. **Mode-change reconciliation (§8)** — v1 rejects a tracking-mode flip while on-hand is non-zero. A migration path (convert existing `Received` LOTs ↔ `LineInventory` counts) is deferred; call it out to MPP if they need to re-classify parts that already have stock.
-3. **Cross-location counts** — `LineInventory` is keyed by exact `(ItemId, LocationId)` (the cell). `Assembly_CompleteTray` decrements at `@CellLocationId`. Confirm loose parts are always received at the *same* location granularity the tray completes at (the cell), not a parent zone. If receipts land at a zone and consumption at a child cell, a small ancestor-resolution is needed (out of scope until confirmed).
-4. **`MaxParts` cap on receive** — included as an optional check; confirm MPP wants the OI-12 lineside cap enforced on loose-parts receipts as it is on LOT moves.
-5. **Audit id high-water** — confirm the next free `LogEntityType`/`LogEventType` ids at build (the terminal-mint + quality-capture work consumed several).
+1. Edit `InventoryManager/view.json`: state + `receiveLoose()` + Receive-loose-parts section; grow height. `scan.ps1`.
+2. Designer smoke per §5.
+3. FDS note + `.docx` if changed.
 
----
-
-## 13. Build order (feeds writing-plans)
-
-1. Migration `0038` (tables + seeds + Item ALTER) — TDD scaffolding first.
-2. `Lots.LineInventory_Receive` / `_Adjust` / `Inventory_GetOnHandByLocation` + suite `0038`.
-3. `Assembly_CompleteTray` v2.0 + `0028` mixed-BOM tests; full-suite re-run.
-4. `Parts.Item_Update`/`_Get`/`_List` tracking-mode plumbing.
-5. Core NQs + entity modules; retire the superseded read.
-6. `InventoryManager` popup rewrite; scan + Designer smoke.
-7. Item Master Identity tracking-mode field; scan + Designer smoke.
-8. `seed_demo` mixed-BOM update; docs (Data Model / FDS / OIR) + `.docx`.
+Given the scope (one view, no SQL), this may not warrant a full multi-phase implementation plan — a direct build against §4 + the §5 smoke checklist is likely sufficient.
