@@ -1,84 +1,36 @@
 {
   "custom": {
-    "dirty": true,
+    "dirty": false,
     "draftPath": null,
     "editDraft": {
-      "attributes": [
-        {
-          "dataType": "DECIMAL",
-          "defaultValue": "",
-          "definitionId": 4,
-          "description": "Machine tonnage rating",
-          "id": null,
-          "name": "Tonnage",
-          "required": false,
-          "sortOrder": 1,
-          "uom": "tons",
-          "value": ""
-        },
-        {
-          "dataType": "INT",
-          "defaultValue": "",
-          "definitionId": 5,
-          "description": "Number of die cavities",
-          "id": null,
-          "name": "NumberOfCavities",
-          "required": false,
-          "sortOrder": 2,
-          "uom": "",
-          "value": ""
-        },
-        {
-          "dataType": "DECIMAL",
-          "defaultValue": "",
-          "definitionId": 6,
-          "description": "Reference cycle time in seconds",
-          "id": null,
-          "name": "RefCycleTimeSec",
-          "required": false,
-          "sortOrder": 3,
-          "uom": "seconds",
-          "value": ""
-        },
-        {
-          "dataType": "DECIMAL",
-          "defaultValue": "",
-          "definitionId": 7,
-          "description": "OEE target percentage",
-          "id": null,
-          "name": "OeeTarget",
-          "required": false,
-          "sortOrder": 4,
-          "uom": "",
-          "value": ""
-        }
-      ],
+      "attributes": [],
       "meta": {
-        "code": "DC3-M02",
-        "description": "Die cast machine",
-        "id": 25,
-        "locationTypeDefinitionId": 8,
-        "name": "Machine 02",
-        "parentLocationId": 23,
-        "sortOrder": 2
+        "code": "TRIM2",
+        "description": "Trim shop - trim press cells, no sublot split",
+        "id": 43,
+        "locationTypeDefinitionId": 3,
+        "name": "Trim Shop 2",
+        "parentLocationId": 2,
+        "sortOrder": 6
       }
     },
     "mode": "update",
+    "oldSelectedPath": "0/0/5",
     "pendingNav": null,
     "searchFilter": "",
     "selected": {
-      "code": "DC3-M02",
-      "definitionId": 8,
-      "definitionName": "Die Cast Machine",
-      "depth": 3,
-      "description": "Die cast machine",
-      "hierarchyLevel": 4,
-      "id": 25,
-      "name": "Machine 02",
-      "sortOrder": 2,
-      "typeName": "Cell"
+      "code": "TRIM2",
+      "definitionId": 3,
+      "definitionName": "Production Area",
+      "depth": 2,
+      "description": "Trim shop - trim press cells, no sublot split",
+      "hierarchyLevel": 2,
+      "id": 43,
+      "name": "Trim Shop 2",
+      "sortOrder": 6,
+      "typeName": "Area"
     },
-    "selectedPath": "0/0/0/1",
+    "selectedPath": "0/0/5",
     "sortedTree": [
       {
         "data": {
@@ -3844,13 +3796,16 @@
   },
   "params": {},
   "propConfig": {
+    "custom.oldSelectedPath": {
+      "persistent": true
+    },
     "custom.searchFilter": {
       "persistent": true
     },
     "custom.selected": {
       "onChange": {
-        "enabled": true,
-        "script": "\t# Tree\u0027s bidirectional writeback hands us BasicQualifiedValue\n\t# wrappers around the node\u0027s data dict + every nested field.\n\t# Deep-unwrap before passing Ids across module boundaries --\n\t# NQ param-binding rejects the wrappers with a ClassCastException.\n\tprev \u003d BlueRidge.Common.Util.extractQualifiedValues(previousValue.value) if previousValue else None\n\tcurr \u003d BlueRidge.Common.Util.extractQualifiedValues(currentValue.value) if currentValue else None\n\tprevId \u003d prev.get(\"id\") if prev else None\n\tcurrId \u003d curr.get(\"id\") if curr else None\n\tif currId is None or currId \u003d\u003d prevId:\n\t\treturn\n\tif self.view.custom.mode \u003d\u003d \"create\":\n\t\treturn\n\tloc \u003d BlueRidge.Location.Location.getOne(currId)\n\tif not loc:\n\t\tself.view.custom.editDraft \u003d {\"meta\": None, \"attributes\": []}\n\t\tself.view.custom.mode \u003d \"view\"\n\t\tself.view.custom.dirty \u003d False\n\t\treturn\n\tmeta \u003d BlueRidge.Location.Location.metaFromLocation(loc)\n\tattrs \u003d BlueRidge.Location.Location.buildAttributesForType(meta.get(\"locationTypeDefinitionId\"), meta.get(\"id\"))\n\tself.view.custom.editDraft \u003d {\"meta\": meta, \"attributes\": attrs}\n\tself.view.custom.mode \u003d \"update\"\n\tself.view.custom.dirty \u003d False\n\tself.view.custom.draftPath \u003d None"
+        "enabled": null,
+        "script": "\t# Tree\u0027s bidirectional writeback hands us BasicQualifiedValue\n\t# wrappers around the node\u0027s data dict + every nested field.\n\t# Deep-unwrap before passing Ids across module boundaries --\n\t# NQ param-binding rejects the wrappers with a ClassCastException.\n\tprev \u003d BlueRidge.Common.Util.extractQualifiedValues(previousValue.value) if previousValue else None\n\tcurr \u003d BlueRidge.Common.Util.extractQualifiedValues(currentValue.value) if currentValue else None\n\tprevId \u003d prev.get(\"id\") if prev else None\n\tcurrId \u003d curr.get(\"id\") if curr else None\n\tif currId is None or currId \u003d\u003d prevId:\n\t\treturn\n\tif self.view.custom.mode \u003d\u003d \"create\":\n\t\treturn\n\t\n\tif not self.custom.dirty:\n\t\tself.view.rootContainer.handleLocationChange(currId)\n\telse:\n\t\tsystem.perspective.openPopup(\n\t\t\tid\u003d\"mpp-confirm-unsaved\",\n\t\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmUnsaved\",\n\t\t\tmodal\u003dTrue,\n\t\t\tshowCloseIcon\u003dFalse,\n\t\t\tparams\u003d{\n\t\t\t\t\"title\":   \"Discard Die?\",\n\t\t\t\t\"message\": \"You have started filling out this form. Discard before closing?\",\n\t\t\t},\n\t\t)"
       }
     },
     "custom.selectedPath": {
@@ -4180,7 +4135,7 @@
                   ],
                   "selectionData": [
                     {
-                      "itemPath": "0/0/0/1"
+                      "itemPath": "0/0/5"
                     }
                   ]
                 },
@@ -4367,7 +4322,7 @@
                           "component": {
                             "onActionPerformed": {
                               "config": {
-                                "script": "\tdraft \u003d self.view.custom.editDraft or {}\n\tresult \u003d BlueRidge.Location.Location.handleSaveAll(draft.get(\"meta\") or {}, draft.get(\"attributes\") or [])\n\tif not result:\n\t\treturn\n\tself.view.custom.tree \u003d result[\"tree\"]\n\tself.view.custom.selectedPath \u003d result[\"selectedPath\"]\n\tself.view.custom.selected \u003d result[\"selected\"]\n\tself.view.custom.editDraft \u003d result[\"editDraft\"]\n\tself.view.custom.mode \u003d result[\"mode\"]\n\tself.view.custom.draftPath \u003d None\n\tself.view.custom.dirty \u003d False"
+                                "script": "\tself.view.rootContainer.handleSave()"
                               },
                               "scope": "G",
                               "type": "script"
@@ -5309,7 +5264,20 @@
       }
     },
     "scripts": {
-      "customMethods": [],
+      "customMethods": [
+        {
+          "name": "handleLocationChange",
+          "params": [
+            "currId"
+          ],
+          "script": "\tloc \u003d BlueRidge.Location.Location.getOne(currId)\n\tif not loc:\n\t\tself.view.custom.editDraft \u003d {\"meta\": None, \"attributes\": []}\n\t\tself.view.custom.mode \u003d \"view\"\n\t\tself.view.custom.dirty \u003d False\n\t\treturn\n\tmeta \u003d BlueRidge.Location.Location.metaFromLocation(loc)\n\tattrs \u003d BlueRidge.Location.Location.buildAttributesForType(meta.get(\"locationTypeDefinitionId\"), meta.get(\"id\"))\n\tself.view.custom.editDraft \u003d {\"meta\": meta, \"attributes\": attrs}\n\tself.view.custom.mode \u003d \"update\"\n\tself.view.custom.dirty \u003d False\n\tself.view.custom.draftPath \u003d None\n\tself.view.custom.oldSelectedPath \u003d self.view.custom.selectedPath"
+        },
+        {
+          "name": "handleSave",
+          "params": [],
+          "script": "\tdraft \u003d self.view.custom.editDraft or {}\n\tresult \u003d BlueRidge.Location.Location.handleSaveAll(draft.get(\"meta\") or {}, draft.get(\"attributes\") or [])\n\tif not result:\n\t\treturn\n\tself.view.custom.tree \u003d result[\"tree\"]\n\tself.view.custom.selectedPath \u003d result[\"selectedPath\"]\n\tself.view.custom.selected \u003d result[\"selected\"]\n\tself.view.custom.editDraft \u003d result[\"editDraft\"]\n\tself.view.custom.mode \u003d result[\"mode\"]\n\tself.view.custom.draftPath \u003d None\n\tself.view.custom.dirty \u003d False"
+        }
+      ],
       "extensionFunctions": null,
       "messageHandlers": [
         {
@@ -5321,10 +5289,10 @@
         },
         {
           "messageType": "confirmUnsavedResult",
-          "pageScope": false,
-          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\tpending \u003d self.view.custom.pendingNav\n\tif action \u003d\u003d \"save\":\n\t\tdraft \u003d self.view.custom.editDraft or {}\n\t\tresult \u003d BlueRidge.Location.Location.handleSaveAll(draft.get(\"meta\") or {}, draft.get(\"attributes\") or [])\n\t\tif not result:\n\t\t\treturn\n\t\tself.view.custom.tree \u003d result[\"tree\"]\n\t\tself.view.custom.selectedPath \u003d result[\"selectedPath\"]\n\t\tself.view.custom.selected \u003d result[\"selected\"]\n\t\tself.view.custom.editDraft \u003d result[\"editDraft\"]\n\t\tself.view.custom.mode \u003d result[\"mode\"]\n\t\tself.view.custom.draftPath \u003d None\n\t\tself.view.custom.dirty \u003d False\n\t\tself.view.custom.pendingNav \u003d None\n\telif action \u003d\u003d \"discard\":\n\t\tself.view.custom.dirty \u003d False\n\t\tself.view.custom.draftPath \u003d None\n\t\tself.view.custom.pendingNav \u003d None\n\t\tBlueRidge.Common.Notify.toast(\"Discarded\", \"Changes discarded.\", \"info\")",
+          "pageScope": true,
+          "script": "\taction \u003d payload.get(\"action\") if payload else None\n\t#pending \u003d self.view.custom.pendingNav\n\tif action \u003d\u003d \"save\":\n\t\tdraft \u003d self.view.custom.editDraft or {}\n\t\tself.handleSave()\n\t\t\n\t\t#self.view.custom.pendingNav \u003d None\n\t\tself.handleLocationChange(self.view.custom.selected.id)\n\telif action \u003d\u003d \"discard\":\n\t\tself.view.custom.dirty \u003d False\n\t\tself.view.custom.draftPath \u003d None\n\t\t#self.view.custom.pendingNav \u003d None\n\t\tBlueRidge.Common.Notify.toast(\"Discarded\", \"Changes discarded.\", \"info\")\n\t\tself.handleLocationChange(self.view.custom.selected.id)\n\telse:\n\t\tself.view.custom.selectedPath \u003d self.view.custom.oldSelectedPath",
           "sessionScope": false,
-          "viewScope": true
+          "viewScope": false
         }
       ]
     },
