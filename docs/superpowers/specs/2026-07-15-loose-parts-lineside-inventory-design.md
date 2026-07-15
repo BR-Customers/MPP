@@ -24,6 +24,8 @@ The fix is to let the operator scan/pick the **part number**, enter the **piece 
 2. **Two explicit sections in the popup.** `InventoryManager` gets a **Check in LTT** section (today's scan → move, unchanged) and a distinct **Receive loose parts** section (part# scan/pick + qty + Add).
 3. **No LTT print (silent mint).** The receive mints the LOT and it appears in the on-hand table; **no label is printed** and there is no navigation away (it's a popup). The box stays physically unlabeled. *(Consequence to accept: a later manual move/hold of that box has no printed barcode to scan; Assembly BOM-FIFO consumption needs none. If MPP later wants labels, add the Receiving Dock's print + reprint-on-failure path — a self-contained follow-up.)*
 4. **Vendor LOT optional.** A nullable, collapsed **Vendor LOT** field is available on the receive form (carried on `Lot.VendorLotNumber`), but the minimal flow is just part# + qty.
+5. **Eligibility gate — already enforced by `Lot_Create`.** A loose-parts receive must reject a part that is not eligible at the line. **No new proc is needed** — `Lots.Lot_Create` step 4 already rejects a mint whose Item is not eligible at `@CurrentLocationId` (`Parts.v_EffectiveItemLocation`, `Direct ∪ BomDerived`, ancestor-cascaded via `Location.ufn_AncestorLocationIds`), returning `Item is not eligible at the specified location.`. Because the receive calls `Lot.create` → `Lot_Create`, the gate is automatic; the popup surfaces the rejection via `notifyResult`. (`Lot_Create` also caps `PieceCount ≤ Item.MaxLotSize` — an over-count receipt is rejected too.)
+6. **No dedicated part picker.** The receive section keeps the compact scan-or-pick **dropdown listing all active parts** (`Item.getForDropdown`) — *not* a separate/scoped picker view. An ineligible pick is caught by the decision-5 gate on Add. (Declined: scoping the dropdown to line-eligible parts, and a dedicated picker popup.)
 
 ---
 
@@ -33,7 +35,7 @@ The fix is to let the operator scan/pick the **part number**, enter the **piece 
 
 | Building block | Status |
 |---|---|
-| `Lots.Lot_Create` (mint, server-generated LTT name when `@LotName` NULL) | exists |
+| `Lots.Lot_Create` (mint, server-generated LTT name when `@LotName` NULL) — **already enforces the eligibility gate** (step 4) + `PieceCount ≤ MaxLotSize` | exists |
 | `BlueRidge.Lots.Lot.create(data, appUserId, terminalLocationId)` | exists |
 | `BlueRidge.Lots.Lot.getOriginTypeIdByCode("Received")` | exists |
 | `BlueRidge.Parts.Item.getForDropdown()` / `getByPartNumber(partNumber)` | exists |
@@ -68,6 +70,8 @@ A view `customMethod` mirroring `ReceivingDock.createLot` **minus the print + na
 
 If `params.locationId` is null, toast "No line selected" and return (same guard as `checkIn`).
 
+The **eligibility gate is server-side** (decision 5): `Lot_Create` returns `Status=0, Message='Item is not eligible at the specified location.'` for an ineligible part (and a MaxLotSize message for an over-count), which `notifyResult` surfaces as an error toast — no client-side eligibility check, no minted LOT. The client does only the cheap input coercion above (part resolution, positive-int qty).
+
 ### 4.3 New children (between the LTT scan and the on-hand table)
 
 A **Receive loose parts** section (`pf-panel`, `overflow:hidden` on single-line rows):
@@ -96,9 +100,11 @@ No SQL tests (no SQL change). Verification is a **Designer smoke** of the popup 
 2. **Receive loose parts:** pick/scan a part number, enter a qty, Add → success toast; the on-hand table shows a new Received LOT row for that part+qty; the form clears; the embedding view's inventory refreshes.
 3. Free-text part number (type a part# not in the list) resolves via `getByPartNumber`; unknown part# → warning toast, no LOT minted.
 4. Blank/zero/negative qty → warning toast, no LOT minted.
-5. **Check in LTT** still works unchanged (scan an existing LTT → LOT moves onto the line).
-6. Optional Vendor LOT flows onto the minted `Lot.VendorLotNumber` (verify via LOT Detail).
-7. Received LOT is consumable: complete an assembly tray whose BOM includes that part → it draws down via the existing FIFO path (proves "behaves like any other lot").
+5. **Eligibility gate (decision 5):** pick/scan a part that is **not** eligible at this line → Add → error toast `Item is not eligible at the specified location.`, **no** LOT minted. Then pick an eligible (Direct or BOM-derived) part → succeeds.
+6. **Over-count:** enter a qty greater than the part's `MaxLotSize` → Add → error toast (MaxLotSize message), no LOT minted.
+7. **Check in LTT** still works unchanged (scan an existing LTT → LOT moves onto the line).
+8. Optional Vendor LOT flows onto the minted `Lot.VendorLotNumber` (verify via LOT Detail).
+9. Received LOT is consumable: complete an assembly tray whose BOM includes that part → it draws down via the existing FIFO path (proves "behaves like any other lot").
 
 File-author the view edit + `scan.ps1`; keep Designer closed on `InventoryManager` until the scan is picked up (open-view reconciliation caution). Because the popup is substantially restructured (new sections + state), authoring the whole `view.json` fresh is acceptable — but confirm no stale Designer cache exists first (it's an existing view).
 
@@ -120,9 +126,10 @@ File-author the view edit + `scan.ps1`; keep Designer closed on `InventoryManage
 ## 7. Open items / risks
 
 1. **Unlabeled boxes (decision 3).** Minted LOTs get no printed LTT, so a later *manual* move/hold of that physical box has no barcode. Accepted; Assembly consumption doesn't need one. Revisit if MPP wants labels (drop-in Receiving Dock print path).
-2. **Part-picker scope.** v1 lists all active parts (matches Receiving Dock). If mis-picks are a concern, scope to line-eligible parts — small follow-up (one scoped read + entity method).
-3. **No eligibility gate at mint.** `Lot_Create` does not check that the item is eligible at the line (Receiving mints anywhere). A loose-parts receipt therefore trusts the operator's part pick. Consistent with today's Receiving Dock; flag to MPP if they want a mint-time eligibility check at assembly lines.
-4. **Duplicate/rapid Add.** The Add button should debounce or the operator could mint two LOTs on a double-tap; a minor UX guard (disable-while-inflight) is worth including in the build.
+2. **Duplicate/rapid Add.** The Add button should debounce or the operator could mint two LOTs on a double-tap; a minor UX guard (disable-while-inflight) is worth including in the build.
+3. **All-parts dropdown + gate (decisions 5–6).** The picker lists all active parts and the server gate rejects an ineligible pick on Add. If operators find scrolling all parts noisy, scoping the dropdown to line-eligible parts is a later follow-up (one scoped read + entity method) — deliberately *not* done in v1.
+
+*(Resolved during design: the eligibility gate needs no new proc — `Lot_Create` enforces it. See §2 decision 5.)*
 
 ---
 
