@@ -277,7 +277,7 @@
                   "style": {
                     "classes": "field-label"
                   },
-                  "text": "Area (optional)"
+                  "text": "AREA"
                 },
                 "type": "ia.display.label"
               },
@@ -335,7 +335,7 @@
                   "style": {
                     "classes": "field-label"
                   },
-                  "text": "Reason Type"
+                  "text": "REASON TYPE (OPTIONAL)"
                 },
                 "type": "ia.display.label"
               },
