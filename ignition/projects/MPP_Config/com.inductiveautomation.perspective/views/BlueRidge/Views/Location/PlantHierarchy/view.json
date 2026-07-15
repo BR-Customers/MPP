@@ -82,13 +82,53 @@
     "sortedTree": [
       {
         "data": {
+          "code": "MPP-ENT",
+          "definitionId": 1,
+          "definitionName": "Organization",
+          "description": "Enterprise root",
+          "id": 1,
+          "name": "Madison Precision Products",
+          "sortOrder": 1,
+          "typeName": "Enterprise"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/account_balance",
+          "style": {}
+        },
+        "items": [],
+        "label": "Madison Precision Products"
+      },
+      {
+        "data": {
+          "code": "MPP-MAD",
+          "definitionId": 2,
+          "definitionName": "Facility",
+          "description": "Main manufacturing facility, Madison IN",
+          "id": 2,
+          "name": "Madison Facility",
+          "sortOrder": 1,
+          "typeName": "Site"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "items": [],
+        "label": "Madison Facility"
+      },
+      {
+        "data": {
           "code": "DC1",
           "definitionId": 3,
-          "definitionName": "",
+          "definitionName": "Production Area",
           "description": "Die casting area - 11 machines",
           "id": 3,
           "name": "Die Cast 1",
-          "sortOrder": -1,
+          "sortOrder": 1,
           "typeName": "Area"
         },
         "expanded": false,
@@ -122,51 +162,11 @@
       },
       {
         "data": {
-          "code": "DC2-T1-P1",
-          "definitionId": 16,
-          "definitionName": "Printer",
-          "description": "Label printer for DC2-T1",
-          "id": 22,
-          "name": "P - 002",
-          "sortOrder": 1,
-          "typeName": "Cell"
-        },
-        "expanded": false,
-        "icon": {
-          "color": "--mpp-text-primary",
-          "path": "mpp/factory",
-          "style": {}
-        },
-        "items": [],
-        "label": "P - 002"
-      },
-      {
-        "data": {
-          "code": "DC3",
-          "definitionId": 3,
-          "definitionName": "",
-          "description": "Die casting area - 5 machines",
-          "id": 23,
-          "name": "Die Cast 3",
-          "sortOrder": 1,
-          "typeName": "Area"
-        },
-        "expanded": false,
-        "icon": {
-          "color": "--mpp-text-primary",
-          "path": "mpp/workspaces",
-          "style": {}
-        },
-        "items": [],
-        "label": "Die Cast 3"
-      },
-      {
-        "data": {
-          "code": "DC3-M01",
+          "code": "DC2-M01",
           "definitionId": 8,
           "definitionName": "Die Cast Machine",
           "description": "Die cast machine",
-          "id": 24,
+          "id": 18,
           "name": "Machine 01",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -202,31 +202,31 @@
       },
       {
         "data": {
-          "code": "DC2",
-          "definitionId": 3,
-          "definitionName": "",
-          "description": "Die casting area - 3 machines",
-          "id": 17,
-          "name": "Die Cast 2",
+          "code": "DC2-T1-P1",
+          "definitionId": 16,
+          "definitionName": "Printer",
+          "description": "Label printer for DC2-T1",
+          "id": 22,
+          "name": "P - 002",
           "sortOrder": 1,
-          "typeName": "Area"
+          "typeName": "Cell"
         },
         "expanded": false,
         "icon": {
           "color": "--mpp-text-primary",
-          "path": "mpp/workspaces",
+          "path": "mpp/factory",
           "style": {}
         },
         "items": [],
-        "label": "Die Cast 2"
+        "label": "P - 002"
       },
       {
         "data": {
-          "code": "DC2-M01",
+          "code": "DC3-M01",
           "definitionId": 8,
           "definitionName": "Die Cast Machine",
           "description": "Die cast machine",
-          "id": 18,
+          "id": 24,
           "name": "Machine 01",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -239,66 +239,6 @@
         },
         "items": [],
         "label": "Machine 01"
-      },
-      {
-        "data": {
-          "code": "MPP-ENT",
-          "definitionId": 1,
-          "definitionName": "Organization",
-          "description": "Enterprise root",
-          "id": 1,
-          "name": "Madison Precision Products",
-          "sortOrder": 1,
-          "typeName": "Enterprise"
-        },
-        "expanded": false,
-        "icon": {
-          "color": "--mpp-text-primary",
-          "path": "mpp/account_balance",
-          "style": {}
-        },
-        "items": [],
-        "label": "Madison Precision Products"
-      },
-      {
-        "data": {
-          "code": "MPP-MAD",
-          "definitionId": 2,
-          "definitionName": "Facilityc",
-          "description": "Main manufacturing facility, Madison IN",
-          "id": 2,
-          "name": "Madison Facility",
-          "sortOrder": 1,
-          "typeName": "Site"
-        },
-        "expanded": false,
-        "icon": {
-          "color": "--mpp-text-primary",
-          "path": "mpp/factory",
-          "style": {}
-        },
-        "items": [],
-        "label": "Madison Facility"
-      },
-      {
-        "data": {
-          "code": "DC3-T1-P1",
-          "definitionId": 16,
-          "definitionName": "Printer",
-          "description": "Label printer for DC3-T1",
-          "id": 30,
-          "name": "P - 003",
-          "sortOrder": 1,
-          "typeName": "Cell"
-        },
-        "expanded": false,
-        "icon": {
-          "color": "--mpp-text-primary",
-          "path": "mpp/factory",
-          "style": {}
-        },
-        "items": [],
-        "label": "P - 003"
       },
       {
         "data": {
@@ -322,6 +262,26 @@
       },
       {
         "data": {
+          "code": "DC3-T1-P1",
+          "definitionId": 16,
+          "definitionName": "Printer",
+          "description": "Label printer for DC3-T1",
+          "id": 30,
+          "name": "P - 003",
+          "sortOrder": 1,
+          "typeName": "Cell"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "items": [],
+        "label": "P - 003"
+      },
+      {
+        "data": {
           "code": "DC4-T1-P1",
           "definitionId": 16,
           "definitionName": "Printer",
@@ -342,30 +302,10 @@
       },
       {
         "data": {
-          "code": "TRIM1",
-          "definitionId": 3,
-          "definitionName": "",
-          "description": "Trim shop - area-level processing, no sublot split",
-          "id": 37,
-          "name": "Trim Shop 1",
-          "sortOrder": 1,
-          "typeName": "Area"
-        },
-        "expanded": false,
-        "icon": {
-          "color": "--mpp-text-primary",
-          "path": "mpp/workspaces",
-          "style": {}
-        },
-        "items": [],
-        "label": "Trim Shop 1"
-      },
-      {
-        "data": {
           "code": "TRIM1-T1",
           "definitionId": 7,
           "definitionName": "Terminal",
-          "description": "Area-level trim terminal",
+          "description": "Shared trim terminal",
           "id": 38,
           "name": "Terminal",
           "sortOrder": 1,
@@ -402,71 +342,31 @@
       },
       {
         "data": {
-          "code": "MA1-COMPBR",
-          "definitionId": 5,
-          "definitionName": "Production Line",
-          "description": "Line - Comp bracket",
-          "id": 44,
-          "name": "Comp bracket",
-          "sortOrder": 1,
-          "typeName": "Work Center"
-        },
-        "expanded": false,
-        "icon": {
-          "color": "--mpp-text-primary",
-          "path": "mpp/arrow_right_alt",
-          "style": {}
-        },
-        "items": [],
-        "label": "Comp bracket"
-      },
-      {
-        "data": {
-          "code": "MA1-COMPBR-MIN",
-          "definitionId": 7,
-          "definitionName": "Terminal",
-          "description": "Machining In",
-          "id": 45,
-          "name": "Machining In",
+          "code": "TRIM1-P01",
+          "definitionId": 10,
+          "definitionName": "Trim Press",
+          "description": "Trim press",
+          "id": 40,
+          "name": "Press 01",
           "sortOrder": 1,
           "typeName": "Cell"
         },
         "expanded": false,
         "icon": {
           "color": "--mpp-text-primary",
-          "path": "mpp/tune",
+          "path": "mpp/content_cut",
           "style": {}
         },
         "items": [],
-        "label": "Machining In"
-      },
-      {
-        "data": {
-          "code": "MA1-COMPBR-MIN-P1",
-          "definitionId": 16,
-          "definitionName": "Printer",
-          "description": "Label printer for MA1-COMPBR-MIN",
-          "id": 46,
-          "name": "P - 007",
-          "sortOrder": 1,
-          "typeName": "Cell"
-        },
-        "expanded": false,
-        "icon": {
-          "color": "--mpp-text-primary",
-          "path": "mpp/factory",
-          "style": {}
-        },
-        "items": [],
-        "label": "P - 007"
+        "label": "Press 01"
       },
       {
         "data": {
           "code": "TRIM2-T1",
           "definitionId": 7,
           "definitionName": "Terminal",
-          "description": "Area-level trim terminal",
-          "id": 41,
+          "description": "Shared trim terminal",
+          "id": 44,
           "name": "Terminal",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -486,7 +386,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for TRIM2-T1",
-          "id": 42,
+          "id": 45,
           "name": "P - 006",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -502,11 +402,91 @@
       },
       {
         "data": {
+          "code": "TRIM2-P01",
+          "definitionId": 10,
+          "definitionName": "Trim Press",
+          "description": "Trim press",
+          "id": 46,
+          "name": "Press 01",
+          "sortOrder": 1,
+          "typeName": "Cell"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/content_cut",
+          "style": {}
+        },
+        "items": [],
+        "label": "Press 01"
+      },
+      {
+        "data": {
+          "code": "MA1-COMPBR",
+          "definitionId": 5,
+          "definitionName": "Production Line",
+          "description": "Line - Comp bracket",
+          "id": 50,
+          "name": "Comp bracket",
+          "sortOrder": 1,
+          "typeName": "Work Center"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/arrow_right_alt",
+          "style": {}
+        },
+        "items": [],
+        "label": "Comp bracket"
+      },
+      {
+        "data": {
+          "code": "MA1-COMPBR-MIN",
+          "definitionId": 7,
+          "definitionName": "Terminal",
+          "description": "Machining In",
+          "id": 51,
+          "name": "Machining In",
+          "sortOrder": 1,
+          "typeName": "Cell"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/tune",
+          "style": {}
+        },
+        "items": [],
+        "label": "Machining In"
+      },
+      {
+        "data": {
+          "code": "MA1-COMPBR-MIN-P1",
+          "definitionId": 16,
+          "definitionName": "Printer",
+          "description": "Label printer for MA1-COMPBR-MIN",
+          "id": 52,
+          "name": "P - 007",
+          "sortOrder": 1,
+          "typeName": "Cell"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "items": [],
+        "label": "P - 007"
+      },
+      {
+        "data": {
           "code": "MA1-COMPBR-AOUT-P1",
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA1-COMPBR-AOUT",
-          "id": 48,
+          "id": 54,
           "name": "P - 008",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -526,8 +506,8 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining In",
-          "id": 50,
-          "name": "Machining In test",
+          "id": 56,
+          "name": "Machining In",
           "sortOrder": 1,
           "typeName": "Cell"
         },
@@ -538,7 +518,7 @@
           "style": {}
         },
         "items": [],
-        "label": "Machining In test"
+        "label": "Machining In"
       },
       {
         "data": {
@@ -546,7 +526,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA1-6MD-MIN",
-          "id": 51,
+          "id": 57,
           "name": "P - 009",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -566,7 +546,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA1-6MD-AOUT",
-          "id": 53,
+          "id": 59,
           "name": "P - 010",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -586,7 +566,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining In",
-          "id": 55,
+          "id": 61,
           "name": "Machining In",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -606,7 +586,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA1-FPRPY-MIN",
-          "id": 56,
+          "id": 62,
           "name": "P - 011",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -626,7 +606,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA1-FPRPY-MOUT",
-          "id": 58,
+          "id": 64,
           "name": "P - 012",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -646,7 +626,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA1-FPRPY-AFIN",
-          "id": 60,
+          "id": 66,
           "name": "P - 013",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -666,7 +646,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining In",
-          "id": 62,
+          "id": 68,
           "name": "Machining In",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -686,7 +666,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA1-FP6NA-MIN",
-          "id": 63,
+          "id": 69,
           "name": "P - 014",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -706,7 +686,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA1-FP6NA-MOUT",
-          "id": 65,
+          "id": 71,
           "name": "P - 015",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -726,7 +706,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA1-FP6NA-AFIN",
-          "id": 67,
+          "id": 73,
           "name": "P - 016",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -746,7 +726,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining In",
-          "id": 69,
+          "id": 75,
           "name": "Machining In",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -766,7 +746,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA1-5GOR-MIN",
-          "id": 70,
+          "id": 76,
           "name": "P - 017",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -786,7 +766,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA1-5GOR-MOUT",
-          "id": 72,
+          "id": 78,
           "name": "P - 018",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -806,7 +786,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA1-5GOR-ASER",
-          "id": 74,
+          "id": 80,
           "name": "P - 019",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -826,7 +806,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining In",
-          "id": 76,
+          "id": 82,
           "name": "Machining In",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -846,7 +826,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA1-5GOF-MIN",
-          "id": 77,
+          "id": 83,
           "name": "P - 020",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -866,7 +846,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA1-5GOF-MOUT",
-          "id": 79,
+          "id": 85,
           "name": "P - 021",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -882,31 +862,11 @@
       },
       {
         "data": {
-          "code": "MA1-5GOF-ASER-P1",
-          "definitionId": 16,
-          "definitionName": "Printer",
-          "description": "Label printer for MA1-5GOF-ASER",
-          "id": 81,
-          "name": "P - 022",
-          "sortOrder": 1,
-          "typeName": "Cell"
-        },
-        "expanded": false,
-        "icon": {
-          "color": "--mpp-text-primary",
-          "path": "mpp/factory",
-          "style": {}
-        },
-        "items": [],
-        "label": "P - 022"
-      },
-      {
-        "data": {
           "code": "MA2-RPY6B2",
           "definitionId": 5,
           "definitionName": "Production Line",
           "description": "Line - RPY 6b2 line2",
-          "id": 83,
+          "id": 89,
           "name": "RPY 6b2 line2",
           "sortOrder": 1,
           "typeName": "Work Center"
@@ -926,7 +886,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining In",
-          "id": 84,
+          "id": 90,
           "name": "Machining In",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -946,7 +906,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-RPY6B2-MIN",
-          "id": 85,
+          "id": 91,
           "name": "P - 023",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -962,11 +922,31 @@
       },
       {
         "data": {
+          "code": "MA1-5GOF-ASER-P1",
+          "definitionId": 16,
+          "definitionName": "Printer",
+          "description": "Label printer for MA1-5GOF-ASER",
+          "id": 87,
+          "name": "P - 022",
+          "sortOrder": 1,
+          "typeName": "Cell"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "items": [],
+        "label": "P - 022"
+      },
+      {
+        "data": {
           "code": "MA2-RPY6B2-MOUT-P1",
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-RPY6B2-MOUT",
-          "id": 87,
+          "id": 93,
           "name": "P - 024",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -986,7 +966,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-RPY6B2-AIN",
-          "id": 89,
+          "id": 95,
           "name": "P - 025",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1006,7 +986,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-RPY6B2-AFIN",
-          "id": 91,
+          "id": 97,
           "name": "P - 026",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1026,7 +1006,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining In - Side A",
-          "id": 93,
+          "id": 99,
           "name": "Machining In - Side A",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1046,7 +1026,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-RPYCAM2-MIN-A",
-          "id": 94,
+          "id": 100,
           "name": "P - 027",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1066,7 +1046,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-RPYCAM2-MIN-B",
-          "id": 96,
+          "id": 102,
           "name": "P - 028",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1086,7 +1066,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-RPYCAM2-MOUT-A",
-          "id": 98,
+          "id": 104,
           "name": "P - 029",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1106,7 +1086,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-RPYCAM2-MOUT-B",
-          "id": 100,
+          "id": 106,
           "name": "P - 030",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1126,7 +1106,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-RPYCAM2-AIN",
-          "id": 102,
+          "id": 108,
           "name": "P - 031",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1146,7 +1126,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-RPYCAM2-AOUT1",
-          "id": 104,
+          "id": 110,
           "name": "P - 032",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1166,7 +1146,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-RPYCAM2-AOUT2",
-          "id": 106,
+          "id": 112,
           "name": "P - 033",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1186,7 +1166,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-RPYCAM2-AOUT3",
-          "id": 108,
+          "id": 114,
           "name": "P - 034",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1206,7 +1186,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining In - Side A",
-          "id": 110,
+          "id": 116,
           "name": "Machining In - Side A",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1226,7 +1206,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-RPYCAM1-MIN-A",
-          "id": 111,
+          "id": 117,
           "name": "P - 035",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1246,7 +1226,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-RPYCAM1-MIN-B",
-          "id": 113,
+          "id": 119,
           "name": "P - 036",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1266,7 +1246,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-RPYCAM1-MOUT-A",
-          "id": 115,
+          "id": 121,
           "name": "P - 037",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1286,7 +1266,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-RPYCAM1-MOUT-B",
-          "id": 117,
+          "id": 123,
           "name": "P - 038",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1306,7 +1286,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-RPYCAM1-AIN",
-          "id": 119,
+          "id": 125,
           "name": "P - 039",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1326,7 +1306,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-RPYCAM1-AOUT1",
-          "id": 121,
+          "id": 127,
           "name": "P - 040",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1346,7 +1326,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-RPYCAM1-AOUT2",
-          "id": 123,
+          "id": 129,
           "name": "P - 041",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1366,7 +1346,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-RPYCAM1-AOUT3",
-          "id": 125,
+          "id": 131,
           "name": "P - 042",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1386,7 +1366,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining In 1",
-          "id": 127,
+          "id": 133,
           "name": "Machining In 1",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1406,7 +1386,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-5PA-MIN1",
-          "id": 128,
+          "id": 134,
           "name": "P - 043",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1426,7 +1406,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-5PA-MIN2",
-          "id": 130,
+          "id": 136,
           "name": "P - 044",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1446,7 +1426,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-5PA-MIN3",
-          "id": 132,
+          "id": 138,
           "name": "P - 045",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1466,7 +1446,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining In",
-          "id": 134,
+          "id": 140,
           "name": "Machining In",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1486,7 +1466,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-6MAOP-MIN",
-          "id": 135,
+          "id": 141,
           "name": "P - 046",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1506,7 +1486,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-6MAOP-AOUT",
-          "id": 137,
+          "id": 143,
           "name": "P - 047",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1526,7 +1506,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining In",
-          "id": 139,
+          "id": 145,
           "name": "Machining In",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1546,7 +1526,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-V6OP-MIN",
-          "id": 140,
+          "id": 146,
           "name": "P - 048",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1566,7 +1546,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-V6OP-AOUT",
-          "id": 142,
+          "id": 148,
           "name": "P - 049",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1586,7 +1566,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining Out",
-          "id": 144,
+          "id": 150,
           "name": "Machining Out",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1606,7 +1586,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-COS-MOUT",
-          "id": 145,
+          "id": 151,
           "name": "P - 050",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1626,7 +1606,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining Out",
-          "id": 147,
+          "id": 153,
           "name": "Machining Out",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1646,7 +1626,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-6F9TC-MOUT",
-          "id": 148,
+          "id": 154,
           "name": "P - 051",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1666,7 +1646,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining In",
-          "id": 150,
+          "id": 156,
           "name": "Machining In",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1686,7 +1666,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-59B-MIN",
-          "id": 151,
+          "id": 157,
           "name": "P - 052",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1706,7 +1686,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-59B-AOUT1",
-          "id": 153,
+          "id": 159,
           "name": "P - 053",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1726,7 +1706,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-59B-AOUT2",
-          "id": 155,
+          "id": 161,
           "name": "P - 054",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1746,7 +1726,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining In",
-          "id": 157,
+          "id": 163,
           "name": "Machining In",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1766,7 +1746,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-6FBCHOP-MIN",
-          "id": 158,
+          "id": 164,
           "name": "P - 055",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1786,7 +1766,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-6FBCHOP-AOUT",
-          "id": 160,
+          "id": 166,
           "name": "P - 056",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1806,7 +1786,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining In",
-          "id": 162,
+          "id": 168,
           "name": "Machining In",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1826,7 +1806,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-64AOP-MIN",
-          "id": 163,
+          "id": 169,
           "name": "P - 057",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1846,7 +1826,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-64AOP-AOUT",
-          "id": 165,
+          "id": 171,
           "name": "P - 058",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1866,7 +1846,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining In",
-          "id": 167,
+          "id": 173,
           "name": "Machining In",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1886,7 +1866,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-6MACH-MIN",
-          "id": 168,
+          "id": 174,
           "name": "P - 059",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1906,7 +1886,7 @@
           "definitionId": 16,
           "definitionName": "Printer",
           "description": "Label printer for MA2-6MACH-AOUT1",
-          "id": 170,
+          "id": 176,
           "name": "P - 060",
           "sortOrder": 1,
           "typeName": "Cell"
@@ -1922,11 +1902,131 @@
       },
       {
         "data": {
+          "code": "MA2-6MACH-AOUT3-P1",
+          "definitionId": 16,
+          "definitionName": "Printer",
+          "description": "Label printer for MA2-6MACH-AOUT3",
+          "id": 180,
+          "name": "P - 062",
+          "sortOrder": 1,
+          "typeName": "Cell"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "items": [],
+        "label": "P - 062"
+      },
+      {
+        "data": {
+          "code": "DC1-M01-T1",
+          "definitionId": 7,
+          "definitionName": "Terminal",
+          "description": "Dedicated die-cast terminal at machine DC1-M01",
+          "id": 185,
+          "name": "Terminal",
+          "sortOrder": 1,
+          "typeName": "Cell"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/tune",
+          "style": {}
+        },
+        "items": [],
+        "label": "Terminal"
+      },
+      {
+        "data": {
+          "code": "DC1-M01-T1-P1",
+          "definitionId": 16,
+          "definitionName": "Printer",
+          "description": "Label printer for DC1-M01-T1",
+          "id": 186,
+          "name": "P - 001D",
+          "sortOrder": 1,
+          "typeName": "Cell"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "items": [],
+        "label": "P - 001D"
+      },
+      {
+        "data": {
+          "code": "TRIM1-P01-T1",
+          "definitionId": 7,
+          "definitionName": "Terminal",
+          "description": "Dedicated trim terminal at press TRIM1-P01",
+          "id": 187,
+          "name": "Terminal",
+          "sortOrder": 1,
+          "typeName": "Cell"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/tune",
+          "style": {}
+        },
+        "items": [],
+        "label": "Terminal"
+      },
+      {
+        "data": {
+          "code": "TRIM1-P01-T1-P1",
+          "definitionId": 16,
+          "definitionName": "Printer",
+          "description": "Label printer for TRIM1-P01-T1",
+          "id": 188,
+          "name": "P - 005D",
+          "sortOrder": 1,
+          "typeName": "Cell"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "items": [],
+        "label": "P - 005D"
+      },
+      {
+        "data": {
+          "code": "MA2-6MACH-AOUT2-P1",
+          "definitionId": 16,
+          "definitionName": "Printer",
+          "description": "Label printer for MA2-6MACH-AOUT2",
+          "id": 178,
+          "name": "P - 061",
+          "sortOrder": 1,
+          "typeName": "Cell"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/factory",
+          "style": {}
+        },
+        "items": [],
+        "label": "P - 061"
+      },
+      {
+        "data": {
           "code": "MA2-6MACH-AOUT1",
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Assembly Out 1",
-          "id": 169,
+          "id": 175,
           "name": "Assembly Out 1",
           "sortOrder": 2,
           "typeName": "Cell"
@@ -1946,7 +2046,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Assembly Out",
-          "id": 164,
+          "id": 170,
           "name": "Assembly Out",
           "sortOrder": 2,
           "typeName": "Cell"
@@ -1966,7 +2066,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Assembly Out",
-          "id": 159,
+          "id": 165,
           "name": "Assembly Out",
           "sortOrder": 2,
           "typeName": "Cell"
@@ -1986,7 +2086,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Assembly Out 1",
-          "id": 152,
+          "id": 158,
           "name": "Assembly Out 1",
           "sortOrder": 2,
           "typeName": "Cell"
@@ -2006,7 +2106,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Assembly Out",
-          "id": 141,
+          "id": 147,
           "name": "Assembly Out",
           "sortOrder": 2,
           "typeName": "Cell"
@@ -2026,7 +2126,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Assembly Out",
-          "id": 136,
+          "id": 142,
           "name": "Assembly Out",
           "sortOrder": 2,
           "typeName": "Cell"
@@ -2046,7 +2146,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining In 2",
-          "id": 129,
+          "id": 135,
           "name": "Machining In 2",
           "sortOrder": 2,
           "typeName": "Cell"
@@ -2066,7 +2166,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining In - Side B",
-          "id": 112,
+          "id": 118,
           "name": "Machining In - Side B",
           "sortOrder": 2,
           "typeName": "Cell"
@@ -2086,7 +2186,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining In - Side B",
-          "id": 95,
+          "id": 101,
           "name": "Machining In - Side B",
           "sortOrder": 2,
           "typeName": "Cell"
@@ -2106,7 +2206,7 @@
           "definitionId": 5,
           "definitionName": "Production Line",
           "description": "Line - RPY Line 2 Cam holders",
-          "id": 92,
+          "id": 98,
           "name": "RPY Line 2 Cam holders",
           "sortOrder": 2,
           "typeName": "Work Center"
@@ -2126,7 +2226,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining Out",
-          "id": 86,
+          "id": 92,
           "name": "Machining Out",
           "sortOrder": 2,
           "typeName": "Cell"
@@ -2146,7 +2246,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining Out",
-          "id": 78,
+          "id": 84,
           "name": "Machining Out",
           "sortOrder": 2,
           "typeName": "Cell"
@@ -2166,7 +2266,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining Out",
-          "id": 71,
+          "id": 77,
           "name": "Machining Out",
           "sortOrder": 2,
           "typeName": "Cell"
@@ -2186,7 +2286,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining Out",
-          "id": 64,
+          "id": 70,
           "name": "Machining Out",
           "sortOrder": 2,
           "typeName": "Cell"
@@ -2206,7 +2306,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining Out",
-          "id": 57,
+          "id": 63,
           "name": "Machining Out",
           "sortOrder": 2,
           "typeName": "Cell"
@@ -2226,7 +2326,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Assembly Out",
-          "id": 52,
+          "id": 58,
           "name": "Assembly Out",
           "sortOrder": 2,
           "typeName": "Cell"
@@ -2246,7 +2346,7 @@
           "definitionId": 5,
           "definitionName": "Production Line",
           "description": "Line - 6MD",
-          "id": 49,
+          "id": 55,
           "name": "6MD",
           "sortOrder": 2,
           "typeName": "Work Center"
@@ -2266,7 +2366,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Assembly Out",
-          "id": 47,
+          "id": 53,
           "name": "Assembly Out",
           "sortOrder": 2,
           "typeName": "Cell"
@@ -2279,6 +2379,46 @@
         },
         "items": [],
         "label": "Assembly Out"
+      },
+      {
+        "data": {
+          "code": "TRIM2-P02",
+          "definitionId": 10,
+          "definitionName": "Trim Press",
+          "description": "Trim press",
+          "id": 47,
+          "name": "Press 02",
+          "sortOrder": 2,
+          "typeName": "Cell"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/content_cut",
+          "style": {}
+        },
+        "items": [],
+        "label": "Press 02"
+      },
+      {
+        "data": {
+          "code": "TRIM1-P02",
+          "definitionId": 10,
+          "definitionName": "Trim Press",
+          "description": "Trim press",
+          "id": 41,
+          "name": "Press 02",
+          "sortOrder": 2,
+          "typeName": "Cell"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/content_cut",
+          "style": {}
+        },
+        "items": [],
+        "label": "Press 02"
       },
       {
         "data": {
@@ -2302,11 +2442,11 @@
       },
       {
         "data": {
-          "code": "DC2-M02",
+          "code": "DC3-M02",
           "definitionId": 8,
           "definitionName": "Die Cast Machine",
           "description": "Die cast machine",
-          "id": 19,
+          "id": 25,
           "name": "Machine 02",
           "sortOrder": 2,
           "typeName": "Cell"
@@ -2322,11 +2462,31 @@
       },
       {
         "data": {
-          "code": "DC3-M02",
+          "code": "DC2",
+          "definitionId": 3,
+          "definitionName": "Production Area",
+          "description": "Die casting area - 3 machines",
+          "id": 17,
+          "name": "Die Cast 2",
+          "sortOrder": 2,
+          "typeName": "Area"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/workspaces",
+          "style": {}
+        },
+        "items": [],
+        "label": "Die Cast 2"
+      },
+      {
+        "data": {
+          "code": "DC2-M02",
           "definitionId": 8,
           "definitionName": "Die Cast Machine",
           "description": "Die cast machine",
-          "id": 25,
+          "id": 19,
           "name": "Machine 02",
           "sortOrder": 2,
           "typeName": "Cell"
@@ -2382,11 +2542,11 @@
       },
       {
         "data": {
-          "code": "DC3-M03",
+          "code": "DC2-M03",
           "definitionId": 8,
           "definitionName": "Die Cast Machine",
           "description": "Die cast machine",
-          "id": 26,
+          "id": 20,
           "name": "Machine 03",
           "sortOrder": 3,
           "typeName": "Cell"
@@ -2402,11 +2562,31 @@
       },
       {
         "data": {
-          "code": "DC2-M03",
+          "code": "DC3",
+          "definitionId": 3,
+          "definitionName": "Production Area",
+          "description": "Die casting area - 5 machines",
+          "id": 23,
+          "name": "Die Cast 3",
+          "sortOrder": 3,
+          "typeName": "Area"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/workspaces",
+          "style": {}
+        },
+        "items": [],
+        "label": "Die Cast 3"
+      },
+      {
+        "data": {
+          "code": "DC3-M03",
           "definitionId": 8,
           "definitionName": "Die Cast Machine",
           "description": "Die cast machine",
-          "id": 20,
+          "id": 26,
           "name": "Machine 03",
           "sortOrder": 3,
           "typeName": "Cell"
@@ -2442,23 +2622,43 @@
       },
       {
         "data": {
-          "code": "TRIM2",
-          "definitionId": 3,
-          "definitionName": "",
-          "description": "Trim shop - area-level processing, no sublot split",
-          "id": 40,
-          "name": "Trim Shop 2",
+          "code": "TRIM1-P03",
+          "definitionId": 10,
+          "definitionName": "Trim Press",
+          "description": "Trim press",
+          "id": 42,
+          "name": "Press 03",
           "sortOrder": 3,
-          "typeName": "Area"
+          "typeName": "Cell"
         },
         "expanded": false,
         "icon": {
           "color": "--mpp-text-primary",
-          "path": "mpp/workspaces",
+          "path": "mpp/content_cut",
           "style": {}
         },
         "items": [],
-        "label": "Trim Shop 2"
+        "label": "Press 03"
+      },
+      {
+        "data": {
+          "code": "TRIM2-P03",
+          "definitionId": 10,
+          "definitionName": "Trim Press",
+          "description": "Trim press",
+          "id": 48,
+          "name": "Press 03",
+          "sortOrder": 3,
+          "typeName": "Cell"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/content_cut",
+          "style": {}
+        },
+        "items": [],
+        "label": "Press 03"
       },
       {
         "data": {
@@ -2466,7 +2666,7 @@
           "definitionId": 5,
           "definitionName": "Production Line",
           "description": "Line - Fuel Pump (RPY 66v)",
-          "id": 54,
+          "id": 60,
           "name": "Fuel Pump (RPY 66v)",
           "sortOrder": 3,
           "typeName": "Work Center"
@@ -2482,11 +2682,11 @@
       },
       {
         "data": {
-          "code": "MA1-FPRPY-AFIN",
+          "code": "MA1-FP6NA-AFIN",
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Assembly Finished",
-          "id": 59,
+          "id": 72,
           "name": "Assembly Finished",
           "sortOrder": 3,
           "typeName": "Cell"
@@ -2502,11 +2702,11 @@
       },
       {
         "data": {
-          "code": "MA1-FP6NA-AFIN",
+          "code": "MA1-FPRPY-AFIN",
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Assembly Finished",
-          "id": 66,
+          "id": 65,
           "name": "Assembly Finished",
           "sortOrder": 3,
           "typeName": "Cell"
@@ -2526,7 +2726,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Assembly (Serialized)",
-          "id": 73,
+          "id": 79,
           "name": "Assembly (Serialized)",
           "sortOrder": 3,
           "typeName": "Cell"
@@ -2546,7 +2746,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Assembly (Serialized)",
-          "id": 80,
+          "id": 86,
           "name": "Assembly (Serialized)",
           "sortOrder": 3,
           "typeName": "Cell"
@@ -2566,7 +2766,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Assembly In",
-          "id": 88,
+          "id": 94,
           "name": "Assembly In",
           "sortOrder": 3,
           "typeName": "Cell"
@@ -2582,31 +2782,11 @@
       },
       {
         "data": {
-          "code": "MA2-RPYCAM1",
-          "definitionId": 5,
-          "definitionName": "Production Line",
-          "description": "Line - RPY Line 1 CH",
-          "id": 109,
-          "name": "RPY Line 1 CH",
-          "sortOrder": 3,
-          "typeName": "Work Center"
-        },
-        "expanded": false,
-        "icon": {
-          "color": "--mpp-text-primary",
-          "path": "mpp/arrow_right_alt",
-          "style": {}
-        },
-        "items": [],
-        "label": "RPY Line 1 CH"
-      },
-      {
-        "data": {
           "code": "MA2-RPYCAM2-MOUT-A",
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining Out - Side A",
-          "id": 97,
+          "id": 103,
           "name": "Machining Out - Side A",
           "sortOrder": 3,
           "typeName": "Cell"
@@ -2622,11 +2802,31 @@
       },
       {
         "data": {
+          "code": "MA2-RPYCAM1",
+          "definitionId": 5,
+          "definitionName": "Production Line",
+          "description": "Line - RPY Line 1 CH",
+          "id": 115,
+          "name": "RPY Line 1 CH",
+          "sortOrder": 3,
+          "typeName": "Work Center"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/arrow_right_alt",
+          "style": {}
+        },
+        "items": [],
+        "label": "RPY Line 1 CH"
+      },
+      {
+        "data": {
           "code": "MA2-RPYCAM1-MOUT-A",
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining Out - Side A",
-          "id": 114,
+          "id": 120,
           "name": "Machining Out - Side A",
           "sortOrder": 3,
           "typeName": "Cell"
@@ -2646,7 +2846,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining In 3",
-          "id": 131,
+          "id": 137,
           "name": "Machining In 3",
           "sortOrder": 3,
           "typeName": "Cell"
@@ -2666,7 +2866,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Assembly Out 2",
-          "id": 154,
+          "id": 160,
           "name": "Assembly Out 2",
           "sortOrder": 3,
           "typeName": "Cell"
@@ -2682,11 +2882,51 @@
       },
       {
         "data": {
+          "code": "MA2-6MACH-AOUT2",
+          "definitionId": 7,
+          "definitionName": "Terminal",
+          "description": "Assembly Out 2",
+          "id": 177,
+          "name": "Assembly Out 2",
+          "sortOrder": 3,
+          "typeName": "Cell"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/tune",
+          "style": {}
+        },
+        "items": [],
+        "label": "Assembly Out 2"
+      },
+      {
+        "data": {
+          "code": "MA2-6MACH-AOUT3",
+          "definitionId": 7,
+          "definitionName": "Terminal",
+          "description": "Assembly Out 3",
+          "id": 179,
+          "name": "Assembly Out 3",
+          "sortOrder": 4,
+          "typeName": "Cell"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/tune",
+          "style": {}
+        },
+        "items": [],
+        "label": "Assembly Out 3"
+      },
+      {
+        "data": {
           "code": "MA2-RPYCAM1-MOUT-B",
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining Out - Side B",
-          "id": 116,
+          "id": 122,
           "name": "Machining Out - Side B",
           "sortOrder": 4,
           "typeName": "Cell"
@@ -2706,7 +2946,7 @@
           "definitionId": 5,
           "definitionName": "Production Line",
           "description": "Line - 5PA Fuel Pump",
-          "id": 126,
+          "id": 132,
           "name": "5PA Fuel Pump",
           "sortOrder": 4,
           "typeName": "Work Center"
@@ -2726,7 +2966,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Machining Out - Side B",
-          "id": 99,
+          "id": 105,
           "name": "Machining Out - Side B",
           "sortOrder": 4,
           "typeName": "Cell"
@@ -2746,7 +2986,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Assembly Finished",
-          "id": 90,
+          "id": 96,
           "name": "Assembly Finished",
           "sortOrder": 4,
           "typeName": "Cell"
@@ -2766,7 +3006,7 @@
           "definitionId": 5,
           "definitionName": "Production Line",
           "description": "Line - Fuel Pump (6na 6vj)",
-          "id": 61,
+          "id": 67,
           "name": "Fuel Pump (6na 6vj)",
           "sortOrder": 4,
           "typeName": "Work Center"
@@ -2782,12 +3022,12 @@
       },
       {
         "data": {
-          "code": "MA1",
+          "code": "DC4",
           "definitionId": 3,
-          "definitionName": "",
-          "description": "Machining and Assembly room",
-          "id": 43,
-          "name": "Machining \u0026 Assembly 1",
+          "definitionName": "Production Area",
+          "description": "Die casting area - 3 machines",
+          "id": 31,
+          "name": "Die Cast 4",
           "sortOrder": 4,
           "typeName": "Area"
         },
@@ -2798,7 +3038,7 @@
           "style": {}
         },
         "items": [],
-        "label": "Machining \u0026 Assembly 1"
+        "label": "Die Cast 4"
       },
       {
         "data": {
@@ -2807,26 +3047,6 @@
           "definitionName": "Terminal",
           "description": "Die cast area terminal",
           "id": 35,
-          "name": "Terminal",
-          "sortOrder": 4,
-          "typeName": "Cell"
-        },
-        "expanded": false,
-        "icon": {
-          "color": "--mpp-text-primary",
-          "path": "mpp/tune",
-          "style": {}
-        },
-        "items": [],
-        "label": "Terminal"
-      },
-      {
-        "data": {
-          "code": "DC2-T1",
-          "definitionId": 7,
-          "definitionName": "Terminal",
-          "description": "Die cast area terminal",
-          "id": 21,
           "name": "Terminal",
           "sortOrder": 4,
           "typeName": "Cell"
@@ -2859,6 +3079,26 @@
         },
         "items": [],
         "label": "Machine 04"
+      },
+      {
+        "data": {
+          "code": "DC2-T1",
+          "definitionId": 7,
+          "definitionName": "Terminal",
+          "description": "Die cast area terminal",
+          "id": 21,
+          "name": "Terminal",
+          "sortOrder": 4,
+          "typeName": "Cell"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/tune",
+          "style": {}
+        },
+        "items": [],
+        "label": "Terminal"
       },
       {
         "data": {
@@ -2922,11 +3162,31 @@
       },
       {
         "data": {
+          "code": "TRIM1",
+          "definitionId": 3,
+          "definitionName": "Production Area",
+          "description": "Trim shop - trim press cells, no sublot split",
+          "id": 37,
+          "name": "Trim Shop 1",
+          "sortOrder": 5,
+          "typeName": "Area"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/workspaces",
+          "style": {}
+        },
+        "items": [],
+        "label": "Trim Shop 1"
+      },
+      {
+        "data": {
           "code": "MA1-5GOR",
           "definitionId": 5,
           "definitionName": "Production Line",
           "description": "Line - 5G0 Rear",
-          "id": 68,
+          "id": 74,
           "name": "5G0 Rear",
           "sortOrder": 5,
           "typeName": "Work Center"
@@ -2946,7 +3206,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Assembly In",
-          "id": 101,
+          "id": 107,
           "name": "Assembly In",
           "sortOrder": 5,
           "typeName": "Cell"
@@ -2966,7 +3226,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Assembly In",
-          "id": 118,
+          "id": 124,
           "name": "Assembly In",
           "sortOrder": 5,
           "typeName": "Cell"
@@ -2986,7 +3246,7 @@
           "definitionId": 5,
           "definitionName": "Production Line",
           "description": "Line - 6ma oil pan",
-          "id": 133,
+          "id": 139,
           "name": "6ma oil pan",
           "sortOrder": 5,
           "typeName": "Work Center"
@@ -3006,7 +3266,7 @@
           "definitionId": 5,
           "definitionName": "Production Line",
           "description": "Line - v6 oil pan",
-          "id": 138,
+          "id": 144,
           "name": "v6 oil pan",
           "sortOrder": 6,
           "typeName": "Work Center"
@@ -3026,7 +3286,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Assembly Out 1",
-          "id": 120,
+          "id": 126,
           "name": "Assembly Out 1",
           "sortOrder": 6,
           "typeName": "Cell"
@@ -3046,7 +3306,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Assembly Out 1",
-          "id": 103,
+          "id": 109,
           "name": "Assembly Out 1",
           "sortOrder": 6,
           "typeName": "Cell"
@@ -3062,31 +3322,11 @@
       },
       {
         "data": {
-          "code": "MA2",
-          "definitionId": 3,
-          "definitionName": "",
-          "description": "Machining and Assembly room",
-          "id": 82,
-          "name": "Machining \u0026 Assembly 2",
-          "sortOrder": 6,
-          "typeName": "Area"
-        },
-        "expanded": false,
-        "icon": {
-          "color": "--mpp-text-primary",
-          "path": "mpp/workspaces",
-          "style": {}
-        },
-        "items": [],
-        "label": "Machining \u0026 Assembly 2"
-      },
-      {
-        "data": {
           "code": "MA1-5GOF",
           "definitionId": 5,
           "definitionName": "Production Line",
           "description": "Line - 5G0 Front",
-          "id": 75,
+          "id": 81,
           "name": "5G0 Front",
           "sortOrder": 6,
           "typeName": "Work Center"
@@ -3099,6 +3339,26 @@
         },
         "items": [],
         "label": "5G0 Front"
+      },
+      {
+        "data": {
+          "code": "TRIM2",
+          "definitionId": 3,
+          "definitionName": "Production Area",
+          "description": "Trim shop - trim press cells, no sublot split",
+          "id": 43,
+          "name": "Trim Shop 2",
+          "sortOrder": 6,
+          "typeName": "Area"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/workspaces",
+          "style": {}
+        },
+        "items": [],
+        "label": "Trim Shop 2"
       },
       {
         "data": {
@@ -3162,11 +3422,31 @@
       },
       {
         "data": {
+          "code": "MA1",
+          "definitionId": 3,
+          "definitionName": "Production Area",
+          "description": "Machining and Assembly room",
+          "id": 49,
+          "name": "Machining \u0026 Assembly 1",
+          "sortOrder": 7,
+          "typeName": "Area"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/workspaces",
+          "style": {}
+        },
+        "items": [],
+        "label": "Machining \u0026 Assembly 1"
+      },
+      {
+        "data": {
           "code": "MA2-RPYCAM2-AOUT2",
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Assembly Out 2",
-          "id": 105,
+          "id": 111,
           "name": "Assembly Out 2",
           "sortOrder": 7,
           "typeName": "Cell"
@@ -3186,7 +3466,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Assembly Out 2",
-          "id": 122,
+          "id": 128,
           "name": "Assembly Out 2",
           "sortOrder": 7,
           "typeName": "Cell"
@@ -3206,7 +3486,7 @@
           "definitionId": 5,
           "definitionName": "Production Line",
           "description": "Line - COS (offsite-origin)",
-          "id": 143,
+          "id": 149,
           "name": "COS (offsite-origin)",
           "sortOrder": 7,
           "typeName": "Work Center"
@@ -3222,31 +3502,11 @@
       },
       {
         "data": {
-          "code": "WHSE",
-          "definitionId": 4,
-          "definitionName": "Support Area",
-          "description": "WIP / cast storage - all die cast goes here prior to Trim",
-          "id": 175,
-          "name": "Warehouse",
-          "sortOrder": 7,
-          "typeName": "Area"
-        },
-        "expanded": false,
-        "icon": {
-          "color": "--mpp-text-primary",
-          "path": "mpp/engineering",
-          "style": {}
-        },
-        "items": [],
-        "label": "Warehouse"
-      },
-      {
-        "data": {
           "code": "MA2-6F9TC",
           "definitionId": 5,
           "definitionName": "Production Line",
           "description": "Line - 6F9-TC (offsite-origin)",
-          "id": 146,
+          "id": 152,
           "name": "6F9-TC (offsite-origin)",
           "sortOrder": 8,
           "typeName": "Work Center"
@@ -3266,7 +3526,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Assembly Out 3",
-          "id": 124,
+          "id": 130,
           "name": "Assembly Out 3",
           "sortOrder": 8,
           "typeName": "Cell"
@@ -3286,7 +3546,7 @@
           "definitionId": 7,
           "definitionName": "Terminal",
           "description": "Assembly Out 3",
-          "id": 107,
+          "id": 113,
           "name": "Assembly Out 3",
           "sortOrder": 8,
           "typeName": "Cell"
@@ -3299,6 +3559,26 @@
         },
         "items": [],
         "label": "Assembly Out 3"
+      },
+      {
+        "data": {
+          "code": "MA2",
+          "definitionId": 3,
+          "definitionName": "Production Area",
+          "description": "Machining and Assembly room",
+          "id": 88,
+          "name": "Machining \u0026 Assembly 2",
+          "sortOrder": 8,
+          "typeName": "Area"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/workspaces",
+          "style": {}
+        },
+        "items": [],
+        "label": "Machining \u0026 Assembly 2"
       },
       {
         "data": {
@@ -3342,11 +3622,31 @@
       },
       {
         "data": {
+          "code": "WHSE",
+          "definitionId": 4,
+          "definitionName": "Support Area",
+          "description": "WIP / cast storage - all die cast goes here prior to Trim",
+          "id": 181,
+          "name": "Warehouse",
+          "sortOrder": 9,
+          "typeName": "Area"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/engineering",
+          "style": {}
+        },
+        "items": [],
+        "label": "Warehouse"
+      },
+      {
+        "data": {
           "code": "MA2-59B",
           "definitionId": 5,
           "definitionName": "Production Line",
           "description": "Line - 59b Cam holder",
-          "id": 149,
+          "id": 155,
           "name": "59b Cam holder",
           "sortOrder": 9,
           "typeName": "Work Center"
@@ -3362,51 +3662,11 @@
       },
       {
         "data": {
-          "code": "SHIPIN",
-          "definitionId": 4,
-          "definitionName": "Support Area",
-          "description": "Receiving dock - pass-through parts",
-          "id": 176,
-          "name": "Shipping IN",
-          "sortOrder": 9,
-          "typeName": "Area"
-        },
-        "expanded": false,
-        "icon": {
-          "color": "--mpp-text-primary",
-          "path": "mpp/engineering",
-          "style": {}
-        },
-        "items": [],
-        "label": "Shipping IN"
-      },
-      {
-        "data": {
-          "code": "SHIPOUT",
-          "definitionId": 4,
-          "definitionName": "Support Area",
-          "description": "Finished-goods staging",
-          "id": 177,
-          "name": "Shipping OUT",
-          "sortOrder": 10,
-          "typeName": "Area"
-        },
-        "expanded": false,
-        "icon": {
-          "color": "--mpp-text-primary",
-          "path": "mpp/engineering",
-          "style": {}
-        },
-        "items": [],
-        "label": "Shipping OUT"
-      },
-      {
-        "data": {
           "code": "MA2-6FBCHOP",
           "definitionId": 5,
           "definitionName": "Production Line",
           "description": "Line - 6FB CH/OP",
-          "id": 156,
+          "id": 162,
           "name": "6FB CH/OP",
           "sortOrder": 10,
           "typeName": "Work Center"
@@ -3419,6 +3679,26 @@
         },
         "items": [],
         "label": "6FB CH/OP"
+      },
+      {
+        "data": {
+          "code": "SHIPIN",
+          "definitionId": 4,
+          "definitionName": "Support Area",
+          "description": "Receiving dock - pass-through parts",
+          "id": 182,
+          "name": "Shipping IN",
+          "sortOrder": 10,
+          "typeName": "Area"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/engineering",
+          "style": {}
+        },
+        "items": [],
+        "label": "Shipping IN"
       },
       {
         "data": {
@@ -3462,23 +3742,23 @@
       },
       {
         "data": {
-          "code": "DC4",
-          "definitionId": 3,
-          "definitionName": "",
-          "description": "Die casting area - 3 machines",
-          "id": 31,
-          "name": "Die Cast 4",
+          "code": "SHIPOUT",
+          "definitionId": 4,
+          "definitionName": "Support Area",
+          "description": "Finished-goods staging",
+          "id": 183,
+          "name": "Shipping OUT",
           "sortOrder": 11,
           "typeName": "Area"
         },
         "expanded": false,
         "icon": {
           "color": "--mpp-text-primary",
-          "path": "mpp/workspaces",
+          "path": "mpp/engineering",
           "style": {}
         },
         "items": [],
-        "label": "Die Cast 4"
+        "label": "Shipping OUT"
       },
       {
         "data": {
@@ -3486,7 +3766,7 @@
           "definitionId": 5,
           "definitionName": "Production Line",
           "description": "Line - 64A Oil Pan",
-          "id": 161,
+          "id": 167,
           "name": "64A Oil Pan",
           "sortOrder": 11,
           "typeName": "Work Center"
@@ -3506,7 +3786,7 @@
           "definitionId": 5,
           "definitionName": "Production Line",
           "description": "Line - 6MA CH",
-          "id": 166,
+          "id": 172,
           "name": "6MA CH",
           "sortOrder": 12,
           "typeName": "Work Center"
@@ -3519,6 +3799,26 @@
         },
         "items": [],
         "label": "6MA CH"
+      },
+      {
+        "data": {
+          "code": "FALLBACK-TERMINAL",
+          "definitionId": 7,
+          "definitionName": "Terminal",
+          "description": "Global default terminal returned when an unregistered IP address connects.",
+          "id": 184,
+          "name": "Fallback Terminal",
+          "sortOrder": 12,
+          "typeName": "Cell"
+        },
+        "expanded": false,
+        "icon": {
+          "color": "--mpp-text-primary",
+          "path": "mpp/tune",
+          "style": {}
+        },
+        "items": [],
+        "label": "Fallback Terminal"
       },
       {
         "data": {
