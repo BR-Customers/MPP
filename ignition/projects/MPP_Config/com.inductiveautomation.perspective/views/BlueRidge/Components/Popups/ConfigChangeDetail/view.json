@@ -50,8 +50,8 @@
   },
   "props": {
     "defaultSize": {
-      "height": 620,
-      "width": 880
+      "height": 900,
+      "width": 1600
     }
   },
   "root": {
@@ -317,6 +317,7 @@
                       }
                     },
                     "props": {
+                      "alignVertical": "top",
                       "style": {
                         "background": "var(--mpp-surface-card)",
                         "border": "1px solid var(--mpp-border-subtle)",
@@ -388,6 +389,7 @@
                       }
                     },
                     "props": {
+                      "alignVertical": "top",
                       "style": {
                         "background": "var(--mpp-surface-card)",
                         "border": "1px solid var(--mpp-border-subtle)",
