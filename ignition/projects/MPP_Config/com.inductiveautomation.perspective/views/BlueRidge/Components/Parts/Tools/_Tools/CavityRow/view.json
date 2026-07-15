@@ -2,43 +2,43 @@
   "custom": {},
   "params": {
     "row": {
-      "rowIndex": 0,
-      "id": null,
       "cavityNumber": null,
       "description": "",
-      "statusCode": "Active",
-      "isScrappedSaved": false
+      "id": null,
+      "isDeprecated": null,
+      "isScrappedSaved": false,
+      "rowIndex": 0,
+      "statusCode": "Active"
     }
   },
   "propConfig": {
-    "params.row": { "paramDirection": "input" }
+    "params.row": {
+      "paramDirection": "input"
+    }
   },
   "props": {
-    "defaultSize": { "height": 36, "width": 1200 }
+    "defaultSize": {
+      "height": 36,
+      "width": 1200
+    }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": { "name": "root" },
-    "props": {
-      "direction": "row",
-      "alignItems": "center",
-      "style": {
-        "borderBottom": "1px solid var(--mpp-border-subtle)",
-        "gap": "6px",
-        "padding": "2px 10px",
-        "height": "100%"
-      }
-    },
     "children": [
       {
-        "type": "ia.display.label",
-        "meta": { "name": "IndexLabel" },
-        "position": { "basis": "32px", "shrink": 0 },
+        "meta": {
+          "name": "IndexLabel"
+        },
+        "position": {
+          "basis": "32px",
+          "shrink": 0
+        },
         "propConfig": {
           "props.text": {
             "binding": {
-              "type": "expr",
-              "config": { "expression": "toStr({view.params.row.rowIndex} + 1)" }
+              "config": {
+                "expression": "toStr({view.params.row.rowIndex} + 1)"
+              },
+              "type": "expr"
             }
           }
         },
@@ -48,165 +48,245 @@
             "fontSize": "12px",
             "textAlign": "right"
           }
-        }
+        },
+        "type": "ia.display.label"
       },
       {
-        "type": "ia.input.numeric-entry-field",
-        "meta": { "name": "NumberInput" },
-        "position": { "basis": "120px", "shrink": 0 },
+        "events": {
+          "dom": {
+            "onBlur": {
+              "config": {
+                "script": "\tv \u003d self.props.value\n\tnewNumber \u003d None if v is None else int(v)\n\tsystem.perspective.sendMessage(\"cavityRowNumberChanged\", payload\u003d{\"rowIndex\": self.view.params.row.rowIndex, \"newNumber\": newNumber}, scope\u003d\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "NumberInput"
+        },
+        "position": {
+          "basis": "120px",
+          "shrink": 0
+        },
         "propConfig": {
           "position.display": {
             "binding": {
-              "type": "expr",
-              "config": { "expression": "isNull({view.params.row.id})" }
+              "config": {
+                "expression": "isNull({view.params.row.id})"
+              },
+              "type": "expr"
             }
           },
           "props.value": {
             "binding": {
-              "type": "property",
-              "config": { "path": "view.params.row.cavityNumber" }
+              "config": {
+                "path": "view.params.row.cavityNumber"
+              },
+              "type": "property"
             }
           }
         },
         "props": {
           "placeholder": "No.",
-          "style": { "classes": "search-input", "height": "30px" }
-        },
-        "events": {
-          "dom": {
-            "onBlur": {
-              "type": "script",
-              "scope": "G",
-              "config": {
-                "script": "\tv = self.props.value\n\tnewNumber = None if v is None else int(v)\n\tsystem.perspective.sendMessage(\"cavityRowNumberChanged\", payload={\"rowIndex\": self.view.params.row.rowIndex, \"newNumber\": newNumber}, scope=\"page\")"
-              }
-            }
+          "style": {
+            "classes": "search-input",
+            "height": "30px"
           }
-        }
+        },
+        "type": "ia.input.numeric-entry-field"
       },
       {
-        "type": "ia.display.label",
-        "meta": { "name": "NumberLabel" },
-        "position": { "basis": "120px", "shrink": 0 },
+        "meta": {
+          "name": "NumberLabel"
+        },
+        "position": {
+          "basis": "120px",
+          "shrink": 0
+        },
         "propConfig": {
           "position.display": {
             "binding": {
-              "type": "expr",
-              "config": { "expression": "!isNull({view.params.row.id})" }
+              "config": {
+                "expression": "!isNull({view.params.row.id})"
+              },
+              "type": "expr"
             }
           },
           "props.text": {
             "binding": {
-              "type": "property",
-              "config": { "path": "view.params.row.cavityNumber" }
+              "config": {
+                "path": "view.params.row.cavityNumber"
+              },
+              "type": "property"
             }
           }
         },
         "props": {
-          "text": "",
-          "style": { "fontSize": "12px" }
-        }
+          "style": {
+            "fontSize": "12px"
+          }
+        },
+        "type": "ia.display.label"
       },
       {
-        "type": "ia.input.text-field",
-        "meta": { "name": "DescInput" },
-        "position": { "grow": 1, "basis": "0" },
-        "propConfig": {
-          "props.text": {
-            "binding": {
-              "type": "property",
-              "config": { "path": "view.params.row.description" }
+        "events": {
+          "dom": {
+            "onBlur": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"cavityRowDescChanged\", payload\u003d{\"rowIndex\": self.view.params.row.rowIndex, \"newDesc\": self.props.text}, scope\u003d\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
             }
-          },
+          }
+        },
+        "meta": {
+          "name": "DescInput"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "propConfig": {
           "props.enabled": {
             "binding": {
-              "type": "expr",
-              "config": { "expression": "!{view.params.row.isScrappedSaved}" }
+              "config": {
+                "expression": "!{view.params.row.isScrappedSaved} \u0026\u0026 !{view.params.row.isDeprecated}"
+              },
+              "type": "expr"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "path": "view.params.row.description"
+              },
+              "type": "property"
             }
           }
         },
         "props": {
           "placeholder": "Description",
-          "style": { "classes": "search-input", "height": "30px" }
-        },
-        "events": {
-          "dom": {
-            "onBlur": {
-              "type": "script",
-              "scope": "G",
-              "config": {
-                "script": "\tsystem.perspective.sendMessage(\"cavityRowDescChanged\", payload={\"rowIndex\": self.view.params.row.rowIndex, \"newDesc\": self.props.text}, scope=\"page\")"
-              }
-            }
+          "style": {
+            "classes": "search-input",
+            "height": "30px"
           }
-        }
+        },
+        "type": "ia.input.text-field"
       },
       {
-        "type": "ia.input.dropdown",
-        "meta": { "name": "StatusDropdown" },
-        "position": { "basis": "160px", "shrink": 0 },
-        "propConfig": {
-          "props.value": {
-            "binding": {
-              "type": "property",
-              "config": { "path": "view.params.row.statusCode" }
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"cavityRowStatusChanged\", payload\u003d{\"rowIndex\": self.view.params.row.rowIndex, \"newStatus\": self.props.value}, scope\u003d\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
             }
-          },
+          }
+        },
+        "meta": {
+          "name": "StatusDropdown"
+        },
+        "position": {
+          "basis": "160px",
+          "shrink": 0
+        },
+        "propConfig": {
           "props.enabled": {
             "binding": {
-              "type": "expr",
-              "config": { "expression": "!{view.params.row.isScrappedSaved}" }
+              "config": {
+                "expression": "!{view.params.row.isScrappedSaved} \u0026\u0026 !{view.params.row.isDeprecated}"
+              },
+              "type": "expr"
+            }
+          },
+          "props.value": {
+            "binding": {
+              "config": {
+                "path": "view.params.row.statusCode"
+              },
+              "type": "property"
             }
           }
         },
         "props": {
           "options": [
-            { "label": "Active", "value": "Active" },
-            { "label": "Closed", "value": "Closed" },
-            { "label": "Scrapped", "value": "Scrapped" }
+            {
+              "label": "Active",
+              "value": "Active"
+            },
+            {
+              "label": "Closed",
+              "value": "Closed"
+            },
+            {
+              "label": "Scrapped",
+              "value": "Scrapped"
+            }
           ],
-          "style": { "classes": "select", "height": "30px" }
+          "style": {
+            "classes": "select",
+            "height": "30px"
+          }
         },
+        "type": "ia.input.dropdown"
+      },
+      {
         "events": {
           "component": {
             "onActionPerformed": {
-              "type": "script",
-              "scope": "G",
               "config": {
-                "script": "\tsystem.perspective.sendMessage(\"cavityRowStatusChanged\", payload={\"rowIndex\": self.view.params.row.rowIndex, \"newStatus\": self.props.value}, scope=\"page\")"
-              }
+                "script": "\tsystem.perspective.sendMessage(\"cavityRowRemove\", payload\u003d{\"rowIndex\": self.view.params.row.rowIndex}, scope\u003d\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
             }
           }
-        }
-      },
-      {
-        "type": "ia.input.button",
-        "meta": { "name": "RemoveBtn" },
-        "position": { "basis": "40px", "shrink": 0 },
+        },
+        "meta": {
+          "name": "RemoveBtn"
+        },
+        "position": {
+          "basis": "40px",
+          "shrink": 0
+        },
         "propConfig": {
           "position.display": {
             "binding": {
-              "type": "expr",
-              "config": { "expression": "isNull({view.params.row.id})" }
+              "config": {
+                "expression": "isNull({view.params.row.id})"
+              },
+              "type": "expr"
             }
           }
         },
         "props": {
-          "text": "×",
-          "style": { "classes": "btn btn-sm", "padding": "2px 6px", "height": "30px" }
+          "style": {
+            "classes": "btn btn-sm",
+            "height": "30px",
+            "padding": "2px 6px"
+          },
+          "text": "×"
         },
-        "events": {
-          "component": {
-            "onActionPerformed": {
-              "type": "script",
-              "scope": "G",
-              "config": {
-                "script": "\tsystem.perspective.sendMessage(\"cavityRowRemove\", payload={\"rowIndex\": self.view.params.row.rowIndex}, scope=\"page\")"
-              }
-            }
-          }
-        }
+        "type": "ia.input.button"
       }
-    ]
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "borderBottom": "1px solid var(--mpp-border-subtle)",
+        "gap": "6px",
+        "height": "100%",
+        "padding": "2px 10px"
+      }
+    },
+    "type": "ia.container.flex"
   }
 }
