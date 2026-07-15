@@ -382,7 +382,7 @@
         {
           "name": "handleDiscard",
           "params": [],
-          "script": "\tselected \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\tself.view.custom.state \u003d {\"selected\": selected, \"editDraft\": {\"rows\": [dict(r) for r in (selected.get(\"rows\") or [])]}}"
+          "script": "\tselected \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\t#self.view.custom.state \u003d {\"selected\": selected, \"editDraft\": {\"rows\": [dict(r) for r in (selected.get(\"rows\") or [])]}}\n\tself.view.custom.state \u003d {\"selected\": selected, \"editDraft\": selected}"
         },
         {
           "name": "addRow",

@@ -32,13 +32,13 @@
     "custom.isDirty": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.editDraft}) != runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.selected})"
+          "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.editDraft}) !\u003d runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.selected})"
         },
         "type": "expr"
       },
       "onChange": {
         "enabled": true,
-        "script": "\tsystem.perspective.sendMessage(\"sectionDirtyChanged\", payload={\"section\": \"containerConfig\", \"isDirty\": bool(currentValue.value)}, scope=\"page\")"
+        "script": "\tsystem.perspective.sendMessage(\"sectionDirtyChanged\", payload\u003d{\"section\": \"containerConfig\", \"isDirty\": bool(currentValue.value)}, scope\u003d\"page\")"
       }
     },
     "params.value": {
@@ -51,8 +51,7 @@
   },
   "props": {
     "defaultSize": {
-      "height": 220,
-      "width": 800
+      "height": 220
     }
   },
   "root": {
@@ -62,9 +61,6 @@
           {
             "meta": {
               "name": "PanelHeader"
-            },
-            "position": {
-              "basis": "auto"
             },
             "props": {
               "style": {
@@ -82,9 +78,6 @@
             "position": {
               "grow": 1
             },
-            "props": {
-              "text": ""
-            },
             "type": "ia.display.label"
           },
           {
@@ -101,9 +94,6 @@
             },
             "meta": {
               "name": "BtnDiscard"
-            },
-            "position": {
-              "basis": "auto"
             },
             "propConfig": {
               "meta.visible": {
@@ -138,9 +128,6 @@
             "meta": {
               "name": "BtnSave"
             },
-            "position": {
-              "basis": "auto"
-            },
             "propConfig": {
               "meta.visible": {
                 "binding": {
@@ -163,12 +150,8 @@
         "meta": {
           "name": "HeaderRow"
         },
-        "position": {
-          "basis": "auto"
-        },
         "props": {
           "alignItems": "center",
-          "direction": "row",
           "style": {
             "gap": "8px",
             "marginBottom": "4px"
@@ -184,9 +167,6 @@
                 "meta": {
                   "name": "LabelTraysPerContainer"
                 },
-                "position": {
-                  "basis": "auto"
-                },
                 "props": {
                   "style": {
                     "classes": "field-label"
@@ -198,9 +178,6 @@
               {
                 "meta": {
                   "name": "InputTraysPerContainer"
-                },
-                "position": {
-                  "basis": "auto"
                 },
                 "propConfig": {
                   "props.text": {
@@ -225,9 +202,6 @@
             "meta": {
               "name": "FieldTraysPerContainer"
             },
-            "position": {
-              "basis": "auto"
-            },
             "props": {
               "direction": "column",
               "style": {
@@ -243,9 +217,6 @@
                 "meta": {
                   "name": "LabelPartsPerTray"
                 },
-                "position": {
-                  "basis": "auto"
-                },
                 "props": {
                   "style": {
                     "classes": "field-label"
@@ -257,9 +228,6 @@
               {
                 "meta": {
                   "name": "InputPartsPerTray"
-                },
-                "position": {
-                  "basis": "auto"
                 },
                 "propConfig": {
                   "props.text": {
@@ -284,9 +252,6 @@
             "meta": {
               "name": "FieldPartsPerTray"
             },
-            "position": {
-              "basis": "auto"
-            },
             "props": {
               "direction": "column",
               "style": {
@@ -302,9 +267,6 @@
                 "meta": {
                   "name": "LabelIsSerialized"
                 },
-                "position": {
-                  "basis": "auto"
-                },
                 "props": {
                   "style": {
                     "classes": "field-label"
@@ -316,9 +278,6 @@
               {
                 "meta": {
                   "name": "DropdownIsSerialized"
-                },
-                "position": {
-                  "basis": "auto"
                 },
                 "propConfig": {
                   "props.value": {
@@ -352,9 +311,6 @@
             "meta": {
               "name": "FieldIsSerialized"
             },
-            "position": {
-              "basis": "auto"
-            },
             "props": {
               "direction": "column",
               "style": {
@@ -368,11 +324,7 @@
         "meta": {
           "name": "FieldRow1"
         },
-        "position": {
-          "basis": "auto"
-        },
         "props": {
-          "direction": "row",
           "style": {
             "classes": "field-row",
             "gap": "12px"
@@ -388,9 +340,6 @@
                 "meta": {
                   "name": "LabelClosureMethod"
                 },
-                "position": {
-                  "basis": "auto"
-                },
                 "props": {
                   "style": {
                     "classes": "field-label"
@@ -402,9 +351,6 @@
               {
                 "meta": {
                   "name": "DropdownClosureMethod"
-                },
-                "position": {
-                  "basis": "auto"
                 },
                 "propConfig": {
                   "props.value": {
@@ -442,9 +388,6 @@
             "meta": {
               "name": "FieldClosureMethod"
             },
-            "position": {
-              "basis": "auto"
-            },
             "props": {
               "direction": "column",
               "style": {
@@ -460,9 +403,6 @@
                 "meta": {
                   "name": "LabelTargetWeight"
                 },
-                "position": {
-                  "basis": "auto"
-                },
                 "props": {
                   "style": {
                     "classes": "field-label"
@@ -474,9 +414,6 @@
               {
                 "meta": {
                   "name": "InputTargetWeight"
-                },
-                "position": {
-                  "basis": "auto"
                 },
                 "propConfig": {
                   "props.text": {
@@ -501,14 +438,11 @@
             "meta": {
               "name": "FieldTargetWeight"
             },
-            "position": {
-              "basis": "auto"
-            },
             "propConfig": {
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "{view.custom.state.editDraft.ClosureMethod} = \"ByWeight\""
+                    "expression": "{view.custom.state.editDraft.ClosureMethod} \u003d \"ByWeight\""
                   },
                   "type": "expr"
                 }
@@ -529,9 +463,6 @@
                 "meta": {
                   "name": "LabelDunnageCode"
                 },
-                "position": {
-                  "basis": "auto"
-                },
                 "props": {
                   "style": {
                     "classes": "field-label"
@@ -543,9 +474,6 @@
               {
                 "meta": {
                   "name": "InputDunnageCode"
-                },
-                "position": {
-                  "basis": "auto"
                 },
                 "propConfig": {
                   "props.text": {
@@ -570,9 +498,6 @@
             "meta": {
               "name": "FieldDunnageCode"
             },
-            "position": {
-              "basis": "auto"
-            },
             "props": {
               "direction": "column",
               "style": {
@@ -588,9 +513,6 @@
                 "meta": {
                   "name": "LabelCustomerCode"
                 },
-                "position": {
-                  "basis": "auto"
-                },
                 "props": {
                   "style": {
                     "classes": "field-label"
@@ -602,9 +524,6 @@
               {
                 "meta": {
                   "name": "InputCustomerCode"
-                },
-                "position": {
-                  "basis": "auto"
                 },
                 "propConfig": {
                   "props.text": {
@@ -629,9 +548,6 @@
             "meta": {
               "name": "FieldCustomerCode"
             },
-            "position": {
-              "basis": "auto"
-            },
             "props": {
               "direction": "column",
               "style": {
@@ -645,11 +561,7 @@
         "meta": {
           "name": "FieldRow2"
         },
-        "position": {
-          "basis": "auto"
-        },
         "props": {
-          "direction": "row",
           "style": {
             "classes": "field-row",
             "gap": "12px"
@@ -675,31 +587,32 @@
         {
           "name": "load",
           "params": [],
-          "script": "\titemId = self.view.params.value\n\tdef _s(v):\n\t\treturn \"\" if v is None else (v if isinstance(v, basestring) else unicode(v))\n\tif not itemId:\n\t\tempty = {\n\t\t\t\"Id\": None, \"ItemId\": None,\n\t\t\t\"TraysPerContainer\": \"\", \"PartsPerTray\": \"\",\n\t\t\t\"IsSerialized\": False,\n\t\t\t\"ClosureMethod\": None, \"TargetWeight\": \"\",\n\t\t\t\"DunnageCode\": \"\", \"CustomerCode\": \"\",\n\t\t}\n\t\tself.view.custom.state = {\"selected\": dict(empty), \"editDraft\": dict(empty)}\n\t\treturn\n\trow = BlueRidge.Parts.ContainerConfig.getByItem(itemId) or {}\n\tloaded = {\n\t\t\"Id\":                row.get(\"Id\"),\n\t\t\"ItemId\":            itemId,\n\t\t\"TraysPerContainer\": _s(row.get(\"TraysPerContainer\")),\n\t\t\"PartsPerTray\":      _s(row.get(\"PartsPerTray\")),\n\t\t\"IsSerialized\":      bool(row.get(\"IsSerialized\", False)),\n\t\t\"ClosureMethod\":     row.get(\"ClosureMethod\"),\n\t\t\"TargetWeight\":      _s(row.get(\"TargetWeight\")),\n\t\t\"DunnageCode\":       _s(row.get(\"DunnageCode\")),\n\t\t\"CustomerCode\":      _s(row.get(\"CustomerCode\")),\n\t}\n\tself.view.custom.state = {\"selected\": dict(loaded), \"editDraft\": dict(loaded)}"
+          "script": "\titemId \u003d self.view.params.value\n\tdef _s(v):\n\t\treturn \"\" if v is None else (v if isinstance(v, basestring) else unicode(v))\n\tif not itemId:\n\t\tempty \u003d {\n\t\t\t\"Id\": None, \"ItemId\": None,\n\t\t\t\"TraysPerContainer\": \"\", \"PartsPerTray\": \"\",\n\t\t\t\"IsSerialized\": False,\n\t\t\t\"ClosureMethod\": None, \"TargetWeight\": \"\",\n\t\t\t\"DunnageCode\": \"\", \"CustomerCode\": \"\",\n\t\t}\n\t\tself.view.custom.state \u003d {\"selected\": dict(empty), \"editDraft\": dict(empty)}\n\t\treturn\n\trow \u003d BlueRidge.Parts.ContainerConfig.getByItem(itemId) or {}\n\tloaded \u003d {\n\t\t\"Id\":                row.get(\"Id\"),\n\t\t\"ItemId\":            itemId,\n\t\t\"TraysPerContainer\": _s(row.get(\"TraysPerContainer\")),\n\t\t\"PartsPerTray\":      _s(row.get(\"PartsPerTray\")),\n\t\t\"IsSerialized\":      bool(row.get(\"IsSerialized\", False)),\n\t\t\"ClosureMethod\":     row.get(\"ClosureMethod\"),\n\t\t\"TargetWeight\":      _s(row.get(\"TargetWeight\")),\n\t\t\"DunnageCode\":       _s(row.get(\"DunnageCode\")),\n\t\t\"CustomerCode\":      _s(row.get(\"CustomerCode\")),\n\t}\n\tself.view.custom.state \u003d {\"selected\": dict(loaded), \"editDraft\": dict(loaded)}"
         },
         {
           "name": "handleSave",
           "params": [],
-          "script": "\tdraft = self.view.custom.state.editDraft or {}\n\titemId = self.view.params.value\n\tif not itemId:\n\t\tBlueRidge.Common.Notify.toast(\"No item selected\", \"Select an item before saving container configuration.\", \"warning\")\n\t\treturn\n\tdef _toNum(v):\n\t\tif v is None or v == \"\":\n\t\t\treturn None\n\t\ttry:\n\t\t\treturn int(v)\n\t\texcept (ValueError, TypeError):\n\t\t\ttry:\n\t\t\t\treturn float(v)\n\t\t\texcept (ValueError, TypeError):\n\t\t\t\treturn None\n\ttrays = _toNum(draft.get(\"TraysPerContainer\"))\n\tpartsPerTray = _toNum(draft.get(\"PartsPerTray\"))\n\tif trays is None or trays <= 0:\n\t\tBlueRidge.Common.Notify.toast(\"Trays per Container required\", \"Enter a positive number of trays per container.\", \"warning\")\n\t\treturn\n\tif partsPerTray is None or partsPerTray <= 0:\n\t\tBlueRidge.Common.Notify.toast(\"Parts per Tray required\", \"Enter a positive number of parts per tray.\", \"warning\")\n\t\treturn\n\ttargetWeight = None\n\tif draft.get(\"ClosureMethod\") == \"ByWeight\":\n\t\ttargetWeight = _toNum(draft.get(\"TargetWeight\"))\n\t\tif targetWeight is None or targetWeight <= 0:\n\t\t\tBlueRidge.Common.Notify.toast(\"Target Weight required\", \"ByWeight closure requires a positive target weight.\", \"warning\")\n\t\t\treturn\n\tpayload = dict(draft)\n\tpayload[\"ItemId\"] = itemId\n\tpayload[\"TraysPerContainer\"] = trays\n\tpayload[\"PartsPerTray\"] = partsPerTray\n\tpayload[\"TargetWeight\"] = targetWeight\n\tif payload.get(\"Id\"):\n\t\tresult = BlueRidge.Parts.ContainerConfig.update(payload)\n\t\tsuccessTitle = \"Container config updated\"\n\telse:\n\t\tresult = BlueRidge.Parts.ContainerConfig.add(payload)\n\t\tsuccessTitle = \"Container config saved\"\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle)\n\tif result and result.get(\"Status\"):\n\t\tself.load()"
+          "script": "\tdraft \u003d self.view.custom.state.editDraft or {}\n\titemId \u003d self.view.params.value\n\tif not itemId:\n\t\tBlueRidge.Common.Notify.toast(\"No item selected\", \"Select an item before saving container configuration.\", \"warning\")\n\t\treturn\n\tdef _toNum(v):\n\t\tif v is None or v \u003d\u003d \"\":\n\t\t\treturn None\n\t\ttry:\n\t\t\treturn int(v)\n\t\texcept (ValueError, TypeError):\n\t\t\ttry:\n\t\t\t\treturn float(v)\n\t\t\texcept (ValueError, TypeError):\n\t\t\t\treturn None\n\ttrays \u003d _toNum(draft.get(\"TraysPerContainer\"))\n\tpartsPerTray \u003d _toNum(draft.get(\"PartsPerTray\"))\n\tif trays is None or trays \u003c\u003d 0:\n\t\tBlueRidge.Common.Notify.toast(\"Trays per Container required\", \"Enter a positive number of trays per container.\", \"warning\")\n\t\treturn\n\tif partsPerTray is None or partsPerTray \u003c\u003d 0:\n\t\tBlueRidge.Common.Notify.toast(\"Parts per Tray required\", \"Enter a positive number of parts per tray.\", \"warning\")\n\t\treturn\n\ttargetWeight \u003d None\n\tif draft.get(\"ClosureMethod\") \u003d\u003d \"ByWeight\":\n\t\ttargetWeight \u003d _toNum(draft.get(\"TargetWeight\"))\n\t\tif targetWeight is None or targetWeight \u003c\u003d 0:\n\t\t\tBlueRidge.Common.Notify.toast(\"Target Weight required\", \"ByWeight closure requires a positive target weight.\", \"warning\")\n\t\t\treturn\n\tpayload \u003d dict(draft)\n\tpayload[\"ItemId\"] \u003d itemId\n\tpayload[\"TraysPerContainer\"] \u003d trays\n\tpayload[\"PartsPerTray\"] \u003d partsPerTray\n\tpayload[\"TargetWeight\"] \u003d targetWeight\n\tif payload.get(\"Id\"):\n\t\tresult \u003d BlueRidge.Parts.ContainerConfig.update(payload)\n\t\tsuccessTitle \u003d \"Container config updated\"\n\telse:\n\t\tresult \u003d BlueRidge.Parts.ContainerConfig.add(payload)\n\t\tsuccessTitle \u003d \"Container config saved\"\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle)\n\tif result and result.get(\"Status\"):\n\t\tself.load()"
         },
         {
           "name": "handleDiscard",
           "params": [],
-          "script": "\tself.view.custom.state.editDraft = dict(self.view.custom.state.selected)"
+          "script": "\tself.view.custom.state.editDraft \u003d dict(self.view.custom.state.selected)"
         }
       ],
+      "extensionFunctions": null,
       "messageHandlers": [
         {
           "messageType": "sectionSaveRequested",
           "pageScope": true,
-          "script": "\tif payload and payload.get(\"section\") == \"containerConfig\":\n\t\tself.handleSave()",
+          "script": "\tif payload and payload.get(\"section\") \u003d\u003d \"containerConfig\":\n\t\tself.handleSave()",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "sectionDiscardRequested",
           "pageScope": true,
-          "script": "\tif payload and payload.get(\"section\") == \"containerConfig\":\n\t\tself.handleDiscard()",
+          "script": "\tif payload and payload.get(\"section\") \u003d\u003d \"containerConfig\":\n\t\tself.handleDiscard()",
           "sessionScope": false,
           "viewScope": false
         }

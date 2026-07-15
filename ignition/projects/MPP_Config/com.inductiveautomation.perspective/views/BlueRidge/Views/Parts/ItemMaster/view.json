@@ -1,7 +1,7 @@
 {
   "custom": {
-    "activeTab": "containerConfig",
-    "activeTabIndex": 0,
+    "activeTab": "eligibility",
+    "activeTabIndex": 4,
     "itemTypes": [
       "Raw Material",
       "Component",
@@ -665,7 +665,7 @@
         {
           "messageType": "sectionDirtyChanged",
           "pageScope": true,
-          "script": "\tsection \u003d payload.get(\"section\") if payload else None\n\tisDirty \u003d bool(payload.get(\"isDirty\")) if payload else False\n\tif not section:\n\t\treturn\n\tnextMap \u003d dict(self.view.custom.sectionDirty or {})\n\tnextMap[section] \u003d isDirty\n\tself.view.custom.sectionDirty \u003d nextMap\n\tpending \u003d self.view.custom.pendingSwitch\n\tif pending and not any(nextMap.values()):\n\t\tself.completeSwitch()",
+          "script": "\tsection \u003d payload.get(\"section\") if payload else None\n\tisDirty \u003d bool(payload.get(\"isDirty\")) if payload else False\n\tif not section:\n\t\treturn\n\tsystem.perspective.print(str(section) + \" dirty: \" + str(isDirty))\n\tnextMap \u003d dict(self.view.custom.sectionDirty or {})\n\tnextMap[section] \u003d isDirty\n\tself.view.custom.sectionDirty \u003d nextMap\n\tpending \u003d self.view.custom.pendingSwitch\n\tif pending and not any(nextMap.values()):\n\t\tself.completeSwitch()",
           "sessionScope": false,
           "viewScope": false
         },

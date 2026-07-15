@@ -210,7 +210,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\titemId = (self.view.custom.state.editDraft or {}).get('Id') or (self.view.custom.state.selected or {}).get('Id')\n\tif not itemId:\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid='mpp-confirm-destructive',\n\t\tview='BlueRidge/Components/Popups/ConfirmDestructive',\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t'title': 'Deprecate Part',\n\t\t\t'message': 'Deprecating this part also deprecates its routes, BOMs, eligibility, and container config. Active LOTs of the part will block this. Continue?',\n\t\t\t'confirmLabel': 'Deprecate',\n\t\t\t'replyMessage': 'itemDeprecateConfirmed'\n\t\t}\n\t)"
+                    "script": "\titemId \u003d (self.view.custom.state.editDraft or {}).get(\u0027Id\u0027) or (self.view.custom.state.selected or {}).get(\u0027Id\u0027)\n\tif not itemId:\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid\u003d\u0027mpp-confirm-destructive\u0027,\n\t\tview\u003d\u0027BlueRidge/Components/Popups/ConfirmDestructive\u0027,\n\t\tmodal\u003dTrue,\n\t\tshowCloseIcon\u003dFalse,\n\t\tparams\u003d{\n\t\t\t\u0027title\u0027: \u0027Deprecate Part\u0027,\n\t\t\t\u0027message\u0027: \u0027Deprecating this part also deprecates its routes, BOMs, eligibility, and container config. Active LOTs of the part will block this. Continue?\u0027,\n\t\t\t\u0027confirmLabel\u0027: \u0027Deprecate\u0027,\n\t\t\t\u0027replyMessage\u0027: \u0027itemDeprecateConfirmed\u0027\n\t\t}\n\t)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -933,7 +933,7 @@
         {
           "messageType": "itemDeprecateConfirmed",
           "pageScope": true,
-          "script": "\taction = (payload or {}).get('action')\n\tif action != 'confirm':\n\t\treturn\n\tself.handleDeprecate()",
+          "script": "\taction \u003d (payload or {}).get(\u0027action\u0027)\n\tif action !\u003d \u0027confirm\u0027:\n\t\treturn\n\tself.handleDeprecate()",
           "sessionScope": false,
           "viewScope": false
         }
