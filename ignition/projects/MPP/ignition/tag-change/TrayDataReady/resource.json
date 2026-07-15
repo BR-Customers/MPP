@@ -1,0 +1,57 @@
+{
+  "scope": "G",
+  "version": 1,
+  "restricted": false,
+  "overridable": true,
+  "files": [
+    "onTagChange.py"
+  ],
+  "attributes": {
+    "changeTypes": [
+      "ValueChange",
+      "QualityChange",
+      "TimestampChange"
+    ],
+    "lastModificationSignature": "d09ece11b5f81b4a9d75cd59d0d63664e392fa02b7ff6da24ab395e4a9a3bbc4",
+    "paths": [
+      "[MPP]PlcDevices/59B_1_FP_1/NET_DataReady",
+      "[MPP]PlcDevices/5PA_1_FP_1/NET_DataReady",
+      "[MPP]PlcDevices/6B2_1_FP_1/NET_DataReady",
+      "[MPP]PlcDevices/RPY_1_FP_1/NET_DataReady",
+      "[MPP]PlcDevices/RPY_1_CB_1/NET_DataReady",
+      "[MPP]PlcDevices/5G0_Front_Scale/NET_DataReady",
+      "[MPP]PlcDevices/5G0_Rear_Scale/NET_DataReady",
+      "[MPP]PlcDevices/5G0_A1/DataReady",
+      "[MPP]PlcDevices/5G0_A1/PartComplete",
+      "[MPP]PlcDevices/5G0_A2/DataReady",
+      "[MPP]PlcDevices/5G0_A2/PartComplete",
+      "[MPP]PlcDevices/5A2_L1_CamHolder/DataReady",
+      "[MPP]PlcDevices/5A2_L1_FuelPump/DataReady",
+      "[MPP]PlcDevices/5A2_L2_CamHolder/DataReady",
+      "[MPP]PlcDevices/5A2_L2_FuelPump/DataReady",
+      "[MPP]PlcDevices/5J6_OilPan/TrayLocked",
+      "[MPP]PlcDevices/5J6_OilPan/InspectionComplete",
+      "[MPP]PlcDevices/5K8_64A_OilPan/TrayLocked",
+      "[MPP]PlcDevices/5K8_64A_OilPan/InspectionComplete",
+      "[MPP]PlcDevices/6B2_CH/TrayLocked",
+      "[MPP]PlcDevices/6B2_CH/InspectionComplete",
+      "[MPP]PlcDevices/6C2_6MA_OilPan/TrayLocked",
+      "[MPP]PlcDevices/6C2_6MA_OilPan/InspectionComplete",
+      "[MPP]PlcDevices/6FB_CH/TrayLocked",
+      "[MPP]PlcDevices/6FB_CH/InspectionComplete",
+      "[MPP]PlcDevices/6MA_CH/TrayLocked",
+      "[MPP]PlcDevices/6MA_CH/InspectionComplete",
+      "[MPP]PlcDevices/RPY_CH/TrayLocked",
+      "[MPP]PlcDevices/RPY_CH/InspectionComplete",
+      "[MPP]PlcDevices/Sort_OilPan/TrayLocked",
+      "[MPP]PlcDevices/Sort_OilPan/InspectionComplete",
+      "[MPP]PlcDevices/Sort_Totes/TrayLocked",
+      "[MPP]PlcDevices/Sort_Totes/InspectionComplete"
+    ],
+    "lastModification": {
+      "actor": "admin",
+      "timestamp": "2026-07-14T15:40:10Z"
+    },
+    "enabled": true
+  }
+}
