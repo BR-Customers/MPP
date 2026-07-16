@@ -70,7 +70,7 @@
         {
           "name": "startup",
           "params": [],
-          "script": "\t# Operator gate: no logged-in operator -> open the initials popup OVER this screen.\n\t# Non-blocking: the page populates behind the modal; session.custom is reactive.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
+          "script": "\t# Dedicated terminal: derive the working cell from the terminal's zone (parent),\n\t# mirroring the Die Cast / Assembly dedicated bodies (receiving deposits at its zone).\n\tt = self.session.custom.terminal\n\tif t and t.get(\"zoneLocationId\"):\n\t\tself.session.custom.cell = {\"locationId\": t.get(\"zoneLocationId\"), \"code\": t.get(\"zoneName\") or \"\", \"name\": t.get(\"zoneName\") or \"\"}\n\t# Operator gate: no logged-in operator -> open the initials popup OVER this screen.\n\t# Non-blocking: the page populates behind the modal; session.custom is reactive.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
         }
       ]
     },
@@ -279,9 +279,9 @@
                     "binding": {
                       "type": "property",
                       "config": {
+                        "bidirectional": true,
                         "path": "view.custom.partItemId"
-                      },
-                      "bidirectional": true
+                      }
                     }
                   }
                 }
@@ -331,9 +331,9 @@
                     "binding": {
                       "type": "property",
                       "config": {
+                        "bidirectional": true,
                         "path": "view.custom.draft.vendorLotNumber"
-                      },
-                      "bidirectional": true
+                      }
                     }
                   }
                 }
@@ -384,9 +384,9 @@
                     "binding": {
                       "type": "property",
                       "config": {
+                        "bidirectional": true,
                         "path": "view.custom.draft.pieceCount"
-                      },
-                      "bidirectional": true
+                      }
                     }
                   }
                 }
@@ -452,9 +452,9 @@
                         "binding": {
                           "type": "property",
                           "config": {
+                            "bidirectional": true,
                             "path": "view.custom.draft.minSerialNumber"
-                          },
-                          "bidirectional": true
+                          }
                         }
                       }
                     }
@@ -508,9 +508,9 @@
                         "binding": {
                           "type": "property",
                           "config": {
+                            "bidirectional": true,
                             "path": "view.custom.draft.maxSerialNumber"
-                          },
-                          "bidirectional": true
+                          }
                         }
                       }
                     }
