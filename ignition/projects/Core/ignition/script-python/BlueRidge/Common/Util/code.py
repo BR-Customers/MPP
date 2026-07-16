@@ -89,6 +89,19 @@ from java.util import Collection as JavaCollection
 # known-valid AppUser.Id keeps mutation audit attribution working in dev.
 _DEV_APP_USER_ID = 2
 
+# The verified system AppUser (bootstrap row Id=1, Initials 'SYS' -- migration
+# 0012). Unattended gateway processes (PLC watchers, timers) attribute their
+# mutations here. Single source -- replaces the ad-hoc _SYSTEM_APP_USER_ID = 1
+# constants scattered through the PLC scripts.
+_SYSTEM_APP_USER_ID = 1
+
+
+def systemAppUserId():
+    """AppUser.Id for system-initiated mutations (PLC watchers, gateway timers)
+    that run outside any operator session. Returns the verified bootstrap
+    system user (Initials 'SYS'). Pass to procs as @AppUserId."""
+    return _SYSTEM_APP_USER_ID
+
 
 def log(msg, level="info"):
     """

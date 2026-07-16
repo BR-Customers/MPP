@@ -1,0 +1,72 @@
+{
+  "name": "Sample UDT",
+  "parameters": {
+    "BasePath": {
+      "dataType": "String",
+      "value": "Ramp/Ramp"
+    },
+    "Device": {
+      "dataType": "String",
+      "value": "Sample MPP Generic Sim"
+    },
+    "IntExample": {
+      "dataType": "Integer",
+      "value": 0
+    }
+  },
+  "tagType": "UdtType",
+  "tags": [
+    {
+      "dataType": "String",
+      "expression": "round({[.]OPC Sample}+{[.]OPC Sample 2},2) + \" Apples\"",
+      "name": "SumOfRamp0-ParamExample",
+      "tagType": "AtomicTag",
+      "valueSource": "expr"
+    },
+    {
+      "name": "LastValue",
+      "tagType": "AtomicTag",
+      "valueSource": "memory"
+    },
+    {
+      "name": "Reference LastValue",
+      "sourceTagPath": "[.]LastValue",
+      "tagType": "AtomicTag",
+      "valueSource": "reference"
+    },
+    {
+      "dataType": "Float8",
+      "eventScripts": [
+        {
+          "eventid": "valueChanged",
+          "script": "\tOpcSample \u003d system.tag.readBlocking(\"[.]OPC Sample\")[0].value\n\tif currentValue.value \u003e OpcSample:\n\t\tsystem.tag.writeBlocking([\"[.]Boolean\",\"[.]LastValue\"], [True,OpcSample])\n\t\t"
+        }
+      ],
+      "name": "OPC Sample 2",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns\u003d1;s\u003d[{Device}]{BasePath}1"
+      },
+      "opcServer": "Ignition OPC UA Server",
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Float8",
+      "name": "OPC Sample",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns\u003d1;s\u003d[{Device}]{BasePath}0"
+      },
+      "opcServer": "Ignition OPC UA Server",
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "defaultValue": "True",
+      "name": "Boolean",
+      "tagType": "AtomicTag",
+      "valueSource": "memory"
+    }
+  ]
+}

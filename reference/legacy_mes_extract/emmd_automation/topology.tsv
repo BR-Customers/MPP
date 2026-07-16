@@ -1,0 +1,46 @@
+Tier	Id	Name	ParentId	ParentName	Active
+Plant	1	Madison	NULL	NULL	1
+Line	1	5A2 Line 1 - Cam Holder Assembly	1	Madison	1
+Line	3	5G0 - Line 2 Backup	1	Madison	0
+Line	4	5A2 Line 1 - Fuel Pump Assembly	1	Madison	1
+Line	7	5A2 Line 2 - Cam Holder Assembly	1	Madison	1
+Line	8	5A2 Line 2 - Fuel Pump Assembly	1	Madison	1
+Line	10	RPY Line 1 - Fuel Pump 1 Assembly	1	Madison	1
+Line	11	59B Line 1 - Fuel Pump 1 Assembly	1	Madison	1
+Line	12	6B2 - Cam Holder Assembly	1	Madison	1
+Line	13	6B2 Line 1 - Fuel Pump 1 Assembly	1	Madison	1
+Line	14	5PA Line 1 - Fuel Pump 1 Assembly	1	Madison	1
+Line	15	6C2 6MA - Oil Pan Assembly	1	Madison	1
+Line	16	Sort Line - Oil Pan	1	Madison	1
+Line	18	Sort Line - Totes	1	Madison	1
+Line	19	RPY - Compressor Bracket Assembly	1	Madison	1
+Line	20	5K8 64A - Oil Pan Assembly	1	Madison	1
+Line	21	6MA - Cam Holder Assembly - 2	1	Madison	0
+Line	26	5G0 - Line 1	1	Madison	1
+Line	28	5G0 - Line 2	1	Madison	1
+Line	29	RPY - Cam Holder Assembly	1	Madison	1
+Line	30	5J6 - Oil Pan Assembly	1	Madison	1
+Line	31	6MA - Cam Holder Assembly	1	Madison	1
+Line	32	6FB - CH and OP Assembly	1	Madison	1
+Task	1	Cam Holder Assembly	1	5A2 Line 1 - Cam Holder Assembly	1
+Task	3	Assembly 2	3	5G0 - Line 2 Backup	1
+Task	4	Fuel Pump Assembly	4	5A2 Line 1 - Fuel Pump Assembly	1
+Task	6	Cam Holder Assembly	7	5A2 Line 2 - Cam Holder Assembly	1
+Task	7	Fuel Pump Assembly	8	5A2 Line 2 - Fuel Pump Assembly	1
+Task	10	Fuel Pump Assembly	10	RPY Line 1 - Fuel Pump 1 Assembly	1
+Task	11	Fuel Pump Assembly	11	59B Line 1 - Fuel Pump 1 Assembly	1
+Task	12	Cam Holder Assembly	12	6B2 - Cam Holder Assembly	1
+Task	13	Fuel Pump Assembly	13	6B2 Line 1 - Fuel Pump 1 Assembly	1
+Task	14	Fuel Pump Assembly	14	5PA Line 1 - Fuel Pump 1 Assembly	1
+Task	15	Oil Pump Assembly	15	6C2 6MA - Oil Pan Assembly	1
+Task	16	Oil Pan Sort	16	Sort Line - Oil Pan	1
+Task	19	Totes Sort	18	Sort Line - Totes	1
+Task	20	Compressor Bracket Assembly	19	RPY - Compressor Bracket Assembly	1
+Task	21	Oil Pump Assembly	20	5K8 64A - Oil Pan Assembly	1
+Task	22	Cam Holder Assembly	21	6MA - Cam Holder Assembly - 2	1
+Task	28	Assembly 1	26	5G0 - Line 1	1
+Task	30	Assembly 2	28	5G0 - Line 2	1
+Task	31	Cam Holder Assembly	29	RPY - Cam Holder Assembly	1
+Task	32	Oil Pump Assembly	30	5J6 - Oil Pan Assembly	1
+Task	33	Cam Holder Assembly	31	6MA - Cam Holder Assembly	1
+Task	34	CH and OP Assembly	32	6FB - CH and OP Assembly	1

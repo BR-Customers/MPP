@@ -1,0 +1,1 @@
+EXEC Location.PlcDeviceType_List

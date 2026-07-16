@@ -1,0 +1,170 @@
+{
+  "custom": {},
+  "params": {
+    "index": 0,
+    "id": null,
+    "deviceCode": "",
+    "deviceTypeName": "",
+    "plcDeviceTypeId": null,
+    "udtInstancePath": "",
+    "sortOrder": null
+  },
+  "propConfig": {
+    "params.index": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.id": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.deviceCode": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.deviceTypeName": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.plcDeviceTypeId": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.udtInstancePath": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.sortOrder": {
+      "paramDirection": "input",
+      "persistent": true
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "width": 640,
+      "height": 60
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "justify": "space-between",
+      "style": {
+        "gap": "10px",
+        "padding": "8px",
+        "classes": "surface-card"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Info"
+        },
+        "position": {
+          "grow": 1,
+          "basis": "0"
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "2px"
+          }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "RowCode"
+            },
+            "props": {},
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "coalesce({view.params.deviceCode}, \"\") + \"  (\" + coalesce({view.params.deviceTypeName}, \"\") + \")\""
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": {
+              "name": "RowPath"
+            },
+            "props": {
+              "style": {
+                "classes": "text-muted"
+              }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "{view.params.udtInstancePath}"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.input.button",
+        "version": 0,
+        "meta": {
+          "name": "EditBtn"
+        },
+        "props": {
+          "text": "Edit",
+          "style": {
+            "classes": "btn"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"plcMappingEdit\", {\"id\": self.view.params.id, \"plcDeviceTypeId\": self.view.params.plcDeviceTypeId, \"deviceCode\": self.view.params.deviceCode, \"udtInstancePath\": self.view.params.udtInstancePath, \"sortOrder\": self.view.params.sortOrder}, scope=\"page\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "version": 0,
+        "meta": {
+          "name": "DeprecateBtn"
+        },
+        "props": {
+          "text": "Remove",
+          "style": {
+            "classes": "btn btn-danger"
+          }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"plcMappingDeprecate\", {\"id\": self.view.params.id}, scope=\"page\")"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

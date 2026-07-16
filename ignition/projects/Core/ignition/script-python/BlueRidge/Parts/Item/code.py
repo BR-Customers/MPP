@@ -444,3 +444,20 @@ def getByPartNumber(partNumber):
         if ("%s" % (r.get("PartNumber") or "")).strip().upper() == target:
             return r
     return None
+
+
+def getPlcId(itemId):
+    """The item's PLC/vision recipe integer. Returns {ItemId, PlcId} or None.
+       PlcId is NULL for parts without a PLC recipe (spec Sec 4.3)."""
+    BlueRidge.Common.Util.log("itemId=%s" % itemId)
+    return BlueRidge.Common.Db.execOne("parts/Item_GetPlcId", {"itemId": itemId})
+
+
+def setPlcId(itemId, plcId, appUserId=None):
+    """Set the item's PLC/vision recipe integer. Returns {Status, Message}."""
+    if appUserId is None:
+        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    BlueRidge.Common.Util.log("itemId=%s plcId=%s" % (itemId, plcId))
+    return BlueRidge.Common.Db.execMutation(
+        "parts/Item_SetPlcId",
+        {"itemId": itemId, "plcId": plcId, "appUserId": appUserId})

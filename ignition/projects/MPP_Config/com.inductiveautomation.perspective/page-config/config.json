@@ -36,6 +36,10 @@
       "title": "Plant Hierarchy",
       "viewPath": "BlueRidge/Views/Location/PlantHierarchy"
     },
+    "/plc-devices": {
+      "title": "PLC Device Mapping",
+      "viewPath": "BlueRidge/Views/Location/PlcDevices"
+    },
     "/quality-specs": {
       "title": "Quality Specs",
       "viewPath": "BlueRidge/Views/Quality/QualitySpecs"

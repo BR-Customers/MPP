@@ -35,6 +35,12 @@ it is byte-accurate (unlike the transcribed snapshot here).
 - `emmd_foreign_keys.csv` — `EMMD` FK relationships
 - `emmd_columns.csv` — `EMMD` column catalog
 
+### EMMD automation-config DATA (2026-07-10)
+- `emmd_automation/` — the actual `EMMD` automation rows (OPC servers, parsed tag catalog,
+  device rollup, topology, events, triggers, handshake step chain) pulled 2026-07-10 for the
+  PLC UDT design. See `emmd_automation/README.md`. Regenerable via
+  `sql/scratch/emmd_extract_udt_tag_map.sql` (+ `..._automation_config.sql`).
+
 ### MES master / reference data
 - `code_tables.csv` — state/type/disposition/UoM/class/role/privilege lookups (grid #A)
 - `locations.csv` — ISA-95 plant tree Site→Area→Line→Cell→Workstation (grid #B)

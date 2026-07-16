@@ -20,7 +20,8 @@ CREATE OR ALTER PROCEDURE Lots.SerializedPart_Mint
     @ItemId             BIGINT,
     @ProducingLotId     BIGINT,
     @AppUserId          BIGINT,
-    @TerminalLocationId BIGINT = NULL
+    @TerminalLocationId BIGINT       = NULL,
+    @SerialNumber       NVARCHAR(50) = NULL   -- PLC/etch-supplied serial; NULL/empty = auto-generate
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -29,7 +30,7 @@ BEGIN
     DECLARE @Status       BIT           = 0;
     DECLARE @Message      NVARCHAR(500) = N'Unknown error';
     DECLARE @NewId        BIGINT        = NULL;
-    DECLARE @SerialNumber NVARCHAR(50)  = NULL;
+    -- @SerialNumber is now a parameter (PLC-supplied or auto-generated below).
 
     DECLARE @SeqLast BIGINT, @SeqEnd BIGINT, @SeqFormat NVARCHAR(50), @SeqPrefix NVARCHAR(50), @SeqPad INT;
 
@@ -56,35 +57,50 @@ BEGIN
             RETURN;
         END
 
+        -- ---- Tier 2b: supplied-serial duplicate -- reject BEFORE opening a
+        --       transaction so a ROLLBACK never fires under INSERT-EXEC (Msg 3915). ----
+        IF @SerialNumber IS NOT NULL AND LTRIM(RTRIM(@SerialNumber)) <> N''
+           AND EXISTS (SELECT 1 FROM Lots.SerializedPart WHERE SerialNumber = @SerialNumber)
+        BEGIN
+            SET @Message = N'Serial number ' + @SerialNumber + N' already exists.';
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @SerialNumber AS SerialNumber;
+            RETURN;
+        END
+
         -- ---- Mutation (atomic): inline 'SerializedItem' mint + insert ----
         BEGIN TRANSACTION;
 
-        SELECT @SeqLast   = s.LastValue + 1,
-               @SeqEnd    = s.EndingValue,
-               @SeqFormat = s.FormatString
-        FROM Lots.IdentifierSequence s WITH (ROWLOCK, UPDLOCK, HOLDLOCK)
-        WHERE s.Code = N'SerializedItem';
+        -- Supplied serial (validated non-duplicate above) is used as-is; otherwise
+        -- auto-generate from the SerializedItem identifier sequence (original behavior).
+        IF @SerialNumber IS NULL OR LTRIM(RTRIM(@SerialNumber)) = N''
+        BEGIN
+            SELECT @SeqLast   = s.LastValue + 1,
+                   @SeqEnd    = s.EndingValue,
+                   @SeqFormat = s.FormatString
+            FROM Lots.IdentifierSequence s WITH (ROWLOCK, UPDLOCK, HOLDLOCK)
+            WHERE s.Code = N'SerializedItem';
 
-        IF @SeqLast IS NULL
-            RAISERROR(N'Identifier sequence ''SerializedItem'' is not configured.', 16, 1);
-        IF @SeqLast > @SeqEnd
-            RAISERROR(N'Identifier sequence ''SerializedItem'' is exhausted.', 16, 1);
+            IF @SeqLast IS NULL
+                RAISERROR(N'Identifier sequence ''SerializedItem'' is not configured.', 16, 1);
+            IF @SeqLast > @SeqEnd
+                RAISERROR(N'Identifier sequence ''SerializedItem'' is exhausted.', 16, 1);
 
-        UPDATE Lots.IdentifierSequence
-        SET LastValue = @SeqLast, UpdatedAt = SYSUTCDATETIME()
-        WHERE Code = N'SerializedItem';
+            UPDATE Lots.IdentifierSequence
+            SET LastValue = @SeqLast, UpdatedAt = SYSUTCDATETIME()
+            WHERE Code = N'SerializedItem';
 
-        SET @SeqPrefix = CASE WHEN CHARINDEX(N'{', @SeqFormat) > 0
-                              THEN LEFT(@SeqFormat, CHARINDEX(N'{', @SeqFormat) - 1)
-                              ELSE @SeqFormat END;
-        SET @SeqPad = TRY_CAST(
-            SUBSTRING(@SeqFormat,
-                      CHARINDEX(N'D', @SeqFormat, CHARINDEX(N'{', @SeqFormat)) + 1,
-                      CHARINDEX(N'}', @SeqFormat, CHARINDEX(N'{', @SeqFormat)) - CHARINDEX(N'D', @SeqFormat, CHARINDEX(N'{', @SeqFormat)) - 1)
-            AS INT);
-        SET @SerialNumber = CASE WHEN @SeqPad IS NULL OR @SeqPad < 1
-            THEN @SeqPrefix + CAST(@SeqLast AS NVARCHAR(20))
-            ELSE @SeqPrefix + RIGHT(REPLICATE(N'0', @SeqPad) + CAST(@SeqLast AS NVARCHAR(20)), @SeqPad) END;
+            SET @SeqPrefix = CASE WHEN CHARINDEX(N'{', @SeqFormat) > 0
+                                  THEN LEFT(@SeqFormat, CHARINDEX(N'{', @SeqFormat) - 1)
+                                  ELSE @SeqFormat END;
+            SET @SeqPad = TRY_CAST(
+                SUBSTRING(@SeqFormat,
+                          CHARINDEX(N'D', @SeqFormat, CHARINDEX(N'{', @SeqFormat)) + 1,
+                          CHARINDEX(N'}', @SeqFormat, CHARINDEX(N'{', @SeqFormat)) - CHARINDEX(N'D', @SeqFormat, CHARINDEX(N'{', @SeqFormat)) - 1)
+                AS INT);
+            SET @SerialNumber = CASE WHEN @SeqPad IS NULL OR @SeqPad < 1
+                THEN @SeqPrefix + CAST(@SeqLast AS NVARCHAR(20))
+                ELSE @SeqPrefix + RIGHT(REPLICATE(N'0', @SeqPad) + CAST(@SeqLast AS NVARCHAR(20)), @SeqPad) END;
+        END
 
         INSERT INTO Lots.SerializedPart (SerialNumber, ItemId, ProducingLotId, EtchedAt, EtchedByUserId)
         VALUES (@SerialNumber, @ItemId, @ProducingLotId, SYSUTCDATETIME(), @AppUserId);

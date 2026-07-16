@@ -82,6 +82,31 @@ Body:     {}
 
 A production/deploy Gateway should **not** junction to a developer's working tree. The deploy pattern is a scheduled `pull.ps1` running *on the deploy box*: `git fetch` + `git reset --hard origin/<branch>` against a repo checkout the deploy Gateway reads from, then POST the same scan endpoint **only if `HEAD` moved**. That script carries machine-specific paths/branch and is independent of the local loop — locally you only ever run `scan.ps1`.
 
+## Gateway tags are import-managed, NOT scan-synced
+
+Project resources (views, named queries, scripts, styles) live under
+`ignition/projects/<P>/` and reach the Gateway through the junction + a `scan.ps1`
+POST. **Gateway tags do not** — they live in the tag provider's own store, outside
+the project export, so a project scan never touches them. Tag artifacts are
+therefore committed as plain files (e.g. this project's `ignition/tags/`: UDT
+definition JSONs, UDT-instance JSONs, and a Programmable Device Simulator program
+CSV) and **imported once via Designer**, not synced on every edit.
+
+Import order (Designer, one-time per environment; re-import after regenerating):
+
+1. **UDT definitions** — Tag Browser → Import each `tags/udt/*.json` into the target
+   provider's `_types_` root (so instance `typeId`s resolve to the bare type name).
+2. **UDT instances** — Tag Browser → Import the instances folder JSON into the
+   provider root.
+3. **Simulator program** (dev only) — Config → Devices → add a Programmable Device
+   Simulator device, load the `tags/sim/*.csv` as its program.
+
+`scan.ps1` is irrelevant to these three — it only re-reads project resources. A
+change to a tag JSON needs a **re-import**, not a scan. (The NQs / scripts / views
+that *bind* to those tags are normal project resources and do scan-sync as usual.)
+See `ignition/tags/README.md` for the project-specific import recipe + the
+`{BasePath}` addressing scheme.
+
 ## Quick reference
 
 | Action | Command |

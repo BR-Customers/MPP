@@ -17,6 +17,7 @@ def onStartup(session):
 			"isFallback":         True,
 		}
 		session.custom.printer = {"locationId": None, "code": "", "endpoint": "", "model": ""}
+		session.custom.plcDevices = []
 		return
 	session.custom.terminal = {
 		"terminalLocationId": term.get("TerminalLocationId"),
@@ -37,3 +38,6 @@ def onStartup(session):
 		"endpoint":   prn.get("endpoint") or "",
 		"model":      prn.get("model") or "",
 	}
+	# Plan 3: resolve this terminal's PLC UDT-instance mappings for the gateway
+	# watchers + PLC screens (empty list when the terminal drives no devices).
+	session.custom.plcDevices = BlueRidge.Location.TerminalPlcDevice.getByTerminal(term.get("TerminalLocationId")) or []
