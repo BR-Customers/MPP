@@ -186,6 +186,7 @@
               }
             },
             "position": {
+              "basis": "94px",
               "shrink": 0
             },
             "props": {
@@ -201,7 +202,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params\u003d{\"locationId\": self.session.custom.cell.locationId}, title\u003d\"Line Inventory\", modal\u003dFalse, showCloseIcon\u003dTrue, draggable\u003dTrue, resizable\u003dTrue)"
+                    "script": "\tsystem.perspective.openPopup(\n\t\tid\u003d\"mpp-inventory\", \n\t\tview\u003d\"BlueRidge/Components/PlantFloor/InventoryManager\", \n\t\tparams\u003d{\"locationId\": self.session.custom.cell.locationId}, \n\t\tmodal\u003dTrue, \n\t\tshowCloseIcon\u003dFalse, \n\t\tdraggable\u003dFalse, \n\t)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -215,6 +216,7 @@
               }
             },
             "position": {
+              "basis": "108px",
               "shrink": 0
             },
             "props": {
@@ -240,6 +242,9 @@
             "meta": {
               "name": "CloseButton"
             },
+            "position": {
+              "basis": "79px"
+            },
             "props": {
               "style": {
                 "classes": "pf-btn pf-btn-secondary"
@@ -256,7 +261,7 @@
           "alignItems": "center",
           "style": {
             "gap": "16px",
-            "overflow": "hidden"
+            "overflow": "visible"
           }
         },
         "type": "ia.container.flex"

@@ -122,6 +122,9 @@
             "meta": {
               "name": "CloseButton"
             },
+            "position": {
+              "basis": "79px"
+            },
             "props": {
               "style": {
                 "classes": "pf-btn pf-btn-secondary"
@@ -138,7 +141,7 @@
           "alignItems": "center",
           "style": {
             "gap": "16px",
-            "overflow": "hidden"
+            "overflow": "visible"
           }
         },
         "type": "ia.container.flex"
@@ -460,6 +463,9 @@
                 "meta": {
                   "name": "CreateButton"
                 },
+                "position": {
+                  "basis": "140px"
+                },
                 "props": {
                   "style": {
                     "classes": "pf-btn pf-btn-primary pf-btn-large"
@@ -482,6 +488,9 @@
                 },
                 "meta": {
                   "name": "ReprintButton"
+                },
+                "position": {
+                  "basis": "150px"
                 },
                 "propConfig": {
                   "position.display": {
@@ -508,7 +517,8 @@
             "props": {
               "alignItems": "center",
               "style": {
-                "gap": "10px"
+                "gap": "10px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"

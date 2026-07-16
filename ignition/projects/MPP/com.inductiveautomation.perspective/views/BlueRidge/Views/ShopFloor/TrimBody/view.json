@@ -352,7 +352,7 @@
         "props": {
           "style": {
             "gap": "8px",
-            "overflow": "hidden"
+            "overflow": "visible"
           }
         },
         "type": "ia.container.flex"

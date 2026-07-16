@@ -1,48 +1,30 @@
 {
   "custom": {
-    "container": {
-      "Id": null,
-      "ItemId": null,
-      "ItemPartNumber": "",
-      "ItemDescription": "",
-      "AccumulatedParts": 0,
-      "TargetParts": 0,
-      "ClosedTrays": 0,
-      "TraysPerContainer": 0,
-      "PartsPerTray": 0,
-      "IsSerialized": false,
-      "ClosureMethod": ""
-    },
-    "queueByPartText": "",
-    "fgConfig": {
-      "Id": null,
-      "ItemId": null,
-      "TraysPerContainer": 0,
-      "PartsPerTray": 0,
-      "IsSerialized": false,
-      "DunnageCode": "",
-      "CustomerCode": "",
-      "ClosureMethod": "",
-      "TargetWeight": null
-    },
-    "closureRaw": "",
     "draft": {
       "partsCount": "",
       "trayPosition": ""
     },
-    "selectedFinishedGoodItemId": null,
-    "refreshToken": 0
+    "refreshToken": 0,
+    "selectedFinishedGoodItemId": null
   },
   "params": {},
   "propConfig": {
+    "custom.closureRaw": {
+      "binding": {
+        "config": {
+          "expression": "if(isNull({view.custom.container.Id}), {view.custom.fgConfig.ClosureMethod}, {view.custom.container.ClosureMethod})"
+        },
+        "type": "expr"
+      }
+    },
     "custom.container": {
       "binding": {
         "config": {
-          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Container.getOpenByCell\", 0, {session.custom.cell.locationId}, {view.custom.refreshToken}), \"\")"
+          "expression": "if({view.custom.refreshToken} \u003e\u003d 0 \u0026\u0026 !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Container.getOpenByCell\", 0, {session.custom.cell.locationId}, {view.custom.refreshToken}), \"\")"
         },
         "transforms": [
           {
-            "code": "\trows = value or []\n\tr = rows[0] if rows else {}\n\treturn {\"Id\": r.get(\"Id\"), \"ItemId\": r.get(\"ItemId\"), \"ItemPartNumber\": r.get(\"ItemPartNumber\") or \"\", \"ItemDescription\": r.get(\"ItemDescription\") or \"\", \"AccumulatedParts\": r.get(\"AccumulatedParts\") or 0, \"TargetParts\": r.get(\"TargetParts\") or 0, \"ClosedTrays\": r.get(\"ClosedTrays\") or 0, \"TraysPerContainer\": r.get(\"TraysPerContainer\") or 0, \"PartsPerTray\": r.get(\"PartsPerTray\") or 0, \"IsSerialized\": r.get(\"IsSerialized\") or False, \"ClosureMethod\": r.get(\"ClosureMethod\") or \"\"}",
+            "code": "\trows \u003d value or []\n\tr \u003d rows[0] if rows else {}\n\treturn {\"Id\": r.get(\"Id\"), \"ItemId\": r.get(\"ItemId\"), \"ItemPartNumber\": r.get(\"ItemPartNumber\") or \"\", \"ItemDescription\": r.get(\"ItemDescription\") or \"\", \"AccumulatedParts\": r.get(\"AccumulatedParts\") or 0, \"TargetParts\": r.get(\"TargetParts\") or 0, \"ClosedTrays\": r.get(\"ClosedTrays\") or 0, \"TraysPerContainer\": r.get(\"TraysPerContainer\") or 0, \"PartsPerTray\": r.get(\"PartsPerTray\") or 0, \"IsSerialized\": r.get(\"IsSerialized\") or False, \"ClosureMethod\": r.get(\"ClosureMethod\") or \"\"}",
             "type": "script"
           }
         ],
@@ -58,25 +40,17 @@
       },
       "onChange": {
         "enabled": true,
-        "script": "\t# Auto-populate from the part's container config: prefill the parts-in-tray\n\t# field with PartsPerTray (only into an EMPTY field - never overwrite input).\n\tcfg = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fgConfig) or {}\n\tppt = cfg.get(\"PartsPerTray\")\n\td = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.draft) or {}\n\tif ppt and d.get(\"partsCount\") in (None, \"\"):\n\t\tself.view.custom.draft = {\"partsCount\": ppt, \"trayPosition\": d.get(\"trayPosition\") or \"\"}"
-      }
-    },
-    "custom.closureRaw": {
-      "binding": {
-        "config": {
-          "expression": "if(isNull({view.custom.container.Id}), {view.custom.fgConfig.ClosureMethod}, {view.custom.container.ClosureMethod})"
-        },
-        "type": "expr"
+        "script": "\t# Auto-populate from the part\u0027s container config: prefill the parts-in-tray\n\t# field with PartsPerTray (only into an EMPTY field - never overwrite input).\n\tcfg \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fgConfig) or {}\n\tppt \u003d cfg.get(\"PartsPerTray\")\n\td \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.draft) or {}\n\tif ppt and d.get(\"partsCount\") in (None, \"\"):\n\t\tself.view.custom.draft \u003d {\"partsCount\": ppt, \"trayPosition\": d.get(\"trayPosition\") or \"\"}"
       }
     },
     "custom.queueByPartText": {
       "binding": {
         "config": {
-          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}), \"\")"
+          "expression": "if({view.custom.refreshToken} \u003e\u003d 0 \u0026\u0026 !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}), \"\")"
         },
         "transforms": [
           {
-            "code": "\trows = value or []\n\tif not rows:\n\t\treturn \"(none at this cell)\"\n\ttotals = {}\n\torder = []\n\tfor r in rows:\n\t\tk = r.get(\"ItemPartNumber\") or \"?\"\n\t\tif k not in totals:\n\t\t\ttotals[k] = 0\n\t\t\torder.append(k)\n\t\ttotals[k] = totals[k] + (r.get(\"PieceCount\") or 0)\n\treturn \"   |   \".join([\"%s: %d pcs\" % (k, totals[k]) for k in order])",
+            "code": "\trows \u003d value or []\n\tif not rows:\n\t\treturn \"(none at this cell)\"\n\ttotals \u003d {}\n\torder \u003d []\n\tfor r in rows:\n\t\tk \u003d r.get(\"ItemPartNumber\") or \"?\"\n\t\tif k not in totals:\n\t\t\ttotals[k] \u003d 0\n\t\t\torder.append(k)\n\t\ttotals[k] \u003d totals[k] + (r.get(\"PieceCount\") or 0)\n\treturn \"   |   \".join([\"%s: %d pcs\" % (k, totals[k]) for k in order])",
             "type": "script"
           }
         ],
@@ -116,7 +90,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"No cell bound\", {session.custom.cell.name}) + \"  ·  Dedicated terminal - operator-driven count - no MIP per-piece handshake\""
+                        "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} \u003d \"\", \"No cell bound\", {session.custom.cell.name}) + \"  ·  Dedicated terminal - operator-driven count - no MIP per-piece handshake\""
                       },
                       "type": "expr"
                     }
@@ -162,7 +136,7 @@
               "dom": {
                 "onClick": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=True, overlayDismiss=True)"
+                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dTrue, overlayDismiss\u003dTrue)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -179,7 +153,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
+                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} \u003d \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
                   },
                   "type": "expr"
                 }
@@ -237,7 +211,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                    "script": "\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
                   },
                   "scope": "G",
                   "type": "script"
@@ -251,6 +225,7 @@
               }
             },
             "position": {
+              "basis": "94px",
               "shrink": 0
             },
             "props": {
@@ -266,7 +241,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params={\"locationId\": self.session.custom.cell.locationId}, title=\"Line Inventory\", modal=False, showCloseIcon=True, draggable=True, resizable=True)"
+                    "script": "\tsystem.perspective.openPopup(\n\t\tid\u003d\"mpp-inventory\", \n\t\tview\u003d\"BlueRidge/Components/PlantFloor/InventoryManager\", \n\t\tparams\u003d{\"locationId\": self.session.custom.cell.locationId}, \n\t\tmodal\u003dTrue, \n\t\tshowCloseIcon\u003dFalse, \n\t\tdraggable\u003dFalse, \n\t)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -280,6 +255,7 @@
               }
             },
             "position": {
+              "basis": "108px",
               "shrink": 0
             },
             "props": {
@@ -305,6 +281,9 @@
             "meta": {
               "name": "CloseButton"
             },
+            "position": {
+              "basis": "79px"
+            },
             "props": {
               "style": {
                 "classes": "pf-btn pf-btn-secondary"
@@ -321,7 +300,7 @@
           "alignItems": "center",
           "style": {
             "gap": "16px",
-            "overflow": "hidden"
+            "overflow": "visible"
           }
         },
         "type": "ia.container.flex"
@@ -419,7 +398,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "if(isNull({session.custom.cell.locationId}), 'No cell bound to see its open container.', 'No open container - pick a finished good below and complete the first tray to open one.')"
+                    "expression": "if(isNull({session.custom.cell.locationId}), \u0027No cell bound to see its open container.\u0027, \u0027No open container - pick a finished good below and complete the first tray to open one.\u0027)"
                   },
                   "type": "expr"
                 }
@@ -528,7 +507,7 @@
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "toStr({view.custom.container.AccumulatedParts}) + ' of ' + toStr({view.custom.container.TargetParts})"
+                            "expression": "toStr({view.custom.container.AccumulatedParts}) + \u0027 of \u0027 + toStr({view.custom.container.TargetParts})"
                           },
                           "type": "expr"
                         }
@@ -549,7 +528,7 @@
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "toStr({view.custom.container.ClosedTrays}) + ' of ' + toStr({view.custom.container.TraysPerContainer}) + ' trays closed - parts accumulated'"
+                            "expression": "toStr({view.custom.container.ClosedTrays}) + \u0027 of \u0027 + toStr({view.custom.container.TraysPerContainer}) + \u0027 trays closed - parts accumulated\u0027"
                           },
                           "type": "expr"
                         }
@@ -600,7 +579,7 @@
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "toStr({view.custom.container.ClosedTrays}) + ' / ' + toStr({view.custom.container.TraysPerContainer})"
+                            "expression": "toStr({view.custom.container.ClosedTrays}) + \u0027 / \u0027 + toStr({view.custom.container.TraysPerContainer})"
                           },
                           "type": "expr"
                         }
@@ -621,7 +600,7 @@
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "'PartsPerTray = ' + toStr({view.custom.container.PartsPerTray})"
+                            "expression": "\u0027PartsPerTray \u003d \u0027 + toStr({view.custom.container.PartsPerTray})"
                           },
                           "type": "expr"
                         }
@@ -687,7 +666,7 @@
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "if(isNull({view.custom.container.Id}), if({view.custom.fgConfig.TraysPerContainer} > 0, 'Per-Tray Close - first tray opens a container (' + toStr({view.custom.fgConfig.TraysPerContainer}) + ' trays x ' + toStr({view.custom.fgConfig.PartsPerTray}) + ' parts/tray)', 'Per-Tray Close - completing the first tray opens a container'), 'Per-Tray Close - ByVision - Tray ' + toStr(({view.custom.container.ClosedTrays} + 1)) + ' of ' + toStr({view.custom.container.TraysPerContainer}))"
+                            "expression": "if(isNull({view.custom.container.Id}), if({view.custom.fgConfig.TraysPerContainer} \u003e 0, \u0027Per-Tray Close - first tray opens a container (\u0027 + toStr({view.custom.fgConfig.TraysPerContainer}) + \u0027 trays x \u0027 + toStr({view.custom.fgConfig.PartsPerTray}) + \u0027 parts/tray)\u0027, \u0027Per-Tray Close - completing the first tray opens a container\u0027), \u0027Per-Tray Close - ByVision - Tray \u0027 + toStr(({view.custom.container.ClosedTrays} + 1)) + \u0027 of \u0027 + toStr({view.custom.container.TraysPerContainer}))"
                           },
                           "type": "expr"
                         }
@@ -709,7 +688,7 @@
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "'Configured PartsPerTray = ' + toStr({view.custom.container.PartsPerTray}) + ' - accumulated ' + toStr({view.custom.container.AccumulatedParts}) + ' / ' + toStr({view.custom.container.TargetParts}) + ' toward Container'"
+                            "expression": "\u0027Configured PartsPerTray \u003d \u0027 + toStr({view.custom.container.PartsPerTray}) + \u0027 - accumulated \u0027 + toStr({view.custom.container.AccumulatedParts}) + \u0027 / \u0027 + toStr({view.custom.container.TargetParts}) + \u0027 toward Container\u0027"
                           },
                           "type": "expr"
                         }
@@ -795,7 +774,7 @@
                               "props.text": {
                                 "binding": {
                                   "config": {
-                                    "expression": "'Last validated tray - ' + toStr({view.custom.container.ClosedTrays}) + ' of ' + toStr({view.custom.container.TraysPerContainer})"
+                                    "expression": "\u0027Last validated tray - \u0027 + toStr({view.custom.container.ClosedTrays}) + \u0027 of \u0027 + toStr({view.custom.container.TraysPerContainer})"
                                   },
                                   "type": "expr"
                                 }
@@ -818,7 +797,7 @@
                               "props.text": {
                                 "binding": {
                                   "config": {
-                                    "expression": "toStr({view.custom.container.PartsPerTray}) + ' / ' + toStr({view.custom.container.PartsPerTray}) + ' positions valid'"
+                                    "expression": "toStr({view.custom.container.PartsPerTray}) + \u0027 / \u0027 + toStr({view.custom.container.PartsPerTray}) + \u0027 positions valid\u0027"
                                   },
                                   "type": "expr"
                                 }
@@ -968,7 +947,7 @@
                               "props.text": {
                                 "binding": {
                                   "config": {
-                                    "expression": "if({view.custom.closureRaw} = \"ByCount\", \"By Count\", if({view.custom.closureRaw} = \"ByWeight\", \"By Weight\", if({view.custom.closureRaw} = \"ByVision\", \"By Vision\", if(isNull({view.custom.closureRaw}) || {view.custom.closureRaw} = \"\", \"-\", {view.custom.closureRaw}))))"
+                                    "expression": "if({view.custom.closureRaw} \u003d \"ByCount\", \"By Count\", if({view.custom.closureRaw} \u003d \"ByWeight\", \"By Weight\", if({view.custom.closureRaw} \u003d \"ByVision\", \"By Vision\", if(isNull({view.custom.closureRaw}) || {view.custom.closureRaw} \u003d \"\", \"-\", {view.custom.closureRaw}))))"
                                   },
                                   "type": "expr"
                                 }
@@ -1069,7 +1048,7 @@
                           "component": {
                             "onActionPerformed": {
                               "config": {
-                                "script": "\tresult = BlueRidge.Workorder.Assembly.handleTrayComplete(self.view.custom.container, self.view.custom.draft, self.view.custom.selectedFinishedGoodItemId, self.session.custom.cell.locationId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tray completed - FG LOT minted\")\n\tif result and result.get(\"Status\"):\n\t\t# Re-prime the next tray from the part's config (the fgConfig onChange only\n\t\t# fires when the CONFIG changes, so a same-container tray 2 would stay blank).\n\t\tcfg = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fgConfig) or {}\n\t\tself.view.custom.draft = {\"trayPosition\": \"\", \"partsCount\": cfg.get(\"PartsPerTray\") or \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1\n\t\tif result.get(\"ContainerFull\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Container full\", \"Press Complete to ship.\", \"info\")"
+                                "script": "\tresult \u003d BlueRidge.Workorder.Assembly.handleTrayComplete(self.view.custom.container, self.view.custom.draft, self.view.custom.selectedFinishedGoodItemId, self.session.custom.cell.locationId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tray completed - FG LOT minted\")\n\tif result and result.get(\"Status\"):\n\t\t# Re-prime the next tray from the part\u0027s config (the fgConfig onChange only\n\t\t# fires when the CONFIG changes, so a same-container tray 2 would stay blank).\n\t\tcfg \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fgConfig) or {}\n\t\tself.view.custom.draft \u003d {\"trayPosition\": \"\", \"partsCount\": cfg.get(\"PartsPerTray\") or \"\"}\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1\n\t\tif result.get(\"ContainerFull\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Container full\", \"Press Complete to ship.\", \"info\")"
                               },
                               "scope": "G",
                               "type": "script"
@@ -1212,7 +1191,7 @@
                           "style": {
                             "classes": "pf-kpi-sub"
                           },
-                          "text": "- ShippingLabel row inserted with PrintedAt = NULL"
+                          "text": "- ShippingLabel row inserted with PrintedAt \u003d NULL"
                         },
                         "type": "ia.display.label"
                       },
@@ -1260,7 +1239,7 @@
                       "component": {
                         "onActionPerformed": {
                           "config": {
-                            "script": "\tc = self.view.custom.container\n\tcellId = self.session.custom.cell.locationId\n\tif not c or c.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No open container at this cell.\"}, \"Assembly\")\n\t\treturn\n\tresult = BlueRidge.Lots.Container.complete(c.get(\"Id\"), operatorConfirmed=True, terminalLocationId=cellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Container complete\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                            "script": "\tc \u003d self.view.custom.container\n\tcellId \u003d self.session.custom.cell.locationId\n\tif not c or c.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No open container at this cell.\"}, \"Assembly\")\n\t\treturn\n\tresult \u003d BlueRidge.Lots.Container.complete(c.get(\"Id\"), operatorConfirmed\u003dTrue, terminalLocationId\u003dcellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Container complete\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
                           },
                           "scope": "G",
                           "type": "script"
@@ -1343,11 +1322,11 @@
     "events": {
       "system": {
         "onStartup": {
-          "type": "script",
-          "scope": "G",
           "config": {
-            "script": "\t# Dedicated-flavor context (FDS-02-010): bind the cell to the terminal's parent line.\n\tt = self.session.custom.terminal\n\tif t and t.get(\"zoneLocationId\"):\n\t\tself.session.custom.cell = {\"locationId\": t.get(\"zoneLocationId\"), \"code\": t.get(\"zoneName\") or \"\", \"name\": t.get(\"zoneName\") or \"\"}\n\t\t# Pre-select the recommended finished good (best BOM match against ready line inventory).\n\t\tself.view.custom.selectedFinishedGoodItemId = BlueRidge.Workorder.Assembly.getRecommendedFinishedGoodId(t.get(\"zoneLocationId\"))\n\ttry:\n\t\tself.session.custom.presence.policy = \"confirm\"\n\texcept:\n\t\tself.session.custom.presence = {\"policy\": \"confirm\"}\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
-          }
+            "script": "\t# Dedicated-flavor context (FDS-02-010): bind the cell to the terminal\u0027s parent line.\n\tt \u003d self.session.custom.terminal\n\tif t and t.get(\"zoneLocationId\"):\n\t\tself.session.custom.cell \u003d {\"locationId\": t.get(\"zoneLocationId\"), \"code\": t.get(\"zoneName\") or \"\", \"name\": t.get(\"zoneName\") or \"\"}\n\t\t# Pre-select the recommended finished good (best BOM match against ready line inventory).\n\t\tself.view.custom.selectedFinishedGoodItemId \u003d BlueRidge.Workorder.Assembly.getRecommendedFinishedGoodId(t.get(\"zoneLocationId\"))\n\ttry:\n\t\tself.session.custom.presence.policy \u003d \"confirm\"\n\texcept:\n\t\tself.session.custom.presence \u003d {\"policy\": \"confirm\"}\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dFalse, overlayDismiss\u003dFalse)"
+          },
+          "scope": "G",
+          "type": "script"
         }
       }
     },
@@ -1369,7 +1348,7 @@
         {
           "messageType": "inventoryChanged",
           "pageScope": true,
-          "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
+          "script": "\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1",
           "sessionScope": false,
           "viewScope": false
         }

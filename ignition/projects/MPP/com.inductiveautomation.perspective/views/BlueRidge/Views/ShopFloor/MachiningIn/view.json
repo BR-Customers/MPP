@@ -227,6 +227,7 @@
               }
             },
             "position": {
+              "basis": "94px",
               "shrink": 0
             },
             "props": {
@@ -256,6 +257,7 @@
               }
             },
             "position": {
+              "basis": "108px",
               "shrink": 0
             },
             "props": {
@@ -281,6 +283,9 @@
             "meta": {
               "name": "CloseButton"
             },
+            "position": {
+              "basis": "79px"
+            },
             "props": {
               "style": {
                 "classes": "pf-btn pf-btn-secondary"
@@ -297,7 +302,7 @@
           "alignItems": "center",
           "style": {
             "gap": "16px",
-            "overflow": "hidden"
+            "overflow": "visible"
           }
         },
         "type": "ia.container.flex"
