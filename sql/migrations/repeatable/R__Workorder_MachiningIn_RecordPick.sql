@@ -52,7 +52,7 @@ BEGIN
     DECLARE @StatusName  NVARCHAR(100);
     DECLARE @Blocks      BIT;
 
-    DECLARE @MachiningInOtId BIGINT = (SELECT TOP 1 Id FROM Parts.OperationTemplate WHERE Code = N'MachiningIn' AND DeprecatedAt IS NULL ORDER BY VersionNumber DESC);
+    DECLARE @MachiningInOtId BIGINT;   -- resolved route-aware once the LOT's item is known (step 3)
 
     BEGIN TRY
         -- ---- 1. Required parameters ----
@@ -69,20 +69,7 @@ BEGIN
             RETURN;
         END
 
-        -- ---- 2. MachiningIn OperationTemplate must be configured ----
-        IF @MachiningInOtId IS NULL
-        BEGIN
-            SET @Message = N'MachiningIn OperationTemplate is not configured.';
-            EXEC Audit.Audit_LogFailure
-                @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
-                @EntityId = @LotId, @LogEventTypeCode = N'MachiningInPicked',
-                @FailureReason = @Message, @ProcedureName = @ProcName,
-                @AttemptedParameters = @Params;
-            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
-            RETURN;
-        END
-
-        -- ---- 3. LOT existence + B2 not-blocked guard (INLINE mirror of Lot_AssertNotBlocked) ----
+        -- ---- 2. LOT existence + B2 not-blocked guard (INLINE mirror of Lot_AssertNotBlocked) ----
         SELECT @LotName    = l.LotName,
                @FromLoc    = l.CurrentLocationId,
                @ItemId     = l.ItemId,
@@ -110,6 +97,31 @@ BEGIN
         BEGIN
             SET @Message = N'LOT is ' + @StatusName + N' (status ' + @StatusCode
                          + N') and cannot be picked; release the hold first.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
+                @EntityId = @LotId, @LogEventTypeCode = N'MachiningInPicked',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
+            RETURN;
+        END
+
+        -- ---- 3. Resolve the MachiningIn OperationTemplate off THIS LOT's route.
+        -- Route-aware: template codes are M-In-A etc., NOT the role code 'MachiningIn';
+        -- resolve via the OperationType role on the item's latest non-deprecated route
+        -- (mirrors parts/OperationTemplate_GetForRouteRole). ----
+        SET @MachiningInOtId = (
+            SELECT TOP 1 ot.Id
+            FROM Parts.RouteTemplate rt
+            INNER JOIN Parts.RouteStep rs         ON rs.RouteTemplateId = rt.Id
+            INNER JOIN Parts.OperationTemplate ot ON ot.Id = rs.OperationTemplateId AND ot.DeprecatedAt IS NULL
+            INNER JOIN Parts.OperationType oty    ON oty.Id = ot.OperationTypeId
+            WHERE rt.ItemId = @ItemId AND rt.DeprecatedAt IS NULL AND oty.Code = N'MachiningIn'
+            ORDER BY rt.VersionNumber DESC, rs.SequenceNumber ASC);
+
+        IF @MachiningInOtId IS NULL
+        BEGIN
+            SET @Message = N'This part''s route has no active Machining IN operation template.';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
                 @EntityId = @LotId, @LogEventTypeCode = N'MachiningInPicked',
