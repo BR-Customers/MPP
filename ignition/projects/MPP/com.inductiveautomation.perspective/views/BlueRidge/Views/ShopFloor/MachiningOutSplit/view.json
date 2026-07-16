@@ -16,7 +16,7 @@
     "custom.opTemplateId": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.getActiveTemplateIdByCode\", 0, \"MachiningOut\")"
+          "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.getActiveTemplateIdForLot\", 0, {view.custom.parentLot.Id}, \"MachiningOut\")"
         },
         "type": "expr"
       }
