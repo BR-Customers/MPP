@@ -1705,7 +1705,12 @@
                   "boolean": "checkbox",
                   "dateFormat": "MM/DD/YYYY",
                   "editable": false,
-                  "field": "CurrentLocationName",
+                  "render": "view",
+                  "justify": "auto",
+                  "align": "center",
+                  "resizable": true,
+                  "sortable": true,
+                  "sort": "none",
                   "filter": {
                     "boolean": {
                       "condition": ""
@@ -1787,10 +1792,18 @@
                       "unselected": ""
                     }
                   },
-                  "viewParams": {},
-                  "viewPath": "",
-                  "visible": true,
-                  "width": 180
+                  "nullFormat": {
+                    "strict": false,
+                    "nullFormatValue": "—",
+                    "includeNullStrings": false
+                  },
+                  "strictWidth": false,
+                  "width": 180,
+                  "style": {
+                    "classes": ""
+                  },
+                  "viewPath": "BlueRidge/Components/PlantFloor/LocationCell",
+                  "viewParams": {"rowData": "", "value": ""}
                 },
                 {
                   "align": "center",

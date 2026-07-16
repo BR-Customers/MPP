@@ -1,0 +1,151 @@
+ServerName	BasePath	Member	Directions	AccessPath	SampleOpcItemId
+OmniServer	59B_1_FP_1	NET_DataReady	WT		59B_1_FP_1.NET_DataReady
+OmniServer	59B_1_FP_1	NET_NetWeightUOM	RW		59B_1_FP_1.NET_NetWeightUOM
+OmniServer	59B_1_FP_1	NET_NetWeightValue	RW		59B_1_FP_1.NET_NetWeightValue
+OmniServer	59B_1_FP_1	NET_PartNumber	R		59B_1_FP_1.NET_PartNumber
+OmniServer	59B_1_FP_1	NET_TargetWeightMetFlag	RW		59B_1_FP_1.NET_TargetWeightMetFlag
+OmniServer	59B_1_FP_1	TRG_SendMessage	W		59B_1_FP_1.TRG_SendMessage
+OmniServer	59B_1_FP_1	TRG_TargetWeightUOM	W		59B_1_FP_1.TRG_TargetWeightUOM
+OmniServer	59B_1_FP_1	TRG_TargetWeightValue	W		59B_1_FP_1.TRG_TargetWeightValue
+OmniServer	59B_1_FP_1	TRG_ToleranceWeightValue	W		59B_1_FP_1.TRG_ToleranceWeightValue
+OmniServer	5G0_Front_Scale	NET_DataReady	RWT		5G0_Front_Scale.NET_DataReady
+OmniServer	5G0_Front_Scale	NET_NetWeightUOM	RW		5G0_Front_Scale.NET_NetWeightUOM
+OmniServer	5G0_Front_Scale	NET_NetWeightValue	RW		5G0_Front_Scale.NET_NetWeightValue
+OmniServer	5G0_Front_Scale	NET_TargetWeightMetFlag	RW		5G0_Front_Scale.NET_TargetWeightMetFlag
+OmniServer	5G0_Rear_Scale	NET_DataReady	WT		5G0_Rear_Scale.NET_DataReady
+OmniServer	5G0_Rear_Scale	NET_NetWeightUOM	RW		5G0_Rear_Scale.NET_NetWeightUOM
+OmniServer	5G0_Rear_Scale	NET_NetWeightValue	RW		5G0_Rear_Scale.NET_NetWeightValue
+OmniServer	5G0_Rear_Scale	NET_TargetWeightMetFlag	RW		5G0_Rear_Scale.NET_TargetWeightMetFlag
+OmniServer	5PA_1_FP_1	NET_DataReady	WT		5PA_1_FP_1.NET_DataReady
+OmniServer	5PA_1_FP_1	NET_NetWeightUOM	RW		5PA_1_FP_1.NET_NetWeightUOM
+OmniServer	5PA_1_FP_1	NET_NetWeightValue	RW		5PA_1_FP_1.NET_NetWeightValue
+OmniServer	5PA_1_FP_1	NET_TargetWeightMetFlag	RW		5PA_1_FP_1.NET_TargetWeightMetFlag
+OmniServer	5PA_1_FP_1	TRG_SendMessage	W		5PA_1_FP_1.TRG_SendMessage
+OmniServer	5PA_1_FP_1	TRG_TargetWeightUOM	W		5PA_1_FP_1.TRG_TargetWeightUOM
+OmniServer	5PA_1_FP_1	TRG_TargetWeightValue	W		5PA_1_FP_1.TRG_TargetWeightValue
+OmniServer	5PA_1_FP_1	TRG_ToleranceWeightValue	W		5PA_1_FP_1.TRG_ToleranceWeightValue
+OmniServer	6B2_1_FP_1	NET_DataReady	WT		6B2_1_FP_1.NET_DataReady
+OmniServer	6B2_1_FP_1	NET_NetWeightUOM	RW		6B2_1_FP_1.NET_NetWeightUOM
+OmniServer	6B2_1_FP_1	NET_NetWeightValue	RW		6B2_1_FP_1.NET_NetWeightValue
+OmniServer	6B2_1_FP_1	NET_TargetWeightMetFlag	RW		6B2_1_FP_1.NET_TargetWeightMetFlag
+OmniServer	6B2_1_FP_1	TRG_SendMessage	W		6B2_1_FP_1.TRG_SendMessage
+OmniServer	6B2_1_FP_1	TRG_TargetWeightUOM	W		6B2_1_FP_1.TRG_TargetWeightUOM
+OmniServer	6B2_1_FP_1	TRG_TargetWeightValue	W		6B2_1_FP_1.TRG_TargetWeightValue
+OmniServer	6B2_1_FP_1	TRG_ToleranceWeightValue	W		6B2_1_FP_1.TRG_ToleranceWeightValue
+OmniServer	RPY_1_CB_1	NET_DataReady	WT		RPY_1_CB_1.NET_DataReady
+OmniServer	RPY_1_CB_1	NET_NetWeightUOM	RW		RPY_1_CB_1.NET_NetWeightUOM
+OmniServer	RPY_1_CB_1	NET_NetWeightValue	RW		RPY_1_CB_1.NET_NetWeightValue
+OmniServer	RPY_1_CB_1	NET_TargetWeightMetFlag	RW		RPY_1_CB_1.NET_TargetWeightMetFlag
+OmniServer	RPY_1_CB_1	TRG_SendMessage	W		RPY_1_CB_1.TRG_SendMessage
+OmniServer	RPY_1_CB_1	TRG_TargetWeightUOM	W		RPY_1_CB_1.TRG_TargetWeightUOM
+OmniServer	RPY_1_CB_1	TRG_TargetWeightValue	W		RPY_1_CB_1.TRG_TargetWeightValue
+OmniServer	RPY_1_CB_1	TRG_ToleranceWeightValue	W		RPY_1_CB_1.TRG_ToleranceWeightValue
+OmniServer	RPY_1_FP_1	NET_DataReady	WT		RPY_1_FP_1.NET_DataReady
+OmniServer	RPY_1_FP_1	NET_NetWeightUOM	RW		RPY_1_FP_1.NET_NetWeightUOM
+OmniServer	RPY_1_FP_1	NET_NetWeightValue	RW		RPY_1_FP_1.NET_NetWeightValue
+OmniServer	RPY_1_FP_1	NET_TargetWeightMetFlag	RW		RPY_1_FP_1.NET_TargetWeightMetFlag
+OmniServer	RPY_1_FP_1	TRG_SendMessage	W		RPY_1_FP_1.TRG_SendMessage
+OmniServer	RPY_1_FP_1	TRG_TargetWeightUOM	W		RPY_1_FP_1.TRG_TargetWeightUOM
+OmniServer	RPY_1_FP_1	TRG_TargetWeightValue	W		RPY_1_FP_1.TRG_TargetWeightValue
+OmniServer	RPY_1_FP_1	TRG_ToleranceWeightValue	W		RPY_1_FP_1.TRG_ToleranceWeightValue
+TOP Server	5A2_L1_CamHolderAssy.ProfaceLT_3300	DataReady	WT	5A2_L1_CamHolderAssy.ProfaceLT_3300	DataReady
+TOP Server	5A2_L1_CamHolderAssy.ProfaceLT_3300	MESAlarmText	W	5A2_L1_CamHolderAssy.ProfaceLT_3300	MESAlarmText
+TOP Server	5A2_L1_CamHolderAssy.ProfaceLT_3300	MESAlarmType	W	5A2_L1_CamHolderAssy.ProfaceLT_3300	MESAlarmType
+TOP Server	5A2_L1_CamHolderAssy.ProfaceLT_3300	PartType	W	5A2_L1_CamHolderAssy.ProfaceLT_3300	PartType
+TOP Server	5A2_L1_CamHolderAssy.ProfaceLT_3300	PartValid	W	5A2_L1_CamHolderAssy.ProfaceLT_3300	PartValid
+TOP Server	5A2_L1_CamHolderAssy.ProfaceLT_3300	TransInProc	W	5A2_L1_CamHolderAssy.ProfaceLT_3300	TransInProc
+TOP Server	5A2_L1_FuelPumpAssy.ProfaceLT_3300	DataReady	WT	5A2_L1_FuelPumpAssy.ProfaceLT_3300	DataReady
+TOP Server	5A2_L1_FuelPumpAssy.ProfaceLT_3300	MESAlarmText	W	5A2_L1_FuelPumpAssy.ProfaceLT_3300	MESAlarmText
+TOP Server	5A2_L1_FuelPumpAssy.ProfaceLT_3300	MESAlarmType	W	5A2_L1_FuelPumpAssy.ProfaceLT_3300	MESAlarmType
+TOP Server	5A2_L1_FuelPumpAssy.ProfaceLT_3300	PartType	W	5A2_L1_FuelPumpAssy.ProfaceLT_3300	PartType
+TOP Server	5A2_L1_FuelPumpAssy.ProfaceLT_3300	PartValid	W	5A2_L1_FuelPumpAssy.ProfaceLT_3300	PartValid
+TOP Server	5A2_L1_FuelPumpAssy.ProfaceLT_3300	TransInProc	W	5A2_L1_FuelPumpAssy.ProfaceLT_3300	TransInProc
+TOP Server	5A2_L2_CamHolderAssy.ProfaceLT_3300	DataReady	WT	5A2_L2_CamHolderAssy.ProfaceLT_3300	DataReady
+TOP Server	5A2_L2_CamHolderAssy.ProfaceLT_3300	MESAlarmText	W	5A2_L2_CamHolderAssy.ProfaceLT_3300	MESAlarmText
+TOP Server	5A2_L2_CamHolderAssy.ProfaceLT_3300	MESAlarmType	W	5A2_L2_CamHolderAssy.ProfaceLT_3300	MESAlarmType
+TOP Server	5A2_L2_CamHolderAssy.ProfaceLT_3300	PartType	W	5A2_L2_CamHolderAssy.ProfaceLT_3300	PartType
+TOP Server	5A2_L2_CamHolderAssy.ProfaceLT_3300	PartValid	W	5A2_L2_CamHolderAssy.ProfaceLT_3300	PartValid
+TOP Server	5A2_L2_CamHolderAssy.ProfaceLT_3300	TransInProc	W	5A2_L2_CamHolderAssy.ProfaceLT_3300	TransInProc
+TOP Server	5A2_L2_FuelPumpAssy.ProfaceLT_3300	DataReady	WT	5A2_L2_FuelPumpAssy.ProfaceLT_3300	DataReady
+TOP Server	5A2_L2_FuelPumpAssy.ProfaceLT_3300	MESAlarmText	W	5A2_L2_FuelPumpAssy.ProfaceLT_3300	MESAlarmText
+TOP Server	5A2_L2_FuelPumpAssy.ProfaceLT_3300	MESAlarmType	W	5A2_L2_FuelPumpAssy.ProfaceLT_3300	MESAlarmType
+TOP Server	5A2_L2_FuelPumpAssy.ProfaceLT_3300	PartType	W	5A2_L2_FuelPumpAssy.ProfaceLT_3300	PartType
+TOP Server	5A2_L2_FuelPumpAssy.ProfaceLT_3300	PartValid	W	5A2_L2_FuelPumpAssy.ProfaceLT_3300	PartValid
+TOP Server	5A2_L2_FuelPumpAssy.ProfaceLT_3300	TransInProc	W	5A2_L2_FuelPumpAssy.ProfaceLT_3300	TransInProc
+TOP Server	5G0_A1.5G0_A1	ContainerCount	RW		5G0_A1.5G0_A1.ContainerCount
+TOP Server	5G0_A1.5G0_A1	ContainerCountRequest	WT		5G0_A1.5G0_A1.ContainerCountRequest
+TOP Server	5G0_A1.5G0_A1	DataReady	WT		5G0_A1.5G0_A1.DataReady
+TOP Server	5G0_A1.5G0_A1	HardwareInterlockEnforced	R		5G0_A1.5G0_A1.HardwareInterlockEnforced
+TOP Server	5G0_A1.5G0_A1	MESAlarmText	W		5G0_A1.5G0_A1.MESAlarmText
+TOP Server	5G0_A1.5G0_A1	MESAlarmType	W		5G0_A1.5G0_A1.MESAlarmType
+TOP Server	5G0_A1.5G0_A1	PartComplete	RWT		5G0_A1.5G0_A1.PartComplete
+TOP Server	5G0_A1.5G0_A1	PartSN	R		5G0_A1.5G0_A1.PartSN
+TOP Server	5G0_A1.5G0_A1	PartType	W		5G0_A1.5G0_A1.PartType
+TOP Server	5G0_A1.5G0_A1	PartValid	W		5G0_A1.5G0_A1.PartValid
+TOP Server	5G0_A1.5G0_A1	TransInProc	RW		5G0_A1.5G0_A1.TransInProc
+TOP Server	5G0_A2.5G0_A2	ContainerCount	RW		5G0_A2.5G0_A2.ContainerCount
+TOP Server	5G0_A2.5G0_A2	ContainerCountRequest	WT		5G0_A2.5G0_A2.ContainerCountRequest
+TOP Server	5G0_A2.5G0_A2	DataReady	WT		5G0_A2.5G0_A2.DataReady
+TOP Server	5G0_A2.5G0_A2	HardwareInterlockEnforced	R		5G0_A2.5G0_A2.HardwareInterlockEnforced
+TOP Server	5G0_A2.5G0_A2	MESAlarmText	W		5G0_A2.5G0_A2.MESAlarmText
+TOP Server	5G0_A2.5G0_A2	MESAlarmType	W		5G0_A2.5G0_A2.MESAlarmType
+TOP Server	5G0_A2.5G0_A2	PartComplete	RWT		5G0_A2.5G0_A2.PartComplete
+TOP Server	5G0_A2.5G0_A2	PartSN	R		5G0_A2.5G0_A2.PartSN
+TOP Server	5G0_A2.5G0_A2	PartType	W		5G0_A2.5G0_A2.PartType
+TOP Server	5G0_A2.5G0_A2	PartValid	W		5G0_A2.5G0_A2.PartValid
+TOP Server	5G0_A2.5G0_A2	TransInProc	RW		5G0_A2.5G0_A2.TransInProc
+TOP Server	5J6_OilPanAssy.MicroLogix1400	InspectionComplete	T	5J6_OilPanAssy.MicroLogix1400	InspectionComplete
+TOP Server	5J6_OilPanAssy.MicroLogix1400	PartNumber	W	5J6_OilPanAssy.MicroLogix1400	PartNumber
+TOP Server	5J6_OilPanAssy.MicroLogix1400	TrayLocked	T	5J6_OilPanAssy.MicroLogix1400	TrayLocked
+TOP Server	5J6_OilPanAssy.MicroLogix1400	VisionPartNumber	R	5J6_OilPanAssy.MicroLogix1400	VisionPartNumber
+TOP Server	5K8_64A_OilPanAssy.MicroLogix1400	InspectionComplete	T	5K8_64A_OilPanAssy.MicroLogix1400	InspectionComplete
+TOP Server	5K8_64A_OilPanAssy.MicroLogix1400	PartNumber	W	5K8_64A_OilPanAssy.MicroLogix1400	PartNumber
+TOP Server	5K8_64A_OilPanAssy.MicroLogix1400	TrayLocked	T	5K8_64A_OilPanAssy.MicroLogix1400	TrayLocked
+TOP Server	5K8_64A_OilPanAssy.MicroLogix1400	VisionPartNumber	R	5K8_64A_OilPanAssy.MicroLogix1400	VisionPartNumber
+TOP Server	6B2_CH.MicroLogix1400	ContainerName	W	6B2_CH.MicroLogix1400	ContainerName
+TOP Server	6B2_CH.MicroLogix1400	InspectionComplete	T	6B2_CH.MicroLogix1400	InspectionComplete
+TOP Server	6B2_CH.MicroLogix1400	OkToContinue	W	6B2_CH.MicroLogix1400	OkToContinue
+TOP Server	6B2_CH.MicroLogix1400	PartDisposition01	R	6B2_CH.MicroLogix1400	PartDisposition01
+TOP Server	6B2_CH.MicroLogix1400	PartDisposition02	R	6B2_CH.MicroLogix1400	PartDisposition02
+TOP Server	6B2_CH.MicroLogix1400	PartDisposition03	R	6B2_CH.MicroLogix1400	PartDisposition03
+TOP Server	6B2_CH.MicroLogix1400	PartDisposition04	R	6B2_CH.MicroLogix1400	PartDisposition04
+TOP Server	6B2_CH.MicroLogix1400	PartDisposition05	R	6B2_CH.MicroLogix1400	PartDisposition05
+TOP Server	6B2_CH.MicroLogix1400	PartDisposition06	R	6B2_CH.MicroLogix1400	PartDisposition06
+TOP Server	6B2_CH.MicroLogix1400	PartDisposition07	R	6B2_CH.MicroLogix1400	PartDisposition07
+TOP Server	6B2_CH.MicroLogix1400	PartDisposition08	R	6B2_CH.MicroLogix1400	PartDisposition08
+TOP Server	6B2_CH.MicroLogix1400	PartDisposition09	R	6B2_CH.MicroLogix1400	PartDisposition09
+TOP Server	6B2_CH.MicroLogix1400	PartDisposition10	R	6B2_CH.MicroLogix1400	PartDisposition10
+TOP Server	6B2_CH.MicroLogix1400	PartDisposition11	R	6B2_CH.MicroLogix1400	PartDisposition11
+TOP Server	6B2_CH.MicroLogix1400	PartDisposition12	R	6B2_CH.MicroLogix1400	PartDisposition12
+TOP Server	6B2_CH.MicroLogix1400	PartDisposition13	R	6B2_CH.MicroLogix1400	PartDisposition13
+TOP Server	6B2_CH.MicroLogix1400	PartDisposition14	R	6B2_CH.MicroLogix1400	PartDisposition14
+TOP Server	6B2_CH.MicroLogix1400	PartDisposition15	R	6B2_CH.MicroLogix1400	PartDisposition15
+TOP Server	6B2_CH.MicroLogix1400	PartDisposition16	R	6B2_CH.MicroLogix1400	PartDisposition16
+TOP Server	6B2_CH.MicroLogix1400	PartDisposition17	R	6B2_CH.MicroLogix1400	PartDisposition17
+TOP Server	6B2_CH.MicroLogix1400	PartDisposition18	R	6B2_CH.MicroLogix1400	PartDisposition18
+TOP Server	6B2_CH.MicroLogix1400	PartNumber	W	6B2_CH.MicroLogix1400	PartNumber
+TOP Server	6B2_CH.MicroLogix1400	TrayLocked	T	6B2_CH.MicroLogix1400	TrayLocked
+TOP Server	6C2_6MA_OilPanAssy.MicroLogix1400	InspectionComplete	T	6C2_6MA_OilPanAssy.MicroLogix1400	InspectionComplete
+TOP Server	6C2_6MA_OilPanAssy.MicroLogix1400	PartNumber	W	6C2_6MA_OilPanAssy.MicroLogix1400	PartNumber
+TOP Server	6C2_6MA_OilPanAssy.MicroLogix1400	TrayLocked	T	6C2_6MA_OilPanAssy.MicroLogix1400	TrayLocked
+TOP Server	6C2_6MA_OilPanAssy.MicroLogix1400	VisionPartNumber	R	6C2_6MA_OilPanAssy.MicroLogix1400	VisionPartNumber
+TOP Server	6FB_CH.MicroLogix1400	InspectionComplete	T	6FB_CH.MicroLogix1400	InspectionComplete
+TOP Server	6FB_CH.Micrologix1400	OkToContinue	W	6FB_CH.Micrologix1400	OkToContinue
+TOP Server	6FB_CH.MicroLogix1400	PartNumber	R	6FB_CH.MicroLogix1400	PartNumber
+TOP Server	6FB_CH.MicroLogix1400	TrayLocked	T	6FB_CH.MicroLogix1400	TrayLocked
+TOP Server	6MA_CH.MicroLogix1400	ContainerName	W	6MA_CH.MicroLogix1400	ContainerName
+TOP Server	6MA_CH.MicroLogix1400	InspectionComplete	T	6MA_CH.MicroLogix1400	InspectionComplete
+TOP Server	6MA_CH.MicroLogix1400	OkToContinue	W	6MA_CH.MicroLogix1400	OkToContinue
+TOP Server	6MA_CH.MicroLogix1400	PartNumber	W	6MA_CH.MicroLogix1400	PartNumber
+TOP Server	6MA_CH.MicroLogix1400	TrayLocked	T	6MA_CH.MicroLogix1400	TrayLocked
+TOP Server	RPY_CH.MicroLogix1400	InspectionComplete	T	RPY_CH.MicroLogix1400	InspectionComplete
+TOP Server	RPY_CH.MicroLogix1400	OkToContinue	W	RPY_CH.MicroLogix1400	OkToContinue
+TOP Server	RPY_CH.MicroLogix1400	PartDisposition01	R	RPY_CH.MicroLogix1400	PartDisposition01
+TOP Server	RPY_CH.MicroLogix1400	PartNumber	RW	RPY_CH.MicroLogix1400	PartNumber
+TOP Server	RPY_CH.MicroLogix1400	TrayLocked	T	RPY_CH.MicroLogix1400	TrayLocked
+TOP Server	Sort_OilPan.MicroLogix1400	InspectionComplete	T	Sort_OilPan.MicroLogix1400	InspectionComplete
+TOP Server	Sort_OilPan.MicroLogix1400	PartNumber	W	Sort_OilPan.MicroLogix1400	PartNumber
+TOP Server	Sort_OilPan.MicroLogix1400	TrayLocked	T	Sort_OilPan.MicroLogix1400	TrayLocked
+TOP Server	Sort_Totes.MicroLogix1400	InspectionComplete	T	Sort_Totes.MicroLogix1400	InspectionComplete
+TOP Server	Sort_Totes.MicroLogix1400	PartNumber	W	Sort_Totes.MicroLogix1400	PartNumber
+TOP Server	Sort_Totes.MicroLogix1400	TrayLocked	T	Sort_Totes.MicroLogix1400	TrayLocked

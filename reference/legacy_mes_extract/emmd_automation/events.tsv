@@ -1,0 +1,47 @@
+Id	Name	Description	Task	Line	OpcServer	AccessPath	OPCItemID	Trigger	TriggerArg1	TriggerArg2	IsMessageHandler	ReactOnStartup	Active
+17	100 - Net Weight Update	Net weight has been updated by scale	Fuel Pump Assembly	59B Line 1 - Fuel Pump 1 Assembly	OmniServer		59B_1_FP_1.NET_DataReady	EQ	1		0	0	1
+18	050 - Target Weight Change	Notify the scale that a new target weight is required	Fuel Pump Assembly	59B Line 1 - Fuel Pump 1 Assembly	NULL	NULL	NULL	EQ	1		1	0	0
+2	200 - Data Ready		Cam Holder Assembly	5A2 Line 1 - Cam Holder Assembly	TOP Server	5A2_L1_CamHolderAssy.ProfaceLT_3300	DataReady	EQ	1		0	0	1
+8	200 - Data Ready		Fuel Pump Assembly	5A2 Line 1 - Fuel Pump Assembly	TOP Server	5A2_L1_FuelPumpAssy.ProfaceLT_3300	DataReady	EQ	1		0	0	1
+9	200 - Data Ready		Cam Holder Assembly	5A2 Line 2 - Cam Holder Assembly	TOP Server	5A2_L2_CamHolderAssy.ProfaceLT_3300	DataReady	EQ	1		0	0	1
+10	200 - Data Ready		Fuel Pump Assembly	5A2 Line 2 - Fuel Pump Assembly	TOP Server	5A2_L2_FuelPumpAssy.ProfaceLT_3300	DataReady	EQ	1		0	0	1
+64	003 - Container Count Request		Assembly 1	5G0 - Line 1	TOP Server		5G0_A1.5G0_A1.ContainerCountRequest	EQ	1		0	0	1
+65	200 - Data Ready		Assembly 1	5G0 - Line 1	TOP Server		5G0_A1.5G0_A1.DataReady	EQ	1		0	0	1
+66	300 - Net Weight Update	Net weight has been updated by scale	Assembly 1	5G0 - Line 1	OmniServer		5G0_Front_Scale.NET_DataReady	EQ	1		0	0	1
+67	400 - Process Part	Process the serialized part & add it to the container	Assembly 1	5G0 - Line 1	TOP Server		5G0_A1.5G0_A1.PartComplete	EQ	1		0	0	1
+72	003 - Container Count Request		Assembly 2	5G0 - Line 2	TOP Server		5G0_A2.5G0_A2.ContainerCountRequest	EQ	1		0	0	1
+73	200 - Data Ready	Note: Deactivated so scale will trigger labels	Assembly 2	5G0 - Line 2	TOP Server		5G0_A2.5G0_A2.DataReady	EQ	1		0	0	1
+75	300 - Scale Data Ready	Net weight has been updated by scale	Assembly 2	5G0 - Line 2	OmniServer		5G0_Rear_Scale.NET_DataReady	EQ	1		0	0	1
+76	400 - Process Part	Note: Deactivated so scale will trigger labels	Assembly 2	5G0 - Line 2	TOP Server		5G0_A2.5G0_A2.PartComplete	EQ	1		0	0	1
+5	003 - Container Count Request		Assembly 2	5G0 - Line 2 Backup	TOP Server		5G0_A2.5G0_A2.ContainerCountRequest	EQ	1		0	0	1
+6	200 - Data Ready	Note: Deactivated so scale will trigger labels	Assembly 2	5G0 - Line 2 Backup	TOP Server		5G0_A2.5G0_A2.DataReady	EQ	1		0	0	1
+82	100 - Tray Locked		Oil Pump Assembly	5J6 - Oil Pan Assembly	TOP Server	5J6_OilPanAssy.MicroLogix1400	TrayLocked	ALL			0	0	1
+83	200 - Inspection Complete	Inspection Complete	Oil Pump Assembly	5J6 - Oil Pan Assembly	TOP Server	5J6_OilPanAssy.MicroLogix1400	InspectionComplete	ALL			0	0	1
+42	100 - Tray Locked		Oil Pump Assembly	5K8 64A - Oil Pan Assembly	TOP Server	5K8_64A_OilPanAssy.MicroLogix1400	TrayLocked	ALL			0	0	1
+43	200 - Inspection Complete	Inspection Complete	Oil Pump Assembly	5K8 64A - Oil Pan Assembly	TOP Server	5K8_64A_OilPanAssy.MicroLogix1400	InspectionComplete	ALL			0	0	1
+27	050 - Target Weight Change	Notify the scale that a new target weight is required	Fuel Pump Assembly	5PA Line 1 - Fuel Pump 1 Assembly	NULL	NULL	NULL	EQ	1		1	0	1
+28	100 - Net Weight Update	Net weight has been updated by scale	Fuel Pump Assembly	5PA Line 1 - Fuel Pump 1 Assembly	OmniServer		5PA_1_FP_1.NET_DataReady	EQ	1		0	0	1
+19	100 - Tray Locked		Cam Holder Assembly	6B2 - Cam Holder Assembly	TOP Server	6B2_CH.MicroLogix1400	TrayLocked	ALL			0	0	1
+20	150 - Set In-Process Container		Cam Holder Assembly	6B2 - Cam Holder Assembly	NULL	NULL	NULL	ALL			1	0	1
+22	200 - Inspection Complete		Cam Holder Assembly	6B2 - Cam Holder Assembly	TOP Server	6B2_CH.MicroLogix1400	InspectionComplete	ALL			0	0	1
+23	100 - Net Weight Update	Net weight has been updated by scale	Fuel Pump Assembly	6B2 Line 1 - Fuel Pump 1 Assembly	OmniServer		6B2_1_FP_1.NET_DataReady	EQ	1		0	0	1
+24	050 - Target Weight Change	Notify the scale that a new target weight is required	Fuel Pump Assembly	6B2 Line 1 - Fuel Pump 1 Assembly	NULL	NULL	NULL	EQ	1		1	0	1
+29	200 - Inspection Complete		Oil Pump Assembly	6C2 6MA - Oil Pan Assembly	TOP Server	6C2_6MA_OilPanAssy.MicroLogix1400	InspectionComplete	ALL			0	0	1
+30	100 - Tray Locked		Oil Pump Assembly	6C2 6MA - Oil Pan Assembly	TOP Server	6C2_6MA_OilPanAssy.MicroLogix1400	TrayLocked	ALL			0	0	1
+87	100 - Tray Locked		CH and OP Assembly	6FB - CH and OP Assembly	TOP Server	6FB_CH.MicroLogix1400	TrayLocked	ALL			0	0	1
+89	200 - Inspection Complete		CH and OP Assembly	6FB - CH and OP Assembly	TOP Server	6FB_CH.MicroLogix1400	InspectionComplete	ALL			0	0	1
+84	100 - Tray Locked		Cam Holder Assembly	6MA - Cam Holder Assembly	TOP Server	6MA_CH.MicroLogix1400	TrayLocked	ALL			0	0	1
+85	150 - Set In-Process Container		Cam Holder Assembly	6MA - Cam Holder Assembly	NULL	NULL	NULL	ALL			1	0	1
+86	200 - Inspection Complete		Cam Holder Assembly	6MA - Cam Holder Assembly	TOP Server	6MA_CH.MicroLogix1400	InspectionComplete	ALL			0	0	1
+44	100 - Tray Locked		Cam Holder Assembly	6MA - Cam Holder Assembly - 2	TOP Server	6MA_CH.MicroLogix1400	TrayLocked	ALL			0	0	1
+45	200 - Inspection Complete		Cam Holder Assembly	6MA - Cam Holder Assembly - 2	TOP Server	6MA_CH.MicroLogix1400	InspectionComplete	ALL			0	0	1
+79	200 - Inspection Complete		Cam Holder Assembly	RPY - Cam Holder Assembly	TOP Server	RPY_CH.MicroLogix1400	InspectionComplete	ALL			0	0	1
+80	100 - Tray Locked		Cam Holder Assembly	RPY - Cam Holder Assembly	TOP Server	RPY_CH.MicroLogix1400	TrayLocked	ALL			0	0	1
+40	100 - Net Weight Update	Net weight has been updated by scale	Compressor Bracket Assembly	RPY - Compressor Bracket Assembly	OmniServer		RPY_1_CB_1.NET_DataReady	EQ	1		0	0	1
+41	050 - Target Weight Change	Notify the scale that a new target weight is required	Compressor Bracket Assembly	RPY - Compressor Bracket Assembly	NULL	NULL	NULL	EQ	1		1	0	1
+15	100 - Net Weight Update	Net weight has been updated by scale	Fuel Pump Assembly	RPY Line 1 - Fuel Pump 1 Assembly	OmniServer		RPY_1_FP_1.NET_DataReady	EQ	1		0	0	1
+16	050 - Target Weight Change	Notify the scale that a new target weight is required	Fuel Pump Assembly	RPY Line 1 - Fuel Pump 1 Assembly	NULL	NULL	NULL	EQ	1		1	0	1
+32	100 - Tray Locked		Oil Pan Sort	Sort Line - Oil Pan	TOP Server	Sort_OilPan.MicroLogix1400	TrayLocked	ALL			0	0	1
+33	200 - Inspection Complete		Oil Pan Sort	Sort Line - Oil Pan	TOP Server	Sort_OilPan.MicroLogix1400	InspectionComplete	ALL			0	0	1
+38	100 - Tray Locked		Totes Sort	Sort Line - Totes	TOP Server	Sort_Totes.MicroLogix1400	TrayLocked	ALL			0	0	1
+39	200 - Inspection Complete		Totes Sort	Sort Line - Totes	TOP Server	Sort_Totes.MicroLogix1400	InspectionComplete	ALL			0	0	1

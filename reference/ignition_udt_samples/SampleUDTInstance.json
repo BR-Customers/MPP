@@ -1,0 +1,39 @@
+{
+  "name": "SampleInstance",
+  "parameters": {
+    "IntExample": {
+      "dataType": "Integer",
+      "value": 7
+    }
+  },
+  "tagType": "UdtInstance",
+  "tags": [
+    {
+      "name": "LastValue",
+      "tagType": "AtomicTag",
+      "value": 9
+    },
+    {
+      "name": "SumOfRamp0-ParamExample",
+      "tagType": "AtomicTag"
+    },
+    {
+      "name": "OPC Sample 2",
+      "tagType": "AtomicTag"
+    },
+    {
+      "name": "OPC Sample",
+      "tagType": "AtomicTag"
+    },
+    {
+      "name": "Reference LastValue",
+      "tagType": "AtomicTag"
+    },
+    {
+      "name": "Boolean",
+      "tagType": "AtomicTag",
+      "value": 1
+    }
+  ],
+  "typeId": "Sample UDT"
+}

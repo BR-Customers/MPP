@@ -343,6 +343,20 @@ def getActiveTemplateIdForRoute(itemId, operationTypeCode):
     return None
 
 
+def getActiveTemplateIdForLot(lotId, operationTypeCode):
+    """Resolve the active OperationTemplate Id for the SCANNED LOT's route step of the
+    given OperationType role, or None. Convenience over getActiveTemplateIdForRoute for
+    callers that hold a LOT id (Trim OUT / Machining OUT terminals scan a LOT, not the
+    item): resolves the LOT's ItemId via Lot.get, then delegates. NEVER use
+    getActiveTemplateIdByCode with a role code -- template codes (T-Out-A, M-Out-A) are
+    not the role codes (TrimOut, MachiningOut)."""
+    if lotId is None or operationTypeCode is None:
+        return None
+    lotRow = BlueRidge.Lots.Lot.get(lotId=lotId)
+    itemId = lotRow.get("ItemId") if lotRow else None
+    return getActiveTemplateIdForRoute(itemId, operationTypeCode)
+
+
 def getDieCastShotFields():
     """The typed data-collection fields for the active DieCastShot OperationTemplate
     (the die-cast checkpoint screen, D5). Returns [{'field': {... DataTypeCode}}], or

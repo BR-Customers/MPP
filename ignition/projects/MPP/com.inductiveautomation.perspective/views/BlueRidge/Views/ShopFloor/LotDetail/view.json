@@ -1156,6 +1156,34 @@
               }
             },
             "meta": {
+              "name": "BtnLotSearch"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "text": "LOT Search",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "toolTipText": "Return to LOT Search to look up another LOT."
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tsystem.perspective.navigate(\"/shop-floor/lot-search\")"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
               "name": "BtnInspections"
             },
             "position": {

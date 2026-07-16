@@ -1,0 +1,111 @@
+{
+  "custom": {},
+  "params": {
+    "index": 0,
+    "title": "",
+    "expectedOutcome": "",
+    "deviceType": ""
+  },
+  "propConfig": {
+    "params.index": { "paramDirection": "input", "persistent": true },
+    "params.title": { "paramDirection": "input", "persistent": true },
+    "params.expectedOutcome": { "paramDirection": "input", "persistent": true },
+    "params.deviceType": { "paramDirection": "input", "persistent": true }
+  },
+  "props": {
+    "defaultSize": { "width": 320, "height": 84 }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": { "name": "root" },
+    "props": {
+      "direction": "row",
+      "alignItems": "center",
+      "justify": "space-between",
+      "style": { "classes": "pf-queue-row", "gap": "8px", "padding": "8px" }
+    },
+    "children": [
+      {
+        "type": "ia.container.flex",
+        "meta": { "name": "TextCol" },
+        "position": { "grow": 1, "basis": "0" },
+        "props": {
+          "direction": "column",
+          "style": { "gap": "2px" }
+        },
+        "children": [
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "TitleLabel" },
+            "props": {
+              "style": { "classes": "pf-queue-name" }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": { "path": "view.params.title" }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.display.label",
+            "meta": { "name": "ExpectedLabel" },
+            "props": {
+              "style": { "classes": "pf-field-help" }
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "type": "property",
+                  "config": { "path": "view.params.expectedOutcome" }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "ia.input.button",
+        "version": 0,
+        "meta": { "name": "PassedButton" },
+        "props": {
+          "text": "Passed",
+          "style": { "classes": "pf-btn pf-btn-primary" }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"scenarioResult\", {\"index\": self.view.params.index, \"title\": self.view.params.title, \"outcome\": \"passed\"}, scope=\"page\")"
+              }
+            }
+          }
+        }
+      },
+      {
+        "type": "ia.input.button",
+        "version": 0,
+        "meta": { "name": "FailedButton" },
+        "props": {
+          "text": "Failed",
+          "style": { "classes": "pf-btn pf-btn-danger" }
+        },
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "type": "script",
+              "scope": "G",
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"scenarioResult\", {\"index\": self.view.params.index, \"title\": self.view.params.title, \"outcome\": \"failed\"}, scope=\"page\")"
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

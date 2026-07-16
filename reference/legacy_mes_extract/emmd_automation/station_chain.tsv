@@ -1,0 +1,210 @@
+Line	Task	Event	EventID	EventTrigger	TriggerArg1	TriggerArg2	EventServer	EventAccessPath	EventItem	ReactOnStartup	Step	Action	Kind	ActionServer	ActionAccessPath	ActionItem	ScriptID	Active
+59B Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	17	EQ	1		OmniServer		59B_1_FP_1.NET_DataReady	0	10	Initialize Local Variables	SCRIPT	NULL	NULL	NULL	28	1
+59B Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	17	EQ	1		OmniServer		59B_1_FP_1.NET_DataReady	0	100	Get Net Weight Value	READ	OmniServer		59B_1_FP_1.NET_NetWeightValue	NULL	1
+59B Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	17	EQ	1		OmniServer		59B_1_FP_1.NET_DataReady	0	110	Get Net Weight UOM	READ	OmniServer		59B_1_FP_1.NET_NetWeightUOM	NULL	1
+59B Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	17	EQ	1		OmniServer		59B_1_FP_1.NET_DataReady	0	120	Get Target Weight Met Flag	READ	OmniServer		59B_1_FP_1.NET_TargetWeightMetFlag	NULL	1
+59B Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	17	EQ	1		OmniServer		59B_1_FP_1.NET_DataReady	0	125	Get Part Number	READ	OmniServer		59B_1_FP_1.NET_PartNumber	NULL	1
+59B Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	17	EQ	1		OmniServer		59B_1_FP_1.NET_DataReady	0	130	Clear Net Weight Data Ready	WRITE	OmniServer		59B_1_FP_1.NET_DataReady	NULL	1
+59B Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	17	EQ	1		OmniServer		59B_1_FP_1.NET_DataReady	0	140	Clear Net Weight Value	WRITE	OmniServer		59B_1_FP_1.NET_NetWeightValue	NULL	0
+59B Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	17	EQ	1		OmniServer		59B_1_FP_1.NET_DataReady	0	142	Clear Net Weight UOM	WRITE	OmniServer		59B_1_FP_1.NET_NetWeightUOM	NULL	0
+59B Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	17	EQ	1		OmniServer		59B_1_FP_1.NET_DataReady	0	144	Clear Target Weight Met Flag	WRITE	OmniServer		59B_1_FP_1.NET_TargetWeightMetFlag	NULL	0
+59B Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	17	EQ	1		OmniServer		59B_1_FP_1.NET_DataReady	0	171	Verify Part	SCRIPT	NULL	NULL	NULL	82	1
+59B Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	17	EQ	1		OmniServer		59B_1_FP_1.NET_DataReady	0	200	[BEGIN] Net Weight Msg	SCRIPT	NULL	NULL	NULL	29	1
+59B Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	17	EQ	1		OmniServer		59B_1_FP_1.NET_DataReady	0	210	Send Weight to MES	SCRIPT	NULL	NULL	NULL	30	1
+59B Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	17	EQ	1		OmniServer		59B_1_FP_1.NET_DataReady	0	299	[END] Net Weight Msg	SCRIPT	NULL	NULL	NULL	31	1
+59B Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	17	EQ	1		OmniServer		59B_1_FP_1.NET_DataReady	0	300	[BEGIN] Process Tote	SCRIPT	NULL	NULL	NULL	32	1
+59B Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	17	EQ	1		OmniServer		59B_1_FP_1.NET_DataReady	0	310	Process Tote	SCRIPT	NULL	NULL	NULL	33	1
+59B Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	17	EQ	1		OmniServer		59B_1_FP_1.NET_DataReady	0	399	[END] Process Tote	SCRIPT	NULL	NULL	NULL	34	1
+59B Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	050 - Target Weight Change	18	EQ	1		NULL	NULL	NULL	0	1	Message Handler Initialize	SCRIPT	NULL	NULL	NULL	35	1
+59B Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	050 - Target Weight Change	18	EQ	1		NULL	NULL	NULL	0	10	Initialize Local Variables	SCRIPT	NULL	NULL	NULL	36	1
+59B Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	050 - Target Weight Change	18	EQ	1		NULL	NULL	NULL	0	100	Write Target Weight Value	WRITE	OmniServer		59B_1_FP_1.TRG_TargetWeightValue	NULL	1
+59B Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	050 - Target Weight Change	18	EQ	1		NULL	NULL	NULL	0	110	Write Target Weight UOM	WRITE	OmniServer		59B_1_FP_1.TRG_TargetWeightUOM	NULL	1
+59B Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	050 - Target Weight Change	18	EQ	1		NULL	NULL	NULL	0	120	Write Tolerance Weight Value	WRITE	OmniServer		59B_1_FP_1.TRG_ToleranceWeightValue	NULL	1
+59B Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	050 - Target Weight Change	18	EQ	1		NULL	NULL	NULL	0	190	Send Target Weight Change To Scale	WRITE	OmniServer		59B_1_FP_1.TRG_SendMessage	NULL	1
+5A2 Line 1 - Cam Holder Assembly	Cam Holder Assembly	200 - Data Ready	2	EQ	1		TOP Server	5A2_L1_CamHolderAssy.ProfaceLT_3300	DataReady	0	20	Set Transaction In Process	WRITE	TOP Server	5A2_L1_CamHolderAssy.ProfaceLT_3300	TransInProc	NULL	1
+5A2 Line 1 - Cam Holder Assembly	Cam Holder Assembly	200 - Data Ready	2	EQ	1		TOP Server	5A2_L1_CamHolderAssy.ProfaceLT_3300	DataReady	0	200	Process Part	SCRIPT	NULL	NULL	NULL	2	1
+5A2 Line 1 - Cam Holder Assembly	Cam Holder Assembly	200 - Data Ready	2	EQ	1		TOP Server	5A2_L1_CamHolderAssy.ProfaceLT_3300	DataReady	0	1000	Set Part Valid	WRITE	TOP Server	5A2_L1_CamHolderAssy.ProfaceLT_3300	PartValid	NULL	1
+5A2 Line 1 - Cam Holder Assembly	Cam Holder Assembly	200 - Data Ready	2	EQ	1		TOP Server	5A2_L1_CamHolderAssy.ProfaceLT_3300	DataReady	0	1010	Skip To Write Part Type	SCRIPT	NULL	NULL	NULL	3	1
+5A2 Line 1 - Cam Holder Assembly	Cam Holder Assembly	200 - Data Ready	2	EQ	1		TOP Server	5A2_L1_CamHolderAssy.ProfaceLT_3300	DataReady	0	1020	Set Alarm Type	WRITE	TOP Server	5A2_L1_CamHolderAssy.ProfaceLT_3300	MESAlarmType	NULL	1
+5A2 Line 1 - Cam Holder Assembly	Cam Holder Assembly	200 - Data Ready	2	EQ	1		TOP Server	5A2_L1_CamHolderAssy.ProfaceLT_3300	DataReady	0	1030	Set Alarm Message	WRITE	TOP Server	5A2_L1_CamHolderAssy.ProfaceLT_3300	MESAlarmText	NULL	1
+5A2 Line 1 - Cam Holder Assembly	Cam Holder Assembly	200 - Data Ready	2	EQ	1		TOP Server	5A2_L1_CamHolderAssy.ProfaceLT_3300	DataReady	0	1050	Write Part Type	WRITE	TOP Server	5A2_L1_CamHolderAssy.ProfaceLT_3300	PartType	NULL	1
+5A2 Line 1 - Cam Holder Assembly	Cam Holder Assembly	200 - Data Ready	2	EQ	1		TOP Server	5A2_L1_CamHolderAssy.ProfaceLT_3300	DataReady	0	1100	Reset Transaction In Process	WRITE	TOP Server	5A2_L1_CamHolderAssy.ProfaceLT_3300	TransInProc	NULL	1
+5A2 Line 1 - Cam Holder Assembly	Cam Holder Assembly	200 - Data Ready	2	EQ	1		TOP Server	5A2_L1_CamHolderAssy.ProfaceLT_3300	DataReady	0	2000	Reset Data Ready	WRITE	TOP Server	5A2_L1_CamHolderAssy.ProfaceLT_3300	DataReady	NULL	1
+5A2 Line 1 - Fuel Pump Assembly	Fuel Pump Assembly	200 - Data Ready	8	EQ	1		TOP Server	5A2_L1_FuelPumpAssy.ProfaceLT_3300	DataReady	0	20	Set Transaction In Process	WRITE	TOP Server	5A2_L1_FuelPumpAssy.ProfaceLT_3300	TransInProc	NULL	1
+5A2 Line 1 - Fuel Pump Assembly	Fuel Pump Assembly	200 - Data Ready	8	EQ	1		TOP Server	5A2_L1_FuelPumpAssy.ProfaceLT_3300	DataReady	0	200	Process Part	SCRIPT	NULL	NULL	NULL	13	1
+5A2 Line 1 - Fuel Pump Assembly	Fuel Pump Assembly	200 - Data Ready	8	EQ	1		TOP Server	5A2_L1_FuelPumpAssy.ProfaceLT_3300	DataReady	0	1000	Set Part Valid	WRITE	TOP Server	5A2_L1_FuelPumpAssy.ProfaceLT_3300	PartValid	NULL	1
+5A2 Line 1 - Fuel Pump Assembly	Fuel Pump Assembly	200 - Data Ready	8	EQ	1		TOP Server	5A2_L1_FuelPumpAssy.ProfaceLT_3300	DataReady	0	1010	Skip To Write Part Type	SCRIPT	NULL	NULL	NULL	14	1
+5A2 Line 1 - Fuel Pump Assembly	Fuel Pump Assembly	200 - Data Ready	8	EQ	1		TOP Server	5A2_L1_FuelPumpAssy.ProfaceLT_3300	DataReady	0	1020	Set Alarm Type	WRITE	TOP Server	5A2_L1_FuelPumpAssy.ProfaceLT_3300	MESAlarmType	NULL	1
+5A2 Line 1 - Fuel Pump Assembly	Fuel Pump Assembly	200 - Data Ready	8	EQ	1		TOP Server	5A2_L1_FuelPumpAssy.ProfaceLT_3300	DataReady	0	1030	Set Alarm Message	WRITE	TOP Server	5A2_L1_FuelPumpAssy.ProfaceLT_3300	MESAlarmText	NULL	1
+5A2 Line 1 - Fuel Pump Assembly	Fuel Pump Assembly	200 - Data Ready	8	EQ	1		TOP Server	5A2_L1_FuelPumpAssy.ProfaceLT_3300	DataReady	0	1050	Write Part Type	WRITE	TOP Server	5A2_L1_FuelPumpAssy.ProfaceLT_3300	PartType	NULL	1
+5A2 Line 1 - Fuel Pump Assembly	Fuel Pump Assembly	200 - Data Ready	8	EQ	1		TOP Server	5A2_L1_FuelPumpAssy.ProfaceLT_3300	DataReady	0	1100	Reset Transaction In Process	WRITE	TOP Server	5A2_L1_FuelPumpAssy.ProfaceLT_3300	TransInProc	NULL	1
+5A2 Line 1 - Fuel Pump Assembly	Fuel Pump Assembly	200 - Data Ready	8	EQ	1		TOP Server	5A2_L1_FuelPumpAssy.ProfaceLT_3300	DataReady	0	2000	Reset Data Ready	WRITE	TOP Server	5A2_L1_FuelPumpAssy.ProfaceLT_3300	DataReady	NULL	1
+5A2 Line 2 - Cam Holder Assembly	Cam Holder Assembly	200 - Data Ready	9	EQ	1		TOP Server	5A2_L2_CamHolderAssy.ProfaceLT_3300	DataReady	0	20	Set Transaction In Process	WRITE	TOP Server	5A2_L2_CamHolderAssy.ProfaceLT_3300	TransInProc	NULL	1
+5A2 Line 2 - Cam Holder Assembly	Cam Holder Assembly	200 - Data Ready	9	EQ	1		TOP Server	5A2_L2_CamHolderAssy.ProfaceLT_3300	DataReady	0	200	Process Part	SCRIPT	NULL	NULL	NULL	15	1
+5A2 Line 2 - Cam Holder Assembly	Cam Holder Assembly	200 - Data Ready	9	EQ	1		TOP Server	5A2_L2_CamHolderAssy.ProfaceLT_3300	DataReady	0	1000	Set Part Valid	WRITE	TOP Server	5A2_L2_CamHolderAssy.ProfaceLT_3300	PartValid	NULL	1
+5A2 Line 2 - Cam Holder Assembly	Cam Holder Assembly	200 - Data Ready	9	EQ	1		TOP Server	5A2_L2_CamHolderAssy.ProfaceLT_3300	DataReady	0	1010	Skip To Write Part Type	SCRIPT	NULL	NULL	NULL	16	1
+5A2 Line 2 - Cam Holder Assembly	Cam Holder Assembly	200 - Data Ready	9	EQ	1		TOP Server	5A2_L2_CamHolderAssy.ProfaceLT_3300	DataReady	0	1020	Set Alarm Type	WRITE	TOP Server	5A2_L2_CamHolderAssy.ProfaceLT_3300	MESAlarmType	NULL	1
+5A2 Line 2 - Cam Holder Assembly	Cam Holder Assembly	200 - Data Ready	9	EQ	1		TOP Server	5A2_L2_CamHolderAssy.ProfaceLT_3300	DataReady	0	1030	Set Alarm Message	WRITE	TOP Server	5A2_L2_CamHolderAssy.ProfaceLT_3300	MESAlarmText	NULL	1
+5A2 Line 2 - Cam Holder Assembly	Cam Holder Assembly	200 - Data Ready	9	EQ	1		TOP Server	5A2_L2_CamHolderAssy.ProfaceLT_3300	DataReady	0	1050	Write Part Type	WRITE	TOP Server	5A2_L2_CamHolderAssy.ProfaceLT_3300	PartType	NULL	1
+5A2 Line 2 - Cam Holder Assembly	Cam Holder Assembly	200 - Data Ready	9	EQ	1		TOP Server	5A2_L2_CamHolderAssy.ProfaceLT_3300	DataReady	0	1100	Reset Transaction In Process	WRITE	TOP Server	5A2_L2_CamHolderAssy.ProfaceLT_3300	TransInProc	NULL	1
+5A2 Line 2 - Cam Holder Assembly	Cam Holder Assembly	200 - Data Ready	9	EQ	1		TOP Server	5A2_L2_CamHolderAssy.ProfaceLT_3300	DataReady	0	2000	Reset Data Ready	WRITE	TOP Server	5A2_L2_CamHolderAssy.ProfaceLT_3300	DataReady	NULL	1
+5A2 Line 2 - Fuel Pump Assembly	Fuel Pump Assembly	200 - Data Ready	10	EQ	1		TOP Server	5A2_L2_FuelPumpAssy.ProfaceLT_3300	DataReady	0	20	Set Transaction In Process	WRITE	TOP Server	5A2_L2_FuelPumpAssy.ProfaceLT_3300	TransInProc	NULL	1
+5A2 Line 2 - Fuel Pump Assembly	Fuel Pump Assembly	200 - Data Ready	10	EQ	1		TOP Server	5A2_L2_FuelPumpAssy.ProfaceLT_3300	DataReady	0	200	Process Part	SCRIPT	NULL	NULL	NULL	17	1
+5A2 Line 2 - Fuel Pump Assembly	Fuel Pump Assembly	200 - Data Ready	10	EQ	1		TOP Server	5A2_L2_FuelPumpAssy.ProfaceLT_3300	DataReady	0	1000	Set Part Valid	WRITE	TOP Server	5A2_L2_FuelPumpAssy.ProfaceLT_3300	PartValid	NULL	1
+5A2 Line 2 - Fuel Pump Assembly	Fuel Pump Assembly	200 - Data Ready	10	EQ	1		TOP Server	5A2_L2_FuelPumpAssy.ProfaceLT_3300	DataReady	0	1010	Skip To Write Part Type	SCRIPT	NULL	NULL	NULL	18	1
+5A2 Line 2 - Fuel Pump Assembly	Fuel Pump Assembly	200 - Data Ready	10	EQ	1		TOP Server	5A2_L2_FuelPumpAssy.ProfaceLT_3300	DataReady	0	1020	Set Alarm Type	WRITE	TOP Server	5A2_L2_FuelPumpAssy.ProfaceLT_3300	MESAlarmType	NULL	1
+5A2 Line 2 - Fuel Pump Assembly	Fuel Pump Assembly	200 - Data Ready	10	EQ	1		TOP Server	5A2_L2_FuelPumpAssy.ProfaceLT_3300	DataReady	0	1030	Set Alarm Message	WRITE	TOP Server	5A2_L2_FuelPumpAssy.ProfaceLT_3300	MESAlarmText	NULL	1
+5A2 Line 2 - Fuel Pump Assembly	Fuel Pump Assembly	200 - Data Ready	10	EQ	1		TOP Server	5A2_L2_FuelPumpAssy.ProfaceLT_3300	DataReady	0	1050	Write Part Type	WRITE	TOP Server	5A2_L2_FuelPumpAssy.ProfaceLT_3300	PartType	NULL	1
+5A2 Line 2 - Fuel Pump Assembly	Fuel Pump Assembly	200 - Data Ready	10	EQ	1		TOP Server	5A2_L2_FuelPumpAssy.ProfaceLT_3300	DataReady	0	1100	Reset Transaction In Process	WRITE	TOP Server	5A2_L2_FuelPumpAssy.ProfaceLT_3300	TransInProc	NULL	1
+5A2 Line 2 - Fuel Pump Assembly	Fuel Pump Assembly	200 - Data Ready	10	EQ	1		TOP Server	5A2_L2_FuelPumpAssy.ProfaceLT_3300	DataReady	0	2000	Reset Data Ready	WRITE	TOP Server	5A2_L2_FuelPumpAssy.ProfaceLT_3300	DataReady	NULL	1
+5G0 - Line 1	Assembly 1	003 - Container Count Request	64	EQ	1		TOP Server		5G0_A1.5G0_A1.ContainerCountRequest	0	200	Get Container Count	SCRIPT	NULL	NULL	NULL	202	1
+5G0 - Line 1	Assembly 1	003 - Container Count Request	64	EQ	1		TOP Server		5G0_A1.5G0_A1.ContainerCountRequest	0	1005	Set Container Count	WRITE	TOP Server		5G0_A1.5G0_A1.ContainerCount	NULL	1
+5G0 - Line 1	Assembly 1	003 - Container Count Request	64	EQ	1		TOP Server		5G0_A1.5G0_A1.ContainerCountRequest	0	1010	Reset Container Count Request	WRITE	TOP Server		5G0_A1.5G0_A1.ContainerCountRequest	NULL	1
+5G0 - Line 1	Assembly 1	200 - Data Ready	65	EQ	1		TOP Server		5G0_A1.5G0_A1.DataReady	0	10	Reset Data Ready	WRITE	TOP Server		5G0_A1.5G0_A1.DataReady	NULL	1
+5G0 - Line 1	Assembly 1	200 - Data Ready	65	EQ	1		TOP Server		5G0_A1.5G0_A1.DataReady	0	15	Read Container Count	READ	TOP Server		5G0_A1.5G0_A1.ContainerCount	NULL	1
+5G0 - Line 1	Assembly 1	200 - Data Ready	65	EQ	1		TOP Server		5G0_A1.5G0_A1.DataReady	0	20	Set Transaction In Process	WRITE	TOP Server		5G0_A1.5G0_A1.TransInProc	NULL	1
+5G0 - Line 1	Assembly 1	200 - Data Ready	65	EQ	1		TOP Server		5G0_A1.5G0_A1.DataReady	0	30	Check Container Count	SCRIPT	NULL	NULL	NULL	204	1
+5G0 - Line 1	Assembly 1	200 - Data Ready	65	EQ	1		TOP Server		5G0_A1.5G0_A1.DataReady	0	40	Set Part Complete	WRITE	TOP Server		5G0_A1.5G0_A1.PartComplete	NULL	1
+5G0 - Line 1	Assembly 1	300 - Net Weight Update	66	EQ	1		OmniServer		5G0_Front_Scale.NET_DataReady	0	10	Initialize Local Variables	SCRIPT	NULL	NULL	NULL	207	1
+5G0 - Line 1	Assembly 1	300 - Net Weight Update	66	EQ	1		OmniServer		5G0_Front_Scale.NET_DataReady	0	15	Read Container Count	READ	TOP Server		5G0_A1.5G0_A1.ContainerCount	NULL	1
+5G0 - Line 1	Assembly 1	300 - Net Weight Update	66	EQ	1		OmniServer		5G0_Front_Scale.NET_DataReady	0	16	Validate Part Count	SCRIPT	NULL	NULL	NULL	208	1
+5G0 - Line 1	Assembly 1	300 - Net Weight Update	66	EQ	1		OmniServer		5G0_Front_Scale.NET_DataReady	0	100	Get Net Weight Value	READ	OmniServer		5G0_Front_Scale.NET_NetWeightValue	NULL	1
+5G0 - Line 1	Assembly 1	300 - Net Weight Update	66	EQ	1		OmniServer		5G0_Front_Scale.NET_DataReady	0	110	Get Net Weight UOM	READ	OmniServer		5G0_Front_Scale.NET_NetWeightUOM	NULL	1
+5G0 - Line 1	Assembly 1	300 - Net Weight Update	66	EQ	1		OmniServer		5G0_Front_Scale.NET_DataReady	0	120	Get Target Weight Met Flag	READ	OmniServer		5G0_Front_Scale.NET_TargetWeightMetFlag	NULL	1
+5G0 - Line 1	Assembly 1	300 - Net Weight Update	66	EQ	1		OmniServer		5G0_Front_Scale.NET_DataReady	0	130	Clear Net Weight Data Ready	WRITE	OmniServer		5G0_Front_Scale.NET_DataReady	NULL	1
+5G0 - Line 1	Assembly 1	300 - Net Weight Update	66	EQ	1		OmniServer		5G0_Front_Scale.NET_DataReady	0	140	Clear Net Weight Value	WRITE	OmniServer		5G0_Front_Scale.NET_NetWeightValue	NULL	0
+5G0 - Line 1	Assembly 1	300 - Net Weight Update	66	EQ	1		OmniServer		5G0_Front_Scale.NET_DataReady	0	142	Clear Net Weight UOM	WRITE	OmniServer		5G0_Front_Scale.NET_NetWeightUOM	NULL	0
+5G0 - Line 1	Assembly 1	300 - Net Weight Update	66	EQ	1		OmniServer		5G0_Front_Scale.NET_DataReady	0	144	Clear Target Weight Met Flag	WRITE	OmniServer		5G0_Front_Scale.NET_TargetWeightMetFlag	NULL	0
+5G0 - Line 1	Assembly 1	300 - Net Weight Update	66	EQ	1		OmniServer		5G0_Front_Scale.NET_DataReady	0	300	[BEGIN] Complete Container	SCRIPT	NULL	NULL	NULL	209	1
+5G0 - Line 1	Assembly 1	300 - Net Weight Update	66	EQ	1		OmniServer		5G0_Front_Scale.NET_DataReady	0	320	Complete Container	SCRIPT	NULL	NULL	NULL	210	1
+5G0 - Line 1	Assembly 1	300 - Net Weight Update	66	EQ	1		OmniServer		5G0_Front_Scale.NET_DataReady	0	325	Set Part Valid	WRITE	TOP Server		5G0_A1.5G0_A1.PartValid	NULL	1
+5G0 - Line 1	Assembly 1	300 - Net Weight Update	66	EQ	1		OmniServer		5G0_Front_Scale.NET_DataReady	0	330	Write Container Quantity	WRITE	TOP Server		5G0_A1.5G0_A1.ContainerCount	NULL	1
+5G0 - Line 1	Assembly 1	300 - Net Weight Update	66	EQ	1		OmniServer		5G0_Front_Scale.NET_DataReady	0	335	Write Part Type	WRITE	TOP Server		5G0_A1.5G0_A1.PartType	NULL	1
+5G0 - Line 1	Assembly 1	300 - Net Weight Update	66	EQ	1		OmniServer		5G0_Front_Scale.NET_DataReady	0	399	[END] Complete Container	SCRIPT	NULL	NULL	NULL	211	1
+5G0 - Line 1	Assembly 1	300 - Net Weight Update	66	EQ	1		OmniServer		5G0_Front_Scale.NET_DataReady	0	500	[BEGIN] Process Next Part	SCRIPT	NULL	NULL	NULL	212	1
+5G0 - Line 1	Assembly 1	300 - Net Weight Update	66	EQ	1		OmniServer		5G0_Front_Scale.NET_DataReady	0	510	Read TransInProc	READ	TOP Server		5G0_A1.5G0_A1.TransInProc	NULL	1
+5G0 - Line 1	Assembly 1	300 - Net Weight Update	66	EQ	1		OmniServer		5G0_Front_Scale.NET_DataReady	0	520	Read Part Complete	READ	TOP Server		5G0_A1.5G0_A1.PartComplete	NULL	1
+5G0 - Line 1	Assembly 1	300 - Net Weight Update	66	EQ	1		OmniServer		5G0_Front_Scale.NET_DataReady	0	540	Check Next Part Pending	SCRIPT	NULL	NULL	NULL	213	1
+5G0 - Line 1	Assembly 1	300 - Net Weight Update	66	EQ	1		OmniServer		5G0_Front_Scale.NET_DataReady	0	550	Set Part Complete	WRITE	TOP Server		5G0_A1.5G0_A1.PartComplete	NULL	1
+5G0 - Line 1	Assembly 1	300 - Net Weight Update	66	EQ	1		OmniServer		5G0_Front_Scale.NET_DataReady	0	599	[END] Process Next Part	SCRIPT	NULL	NULL	NULL	214	1
+5G0 - Line 1	Assembly 1	400 - Process Part	67	EQ	1		TOP Server		5G0_A1.5G0_A1.PartComplete	0	100	Read Serial Number	READ	TOP Server		5G0_A1.5G0_A1.PartSN	NULL	1
+5G0 - Line 1	Assembly 1	400 - Process Part	67	EQ	1		TOP Server		5G0_A1.5G0_A1.PartComplete	0	130	Read Hardware Interlock Enforced	READ	TOP Server		5G0_A1.5G0_A1.HardwareInterlockEnforced	NULL	1
+5G0 - Line 1	Assembly 1	400 - Process Part	67	EQ	1		TOP Server		5G0_A1.5G0_A1.PartComplete	0	200	Process Part	SCRIPT	NULL	NULL	NULL	215	1
+5G0 - Line 1	Assembly 1	400 - Process Part	67	EQ	1		TOP Server		5G0_A1.5G0_A1.PartComplete	0	1000	Set Part Valid	WRITE	TOP Server		5G0_A1.5G0_A1.PartValid	NULL	1
+5G0 - Line 1	Assembly 1	400 - Process Part	67	EQ	1		TOP Server		5G0_A1.5G0_A1.PartComplete	0	1010	Skip To Write Container Quantity	SCRIPT	NULL	NULL	NULL	216	1
+5G0 - Line 1	Assembly 1	400 - Process Part	67	EQ	1		TOP Server		5G0_A1.5G0_A1.PartComplete	0	1020	Set Alarm Type	WRITE	TOP Server		5G0_A1.5G0_A1.MESAlarmType	NULL	1
+5G0 - Line 1	Assembly 1	400 - Process Part	67	EQ	1		TOP Server		5G0_A1.5G0_A1.PartComplete	0	1030	Set Alarm Message	WRITE	TOP Server		5G0_A1.5G0_A1.MESAlarmText	NULL	1
+5G0 - Line 1	Assembly 1	400 - Process Part	67	EQ	1		TOP Server		5G0_A1.5G0_A1.PartComplete	0	1040	Write Container Quantity	WRITE	TOP Server		5G0_A1.5G0_A1.ContainerCount	NULL	1
+5G0 - Line 1	Assembly 1	400 - Process Part	67	EQ	1		TOP Server		5G0_A1.5G0_A1.PartComplete	0	1050	Write Part Type	WRITE	TOP Server		5G0_A1.5G0_A1.PartType	NULL	1
+5G0 - Line 1	Assembly 1	400 - Process Part	67	EQ	1		TOP Server		5G0_A1.5G0_A1.PartComplete	0	1100	Reset Transaction In Process	WRITE	TOP Server		5G0_A1.5G0_A1.TransInProc	NULL	1
+5G0 - Line 1	Assembly 1	400 - Process Part	67	EQ	1		TOP Server		5G0_A1.5G0_A1.PartComplete	0	1200	Reset Part Complete	WRITE	TOP Server		5G0_A1.5G0_A1.PartComplete	NULL	1
+5G0 - Line 2	Assembly 2	003 - Container Count Request	72	EQ	1		TOP Server		5G0_A2.5G0_A2.ContainerCountRequest	0	200	Get Container Count	SCRIPT	NULL	NULL	NULL	229	1
+5G0 - Line 2	Assembly 2	003 - Container Count Request	72	EQ	1		TOP Server		5G0_A2.5G0_A2.ContainerCountRequest	0	1005	Set Container Count	WRITE	TOP Server		5G0_A2.5G0_A2.ContainerCount	NULL	1
+5G0 - Line 2	Assembly 2	003 - Container Count Request	72	EQ	1		TOP Server		5G0_A2.5G0_A2.ContainerCountRequest	0	1010	Reset Container Count Request	WRITE	TOP Server		5G0_A2.5G0_A2.ContainerCountRequest	NULL	1
+5G0 - Line 2	Assembly 2	200 - Data Ready	73	EQ	1		TOP Server		5G0_A2.5G0_A2.DataReady	0	10	Reset Data Ready	WRITE	TOP Server		5G0_A2.5G0_A2.DataReady	NULL	1
+5G0 - Line 2	Assembly 2	200 - Data Ready	73	EQ	1		TOP Server		5G0_A2.5G0_A2.DataReady	0	15	Read Container Count	READ	TOP Server		5G0_A2.5G0_A2.ContainerCount	NULL	1
+5G0 - Line 2	Assembly 2	200 - Data Ready	73	EQ	1		TOP Server		5G0_A2.5G0_A2.DataReady	0	20	Set Transaction In Process	WRITE	TOP Server		5G0_A2.5G0_A2.TransInProc	NULL	1
+5G0 - Line 2	Assembly 2	200 - Data Ready	73	EQ	1		TOP Server		5G0_A2.5G0_A2.DataReady	0	30	Check Container Count	SCRIPT	NULL	NULL	NULL	232	1
+5G0 - Line 2	Assembly 2	200 - Data Ready	73	EQ	1		TOP Server		5G0_A2.5G0_A2.DataReady	0	40	Set Part Complete	WRITE	TOP Server		5G0_A2.5G0_A2.PartComplete	NULL	1
+5G0 - Line 2	Assembly 2	300 - Scale Data Ready	75	EQ	1		OmniServer		5G0_Rear_Scale.NET_DataReady	0	10	Initialize Local Variables	SCRIPT	NULL	NULL	NULL	233	1
+5G0 - Line 2	Assembly 2	300 - Scale Data Ready	75	EQ	1		OmniServer		5G0_Rear_Scale.NET_DataReady	0	100	Get Net Weight Value	READ	OmniServer		5G0_Rear_Scale.NET_NetWeightValue	NULL	1
+5G0 - Line 2	Assembly 2	300 - Scale Data Ready	75	EQ	1		OmniServer		5G0_Rear_Scale.NET_DataReady	0	110	Get Net Weight UOM	READ	OmniServer		5G0_Rear_Scale.NET_NetWeightUOM	NULL	1
+5G0 - Line 2	Assembly 2	300 - Scale Data Ready	75	EQ	1		OmniServer		5G0_Rear_Scale.NET_DataReady	0	120	Get Target Weight Met Flag	READ	OmniServer		5G0_Rear_Scale.NET_TargetWeightMetFlag	NULL	1
+5G0 - Line 2	Assembly 2	300 - Scale Data Ready	75	EQ	1		OmniServer		5G0_Rear_Scale.NET_DataReady	0	130	Clear Net Weight Data Ready	WRITE	OmniServer		5G0_Rear_Scale.NET_DataReady	NULL	1
+5G0 - Line 2	Assembly 2	300 - Scale Data Ready	75	EQ	1		OmniServer		5G0_Rear_Scale.NET_DataReady	0	140	Clear Net Weight Value	WRITE	OmniServer		5G0_Rear_Scale.NET_NetWeightValue	NULL	0
+5G0 - Line 2	Assembly 2	300 - Scale Data Ready	75	EQ	1		OmniServer		5G0_Rear_Scale.NET_DataReady	0	142	Clear Net Weight UOM	WRITE	OmniServer		5G0_Rear_Scale.NET_NetWeightUOM	NULL	0
+5G0 - Line 2	Assembly 2	300 - Scale Data Ready	75	EQ	1		OmniServer		5G0_Rear_Scale.NET_DataReady	0	144	Clear Target Weight Met Flag	WRITE	OmniServer		5G0_Rear_Scale.NET_TargetWeightMetFlag	NULL	0
+5G0 - Line 2	Assembly 2	300 - Scale Data Ready	75	EQ	1		OmniServer		5G0_Rear_Scale.NET_DataReady	0	300	[BEGIN] Complete Container	SCRIPT	NULL	NULL	NULL	240	1
+5G0 - Line 2	Assembly 2	300 - Scale Data Ready	75	EQ	1		OmniServer		5G0_Rear_Scale.NET_DataReady	0	320	Complete Container	SCRIPT	NULL	NULL	NULL	241	1
+5G0 - Line 2	Assembly 2	300 - Scale Data Ready	75	EQ	1		OmniServer		5G0_Rear_Scale.NET_DataReady	0	325	Set Part Valid	WRITE	TOP Server		5G0_A2.5G0_A2.PartValid	NULL	1
+5G0 - Line 2	Assembly 2	300 - Scale Data Ready	75	EQ	1		OmniServer		5G0_Rear_Scale.NET_DataReady	0	330	Reset Container Quantity	WRITE	TOP Server		5G0_A2.5G0_A2.ContainerCount	NULL	1
+5G0 - Line 2	Assembly 2	300 - Scale Data Ready	75	EQ	1		OmniServer		5G0_Rear_Scale.NET_DataReady	0	335	Write Part Type	WRITE	TOP Server		5G0_A2.5G0_A2.PartType	NULL	1
+5G0 - Line 2	Assembly 2	300 - Scale Data Ready	75	EQ	1		OmniServer		5G0_Rear_Scale.NET_DataReady	0	399	[END] Complete Container	SCRIPT	NULL	NULL	NULL	242	1
+5G0 - Line 2	Assembly 2	300 - Scale Data Ready	75	EQ	1		OmniServer		5G0_Rear_Scale.NET_DataReady	0	500	[BEGIN] Process Next Part	SCRIPT	NULL	NULL	NULL	243	1
+5G0 - Line 2	Assembly 2	300 - Scale Data Ready	75	EQ	1		OmniServer		5G0_Rear_Scale.NET_DataReady	0	510	Read TransInProc	READ	TOP Server		5G0_A2.5G0_A2.TransInProc	NULL	1
+5G0 - Line 2	Assembly 2	300 - Scale Data Ready	75	EQ	1		OmniServer		5G0_Rear_Scale.NET_DataReady	0	520	Read Part Complete	READ	TOP Server		5G0_A2.5G0_A2.PartComplete	NULL	1
+5G0 - Line 2	Assembly 2	300 - Scale Data Ready	75	EQ	1		OmniServer		5G0_Rear_Scale.NET_DataReady	0	540	Check Next Part Pending	SCRIPT	NULL	NULL	NULL	244	1
+5G0 - Line 2	Assembly 2	300 - Scale Data Ready	75	EQ	1		OmniServer		5G0_Rear_Scale.NET_DataReady	0	550	Set Part Complete	WRITE	TOP Server		5G0_A2.5G0_A2.PartComplete	NULL	1
+5G0 - Line 2	Assembly 2	300 - Scale Data Ready	75	EQ	1		OmniServer		5G0_Rear_Scale.NET_DataReady	0	599	[END] Process Next Part	SCRIPT	NULL	NULL	NULL	245	1
+5G0 - Line 2	Assembly 2	400 - Process Part	76	EQ	1		TOP Server		5G0_A2.5G0_A2.PartComplete	0	100	Read Serial Number	READ	TOP Server		5G0_A2.5G0_A2.PartSN	NULL	1
+5G0 - Line 2	Assembly 2	400 - Process Part	76	EQ	1		TOP Server		5G0_A2.5G0_A2.PartComplete	0	130	Read Hardware Interlock Enforced	READ	TOP Server		5G0_A2.5G0_A2.HardwareInterlockEnforced	NULL	1
+5G0 - Line 2	Assembly 2	400 - Process Part	76	EQ	1		TOP Server		5G0_A2.5G0_A2.PartComplete	0	200	Process Part	SCRIPT	NULL	NULL	NULL	246	1
+5G0 - Line 2	Assembly 2	400 - Process Part	76	EQ	1		TOP Server		5G0_A2.5G0_A2.PartComplete	0	1000	Set Part Valid	WRITE	TOP Server		5G0_A2.5G0_A2.PartValid	NULL	1
+5G0 - Line 2	Assembly 2	400 - Process Part	76	EQ	1		TOP Server		5G0_A2.5G0_A2.PartComplete	0	1010	Skip To Write Container Quantity	SCRIPT	NULL	NULL	NULL	247	1
+5G0 - Line 2	Assembly 2	400 - Process Part	76	EQ	1		TOP Server		5G0_A2.5G0_A2.PartComplete	0	1020	Set Alarm Type	WRITE	TOP Server		5G0_A2.5G0_A2.MESAlarmType	NULL	1
+5G0 - Line 2	Assembly 2	400 - Process Part	76	EQ	1		TOP Server		5G0_A2.5G0_A2.PartComplete	0	1030	Set Alarm Message	WRITE	TOP Server		5G0_A2.5G0_A2.MESAlarmText	NULL	1
+5G0 - Line 2	Assembly 2	400 - Process Part	76	EQ	1		TOP Server		5G0_A2.5G0_A2.PartComplete	0	1040	Write Container Quantity	WRITE	TOP Server		5G0_A2.5G0_A2.ContainerCount	NULL	1
+5G0 - Line 2	Assembly 2	400 - Process Part	76	EQ	1		TOP Server		5G0_A2.5G0_A2.PartComplete	0	1050	Write Part Type	WRITE	TOP Server		5G0_A2.5G0_A2.PartType	NULL	1
+5G0 - Line 2	Assembly 2	400 - Process Part	76	EQ	1		TOP Server		5G0_A2.5G0_A2.PartComplete	0	1100	Reset Transaction In Process	WRITE	TOP Server		5G0_A2.5G0_A2.TransInProc	NULL	1
+5G0 - Line 2	Assembly 2	400 - Process Part	76	EQ	1		TOP Server		5G0_A2.5G0_A2.PartComplete	0	1200	Reset Part Complete	WRITE	TOP Server		5G0_A2.5G0_A2.PartComplete	NULL	1
+5J6 - Oil Pan Assembly	Oil Pump Assembly	100 - Tray Locked	82	ALL			TOP Server	5J6_OilPanAssy.MicroLogix1400	TrayLocked	0	5	Bail on reset	SCRIPT	NULL	NULL	NULL	263	1
+5J6 - Oil Pan Assembly	Oil Pump Assembly	100 - Tray Locked	82	ALL			TOP Server	5J6_OilPanAssy.MicroLogix1400	TrayLocked	0	10	Initialize Local Variables	SCRIPT	NULL	NULL	NULL	264	1
+5J6 - Oil Pan Assembly	Oil Pump Assembly	100 - Tray Locked	82	ALL			TOP Server	5J6_OilPanAssy.MicroLogix1400	TrayLocked	0	100	Get Part Type	SCRIPT	NULL	NULL	NULL	265	1
+5J6 - Oil Pan Assembly	Oil Pump Assembly	100 - Tray Locked	82	ALL			TOP Server	5J6_OilPanAssy.MicroLogix1400	TrayLocked	0	200	Set Part Type	WRITE	TOP Server	5J6_OilPanAssy.MicroLogix1400	PartNumber	NULL	1
+5J6 - Oil Pan Assembly	Oil Pump Assembly	200 - Inspection Complete	83	ALL			TOP Server	5J6_OilPanAssy.MicroLogix1400	InspectionComplete	0	5	Bail on reset	SCRIPT	NULL	NULL	NULL	266	1
+5J6 - Oil Pan Assembly	Oil Pump Assembly	200 - Inspection Complete	83	ALL			TOP Server	5J6_OilPanAssy.MicroLogix1400	InspectionComplete	0	10	Initialize Local Variables	SCRIPT	NULL	NULL	NULL	267	1
+5J6 - Oil Pan Assembly	Oil Pump Assembly	200 - Inspection Complete	83	ALL			TOP Server	5J6_OilPanAssy.MicroLogix1400	InspectionComplete	0	100	Get Vision Part Number	READ	TOP Server	5J6_OilPanAssy.MicroLogix1400	VisionPartNumber	NULL	1
+5J6 - Oil Pan Assembly	Oil Pump Assembly	200 - Inspection Complete	83	ALL			TOP Server	5J6_OilPanAssy.MicroLogix1400	InspectionComplete	0	310	Process Tote	SCRIPT	NULL	NULL	NULL	268	1
+5K8 64A - Oil Pan Assembly	Oil Pump Assembly	100 - Tray Locked	42	ALL			TOP Server	5K8_64A_OilPanAssy.MicroLogix1400	TrayLocked	0	5	Bail on reset	SCRIPT	NULL	NULL	NULL	123	1
+5K8 64A - Oil Pan Assembly	Oil Pump Assembly	100 - Tray Locked	42	ALL			TOP Server	5K8_64A_OilPanAssy.MicroLogix1400	TrayLocked	0	10	Initialize Local Variables	SCRIPT	NULL	NULL	NULL	124	1
+5K8 64A - Oil Pan Assembly	Oil Pump Assembly	100 - Tray Locked	42	ALL			TOP Server	5K8_64A_OilPanAssy.MicroLogix1400	TrayLocked	0	100	Get Part Type	SCRIPT	NULL	NULL	NULL	125	1
+5K8 64A - Oil Pan Assembly	Oil Pump Assembly	100 - Tray Locked	42	ALL			TOP Server	5K8_64A_OilPanAssy.MicroLogix1400	TrayLocked	0	200	Set Part Type	WRITE	TOP Server	5K8_64A_OilPanAssy.MicroLogix1400	PartNumber	NULL	1
+5K8 64A - Oil Pan Assembly	Oil Pump Assembly	200 - Inspection Complete	43	ALL			TOP Server	5K8_64A_OilPanAssy.MicroLogix1400	InspectionComplete	0	5	Bail on reset	SCRIPT	NULL	NULL	NULL	126	1
+5K8 64A - Oil Pan Assembly	Oil Pump Assembly	200 - Inspection Complete	43	ALL			TOP Server	5K8_64A_OilPanAssy.MicroLogix1400	InspectionComplete	0	10	Initialize Local Variables	SCRIPT	NULL	NULL	NULL	127	1
+5K8 64A - Oil Pan Assembly	Oil Pump Assembly	200 - Inspection Complete	43	ALL			TOP Server	5K8_64A_OilPanAssy.MicroLogix1400	InspectionComplete	0	100	Get Vision Part Number	READ	TOP Server	5K8_64A_OilPanAssy.MicroLogix1400	VisionPartNumber	NULL	1
+5K8 64A - Oil Pan Assembly	Oil Pump Assembly	200 - Inspection Complete	43	ALL			TOP Server	5K8_64A_OilPanAssy.MicroLogix1400	InspectionComplete	0	310	Process Tote	SCRIPT	NULL	NULL	NULL	128	1
+5PA Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	050 - Target Weight Change	27	EQ	1		NULL	NULL	NULL	0	1	Message Handler Initialize	SCRIPT	NULL	NULL	NULL	65	1
+5PA Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	050 - Target Weight Change	27	EQ	1		NULL	NULL	NULL	0	10	Initialize Local Variables	SCRIPT	NULL	NULL	NULL	66	1
+5PA Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	050 - Target Weight Change	27	EQ	1		NULL	NULL	NULL	0	100	Write Target Weight Value	WRITE	OmniServer		5PA_1_FP_1.TRG_TargetWeightValue	NULL	1
+5PA Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	050 - Target Weight Change	27	EQ	1		NULL	NULL	NULL	0	110	Write Target Weight UOM	WRITE	OmniServer		5PA_1_FP_1.TRG_TargetWeightUOM	NULL	1
+5PA Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	050 - Target Weight Change	27	EQ	1		NULL	NULL	NULL	0	120	Write Tolerance Weight Value	WRITE	OmniServer		5PA_1_FP_1.TRG_ToleranceWeightValue	NULL	1
+5PA Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	050 - Target Weight Change	27	EQ	1		NULL	NULL	NULL	0	190	Send Target Weight Change To Scale	WRITE	OmniServer		5PA_1_FP_1.TRG_SendMessage	NULL	1
+5PA Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	28	EQ	1		OmniServer		5PA_1_FP_1.NET_DataReady	0	10	Initialize Local Variables	SCRIPT	NULL	NULL	NULL	67	1
+5PA Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	28	EQ	1		OmniServer		5PA_1_FP_1.NET_DataReady	0	100	Get Net Weight Value	READ	OmniServer		5PA_1_FP_1.NET_NetWeightValue	NULL	1
+5PA Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	28	EQ	1		OmniServer		5PA_1_FP_1.NET_DataReady	0	110	Get Net Weight UOM	READ	OmniServer		5PA_1_FP_1.NET_NetWeightUOM	NULL	1
+5PA Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	28	EQ	1		OmniServer		5PA_1_FP_1.NET_DataReady	0	120	Get Target Weight Met Flag	READ	OmniServer		5PA_1_FP_1.NET_TargetWeightMetFlag	NULL	1
+5PA Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	28	EQ	1		OmniServer		5PA_1_FP_1.NET_DataReady	0	130	Clear Net Weight Data Ready	WRITE	OmniServer		5PA_1_FP_1.NET_DataReady	NULL	1
+5PA Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	28	EQ	1		OmniServer		5PA_1_FP_1.NET_DataReady	0	140	Clear Net Weight Value	WRITE	OmniServer		5PA_1_FP_1.NET_NetWeightValue	NULL	0
+5PA Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	28	EQ	1		OmniServer		5PA_1_FP_1.NET_DataReady	0	142	Clear Net Weight UOM	WRITE	OmniServer		5PA_1_FP_1.NET_NetWeightUOM	NULL	0
+5PA Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	28	EQ	1		OmniServer		5PA_1_FP_1.NET_DataReady	0	144	Clear Target Weight Met Flag	WRITE	OmniServer		5PA_1_FP_1.NET_TargetWeightMetFlag	NULL	0
+5PA Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	28	EQ	1		OmniServer		5PA_1_FP_1.NET_DataReady	0	200	[BEGIN] Net Weight Msg	SCRIPT	NULL	NULL	NULL	68	1
+5PA Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	28	EQ	1		OmniServer		5PA_1_FP_1.NET_DataReady	0	210	Send Weight to MES	SCRIPT	NULL	NULL	NULL	69	1
+5PA Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	28	EQ	1		OmniServer		5PA_1_FP_1.NET_DataReady	0	299	[END] Net Weight Msg	SCRIPT	NULL	NULL	NULL	70	1
+5PA Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	28	EQ	1		OmniServer		5PA_1_FP_1.NET_DataReady	0	300	[BEGIN] Process Tote	SCRIPT	NULL	NULL	NULL	71	1
+5PA Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	28	EQ	1		OmniServer		5PA_1_FP_1.NET_DataReady	0	310	Process Tote	SCRIPT	NULL	NULL	NULL	72	1
+5PA Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	28	EQ	1		OmniServer		5PA_1_FP_1.NET_DataReady	0	399	[END] Process Tote	SCRIPT	NULL	NULL	NULL	73	1
+6B2 - Cam Holder Assembly	Cam Holder Assembly	100 - Tray Locked	19	ALL			TOP Server	6B2_CH.MicroLogix1400	TrayLocked	0	10	Initialize Local Variables	SCRIPT	NULL	NULL	NULL	37	1
+6B2 - Cam Holder Assembly	Cam Holder Assembly	100 - Tray Locked	19	ALL			TOP Server	6B2_CH.MicroLogix1400	TrayLocked	0	20	Send Message to MES	SCRIPT	NULL	NULL	NULL	38	1
+6B2 - Cam Holder Assembly	Cam Holder Assembly	150 - Set In-Process Container	20	ALL			NULL	NULL	NULL	0	1	Message Handler Initialize	SCRIPT	NULL	NULL	NULL	39	1
+6B2 - Cam Holder Assembly	Cam Holder Assembly	150 - Set In-Process Container	20	ALL			NULL	NULL	NULL	0	100	Set Part Type	WRITE	TOP Server	6B2_CH.MicroLogix1400	PartNumber	NULL	1
+6B2 - Cam Holder Assembly	Cam Holder Assembly	150 - Set In-Process Container	20	ALL			NULL	NULL	NULL	0	200	Set Container Name	WRITE	TOP Server	6B2_CH.MicroLogix1400	ContainerName	NULL	1
+6B2 - Cam Holder Assembly	Cam Holder Assembly	150 - Set In-Process Container	20	ALL			NULL	NULL	NULL	0	300	Set Ok To Continue	WRITE	TOP Server	6B2_CH.MicroLogix1400	OkToContinue	NULL	1
+6B2 - Cam Holder Assembly	Cam Holder Assembly	200 - Inspection Complete	22	ALL			TOP Server	6B2_CH.MicroLogix1400	InspectionComplete	0	5	Bail on reset	SCRIPT	NULL	NULL	NULL	55	1
+6B2 - Cam Holder Assembly	Cam Holder Assembly	200 - Inspection Complete	22	ALL			TOP Server	6B2_CH.MicroLogix1400	InspectionComplete	0	10	Initialize Local Variables	SCRIPT	NULL	NULL	NULL	43	1
+6B2 - Cam Holder Assembly	Cam Holder Assembly	200 - Inspection Complete	22	ALL			TOP Server	6B2_CH.MicroLogix1400	InspectionComplete	0	101	Read Part 01 Disposition	READ	TOP Server	6B2_CH.MicroLogix1400	PartDisposition01	NULL	1
+6B2 - Cam Holder Assembly	Cam Holder Assembly	200 - Inspection Complete	22	ALL			TOP Server	6B2_CH.MicroLogix1400	InspectionComplete	0	200	Send Message to MES	SCRIPT	NULL	NULL	NULL	45	1
+6B2 Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	23	EQ	1		OmniServer		6B2_1_FP_1.NET_DataReady	0	10	Initialize Local Variables	SCRIPT	NULL	NULL	NULL	46	1
+6B2 Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	050 - Target Weight Change	24	EQ	1		NULL	NULL	NULL	0	190	Send Target Weight Change To Scale	WRITE	OmniServer		6B2_1_FP_1.TRG_SendMessage	NULL	1
+6C2 6MA - Oil Pan Assembly	Oil Pump Assembly	200 - Inspection Complete	29	ALL			TOP Server	6C2_6MA_OilPanAssy.MicroLogix1400	InspectionComplete	0	100	Get Vision Part Number	READ	TOP Server	6C2_6MA_OilPanAssy.MicroLogix1400	VisionPartNumber	NULL	1
+6C2 6MA - Oil Pan Assembly	Oil Pump Assembly	100 - Tray Locked	30	ALL			TOP Server	6C2_6MA_OilPanAssy.MicroLogix1400	TrayLocked	0	200	Set Part Type	WRITE	TOP Server	6C2_6MA_OilPanAssy.MicroLogix1400	PartNumber	NULL	1
+6FB - CH and OP Assembly	CH and OP Assembly	100 - Tray Locked	87	ALL			TOP Server	6FB_CH.MicroLogix1400	TrayLocked	0	400	Set Ok to Continue	WRITE	TOP Server	6FB_CH.Micrologix1400	OkToContinue	NULL	1
+6FB - CH and OP Assembly	CH and OP Assembly	200 - Inspection Complete	89	ALL			TOP Server	6FB_CH.MicroLogix1400	InspectionComplete	0	100	Get Vision Part Number	READ	TOP Server	6FB_CH.MicroLogix1400	PartNumber	NULL	1
+6MA - Cam Holder Assembly	Cam Holder Assembly	100 - Tray Locked	84	ALL			TOP Server	6MA_CH.MicroLogix1400	TrayLocked	0	20	Send Message to MES	SCRIPT	NULL	NULL	NULL	275	1
+6MA - Cam Holder Assembly	Cam Holder Assembly	150 - Set In-Process Container	85	ALL			NULL	NULL	NULL	0	100	Set Part Type	WRITE	TOP Server	6MA_CH.MicroLogix1400	PartNumber	NULL	1
+6MA - Cam Holder Assembly	Cam Holder Assembly	150 - Set In-Process Container	85	ALL			NULL	NULL	NULL	0	200	Set Container Name	WRITE	TOP Server	6MA_CH.MicroLogix1400	ContainerName	NULL	1
+6MA - Cam Holder Assembly	Cam Holder Assembly	150 - Set In-Process Container	85	ALL			NULL	NULL	NULL	0	300	Set Ok To Continue	WRITE	TOP Server	6MA_CH.MicroLogix1400	OkToContinue	NULL	1
+6MA - Cam Holder Assembly	Cam Holder Assembly	200 - Inspection Complete	86	ALL			TOP Server	6MA_CH.MicroLogix1400	InspectionComplete	0	200	Send Message to MES	SCRIPT	NULL	NULL	NULL	279	1
+RPY - Cam Holder Assembly	Cam Holder Assembly	200 - Inspection Complete	79	ALL			TOP Server	RPY_CH.MicroLogix1400	InspectionComplete	0	100	Get Vision Part Number	READ	TOP Server	RPY_CH.MicroLogix1400	PartNumber	NULL	1
+RPY - Cam Holder Assembly	Cam Holder Assembly	200 - Inspection Complete	79	ALL			TOP Server	RPY_CH.MicroLogix1400	InspectionComplete	0	110	Get Disposition	READ	TOP Server	RPY_CH.MicroLogix1400	PartDisposition01	NULL	0
+RPY - Cam Holder Assembly	Cam Holder Assembly	100 - Tray Locked	80	ALL			TOP Server	RPY_CH.MicroLogix1400	TrayLocked	0	100	Set Part Type	WRITE	TOP Server	RPY_CH.MicroLogix1400	PartNumber	NULL	1
+RPY - Cam Holder Assembly	Cam Holder Assembly	100 - Tray Locked	80	ALL			TOP Server	RPY_CH.MicroLogix1400	TrayLocked	0	300	Set Ok To Continue	WRITE	TOP Server	RPY_CH.MicroLogix1400	OkToContinue	NULL	1
+RPY - Compressor Bracket Assembly	Compressor Bracket Assembly	100 - Net Weight Update	40	EQ	1		OmniServer		RPY_1_CB_1.NET_DataReady	0	100	Get Net Weight Value	READ	OmniServer		RPY_1_CB_1.NET_NetWeightValue	NULL	1
+RPY - Compressor Bracket Assembly	Compressor Bracket Assembly	050 - Target Weight Change	41	EQ	1		NULL	NULL	NULL	0	190	Send Target Weight Change To Scale	WRITE	OmniServer		RPY_1_CB_1.TRG_SendMessage	NULL	1
+RPY Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	100 - Net Weight Update	15	EQ	1		OmniServer		RPY_1_FP_1.NET_DataReady	0	100	Get Net Weight Value	READ	OmniServer		RPY_1_FP_1.NET_NetWeightValue	NULL	1
+RPY Line 1 - Fuel Pump 1 Assembly	Fuel Pump Assembly	050 - Target Weight Change	16	EQ	1		NULL	NULL	NULL	0	190	Send Target Weight Change To Scale	WRITE	OmniServer		RPY_1_FP_1.TRG_SendMessage	NULL	1
+Sort Line - Oil Pan	Oil Pan Sort	100 - Tray Locked	32	ALL			TOP Server	Sort_OilPan.MicroLogix1400	TrayLocked	0	100	Get Sort Recipe	SCRIPT	NULL	NULL	NULL	88	1
+Sort Line - Oil Pan	Oil Pan Sort	100 - Tray Locked	32	ALL			TOP Server	Sort_OilPan.MicroLogix1400	TrayLocked	0	200	Set Sort Recipe	WRITE	TOP Server	Sort_OilPan.MicroLogix1400	PartNumber	NULL	1
+Sort Line - Oil Pan	Oil Pan Sort	200 - Inspection Complete	33	ALL			TOP Server	Sort_OilPan.MicroLogix1400	InspectionComplete	0	310	Process Tote	SCRIPT	NULL	NULL	NULL	91	1
+Sort Line - Totes	Totes Sort	100 - Tray Locked	38	ALL			TOP Server	Sort_Totes.MicroLogix1400	TrayLocked	0	100	Get Sort Recipe	SCRIPT	NULL	NULL	NULL	110	1
+Sort Line - Totes	Totes Sort	100 - Tray Locked	38	ALL			TOP Server	Sort_Totes.MicroLogix1400	TrayLocked	0	200	Set Sort Recipe	WRITE	TOP Server	Sort_Totes.MicroLogix1400	PartNumber	NULL	1
+Sort Line - Totes	Totes Sort	200 - Inspection Complete	39	ALL			TOP Server	Sort_Totes.MicroLogix1400	InspectionComplete	0	310	Process Tote	SCRIPT	NULL	NULL	NULL	113	1

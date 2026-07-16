@@ -8,6 +8,10 @@
       "title": "Dev Launcher",
       "viewPath": "BlueRidge/Views/Dev/DevLauncher"
     },
+    "/dev/sim/plc": {
+      "title": "PLC Simulator",
+      "viewPath": "BlueRidge/Views/Dev/PlcSimulator"
+    },
     "/dev/test-nav": {
       "title": "Dev Nav",
       "viewPath": "BlueRidge/Views/Dev/TestNavHeader"

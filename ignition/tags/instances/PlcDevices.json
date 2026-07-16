@@ -1,0 +1,424 @@
+{
+  "name": "PlcDevices",
+  "tagType": "Folder",
+  "tags": [
+    {
+      "name": "59B_1_FP_1",
+      "parameters": {
+        "BasePath": {
+          "dataType": "String",
+          "value": "59B_1_FP_1/"
+        },
+        "Device": {
+          "dataType": "String",
+          "value": "MPP_Sim"
+        },
+        "OpcServer": {
+          "dataType": "String",
+          "value": "Ignition OPC UA Server"
+        }
+      },
+      "tagType": "UdtInstance",
+      "typeId": "ScaleStation"
+    },
+    {
+      "name": "5PA_1_FP_1",
+      "parameters": {
+        "BasePath": {
+          "dataType": "String",
+          "value": "5PA_1_FP_1/"
+        },
+        "Device": {
+          "dataType": "String",
+          "value": "MPP_Sim"
+        },
+        "OpcServer": {
+          "dataType": "String",
+          "value": "Ignition OPC UA Server"
+        }
+      },
+      "tagType": "UdtInstance",
+      "typeId": "ScaleStation"
+    },
+    {
+      "name": "6B2_1_FP_1",
+      "parameters": {
+        "BasePath": {
+          "dataType": "String",
+          "value": "6B2_1_FP_1/"
+        },
+        "Device": {
+          "dataType": "String",
+          "value": "MPP_Sim"
+        },
+        "OpcServer": {
+          "dataType": "String",
+          "value": "Ignition OPC UA Server"
+        }
+      },
+      "tagType": "UdtInstance",
+      "typeId": "ScaleStation"
+    },
+    {
+      "name": "RPY_1_FP_1",
+      "parameters": {
+        "BasePath": {
+          "dataType": "String",
+          "value": "RPY_1_FP_1/"
+        },
+        "Device": {
+          "dataType": "String",
+          "value": "MPP_Sim"
+        },
+        "OpcServer": {
+          "dataType": "String",
+          "value": "Ignition OPC UA Server"
+        }
+      },
+      "tagType": "UdtInstance",
+      "typeId": "ScaleStation"
+    },
+    {
+      "name": "RPY_1_CB_1",
+      "parameters": {
+        "BasePath": {
+          "dataType": "String",
+          "value": "RPY_1_CB_1/"
+        },
+        "Device": {
+          "dataType": "String",
+          "value": "MPP_Sim"
+        },
+        "OpcServer": {
+          "dataType": "String",
+          "value": "Ignition OPC UA Server"
+        }
+      },
+      "tagType": "UdtInstance",
+      "typeId": "ScaleStation"
+    },
+    {
+      "name": "5G0_Front_Scale",
+      "parameters": {
+        "BasePath": {
+          "dataType": "String",
+          "value": "5G0_Front_Scale/"
+        },
+        "Device": {
+          "dataType": "String",
+          "value": "MPP_Sim"
+        },
+        "OpcServer": {
+          "dataType": "String",
+          "value": "Ignition OPC UA Server"
+        }
+      },
+      "tagType": "UdtInstance",
+      "typeId": "ScaleStation"
+    },
+    {
+      "name": "5G0_Rear_Scale",
+      "parameters": {
+        "BasePath": {
+          "dataType": "String",
+          "value": "5G0_Rear_Scale/"
+        },
+        "Device": {
+          "dataType": "String",
+          "value": "MPP_Sim"
+        },
+        "OpcServer": {
+          "dataType": "String",
+          "value": "Ignition OPC UA Server"
+        }
+      },
+      "tagType": "UdtInstance",
+      "typeId": "ScaleStation"
+    },
+    {
+      "name": "5A2_L1_CamHolder",
+      "parameters": {
+        "BasePath": {
+          "dataType": "String",
+          "value": "5A2_L1_CamHolder/"
+        },
+        "Device": {
+          "dataType": "String",
+          "value": "MPP_Sim"
+        },
+        "OpcServer": {
+          "dataType": "String",
+          "value": "Ignition OPC UA Server"
+        }
+      },
+      "tagType": "UdtInstance",
+      "typeId": "NonSerializedMipStation"
+    },
+    {
+      "name": "5A2_L1_FuelPump",
+      "parameters": {
+        "BasePath": {
+          "dataType": "String",
+          "value": "5A2_L1_FuelPump/"
+        },
+        "Device": {
+          "dataType": "String",
+          "value": "MPP_Sim"
+        },
+        "OpcServer": {
+          "dataType": "String",
+          "value": "Ignition OPC UA Server"
+        }
+      },
+      "tagType": "UdtInstance",
+      "typeId": "NonSerializedMipStation"
+    },
+    {
+      "name": "5A2_L2_CamHolder",
+      "parameters": {
+        "BasePath": {
+          "dataType": "String",
+          "value": "5A2_L2_CamHolder/"
+        },
+        "Device": {
+          "dataType": "String",
+          "value": "MPP_Sim"
+        },
+        "OpcServer": {
+          "dataType": "String",
+          "value": "Ignition OPC UA Server"
+        }
+      },
+      "tagType": "UdtInstance",
+      "typeId": "NonSerializedMipStation"
+    },
+    {
+      "name": "5A2_L2_FuelPump",
+      "parameters": {
+        "BasePath": {
+          "dataType": "String",
+          "value": "5A2_L2_FuelPump/"
+        },
+        "Device": {
+          "dataType": "String",
+          "value": "MPP_Sim"
+        },
+        "OpcServer": {
+          "dataType": "String",
+          "value": "Ignition OPC UA Server"
+        }
+      },
+      "tagType": "UdtInstance",
+      "typeId": "NonSerializedMipStation"
+    },
+    {
+      "name": "5G0_A1",
+      "parameters": {
+        "BasePath": {
+          "dataType": "String",
+          "value": "5G0_A1/"
+        },
+        "Device": {
+          "dataType": "String",
+          "value": "MPP_Sim"
+        },
+        "OpcServer": {
+          "dataType": "String",
+          "value": "Ignition OPC UA Server"
+        }
+      },
+      "tagType": "UdtInstance",
+      "typeId": "SerializedMipStation"
+    },
+    {
+      "name": "5G0_A2",
+      "parameters": {
+        "BasePath": {
+          "dataType": "String",
+          "value": "5G0_A2/"
+        },
+        "Device": {
+          "dataType": "String",
+          "value": "MPP_Sim"
+        },
+        "OpcServer": {
+          "dataType": "String",
+          "value": "Ignition OPC UA Server"
+        }
+      },
+      "tagType": "UdtInstance",
+      "typeId": "SerializedMipStation"
+    },
+    {
+      "name": "5J6_OilPan",
+      "parameters": {
+        "BasePath": {
+          "dataType": "String",
+          "value": "5J6_OilPan/"
+        },
+        "Device": {
+          "dataType": "String",
+          "value": "MPP_Sim"
+        },
+        "OpcServer": {
+          "dataType": "String",
+          "value": "Ignition OPC UA Server"
+        }
+      },
+      "tagType": "UdtInstance",
+      "typeId": "TrayInspectionStation"
+    },
+    {
+      "name": "5K8_64A_OilPan",
+      "parameters": {
+        "BasePath": {
+          "dataType": "String",
+          "value": "5K8_64A_OilPan/"
+        },
+        "Device": {
+          "dataType": "String",
+          "value": "MPP_Sim"
+        },
+        "OpcServer": {
+          "dataType": "String",
+          "value": "Ignition OPC UA Server"
+        }
+      },
+      "tagType": "UdtInstance",
+      "typeId": "TrayInspectionStation"
+    },
+    {
+      "name": "6B2_CH",
+      "parameters": {
+        "BasePath": {
+          "dataType": "String",
+          "value": "6B2_CH/"
+        },
+        "Device": {
+          "dataType": "String",
+          "value": "MPP_Sim"
+        },
+        "OpcServer": {
+          "dataType": "String",
+          "value": "Ignition OPC UA Server"
+        }
+      },
+      "tagType": "UdtInstance",
+      "typeId": "TrayInspectionStation"
+    },
+    {
+      "name": "6C2_6MA_OilPan",
+      "parameters": {
+        "BasePath": {
+          "dataType": "String",
+          "value": "6C2_6MA_OilPan/"
+        },
+        "Device": {
+          "dataType": "String",
+          "value": "MPP_Sim"
+        },
+        "OpcServer": {
+          "dataType": "String",
+          "value": "Ignition OPC UA Server"
+        }
+      },
+      "tagType": "UdtInstance",
+      "typeId": "TrayInspectionStation"
+    },
+    {
+      "name": "6FB_CH",
+      "parameters": {
+        "BasePath": {
+          "dataType": "String",
+          "value": "6FB_CH/"
+        },
+        "Device": {
+          "dataType": "String",
+          "value": "MPP_Sim"
+        },
+        "OpcServer": {
+          "dataType": "String",
+          "value": "Ignition OPC UA Server"
+        }
+      },
+      "tagType": "UdtInstance",
+      "typeId": "TrayInspectionStation"
+    },
+    {
+      "name": "6MA_CH",
+      "parameters": {
+        "BasePath": {
+          "dataType": "String",
+          "value": "6MA_CH/"
+        },
+        "Device": {
+          "dataType": "String",
+          "value": "MPP_Sim"
+        },
+        "OpcServer": {
+          "dataType": "String",
+          "value": "Ignition OPC UA Server"
+        }
+      },
+      "tagType": "UdtInstance",
+      "typeId": "TrayInspectionStation"
+    },
+    {
+      "name": "RPY_CH",
+      "parameters": {
+        "BasePath": {
+          "dataType": "String",
+          "value": "RPY_CH/"
+        },
+        "Device": {
+          "dataType": "String",
+          "value": "MPP_Sim"
+        },
+        "OpcServer": {
+          "dataType": "String",
+          "value": "Ignition OPC UA Server"
+        }
+      },
+      "tagType": "UdtInstance",
+      "typeId": "TrayInspectionStation"
+    },
+    {
+      "name": "Sort_OilPan",
+      "parameters": {
+        "BasePath": {
+          "dataType": "String",
+          "value": "Sort_OilPan/"
+        },
+        "Device": {
+          "dataType": "String",
+          "value": "MPP_Sim"
+        },
+        "OpcServer": {
+          "dataType": "String",
+          "value": "Ignition OPC UA Server"
+        }
+      },
+      "tagType": "UdtInstance",
+      "typeId": "TrayInspectionStation"
+    },
+    {
+      "name": "Sort_Totes",
+      "parameters": {
+        "BasePath": {
+          "dataType": "String",
+          "value": "Sort_Totes/"
+        },
+        "Device": {
+          "dataType": "String",
+          "value": "MPP_Sim"
+        },
+        "OpcServer": {
+          "dataType": "String",
+          "value": "Ignition OPC UA Server"
+        }
+      },
+      "tagType": "UdtInstance",
+      "typeId": "TrayInspectionStation"
+    }
+  ]
+}

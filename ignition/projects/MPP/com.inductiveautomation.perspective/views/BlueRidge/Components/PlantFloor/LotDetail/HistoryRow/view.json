@@ -33,12 +33,11 @@
           "props.color": {
             "binding": {
               "config": {
-                "expression": "if({view.params.row.EventKind}\u003d\"Movement\",\"#5b8def\",if({view.params.row.EventKind}\u003d\"Status\",\"#3fb950\",if({view.params.row.EventKind}\u003d\"Attribute\",\"#d29922\",if({view.params.row.EventKind}\u003d\"Pause\",\"#db8b3a\",if({view.params.row.EventKind}\u003d\"Resume\",\"#2dd4bf\",if({view.params.row.EventKind}\u003d\"Genealogy\",\"#a371f7\",if({view.params.row.EventKind}\u003d\"Production\",\"#0d9488\",if({view.params.row.EventKind}\u003d\"Reject\",\"#f85149\",\"#8b949e\"))))))))"
-              },
-              "type": "expr"
+                "expression": "if({view.params.row.EventKind}=\"Movement\",\"mpp/arrow_right_alt\",if({view.params.row.EventKind}=\"Status\",\"mpp/verified\",if({view.params.row.EventKind}=\"Attribute\",\"mpp/edit\",if({view.params.row.EventKind}=\"Pause\",\"mpp/pause_circle\",if({view.params.row.EventKind}=\"Resume\",\"mpp/play_arrow\",if({view.params.row.EventKind}=\"Genealogy\",\"mpp/content_cut\",if({view.params.row.EventKind}=\"Label\",\"mpp/print\",if({view.params.row.EventKind}=\"Production\",\"mpp/handyman\",if({view.params.row.EventKind}=\"Reject\",\"mpp/warning\",\"mpp/pending_actions\")))))))))"
+              }
             }
           },
-          "props.path": {
+          "props.style.color": {
             "binding": {
               "config": {
                 "expression": "if({view.params.row.EventKind}\u003d\"Movement\",\"material/swap_horiz\",if({view.params.row.EventKind}\u003d\"Status\",\"material/flag\",if({view.params.row.EventKind}\u003d\"Attribute\",\"material/edit\",if({view.params.row.EventKind}\u003d\"Pause\",\"material/pause\",if({view.params.row.EventKind}\u003d\"Resume\",\"material/play_arrow\",if({view.params.row.EventKind}\u003d\"Genealogy\",\"material/call_split\",if({view.params.row.EventKind}\u003d\"Label\",\"material/label\",if({view.params.row.EventKind}\u003d\"Production\",\"material/build\",if({view.params.row.EventKind}\u003d\"Reject\",\"material/warning\",\"material/circle\")))))))))"
@@ -48,6 +47,7 @@
           }
         },
         "props": {
+          "path": "mpp/pending_actions",
           "style": {
             "height": "18px",
             "width": "18px"

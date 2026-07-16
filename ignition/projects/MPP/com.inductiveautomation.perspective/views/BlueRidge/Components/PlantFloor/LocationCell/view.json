@@ -1,0 +1,136 @@
+{
+  "custom": {},
+  "params": {
+    "value": "",
+    "rowData": {
+      "CurrentLocationName": "",
+      "LastOperationName": ""
+    }
+  },
+  "propConfig": {
+    "params.value": {
+      "paramDirection": "input"
+    },
+    "params.rowData": {
+      "paramDirection": "input"
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 48,
+      "width": 190
+    }
+  },
+  "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "alignItems": "flex-start",
+      "justify": "center",
+      "style": {
+        "height": "100%",
+        "width": "100%",
+        "gap": "2px",
+        "paddingLeft": "4px"
+      }
+    },
+    "children": [
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "NameLabel"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.value"
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "color": "var(--mpp-text-primary)",
+            "fontSize": "14px"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "OpChip"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "coalesce({view.params.rowData.LastOperationName}, \"\") != \"\""
+              }
+            }
+          },
+          "props.text": {
+            "binding": {
+              "type": "property",
+              "config": {
+                "path": "view.params.rowData.LastOperationName"
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "",
+          "style": {
+            "background": "var(--mpp-accent-20)",
+            "color": "var(--mpp-accent-70)",
+            "fontSize": "11px",
+            "fontWeight": "600",
+            "padding": "1px 7px",
+            "borderRadius": "4px"
+          }
+        }
+      },
+      {
+        "type": "ia.display.label",
+        "meta": {
+          "name": "NoOpLabel"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "type": "expr",
+              "config": {
+                "expression": "coalesce({view.params.rowData.LastOperationName}, \"\") = \"\""
+              }
+            }
+          }
+        },
+        "props": {
+          "text": "no operation yet",
+          "style": {
+            "color": "var(--mpp-text-tertiary)",
+            "fontSize": "11px"
+          }
+        }
+      }
+    ]
+  }
+}

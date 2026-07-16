@@ -1,0 +1,146 @@
+{
+  "name": "ScaleStation",
+  "parameters": {
+    "BasePath": {
+      "dataType": "String",
+      "value": ""
+    },
+    "Device": {
+      "dataType": "String",
+      "value": "MPP_Sim"
+    },
+    "OpcServer": {
+      "dataType": "String",
+      "value": "Ignition OPC UA Server"
+    }
+  },
+  "tagType": "UdtType",
+  "tags": [
+    {
+      "dataType": "Boolean",
+      "name": "NET_DataReady",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}NET_DataReady"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Float8",
+      "name": "NET_NetWeightValue",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}NET_NetWeightValue"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "String",
+      "name": "NET_NetWeightUOM",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}NET_NetWeightUOM"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Boolean",
+      "name": "NET_TargetWeightMetFlag",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}NET_TargetWeightMetFlag"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "String",
+      "name": "NET_PartNumber",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}NET_PartNumber"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Float8",
+      "name": "TRG_TargetWeightValue",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}TRG_TargetWeightValue"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "String",
+      "name": "TRG_TargetWeightUOM",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}TRG_TargetWeightUOM"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Float8",
+      "name": "TRG_ToleranceWeightValue",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}TRG_ToleranceWeightValue"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    },
+    {
+      "dataType": "Boolean",
+      "name": "TRG_SendMessage",
+      "opcItemPath": {
+        "bindType": "parameter",
+        "binding": "ns=1;s=[{Device}]{BasePath}TRG_SendMessage"
+      },
+      "opcServer": {
+        "bindType": "parameter",
+        "binding": "{OpcServer}"
+      },
+      "tagType": "AtomicTag",
+      "valueSource": "opc"
+    }
+  ]
+}

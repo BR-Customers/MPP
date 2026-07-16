@@ -33,7 +33,8 @@
       { "type": "Parameter", "identifier": "itemId", "sqlType": 3 },
       { "type": "Parameter", "identifier": "producingLotId", "sqlType": 3 },
       { "type": "Parameter", "identifier": "appUserId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "terminalLocationId", "sqlType": 3 }
+      { "type": "Parameter", "identifier": "terminalLocationId", "sqlType": 3 },
+      { "type": "Parameter", "identifier": "serialNumber", "sqlType": 7 }
     ]
   }
 }
