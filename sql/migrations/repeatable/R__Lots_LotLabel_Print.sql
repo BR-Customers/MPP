@@ -64,6 +64,9 @@ BEGIN
     DECLARE @LabelParentLotId BIGINT;
     DECLARE @ParentLotNumber NVARCHAR(50);
     DECLARE @PrintedAt       NVARCHAR(19);
+    DECLARE @ItemDescription  NVARCHAR(500);
+    DECLARE @CurrentLocationId BIGINT;
+    DECLARE @LocationName     NVARCHAR(200);
 
     BEGIN TRY
         -- ---- Tier 1: required-parameter validation ----
@@ -81,10 +84,11 @@ BEGIN
         END
 
         -- ---- Tier 2: referential validation ----
-        SELECT @LotName          = l.LotName,
-               @ItemId           = l.ItemId,
-               @PieceCount       = l.PieceCount,
-               @LabelParentLotId = l.ParentLotId
+        SELECT @LotName           = l.LotName,
+               @ItemId            = l.ItemId,
+               @PieceCount        = l.PieceCount,
+               @LabelParentLotId  = l.ParentLotId,
+               @CurrentLocationId = l.CurrentLocationId
         FROM Lots.Lot l
         WHERE l.Id = @LotId;
 
@@ -143,15 +147,19 @@ BEGIN
         -- ---- Resolve label fields ----
         -- Item.PartNumber is the human-facing item code projected as {ItemCode}.
         SET @ItemCode = (SELECT PartNumber FROM Parts.Item WHERE Id = @ItemId);
+        SET @ItemDescription = (SELECT Description FROM Parts.Item WHERE Id = @ItemId);
+        SET @LocationName = (SELECT Name FROM Location.Location WHERE Id = @CurrentLocationId);
         SET @PrintedAt = CONVERT(NVARCHAR(19), SYSUTCDATETIME(), 120);
         -- Parent LOT name fills {ParentLotNumber}; empty string for a primary LOT.
         SET @ParentLotNumber = ISNULL(
             (SELECT LotName FROM Lots.Lot WHERE Id = @LabelParentLotId), N'');
 
-        -- ---- Render: deterministic token substitution, all five tokens ----
+        -- ---- Render: deterministic token substitution ----
         SET @Zpl = REPLACE(@Zpl, N'{LotName}',         ISNULL(@LotName, N''));
         SET @Zpl = REPLACE(@Zpl, N'{ParentLotNumber}', @ParentLotNumber);
         SET @Zpl = REPLACE(@Zpl, N'{ItemCode}',        ISNULL(@ItemCode, N''));
+        SET @Zpl = REPLACE(@Zpl, N'{ItemDescription}', ISNULL(@ItemDescription, N''));
+        SET @Zpl = REPLACE(@Zpl, N'{LocationName}',    ISNULL(@LocationName, N''));
         SET @Zpl = REPLACE(@Zpl, N'{PieceCount}',      ISNULL(CAST(@PieceCount AS NVARCHAR(20)), N''));
         SET @Zpl = REPLACE(@Zpl, N'{PrintedAt}',       @PrintedAt);
 

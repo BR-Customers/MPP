@@ -387,6 +387,60 @@ def getWipQueueByLocation(locationId, includeDescendants=False, _refreshToken=No
     )
 
 
+def getComponentsAtCell(locationId, includeDescendants=True, _refreshToken=None):
+    """'Components at this cell' read for the assembly screens
+       (Lots.Lot_GetComponentsAtCell): the UNION of route-driven WIP (LOTs whose next
+       pending route step is here) AND routeless components that are BomDerived-eligible
+       here (a BOM child of a finished good eligible at this cell). Fixes routeless
+       received/purchased components being dropped by getWipQueueByLocation's route
+       INNER JOIN. Same column shape as getWipQueueByLocation (routeless rows carry NULL
+       NextOperationTypeCode). _refreshToken is an ignored runScript re-read arg."""
+    if locationId is None:
+        return []
+    BlueRidge.Common.Util.log("getComponentsAtCell locationId=%s includeDescendants=%s"
+                              % (locationId, includeDescendants))
+    return BlueRidge.Common.Db.execList(
+        "lots/Lot_GetComponentsAtCell",
+        {"locationId": _u(locationId), "includeDescendants": bool(includeDescendants)},
+    )
+
+
+def getLineInventoryCards(locationId, _refreshToken=None):
+    """Flex-repeater instances for the line-inventory popup's on-hand list, rendered
+       with the Trim InventoryRow card (display-only, selectable=False). Fetches
+       getLineInventoryByPart and maps each row to the card's params; ArrivedAt is
+       precomputed to a display string (repeater-param date rule). Scalar args only
+       (fetch inside) per the ImmutableList re-eval rule. Returns list[dict]."""
+    locationId = _u(locationId)
+    if locationId is None:
+        return []
+    rows = getLineInventoryByPart(locationId) or []
+    out = []
+    pos = 0
+    for r in rows:
+        r = r or {}
+        pos += 1
+        arr = r.get("ArrivedAt")
+        arrival = ""
+        if arr is not None:
+            try:
+                arrival = system.date.format(arr, "MM/dd HH:mm")
+            except:
+                arrival = ("%s" % arr)[:16]
+        out.append({
+            "lotId":         r.get("LotId"),
+            "lotName":       r.get("LotName") or "",
+            "item":          r.get("PartNumber") or "",
+            "pieceCount":    r.get("InventoryAvailable") or 0,
+            "arrival":       arrival,
+            "position":      pos,
+            "lotStatusCode": "Good",
+            "isSelected":    False,
+            "selectable":    False,
+        })
+    return out
+
+
 def getByName(lotName):
     """Convenience alias: fetch one LOT by its LTT name. Returns a dict or None."""
     return get(lotName=_u(lotName))
