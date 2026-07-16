@@ -14,7 +14,7 @@
         },
         "props": {
           "params": {
-            "cellPickerEnabled": true
+            "cellPickerEnabled": false
           },
           "path": "BlueRidge/Views/ShopFloor/TrimBody"
         },

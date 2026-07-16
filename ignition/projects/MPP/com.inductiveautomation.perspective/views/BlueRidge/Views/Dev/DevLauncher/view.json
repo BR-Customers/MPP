@@ -1,25 +1,8 @@
 {
   "custom": {
-    "expanded": true,
-    "tree": [],
-    "selected": {
-      "id": null,
-      "isTerminal": false,
-      "target": "",
-      "terminal": {}
-    }
+    "expanded": true
   },
   "params": {},
-  "propConfig": {
-    "custom.tree": {
-      "binding": {
-        "config": {
-          "expression": "runScript(\"BlueRidge.Location.Tree.buildLauncherTree\", 0, 1, 2)"
-        },
-        "type": "expr"
-      }
-    }
-  },
   "props": {
     "defaultSize": {
       "width": 340,
@@ -29,19 +12,8 @@
   "root": {
     "children": [
       {
-        "events": {
-          "component": {
-            "onItemClicked": {
-              "config": {
-                "script": "\titems = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.tree) or []\n\traw = getattr(event, \"itemPath\", None)\n\tif raw is None:\n\t\tpath = None\n\telif isinstance(raw, basestring):\n\t\tpath = raw\n\telse:\n\t\tpath = \"/\".join(str(i) for i in raw)\n\tdata = BlueRidge.Location.Tree.getNodeData(items, path) if path else {}\n\tif not data:\n\t\tsel = BlueRidge.Common.Util.extractQualifiedValues(self.props.selectionData) or []\n\t\tdata = (sel[0].get(\"value\") if sel else {}) or {}\n\tif not data.get(\"isTerminal\"):\n\t\treturn\n\ttarget = data.get(\"target\") or \"\"\n\tif not target:\n\t\treturn\n\tself.session.custom.terminal = data.get(\"terminal\") or {}\n\tsystem.perspective.navigate(target)"
-              },
-              "scope": "G",
-              "type": "script"
-            }
-          }
-        },
         "meta": {
-          "name": "Tree"
+          "name": "NavTree"
         },
         "position": {
           "basis": "0",
@@ -55,61 +27,14 @@
               },
               "type": "property"
             }
-          },
-          "props.items": {
-            "binding": {
-              "config": {
-                "path": "view.custom.tree"
-              },
-              "type": "property"
-            }
-          },
-          "props.selectionData[0].value": {
-            "binding": {
-              "config": {
-                "bidirectional": true,
-                "path": "view.custom.selected"
-              },
-              "type": "property"
-            }
           }
         },
         "props": {
-          "appearance": {
-            "defaultNodeIcons": {
-              "collapsed": {
-                "path": "material/account_tree"
-              },
-              "empty": {
-                "path": "material/inventory"
-              },
-              "expanded": {
-                "path": "material/account_tree"
-              }
-            },
-            "expandIcons": {
-              "collapsed": {
-                "path": "material/chevron_right"
-              },
-              "expanded": {
-                "path": "material/expand_more"
-              }
-            }
-          },
-          "selection": [
-            ""
-          ],
-          "selectionData": [
-            {
-              "itemPath": ""
-            }
-          ],
-          "style": {
-            "overflow": "auto",
-            "padding": "6px 4px"
-          }
+          "path": "BlueRidge/Components/PlantFloor/NavigationTree",
+          "useDefaultViewHeight": false,
+          "useDefaultViewWidth": false
         },
-        "type": "ia.display.tree"
+        "type": "ia.display.view"
       }
     ],
     "meta": {

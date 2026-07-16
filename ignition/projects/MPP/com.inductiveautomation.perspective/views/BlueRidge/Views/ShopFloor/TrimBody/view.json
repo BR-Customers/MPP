@@ -8,7 +8,7 @@
     "refreshToken": 0,
     "scrapCount": null,
     "shotCount": null,
-    "trimState": "out"
+    "trimState": "in"
   },
   "params": {
     "areaId": 37,
@@ -34,7 +34,7 @@
     "custom.trimInventory": {
       "binding": {
         "config": {
-          "expression": "if(isNull({session.custom.cell.locationId}), \"\", runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}))"
+          "expression": "if(isNull({session.custom.terminal.zoneLocationId}), \"\", runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.terminal.zoneLocationId}, true, {view.custom.refreshToken}))"
         },
         "type": "expr"
       }
@@ -76,7 +76,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} \u003d \"\", \"No cell selected  ·  Trim Shop Area\", {session.custom.cell.name} + \"  ·  Trim Shop Area\")"
+                        "expression": "if(isNull({session.custom.terminal.zoneName}) || {session.custom.terminal.zoneName} = \"\", \"No terminal resolved\", {session.custom.terminal.zoneName})"
                       },
                       "type": "expr"
                     }
@@ -223,7 +223,7 @@
               "props.value": {
                 "binding": {
                   "config": {
-                    "path": "session.custom.cell.locationId"
+                    "path": "session.custom.terminal.zoneLocationId"
                   },
                   "type": "property"
                 }
@@ -496,7 +496,7 @@
                       "props.params.destinationLocationId": {
                         "binding": {
                           "config": {
-                            "path": "session.custom.cell.locationId"
+                            "path": "session.custom.terminal.zoneLocationId"
                           },
                           "type": "property"
                         }
@@ -1170,7 +1170,7 @@
         {
           "name": "startup",
           "params": [],
-          "script": "\t# Operator gate: no logged-in operator -\u003e open the initials popup OVER this screen.\n\t# Non-blocking: the page still populates behind the modal, and session.custom is\n\t# reactive, so the operator label/mutations pick up the user with no re-populate.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dFalse, overlayDismiss\u003dFalse)"
+          "script": "\t# Operator gate: no logged-in operator -> open the initials popup OVER this screen.\n\t# Non-blocking: the page still populates behind the modal, and session.custom is\n\t# reactive, so the operator label/mutations pick up the user with no re-populate.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
         }
       ],
       "extensionFunctions": null,
