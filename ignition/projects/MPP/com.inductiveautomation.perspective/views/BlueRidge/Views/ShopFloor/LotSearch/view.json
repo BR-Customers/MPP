@@ -1045,7 +1045,7 @@
                   },
                   "visible": true,
                   "editable": false,
-                  "render": "auto",
+                  "render": "view",
                   "justify": "auto",
                   "align": "center",
                   "resizable": true,
@@ -1114,8 +1114,8 @@
                   "style": {
                     "classes": ""
                   },
-                  "viewPath": "",
-                  "viewParams": {}
+                  "viewPath": "BlueRidge/Components/PlantFloor/LocationCell",
+                  "viewParams": {"rowData": "", "value": ""}
                 },
                 {
                   "field": "LotStatusCode",
