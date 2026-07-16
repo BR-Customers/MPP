@@ -48,7 +48,8 @@ CREATE OR ALTER PROCEDURE Lots.Lot_Create
     @AppUserId          BIGINT,
     @TerminalLocationId BIGINT        = NULL,
     @LotName            NVARCHAR(50)  = NULL,   -- D4: caller-supplied identity (pre-printed LTT); NULL = mint server-side (today's behavior)
-    @CavityNote         NVARCHAR(50)  = NULL    -- D2: free-text cavity when no active ToolCavity exists; stored in legacy Lot.CavityNumber
+    @CavityNote         NVARCHAR(50)  = NULL,   -- D2: free-text cavity when no active ToolCavity exists; stored in legacy Lot.CavityNumber
+    @DepositToStorage   BIT           = 0       -- die-cast: after birth at the machine, auto-move to the Warehouse (storage). OFF by default -> other origins (receiving, etc.) unaffected.
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -445,10 +446,70 @@ BEGIN
             @OldValue           = NULL,
             @NewValue           = @NewValue;
 
+        -- ----- Die-cast storage deposit: after birth at the machine, move straight to
+        -- the Warehouse so the LOT's home is storage (the route + shift tally already
+        -- ASSUME the LOT leaves the machine right after creation). Opt-in via
+        -- @DepositToStorage; INLINE, non-eligibility-gated system move (warehouse is
+        -- storage, not a production location) -> a second LotMovement (machine->WHSE)
+        -- and a 'LotMoved' audit, so history reads born-at-machine -> moved-to-storage.
+        -- WHSE resolved by well-known code (not a hardcoded id). Soft-skip (LOT stays at
+        -- the machine) when no warehouse is configured -> a storage misconfig never
+        -- blocks the mint. -----
+        DECLARE @StorageDepositSkipped BIT = 0;
+        IF @DepositToStorage = 1
+        BEGIN
+            DECLARE @WarehouseId BIGINT = (
+                SELECT TOP 1 Id FROM Location.Location
+                WHERE Code = N'WHSE' AND DeprecatedAt IS NULL ORDER BY Id);
+
+            IF @WarehouseId IS NULL OR @WarehouseId = @CurrentLocationId
+                SET @StorageDepositSkipped = 1;
+            ELSE
+            BEGIN
+                UPDATE Lots.Lot
+                SET CurrentLocationId = @WarehouseId,
+                    UpdatedAt         = SYSUTCDATETIME(),
+                    UpdatedByUserId   = @AppUserId
+                WHERE Id = @NewId;
+
+                INSERT INTO Lots.LotMovement (LotId, FromLocationId, ToLocationId, MovedByUserId, TerminalLocationId, MovedAt)
+                VALUES (@NewId, @CurrentLocationId, @WarehouseId, @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
+
+                DECLARE @WhseName NVARCHAR(200) = (SELECT Name FROM Location.Location WHERE Id = @WarehouseId);
+                DECLARE @DepRaw   NVARCHAR(MAX) =
+                    @MintedLotName + N' ' + Audit.ufn_MidDot() + N' Movement ' + Audit.ufn_MidDot()
+                    + N' ' + @LocName + NCHAR(8594) + @WhseName + N' (auto-deposit to storage)';
+                DECLARE @DepActivity NVARCHAR(500) = Audit.ufn_TruncateActivity(@DepRaw);
+                DECLARE @DepOld NVARCHAR(MAX) = (
+                    SELECT JSON_QUERY((SELECT loc.Id, loc.Code, loc.Name FROM Location.Location loc WHERE loc.Id = @CurrentLocationId
+                                       FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Location
+                    FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+                DECLARE @DepNew NVARCHAR(MAX) = (
+                    SELECT JSON_QUERY((SELECT loc.Id, loc.Code, loc.Name FROM Location.Location loc WHERE loc.Id = @WarehouseId
+                                       FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Location
+                    FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
+
+                EXEC Audit.Audit_LogOperation
+                    @AppUserId          = @AppUserId,
+                    @TerminalLocationId = @TerminalLocationId,
+                    @LocationId         = @WarehouseId,
+                    @LogEntityTypeCode  = N'Lot',
+                    @EntityId           = @NewId,
+                    @LogEventTypeCode   = N'LotMoved',
+                    @LogSeverityCode    = N'Info',
+                    @Description        = @DepActivity,
+                    @OldValue           = @DepOld,
+                    @NewValue           = @DepNew;
+            END
+        END
+
         COMMIT TRANSACTION;
 
         SET @Status  = 1;
-        SET @Message = N'LOT ' + @MintedLotName + N' created.';
+        SET @Message = N'LOT ' + @MintedLotName + N' created.'
+                     + CASE WHEN @StorageDepositSkipped = 1
+                            THEN N' (storage deposit skipped: no warehouse configured)'
+                            ELSE N'' END;
         SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @MintedLotName AS MintedLotName;
     END TRY
     BEGIN CATCH
