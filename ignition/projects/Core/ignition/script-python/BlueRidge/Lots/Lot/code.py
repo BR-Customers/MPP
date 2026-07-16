@@ -64,6 +64,9 @@ def create(data, appUserId=None, terminalLocationId=None, lotName=None, cavityNo
         "terminalLocationId": terminalLocationId,
         "lotName":            _u(lotName),
         "cavityNote":         _u(cavityNote),
+        # Die-cast opt-in: after birth at the machine, the proc auto-moves the LOT to
+        # the Warehouse (storage). 0/1 -> BIT. Absent/false = no deposit (other origins).
+        "depositToStorage":   1 if d.get("depositToStorage") else 0,
     }
     return BlueRidge.Common.Db.execMutation("lots/Lot_Create", params)
 
@@ -242,6 +245,46 @@ def mapTrimInventoryInstances(rows, selectable=False, selectedLotId=None):
         })
     return out
 
+
+def mapMachiningOutQueue(rows, selectedLotId=None):
+    """Machining OUT FIFO pick-list instances for MachiningOutSplit. One instance
+       per Lot_GetWipQueueByLocation row (castings whose next route step is the
+       MachiningOut consume-mint), oldest-first. selectedLotId highlights the
+       operator's pick; when it is None or has drained out of the queue, the
+       FIRST (oldest) row is selected by default so the terminal always opens on
+       the next casting to work. Shape mirrors mapTrimInventoryInstances so the
+       OutQueueRow sub-view is a drop-in."""
+    rows = BlueRidge.Common.Util.extractQualifiedValues(rows) or []
+    selectedLotId = BlueRidge.Common.Util.extractQualifiedValues(selectedLotId)
+    out = []
+    pos = 0
+    for r in rows:
+        r = r or {}
+        pos += 1
+        arr = r.get("LastMovementAt")
+        arrival = ""
+        if arr is not None:
+            try:
+                arrival = system.date.format(arr, "MM/dd HH:mm")
+            except:
+                arrival = ("%s" % arr)[:16]
+        out.append({
+            "lotId":         r.get("Id"),
+            "lotName":       r.get("LotName") or "",
+            "item":          r.get("ItemPartNumber") or "",
+            "pieceCount":    r.get("PieceCount") or 0,
+            "arrival":       arrival,
+            "position":      pos,
+            "lotStatusCode": r.get("LotStatusCode") or "",
+            "selectable":    True,
+        })
+    # Default-to-first: honour the operator pick while still queued, else fall
+    # back to the oldest row (covers first load + a casting draining fully out).
+    ids = [x["lotId"] for x in out]
+    effective = selectedLotId if selectedLotId in ids else (out[0]["lotId"] if out else None)
+    for x in out:
+        x["isSelected"] = (x["lotId"] == effective)
+    return out
 
 def getLatestForToolCavityOrEmpty(toolId, toolCavityId, _refreshToken=None):
     """The cavity-scoped reject target (Jacques 2026-07-06): the newest open

@@ -13,4 +13,5 @@ EXEC Lots.Lot_Create
     @AppUserId          = :appUserId,
     @TerminalLocationId = :terminalLocationId,
     @LotName            = :lotName,
-    @CavityNote         = :cavityNote
+    @CavityNote         = :cavityNote,
+    @DepositToStorage   = :depositToStorage
