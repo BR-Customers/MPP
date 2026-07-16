@@ -106,6 +106,14 @@ The rename-BOM thread (mint-a-machined-LOT-at-Machining-IN) is **removed**. The 
 - **Route-legality validation** at `Parts.RouteTemplate_Publish`: non-FinishedGood routes must end at a ConsumeMint; at most one ConsumeMint (last); an OriginMint (Die Cast) is first. (Structural checks only; the full `ItemType`×role matrix is deferred.)
 - **Retired:** `Location.CoupledDownstreamCellLocationId` + `Workorder.MachiningOut_AutoComplete` (cell-coupling; mints are line-resident, no cell→cell auto-move).
 
+### Operation-template resolution — route-aware by ROLE, never by template code (2026-07-16)
+
+Every operation step resolves its `OperationTemplate` from the **LOT's route by OperationType ROLE** (`DieCast` / `TrimIn` / `TrimOut` / `MachiningIn` / `MachiningOut` / `AssemblyIn` / `AssemblyOut`) — via `BlueRidge.Parts.OperationTemplate.getActiveTemplateIdForLot(lotId, roleCode)` or `getActiveTemplateIdForRoute(itemId, roleCode)` (both wrap the `parts/OperationTemplate_GetForRouteRole` NQ), or the same route-role query inlined in the execution proc (e.g. `MachiningIn_RecordPick`).
+
+**NEVER `getActiveTemplateIdByCode(<role>)`.** Template *codes* are `T-Out-A` / `M-Out-A` / `M-In-A`, NOT the role codes `TrimOut` / `MachiningOut` / `MachiningIn` — a role-code by-code lookup always returns `None` → the recurring *"template missing"* toast (Trim OUT / Machining OUT / Machining IN all hit this, fixed 2026-07-16). `getActiveTemplateIdByCode` is legitimate ONLY for a genuine *named-template* code (e.g. `DieCastShot`, which is not an OperationType role).
+
+The methodology is **fragmented across five layers today** (view binding / view Python / Core-Python recorder / SQL proc / not-at-all) — converging it to one SQL resolver `Parts.ufn_OperationTemplateForLotRole` with thin-inert Python is a **prominent OPEN TODO** (top of `PROJECT_STATUS.md`; full inventory + blast radius in `notes/2026-07-16_operation-template-methodology-inventory.md`). Two latent-bug candidates flagged there: `AssemblyIn` records no Advance checkpoint; `AssemblyOut` mints with no template (unlike `MachiningOut`).
+
 ### Stored procedure template
 
 `sql/scripts/_TEMPLATE_stored_procedure.sql`. Three-tier error hierarchy. `RAISERROR` (not `THROW`) in CATCH blocks with nested TRY/CATCH for failure logging. Schema-qualify all DB references. `EXEC` parameters must be literals or `@variables` — never inline `CAST` / arithmetic / `CASE`.
