@@ -134,7 +134,15 @@ def _dispatchAfterRender(res, appUserId, terminalLocationId):
     endpoint = (printer.get("endpoint") or "").strip()
     printerCode = printer.get("code") or ""
 
-    # Fail-fast: no printer configured for this terminal. LOT/label already exist.
+    # session.custom.printer is resolved once at session onStartup, so a printer that is
+    # configured or changed mid-session is not reflected until a full session restart.
+    # When the session value is empty, re-resolve from the DB by terminal before failing.
+    if not endpoint and terminalLocationId is not None:
+        fresh = BlueRidge.Location.Terminal.getPrinter(terminalLocationId) or {}
+        endpoint = (fresh.get("endpoint") or "").strip()
+        printerCode = fresh.get("code") or printerCode
+
+    # Fail-fast: genuinely no printer configured for this terminal. LOT/label already exist.
     if not endpoint:
         return {"Status": 0,
                 "Message": "This terminal has no printer configured.",
