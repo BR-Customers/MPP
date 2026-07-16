@@ -23,12 +23,21 @@ BEGIN
         sc.Code       AS LotStatusCode,
         ot.Code       AS LotOriginTypeCode,
         loc.Name      AS CurrentLocationName,
+        lastop.OperationName AS LastOperationName,
         COUNT(*) OVER() AS TotalCount
     FROM Lots.Lot l
     INNER JOIN Parts.Item         i   ON i.Id   = l.ItemId
     INNER JOIN Lots.LotStatusCode sc  ON sc.Id  = l.LotStatusId
     INNER JOIN Lots.LotOriginType ot  ON ot.Id  = l.LotOriginTypeId
     INNER JOIN Location.Location  loc ON loc.Id = l.CurrentLocationId
+    OUTER APPLY (
+        SELECT TOP (1) oty.Name AS OperationName
+        FROM Workorder.ProductionEvent pe
+        INNER JOIN Parts.OperationTemplate ot2 ON ot2.Id = pe.OperationTemplateId
+        INNER JOIN Parts.OperationType     oty ON oty.Id = ot2.OperationTypeId
+        WHERE pe.LotId = l.Id
+        ORDER BY pe.EventAt DESC, pe.Id DESC
+    ) lastop
     WHERE (@Q IS NULL OR l.LotName LIKE @Q OR l.VendorLotNumber LIKE @Q OR i.PartNumber LIKE @Q)
       AND (@LotStatusId     IS NULL OR l.LotStatusId     = @LotStatusId)
       AND (@LotOriginTypeId IS NULL OR l.LotOriginTypeId = @LotOriginTypeId)
