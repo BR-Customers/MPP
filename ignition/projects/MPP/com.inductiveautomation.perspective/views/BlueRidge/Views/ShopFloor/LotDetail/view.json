@@ -32,694 +32,844 @@
   },
   "propConfig": {
     "params.lotId": {
+      "paramDirection": "input",
       "onChange": {
         "enabled": true,
         "script": "\tself.rootContainer.load()"
-      },
-      "paramDirection": "input"
+      }
     }
   },
   "props": {
     "defaultSize": {
+      "height": 800,
       "width": 1280
     }
   },
   "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "alignItems": "stretch",
+      "style": {
+        "classes": "canvas",
+        "gap": "0px",
+        "padding": "0px",
+        "overflowY": "auto"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "load",
+          "params": [],
+          "script": "\tlotId = self.view.params.lotId\n\tif not lotId:\n\t\treturn\n\tself.view.custom.lot      = BlueRidge.Lots.Lot.get(lotId) or self.view.custom.lot\n\tself.view.custom.history  = BlueRidge.Lots.Lot.getHistory(lotId)\n\tself.view.custom.parents  = BlueRidge.Lots.Lot.getParents(lotId)\n\tself.view.custom.children = BlueRidge.Lots.Lot.getChildren(lotId)\n\tself.view.custom.pauses   = BlueRidge.Lots.Lot.getPauses(lotId)\n\tself.view.custom.scrapSummary = BlueRidge.Lots.Lot.getScrapSummaryOrEmpty(lotId)"
+        }
+      ],
+      "messageHandlers": null,
+      "extensionFunctions": null
+    },
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tself.view.rootContainer.load()"
+          }
+        }
+      }
+    },
     "children": [
       {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "classes": "pf-terminal-header",
+            "gap": "16px",
+            "padding": "20px 24px",
+            "flexShrink": 0
+          }
+        },
         "children": [
           {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "TitleBlock"
+            },
+            "position": {
+              "grow": 1,
+              "basis": "0"
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "flex-start",
+              "style": {
+                "gap": "4px"
+              }
+            },
             "children": [
               {
+                "type": "ia.display.label",
                 "meta": {
                   "name": "Title"
                 },
                 "position": {
+                  "basis": "auto",
                   "shrink": 0
                 },
                 "propConfig": {
                   "props.text": {
                     "binding": {
+                      "type": "expr",
                       "config": {
                         "expression": "\"LOT Detail · \" + if(isNull({view.custom.lot.LotName}), \"\", {view.custom.lot.LotName})"
-                      },
-                      "type": "expr"
+                      }
                     }
                   }
                 },
                 "props": {
+                  "text": "LOT Detail",
                   "style": {
                     "color": "var(--mpp-text-primary)",
                     "fontSize": "28px",
                     "fontWeight": "600"
                   }
-                },
-                "type": "ia.display.label"
+                }
               },
               {
+                "type": "ia.display.label",
                 "meta": {
                   "name": "Meta"
                 },
                 "position": {
+                  "basis": "auto",
                   "shrink": 0
                 },
                 "propConfig": {
                   "props.text": {
                     "binding": {
+                      "type": "expr",
                       "config": {
                         "expression": "if(isNull({view.custom.lot.ItemPartNumber}), \"\", {view.custom.lot.ItemPartNumber}) + \" · \" + if(isNull({view.custom.lot.LotOriginTypeCode}), \"\", {view.custom.lot.LotOriginTypeCode})"
-                      },
-                      "type": "expr"
+                      }
                     }
                   }
                 },
                 "props": {
+                  "text": "",
                   "style": {
                     "color": "var(--mpp-text-secondary)",
                     "fontSize": "14px"
                   }
-                },
-                "type": "ia.display.label"
+                }
               }
-            ],
-            "meta": {
-              "name": "TitleBlock"
-            },
-            "position": {
-              "basis": "0",
-              "grow": 1
-            },
-            "props": {
-              "alignItems": "flex-start",
-              "direction": "column",
-              "style": {
-                "gap": "4px"
-              }
-            },
-            "type": "ia.container.flex"
+            ]
           },
           {
+            "type": "ia.display.label",
             "meta": {
               "name": "StatusPill"
             },
             "position": {
+              "basis": "auto",
               "shrink": 0
             },
             "propConfig": {
               "props.text": {
                 "binding": {
+                  "type": "property",
                   "config": {
                     "path": "view.custom.lot.LotStatusName"
-                  },
-                  "type": "property"
+                  }
                 }
               }
             },
             "props": {
+              "text": "",
               "style": {
-                "borderRadius": "999px",
                 "classes": "pf-pill pf-pill-good",
                 "fontSize": "13px",
                 "fontWeight": "600",
-                "padding": "4px 12px"
+                "padding": "4px 12px",
+                "borderRadius": "999px"
               }
-            },
-            "type": "ia.display.label"
+            }
           },
           {
+            "type": "ia.display.label",
             "meta": {
               "name": "CrtPill"
             },
             "position": {
+              "basis": "auto",
               "shrink": 0
             },
             "propConfig": {
               "position.display": {
                 "binding": {
+                  "type": "expr",
                   "config": {
                     "expression": "coalesce({view.custom.lot.CrtActive}, false)"
-                  },
-                  "type": "expr"
+                  }
                 }
               }
             },
             "props": {
+              "text": "CRT Active",
               "style": {
-                "borderRadius": "999px",
                 "classes": "pf-pill pf-pill-hold",
                 "fontSize": "13px",
                 "fontWeight": "700",
                 "padding": "4px 12px",
+                "borderRadius": "999px",
                 "textTransform": "uppercase"
-              },
-              "text": "CRT Active"
-            },
-            "type": "ia.display.label"
+              }
+            }
           }
-        ],
+        ]
+      },
+      {
+        "type": "ia.container.flex",
         "meta": {
-          "name": "Header"
+          "name": "KpiStrip"
         },
         "position": {
+          "basis": "auto",
           "shrink": 0
         },
         "props": {
-          "alignItems": "center",
+          "direction": "row",
+          "alignItems": "stretch",
           "style": {
-            "classes": "pf-terminal-header",
-            "flexShrink": 0,
-            "gap": "16px",
-            "padding": "20px 24px"
+            "classes": "pf-kpis",
+            "gap": "0px",
+            "padding": "0px 24px 0px 24px",
+            "flexWrap": "wrap"
           }
         },
-        "type": "ia.container.flex"
-      },
-      {
         "children": [
           {
-            "children": [
-              {
-                "meta": {
-                  "name": "Label"
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-kpi-label",
-                    "color": "var(--mpp-text-tertiary)",
-                    "fontSize": "11px",
-                    "letterSpacing": "0.08em",
-                    "textTransform": "uppercase"
-                  },
-                  "text": "LOT Name"
-                },
-                "type": "ia.display.label"
-              },
-              {
-                "meta": {
-                  "name": "Value"
-                },
-                "propConfig": {
-                  "props.text": {
-                    "binding": {
-                      "config": {
-                        "path": "view.custom.lot.LotName"
-                      },
-                      "type": "property"
-                    }
-                  }
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-kpi-value-mono",
-                    "color": "var(--mpp-text-primary)",
-                    "fontFamily": "monospace",
-                    "fontSize": "22px",
-                    "fontWeight": "600"
-                  }
-                },
-                "type": "ia.display.label"
-              }
-            ],
+            "type": "ia.container.flex",
             "meta": {
               "name": "KpiLotName"
             },
             "position": {
+              "basis": "auto",
               "shrink": 0
             },
             "props": {
-              "alignItems": "flex-start",
               "direction": "column",
+              "alignItems": "flex-start",
               "style": {
                 "classes": "pf-kpi",
                 "gap": "2px",
-                "minWidth": "160px",
-                "padding": "16px 20px"
+                "padding": "16px 20px",
+                "minWidth": "160px"
               }
             },
-            "type": "ia.container.flex"
-          },
-          {
             "children": [
               {
+                "type": "ia.display.label",
                 "meta": {
                   "name": "Label"
                 },
                 "props": {
+                  "text": "LOT Name",
                   "style": {
                     "classes": "pf-kpi-label",
                     "color": "var(--mpp-text-tertiary)",
                     "fontSize": "11px",
-                    "letterSpacing": "0.08em",
-                    "textTransform": "uppercase"
-                  },
-                  "text": "Item"
-                },
-                "type": "ia.display.label"
+                    "textTransform": "uppercase",
+                    "letterSpacing": "0.08em"
+                  }
+                }
               },
               {
+                "type": "ia.display.label",
                 "meta": {
                   "name": "Value"
                 },
                 "propConfig": {
                   "props.text": {
                     "binding": {
+                      "type": "property",
                       "config": {
-                        "path": "view.custom.lot.ItemPartNumber"
-                      },
-                      "type": "property"
+                        "path": "view.custom.lot.LotName"
+                      }
                     }
                   }
                 },
                 "props": {
+                  "text": "",
                   "style": {
                     "classes": "pf-kpi-value-mono",
                     "color": "var(--mpp-text-primary)",
-                    "fontFamily": "monospace",
-                    "fontSize": "18px",
-                    "fontWeight": "600"
+                    "fontSize": "22px",
+                    "fontWeight": "600",
+                    "fontFamily": "monospace"
                   }
-                },
-                "type": "ia.display.label"
+                }
               }
-            ],
+            ]
+          },
+          {
+            "type": "ia.container.flex",
             "meta": {
               "name": "KpiItem"
             },
             "position": {
+              "basis": "auto",
               "shrink": 0
             },
             "props": {
-              "alignItems": "flex-start",
               "direction": "column",
+              "alignItems": "flex-start",
               "style": {
                 "classes": "pf-kpi",
                 "gap": "2px",
-                "minWidth": "160px",
-                "padding": "16px 20px"
+                "padding": "16px 20px",
+                "minWidth": "160px"
               }
             },
-            "type": "ia.container.flex"
-          },
-          {
             "children": [
               {
+                "type": "ia.display.label",
                 "meta": {
                   "name": "Label"
                 },
                 "props": {
+                  "text": "Item",
                   "style": {
                     "classes": "pf-kpi-label",
                     "color": "var(--mpp-text-tertiary)",
                     "fontSize": "11px",
-                    "letterSpacing": "0.08em",
-                    "textTransform": "uppercase"
-                  },
-                  "text": "Piece Count"
-                },
-                "type": "ia.display.label"
+                    "textTransform": "uppercase",
+                    "letterSpacing": "0.08em"
+                  }
+                }
               },
               {
+                "type": "ia.display.label",
                 "meta": {
                   "name": "Value"
                 },
                 "propConfig": {
                   "props.text": {
                     "binding": {
+                      "type": "property",
                       "config": {
-                        "expression": "toStr({view.custom.lot.PieceCount})"
-                      },
-                      "type": "expr"
+                        "path": "view.custom.lot.ItemPartNumber"
+                      }
                     }
                   }
                 },
                 "props": {
+                  "text": "",
+                  "style": {
+                    "classes": "pf-kpi-value-mono",
+                    "color": "var(--mpp-text-primary)",
+                    "fontSize": "18px",
+                    "fontWeight": "600",
+                    "fontFamily": "monospace"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "KpiPieceCount"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "flex-start",
+              "style": {
+                "classes": "pf-kpi",
+                "gap": "2px",
+                "padding": "16px 20px",
+                "minWidth": "160px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "text": "Piece Count",
+                  "style": {
+                    "classes": "pf-kpi-label",
+                    "color": "var(--mpp-text-tertiary)",
+                    "fontSize": "11px",
+                    "textTransform": "uppercase",
+                    "letterSpacing": "0.08em"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Value"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "toStr({view.custom.lot.PieceCount})"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "text": "0",
                   "style": {
                     "classes": "pf-kpi-value",
                     "color": "var(--mpp-text-primary)",
                     "fontSize": "28px",
                     "fontWeight": "700"
                   }
-                },
-                "type": "ia.display.label"
+                }
               },
               {
+                "type": "ia.display.label",
                 "meta": {
                   "name": "Sub"
                 },
                 "propConfig": {
                   "props.text": {
                     "binding": {
+                      "type": "expr",
                       "config": {
                         "expression": "\"Inventory Available · \" + toStr({view.custom.lot.InventoryAvailable}) + \" · \" + toStr({view.custom.lot.TotalInProcess}) + \" in process\""
-                      },
-                      "type": "expr"
+                      }
                     }
                   }
                 },
                 "props": {
+                  "text": "Inventory Available · 0 · 0 in process",
                   "style": {
                     "classes": "pf-kpi-sub",
                     "color": "var(--mpp-text-tertiary)",
                     "fontSize": "12px"
                   }
-                },
-                "type": "ia.display.label"
+                }
               }
-            ],
-            "meta": {
-              "name": "KpiPieceCount"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "props": {
-              "alignItems": "flex-start",
-              "direction": "column",
-              "style": {
-                "classes": "pf-kpi",
-                "gap": "2px",
-                "minWidth": "160px",
-                "padding": "16px 20px"
-              }
-            },
-            "type": "ia.container.flex"
+            ]
           },
           {
-            "children": [
-              {
-                "meta": {
-                  "name": "Label"
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-kpi-label",
-                    "color": "var(--mpp-text-tertiary)",
-                    "fontSize": "11px",
-                    "letterSpacing": "0.08em",
-                    "textTransform": "uppercase"
-                  },
-                  "text": "Current Location"
-                },
-                "type": "ia.display.label"
-              },
-              {
-                "meta": {
-                  "name": "Value"
-                },
-                "propConfig": {
-                  "props.text": {
-                    "binding": {
-                      "config": {
-                        "path": "view.custom.lot.CurrentLocationName"
-                      },
-                      "type": "property"
-                    }
-                  }
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-kpi-value",
-                    "color": "var(--mpp-text-primary)",
-                    "fontSize": "18px",
-                    "fontWeight": "600"
-                  }
-                },
-                "type": "ia.display.label"
-              }
-            ],
+            "type": "ia.container.flex",
             "meta": {
               "name": "KpiCurrentLocation"
             },
             "position": {
+              "basis": "auto",
               "shrink": 0
             },
             "props": {
-              "alignItems": "flex-start",
               "direction": "column",
+              "alignItems": "flex-start",
               "style": {
                 "classes": "pf-kpi",
                 "gap": "2px",
-                "minWidth": "160px",
-                "padding": "16px 20px"
+                "padding": "16px 20px",
+                "minWidth": "160px"
               }
             },
-            "type": "ia.container.flex"
-          },
-          {
             "children": [
               {
+                "type": "ia.display.label",
                 "meta": {
                   "name": "Label"
                 },
                 "props": {
+                  "text": "Current Location",
                   "style": {
                     "classes": "pf-kpi-label",
                     "color": "var(--mpp-text-tertiary)",
                     "fontSize": "11px",
-                    "letterSpacing": "0.08em",
-                    "textTransform": "uppercase"
-                  },
-                  "text": "Tool"
-                },
-                "type": "ia.display.label"
+                    "textTransform": "uppercase",
+                    "letterSpacing": "0.08em"
+                  }
+                }
               },
               {
+                "type": "ia.display.label",
                 "meta": {
                   "name": "Value"
                 },
                 "propConfig": {
                   "props.text": {
                     "binding": {
+                      "type": "property",
                       "config": {
-                        "path": "view.custom.lot.ToolCode"
-                      },
-                      "type": "property"
+                        "path": "view.custom.lot.CurrentLocationName"
+                      }
                     }
                   }
                 },
                 "props": {
+                  "text": "",
                   "style": {
-                    "classes": "pf-kpi-value-mono",
+                    "classes": "pf-kpi-value",
                     "color": "var(--mpp-text-primary)",
-                    "fontFamily": "monospace",
                     "fontSize": "18px",
                     "fontWeight": "600"
                   }
-                },
-                "type": "ia.display.label"
+                }
               }
-            ],
+            ]
+          },
+          {
+            "type": "ia.container.flex",
             "meta": {
               "name": "KpiTool"
             },
             "position": {
+              "basis": "auto",
               "shrink": 0
             },
             "propConfig": {
               "position.display": {
                 "binding": {
+                  "type": "expr",
                   "config": {
                     "expression": "!isNull({view.custom.lot.ToolId})"
-                  },
-                  "type": "expr"
+                  }
                 }
               }
             },
             "props": {
-              "alignItems": "flex-start",
               "direction": "column",
+              "alignItems": "flex-start",
               "style": {
                 "classes": "pf-kpi pf-tool-row",
                 "gap": "2px",
-                "minWidth": "140px",
-                "padding": "16px 20px"
+                "padding": "16px 20px",
+                "minWidth": "140px"
               }
             },
-            "type": "ia.container.flex"
-          },
-          {
             "children": [
               {
+                "type": "ia.display.label",
                 "meta": {
                   "name": "Label"
                 },
                 "props": {
+                  "text": "Tool",
                   "style": {
                     "classes": "pf-kpi-label",
                     "color": "var(--mpp-text-tertiary)",
                     "fontSize": "11px",
-                    "letterSpacing": "0.08em",
-                    "textTransform": "uppercase"
-                  },
-                  "text": "Cavity"
-                },
-                "type": "ia.display.label"
+                    "textTransform": "uppercase",
+                    "letterSpacing": "0.08em"
+                  }
+                }
               },
               {
+                "type": "ia.display.label",
                 "meta": {
                   "name": "Value"
                 },
                 "propConfig": {
                   "props.text": {
                     "binding": {
+                      "type": "property",
                       "config": {
-                        "expression": "if(isNull({view.custom.lot.ToolCavityNumber}), \"\", toStr({view.custom.lot.ToolCavityNumber}))"
-                      },
-                      "type": "expr"
+                        "path": "view.custom.lot.ToolCode"
+                      }
                     }
                   }
                 },
                 "props": {
+                  "text": "",
+                  "style": {
+                    "classes": "pf-kpi-value-mono",
+                    "color": "var(--mpp-text-primary)",
+                    "fontSize": "18px",
+                    "fontWeight": "600",
+                    "fontFamily": "monospace"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "KpiCavity"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "type": "expr",
+                  "config": {
+                    "expression": "!isNull({view.custom.lot.ToolId})"
+                  }
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "flex-start",
+              "style": {
+                "classes": "pf-kpi pf-tool-row",
+                "gap": "2px",
+                "padding": "16px 20px",
+                "minWidth": "100px"
+              }
+            },
+            "children": [
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Label"
+                },
+                "props": {
+                  "text": "Cavity",
+                  "style": {
+                    "classes": "pf-kpi-label",
+                    "color": "var(--mpp-text-tertiary)",
+                    "fontSize": "11px",
+                    "textTransform": "uppercase",
+                    "letterSpacing": "0.08em"
+                  }
+                }
+              },
+              {
+                "type": "ia.display.label",
+                "meta": {
+                  "name": "Value"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "if(isNull({view.custom.lot.ToolCavityNumber}), \"\", toStr({view.custom.lot.ToolCavityNumber}))"
+                      }
+                    }
+                  }
+                },
+                "props": {
+                  "text": "",
                   "style": {
                     "classes": "pf-kpi-value",
                     "color": "var(--mpp-text-primary)",
                     "fontSize": "22px",
                     "fontWeight": "700"
                   }
-                },
-                "type": "ia.display.label"
-              }
-            ],
-            "meta": {
-              "name": "KpiCavity"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "propConfig": {
-              "position.display": {
-                "binding": {
-                  "config": {
-                    "expression": "!isNull({view.custom.lot.ToolId})"
-                  },
-                  "type": "expr"
                 }
               }
-            },
-            "props": {
-              "alignItems": "flex-start",
-              "direction": "column",
-              "style": {
-                "classes": "pf-kpi pf-tool-row",
-                "gap": "2px",
-                "minWidth": "100px",
-                "padding": "16px 20px"
-              }
-            },
-            "type": "ia.container.flex"
+            ]
           },
           {
+            "type": "ia.container.flex",
+            "meta": {
+              "name": "KpiTotalScrap"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "alignItems": "flex-start",
+              "style": {
+                "classes": "pf-kpi",
+                "gap": "2px",
+                "padding": "16px 20px",
+                "minWidth": "100px"
+              }
+            },
             "children": [
               {
+                "type": "ia.display.label",
                 "meta": {
                   "name": "Label"
                 },
                 "props": {
+                  "text": "Total Scrap",
                   "style": {
                     "classes": "pf-kpi-label",
                     "color": "var(--mpp-text-tertiary)",
                     "fontSize": "11px",
-                    "letterSpacing": "0.08em",
-                    "textTransform": "uppercase"
-                  },
-                  "text": "Total Scrap"
-                },
-                "type": "ia.display.label"
+                    "textTransform": "uppercase",
+                    "letterSpacing": "0.08em"
+                  }
+                }
               },
               {
+                "type": "ia.display.label",
                 "meta": {
                   "name": "Value"
                 },
                 "propConfig": {
-                  "props.style.color": {
-                    "binding": {
-                      "config": {
-                        "expression": "if({view.custom.scrapSummary.TotalScrap} \u003e 0, \"var(--mpp-error, #f85149)\", \"var(--mpp-text-primary)\")"
-                      },
-                      "type": "expr"
-                    }
-                  },
                   "props.text": {
                     "binding": {
+                      "type": "expr",
                       "config": {
                         "expression": "toStr(if(isNull({view.custom.scrapSummary.TotalScrap}), 0, {view.custom.scrapSummary.TotalScrap}))"
-                      },
-                      "type": "expr"
+                      }
+                    }
+                  },
+                  "props.style.color": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "if({view.custom.scrapSummary.TotalScrap} > 0, \"var(--mpp-error, #f85149)\", \"var(--mpp-text-primary)\")"
+                      }
                     }
                   }
                 },
                 "props": {
+                  "text": "0",
                   "style": {
                     "classes": "pf-kpi-value",
                     "fontSize": "22px",
                     "fontWeight": "700"
                   }
-                },
-                "type": "ia.display.label"
+                }
               }
-            ],
-            "meta": {
-              "name": "KpiTotalScrap"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "props": {
-              "alignItems": "flex-start",
-              "direction": "column",
-              "style": {
-                "classes": "pf-kpi",
-                "gap": "2px",
-                "minWidth": "100px",
-                "padding": "16px 20px"
-              }
-            },
-            "type": "ia.container.flex"
+            ]
           }
-        ],
-        "meta": {
-          "name": "KpiStrip"
-        },
-        "position": {
-          "shrink": 0
-        },
-        "props": {
-          "style": {
-            "classes": "pf-kpis",
-            "flexWrap": "wrap",
-            "gap": "0px",
-            "padding": "0px 24px 0px 24px"
-          }
-        },
-        "type": "ia.container.flex"
+        ]
       },
       {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "ContentPanel"
+        },
+        "position": {
+          "grow": 1,
+          "basis": "0"
+        },
+        "props": {
+          "direction": "column",
+          "alignItems": "stretch",
+          "style": {
+            "classes": "pf-panel",
+            "margin": "16px 24px",
+            "padding": "0px",
+            "gap": "0px",
+            "overflow": "hidden"
+          }
+        },
         "children": [
           {
+            "type": "ia.container.tab",
+            "meta": {
+              "name": "TabContainer"
+            },
+            "position": {
+              "grow": 1,
+              "basis": "0"
+            },
+            "props": {
+              "currentTabIndex": 0,
+              "menuType": "modern",
+              "tabs": [
+                {
+                  "text": "History",
+                  "runWhileHidden": true,
+                  "disabled": false
+                },
+                {
+                  "text": "Genealogy",
+                  "runWhileHidden": true,
+                  "disabled": false
+                },
+                {
+                  "text": "Paused-at",
+                  "runWhileHidden": true,
+                  "disabled": false
+                },
+                {
+                  "text": "Linked Container",
+                  "runWhileHidden": true,
+                  "disabled": false
+                }
+              ],
+              "menuStyle": {
+                "classes": "tab-strip"
+              },
+              "contentStyle": {
+                "classes": "tab-content-fill"
+              },
+              "tabStyle": {
+                "active": {
+                  "classes": "tab-item tab-item-active"
+                },
+                "inactive": {
+                  "classes": "tab-item"
+                },
+                "disabled": {
+                  "classes": "tab-item"
+                }
+              }
+            },
             "children": [
               {
+                "type": "ia.container.flex",
+                "meta": {
+                  "name": "PanelHistory"
+                },
+                "position": {
+                  "tabIndex": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "alignItems": "stretch",
+                  "style": {
+                    "gap": "8px",
+                    "overflowY": "auto"
+                  }
+                },
                 "children": [
                   {
+                    "type": "ia.display.flex-repeater",
                     "meta": {
                       "name": "HistoryRepeater"
                     },
                     "position": {
-                      "basis": "0",
-                      "grow": 1
+                      "grow": 1,
+                      "basis": "0"
                     },
                     "propConfig": {
                       "props.instances": {
                         "binding": {
+                          "type": "property",
                           "config": {
                             "path": "view.custom.history"
                           },
                           "transforms": [
                             {
-                              "code": "\treturn BlueRidge.Lots.Lot.mapHistoryInstances(value)",
-                              "type": "script"
+                              "type": "script",
+                              "code": "\treturn BlueRidge.Lots.Lot.mapHistoryInstances(value)"
                             }
-                          ],
-                          "type": "property"
+                          ]
                         }
                       }
                     },
@@ -729,157 +879,23 @@
                         "basis": "auto",
                         "grow": 0,
                         "shrink": 0
-                      },
-                      "elementStyle": {
-                        "maxHeight": "80px"
                       },
                       "path": "BlueRidge/Components/PlantFloor/LotDetail/HistoryRow",
                       "style": {
                         "gap": "6px"
                       },
                       "useDefaultViewHeight": false,
-                      "useDefaultViewWidth": false
-                    },
-                    "type": "ia.display.flex-repeater"
+                      "useDefaultViewWidth": false,
+                      "elementStyle": {
+                        "maxHeight": "80px",
+                        "classes": ""
+                      }
+                    }
                   }
-                ],
-                "meta": {
-                  "name": "PanelHistory"
-                },
-                "props": {
-                  "direction": "column",
-                  "style": {
-                    "gap": "8px",
-                    "overflowY": "auto"
-                  }
-                },
-                "type": "ia.container.flex"
+                ]
               },
               {
-                "children": [
-                  {
-                    "meta": {
-                      "name": "ParentsHeading"
-                    },
-                    "position": {
-                      "shrink": 0
-                    },
-                    "props": {
-                      "style": {
-                        "color": "var(--mpp-text-tertiary)",
-                        "fontSize": "11px",
-                        "fontWeight": "600",
-                        "letterSpacing": "0.08em",
-                        "textTransform": "uppercase"
-                      },
-                      "text": "Parents"
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "ParentsRepeater"
-                    },
-                    "position": {
-                      "shrink": 0
-                    },
-                    "propConfig": {
-                      "props.instances": {
-                        "binding": {
-                          "config": {
-                            "path": "view.custom.parents"
-                          },
-                          "transforms": [
-                            {
-                              "code": "\trows \u003d value or []\n\tout \u003d []\n\tfor r in rows:\n\t\tr \u003d BlueRidge.Common.Util.extractQualifiedValues(r) or {}\n\t\tout.append({\u0027row\u0027: r})\n\treturn out",
-                              "type": "script"
-                            }
-                          ],
-                          "type": "property"
-                        }
-                      }
-                    },
-                    "props": {
-                      "direction": "column",
-                      "elementPosition": {
-                        "basis": "auto",
-                        "grow": 0,
-                        "shrink": 0
-                      },
-                      "elementStyle": {
-                        "maxHeight": "80px"
-                      },
-                      "path": "BlueRidge/Components/PlantFloor/LotDetail/ParentRow",
-                      "style": {
-                        "gap": "6px"
-                      },
-                      "useDefaultViewHeight": false,
-                      "useDefaultViewWidth": false
-                    },
-                    "type": "ia.display.flex-repeater"
-                  },
-                  {
-                    "meta": {
-                      "name": "ChildrenHeading"
-                    },
-                    "position": {
-                      "shrink": 0
-                    },
-                    "props": {
-                      "style": {
-                        "color": "var(--mpp-text-tertiary)",
-                        "fontSize": "11px",
-                        "fontWeight": "600",
-                        "letterSpacing": "0.08em",
-                        "textTransform": "uppercase"
-                      },
-                      "text": "Children"
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "ChildrenRepeater"
-                    },
-                    "position": {
-                      "shrink": 0
-                    },
-                    "propConfig": {
-                      "props.instances": {
-                        "binding": {
-                          "config": {
-                            "path": "view.custom.children"
-                          },
-                          "transforms": [
-                            {
-                              "code": "\trows \u003d value or []\n\tout \u003d []\n\tfor r in rows:\n\t\tr \u003d BlueRidge.Common.Util.extractQualifiedValues(r) or {}\n\t\tout.append({\u0027row\u0027: r})\n\treturn out",
-                              "type": "script"
-                            }
-                          ],
-                          "type": "property"
-                        }
-                      }
-                    },
-                    "props": {
-                      "direction": "column",
-                      "elementPosition": {
-                        "basis": "auto",
-                        "grow": 0,
-                        "shrink": 0
-                      },
-                      "elementStyle": {
-                        "maxHeight": "80px"
-                      },
-                      "path": "BlueRidge/Components/PlantFloor/LotDetail/ChildRow",
-                      "style": {
-                        "gap": "6px"
-                      },
-                      "useDefaultViewHeight": false,
-                      "useDefaultViewWidth": false
-                    },
-                    "type": "ia.display.flex-repeater"
-                  }
-                ],
+                "type": "ia.container.flex",
                 "meta": {
                   "name": "PanelGenealogy"
                 },
@@ -888,73 +904,55 @@
                 },
                 "props": {
                   "direction": "column",
+                  "alignItems": "stretch",
                   "style": {
                     "gap": "16px",
                     "overflowY": "auto"
                   }
                 },
-                "type": "ia.container.flex"
-              },
-              {
                 "children": [
                   {
+                    "type": "ia.display.label",
                     "meta": {
-                      "name": "EmptyState"
+                      "name": "ParentsHeading"
                     },
                     "position": {
+                      "basis": "auto",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Parents",
+                      "style": {
+                        "color": "var(--mpp-text-tertiary)",
+                        "fontSize": "11px",
+                        "fontWeight": "600",
+                        "textTransform": "uppercase",
+                        "letterSpacing": "0.08em"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.flex-repeater",
+                    "meta": {
+                      "name": "ParentsRepeater"
+                    },
+                    "position": {
+                      "basis": "auto",
                       "shrink": 0
                     },
                     "propConfig": {
-                      "position.display": {
-                        "binding": {
-                          "config": {
-                            "expression": "len({view.custom.pauses}) \u003d 0"
-                          },
-                          "type": "expr"
-                        }
-                      }
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "pf-empty-state",
-                        "color": "var(--mpp-text-secondary)",
-                        "fontSize": "15px",
-                        "padding": "32px",
-                        "textAlign": "center"
-                      },
-                      "text": "No paused entries — this LOT has no open pause rows."
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "PausesRepeater"
-                    },
-                    "position": {
-                      "basis": "0",
-                      "grow": 1
-                    },
-                    "propConfig": {
-                      "position.display": {
-                        "binding": {
-                          "config": {
-                            "expression": "len({view.custom.pauses}) \u003e 0"
-                          },
-                          "type": "expr"
-                        }
-                      },
                       "props.instances": {
                         "binding": {
+                          "type": "property",
                           "config": {
-                            "path": "view.custom.pauses"
+                            "path": "view.custom.parents"
                           },
                           "transforms": [
                             {
-                              "code": "\trows \u003d value or []\n\tout \u003d []\n\tfor r in rows:\n\t\tr \u003d BlueRidge.Common.Util.extractQualifiedValues(r) or {}\n\t\tout.append({\u0027row\u0027: r})\n\treturn out",
-                              "type": "script"
+                              "type": "script",
+                              "code": "\trows = value or []\n\tout = []\n\tfor r in rows:\n\t\tr = BlueRidge.Common.Util.extractQualifiedValues(r) or {}\n\t\tout.append({'row': r})\n\treturn out"
                             }
-                          ],
-                          "type": "property"
+                          ]
                         }
                       }
                     },
@@ -965,19 +963,86 @@
                         "grow": 0,
                         "shrink": 0
                       },
-                      "elementStyle": {
-                        "maxHeight": "80px"
-                      },
-                      "path": "BlueRidge/Components/PlantFloor/LotDetail/PauseRow",
+                      "path": "BlueRidge/Components/PlantFloor/LotDetail/ParentRow",
                       "style": {
                         "gap": "6px"
                       },
                       "useDefaultViewHeight": false,
-                      "useDefaultViewWidth": false
+                      "useDefaultViewWidth": false,
+                      "elementStyle": {
+                        "maxHeight": "80px",
+                        "classes": ""
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "ChildrenHeading"
                     },
-                    "type": "ia.display.flex-repeater"
+                    "position": {
+                      "basis": "auto",
+                      "shrink": 0
+                    },
+                    "props": {
+                      "text": "Children",
+                      "style": {
+                        "color": "var(--mpp-text-tertiary)",
+                        "fontSize": "11px",
+                        "fontWeight": "600",
+                        "textTransform": "uppercase",
+                        "letterSpacing": "0.08em"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.flex-repeater",
+                    "meta": {
+                      "name": "ChildrenRepeater"
+                    },
+                    "position": {
+                      "basis": "auto",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.instances": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.children"
+                          },
+                          "transforms": [
+                            {
+                              "type": "script",
+                              "code": "\trows = value or []\n\tout = []\n\tfor r in rows:\n\t\tr = BlueRidge.Common.Util.extractQualifiedValues(r) or {}\n\t\tout.append({'row': r})\n\treturn out"
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "props": {
+                      "direction": "column",
+                      "elementPosition": {
+                        "basis": "auto",
+                        "grow": 0,
+                        "shrink": 0
+                      },
+                      "path": "BlueRidge/Components/PlantFloor/LotDetail/ChildRow",
+                      "style": {
+                        "gap": "6px"
+                      },
+                      "useDefaultViewHeight": false,
+                      "useDefaultViewWidth": false,
+                      "elementStyle": {
+                        "maxHeight": "80px",
+                        "classes": ""
+                      }
+                    }
                   }
-                ],
+                ]
+              },
+              {
+                "type": "ia.container.flex",
                 "meta": {
                   "name": "PanelPaused"
                 },
@@ -986,47 +1051,99 @@
                 },
                 "props": {
                   "direction": "column",
+                  "alignItems": "stretch",
                   "style": {
                     "gap": "8px",
                     "overflowY": "auto"
                   }
                 },
-                "type": "ia.container.flex"
-              },
-              {
                 "children": [
                   {
+                    "type": "ia.display.label",
                     "meta": {
-                      "name": "ContainerStub"
+                      "name": "EmptyState"
+                    },
+                    "position": {
+                      "basis": "auto",
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "len({view.custom.pauses}) = 0"
+                          }
+                        }
+                      }
                     },
                     "props": {
+                      "text": "No paused entries — this LOT has no open pause rows.",
                       "style": {
                         "classes": "pf-empty-state",
                         "color": "var(--mpp-text-secondary)",
                         "fontSize": "15px",
                         "padding": "32px",
                         "textAlign": "center"
-                      },
-                      "text": "Linked container — later phase"
-                    },
-                    "type": "ia.display.label"
+                      }
+                    }
                   },
                   {
+                    "type": "ia.display.flex-repeater",
                     "meta": {
-                      "name": "ContainerDetail"
+                      "name": "PausesRepeater"
+                    },
+                    "position": {
+                      "grow": 1,
+                      "basis": "0"
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "type": "expr",
+                          "config": {
+                            "expression": "len({view.custom.pauses}) > 0"
+                          }
+                        }
+                      },
+                      "props.instances": {
+                        "binding": {
+                          "type": "property",
+                          "config": {
+                            "path": "view.custom.pauses"
+                          },
+                          "transforms": [
+                            {
+                              "type": "script",
+                              "code": "\trows = value or []\n\tout = []\n\tfor r in rows:\n\t\tr = BlueRidge.Common.Util.extractQualifiedValues(r) or {}\n\t\tout.append({'row': r})\n\treturn out"
+                            }
+                          ]
+                        }
+                      }
                     },
                     "props": {
-                      "style": {
-                        "color": "var(--mpp-text-tertiary)",
-                        "fontSize": "13px",
-                        "maxWidth": "480px",
-                        "textAlign": "center"
+                      "direction": "column",
+                      "elementPosition": {
+                        "basis": "auto",
+                        "grow": 0,
+                        "shrink": 0
                       },
-                      "text": "Container links land at Assembly when serialized parts produce into a Container (Phase 6)."
-                    },
-                    "type": "ia.display.label"
+                      "path": "BlueRidge/Components/PlantFloor/LotDetail/PauseRow",
+                      "style": {
+                        "gap": "6px"
+                      },
+                      "useDefaultViewHeight": false,
+                      "useDefaultViewWidth": false,
+                      "elementStyle": {
+                        "maxHeight": "80px",
+                        "classes": ""
+                      }
+                    }
                   }
-                ],
+                ]
+              },
+              {
+                "type": "ia.container.flex",
                 "meta": {
                   "name": "PanelContainer"
                 },
@@ -1034,140 +1151,85 @@
                   "tabIndex": 3
                 },
                 "props": {
-                  "alignItems": "center",
                   "direction": "column",
+                  "alignItems": "center",
                   "justify": "center",
                   "style": {
                     "gap": "8px"
                   }
                 },
-                "type": "ia.container.flex"
+                "children": [
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "ContainerStub"
+                    },
+                    "props": {
+                      "text": "Linked container — later phase",
+                      "style": {
+                        "classes": "pf-empty-state",
+                        "color": "var(--mpp-text-secondary)",
+                        "fontSize": "15px",
+                        "padding": "32px",
+                        "textAlign": "center"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ia.display.label",
+                    "meta": {
+                      "name": "ContainerDetail"
+                    },
+                    "props": {
+                      "text": "Container links land at Assembly when serialized parts produce into a Container (Phase 6).",
+                      "style": {
+                        "color": "var(--mpp-text-tertiary)",
+                        "fontSize": "13px",
+                        "textAlign": "center",
+                        "maxWidth": "480px"
+                      }
+                    }
+                  }
+                ]
               }
-            ],
-            "meta": {
-              "name": "TabContainer"
-            },
-            "position": {
-              "basis": "0",
-              "grow": 1
-            },
-            "props": {
-              "contentStyle": {
-                "classes": "tab-content-fill"
-              },
-              "menuStyle": {
-                "classes": "tab-strip"
-              },
-              "menuType": "modern",
-              "tabStyle": {
-                "active": {
-                  "classes": "tab-item tab-item-active"
-                },
-                "disabled": {
-                  "classes": "tab-item"
-                },
-                "inactive": {
-                  "classes": "tab-item"
-                }
-              },
-              "tabs": [
-                {
-                  "disabled": false,
-                  "runWhileHidden": true,
-                  "text": "History"
-                },
-                {
-                  "disabled": false,
-                  "runWhileHidden": true,
-                  "text": "Genealogy"
-                },
-                {
-                  "disabled": false,
-                  "runWhileHidden": true,
-                  "text": "Paused-at"
-                },
-                {
-                  "disabled": false,
-                  "runWhileHidden": true,
-                  "text": "Linked Container"
-                }
-              ]
-            },
-            "type": "ia.container.tab"
+            ]
           }
-        ],
-        "meta": {
-          "name": "ContentPanel"
-        },
-        "position": {
-          "basis": "0",
-          "grow": 1
-        },
-        "props": {
-          "direction": "column",
-          "style": {
-            "classes": "pf-panel",
-            "gap": "0px",
-            "margin": "16px 24px",
-            "overflow": "hidden",
-            "padding": "0px"
-          }
-        },
-        "type": "ia.container.flex"
+        ]
       },
       {
+        "type": "ia.container.flex",
+        "meta": {
+          "name": "ActionBar"
+        },
+        "position": {
+          "basis": "auto",
+          "shrink": 0
+        },
+        "props": {
+          "direction": "row",
+          "alignItems": "center",
+          "style": {
+            "classes": "pf-actions",
+            "gap": "12px",
+            "padding": "16px 24px",
+            "borderTop": "1px solid var(--mpp-border-default)"
+          }
+        },
         "children": [
           {
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "config": {
-                    "script": "\tsystem.perspective.navigate(\"/\")"
-                  },
-                  "scope": "G",
-                  "type": "script"
-                }
-              }
-            },
+            "type": "ia.input.button",
             "meta": {
               "name": "BtnBack"
-            },
-            "position": {
-              "shrink": 0
-            },
-            "props": {
-              "style": {
-                "classes": "pf-btn pf-btn-secondary"
-              },
-              "text": "Back to Home"
-            },
-            "type": "ia.input.button"
-          },
-          {
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "config": {
-                    "script": "\tsystem.perspective.navigate(\"/shop-floor/inspection\")"
-                  },
-                  "scope": "G",
-                  "type": "script"
-                }
-              }
-            },
-            "meta": {
-              "name": "BtnLotSearch"
             },
             "position": {
               "basis": "auto",
               "shrink": 0
             },
             "props": {
-              "text": "LOT Search",
+              "text": "Back to Home",
               "style": {
                 "classes": "pf-btn pf-btn-secondary"
-              },
-              "toolTipText": "Return to LOT Search to look up another LOT."
+              }
             },
             "events": {
               "component": {
@@ -1175,7 +1237,7 @@
                   "type": "script",
                   "scope": "G",
                   "config": {
-                    "script": "\tsystem.perspective.navigate(\"/shop-floor/lot-search\")"
+                    "script": "\tsystem.perspective.navigate(\"/\")"
                   }
                 }
               }
@@ -1187,178 +1249,142 @@
               "name": "BtnInspections"
             },
             "position": {
+              "basis": "auto",
               "shrink": 0
             },
             "props": {
+              "text": "Inspections",
               "style": {
                 "classes": "pf-btn pf-btn-secondary"
               },
-              "text": "Inspections",
               "toolTipText": "Open the Inspection terminal to record a quality sample against a LOT."
             },
-            "type": "ia.input.button"
-          },
-          {
             "events": {
               "component": {
                 "onActionPerformed": {
-                  "config": {
-                    "script": "\tterm \u003d self.session.custom.terminal\n\tresult \u003d BlueRidge.Quality.Crt.setCrt(self.view.params.lotId, self.session.custom.appUserId, term.terminalLocationId if term else None)\n\tBlueRidge.Common.Ui.notifyResult(result, \"CRT\", result.get(\"Message\"))\n\tself.view.rootContainer.load()"
-                  },
+                  "type": "script",
                   "scope": "G",
-                  "type": "script"
+                  "config": {
+                    "script": "\tsystem.perspective.navigate(\"/shop-floor/inspection\")"
+                  }
                 }
               }
-            },
+            }
+          },
+          {
+            "type": "ia.input.button",
             "meta": {
               "name": "BtnSetCrt"
             },
             "position": {
+              "basis": "auto",
               "shrink": 0
             },
             "propConfig": {
               "position.display": {
                 "binding": {
+                  "type": "expr",
                   "config": {
-                    "expression": "!isNull({view.custom.lot.Id}) \u0026\u0026 !coalesce({view.custom.lot.CrtActive}, false)"
-                  },
-                  "type": "expr"
+                    "expression": "!isNull({view.custom.lot.Id}) && !coalesce({view.custom.lot.CrtActive}, false)"
+                  }
                 }
               }
             },
             "props": {
+              "text": "Set CRT",
               "style": {
                 "classes": "pf-btn pf-btn-elevated"
               },
-              "text": "Set CRT",
               "toolTipText": "Place this LOT on a Controlled Run Tag (200% downstream inspection prompt)."
             },
-            "type": "ia.input.button"
-          },
-          {
             "events": {
               "component": {
                 "onActionPerformed": {
-                  "config": {
-                    "script": "\tterm \u003d self.session.custom.terminal\n\tresult \u003d BlueRidge.Quality.Crt.clearCrt(self.view.params.lotId, self.session.custom.appUserId, term.terminalLocationId if term else None)\n\tBlueRidge.Common.Ui.notifyResult(result, \"CRT\", result.get(\"Message\"))\n\tself.view.rootContainer.load()"
-                  },
+                  "type": "script",
                   "scope": "G",
-                  "type": "script"
+                  "config": {
+                    "script": "\tterm = self.session.custom.terminal\n\tresult = BlueRidge.Quality.Crt.setCrt(self.view.params.lotId, self.session.custom.appUserId, term.terminalLocationId if term else None)\n\tBlueRidge.Common.Ui.notifyResult(result, \"CRT\", result.get(\"Message\"))\n\tself.view.rootContainer.load()"
+                  }
                 }
               }
-            },
+            }
+          },
+          {
+            "type": "ia.input.button",
             "meta": {
               "name": "BtnClearCrt"
             },
             "position": {
+              "basis": "auto",
               "shrink": 0
             },
             "propConfig": {
               "position.display": {
                 "binding": {
+                  "type": "expr",
                   "config": {
                     "expression": "coalesce({view.custom.lot.CrtActive}, false)"
-                  },
-                  "type": "expr"
+                  }
                 }
               }
             },
             "props": {
+              "text": "Clear CRT",
               "style": {
                 "classes": "pf-btn pf-btn-elevated"
               },
-              "text": "Clear CRT",
               "toolTipText": "Release the Controlled Run Tag (supervisor clearance per FDS-04-007)."
             },
-            "type": "ia.input.button"
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tterm = self.session.custom.terminal\n\tresult = BlueRidge.Quality.Crt.clearCrt(self.view.params.lotId, self.session.custom.appUserId, term.terminalLocationId if term else None)\n\tBlueRidge.Common.Ui.notifyResult(result, \"CRT\", result.get(\"Message\"))\n\tself.view.rootContainer.load()"
+                  }
+                }
+              }
+            }
           },
           {
+            "type": "ia.input.button",
             "meta": {
               "name": "BtnPlaceHold"
             },
             "position": {
+              "basis": "auto",
               "shrink": 0
             },
             "props": {
+              "text": "Place Hold",
               "enabled": false,
               "style": {
                 "classes": "pf-btn pf-btn-elevated"
               },
-              "text": "Place Hold",
               "toolTipText": "Place Hold is a later phase action."
-            },
-            "type": "ia.input.button"
+            }
           },
           {
+            "type": "ia.input.button",
             "meta": {
               "name": "BtnScrap"
             },
             "position": {
+              "basis": "auto",
               "shrink": 0
             },
             "props": {
+              "text": "Scrap",
               "enabled": false,
               "style": {
                 "classes": "pf-btn pf-btn-elevated"
               },
-              "text": "Scrap",
               "toolTipText": "Scrap is a later phase action."
-            },
-            "type": "ia.input.button"
+            }
           }
-        ],
-        "meta": {
-          "name": "ActionBar"
-        },
-        "position": {
-          "shrink": 0
-        },
-        "props": {
-          "alignItems": "center",
-          "style": {
-            "borderTop": "1px solid var(--mpp-border-default)",
-            "classes": "pf-actions",
-            "gap": "12px",
-            "padding": "16px 24px"
-          }
-        },
-        "type": "ia.container.flex"
+        ]
       }
-    ],
-    "events": {
-      "system": {
-        "onStartup": {
-          "config": {
-            "script": "\tself.view.rootContainer.load()"
-          },
-          "scope": "G",
-          "type": "script"
-        }
-      }
-    },
-    "meta": {
-      "name": "root"
-    },
-    "props": {
-      "direction": "column",
-      "style": {
-        "classes": "canvas",
-        "gap": "0px",
-        "overflowY": "auto",
-        "padding": "0px"
-      }
-    },
-    "scripts": {
-      "customMethods": [
-        {
-          "name": "load",
-          "params": [],
-          "script": "\tlotId \u003d self.view.params.lotId\n\tif not lotId:\n\t\treturn\n\tself.view.custom.lot      \u003d BlueRidge.Lots.Lot.get(lotId) or self.view.custom.lot\n\tself.view.custom.history  \u003d BlueRidge.Lots.Lot.getHistory(lotId)\n\tself.view.custom.parents  \u003d BlueRidge.Lots.Lot.getParents(lotId)\n\tself.view.custom.children \u003d BlueRidge.Lots.Lot.getChildren(lotId)\n\tself.view.custom.pauses   \u003d BlueRidge.Lots.Lot.getPauses(lotId)\n\tself.view.custom.scrapSummary \u003d BlueRidge.Lots.Lot.getScrapSummaryOrEmpty(lotId)"
-        }
-      ],
-      "extensionFunctions": null,
-      "messageHandlers": null
-    },
-    "type": "ia.container.flex"
+    ]
   }
 }

@@ -1,6 +1,5 @@
 {
   "custom": {
-    "rows": [],
     "filter": {
       "cellLocationId": null
     },
@@ -16,7 +15,9 @@
   "propConfig": {
     "custom.cellOptions": {
       "binding": {
-        "config": { "expression": "runScript(\"BlueRidge.Location.Location.listByTier\", 0, \"Cell\")" },
+        "config": {
+          "expression": "runScript(\"BlueRidge.Location.Location.listByTier\", 0, \"Cell\")"
+        },
         "transforms": [
           {
             "code": "\treturn [{\"value\": r.get(\"Id\"), \"label\": (r.get(\"Code\") or \"\") + \" - \" + (r.get(\"Name\") or \"\")} for r in (value or [])]",
@@ -28,7 +29,9 @@
     },
     "custom.reasonOptions": {
       "binding": {
-        "config": { "expression": "runScript(\"BlueRidge.Oee.DowntimeReasonCode.search\", 0, {view.custom.reasonFilter})" },
+        "config": {
+          "expression": "runScript(\"BlueRidge.Oee.DowntimeReasonCode.search\", 0, {view.custom.reasonFilter})"
+        },
         "transforms": [
           {
             "code": "\treturn [{\"value\": r.get(\"Id\"), \"label\": (r.get(\"Code\") or \"\") + \" - \" + (r.get(\"Description\") or \"\")} for r in (value or [])]",
@@ -40,56 +43,115 @@
     },
     "custom.rows": {
       "binding": {
-        "config": { "expression": "runScript(\"BlueRidge.Oee.DowntimeEvent.getOpenByLocation\", 0, {view.custom.filter.cellLocationId})" },
+        "config": {
+          "expression": "runScript(\"BlueRidge.Oee.DowntimeEvent.getOpenByLocation\", 0, {view.custom.filter.cellLocationId})"
+        },
         "type": "expr"
       }
     }
   },
   "props": {
-    "defaultSize": { "height": 800, "width": 1280 }
+    "defaultSize": {
+      "width": 1280
+    }
   },
   "root": {
     "children": [
       {
         "children": [
           {
-            "meta": { "name": "Title" },
-            "position": { "grow": 1 },
-            "props": { "text": "Downtime Entry", "style": { "fontSize": "22px", "fontWeight": "700" } },
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "style": {
+                "fontSize": "22px",
+                "fontWeight": "700"
+              },
+              "text": "Downtime Entry"
+            },
             "type": "ia.display.label"
           },
           {
             "children": [
               {
-                "meta": { "name": "MachineLabel" },
-                "props": { "text": "Machine", "style": { "classes": "pf-field-label" } },
+                "meta": {
+                  "name": "MachineLabel"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-field-label"
+                  },
+                  "text": "Machine"
+                },
                 "type": "ia.display.label"
               },
               {
-                "meta": { "name": "CellSelect" },
+                "meta": {
+                  "name": "CellSelect"
+                },
                 "propConfig": {
                   "props.options": {
-                    "binding": { "config": { "path": "view.custom.cellOptions" }, "type": "property" }
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.cellOptions"
+                      },
+                      "type": "property"
+                    }
                   },
                   "props.value": {
-                    "binding": { "config": { "path": "view.custom.filter.cellLocationId", "bidirectional": true }, "type": "property" }
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.filter.cellLocationId"
+                      },
+                      "type": "property"
+                    }
                   }
                 },
-                "props": { "placeholder": "Select machine / cell", "style": { "classes": "pf-field-input" } },
+                "props": {
+                  "placeholder": "Select machine / cell",
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                },
                 "type": "ia.input.dropdown"
               }
             ],
-            "meta": { "name": "MachineField" },
-            "position": { "basis": "340px", "shrink": 0 },
-            "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+            "meta": {
+              "name": "MachineField"
+            },
+            "position": {
+              "basis": "340px",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "gap": "4px",
+                "overflow": "visible"
+              }
+            },
             "type": "ia.container.flex"
           }
         ],
-        "meta": { "name": "Header" },
-        "position": { "shrink": 0 },
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "shrink": 0
+        },
         "props": {
           "alignItems": "flex-end",
-          "style": { "gap": "16px", "padding": "16px", "borderBottom": "1px solid var(--mpp-border-subtle)" }
+          "style": {
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "gap": "16px",
+            "padding": "16px"
+          }
         },
         "type": "ia.container.flex"
       },
@@ -98,29 +160,60 @@
           {
             "children": [
               {
-                "meta": { "name": "OpenHeader" },
-                "position": { "shrink": 0 },
-                "props": { "text": "Open downtime events", "style": { "classes": "pf-panel-header" } },
+                "meta": {
+                  "name": "OpenHeader"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-panel-header"
+                  },
+                  "text": "Open downtime events"
+                },
                 "type": "ia.display.label"
               },
               {
-                "meta": { "name": "EmptyState" },
-                "position": { "shrink": 0 },
+                "meta": {
+                  "name": "EmptyState"
+                },
+                "position": {
+                  "shrink": 0
+                },
                 "propConfig": {
                   "meta.visible": {
-                    "binding": { "config": { "expression": "len({view.custom.rows}) = 0" }, "type": "expr" }
+                    "binding": {
+                      "config": {
+                        "expression": "len({view.custom.rows}) \u003d 0"
+                      },
+                      "type": "expr"
+                    }
                   }
                 },
-                "props": { "text": "No open downtime events at this machine.", "style": { "color": "var(--mpp-text-secondary)", "fontStyle": "italic", "padding": "8px 0" } },
+                "props": {
+                  "style": {
+                    "color": "var(--mpp-text-secondary)",
+                    "fontStyle": "italic",
+                    "padding": "8px 0"
+                  },
+                  "text": "No open downtime events at this machine."
+                },
                 "type": "ia.display.label"
               },
               {
-                "meta": { "name": "Rows" },
-                "position": { "grow": 1 },
+                "meta": {
+                  "name": "Rows"
+                },
+                "position": {
+                  "grow": 1
+                },
                 "propConfig": {
                   "props.instances": {
                     "binding": {
-                      "config": { "path": "view.custom.rows" },
+                      "config": {
+                        "path": "view.custom.rows"
+                      },
                       "transforms": [
                         {
                           "code": "\treturn [\n\t\t{\n\t\t\t\"downtimeEventId\": r.get(\"DowntimeEventId\"),\n\t\t\t\"locationCode\":    r.get(\"LocationCode\"),\n\t\t\t\"sourceCode\":      r.get(\"SourceCode\"),\n\t\t\t\"reasonCode\":      r.get(\"ReasonCode\"),\n\t\t\t\"startedAt\":       str(r.get(\"StartedAtEt\")) if r.get(\"StartedAtEt\") is not None else \"\",\n\t\t\t\"hasReason\":       r.get(\"DowntimeReasonCodeId\") is not None\n\t\t}\n\t\tfor r in (value or [])\n\t]",
@@ -133,26 +226,51 @@
                 },
                 "props": {
                   "direction": "column",
-                  "elementPosition": { "basis": "68px", "shrink": 0 },
+                  "elementPosition": {
+                    "basis": "68px",
+                    "shrink": 0
+                  },
                   "path": "BlueRidge/Components/PlantFloor/DowntimeEntry/EventRow",
-                  "style": { "gap": "8px" },
+                  "style": {
+                    "gap": "8px"
+                  },
                   "useDefaultViewHeight": false,
                   "useDefaultViewWidth": false
                 },
                 "type": "ia.display.flex-repeater"
               }
             ],
-            "meta": { "name": "OpenPanel" },
-            "position": { "grow": 1 },
-            "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "12px", "padding": "16px" } },
+            "meta": {
+              "name": "OpenPanel"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-panel",
+                "gap": "12px",
+                "padding": "16px"
+              }
+            },
             "type": "ia.container.flex"
           },
           {
             "children": [
               {
-                "meta": { "name": "StartHeader" },
-                "position": { "shrink": 0 },
-                "props": { "text": "Start downtime", "style": { "classes": "pf-panel-header" } },
+                "meta": {
+                  "name": "StartHeader"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-panel-header"
+                  },
+                  "text": "Start downtime"
+                },
                 "type": "ia.display.label"
               },
               {
@@ -160,27 +278,63 @@
                   {
                     "children": [
                       {
-                        "meta": { "name": "ReasonLabel" },
-                        "props": { "text": "Reason (optional — can assign later)", "style": { "classes": "pf-field-label" } },
+                        "meta": {
+                          "name": "ReasonLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-label"
+                          },
+                          "text": "Reason (optional — can assign later)"
+                        },
                         "type": "ia.display.label"
                       },
                       {
-                        "meta": { "name": "ReasonSelect" },
+                        "meta": {
+                          "name": "ReasonSelect"
+                        },
                         "propConfig": {
                           "props.options": {
-                            "binding": { "config": { "path": "view.custom.reasonOptions" }, "type": "property" }
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.reasonOptions"
+                              },
+                              "type": "property"
+                            }
                           },
                           "props.value": {
-                            "binding": { "config": { "path": "view.custom.newReasonCodeId", "bidirectional": true }, "type": "property" }
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.newReasonCodeId"
+                              },
+                              "type": "property"
+                            }
                           }
                         },
-                        "props": { "placeholder": "(none)", "style": { "classes": "pf-field-input" } },
+                        "props": {
+                          "placeholder": "(none)",
+                          "style": {
+                            "classes": "pf-field-input"
+                          }
+                        },
                         "type": "ia.input.dropdown"
                       }
                     ],
-                    "meta": { "name": "ReasonField" },
-                    "position": { "grow": 1 },
-                    "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+                    "meta": {
+                      "name": "ReasonField"
+                    },
+                    "position": {
+                      "grow": 1
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "classes": "pf-field",
+                        "gap": "4px",
+                        "overflow": "visible"
+                      }
+                    },
                     "type": "ia.container.flex"
                   },
                   {
@@ -188,49 +342,96 @@
                       "component": {
                         "onActionPerformed": {
                           "config": {
-                            "script": "\tcellId = self.view.custom.filter.cellLocationId\n\tif cellId is None:\n\t\treturn\n\tresult = BlueRidge.Oee.DowntimeEvent.start(cellId, downtimeReasonCodeId=self.view.custom.newReasonCodeId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Downtime started\")\n\tself.view.custom.filter = dict(self.view.custom.filter)"
+                            "script": "\tcellId \u003d self.view.custom.filter.cellLocationId\n\tif cellId is None:\n\t\treturn\n\tresult \u003d BlueRidge.Oee.DowntimeEvent.start(cellId, downtimeReasonCodeId\u003dself.view.custom.newReasonCodeId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Downtime started\")\n\tself.view.custom.filter \u003d dict(self.view.custom.filter)"
                           },
                           "scope": "G",
                           "type": "script"
                         }
                       }
                     },
-                    "meta": { "name": "StartButton" },
-                    "position": { "shrink": 0 },
+                    "meta": {
+                      "name": "StartButton"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
                     "propConfig": {
                       "props.enabled": {
-                        "binding": { "config": { "expression": "!isNull({view.custom.filter.cellLocationId})" }, "type": "expr" }
+                        "binding": {
+                          "config": {
+                            "expression": "!isNull({view.custom.filter.cellLocationId})"
+                          },
+                          "type": "expr"
+                        }
                       }
                     },
-                    "props": { "style": { "classes": "pf-btn pf-btn-primary pf-btn-large" }, "text": "Start Downtime" },
+                    "props": {
+                      "style": {
+                        "classes": "pf-btn pf-btn-primary pf-btn-large"
+                      },
+                      "text": "Start Downtime"
+                    },
                     "type": "ia.input.button"
                   }
                 ],
-                "meta": { "name": "StartRow" },
-                "position": { "shrink": 0 },
-                "props": { "alignItems": "flex-end", "style": { "gap": "12px" } },
+                "meta": {
+                  "name": "StartRow"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "alignItems": "flex-end",
+                  "style": {
+                    "gap": "12px",
+                    "overflow": "visible"
+                  }
+                },
                 "type": "ia.container.flex"
               }
             ],
-            "meta": { "name": "StartPanel" },
-            "position": { "shrink": 0 },
-            "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "12px", "padding": "16px" } },
+            "meta": {
+              "name": "StartPanel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-panel",
+                "gap": "12px",
+                "padding": "16px"
+              }
+            },
             "type": "ia.container.flex"
           }
         ],
-        "meta": { "name": "Body" },
-        "position": { "grow": 1 },
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "grow": 1
+        },
         "props": {
           "direction": "column",
-          "style": { "gap": "16px", "overflowY": "auto", "padding": "16px" }
+          "style": {
+            "gap": "16px",
+            "overflowY": "auto",
+            "padding": "16px"
+          }
         },
         "type": "ia.container.flex"
       }
     ],
-    "meta": { "name": "root" },
+    "meta": {
+      "name": "root"
+    },
     "props": {
       "direction": "column",
-      "style": { "classes": "canvas" }
+      "style": {
+        "classes": "canvas"
+      }
     },
     "scripts": {
       "customMethods": [],
@@ -239,14 +440,14 @@
         {
           "messageType": "downtimeEndRequested",
           "pageScope": true,
-          "script": "\tBlueRidge.Oee.DowntimeEvent.end(payload[\"downtimeEventId\"])\n\tself.view.custom.filter = dict(self.view.custom.filter)",
+          "script": "\tBlueRidge.Oee.DowntimeEvent.end(payload[\"downtimeEventId\"])\n\tself.view.custom.filter \u003d dict(self.view.custom.filter)",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "downtimeAssignRequested",
           "pageScope": true,
-          "script": "\trid = self.view.custom.newReasonCodeId\n\tif rid is not None:\n\t\tBlueRidge.Oee.DowntimeEvent.assignReason(payload[\"downtimeEventId\"], rid)\n\t\tself.view.custom.filter = dict(self.view.custom.filter)",
+          "script": "\trid \u003d self.view.custom.newReasonCodeId\n\tif rid is not None:\n\t\tBlueRidge.Oee.DowntimeEvent.assignReason(payload[\"downtimeEventId\"], rid)\n\t\tself.view.custom.filter \u003d dict(self.view.custom.filter)",
           "sessionScope": false,
           "viewScope": false
         }

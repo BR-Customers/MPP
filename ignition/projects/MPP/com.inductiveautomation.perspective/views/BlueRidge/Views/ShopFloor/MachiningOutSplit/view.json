@@ -482,7 +482,8 @@
                       "direction": "column",
                       "style": {
                         "classes": "pf-field",
-                        "gap": "6px"
+                        "gap": "6px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"

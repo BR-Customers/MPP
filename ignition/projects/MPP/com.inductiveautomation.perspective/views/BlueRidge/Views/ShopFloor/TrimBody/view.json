@@ -76,7 +76,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "if(isNull({session.custom.terminal.zoneName}) || {session.custom.terminal.zoneName} = \"\", \"No terminal resolved\", {session.custom.terminal.zoneName})"
+                        "expression": "if(isNull({session.custom.terminal.zoneName}) || {session.custom.terminal.zoneName} \u003d \"\", \"No terminal resolved\", {session.custom.terminal.zoneName})"
                       },
                       "type": "expr"
                     }
@@ -705,7 +705,7 @@
                   "direction": "column",
                   "style": {
                     "gap": "8px",
-                    "overflow": "hidden"
+                    "overflow": "visible"
                   }
                 },
                 "type": "ia.container.flex"
@@ -804,7 +804,7 @@
                       "style": {
                         "classes": "pf-field",
                         "gap": "4px",
-                        "overflow": "hidden"
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -867,7 +867,7 @@
                       "style": {
                         "classes": "pf-field",
                         "gap": "4px",
-                        "overflow": "hidden"
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -922,7 +922,8 @@
                           "direction": "column",
                           "style": {
                             "classes": "pf-field",
-                            "gap": "4px"
+                            "gap": "4px",
+                            "overflow": "visible"
                           }
                         },
                         "type": "ia.container.flex"
@@ -975,7 +976,8 @@
                           "direction": "column",
                           "style": {
                             "classes": "pf-field",
-                            "gap": "4px"
+                            "gap": "4px",
+                            "overflow": "visible"
                           }
                         },
                         "type": "ia.container.flex"
@@ -990,7 +992,7 @@
                     "props": {
                       "style": {
                         "gap": "12px",
-                        "overflow": "hidden"
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -1078,7 +1080,7 @@
                   "direction": "column",
                   "style": {
                     "gap": "12px",
-                    "overflow": "hidden"
+                    "overflow": "visible"
                   }
                 },
                 "type": "ia.container.flex"
@@ -1094,7 +1096,7 @@
               "direction": "row-reverse",
               "style": {
                 "gap": "16px",
-                "overflow": "hidden"
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -1170,7 +1172,7 @@
         {
           "name": "startup",
           "params": [],
-          "script": "\t# Operator gate: no logged-in operator -> open the initials popup OVER this screen.\n\t# Non-blocking: the page still populates behind the modal, and session.custom is\n\t# reactive, so the operator label/mutations pick up the user with no re-populate.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
+          "script": "\t# Operator gate: no logged-in operator -\u003e open the initials popup OVER this screen.\n\t# Non-blocking: the page still populates behind the modal, and session.custom is\n\t# reactive, so the operator label/mutations pick up the user with no re-populate.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dFalse, overlayDismiss\u003dFalse)"
         }
       ],
       "extensionFunctions": null,

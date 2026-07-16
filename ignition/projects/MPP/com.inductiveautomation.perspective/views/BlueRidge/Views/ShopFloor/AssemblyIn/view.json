@@ -294,7 +294,10 @@
             },
             "props": {
               "alignItems": "center",
-              "gap": "10px"
+              "gap": "10px",
+              "style": {
+                "overflow": "visible"
+              }
             },
             "type": "ia.container.flex"
           }

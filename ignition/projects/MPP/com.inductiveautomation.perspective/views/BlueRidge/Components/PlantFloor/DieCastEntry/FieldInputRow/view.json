@@ -4,12 +4,12 @@
   },
   "params": {
     "field": {
-      "Id": null,
-      "DataCollectionFieldId": null,
       "Code": "",
-      "Name": "",
+      "DataCollectionFieldId": null,
+      "DataTypeCode": "String",
+      "Id": null,
       "IsRequired": false,
-      "DataTypeCode": "String"
+      "Name": ""
     }
   },
   "propConfig": {
@@ -25,7 +25,186 @@
     }
   },
   "root": {
-    "type": "ia.container.flex",
+    "children": [
+      {
+        "meta": {
+          "name": "FieldLabel"
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.field.Name} + if({view.params.field.IsRequired}, \u0027 *\u0027, \u0027\u0027)"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-field-label"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "events": {
+          "dom": {
+            "onBlur": {
+              "config": {
+                "script": "\tself.view.rootContainer.broadcastValue()"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "StringInput"
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.field.DataTypeCode} \u003d \"String\" || isNull({view.params.field.DataTypeCode})"
+              },
+              "type": "expr"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "bidirectional": true,
+                "path": "view.custom.value"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-field-input"
+          }
+        },
+        "type": "ia.input.text-field"
+      },
+      {
+        "events": {
+          "dom": {
+            "onBlur": {
+              "config": {
+                "script": "\tself.view.rootContainer.broadcastValue()"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "NumericInput"
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.field.DataTypeCode} \u003d \"Integer\" || {view.params.field.DataTypeCode} \u003d \"Decimal\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.value": {
+            "binding": {
+              "config": {
+                "bidirectional": true,
+                "path": "view.custom.value"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-field-input"
+          }
+        },
+        "type": "ia.input.numeric-entry-field"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tself.view.rootContainer.broadcastValue()"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "BooleanInput"
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.field.DataTypeCode} \u003d \"Boolean\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.selected": {
+            "binding": {
+              "config": {
+                "bidirectional": true,
+                "path": "view.custom.value"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "text": ""
+        },
+        "type": "ia.input.checkbox"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tself.view.rootContainer.broadcastValue()"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "DateInput"
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.field.DataTypeCode} \u003d \"Date\""
+              },
+              "type": "expr"
+            }
+          },
+          "props.value": {
+            "binding": {
+              "config": {
+                "bidirectional": true,
+                "path": "view.custom.value"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "type": "ia.input.date-time-picker"
+      }
+    ],
     "meta": {
       "name": "root"
     },
@@ -33,206 +212,21 @@
       "direction": "column",
       "style": {
         "classes": "pf-field",
-        "gap": "4px"
+        "gap": "4px",
+        "overflow": "visible"
       }
     },
-    "children": [
-      {
-        "type": "ia.display.label",
-        "meta": {
-          "name": "FieldLabel"
-        },
-        "props": {
-          "style": {
-            "classes": "pf-field-label"
-          }
-        },
-        "propConfig": {
-          "props.text": {
-            "binding": {
-              "type": "expr",
-              "config": {
-                "expression": "{view.params.field.Name} + if({view.params.field.IsRequired}, ' *', '')"
-              }
-            }
-          }
-        }
-      },
-      {
-        "type": "ia.input.text-field",
-        "version": 0,
-        "meta": {
-          "name": "StringInput"
-        },
-        "props": {
-          "style": {
-            "classes": "pf-field-input"
-          }
-        },
-        "position": {},
-        "propConfig": {
-          "position.display": {
-            "binding": {
-              "type": "expr",
-              "config": {
-                "expression": "{view.params.field.DataTypeCode} = \"String\" || isNull({view.params.field.DataTypeCode})"
-              }
-            }
-          },
-          "props.text": {
-            "binding": {
-              "type": "property",
-              "config": {
-                "path": "view.custom.value",
-                "bidirectional": true
-              }
-            }
-          }
-        },
-        "events": {
-          "dom": {
-            "onBlur": {
-              "type": "script",
-              "scope": "G",
-              "config": {
-                "script": "\tself.view.rootContainer.broadcastValue()"
-              }
-            }
-          }
-        }
-      },
-      {
-        "type": "ia.input.numeric-entry-field",
-        "version": 0,
-        "meta": {
-          "name": "NumericInput"
-        },
-        "props": {
-          "style": {
-            "classes": "pf-field-input"
-          }
-        },
-        "position": {},
-        "propConfig": {
-          "position.display": {
-            "binding": {
-              "type": "expr",
-              "config": {
-                "expression": "{view.params.field.DataTypeCode} = \"Integer\" || {view.params.field.DataTypeCode} = \"Decimal\""
-              }
-            }
-          },
-          "props.value": {
-            "binding": {
-              "type": "property",
-              "config": {
-                "path": "view.custom.value",
-                "bidirectional": true
-              }
-            }
-          }
-        },
-        "events": {
-          "dom": {
-            "onBlur": {
-              "type": "script",
-              "scope": "G",
-              "config": {
-                "script": "\tself.view.rootContainer.broadcastValue()"
-              }
-            }
-          }
-        }
-      },
-      {
-        "type": "ia.input.checkbox",
-        "version": 0,
-        "meta": {
-          "name": "BooleanInput"
-        },
-        "props": {
-          "text": ""
-        },
-        "position": {},
-        "propConfig": {
-          "position.display": {
-            "binding": {
-              "type": "expr",
-              "config": {
-                "expression": "{view.params.field.DataTypeCode} = \"Boolean\""
-              }
-            }
-          },
-          "props.selected": {
-            "binding": {
-              "type": "property",
-              "config": {
-                "path": "view.custom.value",
-                "bidirectional": true
-              }
-            }
-          }
-        },
-        "events": {
-          "component": {
-            "onActionPerformed": {
-              "type": "script",
-              "scope": "G",
-              "config": {
-                "script": "\tself.view.rootContainer.broadcastValue()"
-              }
-            }
-          }
-        }
-      },
-      {
-        "type": "ia.input.date-time-picker",
-        "version": 0,
-        "meta": {
-          "name": "DateInput"
-        },
-        "props": {},
-        "position": {},
-        "propConfig": {
-          "position.display": {
-            "binding": {
-              "type": "expr",
-              "config": {
-                "expression": "{view.params.field.DataTypeCode} = \"Date\""
-              }
-            }
-          },
-          "props.value": {
-            "binding": {
-              "type": "property",
-              "config": {
-                "path": "view.custom.value",
-                "bidirectional": true
-              }
-            }
-          }
-        },
-        "events": {
-          "component": {
-            "onActionPerformed": {
-              "type": "script",
-              "scope": "G",
-              "config": {
-                "script": "\tself.view.rootContainer.broadcastValue()"
-              }
-            }
-          }
-        }
-      }
-    ],
     "scripts": {
       "customMethods": [
         {
           "name": "broadcastValue",
           "params": [],
-          "script": "\t# Embed params are input-only; cross back to the CheckpointPanel parent with a\n\t# page-scoped message carrying this field's DataCollectionFieldId + value.\n\tfid = self.view.params.field.get(\"DataCollectionFieldId\") if self.view.params.field else None\n\tsystem.perspective.sendMessage(\"dcFieldChanged\", {\"fieldId\": fid, \"value\": self.view.custom.value}, scope=\"page\")"
+          "script": "\t# Embed params are input-only; cross back to the CheckpointPanel parent with a\n\t# page-scoped message carrying this field\u0027s DataCollectionFieldId + value.\n\tfid \u003d self.view.params.field.get(\"DataCollectionFieldId\") if self.view.params.field else None\n\tsystem.perspective.sendMessage(\"dcFieldChanged\", {\"fieldId\": fid, \"value\": self.view.custom.value}, scope\u003d\"page\")"
         }
-      ]
-    }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": null
+    },
+    "type": "ia.container.flex"
   }
 }

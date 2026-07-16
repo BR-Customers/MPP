@@ -1,18 +1,10 @@
 {
   "custom": {
     "draft": {
+      "chargeToArea": null,
       "defectCodeId": null,
       "quantity": 0,
-      "chargeToArea": null,
       "remarks": null
-    },
-    "defectOptions": [],
-    "targetLot": {
-      "CavityNumber": null,
-      "Id": null,
-      "InventoryAvailable": 0,
-      "LotName": "",
-      "PieceCount": 0
     }
   },
   "params": {
@@ -21,6 +13,22 @@
     "toolId": null
   },
   "propConfig": {
+    "custom.defectOptions": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Quality.DefectCode.getForDropdown\", 0)"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.targetLot": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Lots.Lot.getLatestForToolCavityOrEmpty\", 0, {view.params.toolId}, {view.params.toolCavityId}, {view.params.refreshToken})"
+        },
+        "type": "expr"
+      }
+    },
     "params.refreshToken": {
       "paramDirection": "input",
       "persistent": true
@@ -32,22 +40,6 @@
     "params.toolId": {
       "paramDirection": "input",
       "persistent": true
-    },
-    "custom.defectOptions": {
-      "binding": {
-        "type": "expr",
-        "config": {
-          "expression": "runScript(\"BlueRidge.Quality.DefectCode.getForDropdown\", 0)"
-        }
-      }
-    },
-    "custom.targetLot": {
-      "binding": {
-        "type": "expr",
-        "config": {
-          "expression": "runScript(\"BlueRidge.Lots.Lot.getLatestForToolCavityOrEmpty\", 0, {view.params.toolId}, {view.params.toolCavityId}, {view.params.refreshToken})"
-        }
-      }
     }
   },
   "props": {
@@ -57,51 +49,38 @@
     }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": {
-      "name": "root"
-    },
-    "props": {
-      "direction": "column",
-      "style": {
-        "borderTop": "1px solid var(--mpp-border, #e0e0e0)",
-        "gap": "12px",
-        "paddingTop": "12px"
-      }
-    },
     "children": [
       {
-        "type": "ia.display.label",
         "meta": {
           "name": "PanelHeader"
         },
         "props": {
-          "text": "Reject Entry",
           "style": {
             "classes": "pf-panel-header"
-          }
-        }
+          },
+          "text": "Reject Entry"
+        },
+        "type": "ia.display.label"
       },
       {
-        "type": "ia.display.label",
         "meta": {
           "name": "TargetLotLabel"
         },
         "propConfig": {
-          "props.text": {
-            "binding": {
-              "type": "expr",
-              "config": {
-                "expression": "if(isNull({view.params.toolCavityId}), \"Select a cavity above to target rejects.\", if(isNull({view.custom.targetLot.Id}), \"No open LOT on the selected cavity.\", \"Rejecting Cavity \" + toStr({view.custom.targetLot.CavityNumber}) + \" - charges newest open LOT \" + {view.custom.targetLot.LotName}))"
-              }
-            }
-          },
           "props.style.color": {
             "binding": {
-              "type": "expr",
               "config": {
                 "expression": "if(isNull({view.custom.targetLot.Id}), \"var(--mpp-text-secondary, #757575)\", \"var(--mpp-warning, #b26a00)\")"
-              }
+              },
+              "type": "expr"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "expression": "if(isNull({view.params.toolCavityId}), \"Select a cavity above to target rejects.\", if(isNull({view.custom.targetLot.Id}), \"No open LOT on the selected cavity.\", \"Rejecting Cavity \" + toStr({view.custom.targetLot.CavityNumber}) + \" - charges newest open LOT \" + {view.custom.targetLot.LotName}))"
+              },
+              "type": "expr"
             }
           }
         },
@@ -110,10 +89,54 @@
             "classes": "pf-kpi-sub",
             "fontWeight": 600
           }
-        }
+        },
+        "type": "ia.display.label"
       },
       {
-        "type": "ia.container.flex",
+        "children": [
+          {
+            "meta": {
+              "name": "DefectLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-field-label"
+              },
+              "text": "Defect Code"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "DefectDropdown"
+            },
+            "propConfig": {
+              "props.options": {
+                "binding": {
+                  "config": {
+                    "path": "view.custom.defectOptions"
+                  },
+                  "type": "property"
+                }
+              },
+              "props.value": {
+                "binding": {
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.draft.defectCodeId"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "placeholder": {
+                "text": "Select a defect code"
+              }
+            },
+            "type": "ia.input.dropdown"
+          }
+        ],
         "meta": {
           "name": "DefectField"
         },
@@ -121,57 +144,49 @@
           "direction": "column",
           "style": {
             "classes": "pf-field",
-            "gap": "4px"
+            "gap": "4px",
+            "overflow": "visible"
           }
         },
-        "children": [
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "DefectLabel"
-            },
-            "props": {
-              "text": "Defect Code",
-              "style": {
-                "classes": "pf-field-label"
-              }
-            }
-          },
-          {
-            "type": "ia.input.dropdown",
-            "version": 0,
-            "meta": {
-              "name": "DefectDropdown"
-            },
-            "props": {
-              "placeholder": {
-                "text": "Select a defect code"
-              }
-            },
-            "propConfig": {
-              "props.options": {
-                "binding": {
-                  "type": "property",
-                  "config": {
-                    "path": "view.custom.defectOptions"
-                  }
-                }
-              },
-              "props.value": {
-                "binding": {
-                  "type": "property",
-                  "config": {
-                    "path": "view.custom.draft.defectCodeId",
-                    "bidirectional": true
-                  }
-                }
-              }
-            }
-          }
-        ]
+        "type": "ia.container.flex"
       },
       {
-        "type": "ia.container.flex",
+        "children": [
+          {
+            "meta": {
+              "name": "QuantityLabel"
+            },
+            "props": {
+              "style": {
+                "classes": "pf-field-label"
+              },
+              "text": "Quantity"
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "QuantityInput"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "bidirectional": true,
+                    "path": "view.custom.draft.quantity"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-field-input"
+              }
+            },
+            "type": "ia.input.text-field"
+          }
+        ],
         "meta": {
           "name": "QuantityField"
         },
@@ -179,90 +194,69 @@
           "direction": "column",
           "style": {
             "classes": "pf-field",
-            "gap": "4px"
+            "gap": "4px",
+            "overflow": "visible"
           }
         },
-        "children": [
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "QuantityLabel"
-            },
-            "props": {
-              "text": "Quantity",
-              "style": {
-                "classes": "pf-field-label"
-              }
-            }
-          },
-          {
-            "type": "ia.input.text-field",
-            "version": 0,
-            "meta": {
-              "name": "QuantityInput"
-            },
-            "props": {
-              "style": {
-                "classes": "pf-field-input"
-              }
-            },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "property",
-                  "config": {
-                    "path": "view.custom.draft.quantity",
-                    "bidirectional": true
-                  }
-                }
-              }
-            }
-          }
-        ]
+        "type": "ia.container.flex"
       },
       {
-        "type": "ia.input.button",
-        "version": 0,
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tself.view.rootContainer.submitReject()"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
         "meta": {
           "name": "AddRejectButton"
-        },
-        "props": {
-          "text": "Add RejectEvent",
-          "style": {
-            "classes": "pf-btn pf-btn-secondary"
-          }
         },
         "propConfig": {
           "props.enabled": {
             "binding": {
-              "type": "expr",
               "config": {
-                "expression": "!isNull({view.custom.targetLot.Id}) && !isNull({view.custom.draft.defectCodeId}) && {view.custom.draft.quantity} > 0"
-              }
+                "expression": "!isNull({view.custom.targetLot.Id}) \u0026\u0026 !isNull({view.custom.draft.defectCodeId}) \u0026\u0026 {view.custom.draft.quantity} \u003e 0"
+              },
+              "type": "expr"
             }
           }
         },
-        "events": {
-          "component": {
-            "onActionPerformed": {
-              "type": "script",
-              "scope": "G",
-              "config": {
-                "script": "\tself.view.rootContainer.submitReject()"
-              }
-            }
-          }
-        }
+        "props": {
+          "style": {
+            "classes": "pf-btn pf-btn-secondary"
+          },
+          "text": "Add RejectEvent"
+        },
+        "type": "ia.input.button"
       }
     ],
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "borderTop": "1px solid var(--mpp-border, #e0e0e0)",
+        "gap": "12px",
+        "overflow": "visible",
+        "paddingTop": "12px"
+      }
+    },
     "scripts": {
       "customMethods": [
         {
           "name": "submitReject",
           "params": [],
-          "script": "\t# Cavity-scoped reject (Jacques 2026-07-06): charge the newest open LOT on the selected cavity.\n\ttarget = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.targetLot) or {}\n\tlotId = target.get(\"Id\")\n\tif lotId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No target LOT\", \"No open LOT on the selected cavity - nothing to reject against.\", \"warning\")\n\t\treturn\n\tdraft = dict(self.view.custom.draft)\n\tdraft[\"lotId\"] = lotId\n\tdraft[\"quantity\"] = BlueRidge.Common.Util.toIntOrNone(draft.get(\"quantity\"))\n\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tresult = BlueRidge.Workorder.RejectEvent.record(draft, appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle=\"Reject recorded\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"defectCodeId\": None, \"quantity\": 0, \"chargeToArea\": None, \"remarks\": None}\n\t\tsystem.perspective.sendMessage(\"rejectRecorded\", {\"lotId\": lotId}, scope=\"page\")"
+          "script": "\t# Cavity-scoped reject (Jacques 2026-07-06): charge the newest open LOT on the selected cavity.\n\ttarget \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.targetLot) or {}\n\tlotId \u003d target.get(\"Id\")\n\tif lotId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No target LOT\", \"No open LOT on the selected cavity - nothing to reject against.\", \"warning\")\n\t\treturn\n\tdraft \u003d dict(self.view.custom.draft)\n\tdraft[\"lotId\"] \u003d lotId\n\tdraft[\"quantity\"] \u003d BlueRidge.Common.Util.toIntOrNone(draft.get(\"quantity\"))\n\tappUserId \u003d self.session.custom.appUserId\n\ttermId \u003d None\n\ttry:\n\t\ttermId \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId \u003d None\n\tresult \u003d BlueRidge.Workorder.RejectEvent.record(draft, appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle\u003d\"Reject recorded\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft \u003d {\"defectCodeId\": None, \"quantity\": 0, \"chargeToArea\": None, \"remarks\": None}\n\t\tsystem.perspective.sendMessage(\"rejectRecorded\", {\"lotId\": lotId}, scope\u003d\"page\")"
         }
-      ]
-    }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": null
+    },
+    "type": "ia.container.flex"
   }
 }

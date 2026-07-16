@@ -22,252 +22,23 @@
           "$": [
             "ts",
             192,
-            1784210570076
+            1784227185312
           ],
-          "$ts": 1784210170172
-        },
-        "CurrentLocationId": 4,
-        "CurrentLocationName": "Machine 01",
-        "Id": 30,
-        "ItemId": 1,
-        "ItemPartNumber": "5G0-c",
-        "LotName": "MESL3000030",
-        "LotOriginTypeCode": "Manufactured",
-        "LotOriginTypeId": 1,
-        "LotStatusCode": "Good",
-        "LotStatusId": 1,
-        "PieceCount": 24,
-        "TotalCount": 30,
-        "VendorLotNumber": null
-      },
-      {
-        "CreatedAt": {
-          "$": [
-            "ts",
-            192,
-            1784210570076
-          ],
-          "$ts": 1784042109597
-        },
-        "CurrentLocationId": 67,
-        "CurrentLocationName": "Fuel Pump (6na 6vj)",
-        "Id": 29,
-        "ItemId": 10,
-        "ItemPartNumber": "12270-6NA",
-        "LotName": "MESL3000029",
-        "LotOriginTypeCode": "Manufactured",
-        "LotOriginTypeId": 1,
-        "LotStatusCode": "Good",
-        "LotStatusId": 1,
-        "PieceCount": 8,
-        "TotalCount": 30,
-        "VendorLotNumber": null
-      },
-      {
-        "CreatedAt": {
-          "$": [
-            "ts",
-            192,
-            1784210570076
-          ],
-          "$ts": 1784038485099
-        },
-        "CurrentLocationId": 81,
-        "CurrentLocationName": "5G0 Front",
-        "Id": 28,
-        "ItemId": 2,
-        "ItemPartNumber": "5G0-SA",
-        "LotName": "MESL3000028",
-        "LotOriginTypeCode": "Manufactured",
-        "LotOriginTypeId": 1,
-        "LotStatusCode": "Good",
-        "LotStatusId": 1,
-        "PieceCount": 12,
-        "TotalCount": 30,
-        "VendorLotNumber": null
-      },
-      {
-        "CreatedAt": {
-          "$": [
-            "ts",
-            192,
-            1784210570076
-          ],
-          "$ts": 1784037970886
-        },
-        "CurrentLocationId": 13,
-        "CurrentLocationName": "Machine 10",
-        "Id": 27,
-        "ItemId": 1,
-        "ItemPartNumber": "5G0-c",
-        "LotName": "MESL3000027",
-        "LotOriginTypeCode": "Manufactured",
-        "LotOriginTypeId": 1,
-        "LotStatusCode": "Good",
-        "LotStatusId": 1,
-        "PieceCount": 24,
-        "TotalCount": 30,
-        "VendorLotNumber": null
-      },
-      {
-        "CreatedAt": {
-          "$": [
-            "ts",
-            192,
-            1784210570076
-          ],
-          "$ts": 1784037958765
-        },
-        "CurrentLocationId": 13,
-        "CurrentLocationName": "Machine 10",
-        "Id": 26,
-        "ItemId": 1,
-        "ItemPartNumber": "5G0-c",
-        "LotName": "MESL3000026",
-        "LotOriginTypeCode": "Manufactured",
-        "LotOriginTypeId": 1,
-        "LotStatusCode": "Good",
-        "LotStatusId": 1,
-        "PieceCount": 24,
-        "TotalCount": 30,
-        "VendorLotNumber": null
-      },
-      {
-        "CreatedAt": {
-          "$": [
-            "ts",
-            192,
-            1784210570076
-          ],
-          "$ts": 1784035011214
-        },
-        "CurrentLocationId": 81,
-        "CurrentLocationName": "5G0 Front",
-        "Id": 25,
-        "ItemId": 1,
-        "ItemPartNumber": "5G0-c",
-        "LotName": "MESL3000025",
-        "LotOriginTypeCode": "Manufactured",
-        "LotOriginTypeId": 1,
-        "LotStatusCode": "Closed",
-        "LotStatusId": 4,
-        "PieceCount": 0,
-        "TotalCount": 30,
-        "VendorLotNumber": null
-      },
-      {
-        "CreatedAt": {
-          "$": [
-            "ts",
-            192,
-            1784210570076
-          ],
-          "$ts": 1784035002561
-        },
-        "CurrentLocationId": 81,
-        "CurrentLocationName": "5G0 Front",
-        "Id": 24,
-        "ItemId": 1,
-        "ItemPartNumber": "5G0-c",
-        "LotName": "MESL3000024",
-        "LotOriginTypeCode": "Manufactured",
-        "LotOriginTypeId": 1,
-        "LotStatusCode": "Good",
-        "LotStatusId": 1,
-        "PieceCount": 23,
-        "TotalCount": 30,
-        "VendorLotNumber": null
-      },
-      {
-        "CreatedAt": {
-          "$": [
-            "ts",
-            192,
-            1784210570076
-          ],
-          "$ts": 1784034989766
-        },
-        "CurrentLocationId": 4,
-        "CurrentLocationName": "Machine 01",
-        "Id": 23,
-        "ItemId": 1,
-        "ItemPartNumber": "5G0-c",
-        "LotName": "MESL3000023",
-        "LotOriginTypeCode": "Manufactured",
-        "LotOriginTypeId": 1,
-        "LotStatusCode": "Good",
-        "LotStatusId": 1,
-        "PieceCount": 24,
-        "TotalCount": 30,
-        "VendorLotNumber": null
-      },
-      {
-        "CreatedAt": {
-          "$": [
-            "ts",
-            192,
-            1784210570076
-          ],
-          "$ts": 1784034970412
-        },
-        "CurrentLocationId": 4,
-        "CurrentLocationName": "Machine 01",
-        "Id": 22,
-        "ItemId": 1,
-        "ItemPartNumber": "5G0-c",
-        "LotName": "MESL3000022",
-        "LotOriginTypeCode": "Manufactured",
-        "LotOriginTypeId": 1,
-        "LotStatusCode": "Good",
-        "LotStatusId": 1,
-        "PieceCount": 24,
-        "TotalCount": 30,
-        "VendorLotNumber": null
-      },
-      {
-        "CreatedAt": {
-          "$": [
-            "ts",
-            192,
-            1784210570076
-          ],
-          "$ts": 1784034567082
-        },
-        "CurrentLocationId": 4,
-        "CurrentLocationName": "Machine 01",
-        "Id": 21,
-        "ItemId": 1,
-        "ItemPartNumber": "5G0-c",
-        "LotName": "MESL3000021",
-        "LotOriginTypeCode": "Manufactured",
-        "LotOriginTypeId": 1,
-        "LotStatusCode": "Good",
-        "LotStatusId": 1,
-        "PieceCount": 24,
-        "TotalCount": 30,
-        "VendorLotNumber": null
-      },
-      {
-        "CreatedAt": {
-          "$": [
-            "ts",
-            192,
-            1784210570076
-          ],
-          "$ts": 1783963634070
+          "$ts": 1784223690231
         },
         "CurrentLocationId": 49,
         "CurrentLocationName": "Machining \u0026 Assembly 1",
         "Id": 20,
         "ItemId": 4,
         "ItemPartNumber": "21001 pin",
+        "LastOperationName": null,
         "LotName": "MESL3000020",
         "LotOriginTypeCode": "Received",
         "LotOriginTypeId": 2,
         "LotStatusCode": "Good",
         "LotStatusId": 1,
         "PieceCount": 100,
-        "TotalCount": 30,
+        "TotalCount": 20,
         "VendorLotNumber": "PIN-VEND-0001"
       },
       {
@@ -275,22 +46,23 @@
           "$": [
             "ts",
             192,
-            1784210570076
+            1784227185312
           ],
-          "$ts": 1783963633909
+          "$ts": 1784223690077
         },
         "CurrentLocationId": 86,
         "CurrentLocationName": "Assembly (Serialized)",
         "Id": 19,
         "ItemId": 2,
         "ItemPartNumber": "5G0-SA",
+        "LastOperationName": null,
         "LotName": "MESL3000019",
         "LotOriginTypeCode": "Manufactured",
         "LotOriginTypeId": 1,
         "LotStatusCode": "Hold",
         "LotStatusId": 2,
         "PieceCount": 24,
-        "TotalCount": 30,
+        "TotalCount": 20,
         "VendorLotNumber": null
       },
       {
@@ -298,22 +70,23 @@
           "$": [
             "ts",
             192,
-            1784210570076
+            1784227185312
           ],
-          "$ts": 1783963633888
+          "$ts": 1784223690061
         },
         "CurrentLocationId": 82,
         "CurrentLocationName": "Machining In",
         "Id": 18,
         "ItemId": 1,
         "ItemPartNumber": "5G0-c",
+        "LastOperationName": "Machining Out",
         "LotName": "MESL3000018",
         "LotOriginTypeCode": "Manufactured",
         "LotOriginTypeId": 1,
         "LotStatusCode": "Closed",
         "LotStatusId": 4,
         "PieceCount": 0,
-        "TotalCount": 30,
+        "TotalCount": 20,
         "VendorLotNumber": null
       },
       {
@@ -321,22 +94,23 @@
           "$": [
             "ts",
             192,
-            1784210570076
+            1784227185312
           ],
-          "$ts": 1783963633877
+          "$ts": 1784223690053
         },
         "CurrentLocationId": 72,
         "CurrentLocationName": "Assembly Finished",
         "Id": 17,
         "ItemId": 11,
         "ItemPartNumber": "12270-6NA-M",
+        "LastOperationName": null,
         "LotName": "MESL3000017",
         "LotOriginTypeCode": "Manufactured",
         "LotOriginTypeId": 1,
         "LotStatusCode": "Good",
         "LotStatusId": 1,
         "PieceCount": 12,
-        "TotalCount": 30,
+        "TotalCount": 20,
         "VendorLotNumber": null
       },
       {
@@ -344,22 +118,23 @@
           "$": [
             "ts",
             192,
-            1784210570076
+            1784227185312
           ],
-          "$ts": 1783963633856
+          "$ts": 1784223690033
         },
         "CurrentLocationId": 68,
         "CurrentLocationName": "Machining In",
         "Id": 16,
         "ItemId": 10,
         "ItemPartNumber": "12270-6NA",
+        "LastOperationName": "Machining Out",
         "LotName": "MESL3000016",
         "LotOriginTypeCode": "Manufactured",
         "LotOriginTypeId": 1,
         "LotStatusCode": "Closed",
         "LotStatusId": 4,
         "PieceCount": 0,
-        "TotalCount": 30,
+        "TotalCount": 20,
         "VendorLotNumber": null
       },
       {
@@ -367,22 +142,23 @@
           "$": [
             "ts",
             192,
-            1784210570076
+            1784227185312
           ],
-          "$ts": 1783963633848
+          "$ts": 1784223690025
         },
         "CurrentLocationId": 68,
         "CurrentLocationName": "Machining In",
         "Id": 15,
         "ItemId": 11,
         "ItemPartNumber": "12270-6NA-M",
+        "LastOperationName": null,
         "LotName": "MESL3000015",
         "LotOriginTypeCode": "Manufactured",
         "LotOriginTypeId": 1,
         "LotStatusCode": "Good",
         "LotStatusId": 1,
         "PieceCount": 10,
-        "TotalCount": 30,
+        "TotalCount": 20,
         "VendorLotNumber": null
       },
       {
@@ -390,22 +166,23 @@
           "$": [
             "ts",
             192,
-            1784210570076
+            1784227185312
           ],
-          "$ts": 1783963633828
+          "$ts": 1784223690004
         },
         "CurrentLocationId": 68,
         "CurrentLocationName": "Machining In",
         "Id": 14,
         "ItemId": 10,
         "ItemPartNumber": "12270-6NA",
+        "LastOperationName": "Machining Out",
         "LotName": "MESL3000014",
         "LotOriginTypeCode": "Manufactured",
         "LotOriginTypeId": 1,
         "LotStatusCode": "Closed",
         "LotStatusId": 4,
         "PieceCount": 0,
-        "TotalCount": 30,
+        "TotalCount": 20,
         "VendorLotNumber": null
       },
       {
@@ -413,22 +190,23 @@
           "$": [
             "ts",
             192,
-            1784210570076
+            1784227185312
           ],
-          "$ts": 1783963633808
+          "$ts": 1784223689986
         },
         "CurrentLocationId": 68,
         "CurrentLocationName": "Machining In",
         "Id": 13,
         "ItemId": 10,
         "ItemPartNumber": "12270-6NA",
+        "LastOperationName": "Trim Out",
         "LotName": "MESL3000013",
         "LotOriginTypeCode": "Manufactured",
         "LotOriginTypeId": 1,
         "LotStatusCode": "Good",
         "LotStatusId": 1,
         "PieceCount": 12,
-        "TotalCount": 30,
+        "TotalCount": 20,
         "VendorLotNumber": null
       },
       {
@@ -436,22 +214,23 @@
           "$": [
             "ts",
             192,
-            1784210570076
+            1784227185312
           ],
-          "$ts": 1783963633792
+          "$ts": 1784223689975
         },
         "CurrentLocationId": 37,
         "CurrentLocationName": "Trim Shop 1",
         "Id": 12,
         "ItemId": 10,
         "ItemPartNumber": "12270-6NA",
+        "LastOperationName": null,
         "LotName": "MESL3000012",
         "LotOriginTypeCode": "Manufactured",
         "LotOriginTypeId": 1,
         "LotStatusCode": "Good",
         "LotStatusId": 1,
         "PieceCount": 12,
-        "TotalCount": 30,
+        "TotalCount": 20,
         "VendorLotNumber": null
       },
       {
@@ -459,22 +238,23 @@
           "$": [
             "ts",
             192,
-            1784210570076
+            1784227185312
           ],
-          "$ts": 1783963633784
+          "$ts": 1784223689969
         },
         "CurrentLocationId": 24,
         "CurrentLocationName": "Machine 01",
         "Id": 11,
         "ItemId": 10,
         "ItemPartNumber": "12270-6NA",
+        "LastOperationName": null,
         "LotName": "MESL3000011",
         "LotOriginTypeCode": "Manufactured",
         "LotOriginTypeId": 1,
         "LotStatusCode": "Good",
         "LotStatusId": 1,
         "PieceCount": 12,
-        "TotalCount": 30,
+        "TotalCount": 20,
         "VendorLotNumber": null
       },
       {
@@ -482,22 +262,23 @@
           "$": [
             "ts",
             192,
-            1784210570076
+            1784227185312
           ],
-          "$ts": 1783963633642
+          "$ts": 1784223689833
         },
         "CurrentLocationId": 72,
         "CurrentLocationName": "Assembly Finished",
         "Id": 10,
         "ItemId": 14,
         "ItemPartNumber": "12270-6NA -0001",
+        "LastOperationName": null,
         "LotName": "MESL3000010",
         "LotOriginTypeCode": "Manufactured",
         "LotOriginTypeId": 1,
         "LotStatusCode": "Good",
         "LotStatusId": 1,
         "PieceCount": 6,
-        "TotalCount": 30,
+        "TotalCount": 20,
         "VendorLotNumber": null
       },
       {
@@ -505,22 +286,23 @@
           "$": [
             "ts",
             192,
-            1784210570076
+            1784227185312
           ],
-          "$ts": 1783963633635
+          "$ts": 1784223689829
         },
         "CurrentLocationId": 72,
         "CurrentLocationName": "Assembly Finished",
         "Id": 9,
         "ItemId": 14,
         "ItemPartNumber": "12270-6NA -0001",
+        "LastOperationName": null,
         "LotName": "MESL3000009",
         "LotOriginTypeCode": "Manufactured",
         "LotOriginTypeId": 1,
         "LotStatusCode": "Good",
         "LotStatusId": 1,
         "PieceCount": 6,
-        "TotalCount": 30,
+        "TotalCount": 20,
         "VendorLotNumber": null
       },
       {
@@ -528,22 +310,23 @@
           "$": [
             "ts",
             192,
-            1784210570076
+            1784227185312
           ],
-          "$ts": 1783963633606
+          "$ts": 1784223689806
         },
         "CurrentLocationId": 72,
         "CurrentLocationName": "Assembly Finished",
         "Id": 8,
         "ItemId": 14,
         "ItemPartNumber": "12270-6NA -0001",
+        "LastOperationName": null,
         "LotName": "MESL3000008",
         "LotOriginTypeCode": "Manufactured",
         "LotOriginTypeId": 1,
         "LotStatusCode": "Good",
         "LotStatusId": 1,
         "PieceCount": 6,
-        "TotalCount": 30,
+        "TotalCount": 20,
         "VendorLotNumber": null
       },
       {
@@ -551,22 +334,23 @@
           "$": [
             "ts",
             192,
-            1784210570076
+            1784227185312
           ],
-          "$ts": 1783963633578
+          "$ts": 1784223689779
         },
         "CurrentLocationId": 72,
         "CurrentLocationName": "Assembly Finished",
         "Id": 7,
         "ItemId": 14,
         "ItemPartNumber": "12270-6NA -0001",
+        "LastOperationName": null,
         "LotName": "MESL3000007",
         "LotOriginTypeCode": "Manufactured",
         "LotOriginTypeId": 1,
         "LotStatusCode": "Good",
         "LotStatusId": 1,
         "PieceCount": 6,
-        "TotalCount": 30,
+        "TotalCount": 20,
         "VendorLotNumber": null
       },
       {
@@ -574,22 +358,23 @@
           "$": [
             "ts",
             192,
-            1784210570076
+            1784227185312
           ],
-          "$ts": 1783963633337
+          "$ts": 1784223689526
         },
         "CurrentLocationId": 72,
         "CurrentLocationName": "Assembly Finished",
         "Id": 6,
         "ItemId": 11,
         "ItemPartNumber": "12270-6NA-M",
+        "LastOperationName": null,
         "LotName": "MESL3000006",
         "LotOriginTypeCode": "Manufactured",
         "LotOriginTypeId": 1,
         "LotStatusCode": "Closed",
         "LotStatusId": 4,
         "PieceCount": 0,
-        "TotalCount": 30,
+        "TotalCount": 20,
         "VendorLotNumber": null
       },
       {
@@ -597,22 +382,23 @@
           "$": [
             "ts",
             192,
-            1784210570076
+            1784227185312
           ],
-          "$ts": 1783963633311
+          "$ts": 1784223689505
         },
         "CurrentLocationId": 68,
         "CurrentLocationName": "Machining In",
         "Id": 5,
         "ItemId": 10,
         "ItemPartNumber": "12270-6NA",
+        "LastOperationName": "Machining Out",
         "LotName": "MESL3000005",
         "LotOriginTypeCode": "Manufactured",
         "LotOriginTypeId": 1,
         "LotStatusCode": "Closed",
         "LotStatusId": 4,
         "PieceCount": 0,
-        "TotalCount": 30,
+        "TotalCount": 20,
         "VendorLotNumber": null
       },
       {
@@ -620,22 +406,23 @@
           "$": [
             "ts",
             192,
-            1784210570076
+            1784227185312
           ],
-          "$ts": 1783963633291
+          "$ts": 1784223689489
         },
         "CurrentLocationId": 72,
         "CurrentLocationName": "Assembly Finished",
         "Id": 4,
         "ItemId": 11,
         "ItemPartNumber": "12270-6NA-M",
+        "LastOperationName": null,
         "LotName": "MESL3000004",
         "LotOriginTypeCode": "Manufactured",
         "LotOriginTypeId": 1,
         "LotStatusCode": "Closed",
         "LotStatusId": 4,
         "PieceCount": 0,
-        "TotalCount": 30,
+        "TotalCount": 20,
         "VendorLotNumber": null
       },
       {
@@ -643,22 +430,23 @@
           "$": [
             "ts",
             192,
-            1784210570076
+            1784227185312
           ],
-          "$ts": 1783963632558
+          "$ts": 1784223688767
         },
         "CurrentLocationId": 68,
         "CurrentLocationName": "Machining In",
         "Id": 3,
         "ItemId": 10,
         "ItemPartNumber": "12270-6NA",
+        "LastOperationName": "Machining Out",
         "LotName": "MESL3000003",
         "LotOriginTypeCode": "Manufactured",
         "LotOriginTypeId": 1,
         "LotStatusCode": "Closed",
         "LotStatusId": 4,
         "PieceCount": 0,
-        "TotalCount": 30,
+        "TotalCount": 20,
         "VendorLotNumber": null
       },
       {
@@ -666,22 +454,23 @@
           "$": [
             "ts",
             192,
-            1784210570076
+            1784227185312
           ],
-          "$ts": 1783963632553
+          "$ts": 1784223688760
         },
         "CurrentLocationId": 72,
         "CurrentLocationName": "Assembly Finished",
         "Id": 2,
         "ItemId": 13,
         "ItemPartNumber": "94301-08100",
+        "LastOperationName": null,
         "LotName": "MESL3000002",
         "LotOriginTypeCode": "Received",
         "LotOriginTypeId": 2,
         "LotStatusCode": "Good",
         "LotStatusId": 1,
         "PieceCount": 32,
-        "TotalCount": 30,
+        "TotalCount": 20,
         "VendorLotNumber": "DOWEL-VEND-0001"
       },
       {
@@ -689,22 +478,23 @@
           "$": [
             "ts",
             192,
-            1784210570076
+            1784227185312
           ],
-          "$ts": 1783963632515
+          "$ts": 1784223688717
         },
         "CurrentLocationId": 72,
         "CurrentLocationName": "Assembly Finished",
         "Id": 1,
         "ItemId": 12,
         "ItemPartNumber": "92900-06014-1B",
+        "LastOperationName": null,
         "LotName": "MESL3000001",
         "LotOriginTypeCode": "Received",
         "LotOriginTypeId": 2,
         "LotStatusCode": "Good",
         "LotStatusId": 1,
         "PieceCount": 16,
-        "TotalCount": 30,
+        "TotalCount": 20,
         "VendorLotNumber": "STUD-VEND-0001"
       }
     ],
@@ -845,7 +635,8 @@
               "direction": "column",
               "style": {
                 "gap": "4px",
-                "minWidth": "240px"
+                "minWidth": "240px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -921,7 +712,8 @@
               "direction": "column",
               "style": {
                 "gap": "4px",
-                "minWidth": "160px"
+                "minWidth": "160px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -997,7 +789,8 @@
               "direction": "column",
               "style": {
                 "gap": "4px",
-                "minWidth": "160px"
+                "minWidth": "160px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -1069,7 +862,8 @@
           "alignItems": "flex-end",
           "style": {
             "flexWrap": "wrap",
-            "gap": "12px"
+            "gap": "12px",
+            "overflow": "visible"
           }
         },
         "type": "ia.container.flex"
@@ -1705,12 +1499,7 @@
                   "boolean": "checkbox",
                   "dateFormat": "MM/DD/YYYY",
                   "editable": false,
-                  "render": "view",
-                  "justify": "auto",
-                  "align": "center",
-                  "resizable": true,
-                  "sortable": true,
-                  "sort": "none",
+                  "field": "CurrentLocationName",
                   "filter": {
                     "boolean": {
                       "condition": ""
@@ -1792,18 +1581,10 @@
                       "unselected": ""
                     }
                   },
-                  "nullFormat": {
-                    "strict": false,
-                    "nullFormatValue": "—",
-                    "includeNullStrings": false
-                  },
-                  "strictWidth": false,
-                  "width": 180,
-                  "style": {
-                    "classes": ""
-                  },
-                  "viewPath": "BlueRidge/Components/PlantFloor/LocationCell",
-                  "viewParams": {"rowData": "", "value": ""}
+                  "viewParams": {},
+                  "viewPath": "",
+                  "visible": true,
+                  "width": 180
                 },
                 {
                   "align": "center",
@@ -1990,9 +1771,6 @@
                   "width": 160
                 }
               ],
-              "selection": {
-                "enabled": true
-              },
               "style": {
                 "width": "100%"
               }

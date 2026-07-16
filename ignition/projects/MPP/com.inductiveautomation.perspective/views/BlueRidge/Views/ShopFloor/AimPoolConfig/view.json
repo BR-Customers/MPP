@@ -283,7 +283,8 @@
                       "direction": "column",
                       "style": {
                         "classes": "pf-field",
-                        "gap": "4px"
+                        "gap": "4px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -337,7 +338,8 @@
                       "direction": "column",
                       "style": {
                         "classes": "pf-field",
-                        "gap": "4px"
+                        "gap": "4px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -391,7 +393,8 @@
                       "direction": "column",
                       "style": {
                         "classes": "pf-field",
-                        "gap": "4px"
+                        "gap": "4px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -445,7 +448,8 @@
                       "direction": "column",
                       "style": {
                         "classes": "pf-field",
-                        "gap": "4px"
+                        "gap": "4px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -460,7 +464,8 @@
                 "props": {
                   "alignItems": "flex-end",
                   "style": {
-                    "gap": "12px"
+                    "gap": "12px",
+                    "overflow": "visible"
                   },
                   "wrap": "wrap"
                 },

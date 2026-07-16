@@ -1,120 +1,413 @@
 {
   "custom": {
-    "summary": {
-      "openDowntime": [],
-      "openPauses": [],
-      "inProcessLots": []
-    },
-    "filter": { "cellLocationId": null }
+    "filter": {
+      "cellLocationId": null
+    }
   },
   "params": {},
   "propConfig": {
     "custom.cellOptions": {
       "binding": {
-        "config": { "expression": "runScript(\"BlueRidge.Location.Location.listByTier\", 0, \"Cell\")" },
+        "config": {
+          "expression": "runScript(\"BlueRidge.Location.Location.listByTier\", 0, \"Cell\")"
+        },
         "transforms": [
-          { "code": "\treturn [{\"value\": r.get(\"Id\"), \"label\": (r.get(\"Code\") or \"\") + \" - \" + (r.get(\"Name\") or \"\")} for r in (value or [])]", "type": "script" }
+          {
+            "code": "\treturn [{\"value\": r.get(\"Id\"), \"label\": (r.get(\"Code\") or \"\") + \" - \" + (r.get(\"Name\") or \"\")} for r in (value or [])]",
+            "type": "script"
+          }
         ],
         "type": "expr"
       }
     },
     "custom.summary": {
       "binding": {
-        "config": { "expression": "runScript(\"BlueRidge.Oee.DowntimeEvent.getEndOfShiftSummary\", 0, {view.custom.filter.cellLocationId})" },
+        "config": {
+          "expression": "runScript(\"BlueRidge.Oee.DowntimeEvent.getEndOfShiftSummary\", 0, {view.custom.filter.cellLocationId})"
+        },
         "type": "expr"
       }
     }
   },
   "props": {
-    "defaultSize": { "height": 800, "width": 1280 }
+    "defaultSize": {
+      "width": 1280
+    }
   },
   "root": {
     "children": [
       {
         "children": [
-          { "meta": { "name": "Title" }, "position": { "grow": 1 }, "props": { "text": "Shift-End Summary", "style": { "fontSize": "22px", "fontWeight": "700" } }, "type": "ia.display.label" },
+          {
+            "meta": {
+              "name": "Title"
+            },
+            "position": {
+              "grow": 1
+            },
+            "props": {
+              "style": {
+                "fontSize": "22px",
+                "fontWeight": "700"
+              },
+              "text": "Shift-End Summary"
+            },
+            "type": "ia.display.label"
+          },
           {
             "children": [
-              { "meta": { "name": "MachineLabel" }, "props": { "text": "Cell", "style": { "classes": "pf-field-label" } }, "type": "ia.display.label" },
               {
-                "meta": { "name": "CellSelect" },
-                "propConfig": {
-                  "props.options": { "binding": { "config": { "path": "view.custom.cellOptions" }, "type": "property" } },
-                  "props.value": { "binding": { "config": { "path": "view.custom.filter.cellLocationId", "bidirectional": true }, "type": "property" } }
+                "meta": {
+                  "name": "MachineLabel"
                 },
-                "props": { "placeholder": "Select cell", "style": { "classes": "pf-field-input" } },
+                "props": {
+                  "style": {
+                    "classes": "pf-field-label"
+                  },
+                  "text": "Cell"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "CellSelect"
+                },
+                "propConfig": {
+                  "props.options": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.cellOptions"
+                      },
+                      "type": "property"
+                    }
+                  },
+                  "props.value": {
+                    "binding": {
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.filter.cellLocationId"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "placeholder": "Select cell",
+                  "style": {
+                    "classes": "pf-field-input"
+                  }
+                },
                 "type": "ia.input.dropdown"
               }
             ],
-            "meta": { "name": "MachineField" },
-            "position": { "basis": "320px", "shrink": 0 },
-            "props": { "direction": "column", "style": { "classes": "pf-field", "gap": "4px" } },
+            "meta": {
+              "name": "MachineField"
+            },
+            "position": {
+              "basis": "320px",
+              "shrink": 0
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-field",
+                "gap": "4px",
+                "overflow": "visible"
+              }
+            },
             "type": "ia.container.flex"
           },
           {
             "events": {
               "component": {
                 "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
                   "config": {
-                    "script": "\tcellId = self.view.custom.filter.cellLocationId\n\tshift = BlueRidge.Oee.Shift.getOpen()\n\tif shift:\n\t\tresult = BlueRidge.Oee.Shift.acknowledgeHandover(shift[\"Id\"], cellId)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"Handover acknowledged\")\n\telse:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No open shift to acknowledge.\"}, \"Handover acknowledged\")"
-                  }
+                    "script": "\tcellId \u003d self.view.custom.filter.cellLocationId\n\tshift \u003d BlueRidge.Oee.Shift.getOpen()\n\tif shift:\n\t\tresult \u003d BlueRidge.Oee.Shift.acknowledgeHandover(shift[\"Id\"], cellId)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"Handover acknowledged\")\n\telse:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"No open shift to acknowledge.\"}, \"Handover acknowledged\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
                 }
               }
             },
-            "meta": { "name": "AckButton" },
-            "position": { "shrink": 0 },
-            "props": { "style": { "classes": "pf-btn pf-btn-primary" }, "text": "Acknowledge Handover" },
+            "meta": {
+              "name": "AckButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "props": {
+              "style": {
+                "classes": "pf-btn pf-btn-primary"
+              },
+              "text": "Acknowledge Handover"
+            },
             "type": "ia.input.button"
           }
         ],
-        "meta": { "name": "Header" },
-        "position": { "shrink": 0 },
-        "props": { "alignItems": "flex-end", "style": { "gap": "16px", "padding": "16px", "borderBottom": "1px solid var(--mpp-border-subtle)" } },
+        "meta": {
+          "name": "Header"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "alignItems": "flex-end",
+          "style": {
+            "borderBottom": "1px solid var(--mpp-border-subtle)",
+            "gap": "16px",
+            "padding": "16px"
+          }
+        },
         "type": "ia.container.flex"
       },
       {
         "children": [
           {
             "children": [
-              { "meta": { "name": "H" }, "position": { "shrink": 0 }, "props": { "text": "Open downtime events", "style": { "classes": "pf-panel-header" } }, "type": "ia.display.label" },
-              { "meta": { "name": "Rows" }, "position": { "grow": 1 }, "propConfig": { "props.instances": { "binding": { "config": { "path": "view.custom.summary.openDowntime" }, "transforms": [ { "type": "script", "code": "\treturn [{\"c1\": r.get(\"LocationCode\") or \"\", \"c2\": r.get(\"SourceCode\") or \"\", \"c3\": (r.get(\"ReasonCode\") or \"(no reason)\"), \"c4\": str(r.get(\"StartedAtEt\") or \"\")} for r in (value or [])]" } ], "type": "property" } } }, "props": { "direction": "column", "elementPosition": { "basis": "52px", "shrink": 0 }, "path": "BlueRidge/Components/PlantFloor/ShiftEndSummary/SummaryRow", "style": { "gap": "8px" }, "useDefaultViewHeight": false, "useDefaultViewWidth": false }, "type": "ia.display.flex-repeater" }
+              {
+                "meta": {
+                  "name": "H"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-panel-header"
+                  },
+                  "text": "Open downtime events"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Rows"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "propConfig": {
+                  "props.instances": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.summary.openDowntime"
+                      },
+                      "transforms": [
+                        {
+                          "code": "\treturn [{\"c1\": r.get(\"LocationCode\") or \"\", \"c2\": r.get(\"SourceCode\") or \"\", \"c3\": (r.get(\"ReasonCode\") or \"(no reason)\"), \"c4\": str(r.get(\"StartedAtEt\") or \"\")} for r in (value or [])]",
+                          "type": "script"
+                        }
+                      ],
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "elementPosition": {
+                    "basis": "52px",
+                    "shrink": 0
+                  },
+                  "path": "BlueRidge/Components/PlantFloor/ShiftEndSummary/SummaryRow",
+                  "style": {
+                    "gap": "8px"
+                  },
+                  "useDefaultViewHeight": false,
+                  "useDefaultViewWidth": false
+                },
+                "type": "ia.display.flex-repeater"
+              }
             ],
-            "meta": { "name": "DowntimePanel" },
-            "position": { "grow": 1, "basis": "0" },
-            "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "8px", "padding": "16px" } },
+            "meta": {
+              "name": "DowntimePanel"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-panel",
+                "gap": "8px",
+                "padding": "16px"
+              }
+            },
             "type": "ia.container.flex"
           },
           {
             "children": [
-              { "meta": { "name": "H" }, "position": { "shrink": 0 }, "props": { "text": "Paused LOTs", "style": { "classes": "pf-panel-header" } }, "type": "ia.display.label" },
-              { "meta": { "name": "Rows" }, "position": { "grow": 1 }, "propConfig": { "props.instances": { "binding": { "config": { "path": "view.custom.summary.openPauses" }, "transforms": [ { "type": "script", "code": "\treturn [{\"c1\": r.get(\"LotName\") or \"\", \"c2\": r.get(\"ItemCode\") or \"\", \"c3\": (r.get(\"PausedReason\") or \"\"), \"c4\": str(r.get(\"PausedAt\") or \"\")} for r in (value or [])]" } ], "type": "property" } } }, "props": { "direction": "column", "elementPosition": { "basis": "52px", "shrink": 0 }, "path": "BlueRidge/Components/PlantFloor/ShiftEndSummary/SummaryRow", "style": { "gap": "8px" }, "useDefaultViewHeight": false, "useDefaultViewWidth": false }, "type": "ia.display.flex-repeater" }
+              {
+                "meta": {
+                  "name": "H"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-panel-header"
+                  },
+                  "text": "Paused LOTs"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Rows"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "propConfig": {
+                  "props.instances": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.summary.openPauses"
+                      },
+                      "transforms": [
+                        {
+                          "code": "\treturn [{\"c1\": r.get(\"LotName\") or \"\", \"c2\": r.get(\"ItemCode\") or \"\", \"c3\": (r.get(\"PausedReason\") or \"\"), \"c4\": str(r.get(\"PausedAt\") or \"\")} for r in (value or [])]",
+                          "type": "script"
+                        }
+                      ],
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "elementPosition": {
+                    "basis": "52px",
+                    "shrink": 0
+                  },
+                  "path": "BlueRidge/Components/PlantFloor/ShiftEndSummary/SummaryRow",
+                  "style": {
+                    "gap": "8px"
+                  },
+                  "useDefaultViewHeight": false,
+                  "useDefaultViewWidth": false
+                },
+                "type": "ia.display.flex-repeater"
+              }
             ],
-            "meta": { "name": "PausePanel" },
-            "position": { "grow": 1, "basis": "0" },
-            "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "8px", "padding": "16px" } },
+            "meta": {
+              "name": "PausePanel"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-panel",
+                "gap": "8px",
+                "padding": "16px"
+              }
+            },
             "type": "ia.container.flex"
           },
           {
             "children": [
-              { "meta": { "name": "H" }, "position": { "shrink": 0 }, "props": { "text": "In-process LOTs", "style": { "classes": "pf-panel-header" } }, "type": "ia.display.label" },
-              { "meta": { "name": "Rows" }, "position": { "grow": 1 }, "propConfig": { "props.instances": { "binding": { "config": { "path": "view.custom.summary.inProcessLots" }, "transforms": [ { "type": "script", "code": "\treturn [{\"c1\": r.get(\"LotName\") or \"\", \"c2\": r.get(\"ItemCode\") or \"\", \"c3\": (str(r.get(\"InProcessPieceCount\") or \"\") + \" pcs\"), \"c4\": (r.get(\"LotStatus\") or \"\")} for r in (value or [])]" } ], "type": "property" } } }, "props": { "direction": "column", "elementPosition": { "basis": "52px", "shrink": 0 }, "path": "BlueRidge/Components/PlantFloor/ShiftEndSummary/SummaryRow", "style": { "gap": "8px" }, "useDefaultViewHeight": false, "useDefaultViewWidth": false }, "type": "ia.display.flex-repeater" }
+              {
+                "meta": {
+                  "name": "H"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-panel-header"
+                  },
+                  "text": "In-process LOTs"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "Rows"
+                },
+                "position": {
+                  "grow": 1
+                },
+                "propConfig": {
+                  "props.instances": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.summary.inProcessLots"
+                      },
+                      "transforms": [
+                        {
+                          "code": "\treturn [{\"c1\": r.get(\"LotName\") or \"\", \"c2\": r.get(\"ItemCode\") or \"\", \"c3\": (str(r.get(\"InProcessPieceCount\") or \"\") + \" pcs\"), \"c4\": (r.get(\"LotStatus\") or \"\")} for r in (value or [])]",
+                          "type": "script"
+                        }
+                      ],
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "elementPosition": {
+                    "basis": "52px",
+                    "shrink": 0
+                  },
+                  "path": "BlueRidge/Components/PlantFloor/ShiftEndSummary/SummaryRow",
+                  "style": {
+                    "gap": "8px"
+                  },
+                  "useDefaultViewHeight": false,
+                  "useDefaultViewWidth": false
+                },
+                "type": "ia.display.flex-repeater"
+              }
             ],
-            "meta": { "name": "LotPanel" },
-            "position": { "grow": 1, "basis": "0" },
-            "props": { "direction": "column", "style": { "classes": "pf-panel", "gap": "8px", "padding": "16px" } },
+            "meta": {
+              "name": "LotPanel"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-panel",
+                "gap": "8px",
+                "padding": "16px"
+              }
+            },
             "type": "ia.container.flex"
           }
         ],
-        "meta": { "name": "Body" },
-        "position": { "grow": 1 },
-        "props": { "direction": "column", "style": { "gap": "16px", "padding": "16px", "overflowY": "auto" } },
+        "meta": {
+          "name": "Body"
+        },
+        "position": {
+          "grow": 1
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "gap": "16px",
+            "overflowY": "auto",
+            "padding": "16px"
+          }
+        },
         "type": "ia.container.flex"
       }
     ],
-    "meta": { "name": "root" },
-    "props": { "direction": "column", "style": { "classes": "canvas" } },
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "canvas"
+      }
+    },
     "type": "ia.container.flex"
   }
 }
