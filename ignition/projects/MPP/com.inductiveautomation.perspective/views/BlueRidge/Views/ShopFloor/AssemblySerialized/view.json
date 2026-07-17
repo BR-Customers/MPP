@@ -21,7 +21,7 @@
     "custom.queueByPartText": {
       "binding": {
         "config": {
-          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getComponentsAtCell\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}), \"\")"
+          "expression": "if({view.custom.refreshToken} \u003e\u003d 0 \u0026\u0026 !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getComponentsAtCell\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}), \"\")"
         },
         "transforms": [
           {
@@ -200,7 +200,6 @@
               }
             },
             "position": {
-              "basis": "94px",
               "shrink": 0
             },
             "props": {
@@ -216,8 +215,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params={\"locationId\": self.session.custom.cell.locationId}, modal=False, showCloseIcon=True, draggable=True, resizable=True)"
-                    "script": "\tsystem.perspective.openPopup(\n\t\tid\u003d\"mpp-inventory\", \n\t\tview\u003d\"BlueRidge/Components/PlantFloor/InventoryManager\", \n\t\tparams\u003d{\"locationId\": self.session.custom.cell.locationId}, \n\t\tmodal\u003dTrue, \n\t\tshowCloseIcon\u003dFalse, \n\t\tdraggable\u003dFalse, \n\t)"
+                    "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params\u003d{\"locationId\": self.session.custom.cell.locationId}, modal\u003dFalse, showCloseIcon\u003dTrue, draggable\u003dTrue, resizable\u003dTrue)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -231,7 +229,6 @@
               }
             },
             "position": {
-              "basis": "108px",
               "shrink": 0
             },
             "props": {
@@ -257,9 +254,6 @@
             "meta": {
               "name": "CloseButton"
             },
-            "position": {
-              "basis": "79px"
-            },
             "props": {
               "style": {
                 "classes": "pf-btn pf-btn-secondary"
@@ -276,7 +270,7 @@
           "alignItems": "center",
           "style": {
             "gap": "16px",
-            "overflow": "visible"
+            "overflow": "hidden"
           }
         },
         "type": "ia.container.flex"

@@ -1,20 +1,34 @@
 {
   "custom": {
-    "scanCode": "",
-    "refreshToken": 0,
     "receiveDraft": {
       "partItemId": null,
       "qty": "",
       "vendorLotNumber": ""
     },
-    "partOptions": [],
-    "receivedOriginId": null
+    "refreshToken": 0,
+    "scanCode": ""
   },
   "params": {
     "locationId": null,
     "replyMessage": "inventoryChanged"
   },
   "propConfig": {
+    "custom.partOptions": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Parts.Item.getForDropdown\", 0)"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.receivedOriginId": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Lots.Lot.getOriginTypeIdByCode\", 0, \"Received\")"
+        },
+        "type": "expr"
+      }
+    },
     "params.locationId": {
       "paramDirection": "input",
       "persistent": true
@@ -22,22 +36,6 @@
     "params.replyMessage": {
       "paramDirection": "input",
       "persistent": true
-    },
-    "custom.partOptions": {
-      "binding": {
-        "type": "expr",
-        "config": {
-          "expression": "runScript(\"BlueRidge.Parts.Item.getForDropdown\", 0)"
-        }
-      }
-    },
-    "custom.receivedOriginId": {
-      "binding": {
-        "type": "expr",
-        "config": {
-          "expression": "runScript(\"BlueRidge.Lots.Lot.getOriginTypeIdByCode\", 0, \"Received\")"
-        }
-      }
     }
   },
   "props": {
@@ -47,41 +45,8 @@
     }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": {
-      "name": "root"
-    },
-    "props": {
-      "direction": "column",
-      "alignItems": "stretch",
-      "style": {
-        "classes": "canvas",
-        "gap": "12px",
-        "padding": "16px"
-      }
-    },
-    "scripts": {
-      "customMethods": [
-        {
-          "name": "checkIn",
-          "params": [],
-          "script": "\tcode = self.view.custom.scanCode\n\tif not code:\n\t\treturn\n\tloc = self.view.params.locationId\n\tif loc is None:\n\t\tBlueRidge.Common.Notify.toast(\"No line selected\", \"This inventory view has no location context.\", \"warning\")\n\t\treturn\n\tlot = BlueRidge.Lots.Lot.getByName(code)\n\tif not lot:\n\t\tBlueRidge.Common.Notify.toast(\"LOT not found\", \"No LOT matches '%s'.\" % code, \"warning\")\n\t\treturn\n\tres = BlueRidge.Lots.Lot.moveToValidated(lot.get(\"Id\"), loc)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Checked in\")\n\tif res and res.get(\"Status\"):\n\t\tself.view.custom.scanCode = \"\"\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1\n\t\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"lotId\": lot.get(\"Id\")}, scope=\"page\")"
-        },
-        {
-          "name": "refresh",
-          "params": [],
-          "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
-        },
-        {
-          "name": "receiveLoose",
-          "params": [],
-          "script": "\treceiveDraft = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.receiveDraft) or {}\n\tloc = self.view.params.locationId\n\tif loc is None:\n\t\tBlueRidge.Common.Notify.toast(\"No line selected\", \"This inventory view has no location context.\", \"warning\")\n\t\treturn\n\tpartValue = receiveDraft.get(\"partItemId\")\n\titemId = None\n\tif partValue is not None and partValue != \"\":\n\t\ttry:\n\t\t\titemId = int(partValue)\n\t\texcept (ValueError, TypeError):\n\t\t\trow = BlueRidge.Parts.Item.getByPartNumber(partValue)\n\t\t\tif row is None:\n\t\t\t\tBlueRidge.Common.Notify.toast(\"Unknown part\", \"No active item matches '%s'.\" % partValue, \"warning\")\n\t\t\t\treturn\n\t\t\titemId = row.get(\"Id\")\n\tif itemId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Part required\", \"Scan or pick a part number.\", \"warning\")\n\t\treturn\n\tqty = None\n\tpc = receiveDraft.get(\"qty\")\n\tif pc is not None and (\"%s\" % pc).strip() != \"\":\n\t\ttry:\n\t\t\tqty = int((\"%s\" % pc).strip())\n\t\texcept (ValueError, TypeError):\n\t\t\tBlueRidge.Common.Notify.toast(\"Invalid piece count\", \"Enter a whole number.\", \"warning\")\n\t\t\treturn\n\tif qty is None or qty <= 0:\n\t\tBlueRidge.Common.Notify.toast(\"Piece count required\", \"Enter how many parts are in the box.\", \"warning\")\n\t\treturn\n\tvendorLot = receiveDraft.get(\"vendorLotNumber\") or None\n\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tdata = {\"itemId\": itemId, \"lotOriginTypeId\": self.view.custom.receivedOriginId, \"currentLocationId\": loc, \"pieceCount\": qty, \"vendorLotNumber\": vendorLot}\n\tres = BlueRidge.Lots.Lot.create(data, appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Parts received\")\n\tif res and res.get(\"Status\"):\n\t\tself.view.custom.receiveDraft = {\"partItemId\": None, \"qty\": \"\", \"vendorLotNumber\": \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1\n\t\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"lotId\": res.get(\"NewId\")}, scope=\"page\")"
-        }
-      ]
-    },
     "children": [
       {
-        "type": "ia.display.label",
         "meta": {
           "name": "ContextLine"
         },
@@ -91,10 +56,10 @@
         "propConfig": {
           "props.text": {
             "binding": {
-              "type": "expr",
               "config": {
-                "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} = \"\", \"Line inventory\", {session.custom.cell.name})"
-              }
+                "expression": "if(isNull({session.custom.cell.name}) || {session.custom.cell.name} \u003d \"\", \"Line inventory\", {session.custom.cell.name})"
+              },
+              "type": "expr"
             }
           }
         },
@@ -108,26 +73,332 @@
         "type": "ia.container.flex"
       },
       {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "BodyRow"
-        },
-        "position": {
-          "basis": "0",
-          "grow": 1,
-          "shrink": 1
-        },
-        "props": {
-          "direction": "row",
-          "alignItems": "stretch",
-          "style": {
-            "gap": "16px",
-            "overflow": "hidden"
-          }
-        },
         "children": [
           {
-            "type": "ia.container.flex",
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "CheckInHeader"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-panel-header"
+                      },
+                      "text": "Check in LTT"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "ScanLabel"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-field-label",
+                        "marginBottom": "0px"
+                      },
+                      "text": "Scan an LTT to check it in to this line"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "events": {
+                      "dom": {
+                        "onBlur": {
+                          "config": {
+                            "script": "\tself.view.rootContainer.checkIn()"
+                          },
+                          "scope": "G",
+                          "type": "script"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "name": "ScanInput"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "bidirectional": true,
+                            "path": "view.custom.scanCode"
+                          },
+                          "type": "property"
+                        }
+                      }
+                    },
+                    "props": {
+                      "placeholder": "Scan LTT barcode",
+                      "style": {
+                        "classes": "pf-field-input-mono",
+                        "fontSize": "18px",
+                        "minHeight": "44px",
+                        "textTransform": "uppercase"
+                      }
+                    },
+                    "type": "ia.input.text-field"
+                  }
+                ],
+                "meta": {
+                  "name": "CheckInPanel"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-panel",
+                    "gap": "8px",
+                    "padding": "12px"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "ReceiveHeader"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-panel-header"
+                      },
+                      "text": "Receive loose parts"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "ReceiveHelp"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-field-label",
+                        "marginBottom": "0px"
+                      },
+                      "text": "Scan a part number and enter how many are in the box"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "PartLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-label"
+                          },
+                          "text": "Part Number (scan or pick)"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "PartNumberDropdown"
+                        },
+                        "propConfig": {
+                          "props.options": {
+                            "binding": {
+                              "config": {
+                                "path": "view.custom.partOptions"
+                              },
+                              "type": "property"
+                            }
+                          },
+                          "props.value": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.receiveDraft.partItemId"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "allowCustomOptions": true,
+                          "placeholder": "Scan or select a part number",
+                          "style": {
+                            "minHeight": "44px"
+                          }
+                        },
+                        "type": "ia.input.dropdown"
+                      }
+                    ],
+                    "meta": {
+                      "name": "PartField"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "classes": "pf-field",
+                        "gap": "4px",
+                        "overflow": "visible"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "QtyLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-label"
+                          },
+                          "text": "Piece Count"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "QtyInput"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.receiveDraft.qty"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "inputType": "tel",
+                          "placeholder": "Enter piece count",
+                          "style": {
+                            "classes": "pf-field-input",
+                            "minHeight": "44px"
+                          }
+                        },
+                        "type": "ia.input.text-field"
+                      }
+                    ],
+                    "meta": {
+                      "name": "QtyField"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "classes": "pf-field",
+                        "gap": "4px",
+                        "overflow": "visible"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "VendorLotLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "pf-field-label"
+                          },
+                          "text": "Vendor LOT (optional)"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "VendorLotInput"
+                        },
+                        "propConfig": {
+                          "props.text": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.receiveDraft.vendorLotNumber"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "placeholder": "Scan or enter vendor LOT",
+                          "style": {
+                            "classes": "pf-field-input-mono",
+                            "minHeight": "44px"
+                          }
+                        },
+                        "type": "ia.input.text-field"
+                      }
+                    ],
+                    "meta": {
+                      "name": "VendorLotField"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "classes": "pf-field",
+                        "gap": "4px",
+                        "overflow": "visible"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "events": {
+                      "component": {
+                        "onActionPerformed": {
+                          "config": {
+                            "script": "\tself.view.rootContainer.receiveLoose()"
+                          },
+                          "scope": "G",
+                          "type": "script"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "name": "AddButton"
+                    },
+                    "position": {
+                      "shrink": 0
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-btn pf-btn-primary"
+                      },
+                      "text": "Add to line"
+                    },
+                    "type": "ia.input.button"
+                  }
+                ],
+                "meta": {
+                  "name": "ReceivePanel"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "classes": "pf-panel",
+                    "gap": "10px",
+                    "padding": "12px"
+                  }
+                },
+                "type": "ia.container.flex"
+              }
+            ],
             "meta": {
               "name": "ActionsCol"
             },
@@ -142,395 +413,45 @@
                 "overflow": "hidden"
               }
             },
-            "children": [
-              {
-                "type": "ia.container.flex",
-                "meta": {
-                  "name": "CheckInPanel"
-                },
-                "position": {
-                  "basis": "auto",
-                  "shrink": 0
-                },
-                "props": {
-                  "direction": "column",
-                  "style": {
-                    "classes": "pf-panel",
-                    "gap": "8px",
-                    "padding": "12px"
-                  }
-                },
-                "children": [
-                  {
-                    "type": "ia.display.label",
-                    "meta": {
-                      "name": "CheckInHeader"
-                    },
-                    "props": {
-                      "text": "Check in LTT",
-                      "style": {
-                        "classes": "pf-panel-header"
-                      }
-                    }
-                  },
-                  {
-                    "type": "ia.display.label",
-                    "meta": {
-                      "name": "ScanLabel"
-                    },
-                    "position": {
-                      "basis": "auto",
-                      "shrink": 0
-                    },
-                    "props": {
-                      "text": "Scan an LTT to check it in to this line",
-                      "style": {
-                        "classes": "pf-field-label",
-                        "marginBottom": "0px"
-                      }
-                    }
-                  },
-                  {
-                    "type": "ia.input.text-field",
-                    "meta": {
-                      "name": "ScanInput"
-                    },
-                    "position": {
-                      "basis": "auto",
-                      "shrink": 0
-                    },
-                    "propConfig": {
-                      "props.text": {
-                        "binding": {
-                          "type": "property",
-                          "config": {
-                            "bidirectional": true,
-                            "path": "view.custom.scanCode"
-                          }
-                        }
-                      }
-                    },
-                    "props": {
-                      "placeholder": "Scan LTT barcode",
-                      "style": {
-                        "classes": "pf-field-input-mono",
-                        "textTransform": "uppercase",
-                        "minHeight": "44px",
-                        "fontSize": "18px"
-                      }
-                    },
-                    "events": {
-                      "dom": {
-                        "onBlur": {
-                          "type": "script",
-                          "scope": "G",
-                          "config": {
-                            "script": "\tself.view.rootContainer.checkIn()"
-                          }
-                        }
-                      }
-                    }
-                  }
-                ]
-              },
-              {
-                "type": "ia.container.flex",
-                "meta": {
-                  "name": "ReceivePanel"
-                },
-                "position": {
-                  "basis": "auto",
-                  "shrink": 0
-                },
-                "props": {
-                  "direction": "column",
-                  "style": {
-                    "classes": "pf-panel",
-                    "gap": "10px",
-                    "padding": "12px"
-                  }
-                },
-                "children": [
-                  {
-                    "type": "ia.display.label",
-                    "meta": {
-                      "name": "ReceiveHeader"
-                    },
-                    "props": {
-                      "text": "Receive loose parts",
-                      "style": {
-                        "classes": "pf-panel-header"
-                      }
-                    }
-                  },
-                  {
-                    "type": "ia.display.label",
-                    "meta": {
-                      "name": "ReceiveHelp"
-                    },
-                    "props": {
-                      "text": "Scan a part number and enter how many are in the box",
-                      "style": {
-                        "classes": "pf-field-label",
-                        "marginBottom": "0px"
-                      }
-                    }
-                  },
-                  {
-                    "type": "ia.container.flex",
-                    "meta": {
-                      "name": "PartField"
-                    },
-                    "props": {
-                      "direction": "column",
-                      "style": {
-                        "classes": "pf-field",
-                        "gap": "4px"
-                      }
-                    },
-                    "children": [
-                      {
-                        "type": "ia.display.label",
-                        "meta": {
-                          "name": "PartLabel"
-                        },
-                        "props": {
-                          "text": "Part Number (scan or pick)",
-                          "style": {
-                            "classes": "pf-field-label"
-                          }
-                        }
-                      },
-                      {
-                        "type": "ia.input.dropdown",
-                        "meta": {
-                          "name": "PartNumberDropdown"
-                        },
-                        "props": {
-                          "placeholder": "Scan or select a part number",
-                          "allowCustomOptions": true,
-                          "search": {
-                            "enabled": true
-                          },
-                          "style": {
-                            "minHeight": "44px"
-                          }
-                        },
-                        "propConfig": {
-                          "props.options": {
-                            "binding": {
-                              "type": "property",
-                              "config": {
-                                "path": "view.custom.partOptions"
-                              }
-                            }
-                          },
-                          "props.value": {
-                            "binding": {
-                              "type": "property",
-                              "config": {
-                                "bidirectional": true,
-                                "path": "view.custom.receiveDraft.partItemId"
-                              }
-                            }
-                          }
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "type": "ia.container.flex",
-                    "meta": {
-                      "name": "QtyField"
-                    },
-                    "props": {
-                      "direction": "column",
-                      "style": {
-                        "classes": "pf-field",
-                        "gap": "4px"
-                      }
-                    },
-                    "children": [
-                      {
-                        "type": "ia.display.label",
-                        "meta": {
-                          "name": "QtyLabel"
-                        },
-                        "props": {
-                          "text": "Piece Count",
-                          "style": {
-                            "classes": "pf-field-label"
-                          }
-                        }
-                      },
-                      {
-                        "type": "ia.input.text-field",
-                        "meta": {
-                          "name": "QtyInput"
-                        },
-                        "props": {
-                          "placeholder": "Enter piece count",
-                          "inputType": "tel",
-                          "style": {
-                            "classes": "pf-field-input",
-                            "minHeight": "44px"
-                          }
-                        },
-                        "propConfig": {
-                          "props.text": {
-                            "binding": {
-                              "type": "property",
-                              "config": {
-                                "bidirectional": true,
-                                "path": "view.custom.receiveDraft.qty"
-                              }
-                            }
-                          }
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "type": "ia.container.flex",
-                    "meta": {
-                      "name": "VendorLotField"
-                    },
-                    "props": {
-                      "direction": "column",
-                      "style": {
-                        "classes": "pf-field",
-                        "gap": "4px"
-                      }
-                    },
-                    "children": [
-                      {
-                        "type": "ia.display.label",
-                        "meta": {
-                          "name": "VendorLotLabel"
-                        },
-                        "props": {
-                          "text": "Vendor LOT (optional)",
-                          "style": {
-                            "classes": "pf-field-label"
-                          }
-                        }
-                      },
-                      {
-                        "type": "ia.input.text-field",
-                        "meta": {
-                          "name": "VendorLotInput"
-                        },
-                        "props": {
-                          "placeholder": "Scan or enter vendor LOT",
-                          "style": {
-                            "classes": "pf-field-input-mono",
-                            "minHeight": "44px"
-                          }
-                        },
-                        "propConfig": {
-                          "props.text": {
-                            "binding": {
-                              "type": "property",
-                              "config": {
-                                "bidirectional": true,
-                                "path": "view.custom.receiveDraft.vendorLotNumber"
-                              }
-                            }
-                          }
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "type": "ia.input.button",
-                    "meta": {
-                      "name": "AddButton"
-                    },
-                    "position": {
-                      "basis": "auto",
-                      "shrink": 0
-                    },
-                    "props": {
-                      "text": "Add to line",
-                      "style": {
-                        "classes": "pf-btn pf-btn-primary"
-                      }
-                    },
-                    "events": {
-                      "component": {
-                        "onActionPerformed": {
-                          "type": "script",
-                          "scope": "G",
-                          "config": {
-                            "script": "\tself.view.rootContainer.receiveLoose()"
-                          }
-                        }
-                      }
-                    }
-                  }
-                ]
-              }
-            ]
+            "type": "ia.container.flex"
           },
           {
-            "type": "ia.container.flex",
-            "meta": {
-              "name": "OnHandCol"
-            },
-            "position": {
-              "basis": "0",
-              "grow": 1,
-              "shrink": 1
-            },
-            "props": {
-              "direction": "column",
-              "style": {
-                "classes": "pf-panel",
-                "gap": "8px",
-                "padding": "12px",
-                "overflow": "hidden"
-              }
-            },
             "children": [
               {
-                "type": "ia.display.label",
                 "meta": {
                   "name": "OnHandHeader"
                 },
                 "position": {
-                  "basis": "auto",
                   "shrink": 0
                 },
                 "props": {
-                  "text": "On hand (FIFO by arrival)",
                   "style": {
                     "classes": "pf-panel-header"
-                  }
-                }
+                  },
+                  "text": "On hand (FIFO by arrival)"
+                },
+                "type": "ia.display.label"
               },
               {
-                "type": "ia.display.flex-repeater",
                 "meta": {
                   "name": "OnHandRepeater"
                 },
                 "position": {
                   "basis": "0",
-                  "grow": 1,
-                  "shrink": 1
+                  "grow": 1
                 },
                 "propConfig": {
                   "props.instances": {
                     "binding": {
-                      "type": "expr",
                       "config": {
                         "expression": "runScript(\"BlueRidge.Lots.Lot.getLineInventoryCards\", 0, {view.params.locationId}, {view.custom.refreshToken})"
-                      }
+                      },
+                      "type": "expr"
                     }
                   }
                 },
                 "props": {
                   "direction": "column",
-                  "useDefaultViewWidth": false,
                   "elementPosition": {
                     "basis": "92px",
                     "shrink": 0
@@ -539,12 +460,45 @@
                   "style": {
                     "gap": "8px",
                     "overflowY": "auto"
-                  }
-                }
+                  },
+                  "useDefaultViewWidth": false
+                },
+                "type": "ia.display.flex-repeater"
               }
-            ]
+            ],
+            "meta": {
+              "name": "OnHandCol"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-panel",
+                "gap": "8px",
+                "overflow": "hidden",
+                "padding": "12px"
+              }
+            },
+            "type": "ia.container.flex"
           }
-        ]
+        ],
+        "meta": {
+          "name": "BodyRow"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "style": {
+            "gap": "16px",
+            "overflow": "hidden"
+          }
+        },
+        "type": "ia.container.flex"
       }
     ],
     "meta": {

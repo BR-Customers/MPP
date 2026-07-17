@@ -4,8 +4,7 @@
       "qty": ""
     },
     "refreshToken": 0,
-    "selectedLotId": null,
-    "queue": []
+    "selectedLotId": null
   },
   "params": {},
   "propConfig": {
@@ -24,7 +23,7 @@
         },
         "transforms": [
           {
-            "code": "\tsel = [r for r in (value or []) if r.get(\"isSelected\")]\n\tr = sel[0] if sel else {}\n\treturn {\"Id\": r.get(\"lotId\"), \"LotName\": r.get(\"lotName\") or \"\", \"PieceCount\": r.get(\"pieceCount\") or 0, \"ItemPartNumber\": r.get(\"item\") or \"\"}",
+            "code": "\tsel \u003d [r for r in (value or []) if r.get(\"isSelected\")]\n\tr \u003d sel[0] if sel else {}\n\treturn {\"Id\": r.get(\"lotId\"), \"LotName\": r.get(\"lotName\") or \"\", \"PieceCount\": r.get(\"pieceCount\") or 0, \"ItemPartNumber\": r.get(\"item\") or \"\"}",
             "type": "script"
           }
         ],
@@ -34,7 +33,7 @@
     "custom.queue": {
       "binding": {
         "config": {
-          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}, \"MachiningOut\"), \"\")"
+          "expression": "if({view.custom.refreshToken} \u003e\u003d 0 \u0026\u0026 !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}, \"MachiningOut\"), \"\")"
         },
         "transforms": [
           {
@@ -218,7 +217,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params={\"locationId\": self.session.custom.cell.locationId}, modal=False, showCloseIcon=True, draggable=True, resizable=True)"
+                    "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params\u003d{\"locationId\": self.session.custom.cell.locationId}, modal\u003dFalse, showCloseIcon\u003dTrue, draggable\u003dTrue, resizable\u003dTrue)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -283,25 +282,131 @@
         "type": "ia.container.flex"
       },
       {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "ContentRow"
-        },
-        "position": {
-          "basis": "0",
-          "grow": 1
-        },
-        "props": {
-          "direction": "row",
-          "alignItems": "stretch",
-          "style": {
-            "gap": "16px",
-            "overflow": "hidden"
-          }
-        },
         "children": [
           {
-            "type": "ia.container.flex",
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "QueueTitle"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "\u0027FIFO Queue - \u0027 + toStr(len({view.custom.queue})) + \u0027 castings awaiting Machining OUT\u0027"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "color": "var(--mpp-text-secondary)",
+                        "fontSize": "14px",
+                        "fontWeight": "600",
+                        "letterSpacing": "0.06em",
+                        "textTransform": "uppercase"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "QueueSub"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      },
+                      "text": "Castings pending Machining OUT at this cell, oldest first. The oldest is selected by default - tap Select to work a different one."
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "QueueHeader"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "alignItems": "flex-start",
+                    "classes": "pf-panel-header",
+                    "gap": "4px"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "EmptyHint"
+                },
+                "position": {
+                  "shrink": 0
+                },
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "config": {
+                        "expression": "len({view.custom.queue}) \u003d 0"
+                      },
+                      "type": "expr"
+                    }
+                  },
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "if(isNull({session.custom.cell.locationId}), \u0027No cell is bound to this terminal.\u0027, \u0027This cell has no castings queued for Machining OUT.\u0027)"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  }
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "meta": {
+                  "name": "QueueRepeater"
+                },
+                "position": {
+                  "basis": "0",
+                  "grow": 1
+                },
+                "propConfig": {
+                  "props.instances": {
+                    "binding": {
+                      "config": {
+                        "path": "view.custom.queue"
+                      },
+                      "type": "property"
+                    }
+                  }
+                },
+                "props": {
+                  "direction": "column",
+                  "elementPosition": {
+                    "basis": "92px",
+                    "shrink": 0
+                  },
+                  "path": "BlueRidge/Components/PlantFloor/Machining/OutQueueRow",
+                  "style": {
+                    "gap": "8px",
+                    "overflowY": "auto"
+                  },
+                  "useDefaultViewWidth": false
+                },
+                "type": "ia.display.flex-repeater"
+              }
+            ],
             "meta": {
               "name": "QueuePanel"
             },
@@ -318,146 +423,9 @@
                 "padding": "14px 16px"
               }
             },
-            "children": [
-              {
-                "type": "ia.container.flex",
-                "meta": {
-                  "name": "QueueHeader"
-                },
-                "position": {
-                  "shrink": 0
-                },
-                "props": {
-                  "direction": "column",
-                  "style": {
-                    "alignItems": "flex-start",
-                    "classes": "pf-panel-header",
-                    "gap": "4px"
-                  }
-                },
-                "children": [
-                  {
-                    "type": "ia.display.label",
-                    "meta": {
-                      "name": "QueueTitle"
-                    },
-                    "propConfig": {
-                      "props.text": {
-                        "binding": {
-                          "type": "expr",
-                          "config": {
-                            "expression": "'FIFO Queue - ' + toStr(len({view.custom.queue})) + ' castings awaiting Machining OUT'"
-                          }
-                        }
-                      }
-                    },
-                    "props": {
-                      "style": {
-                        "color": "var(--mpp-text-secondary)",
-                        "fontSize": "14px",
-                        "fontWeight": "600",
-                        "letterSpacing": "0.06em",
-                        "textTransform": "uppercase"
-                      }
-                    }
-                  },
-                  {
-                    "type": "ia.display.label",
-                    "meta": {
-                      "name": "QueueSub"
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "pf-kpi-sub"
-                      },
-                      "text": "Castings pending Machining OUT at this cell, oldest first. The oldest is selected by default - tap Select to work a different one."
-                    }
-                  }
-                ]
-              },
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "EmptyHint"
-                },
-                "position": {
-                  "shrink": 0
-                },
-                "propConfig": {
-                  "position.display": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "len({view.custom.queue}) = 0"
-                      }
-                    }
-                  },
-                  "props.text": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "if(isNull({session.custom.cell.locationId}), 'No cell is bound to this terminal.', 'This cell has no castings queued for Machining OUT.')"
-                      }
-                    }
-                  }
-                },
-                "props": {
-                  "style": {
-                    "classes": "pf-kpi-sub"
-                  }
-                }
-              },
-              {
-                "type": "ia.display.flex-repeater",
-                "meta": {
-                  "name": "QueueRepeater"
-                },
-                "position": {
-                  "basis": "0",
-                  "grow": 1
-                },
-                "propConfig": {
-                  "props.instances": {
-                    "binding": {
-                      "type": "property",
-                      "config": {
-                        "path": "view.custom.queue"
-                      }
-                    }
-                  }
-                },
-                "props": {
-                  "direction": "column",
-                  "elementPosition": {
-                    "basis": "92px",
-                    "shrink": 0
-                  },
-                  "path": "BlueRidge/Components/PlantFloor/Machining/OutQueueRow",
-                  "style": {
-                    "gap": "8px",
-                    "overflowY": "auto"
-                  },
-                  "useDefaultViewWidth": false
-                }
-              }
-            ]
+            "type": "ia.container.flex"
           },
           {
-            "type": "ia.container.flex",
-            "meta": {
-              "name": "ActivePanel"
-            },
-            "position": {
-              "basis": "0",
-              "grow": 1
-            },
-            "props": {
-              "direction": "column",
-              "style": {
-                "gap": "16px",
-                "overflow": "hidden"
-              }
-            },
             "children": [
               {
                 "children": [
@@ -519,7 +487,7 @@
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "if(isNull({view.custom.parentLot.Id}), 'No machined LOT at this cell.', 'Parent LOT: ' + {view.custom.parentLot.LotName} + '  (' + {view.custom.parentLot.ItemPartNumber} + ')  -  ' + toStr({view.custom.parentLot.PieceCount}) + ' pcs')"
+                            "expression": "if(isNull({view.custom.parentLot.Id}), \u0027No machined LOT at this cell.\u0027, \u0027Parent LOT: \u0027 + {view.custom.parentLot.LotName} + \u0027  (\u0027 + {view.custom.parentLot.ItemPartNumber} + \u0027)  -  \u0027 + toStr({view.custom.parentLot.PieceCount}) + \u0027 pcs\u0027)"
                           },
                           "type": "expr"
                         }
@@ -582,7 +550,7 @@
                           "props.text": {
                             "binding": {
                               "config": {
-                                "expression": "'Extract: ' + toStr(toInt({view.custom.draft.qty}, 0)) + ' / ' + toStr({view.custom.parentLot.PieceCount}) + ' pcs remaining'"
+                                "expression": "\u0027Extract: \u0027 + toStr(toInt({view.custom.draft.qty}, 0)) + \u0027 / \u0027 + toStr({view.custom.parentLot.PieceCount}) + \u0027 pcs remaining\u0027"
                               },
                               "type": "expr"
                             }
@@ -624,7 +592,7 @@
                       "style": {
                         "classes": "pf-kpi-sub"
                       },
-                      "text": "Extract one machining-origin sub-LOT from the parent. Enter a piece count up to the parent's remaining count and a destination. The parent stays open with its reduced count and can be extracted again until it reaches zero. LTT labels print showing child + parent LotName."
+                      "text": "Extract one machining-origin sub-LOT from the parent. Enter a piece count up to the parent\u0027s remaining count and a destination. The parent stays open with its reduced count and can be extracted again until it reaches zero. LTT labels print showing child + parent LotName."
                     },
                     "type": "ia.display.label"
                   },
@@ -726,7 +694,7 @@
                           "component": {
                             "onActionPerformed": {
                               "config": {
-                                "script": "\t# Terminal-mint: consume the source casting to MINT a machined SubAssembly LOT\n\t# (line-resident, no destination). Produced part derived via BOM by the proc.\n\tsource = self.view.custom.parentLot\n\totId = self.view.custom.opTemplateId\n\tcellId = self.session.custom.cell.locationId\n\td = self.view.custom.draft\n\tif cellId is None or not source or source.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Select a cell that has a casting ready for Machining OUT.\"}, \"Machining OUT\")\n\t\treturn\n\tif otId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"MachiningOut operation template not found.\"}, \"Machining OUT\")\n\t\treturn\n\tq = BlueRidge.Common.Util.toIntOrNone(d.get(\"qty\"))\n\tif q is None or q <= 0:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a positive quantity to mint.\"}, \"Machining OUT\")\n\t\treturn\n\tresult = BlueRidge.Workorder.Machining.mint(source.get(\"Id\"), otId, q, None, self.session.custom.appUserId, cellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining OUT - Mint\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft = {\"qty\": \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
+                                "script": "\t# Terminal-mint: consume the source casting to MINT a machined SubAssembly LOT\n\t# (line-resident, no destination). Produced part derived via BOM by the proc.\n\tsource \u003d self.view.custom.parentLot\n\totId \u003d self.view.custom.opTemplateId\n\tcellId \u003d self.session.custom.cell.locationId\n\td \u003d self.view.custom.draft\n\tif cellId is None or not source or source.get(\"Id\") is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Select a cell that has a casting ready for Machining OUT.\"}, \"Machining OUT\")\n\t\treturn\n\tif otId is None:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"MachiningOut operation template not found.\"}, \"Machining OUT\")\n\t\treturn\n\tq \u003d BlueRidge.Common.Util.toIntOrNone(d.get(\"qty\"))\n\tif q is None or q \u003c\u003d 0:\n\t\tBlueRidge.Common.Ui.notifyResult({\"Status\": False, \"Message\": \"Enter a positive quantity to mint.\"}, \"Machining OUT\")\n\t\treturn\n\tresult \u003d BlueRidge.Workorder.Machining.mint(source.get(\"Id\"), otId, q, None, self.session.custom.appUserId, cellId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Machining OUT - Mint\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.draft \u003d {\"qty\": \"\"}\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
                               },
                               "scope": "G",
                               "type": "script"
@@ -737,6 +705,7 @@
                           "name": "SubmitButton"
                         },
                         "position": {
+                          "basis": "375px",
                           "shrink": 0
                         },
                         "props": {
@@ -782,6 +751,7 @@
                         "classes": "pf-actions",
                         "gap": "12px",
                         "marginTop": "12px",
+                        "overflow": "visible",
                         "paddingTop": "12px"
                       },
                       "wrap": "wrap"
@@ -806,9 +776,38 @@
                 },
                 "type": "ia.container.flex"
               }
-            ]
+            ],
+            "meta": {
+              "name": "ActivePanel"
+            },
+            "position": {
+              "basis": "0",
+              "grow": 1
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "gap": "16px",
+                "overflow": "hidden"
+              }
+            },
+            "type": "ia.container.flex"
           }
-        ]
+        ],
+        "meta": {
+          "name": "ContentRow"
+        },
+        "position": {
+          "basis": "0",
+          "grow": 1
+        },
+        "props": {
+          "style": {
+            "gap": "16px",
+            "overflow": "hidden"
+          }
+        },
+        "type": "ia.container.flex"
       }
     ],
     "events": {
@@ -841,7 +840,7 @@
         {
           "messageType": "machiningOutSelected",
           "pageScope": true,
-          "script": "\tself.view.custom.selectedLotId = payload.get(\"lotId\")\n\tself.view.custom.draft = {\"qty\": \"\"}\n\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
+          "script": "\tself.view.custom.selectedLotId \u003d payload.get(\"lotId\")\n\tself.view.custom.draft \u003d {\"qty\": \"\"}\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1",
           "sessionScope": false,
           "viewScope": false
         },
