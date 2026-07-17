@@ -748,8 +748,7 @@
                 },
                 "props": {
                   "style": {
-                    "classes": "search-input",
-                    "width": "100px"
+                    "classes": "search-input"
                   }
                 },
                 "type": "ia.input.text-field"
@@ -757,6 +756,9 @@
             ],
             "meta": {
               "name": "FieldDefaultSubLotQty"
+            },
+            "position": {
+              "basis": "138px"
             },
             "props": {
               "direction": "column",

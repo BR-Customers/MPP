@@ -700,6 +700,7 @@
                     },
                     "props": {
                       "direction": "column",
+                      "justify": "flex-end",
                       "style": {
                         "classes": "field",
                         "gap": "2px",
@@ -756,6 +757,7 @@
                     },
                     "props": {
                       "direction": "column",
+                      "justify": "flex-end",
                       "style": {
                         "classes": "field",
                         "gap": "2px",
@@ -772,9 +774,10 @@
                         },
                         "props": {
                           "style": {
-                            "classes": "field-label"
+                            "classes": "field-label",
+                            "whiteSpace": "pre-wrap"
                           },
-                          "text": "Max Parts (per container)"
+                          "text": "Max Parts \n(per container)"
                         },
                         "type": "ia.display.label"
                       },
