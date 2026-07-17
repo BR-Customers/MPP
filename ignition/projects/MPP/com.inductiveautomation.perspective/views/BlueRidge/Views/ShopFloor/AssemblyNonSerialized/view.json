@@ -46,7 +46,7 @@
     "custom.queueByPartText": {
       "binding": {
         "config": {
-          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getComponentsAtCell\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}), \"\")"
+          "expression": "if({view.custom.refreshToken} \u003e\u003d 0 \u0026\u0026 !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getComponentsAtCell\", 0, {session.custom.cell.locationId}, true, {view.custom.refreshToken}), \"\")"
         },
         "transforms": [
           {
@@ -241,7 +241,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params={\"locationId\": self.session.custom.cell.locationId}, modal=False, showCloseIcon=True, draggable=True, resizable=True)"
+                    "script": "\tsystem.perspective.openPopup(\"mpp-inventory\", \"BlueRidge/Components/PlantFloor/InventoryManager\", params\u003d{\"locationId\": self.session.custom.cell.locationId}, modal\u003dFalse, showCloseIcon\u003dTrue, draggable\u003dTrue, resizable\u003dTrue)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -920,7 +920,8 @@
                           "direction": "column",
                           "style": {
                             "classes": "pf-field",
-                            "gap": "4px"
+                            "gap": "4px",
+                            "overflow": "visible"
                           }
                         },
                         "type": "ia.container.flex"
@@ -968,7 +969,8 @@
                           "direction": "column",
                           "style": {
                             "classes": "pf-field",
-                            "gap": "4px"
+                            "gap": "4px",
+                            "overflow": "visible"
                           }
                         },
                         "type": "ia.container.flex"
@@ -1038,7 +1040,8 @@
                           "direction": "column",
                           "style": {
                             "classes": "pf-field",
-                            "gap": "4px"
+                            "gap": "4px",
+                            "overflow": "visible"
                           }
                         },
                         "type": "ia.container.flex"
@@ -1080,7 +1083,8 @@
                     "props": {
                       "direction": "column",
                       "style": {
-                        "gap": "10px"
+                        "gap": "10px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -1091,7 +1095,8 @@
                 },
                 "props": {
                   "style": {
-                    "gap": "12px"
+                    "gap": "12px",
+                    "overflow": "visible"
                   },
                   "wrap": "wrap"
                 },
