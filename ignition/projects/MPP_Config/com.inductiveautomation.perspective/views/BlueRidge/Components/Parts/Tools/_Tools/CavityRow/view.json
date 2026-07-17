@@ -5,7 +5,7 @@
       "cavityNumber": null,
       "description": "",
       "id": null,
-      "isDeprecated": null,
+      "isDeprecated": false,
       "isScrappedSaved": false,
       "rowIndex": 0,
       "statusCode": "Active"

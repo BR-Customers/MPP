@@ -361,7 +361,7 @@
         {
           "name": "addRow",
           "params": [],
-          "script": "\tdraft \u003d dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {\"rows\": []})\n\trows \u003d list(draft.get(\"rows\") or [])\n\trows.append({\n\t\t\"id\":              None,\n\t\t\"cavityNumber\":    None,\n\t\t\"description\":     \"\",\n\t\t\"statusCode\":      \"Active\",\n\t\t\"isScrappedSaved\": False,\n\t})\n\tdraft[\"rows\"] \u003d rows\n\tselected \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\tself.view.custom.state \u003d {\"selected\": selected, \"editDraft\": draft}"
+          "script": "\tdraft \u003d dict(BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.editDraft) or {\"rows\": []})\n\trows \u003d list(draft.get(\"rows\") or [])\n\trows.append({\n\t\t\"id\":              None,\n\t\t\"cavityNumber\":    None,\n\t\t\"description\":     \"\",\n\t\t\"statusCode\":      \"Active\",\n\t\t\"isScrappedSaved\": False,\n\t\t\"isDeprecated\": self.view.params.deprecated,\n\t})\n\tdraft[\"rows\"] \u003d rows\n\tselected \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state.selected) or {\"rows\": []}\n\tself.view.custom.state \u003d {\"selected\": selected, \"editDraft\": draft}"
         },
         {
           "name": "_applyNumberChange",
