@@ -1,7 +1,7 @@
 # Assembly-Out Closure Method — Terminal Mode + Per-Method Container Config
 
 **Date:** 2026-07-17
-**Status:** Draft (design approved in brainstorming; blast-radius pending)
+**Status:** Draft (design approved in brainstorming; blast radius complete; PLC tag wiring resolved from built UDTs)
 **Author:** Blue Ridge Automation
 **Related:** `MPP_MES_DATA_MODEL.md` (Parts.ContainerConfig, Lots.Container), FDS-02-010 (terminal view-policy), the 2026-06-10 terminal-mode-view-policy spec, Arc 2 Phase 6 assembly (`0028_arc2_phase6_assembly.sql`), Arc 2 Phase 7 hold (`Quality.Hold_Place`/`Hold_Release`).
 
@@ -33,13 +33,15 @@ Closure method is resolved by a **persisted terminal mode** that *selects among*
 - `ClosureMethod` becomes **NOT NULL** and **code-table-backed** via a new `Parts.ClosureMethodCode` (`ByCount` / `ByWeight` / `ByVision`) with an FK — per the no-magic-strings convention. It is promoted from its OI-02 "nullable maybe" status to the required discriminator.
 - **One active config per (part, method)** — a part cannot have two different `ByCount` pack-outs. Two count box sizes for one part would need a further discriminator (the customer/pack-out axis), which is explicitly out of scope.
 
-### 2.2 Terminal carries the mode
+### 2.2 Terminal carries the mode; capability is derived from bound PLC devices
 
-- New EAV attributes on the Terminal Location (`LocationTypeDefinition` 7), same mechanism as `IpAddress` / `DefaultScreen`:
-  - **`CurrentClosureMethod`** — the station's active mode; persisted; changed only at changeover.
-  - **`ClosureCapabilities`** — CSV bound of methods the station's hardware supports (e.g. `ByCount,ByVision`); set at commissioning; the changeover picker offers only these.
-  - **`VisionAppUrl`** — the external vision web-app URL embedded in the Vision appearance (scale/PLC devices already resolve via `session.custom.plcDevices`).
-- `onStartup` resolves `CurrentClosureMethod` into **`session.custom.closureMethod`** alongside the existing `session.custom.terminal` / `.printer` / `.plcDevices`.
+- **Persisted mode** — one new EAV attribute on the Terminal Location (`LocationTypeDefinition` 7), same mechanism as `IpAddress` / `DefaultScreen`: **`CurrentClosureMethod`** — the station's active mode; changed only at changeover. `onStartup` resolves it into **`session.custom.closureMethod`** alongside the existing `session.custom.terminal` / `.printer` / `.plcDevices`.
+- **Capability is NOT stored** — it is derived from the PLC devices already bound to the terminal (`Location.TerminalPlcDevice → Location.PlcDeviceType`). The mapping lives in **data, not logic**: add a nullable **`PlcDeviceType.ClosureMethodCode`** FK →
+  - `ScaleStation` → `ByWeight`
+  - `TrayInspectionStation` → `ByVision`
+  - `SerializedMipStation` / `NonSerializedMipStation` → `NULL` (MIP handshake is the part-validation axis, orthogonal to container closure)
+  - A terminal's **capability set** = the distinct non-null `ClosureMethodCode` across its active devices, **plus `ByCount` always** (needs no device). The changeover picker offers exactly this set. `ClosureCapabilities` as a stored attribute is dropped.
+- **Vision embed URL** — the external vision-app URL for the ByVision appearance stays a small terminal attribute (`VisionAppUrl`); it is a display concern, not a PLC tag.
 
 ### 2.3 Resolution — deterministic, zero per-container choice
 
@@ -73,11 +75,13 @@ The operator never selects a method. The terminal's mode already answered "which
 
 A single conditional replaces the hardcoded ByVision chrome. `position.display` gates the middle panel on the resolved method; the shared chrome (KPIs, Container Completion Gate, header) stays common.
 
-| Mode | Middle panel | Close trigger |
-|---|---|---|
-| **ByCount** | Today's build: operator-typed "Parts in tray" + **Complete Tray** button. | Operator button press (existing `Assembly.handleTrayComplete`). |
-| **ByWeight** | No camera, no count field; a "waiting for scale — target N" status panel. | PLC asserts weight-reached flag → auto-close + print. *(PLC-integration tail phase.)* |
-| **ByVision** | External vision web app embedded on the left (Perspective Inline Frame → `session.custom.terminal.visionAppUrl`); tray/container status on the right. | PLC/camera PASS → close. *(PLC-integration tail phase.)* |
+| Mode | Middle panel | Device UDT | Close trigger (MES watches) | MES writes down |
+|---|---|---|---|---|
+| **ByCount** | Today's build: operator-typed "Parts in tray" + **Complete Tray** button. | — | operator button (`Assembly.handleTrayComplete`) | — |
+| **ByWeight** | Live weight vs target ("waiting for scale — 4.2 / 5.0 kg"); no camera, no count field. | `ScaleStation` | `NET_TargetWeightMetFlag` → true | `TRG_TargetWeightValue` ← `ContainerConfig.TargetWeight` (+ UOM/tolerance), pulse `TRG_SendMessage` |
+| **ByVision** | External vision app embedded left (`VisionAppUrl`); per-slot dispositions + tray status right. | `TrayInspectionStation` | `OkToContinue` → true (with `InspectionComplete`, `PartDisposition01..18`) | `PartNumber` ← `Item.PlcId` (recipe); validate `VisionPartNumber` read-back |
+
+Trigger-tag path = `TerminalPlcDevice.UdtInstancePath` + member. `Workorder.TrayInspectionWatcher` already subscribes to the TrayInspection members; a scale watcher covers `NET_TargetWeightMetFlag`. Weight/Vision auto-close is the PLC tail phase; the view swap + Count path ship first.
 
 `Lots.ContainerTray.ClosureMethod` already persists per tray in the mint path, so each tray records the mode that produced it — full traceability regardless of appearance.
 
@@ -119,8 +123,10 @@ Synthesized from four parallel read-only passes. Two agents disagreed on test-fi
 
 ### 5.3 Terminal / session / hold
 
-- **Terminal EAV** — add three `LocationAttributeDefinition` rows for `LocationTypeDefinitionId = 7` (`CurrentClosureMethod`, `ClosureCapabilities`, `VisionAppUrl`), following the `0002`/`0020` seed pattern; respect the `(LocationTypeDefinitionId, AttributeName)` filtered-unique constraint (`0014`) and continue the existing `SortOrder`.
+- **Terminal EAV** — add two `LocationAttributeDefinition` rows for `LocationTypeDefinitionId = 7` (`CurrentClosureMethod`, `VisionAppUrl`), following the `0002`/`0020` seed pattern; respect the `(LocationTypeDefinitionId, AttributeName)` filtered-unique constraint (`0014`) and continue the existing `SortOrder`. (`ClosureCapabilities` is NOT stored — see below.)
+- **`Location.PlcDeviceType.ClosureMethodCode`** — new nullable FK → `Parts.ClosureMethodCode`; seed `ScaleStation→ByWeight`, `TrayInspectionStation→ByVision`, MIP types `NULL`. Capability = distinct non-null values across the terminal's active `TerminalPlcDevice` rows + `ByCount`. A read proc (`Location.Terminal_GetClosureCapabilities` or a column on the terminal resolver) surfaces the set for the changeover picker.
 - **`R__Location_Terminal_GetByIpAddress.sql`** — add `LEFT JOIN` + projection for `CurrentClosureMethod` (and `VisionAppUrl`) so the session resolver can read them.
+- **UDT close-trigger members** already exist (we built them): `ScaleStation.NET_TargetWeightMetFlag` / `TRG_TargetWeightValue` / `TRG_SendMessage`; `TrayInspectionStation.OkToContinue` / `InspectionComplete` / `PartDisposition01..18` / `PartNumber` / `VisionPartNumber`. No UDT changes needed — the tail-phase watchers subscribe to them.
 - **`onStartup.py`** — stash `session.custom.closureMethod` (+ vision URL) from the terminal row, fallback `""`. `session-props/props.json` needs no declaration (session custom is untyped) — but readers must tolerate empty/None.
 - **Hold freeze/thaw is native** — `Hold_Place @ContainerId` on an **Open(1)** container captures `PriorContainerStatusCodeId = 1`; `Hold_Release` restores Open(1). While Hold(4) it leaves `Container_GetOpenByCell` (cell free for the new-mode container) and returns on thaw. Seed `Quality.HoldTypeCode` Id 4 `Changeover` (guarded insert). **Verify:** existing tests only held Complete/Shipped containers — confirm `Hold_Place` permits an Open one (no status guard beyond the double-hold B3 check is expected).
 - **Elevation** — reuse `BlueRidge.Location.AppUser.elevate(ad, pw, 'Changeover', terminalId)` + `ElevationModal`; it's **stateless per action** (returns `appUserId`, does not set `session.custom.appUserId`), so pass the returned id straight to the changeover proc. Audit via existing `ElevationGranted`/`ElevationDenied` event types (27/28). **Deployment blocker:** `_validateAdCredentials` is a stub that rejects all until wired to the gateway IdP — the changeover can't be exercised end-to-end in dev until that lands (dev workaround: bypass seam or bootstrap user).
@@ -138,7 +144,7 @@ Synthesized from four parallel read-only passes. Two agents disagreed on test-fi
 Multi-part build; the plan will sequence roughly:
 
 1. **Schema foundation** — `Parts.ClosureMethodCode` code table; `ContainerConfig.ClosureMethod` NOT NULL + FK; re-key unique index `(ItemId, ClosureMethod)`; backfill existing configs.
-2. **Terminal attributes + resolution** — the 3 EAV attribute definitions; `onStartup` → `session.custom.closureMethod`; session-prop declaration.
+2. **Terminal mode + derived capability** — `CurrentClosureMethod` + `VisionAppUrl` EAV attrs; `PlcDeviceType.ClosureMethodCode` column + seed; capability read from `TerminalPlcDevice`; `onStartup` → `session.custom.closureMethod`.
 3. **Config-driven resolution in procs** — `Assembly_CompleteTray` (+ `Container_Open`) resolve config by `(ItemId, ClosureMethod)` instead of TOP-1-by-ItemId.
 4. **Changeover action** — elevated mutation proc + `Changeover` HoldTypeCode + freeze/thaw; header mode chip.
 5. **Item Master editor** — ContainerConfig section edits a per-method list.
@@ -152,10 +158,10 @@ Front phases (1–6) deliver the visible fix; phase 7 rides the PLC integration.
 ## 7. Open questions
 
 - **Backfill default** for `ClosureMethod` on existing NULL configs before the NOT-NULL constraint — proposed `ByCount`. Confirm (dev seeds already set explicit methods, so this only affects any hand-created rows).
-- **`ClosureCapabilities` authoring** — is the terminal's capability set edited in the Configuration Tool (terminal/location admin), or seeded at commissioning only? Drives whether the Item-Master-adjacent terminal editor gains a field now or later.
-
 ### Resolved during blast radius
 
+- **Capability is derived, not authored** — from `TerminalPlcDevice → PlcDeviceType.ClosureMethodCode` (§2.2). No `ClosureCapabilities` attribute, no commissioning-editor question. `ByCount` is always in the set.
+- **Close-trigger tags are known** — read off the UDTs we built (§4): `NET_TargetWeightMetFlag` (weight), `OkToContinue` (vision). `TargetWeight` on the config feeds `TRG_TargetWeightValue`; `Item.PlcId` feeds the vision `PartNumber` recipe.
 - **Serialized assembly view is in scope** — it carries the identical hardcoded-Vision chrome and takes the same three-appearance treatment (not a separate path).
 - **Changeover with an open container** freezes it via the existing Hold path (native Open→Hold→Open round-trip); no new container status needed.
 - **Live-session staleness** is handled in the changeover handler by assigning `session.custom.closureMethod` directly after the proc (§3).
