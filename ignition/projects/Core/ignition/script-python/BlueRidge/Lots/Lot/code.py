@@ -64,6 +64,9 @@ def create(data, appUserId=None, terminalLocationId=None, lotName=None, cavityNo
         "terminalLocationId": terminalLocationId,
         "lotName":            _u(lotName),
         "cavityNote":         _u(cavityNote),
+        # Die-cast opt-in: after birth at the machine, the proc auto-moves the LOT to
+        # the Warehouse (storage). 0/1 -> BIT. Absent/false = no deposit (other origins).
+        "depositToStorage":   1 if d.get("depositToStorage") else 0,
     }
     return BlueRidge.Common.Db.execMutation("lots/Lot_Create", params)
 
@@ -243,6 +246,46 @@ def mapTrimInventoryInstances(rows, selectable=False, selectedLotId=None):
     return out
 
 
+def mapMachiningOutQueue(rows, selectedLotId=None):
+    """Machining OUT FIFO pick-list instances for MachiningOutSplit. One instance
+       per Lot_GetWipQueueByLocation row (castings whose next route step is the
+       MachiningOut consume-mint), oldest-first. selectedLotId highlights the
+       operator's pick; when it is None or has drained out of the queue, the
+       FIRST (oldest) row is selected by default so the terminal always opens on
+       the next casting to work. Shape mirrors mapTrimInventoryInstances so the
+       OutQueueRow sub-view is a drop-in."""
+    rows = BlueRidge.Common.Util.extractQualifiedValues(rows) or []
+    selectedLotId = BlueRidge.Common.Util.extractQualifiedValues(selectedLotId)
+    out = []
+    pos = 0
+    for r in rows:
+        r = r or {}
+        pos += 1
+        arr = r.get("LastMovementAt")
+        arrival = ""
+        if arr is not None:
+            try:
+                arrival = system.date.format(arr, "MM/dd HH:mm")
+            except:
+                arrival = ("%s" % arr)[:16]
+        out.append({
+            "lotId":         r.get("Id"),
+            "lotName":       r.get("LotName") or "",
+            "item":          r.get("ItemPartNumber") or "",
+            "pieceCount":    r.get("PieceCount") or 0,
+            "arrival":       arrival,
+            "position":      pos,
+            "lotStatusCode": r.get("LotStatusCode") or "",
+            "selectable":    True,
+        })
+    # Default-to-first: honour the operator pick while still queued, else fall
+    # back to the oldest row (covers first load + a casting draining fully out).
+    ids = [x["lotId"] for x in out]
+    effective = selectedLotId if selectedLotId in ids else (out[0]["lotId"] if out else None)
+    for x in out:
+        x["isSelected"] = (x["lotId"] == effective)
+    return out
+
 def getLatestForToolCavityOrEmpty(toolId, toolCavityId, _refreshToken=None):
     """The cavity-scoped reject target (Jacques 2026-07-06): the newest open
        LOT cast on (tool, cavity). Always returns the fully-shaped dict
@@ -342,6 +385,60 @@ def getWipQueueByLocation(locationId, includeDescendants=False, _refreshToken=No
         {"locationId": _u(locationId), "operationTypeCode": otc,
          "includeDescendants": bool(includeDescendants)},
     )
+
+
+def getComponentsAtCell(locationId, includeDescendants=True, _refreshToken=None):
+    """'Components at this cell' read for the assembly screens
+       (Lots.Lot_GetComponentsAtCell): the UNION of route-driven WIP (LOTs whose next
+       pending route step is here) AND routeless components that are BomDerived-eligible
+       here (a BOM child of a finished good eligible at this cell). Fixes routeless
+       received/purchased components being dropped by getWipQueueByLocation's route
+       INNER JOIN. Same column shape as getWipQueueByLocation (routeless rows carry NULL
+       NextOperationTypeCode). _refreshToken is an ignored runScript re-read arg."""
+    if locationId is None:
+        return []
+    BlueRidge.Common.Util.log("getComponentsAtCell locationId=%s includeDescendants=%s"
+                              % (locationId, includeDescendants))
+    return BlueRidge.Common.Db.execList(
+        "lots/Lot_GetComponentsAtCell",
+        {"locationId": _u(locationId), "includeDescendants": bool(includeDescendants)},
+    )
+
+
+def getLineInventoryCards(locationId, _refreshToken=None):
+    """Flex-repeater instances for the line-inventory popup's on-hand list, rendered
+       with the Trim InventoryRow card (display-only, selectable=False). Fetches
+       getLineInventoryByPart and maps each row to the card's params; ArrivedAt is
+       precomputed to a display string (repeater-param date rule). Scalar args only
+       (fetch inside) per the ImmutableList re-eval rule. Returns list[dict]."""
+    locationId = _u(locationId)
+    if locationId is None:
+        return []
+    rows = getLineInventoryByPart(locationId) or []
+    out = []
+    pos = 0
+    for r in rows:
+        r = r or {}
+        pos += 1
+        arr = r.get("ArrivedAt")
+        arrival = ""
+        if arr is not None:
+            try:
+                arrival = system.date.format(arr, "MM/dd HH:mm")
+            except:
+                arrival = ("%s" % arr)[:16]
+        out.append({
+            "lotId":         r.get("LotId"),
+            "lotName":       r.get("LotName") or "",
+            "item":          r.get("PartNumber") or "",
+            "pieceCount":    r.get("InventoryAvailable") or 0,
+            "arrival":       arrival,
+            "position":      pos,
+            "lotStatusCode": "Good",
+            "isSelected":    False,
+            "selectable":    False,
+        })
+    return out
 
 
 def getByName(lotName):

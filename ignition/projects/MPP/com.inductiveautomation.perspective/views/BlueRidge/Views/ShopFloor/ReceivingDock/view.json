@@ -35,6 +35,53 @@
     }
   },
   "root": {
+    "type": "ia.container.flex",
+    "meta": {
+      "name": "root"
+    },
+    "props": {
+      "direction": "column",
+      "style": {
+        "classes": "canvas",
+        "gap": "16px",
+        "padding": "24px"
+      }
+    },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "createLot",
+          "params": [],
+          "script": "\tdraft = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.draft) or {}\n\tcell = BlueRidge.Common.Util.extractQualifiedValues(self.session.custom.cell) or {}\n\tpartValue = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.partItemId)\n\n\t# Resolve part: a numeric option value is a real Item.Id; a typed (custom)\n\t# value from allowCustomOptions arrives as a raw part-number string ->\n\t# resolve to an itemId via Item.getByPartNumber.\n\titemId = None\n\tif partValue is not None and partValue != \"\":\n\t\ttry:\n\t\t\titemId = int(partValue)\n\t\texcept (ValueError, TypeError):\n\t\t\trow = BlueRidge.Parts.Item.getByPartNumber(partValue)\n\t\t\tif row is None:\n\t\t\t\tBlueRidge.Common.Notify.toast(\"Unknown part\", \"No active item matches '%s'.\" % partValue, \"error\")\n\t\t\t\treturn\n\t\t\titemId = row.get(\"Id\")\n\tif itemId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Part required\", \"Scan or pick a part number.\", \"warning\")\n\t\treturn\n\n\t# Piece count: text-field + proc coercion (proc takes an int).\n\tpieceCount = None\n\tpc = draft.get(\"pieceCount\")\n\tif pc is not None and (\"%s\" % pc).strip() != \"\":\n\t\ttry:\n\t\t\tpieceCount = int((\"%s\" % pc).strip())\n\t\texcept (ValueError, TypeError):\n\t\t\tBlueRidge.Common.Notify.toast(\"Invalid piece count\", \"Enter a whole number.\", \"warning\")\n\t\t\treturn\n\n\t# Optional serial range -> int or None.\n\tdef _toIntOrNone(v):\n\t\tif v is None:\n\t\t\treturn None\n\t\ts = (\"%s\" % v).strip()\n\t\tif s == \"\":\n\t\t\treturn None\n\t\ttry:\n\t\t\treturn int(s)\n\t\texcept (ValueError, TypeError):\n\t\t\treturn None\n\tminSerial = _toIntOrNone(draft.get(\"minSerialNumber\"))\n\tmaxSerial = _toIntOrNone(draft.get(\"maxSerialNumber\"))\n\n\tvendorLot = draft.get(\"vendorLotNumber\") or None\n\n\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\n\tdata = {\n\t\t\"itemId\": itemId,\n\t\t\"lotOriginTypeId\": self.view.custom.receivedOriginId,\n\t\t\"currentLocationId\": cell.get(\"locationId\"),\n\t\t\"pieceCount\": pieceCount,\n\t\t\"vendorLotNumber\": vendorLot,\n\t\t\"minSerialNumber\": minSerial,\n\t\t\"maxSerialNumber\": maxSerial,\n\t}\n\tres = BlueRidge.Lots.Lot.create(data, appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(res, successTitle=\"LOT created\")\n\tif not (res and res.get(\"Status\")):\n\t\treturn\n\tnewId = res.get(\"NewId\")\n\n\t# Print the LTT. TODO(phase4): no resolver exists yet for the Primary label\n\t# type id or the Initial print-reason id (LotLabel has no getByCode helper and\n\t# the view must not call system.db / invent SQL). Passing None best-effort; the\n\t# proc/print may reject -> the UI holds on printFailed and offers Reprint.\n\tpr = BlueRidge.Lots.LotLabel.printLabel({\"lotId\": newId, \"labelTypeCodeId\": None, \"printReasonCodeId\": None}, appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(pr, successTitle=\"LTT printed\")\n\tif not (pr and pr.get(\"Status\")):\n\t\tself.view.custom.printFailed = True\n\t\tself.view.custom.lastLabelLotId = newId\n\telse:\n\t\tself.view.custom.printFailed = False\n\t\tself.view.custom.lastLabelLotId = newId\n\t\tself.resetForm()\n\t\tsystem.perspective.navigate(\"/shop-floor/lot-detail/\" + str(newId))"
+        },
+        {
+          "name": "reprintLast",
+          "params": [],
+          "script": "\tlotId = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.lastLabelLotId)\n\tif lotId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Nothing to reprint\", \"No recent LOT to reprint.\", \"warning\")\n\t\treturn\n\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\t# TODO(phase4): non-Initial print-reason id is not resolvable from the view\n\t# (no LotLabel.getReasonIdByCode helper; view must not call system.db).\n\t# Passing None best-effort.\n\tpr = BlueRidge.Lots.LotLabel.reprint(lotId, None, appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(pr, successTitle=\"LTT reprinted\")\n\tif pr and pr.get(\"Status\"):\n\t\tself.view.custom.printFailed = False"
+        },
+        {
+          "name": "resetForm",
+          "params": [],
+          "script": "\tself.view.custom.partItemId = None\n\tself.view.custom.draft = {\"vendorLotNumber\": \"\", \"pieceCount\": \"\", \"minSerialNumber\": \"\", \"maxSerialNumber\": \"\"}"
+        },
+        {
+          "name": "startup",
+          "params": [],
+          "script": "\t# Dedicated terminal: derive the working cell from the terminal's zone (parent),\n\t# mirroring the Die Cast / Assembly dedicated bodies (receiving deposits at its zone).\n\tt = self.session.custom.terminal\n\tif t and t.get(\"zoneLocationId\"):\n\t\tself.session.custom.cell = {\"locationId\": t.get(\"zoneLocationId\"), \"code\": t.get(\"zoneName\") or \"\", \"name\": t.get(\"zoneName\") or \"\"}\n\t# Operator gate: no logged-in operator -> open the initials popup OVER this screen.\n\t# Non-blocking: the page populates behind the modal; session.custom is reactive.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
+        }
+      ]
+    },
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tself.startup()"
+          }
+        }
+      }
+    },
     "children": [
       {
         "children": [
@@ -190,9 +237,9 @@
                   "props.value": {
                     "binding": {
                       "config": {
+                        "bidirectional": true,
                         "path": "view.custom.partItemId"
-                      },
-                      "type": "property"
+                      }
                     }
                   }
                 },
@@ -254,7 +301,17 @@
                     "minHeight": "44px"
                   }
                 },
-                "type": "ia.input.text-field"
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "type": "property",
+                      "config": {
+                        "bidirectional": true,
+                        "path": "view.custom.draft.vendorLotNumber"
+                      }
+                    }
+                  }
+                }
               }
             ],
             "meta": {
@@ -292,9 +349,9 @@
                   "props.text": {
                     "binding": {
                       "config": {
+                        "bidirectional": true,
                         "path": "view.custom.draft.pieceCount"
-                      },
-                      "type": "property"
+                      }
                     }
                   }
                 },
@@ -346,9 +403,9 @@
                       "props.text": {
                         "binding": {
                           "config": {
+                            "bidirectional": true,
                             "path": "view.custom.draft.minSerialNumber"
-                          },
-                          "type": "property"
+                          }
                         }
                       }
                     },
@@ -401,18 +458,10 @@
                       "props.text": {
                         "binding": {
                           "config": {
+                            "bidirectional": true,
                             "path": "view.custom.draft.maxSerialNumber"
-                          },
-                          "type": "property"
+                          }
                         }
-                      }
-                    },
-                    "props": {
-                      "inputType": "tel",
-                      "placeholder": "Max serial",
-                      "style": {
-                        "classes": "pf-field-input-mono",
-                        "minHeight": "44px"
                       }
                     },
                     "type": "ia.input.text-field"

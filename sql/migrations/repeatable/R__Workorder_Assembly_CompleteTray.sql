@@ -172,17 +172,28 @@ BEGIN
         END
 
         -- ---- 7. Pre-check FIFO stock sufficiency for every BOM line (advisory; the
-        --      in-txn drained-mid-consume RAISERROR is authoritative) ----
-        IF EXISTS (
-            SELECT 1 FROM Parts.BomLine bl
+        --      in-txn drained-mid-consume RAISERROR is authoritative). Names the
+        --      SHORT component(s) with need-vs-have so the operator knows exactly
+        --      what to stage, not just "one or more BOM lines". ----
+        DECLARE @ShortList NVARCHAR(MAX) = (
+            SELECT STRING_AGG(
+                       i.PartNumber
+                       + N' (need ' + CAST(CAST(bl.QtyPer * @PieceCount AS INT) AS NVARCHAR(20))
+                       + N', have ' + CAST(s.Avail AS NVARCHAR(20)) + N')',
+                       N'; ') WITHIN GROUP (ORDER BY i.PartNumber)
+            FROM Parts.BomLine bl
+            INNER JOIN Parts.Item i ON i.Id = bl.ChildItemId
             OUTER APPLY (
                 SELECT ISNULL(SUM(l.InventoryAvailable), 0) AS Avail FROM Lots.Lot l
                 INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId
                 WHERE l.ItemId = bl.ChildItemId AND l.CurrentLocationId = @CellLocationId AND sc.Code <> N'Closed'
             ) s
-            WHERE bl.BomId = @BomId AND s.Avail < CAST(bl.QtyPer * @PieceCount AS INT))
+            WHERE bl.BomId = @BomId AND s.Avail < CAST(bl.QtyPer * @PieceCount AS INT));
+
+        IF @ShortList IS NOT NULL AND @ShortList <> N''
         BEGIN
-            SET @Message = N'Insufficient component stock at the line for one or more BOM lines.';
+            SET @Message = Audit.ufn_TruncateActivity(
+                N'Insufficient component stock at the line -- short: ' + @ShortList + N'.');
             EXEC Audit.Audit_LogFailure @AppUserId = @AppUserId, @LogEntityTypeCode = N'ContainerTray',
                 @EntityId = NULL, @LogEventTypeCode = N'TrayClosed', @FailureReason = @Message,
                 @ProcedureName = @ProcName, @AttemptedParameters = @Params;
