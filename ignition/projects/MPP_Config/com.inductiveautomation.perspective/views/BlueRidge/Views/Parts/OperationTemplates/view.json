@@ -768,7 +768,8 @@
                           "direction": "column",
                           "style": {
                             "classes": "field",
-                            "gap": "2px"
+                            "gap": "2px",
+                            "overflow": "visible"
                           }
                         },
                         "type": "ia.container.flex"
@@ -780,7 +781,8 @@
                     "props": {
                       "style": {
                         "classes": "field-row",
-                        "gap": "12px"
+                        "gap": "12px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"

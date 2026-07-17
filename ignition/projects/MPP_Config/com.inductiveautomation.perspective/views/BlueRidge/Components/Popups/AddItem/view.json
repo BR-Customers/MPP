@@ -208,7 +208,8 @@
                       "direction": "column",
                       "style": {
                         "classes": "field",
-                        "gap": "2px"
+                        "gap": "2px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -269,7 +270,8 @@
                       "direction": "column",
                       "style": {
                         "classes": "field",
-                        "gap": "2px"
+                        "gap": "2px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -330,7 +332,8 @@
                       "direction": "column",
                       "style": {
                         "classes": "field",
-                        "gap": "2px"
+                        "gap": "2px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -342,7 +345,8 @@
                 "props": {
                   "style": {
                     "classes": "field-row",
-                    "gap": "10px"
+                    "gap": "10px",
+                    "overflow": "visible"
                   }
                 },
                 "type": "ia.container.flex"
@@ -357,7 +361,7 @@
                       "style": {
                         "classes": "field-label"
                       },
-                      "text": "Description *"
+                      "text": "DESCRIPTION *"
                     },
                     "type": "ia.display.label"
                   },
@@ -393,7 +397,8 @@
                   "direction": "column",
                   "style": {
                     "classes": "field",
-                    "gap": "2px"
+                    "gap": "2px",
+                    "overflow": "visible"
                   }
                 },
                 "type": "ia.container.flex"
@@ -444,7 +449,8 @@
                   "direction": "column",
                   "style": {
                     "classes": "field",
-                    "gap": "2px"
+                    "gap": "2px",
+                    "overflow": "visible"
                   }
                 },
                 "type": "ia.container.flex"
@@ -456,7 +462,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "8px"
+                "gap": "8px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -531,7 +538,8 @@
                       "direction": "column",
                       "style": {
                         "classes": "field",
-                        "gap": "2px"
+                        "gap": "2px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -592,7 +600,8 @@
                       "direction": "column",
                       "style": {
                         "classes": "field",
-                        "gap": "2px"
+                        "gap": "2px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -604,7 +613,8 @@
                 "props": {
                   "style": {
                     "classes": "field-row",
-                    "gap": "10px"
+                    "gap": "10px",
+                    "overflow": "visible"
                   }
                 },
                 "type": "ia.container.flex"
@@ -616,7 +626,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "8px"
+                "gap": "8px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -691,7 +702,8 @@
                       "direction": "column",
                       "style": {
                         "classes": "field",
-                        "gap": "2px"
+                        "gap": "2px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -746,7 +758,8 @@
                       "direction": "column",
                       "style": {
                         "classes": "field",
-                        "gap": "2px"
+                        "gap": "2px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -801,7 +814,8 @@
                       "direction": "column",
                       "style": {
                         "classes": "field",
-                        "gap": "2px"
+                        "gap": "2px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -813,7 +827,8 @@
                 "props": {
                   "style": {
                     "classes": "field-row",
-                    "gap": "10px"
+                    "gap": "10px",
+                    "overflow": "visible"
                   }
                 },
                 "type": "ia.container.flex"
@@ -825,7 +840,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "8px"
+                "gap": "8px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -894,7 +910,8 @@
                   "direction": "column",
                   "style": {
                     "classes": "field",
-                    "gap": "2px"
+                    "gap": "2px",
+                    "overflow": "visible"
                   }
                 },
                 "type": "ia.container.flex"
@@ -906,7 +923,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "8px"
+                "gap": "8px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"

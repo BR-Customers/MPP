@@ -8,7 +8,7 @@
     },
     "plcDevices": [],
     "presence": {
-      "policy": "confirm"
+      "policy": "strict"
     },
     "printer": {
       "code": "",

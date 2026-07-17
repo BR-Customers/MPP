@@ -6,9 +6,9 @@
         "$": [
           "ts",
           192,
-          1784135844746
+          1784293527876
         ],
-        "$ts": 1784135844746
+        "$ts": 1784293527876
       },
       "entityTypeCode": null,
       "logSeverityCode": null,
@@ -17,643 +17,19 @@
         "$": [
           "ts",
           192,
-          1784135844746
+          1784293527876
         ],
-        "$ts": 1783531044746
+        "$ts": 1783688727876
       }
     },
     "rows": [
       {
-        "ChangesSummary": "Location: \"{\"Id\":3,\"ParentLocationId\":2,…\" → \"{\"Id\":3,\"ParentLocationId\":2,…\"",
-        "Description": "Location updated with attribute reconciliation.",
-        "EntityId": 3,
-        "Id": 27,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "LogSeverityCode": "Info",
-        "LogSeverityId": 1,
-        "LoggedAt": {
-          "$": [
-            "ts",
-            192,
-            1784135844762
-          ],
-          "$ts": 1784135079165
-        },
-        "NewValue": "{\"Location\":\"{\\\"Id\\\":3,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC1\\\",\\\"Name\\\":\\\"Die Cast 1\\\",\\\"Description\\\":\\\"Die casting area - 11 machines\\\",\\\"SortOrder\\\":1}\"}",
-        "OldValue": "{\"Location\":\"{\\\"Id\\\":3,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC1\\\",\\\"Name\\\":\\\"Die Cast 1 d\\\",\\\"Description\\\":\\\"Die casting area - 11 machines\\\",\\\"SortOrder\\\":1}\"}",
-        "UserDisplayName": "Dev User",
-        "UserId": 2
-      },
-      {
-        "ChangesSummary": "Location: \"{\"Id\":3,\"ParentLocationId\":2,…\" → \"{\"Id\":3,\"ParentLocationId\":2,…\"",
-        "Description": "Location updated with attribute reconciliation.",
-        "EntityId": 3,
-        "Id": 26,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "LogSeverityCode": "Info",
-        "LogSeverityId": 1,
-        "LoggedAt": {
-          "$": [
-            "ts",
-            192,
-            1784135844762
-          ],
-          "$ts": 1784134875346
-        },
-        "NewValue": "{\"Location\":\"{\\\"Id\\\":3,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC1\\\",\\\"Name\\\":\\\"Die Cast 1 d\\\",\\\"Description\\\":\\\"Die casting area - 11 machines\\\",\\\"SortOrder\\\":1}\"}",
-        "OldValue": "{\"Location\":\"{\\\"Id\\\":3,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC1\\\",\\\"Name\\\":\\\"Die Cast 1\\\",\\\"Description\\\":\\\"Die casting area - 11 machines\\\",\\\"SortOrder\\\":1}\"}",
-        "UserDisplayName": "Dev User",
-        "UserId": 2
-      },
-      {
-        "ChangesSummary": "Location: \"{\"Id\":3,\"ParentLocationId\":2,…\" → \"{\"Id\":3,\"ParentLocationId\":2,…\"",
-        "Description": "Location updated with attribute reconciliation.",
-        "EntityId": 3,
-        "Id": 25,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "LogSeverityCode": "Info",
-        "LogSeverityId": 1,
-        "LoggedAt": {
-          "$": [
-            "ts",
-            192,
-            1784135844762
-          ],
-          "$ts": 1784134868498
-        },
-        "NewValue": "{\"Location\":\"{\\\"Id\\\":3,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC1\\\",\\\"Name\\\":\\\"Die Cast 1\\\",\\\"Description\\\":\\\"Die casting area - 11 machines\\\",\\\"SortOrder\\\":1}\"}",
-        "OldValue": "{\"Location\":\"{\\\"Id\\\":3,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC1\\\",\\\"Name\\\":\\\"Die Cast 1 asd\\\",\\\"Description\\\":\\\"Die casting area - 11 machines\\\",\\\"SortOrder\\\":1}\"}",
-        "UserDisplayName": "Dev User",
-        "UserId": 2
-      },
-      {
-        "ChangesSummary": "Location: \"{\"Id\":3,\"ParentLocationId\":2,…\" → \"{\"Id\":3,\"ParentLocationId\":2,…\"",
-        "Description": "Location updated with attribute reconciliation.",
-        "EntityId": 3,
-        "Id": 24,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "LogSeverityCode": "Info",
-        "LogSeverityId": 1,
-        "LoggedAt": {
-          "$": [
-            "ts",
-            192,
-            1784135844762
-          ],
-          "$ts": 1784134859022
-        },
-        "NewValue": "{\"Location\":\"{\\\"Id\\\":3,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC1\\\",\\\"Name\\\":\\\"Die Cast 1 asd\\\",\\\"Description\\\":\\\"Die casting area - 11 machines\\\",\\\"SortOrder\\\":1}\"}",
-        "OldValue": "{\"Location\":\"{\\\"Id\\\":3,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC1\\\",\\\"Name\\\":\\\"Die Cast 1\\\",\\\"Description\\\":\\\"Die casting area - 11 machines\\\",\\\"SortOrder\\\":1}\"}",
-        "UserDisplayName": "Dev User",
-        "UserId": 2
-      },
-      {
         "ChangesSummary": "",
-        "Description": "Location updated with attribute reconciliation.",
-        "EntityId": 17,
-        "Id": 23,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "LogSeverityCode": "Info",
-        "LogSeverityId": 1,
-        "LoggedAt": {
-          "$": [
-            "ts",
-            192,
-            1784135844762
-          ],
-          "$ts": 1784134709367
-        },
-        "NewValue": "{\"Location\":\"{\\\"Id\\\":17,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC2\\\",\\\"Name\\\":\\\"Die Cast 2\\\",\\\"Description\\\":\\\"Die casting area - 3 machines\\\",\\\"SortOrder\\\":2}\"}",
-        "OldValue": "{\"Location\":\"{\\\"Id\\\":17,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC2\\\",\\\"Name\\\":\\\"Die Cast 2\\\",\\\"Description\\\":\\\"Die casting area - 3 machines\\\",\\\"SortOrder\\\":2}\"}",
-        "UserDisplayName": "Dev User",
-        "UserId": 2
-      },
-      {
-        "ChangesSummary": "Location: \"{\"Id\":17,\"ParentLocationId\":2…\" → \"{\"Id\":17,\"ParentLocationId\":2…\"",
-        "Description": "Location updated with attribute reconciliation.",
-        "EntityId": 17,
-        "Id": 22,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "LogSeverityCode": "Info",
-        "LogSeverityId": 1,
-        "LoggedAt": {
-          "$": [
-            "ts",
-            192,
-            1784135844762
-          ],
-          "$ts": 1784134707568
-        },
-        "NewValue": "{\"Location\":\"{\\\"Id\\\":17,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC2\\\",\\\"Name\\\":\\\"Die Cast 2\\\",\\\"Description\\\":\\\"Die casting area - 3 machines\\\",\\\"SortOrder\\\":2}\"}",
-        "OldValue": "{\"Location\":\"{\\\"Id\\\":17,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC2\\\",\\\"Name\\\":\\\"Die Cast 2 asd\\\",\\\"Description\\\":\\\"Die casting area - 3 machines\\\",\\\"SortOrder\\\":2}\"}",
-        "UserDisplayName": "Dev User",
-        "UserId": 2
-      },
-      {
-        "ChangesSummary": "Location: \"{\"Id\":17,\"ParentLocationId\":2…\" → \"{\"Id\":17,\"ParentLocationId\":2…\"",
-        "Description": "Location updated with attribute reconciliation.",
-        "EntityId": 17,
-        "Id": 21,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "LogSeverityCode": "Info",
-        "LogSeverityId": 1,
-        "LoggedAt": {
-          "$": [
-            "ts",
-            192,
-            1784135844762
-          ],
-          "$ts": 1784134699136
-        },
-        "NewValue": "{\"Location\":\"{\\\"Id\\\":17,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC2\\\",\\\"Name\\\":\\\"Die Cast 2 asd\\\",\\\"Description\\\":\\\"Die casting area - 3 machines\\\",\\\"SortOrder\\\":2}\"}",
-        "OldValue": "{\"Location\":\"{\\\"Id\\\":17,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC2\\\",\\\"Name\\\":\\\"Die Cast 2\\\",\\\"Description\\\":\\\"Die casting area - 3 machines\\\",\\\"SortOrder\\\":2}\"}",
-        "UserDisplayName": "Dev User",
-        "UserId": 2
-      },
-      {
-        "ChangesSummary": "Location: \"{\"Id\":3,\"ParentLocationId\":2,…\" → \"{\"Id\":3,\"ParentLocationId\":2,…\"",
-        "Description": "Location updated with attribute reconciliation.",
-        "EntityId": 3,
-        "Id": 20,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "LogSeverityCode": "Info",
-        "LogSeverityId": 1,
-        "LoggedAt": {
-          "$": [
-            "ts",
-            192,
-            1784135844762
-          ],
-          "$ts": 1784132745532
-        },
-        "NewValue": "{\"Location\":\"{\\\"Id\\\":3,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC1\\\",\\\"Name\\\":\\\"Die Cast 1\\\",\\\"Description\\\":\\\"Die casting area - 11 machines\\\",\\\"SortOrder\\\":1}\"}",
-        "OldValue": "{\"Location\":\"{\\\"Id\\\":3,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC1\\\",\\\"Name\\\":\\\"Die Cast 1 ddd\\\",\\\"Description\\\":\\\"Die casting area - 11 machines\\\",\\\"SortOrder\\\":1}\"}",
-        "UserDisplayName": "Dev User",
-        "UserId": 2
-      },
-      {
-        "ChangesSummary": "",
-        "Description": "Location updated with attribute reconciliation.",
-        "EntityId": 3,
-        "Id": 19,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "LogSeverityCode": "Info",
-        "LogSeverityId": 1,
-        "LoggedAt": {
-          "$": [
-            "ts",
-            192,
-            1784135844762
-          ],
-          "$ts": 1784132729037
-        },
-        "NewValue": "{\"Location\":\"{\\\"Id\\\":3,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC1\\\",\\\"Name\\\":\\\"Die Cast 1 ddd\\\",\\\"Description\\\":\\\"Die casting area - 11 machines\\\",\\\"SortOrder\\\":1}\"}",
-        "OldValue": "{\"Location\":\"{\\\"Id\\\":3,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC1\\\",\\\"Name\\\":\\\"Die Cast 1 ddd\\\",\\\"Description\\\":\\\"Die casting area - 11 machines\\\",\\\"SortOrder\\\":1}\"}",
-        "UserDisplayName": "Dev User",
-        "UserId": 2
-      },
-      {
-        "ChangesSummary": "Location: \"{\"Id\":3,\"ParentLocationId\":2,…\" → \"{\"Id\":3,\"ParentLocationId\":2,…\"",
-        "Description": "Location updated with attribute reconciliation.",
-        "EntityId": 3,
-        "Id": 18,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "LogSeverityCode": "Info",
-        "LogSeverityId": 1,
-        "LoggedAt": {
-          "$": [
-            "ts",
-            192,
-            1784135844762
-          ],
-          "$ts": 1784132726589
-        },
-        "NewValue": "{\"Location\":\"{\\\"Id\\\":3,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC1\\\",\\\"Name\\\":\\\"Die Cast 1 ddd\\\",\\\"Description\\\":\\\"Die casting area - 11 machines\\\",\\\"SortOrder\\\":1}\"}",
-        "OldValue": "{\"Location\":\"{\\\"Id\\\":3,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC1\\\",\\\"Name\\\":\\\"Die Cast 1\\\",\\\"Description\\\":\\\"Die casting area - 11 machines\\\",\\\"SortOrder\\\":1}\"}",
-        "UserDisplayName": "Dev User",
-        "UserId": 2
-      },
-      {
-        "ChangesSummary": "",
-        "Description": "Location updated with attribute reconciliation.",
-        "EntityId": 25,
-        "Id": 17,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "LogSeverityCode": "Info",
-        "LogSeverityId": 1,
-        "LoggedAt": {
-          "$": [
-            "ts",
-            192,
-            1784135844762
-          ],
-          "$ts": 1784127701262
-        },
-        "NewValue": "{\"Location\":\"{\\\"Id\\\":25,\\\"ParentLocationId\\\":23,\\\"LocationTypeDefinitionId\\\":8,\\\"Code\\\":\\\"DC3-M02\\\",\\\"Name\\\":\\\"Machine 02\\\",\\\"Description\\\":\\\"Die cast machine\\\",\\\"SortOrder\\\":2}\"}",
-        "OldValue": "{\"Location\":\"{\\\"Id\\\":25,\\\"ParentLocationId\\\":23,\\\"LocationTypeDefinitionId\\\":8,\\\"Code\\\":\\\"DC3-M02\\\",\\\"Name\\\":\\\"Machine 02\\\",\\\"Description\\\":\\\"Die cast machine\\\",\\\"SortOrder\\\":2}\"}",
-        "UserDisplayName": "Dev User",
-        "UserId": 2
-      },
-      {
-        "ChangesSummary": "Location: \"{\"Id\":3,\"ParentLocationId\":2,…\" → \"{\"Id\":3,\"ParentLocationId\":2,…\"",
-        "Description": "Location updated with attribute reconciliation.",
-        "EntityId": 3,
-        "Id": 16,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "LogSeverityCode": "Info",
-        "LogSeverityId": 1,
-        "LoggedAt": {
-          "$": [
-            "ts",
-            192,
-            1784135844762
-          ],
-          "$ts": 1784126752317
-        },
-        "NewValue": "{\"Location\":\"{\\\"Id\\\":3,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC1\\\",\\\"Name\\\":\\\"Die Cast 1\\\",\\\"Description\\\":\\\"Die casting area - 11 machines\\\",\\\"SortOrder\\\":1}\"}",
-        "OldValue": "{\"Location\":\"{\\\"Id\\\":3,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC1\\\",\\\"Name\\\":\\\"Die Cast 1\\\",\\\"Description\\\":\\\"Die casting area - 11 machines test\\\",\\\"SortOrder\\\":1}\"}",
-        "UserDisplayName": "Dev User",
-        "UserId": 2
-      },
-      {
-        "ChangesSummary": "Location: \"{\"Id\":3,\"ParentLocationId\":2,…\" → \"{\"Id\":3,\"ParentLocationId\":2,…\"",
-        "Description": "Location updated with attribute reconciliation.",
-        "EntityId": 3,
-        "Id": 15,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "LogSeverityCode": "Info",
-        "LogSeverityId": 1,
-        "LoggedAt": {
-          "$": [
-            "ts",
-            192,
-            1784135844762
-          ],
-          "$ts": 1784126740767
-        },
-        "NewValue": "{\"Location\":\"{\\\"Id\\\":3,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC1\\\",\\\"Name\\\":\\\"Die Cast 1\\\",\\\"Description\\\":\\\"Die casting area - 11 machines test\\\",\\\"SortOrder\\\":1}\"}",
-        "OldValue": "{\"Location\":\"{\\\"Id\\\":3,\\\"ParentLocationId\\\":2,\\\"LocationTypeDefinitionId\\\":3,\\\"Code\\\":\\\"DC1\\\",\\\"Name\\\":\\\"Die Cast 1\\\",\\\"Description\\\":\\\"Die casting area - 11 machines\\\",\\\"SortOrder\\\":1}\"}",
-        "UserDisplayName": "Dev User",
-        "UserId": 2
-      },
-      {
-        "ChangesSummary": "StatusCode: \"Active\" → \"Retired\"",
-        "Description": "Tool retired (deprecated; status set to Retired).",
-        "EntityId": 4,
-        "Id": 14,
-        "LogEntityTypeCode": "Tool",
-        "LogEntityTypeName": "Tool",
-        "LogEventTypeCode": "Deprecated",
-        "LogEventTypeId": 3,
-        "LogSeverityCode": "Info",
-        "LogSeverityId": 1,
-        "LoggedAt": {
-          "$": [
-            "ts",
-            192,
-            1784135844762
-          ],
-          "$ts": 1784041805255
-        },
-        "NewValue": "{\"Id\":4,\"StatusCode\":\"Retired\"}",
-        "OldValue": "{\"StatusCode\":\"Active\"}",
-        "UserDisplayName": "Dev User",
-        "UserId": 2
-      },
-      {
-        "ChangesSummary": "",
-        "Description": "DC3-M01 — Demo Die · Cavities · +#1 (Active), +#2 (Active); 2 rows",
-        "EntityId": 4,
-        "Id": 13,
-        "LogEntityTypeCode": "ToolCavity",
-        "LogEntityTypeName": "Tool Cavity",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "LogSeverityCode": "Info",
-        "LogSeverityId": 1,
-        "LoggedAt": {
-          "$": [
-            "ts",
-            192,
-            1784135844762
-          ],
-          "$ts": 1784041767144
-        },
-        "NewValue": "[{\"CavityNumber\":1,\"Status\":\"Active\",\"Description\":\"\"},{\"CavityNumber\":2,\"Status\":\"Active\",\"Description\":\"\"}]",
-        "OldValue": null,
-        "UserDisplayName": "Dev User",
-        "UserId": 2
-      },
-      {
-        "ChangesSummary": "+ Code, Name, ToolTypeId +1 more",
-        "Description": "Tool created.",
-        "EntityId": 4,
-        "Id": 12,
-        "LogEntityTypeCode": "Tool",
-        "LogEntityTypeName": "Tool",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "LogSeverityCode": "Info",
-        "LogSeverityId": 1,
-        "LoggedAt": {
-          "$": [
-            "ts",
-            192,
-            1784135844762
-          ],
-          "$ts": 1784041738075
-        },
-        "NewValue": "{\"ToolTypeId\":1,\"Code\":\"DC3-M01\",\"Name\":\"Demo Die\",\"StatusCodeId\":1}",
-        "OldValue": null,
-        "UserDisplayName": "Dev User",
-        "UserId": 2
-      },
-      {
-        "ChangesSummary": "+ Description, IsExcused, Code +2 more",
-        "Description": "Downtime Code TEST2 — test (Die Cast 1) · Created",
-        "EntityId": 2,
-        "Id": 11,
-        "LogEntityTypeCode": "DowntimeReasonCode",
-        "LogEntityTypeName": "Downtime Reason Code",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "LogSeverityCode": "Info",
-        "LogSeverityId": 1,
-        "LoggedAt": {
-          "$": [
-            "ts",
-            192,
-            1784135844762
-          ],
-          "$ts": 1784040151528
-        },
-        "NewValue": "{\"Code\":\"TEST2\",\"Description\":\"test\",\"Area\":{\"Id\":3,\"Code\":\"DC1\",\"Name\":\"Die Cast 1\"},\"ReasonType\":{\"Id\":7,\"Code\":\"Break\",\"Name\":\"Break\"},\"IsExcused\":false}",
-        "OldValue": null,
-        "UserDisplayName": "Dev User",
-        "UserId": 2
-      },
-      {
-        "ChangesSummary": "+ Initials, DisplayName",
-        "Description": "AppUser created.",
-        "EntityId": 3,
-        "Id": 10,
-        "LogEntityTypeCode": "AppUser",
-        "LogEntityTypeName": "Application User",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "LogSeverityCode": "Info",
-        "LogSeverityId": 1,
-        "LoggedAt": {
-          "$": [
-            "ts",
-            192,
-            1784135844762
-          ],
-          "$ts": 1784034297296
-        },
-        "NewValue": "{\"Initials\":\"SSS\",\"DisplayName\":\"SSSS\"}",
-        "OldValue": null,
-        "UserDisplayName": "System Bootstrap",
-        "UserId": 1
-      },
-      {
-        "ChangesSummary": "- Description, IsExcused, Code +2 more",
-        "Description": "Downtime Code TEST · Deprecated",
+        "Description": "DEMO-DC-6NA — Demo Die - 6NA Fuel Pump Base · Cavities · No-op save; 2 rows",
         "EntityId": 1,
-        "Id": 9,
-        "LogEntityTypeCode": "DowntimeReasonCode",
-        "LogEntityTypeName": "Downtime Reason Code",
-        "LogEventTypeCode": "Deprecated",
-        "LogEventTypeId": 3,
-        "LogSeverityCode": "Warning",
-        "LogSeverityId": 2,
-        "LoggedAt": {
-          "$": [
-            "ts",
-            192,
-            1784135844762
-          ],
-          "$ts": 1783972586354
-        },
-        "NewValue": null,
-        "OldValue": "{\"Code\":\"TEST\",\"Description\":\"test\",\"Area\":{\"Id\":17,\"Code\":\"DC2\",\"Name\":\"Die Cast 2\"},\"ReasonType\":{\"Id\":3,\"Code\":\"Mold\",\"Name\":\"Mold\"},\"IsExcused\":false}",
-        "UserDisplayName": "Dev User",
-        "UserId": 2
-      },
-      {
-        "ChangesSummary": "+ Description, IsExcused, Code +2 more",
-        "Description": "Downtime Code TEST — test (Die Cast 2) · Created",
-        "EntityId": 1,
-        "Id": 8,
-        "LogEntityTypeCode": "DowntimeReasonCode",
-        "LogEntityTypeName": "Downtime Reason Code",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "LogSeverityCode": "Info",
-        "LogSeverityId": 1,
-        "LoggedAt": {
-          "$": [
-            "ts",
-            192,
-            1784135844762
-          ],
-          "$ts": 1783972485837
-        },
-        "NewValue": "{\"Code\":\"TEST\",\"Description\":\"test\",\"Area\":{\"Id\":17,\"Code\":\"DC2\",\"Name\":\"Die Cast 2\"},\"ReasonType\":{\"Id\":3,\"Code\":\"Mold\",\"Name\":\"Mold\"},\"IsExcused\":false}",
-        "OldValue": null,
-        "UserDisplayName": "Dev User",
-        "UserId": 2
-      },
-      {
-        "ChangesSummary": "+ Description, Name",
-        "Description": "Quality Spec \"Test Spec\" · Created",
-        "EntityId": 1,
-        "Id": 7,
-        "LogEntityTypeCode": "QualitySpec",
-        "LogEntityTypeName": "Quality Spec",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "LogSeverityCode": "Info",
-        "LogSeverityId": 1,
-        "LoggedAt": {
-          "$": [
-            "ts",
-            192,
-            1784135844762
-          ],
-          "$ts": 1783971605853
-        },
-        "NewValue": "{\"Id\":1,\"Name\":\"Test Spec\",\"Description\":\"testing\"}",
-        "OldValue": null,
-        "UserDisplayName": "Dev User",
-        "UserId": 2
-      },
-      {
-        "ChangesSummary": "-CellLocationId, -AssignmentId, +ToolId: 3",
-        "Description": "Tool assignment released.",
-        "EntityId": 3,
-        "Id": 6,
-        "LogEntityTypeCode": "ToolAssignment",
-        "LogEntityTypeName": "Tool Assignment",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "LogSeverityCode": "Info",
-        "LogSeverityId": 1,
-        "LoggedAt": {
-          "$": [
-            "ts",
-            192,
-            1784135844762
-          ],
-          "$ts": 1783968932326
-        },
-        "NewValue": "{\"ToolId\":3}",
-        "OldValue": "{\"AssignmentId\":3,\"CellLocationId\":18}",
-        "UserDisplayName": "Dev User",
-        "UserId": 2
-      },
-      {
-        "ChangesSummary": "+ CellLocationId, ToolId, Notes",
-        "Description": "Tool mounted on Cell.",
-        "EntityId": 3,
-        "Id": 5,
-        "LogEntityTypeCode": "ToolAssignment",
-        "LogEntityTypeName": "Tool Assignment",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "LogSeverityCode": "Info",
-        "LogSeverityId": 1,
-        "LoggedAt": {
-          "$": [
-            "ts",
-            192,
-            1784135844762
-          ],
-          "$ts": 1783968926269
-        },
-        "NewValue": "{\"ToolId\":3,\"CellLocationId\":18,\"Notes\":\"klhjbnm\"}",
-        "OldValue": null,
-        "UserDisplayName": "Dev User",
-        "UserId": 2
-      },
-      {
-        "ChangesSummary": "",
-        "Description": "ABCD — sdgdfdgf · Cavities · +#213 (Active); 1 rows",
-        "EntityId": 3,
-        "Id": 4,
-        "LogEntityTypeCode": "ToolCavity",
-        "LogEntityTypeName": "Tool Cavity",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "LogSeverityCode": "Info",
-        "LogSeverityId": 1,
-        "LoggedAt": {
-          "$": [
-            "ts",
-            192,
-            1784135844762
-          ],
-          "$ts": 1783968914421
-        },
-        "NewValue": "[{\"CavityNumber\":213,\"Status\":\"Active\",\"Description\":\"dsfdgfg\"}]",
-        "OldValue": null,
-        "UserDisplayName": "Dev User",
-        "UserId": 2
-      },
-      {
-        "ChangesSummary": "+ Code, Name, ToolTypeId +1 more",
-        "Description": "Tool created.",
-        "EntityId": 3,
-        "Id": 3,
-        "LogEntityTypeCode": "Tool",
-        "LogEntityTypeName": "Tool",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "LogSeverityCode": "Info",
-        "LogSeverityId": 1,
-        "LoggedAt": {
-          "$": [
-            "ts",
-            192,
-            1784135844762
-          ],
-          "$ts": 1783968863493
-        },
-        "NewValue": "{\"ToolTypeId\":1,\"Code\":\"ABCD\",\"Name\":\"sdgdfdgf\",\"StatusCodeId\":1}",
-        "OldValue": null,
-        "UserDisplayName": "Dev User",
-        "UserId": 2
-      },
-      {
-        "ChangesSummary": "SortOrder: 2 → 1",
-        "Description": "Location DC1 · Reordered from #2 to #1 within MPP-MAD",
-        "EntityId": 3,
-        "Id": 2,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "LogSeverityCode": "Info",
-        "LogSeverityId": 1,
-        "LoggedAt": {
-          "$": [
-            "ts",
-            192,
-            1784135844762
-          ],
-          "$ts": 1783966410545
-        },
-        "NewValue": "{\"Id\":3,\"Code\":\"DC1\",\"Name\":\"Die Cast 1\",\"SortOrder\":1,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
-        "OldValue": "{\"Id\":3,\"Code\":\"DC1\",\"Name\":\"Die Cast 1\",\"SortOrder\":2,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
-        "UserDisplayName": "Dev User",
-        "UserId": 2
-      },
-      {
-        "ChangesSummary": "SortOrder: 1 → 2",
-        "Description": "Location DC1 · Reordered from #1 to #2 within MPP-MAD",
-        "EntityId": 3,
         "Id": 1,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
+        "LogEntityTypeCode": "ToolCavity",
+        "LogEntityTypeName": "Tool Cavity",
         "LogEventTypeCode": "Updated",
         "LogEventTypeId": 2,
         "LogSeverityCode": "Info",
@@ -662,17 +38,17 @@
           "$": [
             "ts",
             192,
-            1784135844762
+            1784293527887
           ],
-          "$ts": 1783966408708
+          "$ts": 1784293408275
         },
-        "NewValue": "{\"Id\":3,\"Code\":\"DC1\",\"Name\":\"Die Cast 1\",\"SortOrder\":2,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
-        "OldValue": "{\"Id\":3,\"Code\":\"DC1\",\"Name\":\"Die Cast 1\",\"SortOrder\":1,\"Parent\":{\"Id\":2,\"Code\":\"MPP-MAD\",\"Name\":\"Madison Facility\"},\"LocationTypeDefinition\":{\"Id\":3,\"Name\":\"Production Area\"}}",
+        "NewValue": "[{\"Id\":1,\"CavityNumber\":1,\"Status\":\"Active\",\"Description\":\"\"},{\"Id\":2,\"CavityNumber\":2,\"Status\":\"Active\",\"Description\":\"\"}]",
+        "OldValue": "[{\"Id\":1,\"CavityNumber\":1,\"Status\":\"Active\"},{\"Id\":2,\"CavityNumber\":2,\"Status\":\"Active\"}]",
         "UserDisplayName": "Dev User",
         "UserId": 2
       }
     ],
-    "totalCount": 27
+    "totalCount": 1
   },
   "params": {},
   "propConfig": {
@@ -794,7 +170,8 @@
                     "props": {
                       "direction": "column",
                       "style": {
-                        "gap": "4px"
+                        "gap": "4px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -856,7 +233,8 @@
                     "props": {
                       "direction": "column",
                       "style": {
-                        "gap": "4px"
+                        "gap": "4px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -892,7 +270,7 @@
                         },
                         "props": {
                           "format": "YYYY-MM-DD",
-                          "formattedValue": "2026-07-08",
+                          "formattedValue": "2026-07-10",
                           "pickerType": "date"
                         },
                         "type": "ia.input.date-time-input"
@@ -904,7 +282,8 @@
                     "props": {
                       "direction": "column",
                       "style": {
-                        "gap": "4px"
+                        "gap": "4px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -940,7 +319,7 @@
                         },
                         "props": {
                           "format": "YYYY-MM-DD",
-                          "formattedValue": "2026-07-15",
+                          "formattedValue": "2026-07-17",
                           "pickerType": "date"
                         },
                         "type": "ia.input.date-time-input"
@@ -952,7 +331,8 @@
                     "props": {
                       "direction": "column",
                       "style": {
-                        "gap": "4px"
+                        "gap": "4px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -1001,7 +381,8 @@
                     "props": {
                       "direction": "column",
                       "style": {
-                        "gap": "4px"
+                        "gap": "4px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"

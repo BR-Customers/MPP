@@ -1,18 +1,18 @@
 {
   "custom": {
     "editDraft": {
-      "OperationCategoryId": null,
-      "OperationTypeId": null,
       "Code": "",
       "Description": "",
-      "Name": ""
+      "Name": "",
+      "OperationCategoryId": null,
+      "OperationTypeId": null
     },
     "selected": {
-      "OperationCategoryId": null,
-      "OperationTypeId": null,
       "Code": "",
       "Description": "",
-      "Name": ""
+      "Name": "",
+      "OperationCategoryId": null,
+      "OperationTypeId": null
     }
   },
   "params": {},
@@ -25,6 +25,9 @@
         "type": "expr"
       }
     },
+    "custom.selected": {
+      "persistent": true
+    },
     "custom.typeOptions": {
       "binding": {
         "config": {
@@ -32,9 +35,6 @@
         },
         "type": "expr"
       }
-    },
-    "custom.selected": {
-      "persistent": true
     }
   },
   "props": {
@@ -190,7 +190,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "4px"
+                "gap": "4px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -241,7 +242,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "4px"
+                "gap": "4px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -265,7 +267,7 @@
                   "component": {
                     "onActionPerformed": {
                       "config": {
-                        "script": "\tnewCatId = self.props.value\n\tdraft = dict(self.view.custom.editDraft or {})\n\tdraft['OperationCategoryId'] = newCatId\n\t# Category drives the Operation dropdown; changing it clears the prior pick.\n\tdraft['OperationTypeId'] = None\n\t# Auto-select when the category has exactly one operation (e.g. Die Cast).\n\ttypes = BlueRidge.Parts.OperationTemplate.getOperationTypesByCategory(newCatId)\n\tif types and len(types) == 1:\n\t\tdraft['OperationTypeId'] = types[0].get('value')\n\tself.view.custom.editDraft = draft"
+                        "script": "\tnewCatId \u003d self.props.value\n\tdraft \u003d dict(self.view.custom.editDraft or {})\n\tdraft[\u0027OperationCategoryId\u0027] \u003d newCatId\n\t# Category drives the Operation dropdown; changing it clears the prior pick.\n\tdraft[\u0027OperationTypeId\u0027] \u003d None\n\t# Auto-select when the category has exactly one operation (e.g. Die Cast).\n\ttypes \u003d BlueRidge.Parts.OperationTemplate.getOperationTypesByCategory(newCatId)\n\tif types and len(types) \u003d\u003d 1:\n\t\tdraft[\u0027OperationTypeId\u0027] \u003d types[0].get(\u0027value\u0027)\n\tself.view.custom.editDraft \u003d draft"
                       },
                       "scope": "G",
                       "type": "script"
@@ -311,7 +313,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "4px"
+                "gap": "4px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -338,7 +341,7 @@
                   "props.enabled": {
                     "binding": {
                       "config": {
-                        "expression": "{view.custom.editDraft.OperationCategoryId} != null"
+                        "expression": "{view.custom.editDraft.OperationCategoryId} !\u003d null"
                       },
                       "type": "expr"
                     }
@@ -378,7 +381,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "4px"
+                "gap": "4px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -429,7 +433,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "4px"
+                "gap": "4px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"

@@ -561,7 +561,8 @@
                   "direction": "column",
                   "style": {
                     "classes": "pf-field",
-                    "gap": "4px"
+                    "gap": "4px",
+                    "overflow": "visible"
                   }
                 },
                 "type": "ia.container.flex"
@@ -623,6 +624,9 @@
                             "meta": {
                               "name": "ToolConfigButton"
                             },
+                            "position": {
+                              "basis": "119px"
+                            },
                             "props": {
                               "style": {
                                 "classes": "pf-btn pf-btn-secondary"
@@ -638,7 +642,8 @@
                         "props": {
                           "alignItems": "center",
                           "style": {
-                            "gap": "8px"
+                            "gap": "8px",
+                            "overflow": "visible"
                           }
                         },
                         "type": "ia.container.flex"
@@ -654,7 +659,8 @@
                       "direction": "column",
                       "style": {
                         "classes": "pf-field",
-                        "gap": "4px"
+                        "gap": "4px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -730,7 +736,8 @@
                       "direction": "column",
                       "style": {
                         "classes": "pf-field",
-                        "gap": "4px"
+                        "gap": "4px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -742,7 +749,7 @@
                 "props": {
                   "style": {
                     "gap": "10px",
-                    "overflow": "hidden"
+                    "overflow": "visible"
                   }
                 },
                 "type": "ia.container.flex"

@@ -1,7 +1,6 @@
 {
   "custom": {
     "activeVersionId": null,
-    "categories": [],
     "includeDeprecated": false,
     "state": {
       "editDraft": {
@@ -36,24 +35,24 @@
         "script": "\tself.rootContainer.loadActiveVersion()"
       }
     },
-    "custom.isDirty": {
-      "binding": {
-        "config": {
-          "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.editDraft.steps}) != runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.selected.steps}) || {view.custom.state.editDraft.name} != {view.custom.state.selected.name} || {view.custom.state.editDraft.effectiveFromDisplay} != {view.custom.state.selected.effectiveFromDisplay}"
-        },
-        "type": "expr"
-      },
-      "onChange": {
-        "enabled": true,
-        "script": "\tsystem.perspective.sendMessage(\"sectionDirtyChanged\", payload={\"section\": \"routes\", \"isDirty\": bool(currentValue.value)}, scope=\"page\")"
-      }
-    },
     "custom.categories": {
       "binding": {
         "config": {
           "expression": "runScript(\"BlueRidge.Parts.OperationTemplate.getOperationCategoriesForDropdown\", 0)"
         },
         "type": "expr"
+      }
+    },
+    "custom.isDirty": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.editDraft.steps}) !\u003d runScript(\"BlueRidge.Common.Util.convertWrapperObjectToJson\", 0, {view.custom.state.selected.steps}) || {view.custom.state.editDraft.name} !\u003d {view.custom.state.selected.name} || {view.custom.state.editDraft.effectiveFromDisplay} !\u003d {view.custom.state.selected.effectiveFromDisplay}"
+        },
+        "type": "expr"
+      },
+      "onChange": {
+        "enabled": true,
+        "script": "\tsystem.perspective.sendMessage(\"sectionDirtyChanged\", payload\u003d{\"section\": \"routes\", \"isDirty\": bool(currentValue.value)}, scope\u003d\"page\")"
       }
     },
     "custom.versions": {
@@ -98,7 +97,7 @@
                   },
                   "transforms": [
                     {
-                      "code": "\tout = []\n\tfor v in (value or []):\n\t\tv = v or {}\n\t\tvnum = v.get('VersionNumber', 0)\n\t\tname = v.get('Name') or ''\n\t\tif v.get('DeprecatedAt'):\n\t\t\tstatus = 'Deprecated'\n\t\telif v.get('PublishedAt'):\n\t\t\tstatus = 'Published'\n\t\telse:\n\t\t\tstatus = 'Draft'\n\t\tout.append({'label': 'v' + str(vnum) + ' - ' + name + ' (' + status + ')', 'value': v.get('Id')})\n\treturn out",
+                      "code": "\tout \u003d []\n\tfor v in (value or []):\n\t\tv \u003d v or {}\n\t\tvnum \u003d v.get(\u0027VersionNumber\u0027, 0)\n\t\tname \u003d v.get(\u0027Name\u0027) or \u0027\u0027\n\t\tif v.get(\u0027DeprecatedAt\u0027):\n\t\t\tstatus \u003d \u0027Deprecated\u0027\n\t\telif v.get(\u0027PublishedAt\u0027):\n\t\t\tstatus \u003d \u0027Published\u0027\n\t\telse:\n\t\t\tstatus \u003d \u0027Draft\u0027\n\t\tout.append({\u0027label\u0027: \u0027v\u0027 + str(vnum) + \u0027 - \u0027 + name + \u0027 (\u0027 + status + \u0027)\u0027, \u0027value\u0027: v.get(\u0027Id\u0027)})\n\treturn out",
                       "type": "script"
                     }
                   ],
@@ -135,7 +134,7 @@
               "props.style.classes": {
                 "binding": {
                   "config": {
-                    "expression": "if({view.custom.state.selected.status} = \"Published\", \"badge badge-published\", if({view.custom.state.selected.status} = \"Draft\", \"badge badge-warn\", if({view.custom.state.selected.status} = \"Deprecated\", \"badge badge-muted\", \"\")))"
+                    "expression": "if({view.custom.state.selected.status} \u003d \"Published\", \"badge badge-published\", if({view.custom.state.selected.status} \u003d \"Draft\", \"badge badge-warn\", if({view.custom.state.selected.status} \u003d \"Deprecated\", \"badge badge-muted\", \"\")))"
                   },
                   "type": "expr"
                 }
@@ -212,7 +211,7 @@
               "props.enabled": {
                 "binding": {
                   "config": {
-                    "expression": "{view.params.value} > 0 && !{view.custom.isDirty}"
+                    "expression": "{view.params.value} \u003e 0 \u0026\u0026 !{view.custom.isDirty}"
                   },
                   "type": "expr"
                 }
@@ -248,7 +247,7 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "{view.custom.state.selected.status} = \"Published\""
+                    "expression": "{view.custom.state.selected.status} \u003d \"Published\""
                   },
                   "type": "expr"
                 }
@@ -273,7 +272,7 @@
           "alignItems": "center",
           "style": {
             "gap": "8px",
-            "overflow": "hidden"
+            "overflow": "visible"
           }
         },
         "type": "ia.container.flex"
@@ -472,7 +471,7 @@
           "position.display": {
             "binding": {
               "config": {
-                "expression": "{view.custom.state.editDraft.status} = \"Draft\""
+                "expression": "{view.custom.state.editDraft.status} \u003d \"Draft\""
               },
               "type": "expr"
             }
@@ -517,7 +516,7 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "{view.custom.state.editDraft.status} = \"Draft\""
+                    "expression": "{view.custom.state.editDraft.status} \u003d \"Draft\""
                   },
                   "type": "expr"
                 }
@@ -592,7 +591,7 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "{view.custom.state.editDraft.status} = \"Draft\""
+                    "expression": "{view.custom.state.editDraft.status} \u003d \"Draft\""
                   },
                   "type": "expr"
                 }
@@ -648,7 +647,7 @@
               },
               "transforms": [
                 {
-                  "code": "\tsteps = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\tif len(steps) == 0:\n\t\treturn []\n\tstate = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state) or {}\n\teditDraft = state.get('editDraft') or {}\n\tstatus = editDraft.get('status') or ''\n\tif status == 'Draft':\n\t\tmode = 'draft'\n\telif status == 'Deprecated':\n\t\tmode = 'deprecated'\n\telse:\n\t\tmode = 'published'\n\tcategories = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.categories) or []\n\ttotal = len(steps)\n\tout = []\n\tfor i, s in enumerate(steps):\n\t\ts = s or {}\n\t\tout.append({'rowIndex': i, 'step': dict(s), 'mode': mode, 'stepCount': total, 'categories': categories})\n\treturn out",
+                  "code": "\tsteps \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\tif len(steps) \u003d\u003d 0:\n\t\treturn []\n\tstate \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.state) or {}\n\teditDraft \u003d state.get(\u0027editDraft\u0027) or {}\n\tstatus \u003d editDraft.get(\u0027status\u0027) or \u0027\u0027\n\tif status \u003d\u003d \u0027Draft\u0027:\n\t\tmode \u003d \u0027draft\u0027\n\telif status \u003d\u003d \u0027Deprecated\u0027:\n\t\tmode \u003d \u0027deprecated\u0027\n\telse:\n\t\tmode \u003d \u0027published\u0027\n\tcategories \u003d BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.categories) or []\n\ttotal \u003d len(steps)\n\tout \u003d []\n\tfor i, s in enumerate(steps):\n\t\ts \u003d s or {}\n\t\tout.append({\u0027rowIndex\u0027: i, \u0027step\u0027: dict(s), \u0027mode\u0027: mode, \u0027stepCount\u0027: total, \u0027categories\u0027: categories})\n\treturn out",
                   "type": "script"
                 }
               ],
@@ -669,7 +668,6 @@
           "style": {
             "overflowY": "auto"
           },
-          "useDefaultViewHeight": true,
           "useDefaultViewWidth": false
         },
         "type": "ia.display.flex-repeater"
@@ -713,7 +711,7 @@
           "position.display": {
             "binding": {
               "config": {
-                "expression": "{view.custom.state.editDraft.status} = \"Draft\""
+                "expression": "{view.custom.state.editDraft.status} \u003d \"Draft\""
               },
               "type": "expr"
             }
@@ -772,12 +770,12 @@
         {
           "name": "onItemChanged",
           "params": [],
-          "script": "\titemId = self.view.params.value\n\tself.view.custom.activeVersionId = None\n\tself.view.custom.state = {\"selected\": self._emptyRoute(), \"editDraft\": self._emptyRoute()}\n\tif not itemId:\n\t\treturn\n\tdefaultId = BlueRidge.Parts.RouteTemplate.getDefaultVersionId(itemId)\n\tif defaultId:\n\t\tself.view.custom.activeVersionId = defaultId"
+          "script": "\titemId \u003d self.view.params.value\n\tself.view.custom.activeVersionId \u003d None\n\tself.view.custom.state \u003d {\"selected\": self._emptyRoute(), \"editDraft\": self._emptyRoute()}\n\tif not itemId:\n\t\treturn\n\tdefaultId \u003d BlueRidge.Parts.RouteTemplate.getDefaultVersionId(itemId)\n\tif defaultId:\n\t\tself.view.custom.activeVersionId \u003d defaultId"
         },
         {
           "name": "loadActiveVersion",
           "params": [],
-          "script": "\trouteId = self.view.custom.activeVersionId\n\tif not routeId:\n\t\tself.view.custom.state = {\"selected\": self._emptyRoute(), \"editDraft\": self._emptyRoute()}\n\t\treturn\n\tbundle = self._bundleFor(routeId)\n\tself.view.custom.state = {\"selected\": bundle, \"editDraft\": self._cloneBundle(bundle)}"
+          "script": "\trouteId \u003d self.view.custom.activeVersionId\n\tif not routeId:\n\t\tself.view.custom.state \u003d {\"selected\": self._emptyRoute(), \"editDraft\": self._emptyRoute()}\n\t\treturn\n\tbundle \u003d self._bundleFor(routeId)\n\tself.view.custom.state \u003d {\"selected\": bundle, \"editDraft\": self._cloneBundle(bundle)}"
         },
         {
           "name": "_emptyRoute",
@@ -789,54 +787,54 @@
           "params": [
             "routeId"
           ],
-          "script": "\theader = BlueRidge.Parts.RouteTemplate.getHeader(routeId)\n\tif not header:\n\t\treturn self._emptyRoute()\n\tsteps = BlueRidge.Parts.RouteTemplate.getSteps(routeId) or []\n\tif header.get(\"DeprecatedAt\"):\n\t\tstatus = \"Deprecated\"\n\telif header.get(\"PublishedAt\"):\n\t\tstatus = \"Published\"\n\telse:\n\t\tstatus = \"Draft\"\n\treturn {\n\t\t\"id\": header.get(\"Id\"),\n\t\t\"versionNumber\": header.get(\"VersionNumber\"),\n\t\t\"name\": header.get(\"Name\") or \"\",\n\t\t\"effectiveFromDisplay\": str(header.get(\"EffectiveFrom\") or \"\")[:10],\n\t\t\"publishedAt\": str(header.get(\"PublishedAt\") or \"\") or None,\n\t\t\"deprecatedAt\": str(header.get(\"DeprecatedAt\") or \"\") or None,\n\t\t\"status\": status,\n\t\t\"steps\": [dict(s) for s in steps],\n\t}"
+          "script": "\theader \u003d BlueRidge.Parts.RouteTemplate.getHeader(routeId)\n\tif not header:\n\t\treturn self._emptyRoute()\n\tsteps \u003d BlueRidge.Parts.RouteTemplate.getSteps(routeId) or []\n\tif header.get(\"DeprecatedAt\"):\n\t\tstatus \u003d \"Deprecated\"\n\telif header.get(\"PublishedAt\"):\n\t\tstatus \u003d \"Published\"\n\telse:\n\t\tstatus \u003d \"Draft\"\n\treturn {\n\t\t\"id\": header.get(\"Id\"),\n\t\t\"versionNumber\": header.get(\"VersionNumber\"),\n\t\t\"name\": header.get(\"Name\") or \"\",\n\t\t\"effectiveFromDisplay\": str(header.get(\"EffectiveFrom\") or \"\")[:10],\n\t\t\"publishedAt\": str(header.get(\"PublishedAt\") or \"\") or None,\n\t\t\"deprecatedAt\": str(header.get(\"DeprecatedAt\") or \"\") or None,\n\t\t\"status\": status,\n\t\t\"steps\": [dict(s) for s in steps],\n\t}"
         },
         {
           "name": "_cloneBundle",
           "params": [
             "bundle"
           ],
-          "script": "\tb = dict(bundle or {})\n\tsteps = []\n\tfor s in (bundle or {}).get(\"steps\", []) or []:\n\t\tsteps.append(dict(s))\n\tb[\"steps\"] = steps\n\treturn b"
+          "script": "\tb \u003d dict(bundle or {})\n\tsteps \u003d []\n\tfor s in (bundle or {}).get(\"steps\", []) or []:\n\t\tsteps.append(dict(s))\n\tb[\"steps\"] \u003d steps\n\treturn b"
         },
         {
           "name": "refreshVersionList",
           "params": [],
-          "script": "\titemId = self.view.params.value\n\tself.view.custom.versions = BlueRidge.Parts.RouteTemplate.listVersions(itemId, self.view.custom.includeDeprecated) or []"
+          "script": "\titemId \u003d self.view.params.value\n\tself.view.custom.versions \u003d BlueRidge.Parts.RouteTemplate.listVersions(itemId, self.view.custom.includeDeprecated) or []"
         },
         {
           "name": "handleNewVersion",
           "params": [],
-          "script": "\titemId = self.view.params.value\n\tif not itemId:\n\t\treturn\n\texisting = BlueRidge.Parts.RouteTemplate.listVersions(itemId, True) or []\n\tif existing:\n\t\tparentId = self.view.custom.activeVersionId or existing[0].get(\"Id\")\n\t\tresult = BlueRidge.Parts.RouteTemplate.createNewVersion(parentId)\n\telse:\n\t\tresult = BlueRidge.Parts.RouteTemplate.createInitial(itemId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"New draft version created\")\n\tif not (result and result.get(\"Status\")):\n\t\treturn\n\tnewId = result.get(\"NewId\")\n\tself.refreshVersionList()\n\tif not newId:\n\t\treturn\n\tself.view.custom.activeVersionId = newId\n\tbundle = self._bundleFor(newId)\n\tself.view.custom.state = {\"selected\": bundle, \"editDraft\": self._cloneBundle(bundle)}"
+          "script": "\titemId \u003d self.view.params.value\n\tif not itemId:\n\t\treturn\n\texisting \u003d BlueRidge.Parts.RouteTemplate.listVersions(itemId, True) or []\n\tif existing:\n\t\tparentId \u003d self.view.custom.activeVersionId or existing[0].get(\"Id\")\n\t\tresult \u003d BlueRidge.Parts.RouteTemplate.createNewVersion(parentId)\n\telse:\n\t\tresult \u003d BlueRidge.Parts.RouteTemplate.createInitial(itemId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"New draft version created\")\n\tif not (result and result.get(\"Status\")):\n\t\treturn\n\tnewId \u003d result.get(\"NewId\")\n\tself.refreshVersionList()\n\tif not newId:\n\t\treturn\n\tself.view.custom.activeVersionId \u003d newId\n\tbundle \u003d self._bundleFor(newId)\n\tself.view.custom.state \u003d {\"selected\": bundle, \"editDraft\": self._cloneBundle(bundle)}"
         },
         {
           "name": "handleSaveDraft",
           "params": [],
-          "script": "\tdraft = self.view.custom.state.editDraft or {}\n\trouteId = draft.get(\"id\")\n\tif not routeId:\n\t\tBlueRidge.Common.Notify.toast(\"No draft selected\", \"Cannot save: no draft route is currently active.\", \"warning\")\n\t\treturn\n\tname = (draft.get(\"name\") or \"\").strip()\n\tif not name:\n\t\tBlueRidge.Common.Notify.toast(\"Name required\", \"Enter a route name before saving.\", \"warning\")\n\t\treturn\n\teff = (draft.get(\"effectiveFromDisplay\") or \"\").strip() or None\n\tsteps = BlueRidge.Common.Util.extractQualifiedValues(draft.get(\"steps\")) or []\n\tresult = BlueRidge.Parts.RouteTemplate.saveAll(routeId, name, eff, steps)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Route draft saved\")\n\tif result and result.get(\"Status\"):\n\t\tself.refreshVersionList()\n\t\tself.loadActiveVersion()"
+          "script": "\tdraft \u003d self.view.custom.state.editDraft or {}\n\trouteId \u003d draft.get(\"id\")\n\tif not routeId:\n\t\tBlueRidge.Common.Notify.toast(\"No draft selected\", \"Cannot save: no draft route is currently active.\", \"warning\")\n\t\treturn\n\tname \u003d (draft.get(\"name\") or \"\").strip()\n\tif not name:\n\t\tBlueRidge.Common.Notify.toast(\"Name required\", \"Enter a route name before saving.\", \"warning\")\n\t\treturn\n\teff \u003d (draft.get(\"effectiveFromDisplay\") or \"\").strip() or None\n\tsteps \u003d BlueRidge.Common.Util.extractQualifiedValues(draft.get(\"steps\")) or []\n\tresult \u003d BlueRidge.Parts.RouteTemplate.saveAll(routeId, name, eff, steps)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Route draft saved\")\n\tif result and result.get(\"Status\"):\n\t\tself.refreshVersionList()\n\t\tself.loadActiveVersion()"
         },
         {
           "name": "handlePublish",
           "params": [],
-          "script": "\tdraft = self.view.custom.state.editDraft or {}\n\trouteId = draft.get(\"id\")\n\tif not routeId:\n\t\tBlueRidge.Common.Notify.toast(\"No draft selected\", \"Cannot publish: no draft route is currently active.\", \"warning\")\n\t\treturn\n\tname = (draft.get(\"name\") or \"\").strip()\n\tif not name:\n\t\tBlueRidge.Common.Notify.toast(\"Name required\", \"Enter a route name before publishing.\", \"warning\")\n\t\treturn\n\tsteps = BlueRidge.Common.Util.extractQualifiedValues(draft.get(\"steps\")) or []\n\tif not steps:\n\t\tBlueRidge.Common.Notify.toast(\"At least one step required\", \"Add at least one step before publishing.\", \"warning\")\n\t\treturn\n\tfor s in steps:\n\t\tif not (s or {}).get(\"OperationTemplateId\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Incomplete step\", \"Every step needs an operation template before publishing.\", \"warning\")\n\t\t\treturn\n\teff = (draft.get(\"effectiveFromDisplay\") or \"\").strip() or None\n\tresult = BlueRidge.Parts.RouteTemplate.publishWithSave(routeId, name, eff, steps)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Route published\")\n\tif result and result.get(\"Status\"):\n\t\tself.refreshVersionList()\n\t\tself.loadActiveVersion()"
+          "script": "\tdraft \u003d self.view.custom.state.editDraft or {}\n\trouteId \u003d draft.get(\"id\")\n\tif not routeId:\n\t\tBlueRidge.Common.Notify.toast(\"No draft selected\", \"Cannot publish: no draft route is currently active.\", \"warning\")\n\t\treturn\n\tname \u003d (draft.get(\"name\") or \"\").strip()\n\tif not name:\n\t\tBlueRidge.Common.Notify.toast(\"Name required\", \"Enter a route name before publishing.\", \"warning\")\n\t\treturn\n\tsteps \u003d BlueRidge.Common.Util.extractQualifiedValues(draft.get(\"steps\")) or []\n\tif not steps:\n\t\tBlueRidge.Common.Notify.toast(\"At least one step required\", \"Add at least one step before publishing.\", \"warning\")\n\t\treturn\n\tfor s in steps:\n\t\tif not (s or {}).get(\"OperationTemplateId\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Incomplete step\", \"Every step needs an operation template before publishing.\", \"warning\")\n\t\t\treturn\n\teff \u003d (draft.get(\"effectiveFromDisplay\") or \"\").strip() or None\n\tresult \u003d BlueRidge.Parts.RouteTemplate.publishWithSave(routeId, name, eff, steps)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Route published\")\n\tif result and result.get(\"Status\"):\n\t\tself.refreshVersionList()\n\t\tself.loadActiveVersion()"
         },
         {
           "name": "requestPublish",
           "params": [],
-          "script": "\tdraft = self.view.custom.state.editDraft or {}\n\tdraftId = draft.get(\"id\")\n\tdraftVer = draft.get(\"versionNumber\")\n\tif not draftId:\n\t\treturn\n\tpriorVer = None\n\tfor v in (self.view.custom.versions or []):\n\t\tif not v:\n\t\t\tcontinue\n\t\tif v.get(\"Id\") == draftId:\n\t\t\tcontinue\n\t\tif v.get(\"PublishedAt\") and not v.get(\"DeprecatedAt\"):\n\t\t\tpriorVer = v.get(\"VersionNumber\")\n\t\t\tbreak\n\tif priorVer is None:\n\t\tself.handlePublish()\n\t\treturn\n\tmsg = \"Publish v\" + str(draftVer) + \"? This will deprecate v\" + str(priorVer) + \" (currently active in production).\"\n\tsystem.perspective.openPopup(\n\t\tid=\"mpp-confirm-destructive\",\n\t\tview=\"BlueRidge/Components/Popups/ConfirmDestructive\",\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t\"title\":        \"Publish Route\",\n\t\t\t\"message\":      msg,\n\t\t\t\"confirmLabel\": \"Publish\",\n\t\t\t\"cancelLabel\":  \"Cancel\",\n\t\t\t\"confirmClass\": \"btn btn-primary btn-sm\",\n\t\t\t\"replyMessage\": \"routeConfirmPublishResult\",\n\t\t},\n\t)"
+          "script": "\tdraft \u003d self.view.custom.state.editDraft or {}\n\tdraftId \u003d draft.get(\"id\")\n\tdraftVer \u003d draft.get(\"versionNumber\")\n\tif not draftId:\n\t\treturn\n\tpriorVer \u003d None\n\tfor v in (self.view.custom.versions or []):\n\t\tif not v:\n\t\t\tcontinue\n\t\tif v.get(\"Id\") \u003d\u003d draftId:\n\t\t\tcontinue\n\t\tif v.get(\"PublishedAt\") and not v.get(\"DeprecatedAt\"):\n\t\t\tpriorVer \u003d v.get(\"VersionNumber\")\n\t\t\tbreak\n\tif priorVer is None:\n\t\tself.handlePublish()\n\t\treturn\n\tmsg \u003d \"Publish v\" + str(draftVer) + \"? This will deprecate v\" + str(priorVer) + \" (currently active in production).\"\n\tsystem.perspective.openPopup(\n\t\tid\u003d\"mpp-confirm-destructive\",\n\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmDestructive\",\n\t\tmodal\u003dTrue,\n\t\tshowCloseIcon\u003dFalse,\n\t\tparams\u003d{\n\t\t\t\"title\":        \"Publish Route\",\n\t\t\t\"message\":      msg,\n\t\t\t\"confirmLabel\": \"Publish\",\n\t\t\t\"cancelLabel\":  \"Cancel\",\n\t\t\t\"confirmClass\": \"btn btn-primary btn-sm\",\n\t\t\t\"replyMessage\": \"routeConfirmPublishResult\",\n\t\t},\n\t)"
         },
         {
           "name": "openDeprecateConfirm",
           "params": [],
-          "script": "\tsel = self.view.custom.state.selected or {}\n\trouteId = sel.get(\"id\")\n\tver = sel.get(\"versionNumber\")\n\tif not routeId:\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid=\"mpp-confirm-destructive\",\n\t\tview=\"BlueRidge/Components/Popups/ConfirmDestructive\",\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t\"title\":        \"Deprecate Route\",\n\t\t\t\"message\":      \"Deprecate v\" + str(ver) + \"? This retires the version from production. In-flight LOTs are unaffected.\",\n\t\t\t\"confirmLabel\": \"Deprecate\",\n\t\t\t\"cancelLabel\":  \"Cancel\",\n\t\t\t\"confirmClass\": \"btn btn-danger btn-sm\",\n\t\t\t\"replyMessage\": \"routeConfirmDeprecateResult\",\n\t\t},\n\t)"
+          "script": "\tsel \u003d self.view.custom.state.selected or {}\n\trouteId \u003d sel.get(\"id\")\n\tver \u003d sel.get(\"versionNumber\")\n\tif not routeId:\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid\u003d\"mpp-confirm-destructive\",\n\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmDestructive\",\n\t\tmodal\u003dTrue,\n\t\tshowCloseIcon\u003dFalse,\n\t\tparams\u003d{\n\t\t\t\"title\":        \"Deprecate Route\",\n\t\t\t\"message\":      \"Deprecate v\" + str(ver) + \"? This retires the version from production. In-flight LOTs are unaffected.\",\n\t\t\t\"confirmLabel\": \"Deprecate\",\n\t\t\t\"cancelLabel\":  \"Cancel\",\n\t\t\t\"confirmClass\": \"btn btn-danger btn-sm\",\n\t\t\t\"replyMessage\": \"routeConfirmDeprecateResult\",\n\t\t},\n\t)"
         },
         {
           "name": "openDiscardDraftConfirm",
           "params": [],
-          "script": "\tdraft = self.view.custom.state.editDraft or {}\n\trouteId = draft.get(\"id\")\n\tif not routeId:\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid=\"mpp-confirm-destructive\",\n\t\tview=\"BlueRidge/Components/Popups/ConfirmDestructive\",\n\t\tmodal=True,\n\t\tshowCloseIcon=False,\n\t\tparams={\n\t\t\t\"title\":        \"Discard Draft\",\n\t\t\t\"message\":      \"Discard this draft and all unsaved edits? This cannot be undone.\",\n\t\t\t\"confirmLabel\": \"Discard\",\n\t\t\t\"cancelLabel\":  \"Cancel\",\n\t\t\t\"confirmClass\": \"btn btn-danger btn-sm\",\n\t\t\t\"replyMessage\": \"routeConfirmDiscardResult\",\n\t\t},\n\t)"
+          "script": "\tdraft \u003d self.view.custom.state.editDraft or {}\n\trouteId \u003d draft.get(\"id\")\n\tif not routeId:\n\t\treturn\n\tsystem.perspective.openPopup(\n\t\tid\u003d\"mpp-confirm-destructive\",\n\t\tview\u003d\"BlueRidge/Components/Popups/ConfirmDestructive\",\n\t\tmodal\u003dTrue,\n\t\tshowCloseIcon\u003dFalse,\n\t\tparams\u003d{\n\t\t\t\"title\":        \"Discard Draft\",\n\t\t\t\"message\":      \"Discard this draft and all unsaved edits? This cannot be undone.\",\n\t\t\t\"confirmLabel\": \"Discard\",\n\t\t\t\"cancelLabel\":  \"Cancel\",\n\t\t\t\"confirmClass\": \"btn btn-danger btn-sm\",\n\t\t\t\"replyMessage\": \"routeConfirmDiscardResult\",\n\t\t},\n\t)"
         },
         {
           "name": "handleAddStep",
           "params": [],
-          "script": "\tdraft = dict(self.view.custom.state.editDraft or {})\n\tsteps = list(draft.get(\"steps\") or [])\n\tsteps.append({\n\t\t\"Id\": None, \"SequenceNumber\": len(steps) + 1,\n\t\t\"OperationCategoryId\": None, \"OperationCategoryName\": \"\",\n\t\t\"OperationTypeId\": None, \"OperationTypeCode\": \"\", \"OperationTypeName\": \"\",\n\t\t\"OperationTemplateId\": None, \"OperationCode\": \"\", \"OperationName\": \"\",\n\t\t\"OperationVersionNumber\": None, \"DataCollectionSummary\": \"\",\n\t\t\"IsRequired\": True, \"Description\": None,\n\t})\n\tdraft[\"steps\"] = steps\n\tself.view.custom.state.editDraft = draft"
+          "script": "\tdraft \u003d dict(self.view.custom.state.editDraft or {})\n\tsteps \u003d list(draft.get(\"steps\") or [])\n\tsteps.append({\n\t\t\"Id\": None, \"SequenceNumber\": len(steps) + 1,\n\t\t\"OperationCategoryId\": None, \"OperationCategoryName\": \"\",\n\t\t\"OperationTypeId\": None, \"OperationTypeCode\": \"\", \"OperationTypeName\": \"\",\n\t\t\"OperationTemplateId\": None, \"OperationCode\": \"\", \"OperationName\": \"\",\n\t\t\"OperationVersionNumber\": None, \"DataCollectionSummary\": \"\",\n\t\t\"IsRequired\": True, \"Description\": None,\n\t})\n\tdraft[\"steps\"] \u003d steps\n\tself.view.custom.state.editDraft \u003d draft"
         },
         {
           "name": "_swapSteps",
@@ -844,14 +842,14 @@
             "idxA",
             "idxB"
           ],
-          "script": "\tdraft = dict(self.view.custom.state.editDraft or {})\n\tsteps = list(draft.get(\"steps\") or [])\n\tif idxA < 0 or idxB < 0 or idxA >= len(steps) or idxB >= len(steps):\n\t\treturn\n\tsteps[idxA], steps[idxB] = steps[idxB], steps[idxA]\n\tdraft[\"steps\"] = steps\n\tself.view.custom.state.editDraft = draft"
+          "script": "\tdraft \u003d dict(self.view.custom.state.editDraft or {})\n\tsteps \u003d list(draft.get(\"steps\") or [])\n\tif idxA \u003c 0 or idxB \u003c 0 or idxA \u003e\u003d len(steps) or idxB \u003e\u003d len(steps):\n\t\treturn\n\tsteps[idxA], steps[idxB] \u003d steps[idxB], steps[idxA]\n\tdraft[\"steps\"] \u003d steps\n\tself.view.custom.state.editDraft \u003d draft"
         },
         {
           "name": "_removeStep",
           "params": [
             "idx"
           ],
-          "script": "\tdraft = dict(self.view.custom.state.editDraft or {})\n\tsteps = list(draft.get(\"steps\") or [])\n\tif idx < 0 or idx >= len(steps):\n\t\treturn\n\tdel steps[idx]\n\tdraft[\"steps\"] = steps\n\tself.view.custom.state.editDraft = draft"
+          "script": "\tdraft \u003d dict(self.view.custom.state.editDraft or {})\n\tsteps \u003d list(draft.get(\"steps\") or [])\n\tif idx \u003c 0 or idx \u003e\u003d len(steps):\n\t\treturn\n\tdel steps[idx]\n\tdraft[\"steps\"] \u003d steps\n\tself.view.custom.state.editDraft \u003d draft"
         },
         {
           "name": "_applyCategoryChange",
@@ -859,7 +857,7 @@
             "idx",
             "newCategoryId"
           ],
-          "script": "\tdraft = dict(self.view.custom.state.editDraft or {})\n\tsteps = list(draft.get(\"steps\") or [])\n\tif idx < 0 or idx >= len(steps):\n\t\treturn\n\ts = dict(steps[idx])\n\ts[\"OperationCategoryId\"] = newCategoryId\n\ts[\"OperationCategoryName\"] = \"\"\n\tfor c in BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.categories) or []:\n\t\tif c.get(\"value\") == newCategoryId:\n\t\t\ts[\"OperationCategoryName\"] = c.get(\"label\") or \"\"\n\t\t\tbreak\n\ts[\"OperationTypeId\"] = None\n\ts[\"OperationTypeCode\"] = \"\"\n\ts[\"OperationTypeName\"] = \"\"\n\ts[\"OperationTemplateId\"] = None\n\ts[\"OperationCode\"] = \"\"\n\ts[\"OperationName\"] = \"\"\n\ts[\"OperationVersionNumber\"] = None\n\ts[\"DataCollectionSummary\"] = \"\"\n\tsteps[idx] = s\n\tdraft[\"steps\"] = steps\n\tself.view.custom.state.editDraft = draft"
+          "script": "\tdraft \u003d dict(self.view.custom.state.editDraft or {})\n\tsteps \u003d list(draft.get(\"steps\") or [])\n\tif idx \u003c 0 or idx \u003e\u003d len(steps):\n\t\treturn\n\ts \u003d dict(steps[idx])\n\ts[\"OperationCategoryId\"] \u003d newCategoryId\n\ts[\"OperationCategoryName\"] \u003d \"\"\n\tfor c in BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.categories) or []:\n\t\tif c.get(\"value\") \u003d\u003d newCategoryId:\n\t\t\ts[\"OperationCategoryName\"] \u003d c.get(\"label\") or \"\"\n\t\t\tbreak\n\ts[\"OperationTypeId\"] \u003d None\n\ts[\"OperationTypeCode\"] \u003d \"\"\n\ts[\"OperationTypeName\"] \u003d \"\"\n\ts[\"OperationTemplateId\"] \u003d None\n\ts[\"OperationCode\"] \u003d \"\"\n\ts[\"OperationName\"] \u003d \"\"\n\ts[\"OperationVersionNumber\"] \u003d None\n\ts[\"DataCollectionSummary\"] \u003d \"\"\n\tsteps[idx] \u003d s\n\tdraft[\"steps\"] \u003d steps\n\tself.view.custom.state.editDraft \u003d draft"
         },
         {
           "name": "_applyTemplateChange",
@@ -867,7 +865,7 @@
             "idx",
             "newTemplateId"
           ],
-          "script": "\tdraft = dict(self.view.custom.state.editDraft or {})\n\tsteps = list(draft.get(\"steps\") or [])\n\tif idx < 0 or idx >= len(steps):\n\t\treturn\n\ts = dict(steps[idx])\n\ts[\"OperationTemplateId\"] = newTemplateId\n\ts[\"OperationCode\"] = \"\"\n\ts[\"OperationName\"] = \"\"\n\ts[\"OperationVersionNumber\"] = None\n\ts[\"DataCollectionSummary\"] = \"\"\n\tif newTemplateId:\n\t\tfor ot in (BlueRidge.Parts.RouteTemplate.getOperationTemplatesByCategory(s.get(\"OperationCategoryId\")) or []):\n\t\t\tif ot.get(\"Id\") == newTemplateId:\n\t\t\t\ts[\"OperationCode\"] = ot.get(\"Code\") or \"\"\n\t\t\t\ts[\"OperationName\"] = ot.get(\"Name\") or \"\"\n\t\t\t\ts[\"OperationVersionNumber\"] = ot.get(\"VersionNumber\")\n\t\t\t\ts[\"OperationTypeId\"] = ot.get(\"OperationTypeId\")\n\t\t\t\ts[\"OperationTypeName\"] = ot.get(\"OperationTypeName\") or \"\"\n\t\t\t\tbreak\n\t\ts[\"DataCollectionSummary\"] = BlueRidge.Parts.OperationTemplate.getFieldSummary(newTemplateId)\n\tsteps[idx] = s\n\tdraft[\"steps\"] = steps\n\tself.view.custom.state.editDraft = draft"
+          "script": "\tdraft \u003d dict(self.view.custom.state.editDraft or {})\n\tsteps \u003d list(draft.get(\"steps\") or [])\n\tif idx \u003c 0 or idx \u003e\u003d len(steps):\n\t\treturn\n\ts \u003d dict(steps[idx])\n\ts[\"OperationTemplateId\"] \u003d newTemplateId\n\ts[\"OperationCode\"] \u003d \"\"\n\ts[\"OperationName\"] \u003d \"\"\n\ts[\"OperationVersionNumber\"] \u003d None\n\ts[\"DataCollectionSummary\"] \u003d \"\"\n\tif newTemplateId:\n\t\tfor ot in (BlueRidge.Parts.RouteTemplate.getOperationTemplatesByCategory(s.get(\"OperationCategoryId\")) or []):\n\t\t\tif ot.get(\"Id\") \u003d\u003d newTemplateId:\n\t\t\t\ts[\"OperationCode\"] \u003d ot.get(\"Code\") or \"\"\n\t\t\t\ts[\"OperationName\"] \u003d ot.get(\"Name\") or \"\"\n\t\t\t\ts[\"OperationVersionNumber\"] \u003d ot.get(\"VersionNumber\")\n\t\t\t\ts[\"OperationTypeId\"] \u003d ot.get(\"OperationTypeId\")\n\t\t\t\ts[\"OperationTypeName\"] \u003d ot.get(\"OperationTypeName\") or \"\"\n\t\t\t\tbreak\n\t\ts[\"DataCollectionSummary\"] \u003d BlueRidge.Parts.OperationTemplate.getFieldSummary(newTemplateId)\n\tsteps[idx] \u003d s\n\tdraft[\"steps\"] \u003d steps\n\tself.view.custom.state.editDraft \u003d draft"
         },
         {
           "name": "_applyReqChange",
@@ -875,7 +873,7 @@
             "idx",
             "isRequired"
           ],
-          "script": "\tdraft = dict(self.view.custom.state.editDraft or {})\n\tsteps = list(draft.get(\"steps\") or [])\n\tif idx < 0 or idx >= len(steps):\n\t\treturn\n\ts = dict(steps[idx])\n\ts[\"IsRequired\"] = bool(isRequired)\n\tsteps[idx] = s\n\tdraft[\"steps\"] = steps\n\tself.view.custom.state.editDraft = draft"
+          "script": "\tdraft \u003d dict(self.view.custom.state.editDraft or {})\n\tsteps \u003d list(draft.get(\"steps\") or [])\n\tif idx \u003c 0 or idx \u003e\u003d len(steps):\n\t\treturn\n\ts \u003d dict(steps[idx])\n\ts[\"IsRequired\"] \u003d bool(isRequired)\n\tsteps[idx] \u003d s\n\tdraft[\"steps\"] \u003d steps\n\tself.view.custom.state.editDraft \u003d draft"
         }
       ],
       "extensionFunctions": null,
@@ -883,77 +881,77 @@
         {
           "messageType": "sectionSaveRequested",
           "pageScope": true,
-          "script": "\tif payload and payload.get(\"section\") == \"routes\":\n\t\tself.handleSaveDraft()",
+          "script": "\tif payload and payload.get(\"section\") \u003d\u003d \"routes\":\n\t\tself.handleSaveDraft()",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "sectionDiscardRequested",
           "pageScope": true,
-          "script": "\tif payload and payload.get(\"section\") == \"routes\":\n\t\tself.view.custom.state.editDraft = self._cloneBundle(self.view.custom.state.selected)",
+          "script": "\tif payload and payload.get(\"section\") \u003d\u003d \"routes\":\n\t\tself.view.custom.state.editDraft \u003d self._cloneBundle(self.view.custom.state.selected)",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "routeStepMoveUp",
           "pageScope": true,
-          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tself._swapSteps(idx, idx - 1)",
+          "script": "\tif not payload:\n\t\treturn\n\tidx \u003d int(payload.get(\"rowIndex\", -1))\n\tself._swapSteps(idx, idx - 1)",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "routeStepMoveDown",
           "pageScope": true,
-          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tself._swapSteps(idx, idx + 1)",
+          "script": "\tif not payload:\n\t\treturn\n\tidx \u003d int(payload.get(\"rowIndex\", -1))\n\tself._swapSteps(idx, idx + 1)",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "routeStepRemove",
           "pageScope": true,
-          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tself._removeStep(idx)",
+          "script": "\tif not payload:\n\t\treturn\n\tidx \u003d int(payload.get(\"rowIndex\", -1))\n\tself._removeStep(idx)",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "routeStepCategoryChanged",
           "pageScope": true,
-          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tself._applyCategoryChange(idx, payload.get(\"newCategoryId\"))",
+          "script": "\tif not payload:\n\t\treturn\n\tidx \u003d int(payload.get(\"rowIndex\", -1))\n\tself._applyCategoryChange(idx, payload.get(\"newCategoryId\"))",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "routeStepTemplateChanged",
           "pageScope": true,
-          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tself._applyTemplateChange(idx, payload.get(\"newTemplateId\"))",
+          "script": "\tif not payload:\n\t\treturn\n\tidx \u003d int(payload.get(\"rowIndex\", -1))\n\tself._applyTemplateChange(idx, payload.get(\"newTemplateId\"))",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "routeStepReqChanged",
           "pageScope": true,
-          "script": "\tif not payload:\n\t\treturn\n\tidx = int(payload.get(\"rowIndex\", -1))\n\tself._applyReqChange(idx, payload.get(\"isRequired\"))",
+          "script": "\tif not payload:\n\t\treturn\n\tidx \u003d int(payload.get(\"rowIndex\", -1))\n\tself._applyReqChange(idx, payload.get(\"isRequired\"))",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "routeConfirmPublishResult",
           "pageScope": true,
-          "script": "\tif not payload:\n\t\treturn\n\tif payload.get(\"action\") != \"confirm\":\n\t\treturn\n\tself.handlePublish()",
+          "script": "\tif not payload:\n\t\treturn\n\tif payload.get(\"action\") !\u003d \"confirm\":\n\t\treturn\n\tself.handlePublish()",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "routeConfirmDeprecateResult",
           "pageScope": true,
-          "script": "\tif not payload:\n\t\treturn\n\tif payload.get(\"action\") != \"confirm\":\n\t\treturn\n\tsel = self.view.custom.state.selected or {}\n\trouteId = sel.get(\"id\")\n\tif not routeId:\n\t\treturn\n\tresult = BlueRidge.Parts.RouteTemplate.deprecate(routeId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Route deprecated\")\n\tif result and result.get(\"Status\"):\n\t\tself.refreshVersionList()\n\t\tself.loadActiveVersion()",
+          "script": "\tif not payload:\n\t\treturn\n\tif payload.get(\"action\") !\u003d \"confirm\":\n\t\treturn\n\tsel \u003d self.view.custom.state.selected or {}\n\trouteId \u003d sel.get(\"id\")\n\tif not routeId:\n\t\treturn\n\tresult \u003d BlueRidge.Parts.RouteTemplate.deprecate(routeId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Route deprecated\")\n\tif result and result.get(\"Status\"):\n\t\tself.refreshVersionList()\n\t\tself.loadActiveVersion()",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "routeConfirmDiscardResult",
           "pageScope": true,
-          "script": "\tif not payload:\n\t\treturn\n\tif payload.get(\"action\") != \"confirm\":\n\t\treturn\n\tdraft = self.view.custom.state.editDraft or {}\n\trouteId = draft.get(\"id\")\n\tif not routeId:\n\t\treturn\n\tresult = BlueRidge.Parts.RouteTemplate.discardDraft(routeId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Draft discarded\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.activeVersionId = None\n\t\tself.refreshVersionList()\n\t\titemId = self.view.params.value\n\t\tdefaultId = BlueRidge.Parts.RouteTemplate.getDefaultVersionId(itemId)\n\t\tif defaultId:\n\t\t\tself.view.custom.activeVersionId = defaultId",
+          "script": "\tif not payload:\n\t\treturn\n\tif payload.get(\"action\") !\u003d \"confirm\":\n\t\treturn\n\tdraft \u003d self.view.custom.state.editDraft or {}\n\trouteId \u003d draft.get(\"id\")\n\tif not routeId:\n\t\treturn\n\tresult \u003d BlueRidge.Parts.RouteTemplate.discardDraft(routeId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Draft discarded\")\n\tif result and result.get(\"Status\"):\n\t\tself.view.custom.activeVersionId \u003d None\n\t\tself.refreshVersionList()\n\t\titemId \u003d self.view.params.value\n\t\tdefaultId \u003d BlueRidge.Parts.RouteTemplate.getDefaultVersionId(itemId)\n\t\tif defaultId:\n\t\t\tself.view.custom.activeVersionId \u003d defaultId",
           "sessionScope": false,
           "viewScope": false
         }

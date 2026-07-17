@@ -221,7 +221,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "4px"
+                "gap": "4px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -306,7 +307,8 @@
                 "props": {
                   "alignItems": "center",
                   "style": {
-                    "gap": "6px"
+                    "gap": "6px",
+                    "overflow": "visible"
                   },
                   "wrap": "wrap"
                 },
@@ -324,7 +326,8 @@
               "direction": "column",
               "style": {
                 "gap": "4px",
-                "minWidth": "0"
+                "minWidth": "0",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"

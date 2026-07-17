@@ -245,7 +245,8 @@
                     "props": {
                       "direction": "column",
                       "style": {
-                        "gap": "4px"
+                        "gap": "4px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -301,7 +302,8 @@
                     "props": {
                       "direction": "column",
                       "style": {
-                        "gap": "4px"
+                        "gap": "4px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -350,7 +352,8 @@
                     "props": {
                       "direction": "column",
                       "style": {
-                        "gap": "4px"
+                        "gap": "4px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"

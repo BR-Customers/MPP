@@ -6,9 +6,9 @@
         "$": [
           "ts",
           192,
-          1781628378049
+          1784293568750
         ],
-        "$ts": 1781628378049
+        "$ts": 1784293568750
       },
       "entityTypeCode": null,
       "procedureName": null,
@@ -17,1297 +17,15 @@
         "$": [
           "ts",
           192,
-          1781628378049
+          1784293568750
         ],
-        "$ts": 1781023578049
+        "$ts": 1783688768750
       }
     },
-    "rows": [
-      {
-        "AppUserId": 30,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781624198937
-        },
-        "AttemptedParameters": "{\"Initials\":\"NEN\",\"DisplayName\":\"Noah Nesbitt\"}",
-        "EntityId": null,
-        "FailureReason": "An AppUser with these Initials already exists.",
-        "Id": 65,
-        "LogEntityTypeCode": "AppUser",
-        "LogEntityTypeName": "Application User",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "ProcedureName": "Location.AppUser_Create",
-        "UserDisplayName": null
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781544027292
-        },
-        "AttemptedParameters": "{\"Id\":3,\"EffectiveFrom\":\"2026-06-15T00:00:00\",\"Name\":\"Route v1\"}",
-        "EntityId": 3,
-        "FailureReason": "Cannot publish: route has no steps.",
-        "Id": 58,
-        "LogEntityTypeCode": "Route",
-        "LogEntityTypeName": "Route",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "ProcedureName": "Parts.RouteTemplate_Publish",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781541736447
-        },
-        "AttemptedParameters": "{\"Id\":0,\"LocationTypeId\":0,\"Code\":\"\",\"Name\":\"\",\"Attributes\":[{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null}]}",
-        "EntityId": 0,
-        "FailureReason": "Invalid LocationTypeId.",
-        "Id": 57,
-        "LogEntityTypeCode": "LocationTypeDef",
-        "LogEntityTypeName": "Location Type Def",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "ProcedureName": "Location.LocationTypeDefinition_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781541736442
-        },
-        "AttemptedParameters": "{\"AttributeValues\":[]}",
-        "EntityId": null,
-        "FailureReason": "Required parameter missing.",
-        "Id": 56,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "ProcedureName": "Location.Location_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781541561537
-        },
-        "AttemptedParameters": "{\"AttributeValues\":[]}",
-        "EntityId": null,
-        "FailureReason": "Required parameter missing.",
-        "Id": 55,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "ProcedureName": "Location.Location_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781541538132
-        },
-        "AttemptedParameters": "{\"AttributeValues\":[]}",
-        "EntityId": null,
-        "FailureReason": "Required parameter missing.",
-        "Id": 54,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "ProcedureName": "Location.Location_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781541527079
-        },
-        "AttemptedParameters": "{\"Id\":0,\"LocationTypeId\":0,\"Code\":\"\",\"Name\":\"\",\"Attributes\":[]}",
-        "EntityId": 0,
-        "FailureReason": "Invalid LocationTypeId.",
-        "Id": 53,
-        "LogEntityTypeCode": "LocationTypeDef",
-        "LogEntityTypeName": "Location Type Def",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "ProcedureName": "Location.LocationTypeDefinition_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781541527078
-        },
-        "AttemptedParameters": "{\"AttributeValues\":[]}",
-        "EntityId": null,
-        "FailureReason": "Required parameter missing.",
-        "Id": 52,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "ProcedureName": "Location.Location_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781541179869
-        },
-        "AttemptedParameters": "{\"AttributeValues\":[]}",
-        "EntityId": null,
-        "FailureReason": "Required parameter missing.",
-        "Id": 51,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "ProcedureName": "Location.Location_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781541168838
-        },
-        "AttemptedParameters": "{\"AttributeValues\":[]}",
-        "EntityId": null,
-        "FailureReason": "Required parameter missing.",
-        "Id": 50,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "ProcedureName": "Location.Location_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781541145403
-        },
-        "AttemptedParameters": "{\"AttributeValues\":[]}",
-        "EntityId": null,
-        "FailureReason": "Required parameter missing.",
-        "Id": 49,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "ProcedureName": "Location.Location_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781539269694
-        },
-        "AttemptedParameters": "{\"AttributeValues\":[]}",
-        "EntityId": null,
-        "FailureReason": "Required parameter missing.",
-        "Id": 48,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "ProcedureName": "Location.Location_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781539249111
-        },
-        "AttemptedParameters": "{\"AttributeValues\":[]}",
-        "EntityId": null,
-        "FailureReason": "Required parameter missing.",
-        "Id": 47,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "ProcedureName": "Location.Location_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781539158700
-        },
-        "AttemptedParameters": "{\"AttributeValues\":[]}",
-        "EntityId": null,
-        "FailureReason": "Required parameter missing.",
-        "Id": 46,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "ProcedureName": "Location.Location_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781539145672
-        },
-        "AttemptedParameters": "{\"AttributeValues\":[]}",
-        "EntityId": null,
-        "FailureReason": "Required parameter missing.",
-        "Id": 45,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "ProcedureName": "Location.Location_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781539145671
-        },
-        "AttemptedParameters": "{\"Id\":0,\"LocationTypeId\":0,\"Code\":\"\",\"Name\":\"\",\"Attributes\":[{\"DefaultValue\":\"fcbc\",\"Uom\":\"b\",\"Description\":\"cbcc\",\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"hcgjk\",\"Id\":null}]}",
-        "EntityId": 0,
-        "FailureReason": "Invalid LocationTypeId.",
-        "Id": 44,
-        "LogEntityTypeCode": "LocationTypeDef",
-        "LogEntityTypeName": "Location Type Def",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "ProcedureName": "Location.LocationTypeDefinition_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781539124270
-        },
-        "AttemptedParameters": "{\"Id\":0,\"LocationTypeId\":0,\"Code\":\"\",\"Name\":\"\",\"Attributes\":[{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null}]}",
-        "EntityId": 0,
-        "FailureReason": "Invalid LocationTypeId.",
-        "Id": 43,
-        "LogEntityTypeCode": "LocationTypeDef",
-        "LogEntityTypeName": "Location Type Def",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "ProcedureName": "Location.LocationTypeDefinition_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781539124267
-        },
-        "AttemptedParameters": "{\"AttributeValues\":[]}",
-        "EntityId": null,
-        "FailureReason": "Required parameter missing.",
-        "Id": 42,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "ProcedureName": "Location.Location_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781538672047
-        },
-        "AttemptedParameters": "{\"Id\":0,\"LocationTypeId\":0,\"Code\":\"\",\"Name\":\"\",\"Attributes\":[{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"INT\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"DECIMAL\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null}]}",
-        "EntityId": 0,
-        "FailureReason": "Invalid LocationTypeId.",
-        "Id": 40,
-        "LogEntityTypeCode": "LocationTypeDef",
-        "LogEntityTypeName": "Location Type Def",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "ProcedureName": "Location.LocationTypeDefinition_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781538672047
-        },
-        "AttemptedParameters": "{\"AttributeValues\":[]}",
-        "EntityId": null,
-        "FailureReason": "Required parameter missing.",
-        "Id": 41,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "ProcedureName": "Location.Location_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781538661062
-        },
-        "AttemptedParameters": "{\"Id\":0,\"LocationTypeId\":0,\"Code\":\"\",\"Name\":\"\",\"Attributes\":[{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"INT\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null}]}",
-        "EntityId": 0,
-        "FailureReason": "Invalid LocationTypeId.",
-        "Id": 39,
-        "LogEntityTypeCode": "LocationTypeDef",
-        "LogEntityTypeName": "Location Type Def",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "ProcedureName": "Location.LocationTypeDefinition_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781538515981
-        },
-        "AttemptedParameters": "{\"Id\":0,\"LocationTypeId\":0,\"Code\":\"\",\"Name\":\"\",\"Attributes\":[{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null}]}",
-        "EntityId": 0,
-        "FailureReason": "Invalid LocationTypeId.",
-        "Id": 38,
-        "LogEntityTypeCode": "LocationTypeDef",
-        "LogEntityTypeName": "Location Type Def",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "ProcedureName": "Location.LocationTypeDefinition_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781538515978
-        },
-        "AttemptedParameters": "{\"AttributeValues\":[]}",
-        "EntityId": null,
-        "FailureReason": "Required parameter missing.",
-        "Id": 37,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "ProcedureName": "Location.Location_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781538117140
-        },
-        "AttemptedParameters": "{\"Id\":0,\"LocationTypeId\":0,\"Code\":\"\",\"Name\":\"\",\"Attributes\":[{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null}]}",
-        "EntityId": 0,
-        "FailureReason": "Invalid LocationTypeId.",
-        "Id": 36,
-        "LogEntityTypeCode": "LocationTypeDef",
-        "LogEntityTypeName": "Location Type Def",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "ProcedureName": "Location.LocationTypeDefinition_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781537497394
-        },
-        "AttemptedParameters": "{\"ParentLocationId\":31,\"Code\":\"\",\"Name\":\"\",\"AttributeValues\":[]}",
-        "EntityId": null,
-        "FailureReason": "Required parameter missing.",
-        "Id": 34,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "ProcedureName": "Location.Location_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781537497394
-        },
-        "AttemptedParameters": "{\"Id\":0,\"LocationTypeId\":0,\"Code\":\"\",\"Name\":\"\",\"Attributes\":[{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null}]}",
-        "EntityId": 0,
-        "FailureReason": "Invalid LocationTypeId.",
-        "Id": 35,
-        "LogEntityTypeCode": "LocationTypeDef",
-        "LogEntityTypeName": "Location Type Def",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "ProcedureName": "Location.LocationTypeDefinition_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781536883042
-        },
-        "AttemptedParameters": "{\"Id\":0,\"LocationTypeId\":0,\"Code\":\"\",\"Name\":\"\",\"Attributes\":[{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null}]}",
-        "EntityId": 0,
-        "FailureReason": "Invalid LocationTypeId.",
-        "Id": 33,
-        "LogEntityTypeCode": "LocationTypeDef",
-        "LogEntityTypeName": "Location Type Def",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "ProcedureName": "Location.LocationTypeDefinition_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781536881067
-        },
-        "AttemptedParameters": "{\"Id\":0,\"LocationTypeId\":0,\"Code\":\"\",\"Name\":\"\",\"Attributes\":[{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null}]}",
-        "EntityId": 0,
-        "FailureReason": "Invalid LocationTypeId.",
-        "Id": 32,
-        "LogEntityTypeCode": "LocationTypeDef",
-        "LogEntityTypeName": "Location Type Def",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "ProcedureName": "Location.LocationTypeDefinition_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781533943730
-        },
-        "AttemptedParameters": "{\"Id\":3,\"Name\":\"Route v1\",\"EffectiveFrom\":\"2026-06-15T00:00:00\",\"Steps\":[{\"Description\":null,\"IsRequired\":1,\"OperationTemplateId\":null,\"Id\":null}]}",
-        "EntityId": 3,
-        "FailureReason": "Step at row 1 is missing OperationTemplateId.",
-        "Id": 31,
-        "LogEntityTypeCode": "Route",
-        "LogEntityTypeName": "Route",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "ProcedureName": "Parts.RouteTemplate_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781533943011
-        },
-        "AttemptedParameters": "{\"Id\":3,\"Name\":\"Route v1\",\"EffectiveFrom\":\"2026-06-15T00:00:00\",\"Steps\":[{\"Description\":null,\"IsRequired\":1,\"OperationTemplateId\":null,\"Id\":null}]}",
-        "EntityId": 3,
-        "FailureReason": "Step at row 1 is missing OperationTemplateId.",
-        "Id": 30,
-        "LogEntityTypeCode": "Route",
-        "LogEntityTypeName": "Route",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "ProcedureName": "Parts.RouteTemplate_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781533942861
-        },
-        "AttemptedParameters": "{\"Id\":3,\"Name\":\"Route v1\",\"EffectiveFrom\":\"2026-06-15T00:00:00\",\"Steps\":[{\"Description\":null,\"IsRequired\":1,\"OperationTemplateId\":null,\"Id\":null}]}",
-        "EntityId": 3,
-        "FailureReason": "Step at row 1 is missing OperationTemplateId.",
-        "Id": 29,
-        "LogEntityTypeCode": "Route",
-        "LogEntityTypeName": "Route",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "ProcedureName": "Parts.RouteTemplate_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781533942678
-        },
-        "AttemptedParameters": "{\"Id\":3,\"Name\":\"Route v1\",\"EffectiveFrom\":\"2026-06-15T00:00:00\",\"Steps\":[{\"Description\":null,\"IsRequired\":1,\"OperationTemplateId\":null,\"Id\":null}]}",
-        "EntityId": 3,
-        "FailureReason": "Step at row 1 is missing OperationTemplateId.",
-        "Id": 28,
-        "LogEntityTypeCode": "Route",
-        "LogEntityTypeName": "Route",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "ProcedureName": "Parts.RouteTemplate_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781533942070
-        },
-        "AttemptedParameters": "{\"Id\":3,\"Name\":\"Route v1\",\"EffectiveFrom\":\"2026-06-15T00:00:00\",\"Steps\":[{\"Description\":null,\"IsRequired\":1,\"OperationTemplateId\":null,\"Id\":null}]}",
-        "EntityId": 3,
-        "FailureReason": "Step at row 1 is missing OperationTemplateId.",
-        "Id": 27,
-        "LogEntityTypeCode": "Route",
-        "LogEntityTypeName": "Route",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "ProcedureName": "Parts.RouteTemplate_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781533100851
-        },
-        "AttemptedParameters": "{\"Id\":23}",
-        "EntityId": 23,
-        "FailureReason": "Cannot deprecate: active child locations exist.",
-        "Id": 26,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Deprecated",
-        "LogEventTypeId": 3,
-        "ProcedureName": "Location.Location_Deprecate",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781533100686
-        },
-        "AttemptedParameters": "{\"Id\":23}",
-        "EntityId": 23,
-        "FailureReason": "Cannot deprecate: active child locations exist.",
-        "Id": 25,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Deprecated",
-        "LogEventTypeId": 3,
-        "ProcedureName": "Location.Location_Deprecate",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781533100536
-        },
-        "AttemptedParameters": "{\"Id\":23}",
-        "EntityId": 23,
-        "FailureReason": "Cannot deprecate: active child locations exist.",
-        "Id": 24,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Deprecated",
-        "LogEventTypeId": 3,
-        "ProcedureName": "Location.Location_Deprecate",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781533100387
-        },
-        "AttemptedParameters": "{\"Id\":23}",
-        "EntityId": 23,
-        "FailureReason": "Cannot deprecate: active child locations exist.",
-        "Id": 23,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Deprecated",
-        "LogEventTypeId": 3,
-        "ProcedureName": "Location.Location_Deprecate",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781533100220
-        },
-        "AttemptedParameters": "{\"Id\":23}",
-        "EntityId": 23,
-        "FailureReason": "Cannot deprecate: active child locations exist.",
-        "Id": 22,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Deprecated",
-        "LogEventTypeId": 3,
-        "ProcedureName": "Location.Location_Deprecate",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781533099664
-        },
-        "AttemptedParameters": "{\"Id\":23}",
-        "EntityId": 23,
-        "FailureReason": "Cannot deprecate: active child locations exist.",
-        "Id": 21,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Deprecated",
-        "LogEventTypeId": 3,
-        "ProcedureName": "Location.Location_Deprecate",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781529838375
-        },
-        "AttemptedParameters": "{\"Id\":2}",
-        "EntityId": 2,
-        "FailureReason": "Tool not found or already deprecated.",
-        "Id": 20,
-        "LogEntityTypeCode": "Tool",
-        "LogEntityTypeName": "Tool",
-        "LogEventTypeCode": "Deprecated",
-        "LogEventTypeId": 3,
-        "ProcedureName": "Tools.Tool_Deprecate",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781529834832
-        },
-        "AttemptedParameters": "{\"Id\":2}",
-        "EntityId": 2,
-        "FailureReason": "Tool not found or already deprecated.",
-        "Id": 19,
-        "LogEntityTypeCode": "Tool",
-        "LogEntityTypeName": "Tool",
-        "LogEventTypeCode": "Deprecated",
-        "LogEventTypeId": 3,
-        "ProcedureName": "Tools.Tool_Deprecate",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781291582694
-        },
-        "AttemptedParameters": "{\"PartNumber\":\"\",\"Description\":\"\",\"MacolaPartNumber\":\"\",\"CountryOfOrigin\":\"\"}",
-        "EntityId": null,
-        "FailureReason": "Required parameter missing.",
-        "Id": 18,
-        "LogEntityTypeCode": "Item",
-        "LogEntityTypeName": "Item",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "ProcedureName": "Parts.Item_Create",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781291579447
-        },
-        "AttemptedParameters": "{\"PartNumber\":\"\",\"Description\":\"\",\"MacolaPartNumber\":\"\",\"CountryOfOrigin\":\"\"}",
-        "EntityId": null,
-        "FailureReason": "Required parameter missing.",
-        "Id": 17,
-        "LogEntityTypeCode": "Item",
-        "LogEntityTypeName": "Item",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "ProcedureName": "Parts.Item_Create",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781289527527
-        },
-        "AttemptedParameters": "{\"ParentLocationId\":43,\"Code\":\"\",\"Name\":\"\",\"AttributeValues\":[]}",
-        "EntityId": null,
-        "FailureReason": "Required parameter missing.",
-        "Id": 16,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "ProcedureName": "Location.Location_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781289527340
-        },
-        "AttemptedParameters": "{\"ParentLocationId\":43,\"Code\":\"\",\"Name\":\"\",\"AttributeValues\":[]}",
-        "EntityId": null,
-        "FailureReason": "Required parameter missing.",
-        "Id": 15,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "ProcedureName": "Location.Location_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781289527025
-        },
-        "AttemptedParameters": "{\"ParentLocationId\":43,\"Code\":\"\",\"Name\":\"\",\"AttributeValues\":[]}",
-        "EntityId": null,
-        "FailureReason": "Required parameter missing.",
-        "Id": 14,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "ProcedureName": "Location.Location_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781289526672
-        },
-        "AttemptedParameters": "{\"ParentLocationId\":43,\"Code\":\"\",\"Name\":\"\",\"AttributeValues\":[]}",
-        "EntityId": null,
-        "FailureReason": "Required parameter missing.",
-        "Id": 13,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "ProcedureName": "Location.Location_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781289526491
-        },
-        "AttemptedParameters": "{\"ParentLocationId\":43,\"Code\":\"\",\"Name\":\"\",\"AttributeValues\":[]}",
-        "EntityId": null,
-        "FailureReason": "Required parameter missing.",
-        "Id": 12,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "ProcedureName": "Location.Location_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781289526023
-        },
-        "AttemptedParameters": "{\"ParentLocationId\":43,\"Code\":\"\",\"Name\":\"\",\"AttributeValues\":[]}",
-        "EntityId": null,
-        "FailureReason": "Required parameter missing.",
-        "Id": 11,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "ProcedureName": "Location.Location_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781288912133
-        },
-        "AttemptedParameters": "{\"Id\":0,\"LocationTypeId\":0,\"Code\":\"\",\"Name\":\"\",\"Attributes\":[]}",
-        "EntityId": 0,
-        "FailureReason": "Invalid LocationTypeId.",
-        "Id": 10,
-        "LogEntityTypeCode": "LocationTypeDef",
-        "LogEntityTypeName": "Location Type Def",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "ProcedureName": "Location.LocationTypeDefinition_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781288911916
-        },
-        "AttemptedParameters": "{\"Id\":0,\"LocationTypeId\":0,\"Code\":\"\",\"Name\":\"\",\"Attributes\":[]}",
-        "EntityId": 0,
-        "FailureReason": "Invalid LocationTypeId.",
-        "Id": 9,
-        "LogEntityTypeCode": "LocationTypeDef",
-        "LogEntityTypeName": "Location Type Def",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "ProcedureName": "Location.LocationTypeDefinition_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781288910443
-        },
-        "AttemptedParameters": "{\"Id\":0,\"LocationTypeId\":0,\"Code\":\"\",\"Name\":\"\",\"Attributes\":[{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null}]}",
-        "EntityId": 0,
-        "FailureReason": "Invalid LocationTypeId.",
-        "Id": 8,
-        "LogEntityTypeCode": "LocationTypeDef",
-        "LogEntityTypeName": "Location Type Def",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "ProcedureName": "Location.LocationTypeDefinition_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781288910262
-        },
-        "AttemptedParameters": "{\"Id\":0,\"LocationTypeId\":0,\"Code\":\"\",\"Name\":\"\",\"Attributes\":[{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null}]}",
-        "EntityId": 0,
-        "FailureReason": "Invalid LocationTypeId.",
-        "Id": 7,
-        "LogEntityTypeCode": "LocationTypeDef",
-        "LogEntityTypeName": "Location Type Def",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "ProcedureName": "Location.LocationTypeDefinition_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781288910127
-        },
-        "AttemptedParameters": "{\"Id\":0,\"LocationTypeId\":0,\"Code\":\"\",\"Name\":\"\",\"Attributes\":[{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null}]}",
-        "EntityId": 0,
-        "FailureReason": "Invalid LocationTypeId.",
-        "Id": 6,
-        "LogEntityTypeCode": "LocationTypeDef",
-        "LogEntityTypeName": "Location Type Def",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "ProcedureName": "Location.LocationTypeDefinition_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781288909977
-        },
-        "AttemptedParameters": "{\"Id\":0,\"LocationTypeId\":0,\"Code\":\"\",\"Name\":\"\",\"Attributes\":[{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null}]}",
-        "EntityId": 0,
-        "FailureReason": "Invalid LocationTypeId.",
-        "Id": 5,
-        "LogEntityTypeCode": "LocationTypeDef",
-        "LogEntityTypeName": "Location Type Def",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "ProcedureName": "Location.LocationTypeDefinition_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781288909827
-        },
-        "AttemptedParameters": "{\"Id\":0,\"LocationTypeId\":0,\"Code\":\"\",\"Name\":\"\",\"Attributes\":[{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null}]}",
-        "EntityId": 0,
-        "FailureReason": "Invalid LocationTypeId.",
-        "Id": 4,
-        "LogEntityTypeCode": "LocationTypeDef",
-        "LogEntityTypeName": "Location Type Def",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "ProcedureName": "Location.LocationTypeDefinition_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781288909770
-        },
-        "AttemptedParameters": "{\"Id\":0,\"LocationTypeId\":0,\"Code\":\"\",\"Name\":\"\",\"Attributes\":[{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null},{\"DefaultValue\":null,\"Uom\":null,\"Description\":null,\"IsRequired\":false,\"DataType\":\"NVARCHAR\",\"AttributeName\":\"\",\"Id\":null}]}",
-        "EntityId": 0,
-        "FailureReason": "Invalid LocationTypeId.",
-        "Id": 3,
-        "LogEntityTypeCode": "LocationTypeDef",
-        "LogEntityTypeName": "Location Type Def",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "ProcedureName": "Location.LocationTypeDefinition_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781288858983
-        },
-        "AttemptedParameters": "{\"ParentLocationId\":3,\"Code\":\"\",\"Name\":\"\",\"AttributeValues\":[]}",
-        "EntityId": null,
-        "FailureReason": "Required parameter missing.",
-        "Id": 2,
-        "LogEntityTypeCode": "Location",
-        "LogEntityTypeName": "Location",
-        "LogEventTypeCode": "Created",
-        "LogEventTypeId": 1,
-        "ProcedureName": "Location.Location_SaveAll",
-        "UserDisplayName": "Dev User"
-      },
-      {
-        "AppUserId": 2,
-        "AttemptedAt": {
-          "$": [
-            "ts",
-            192,
-            1781628378063
-          ],
-          "$ts": 1781284796619
-        },
-        "AttemptedParameters": "{\"ItemId\":1,\"Rows\":[{\"LocationId\":8,\"IsConsumptionPoint\":false,\"Id\":1,\"MaxQuantity\":null,\"MinQuantity\":null,\"DefaultQuantity\":null},{\"LocationId\":9,\"IsConsumptionPoint\":false,\"Id\":2,\"MaxQuantity\":null,\"MinQuantity\":null,\"DefaultQuantity\":null},{\"LocationId\":10,\"IsConsumptionPoint\":false,\"Id\":3,\"MaxQuantity\":null,\"MinQuantity\":null,\"DefaultQuantity\":null},{\"LocationId\":11,\"IsConsumptionPoint\":true,\"Id\":4,\"MaxQuantity\":500,\"MinQuantity\":10,\"DefaultQuantity\":100},{\"LocationId\":null,\"IsConsumptionPoint\":false,\"Id\":null,\"MaxQuantity\":null,\"MinQuantity\":null,\"DefaultQuantity\":null},{\"LocationId\":null,\"IsConsumptionPoint\":false,\"Id\":null,\"MaxQuantity\":null,\"MinQuantity\":null,\"DefaultQuantity\":null},{\"LocationId\":null,\"IsConsumptionPoint\":false,\"Id\":null,\"MaxQuantity\":null,\"MinQuantity\":null,\"DefaultQuantity\":null},{\"LocationId\":null,\"IsConsumptionPoint\":false,\"Id\":null,\"MaxQuantity\":null,\"MinQuantity\":null,\"DefaultQuantity\":null}]}",
-        "EntityId": 1,
-        "FailureReason": "One or more rows are missing LocationId.",
-        "Id": 1,
-        "LogEntityTypeCode": "ItemLocation",
-        "LogEntityTypeName": "Item-Location",
-        "LogEventTypeCode": "Updated",
-        "LogEventTypeId": 2,
-        "ProcedureName": "Parts.ItemLocation_SaveAllForItem",
-        "UserDisplayName": "Dev User"
-      }
-    ],
-    "topProcs": [
-      {
-        "FailureCount": 22,
-        "ProcedureName": "Location.Location_SaveAll"
-      },
-      {
-        "FailureCount": 19,
-        "ProcedureName": "Location.LocationTypeDefinition_SaveAll"
-      },
-      {
-        "FailureCount": 6,
-        "ProcedureName": "Location.Location_Deprecate"
-      },
-      {
-        "FailureCount": 5,
-        "ProcedureName": "Parts.RouteTemplate_SaveAll"
-      },
-      {
-        "FailureCount": 2,
-        "ProcedureName": "Parts.Item_Create"
-      }
-    ],
-    "topReasons": [
-      {
-        "FailureCount": 24,
-        "FailureReason": "Required parameter missing."
-      },
-      {
-        "FailureCount": 19,
-        "FailureReason": "Invalid LocationTypeId."
-      },
-      {
-        "FailureCount": 6,
-        "FailureReason": "Cannot deprecate: active child locations exist."
-      },
-      {
-        "FailureCount": 5,
-        "FailureReason": "Step at row 1 is missing OperationTemplateId."
-      },
-      {
-        "FailureCount": 2,
-        "FailureReason": "Tool not found or already deprecated."
-      }
-    ],
-    "totalCount": 59
+    "rows": [],
+    "topProcs": [],
+    "topReasons": [],
+    "totalCount": 0
   },
   "params": {},
   "propConfig": {
@@ -1376,102 +94,6 @@
                     "children": [
                       {
                         "meta": {
-                          "name": "StartDateLabel"
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "label-eyebrow"
-                          },
-                          "text": "Start Date"
-                        },
-                        "type": "ia.display.label"
-                      },
-                      {
-                        "meta": {
-                          "name": "StartDateInput"
-                        },
-                        "propConfig": {
-                          "props.value": {
-                            "binding": {
-                              "config": {
-                                "bidirectional": true,
-                                "path": "view.custom.filter.startDate"
-                              },
-                              "type": "property"
-                            }
-                          }
-                        },
-                        "props": {
-                          "format": "YYYY-MM-DD",
-                          "formattedValue": "2026-06-09",
-                          "pickerType": "date"
-                        },
-                        "type": "ia.input.date-time-input"
-                      }
-                    ],
-                    "meta": {
-                      "name": "StartDateField"
-                    },
-                    "props": {
-                      "direction": "column",
-                      "style": {
-                        "gap": "4px"
-                      }
-                    },
-                    "type": "ia.container.flex"
-                  },
-                  {
-                    "children": [
-                      {
-                        "meta": {
-                          "name": "EndDateLabel"
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "label-eyebrow"
-                          },
-                          "text": "End Date"
-                        },
-                        "type": "ia.display.label"
-                      },
-                      {
-                        "meta": {
-                          "name": "EndDateInput"
-                        },
-                        "propConfig": {
-                          "props.value": {
-                            "binding": {
-                              "config": {
-                                "bidirectional": true,
-                                "path": "view.custom.filter.endDate"
-                              },
-                              "type": "property"
-                            }
-                          }
-                        },
-                        "props": {
-                          "format": "YYYY-MM-DD",
-                          "formattedValue": "2026-06-16",
-                          "pickerType": "date"
-                        },
-                        "type": "ia.input.date-time-input"
-                      }
-                    ],
-                    "meta": {
-                      "name": "EndDateField"
-                    },
-                    "props": {
-                      "direction": "column",
-                      "style": {
-                        "gap": "4px"
-                      }
-                    },
-                    "type": "ia.container.flex"
-                  },
-                  {
-                    "children": [
-                      {
-                        "meta": {
                           "name": "EntityTypeLabel"
                         },
                         "props": {
@@ -1525,7 +147,8 @@
                     "props": {
                       "direction": "column",
                       "style": {
-                        "gap": "4px"
+                        "gap": "4px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -1587,7 +210,106 @@
                     "props": {
                       "direction": "column",
                       "style": {
-                        "gap": "4px"
+                        "gap": "4px",
+                        "overflow": "visible"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "StartDateLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "label-eyebrow"
+                          },
+                          "text": "Start Date"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "StartDateInput"
+                        },
+                        "propConfig": {
+                          "props.value": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.filter.startDate"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "format": "YYYY-MM-DD",
+                          "formattedValue": "2026-07-10",
+                          "pickerType": "date"
+                        },
+                        "type": "ia.input.date-time-input"
+                      }
+                    ],
+                    "meta": {
+                      "name": "StartDateField"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "4px",
+                        "overflow": "visible"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "EndDateLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "classes": "label-eyebrow"
+                          },
+                          "text": "End Date"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "EndDateInput"
+                        },
+                        "propConfig": {
+                          "props.value": {
+                            "binding": {
+                              "config": {
+                                "bidirectional": true,
+                                "path": "view.custom.filter.endDate"
+                              },
+                              "type": "property"
+                            }
+                          }
+                        },
+                        "props": {
+                          "format": "YYYY-MM-DD",
+                          "formattedValue": "2026-07-17",
+                          "pickerType": "date"
+                        },
+                        "type": "ia.input.date-time-input"
+                      }
+                    ],
+                    "meta": {
+                      "name": "EndDateField"
+                    },
+                    "props": {
+                      "direction": "column",
+                      "style": {
+                        "gap": "4px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -1636,7 +358,8 @@
                     "props": {
                       "direction": "column",
                       "style": {
-                        "gap": "4px"
+                        "gap": "4px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"

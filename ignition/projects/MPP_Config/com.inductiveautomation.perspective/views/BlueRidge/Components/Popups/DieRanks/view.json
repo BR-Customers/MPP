@@ -1,37 +1,6 @@
 {
   "custom": {
-    "compatibilityData": [
-      {
-        "CanMix": true,
-        "RankAId": 1,
-        "RankBId": 1
-      },
-      {
-        "CanMix": false,
-        "RankAId": 3,
-        "RankBId": 1
-      },
-      {
-        "CanMix": false,
-        "RankAId": 4,
-        "RankBId": 1
-      },
-      {
-        "CanMix": true,
-        "RankAId": 3,
-        "RankBId": 3
-      },
-      {
-        "CanMix": false,
-        "RankAId": 4,
-        "RankBId": 3
-      },
-      {
-        "CanMix": true,
-        "RankAId": 4,
-        "RankBId": 4
-      }
-    ]
+    "compatibilityData": []
   },
   "params": {},
   "propConfig": {
