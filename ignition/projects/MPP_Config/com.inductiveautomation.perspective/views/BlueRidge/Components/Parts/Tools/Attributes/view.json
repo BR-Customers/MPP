@@ -94,6 +94,7 @@
               "name": "BtnNewDefinition"
             },
             "position": {
+              "basis": "114px",
               "shrink": 0
             },
             "props": {
@@ -120,6 +121,7 @@
               "name": "BtnDiscard"
             },
             "position": {
+              "basis": "66px",
               "shrink": 0
             },
             "propConfig": {
@@ -156,6 +158,7 @@
               "name": "BtnSave"
             },
             "position": {
+              "basis": "51px",
               "shrink": 0
             },
             "propConfig": {
@@ -183,7 +186,8 @@
         "props": {
           "alignItems": "center",
           "style": {
-            "gap": "8px"
+            "gap": "8px",
+            "overflow": "visible"
           }
         },
         "type": "ia.container.flex"
@@ -326,6 +330,7 @@
           "name": "BtnAddRow"
         },
         "position": {
+          "basis": "31px",
           "shrink": 0
         },
         "propConfig": {

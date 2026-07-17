@@ -1,7 +1,7 @@
 {
   "custom": {
-    "activeTab": "eligibility",
-    "activeTabIndex": 4,
+    "activeTab": "routes",
+    "activeTabIndex": 1,
     "itemTypes": [
       "Raw Material",
       "Component",
@@ -176,6 +176,9 @@
             },
             "meta": {
               "name": "BtnAddItem"
+            },
+            "position": {
+              "basis": "98px"
             },
             "props": {
               "style": {

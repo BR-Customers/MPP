@@ -229,6 +229,9 @@
             "meta": {
               "name": "BtnNewTemplate"
             },
+            "position": {
+              "basis": "128px"
+            },
             "props": {
               "style": {
                 "classes": "btn btn-primary"
@@ -477,6 +480,9 @@
                         "meta": {
                           "name": "BtnSave"
                         },
+                        "position": {
+                          "basis": "51px"
+                        },
                         "props": {
                           "style": {
                             "classes": "btn btn-primary btn-sm"
@@ -500,11 +506,14 @@
                         "meta": {
                           "name": "BtnNewVersion"
                         },
+                        "position": {
+                          "basis": "102px"
+                        },
                         "props": {
                           "style": {
                             "classes": "btn btn-sm"
                           },
-                          "text": "New Version"
+                          "text": "+ New Version"
                         },
                         "type": "ia.input.button"
                       },
@@ -523,6 +532,9 @@
                         "meta": {
                           "name": "BtnDeprecate"
                         },
+                        "position": {
+                          "basis": "81px"
+                        },
                         "props": {
                           "style": {
                             "classes": "btn btn-danger btn-sm"
@@ -538,7 +550,8 @@
                     "props": {
                       "alignItems": "center",
                       "style": {
-                        "gap": "8px"
+                        "gap": "8px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -1043,6 +1056,7 @@
                           "name": "BtnAddField"
                         },
                         "position": {
+                          "basis": "83px",
                           "shrink": 0
                         },
                         "props": {
@@ -1069,6 +1083,7 @@
                           "name": "BtnDiscardFields"
                         },
                         "position": {
+                          "basis": "98px",
                           "shrink": 0
                         },
                         "propConfig": {
@@ -1105,6 +1120,7 @@
                           "name": "BtnSaveFields"
                         },
                         "position": {
+                          "basis": "82px",
                           "shrink": 0
                         },
                         "propConfig": {

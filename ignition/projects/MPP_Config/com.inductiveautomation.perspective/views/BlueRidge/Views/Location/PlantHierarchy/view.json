@@ -4018,6 +4018,9 @@
                     "meta": {
                       "name": "AddLocationButton"
                     },
+                    "position": {
+                      "basis": "35px"
+                    },
                     "props": {
                       "style": {
                         "classes": "btn btn-primary",
@@ -4299,6 +4302,9 @@
                         "meta": {
                           "name": "CancelButton"
                         },
+                        "position": {
+                          "basis": "62px"
+                        },
                         "propConfig": {
                           "position.display": {
                             "binding": {
@@ -4332,6 +4338,9 @@
                         "meta": {
                           "name": "SaveButton"
                         },
+                        "position": {
+                          "basis": "51px"
+                        },
                         "props": {
                           "style": {
                             "classes": "btn btn-primary btn-sm"
@@ -4354,6 +4363,9 @@
                         },
                         "meta": {
                           "name": "DeprecateButton"
+                        },
+                        "position": {
+                          "basis": "81px"
                         },
                         "propConfig": {
                           "position.display": {

@@ -6,9 +6,9 @@
         "$": [
           "ts",
           192,
-          1784293527876
+          1784299564578
         ],
-        "$ts": 1784293527876
+        "$ts": 1784299564578
       },
       "entityTypeCode": null,
       "logSeverityCode": null,
@@ -17,12 +17,396 @@
         "$": [
           "ts",
           192,
-          1784293527876
+          1784299564578
         ],
-        "$ts": 1783688727876
+        "$ts": 1783694764578
       }
     },
     "rows": [
+      {
+        "ChangesSummary": "+ Code, Name",
+        "Description": "DieRank created.",
+        "EntityId": 2,
+        "Id": 17,
+        "LogEntityTypeCode": "DieRank",
+        "LogEntityTypeName": "Die Rank",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1784299564589
+          ],
+          "$ts": 1784299208052
+        },
+        "NewValue": "{\"Code\":\"TEST2\",\"Name\":\"test2\"}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Code, Name",
+        "Description": "DieRank created.",
+        "EntityId": 1,
+        "Id": 16,
+        "LogEntityTypeCode": "DieRank",
+        "LogEntityTypeName": "Die Rank",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1784299564589
+          ],
+          "$ts": 1784299163911
+        },
+        "NewValue": "{\"Code\":\"TEST\",\"Name\":\"test\"}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Steps, Header",
+        "Description": "5G0-SA · Route v2 (Draft) · Created from v1; 1 steps",
+        "EntityId": 12,
+        "Id": 15,
+        "LogEntityTypeCode": "Route",
+        "LogEntityTypeName": "Route",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1784299564589
+          ],
+          "$ts": 1784298832321
+        },
+        "NewValue": "{\"Header\":{\"Id\":12,\"VersionNumber\":2,\"Name\":\"5G0-SA Machining-Out Route v1\",\"EffectiveFrom\":\"2026-07-17T14:33:52.318\",\"Item\":{\"Id\":2,\"PartNumber\":\"5G0-SA\",\"Description\":\"5G0 Front Cover Sub-Assembly\"}},\"Steps\":[{\"Id\":32,\"SequenceNumber\":1,\"IsRequired\":true,\"Description\":\"Machining out\",\"OperationTemplate\":{\"Id\":5,\"Code\":\"MachiningOut\",\"Name\":\"Machining Out\"}}]}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "- Bom, Lines",
+        "Description": "5G0-SA — 5G0 Front Cover Sub-Assembly · BOM v2 (Draft) · Discarded; 1 lines discarded",
+        "EntityId": 7,
+        "Id": 14,
+        "LogEntityTypeCode": "Bom",
+        "LogEntityTypeName": "BOM",
+        "LogEventTypeCode": "Deleted",
+        "LogEventTypeId": 21,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1784299564589
+          ],
+          "$ts": 1784298815213
+        },
+        "NewValue": null,
+        "OldValue": "{\"Bom\":{\"Id\":7,\"VersionNumber\":2,\"EffectiveFrom\":\"2026-07-17T14:33:18.536\",\"ParentItem\":{\"Id\":2,\"PartNumber\":\"5G0-SA\",\"Description\":\"5G0 Front Cover Sub-Assembly\"}},\"Lines\":[{\"Id\":13,\"QtyPer\":1.0000,\"SortOrder\":1,\"ChildItem\":{\"Id\":1,\"PartNumber\":\"5G0-c\",\"Description\":\"5G0 Front Cover Casting\"},\"Uom\":{\"Id\":6,\"Code\":\"PCS\",\"Name\":\"Pieces\"}}]}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "VersionNumber: 1 → 2, -PublishedAt, EffectiveFrom: \"2026-01-15T00:00:00\" → \"2026-07-17T14:33:18.536\" +1 more",
+        "Description": "5G0-SA — 5G0 Front Cover Sub-Assembly · BOM v2 (Draft) · Created from v1; 1 lines",
+        "EntityId": 7,
+        "Id": 13,
+        "LogEntityTypeCode": "Bom",
+        "LogEntityTypeName": "BOM",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1784299564589
+          ],
+          "$ts": 1784298798539
+        },
+        "NewValue": "{\"Id\":7,\"VersionNumber\":2,\"EffectiveFrom\":\"2026-07-17T14:33:18.536\",\"ParentItem\":{\"Id\":2,\"PartNumber\":\"5G0-SA\",\"Description\":\"5G0 Front Cover Sub-Assembly\"},\"Lines\":[{\"Id\":13,\"QtyPer\":1.0000,\"SortOrder\":1,\"ChildItem\":{\"Id\":1,\"PartNumber\":\"5G0-c\",\"Description\":\"5G0 Front Cover Casting\"},\"Uom\":{\"Id\":6,\"Code\":\"PCS\",\"Name\":\"Pieces\"}}]}",
+        "OldValue": "{\"Id\":1,\"VersionNumber\":1,\"EffectiveFrom\":\"2026-01-15T00:00:00\",\"PublishedAt\":\"2026-01-14T00:00:00\",\"ParentItem\":{\"Id\":2,\"PartNumber\":\"5G0-SA\",\"Description\":\"5G0 Front Cover Sub-Assembly\"},\"Lines\":[{\"Id\":1,\"QtyPer\":1.0000,\"SortOrder\":1,\"ChildItem\":{\"Id\":1,\"PartNumber\":\"5G0-c\",\"Description\":\"5G0 Front Cover Casting\"},\"Uom\":{\"Id\":6,\"Code\":\"PCS\",\"Name\":\"Pieces\"}}]}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ QualitySpecId, VersionNumber, EffectiveFrom",
+        "Description": "12231-59B-0000 — 59B Cam Holder IN #1 Casting · Quality Spec \"test\" v1 (Draft) · Created",
+        "EntityId": 1,
+        "Id": 12,
+        "LogEntityTypeCode": "QualitySpecVersion",
+        "LogEntityTypeName": "Quality Spec Version",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1784299564589
+          ],
+          "$ts": 1784297408880
+        },
+        "NewValue": "{\"Id\":1,\"QualitySpecId\":1,\"VersionNumber\":1,\"EffectiveFrom\":\"2026-07-17T14:10:08.877\"}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Description, Name, Item",
+        "Description": "12231-59B-0000 — 59B Cam Holder IN #1 Casting · Quality Spec \"test\" · Created",
+        "EntityId": 1,
+        "Id": 11,
+        "LogEntityTypeCode": "QualitySpec",
+        "LogEntityTypeName": "Quality Spec",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1784299564589
+          ],
+          "$ts": 1784297405288
+        },
+        "NewValue": "{\"Id\":1,\"Name\":\"test\",\"Description\":\"test\",\"Item\":{\"Id\":5,\"PartNumber\":\"12231-59B-0000\",\"Description\":\"59B Cam Holder IN #1 Casting\"}}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "DEMO-DC-6NA — Demo Die - 6NA Fuel Pump Base · Cavities · No-op save; 2 rows",
+        "EntityId": 1,
+        "Id": 10,
+        "LogEntityTypeCode": "ToolCavity",
+        "LogEntityTypeName": "Tool Cavity",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1784299564589
+          ],
+          "$ts": 1784296909095
+        },
+        "NewValue": "[{\"Id\":1,\"CavityNumber\":1,\"Status\":\"Active\",\"Description\":\"\"},{\"Id\":2,\"CavityNumber\":2,\"Status\":\"Active\",\"Description\":\"\"}]",
+        "OldValue": "[{\"Id\":1,\"CavityNumber\":1,\"Status\":\"Active\",\"Description\":\"\"},{\"Id\":2,\"CavityNumber\":2,\"Status\":\"Active\",\"Description\":\"\"}]",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "DEMO-DC-6NA — Demo Die - 6NA Fuel Pump Base · Cavities · No-op save; 2 rows",
+        "EntityId": 1,
+        "Id": 9,
+        "LogEntityTypeCode": "ToolCavity",
+        "LogEntityTypeName": "Tool Cavity",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1784299564589
+          ],
+          "$ts": 1784296790404
+        },
+        "NewValue": "[{\"Id\":1,\"CavityNumber\":1,\"Status\":\"Active\",\"Description\":\"\"},{\"Id\":2,\"CavityNumber\":2,\"Status\":\"Active\",\"Description\":\"\"}]",
+        "OldValue": "[{\"Id\":1,\"CavityNumber\":1,\"Status\":\"Active\",\"Description\":\"\"},{\"Id\":2,\"CavityNumber\":2,\"Status\":\"Active\",\"Description\":\"\"}]",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "DEMO-DC-6NA — Demo Die - 6NA Fuel Pump Base · Cavities · No-op save; 2 rows",
+        "EntityId": 1,
+        "Id": 8,
+        "LogEntityTypeCode": "ToolCavity",
+        "LogEntityTypeName": "Tool Cavity",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1784299564589
+          ],
+          "$ts": 1784296768989
+        },
+        "NewValue": "[{\"Id\":1,\"CavityNumber\":1,\"Status\":\"Active\",\"Description\":\"\"},{\"Id\":2,\"CavityNumber\":2,\"Status\":\"Active\",\"Description\":\"\"}]",
+        "OldValue": "[{\"Id\":1,\"CavityNumber\":1,\"Status\":\"Active\",\"Description\":\"\"},{\"Id\":2,\"CavityNumber\":2,\"Status\":\"Active\",\"Description\":\"\"}]",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "",
+        "Description": "Tool updated.",
+        "EntityId": 1,
+        "Id": 7,
+        "LogEntityTypeCode": "Tool",
+        "LogEntityTypeName": "Tool",
+        "LogEventTypeCode": "Updated",
+        "LogEventTypeId": 2,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1784299564589
+          ],
+          "$ts": 1784296537575
+        },
+        "NewValue": "{\"Id\":1,\"Name\":\"Demo Die - 6NA Fuel Pump Base\"}",
+        "OldValue": "{\"Name\":\"Demo Die - 6NA Fuel Pump Base\"}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ ParentOperationTemplateId",
+        "Description": "OperationTemplate cloned from parent as new version.",
+        "EntityId": 8,
+        "Id": 6,
+        "LogEntityTypeCode": "OperationTemplate",
+        "LogEntityTypeName": "Operation Template",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1784299564589
+          ],
+          "$ts": 1784295895208
+        },
+        "NewValue": "{\"ParentOperationTemplateId\":1}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "- Bom, Lines",
+        "Description": "5G0-SA — 5G0 Front Cover Sub-Assembly · BOM v2 (Draft) · Discarded; 1 lines discarded",
+        "EntityId": 6,
+        "Id": 5,
+        "LogEntityTypeCode": "Bom",
+        "LogEntityTypeName": "BOM",
+        "LogEventTypeCode": "Deleted",
+        "LogEventTypeId": 21,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1784299564589
+          ],
+          "$ts": 1784295456390
+        },
+        "NewValue": null,
+        "OldValue": "{\"Bom\":{\"Id\":6,\"VersionNumber\":2,\"EffectiveFrom\":\"2026-07-17T13:36:05.547\",\"ParentItem\":{\"Id\":2,\"PartNumber\":\"5G0-SA\",\"Description\":\"5G0 Front Cover Sub-Assembly\"}},\"Lines\":[{\"Id\":12,\"QtyPer\":1.0000,\"SortOrder\":1,\"ChildItem\":{\"Id\":1,\"PartNumber\":\"5G0-c\",\"Description\":\"5G0 Front Cover Casting\"},\"Uom\":{\"Id\":6,\"Code\":\"PCS\",\"Name\":\"Pieces\"}}]}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "VersionNumber: 1 → 2, -PublishedAt, EffectiveFrom: \"2026-01-15T00:00:00\" → \"2026-07-17T13:36:05.547\" +1 more",
+        "Description": "5G0-SA — 5G0 Front Cover Sub-Assembly · BOM v2 (Draft) · Created from v1; 1 lines",
+        "EntityId": 6,
+        "Id": 4,
+        "LogEntityTypeCode": "Bom",
+        "LogEntityTypeName": "BOM",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1784299564589
+          ],
+          "$ts": 1784295365551
+        },
+        "NewValue": "{\"Id\":6,\"VersionNumber\":2,\"EffectiveFrom\":\"2026-07-17T13:36:05.547\",\"ParentItem\":{\"Id\":2,\"PartNumber\":\"5G0-SA\",\"Description\":\"5G0 Front Cover Sub-Assembly\"},\"Lines\":[{\"Id\":12,\"QtyPer\":1.0000,\"SortOrder\":1,\"ChildItem\":{\"Id\":1,\"PartNumber\":\"5G0-c\",\"Description\":\"5G0 Front Cover Casting\"},\"Uom\":{\"Id\":6,\"Code\":\"PCS\",\"Name\":\"Pieces\"}}]}",
+        "OldValue": "{\"Id\":1,\"VersionNumber\":1,\"EffectiveFrom\":\"2026-01-15T00:00:00\",\"PublishedAt\":\"2026-01-14T00:00:00\",\"ParentItem\":{\"Id\":2,\"PartNumber\":\"5G0-SA\",\"Description\":\"5G0 Front Cover Sub-Assembly\"},\"Lines\":[{\"Id\":1,\"QtyPer\":1.0000,\"SortOrder\":1,\"ChildItem\":{\"Id\":1,\"PartNumber\":\"5G0-c\",\"Description\":\"5G0 Front Cover Casting\"},\"Uom\":{\"Id\":6,\"Code\":\"PCS\",\"Name\":\"Pieces\"}}]}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "- Steps, Header",
+        "Description": "5G0-SA · Route v2 (Draft) · Discarded; 1 steps discarded",
+        "EntityId": 11,
+        "Id": 3,
+        "LogEntityTypeCode": "Route",
+        "LogEntityTypeName": "Route",
+        "LogEventTypeCode": "Deleted",
+        "LogEventTypeId": 21,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1784299564589
+          ],
+          "$ts": 1784295290166
+        },
+        "NewValue": null,
+        "OldValue": "{\"Header\":{\"Id\":11,\"ItemId\":2,\"VersionNumber\":2,\"Name\":\"5G0-SA Machining-Out Route v1\",\"EffectiveFrom\":\"2026-07-17T13:33:15.166\",\"CreatedByUserId\":2,\"CreatedAt\":\"2026-07-17T13:33:15.166\",\"Item\":{\"Id\":2,\"PartNumber\":\"5G0-SA\",\"Description\":\"5G0 Front Cover Sub-Assembly\"}},\"Steps\":[{\"Id\":31,\"SequenceNumber\":1,\"IsRequired\":true,\"Description\":\"Machining out\",\"OperationTemplate\":{\"Id\":5,\"Code\":\"MachiningOut\",\"Name\":\"Machining Out\"}}]}",
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
+      {
+        "ChangesSummary": "+ Steps, Header",
+        "Description": "5G0-SA · Route v2 (Draft) · Created from v1; 1 steps",
+        "EntityId": 11,
+        "Id": 2,
+        "LogEntityTypeCode": "Route",
+        "LogEntityTypeName": "Route",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "LogSeverityCode": "Info",
+        "LogSeverityId": 1,
+        "LoggedAt": {
+          "$": [
+            "ts",
+            192,
+            1784299564589
+          ],
+          "$ts": 1784295195169
+        },
+        "NewValue": "{\"Header\":{\"Id\":11,\"VersionNumber\":2,\"Name\":\"5G0-SA Machining-Out Route v1\",\"EffectiveFrom\":\"2026-07-17T13:33:15.166\",\"Item\":{\"Id\":2,\"PartNumber\":\"5G0-SA\",\"Description\":\"5G0 Front Cover Sub-Assembly\"}},\"Steps\":[{\"Id\":31,\"SequenceNumber\":1,\"IsRequired\":true,\"Description\":\"Machining out\",\"OperationTemplate\":{\"Id\":5,\"Code\":\"MachiningOut\",\"Name\":\"Machining Out\"}}]}",
+        "OldValue": null,
+        "UserDisplayName": "Dev User",
+        "UserId": 2
+      },
       {
         "ChangesSummary": "",
         "Description": "DEMO-DC-6NA — Demo Die - 6NA Fuel Pump Base · Cavities · No-op save; 2 rows",
@@ -38,7 +422,7 @@
           "$": [
             "ts",
             192,
-            1784293527887
+            1784299564589
           ],
           "$ts": 1784293408275
         },
@@ -48,7 +432,7 @@
         "UserId": 2
       }
     ],
-    "totalCount": 1
+    "totalCount": 17
   },
   "params": {},
   "propConfig": {
@@ -405,7 +789,7 @@
                           "name": "ResetButton"
                         },
                         "position": {
-                          "basis": "0",
+                          "basis": "19px",
                           "grow": 1
                         },
                         "props": {
@@ -432,7 +816,7 @@
                           "name": "ApplyButton"
                         },
                         "position": {
-                          "basis": "0",
+                          "basis": "19px",
                           "grow": 1
                         },
                         "props": {
@@ -454,6 +838,7 @@
                       "alignItems": "center",
                       "style": {
                         "gap": "8px",
+                        "overflow": "visible",
                         "padding": "12px 0 0 0"
                       }
                     },

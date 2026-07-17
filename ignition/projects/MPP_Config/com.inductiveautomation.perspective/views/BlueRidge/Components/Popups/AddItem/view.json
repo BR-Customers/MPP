@@ -964,6 +964,9 @@
             "meta": {
               "name": "BtnCancel"
             },
+            "position": {
+              "basis": "73px"
+            },
             "props": {
               "style": {
                 "classes": "btn"
@@ -986,6 +989,9 @@
             },
             "meta": {
               "name": "BtnCreate"
+            },
+            "position": {
+              "basis": "103px"
             },
             "props": {
               "style": {

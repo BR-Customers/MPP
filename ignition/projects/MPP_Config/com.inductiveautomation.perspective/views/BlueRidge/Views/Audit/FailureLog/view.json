@@ -6,9 +6,9 @@
         "$": [
           "ts",
           192,
-          1784293568750
+          1784299619182
         ],
-        "$ts": 1784293568750
+        "$ts": 1784299619182
       },
       "entityTypeCode": null,
       "procedureName": null,
@@ -17,15 +17,76 @@
         "$": [
           "ts",
           192,
-          1784293568750
+          1784299619182
         ],
-        "$ts": 1783688768750
+        "$ts": 1783694819182
       }
     },
-    "rows": [],
-    "topProcs": [],
-    "topReasons": [],
-    "totalCount": 0
+    "rows": [
+      {
+        "AppUserId": 2,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1784299619191
+          ],
+          "$ts": 1784297395358
+        },
+        "AttemptedParameters": "{\"QualitySpecId\":8}",
+        "EntityId": null,
+        "FailureReason": "Quality specification not found.",
+        "Id": 2,
+        "LogEntityTypeCode": "QualitySpecVersion",
+        "LogEntityTypeName": "Quality Spec Version",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Quality.QualitySpecVersion_Create",
+        "UserDisplayName": "Dev User"
+      },
+      {
+        "AppUserId": 2,
+        "AttemptedAt": {
+          "$": [
+            "ts",
+            192,
+            1784299619191
+          ],
+          "$ts": 1784295269084
+        },
+        "AttemptedParameters": "{\"ParentRouteTemplateId\":2}",
+        "EntityId": 2,
+        "FailureReason": "A Draft for this Item already exists. Publish or discard it before creating another.",
+        "Id": 1,
+        "LogEntityTypeCode": "Route",
+        "LogEntityTypeName": "Route",
+        "LogEventTypeCode": "Created",
+        "LogEventTypeId": 1,
+        "ProcedureName": "Parts.RouteTemplate_CreateNewVersion",
+        "UserDisplayName": "Dev User"
+      }
+    ],
+    "topProcs": [
+      {
+        "FailureCount": 1,
+        "ProcedureName": "Quality.QualitySpecVersion_Create"
+      },
+      {
+        "FailureCount": 1,
+        "ProcedureName": "Parts.RouteTemplate_CreateNewVersion"
+      }
+    ],
+    "topReasons": [
+      {
+        "FailureCount": 1,
+        "FailureReason": "Quality specification not found."
+      },
+      {
+        "FailureCount": 1,
+        "FailureReason": "A Draft for this Item already exists. Publish or discard it before creating another."
+      }
+    ],
+    "totalCount": 2
   },
   "params": {},
   "propConfig": {
@@ -382,7 +443,7 @@
                           "name": "ResetButton"
                         },
                         "position": {
-                          "basis": "0",
+                          "basis": "19px",
                           "grow": 1
                         },
                         "props": {
@@ -409,7 +470,7 @@
                           "name": "ApplyButton"
                         },
                         "position": {
-                          "basis": "0",
+                          "basis": "19px",
                           "grow": 1
                         },
                         "props": {
@@ -431,6 +492,7 @@
                       "alignItems": "center",
                       "style": {
                         "gap": "8px",
+                        "overflow": "visible",
                         "padding": "12px 0 0 0"
                       }
                     },

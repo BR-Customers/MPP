@@ -343,6 +343,7 @@
                   "name": "CancelButton"
                 },
                 "position": {
+                  "basis": "62px",
                   "shrink": 0
                 },
                 "props": {
@@ -369,13 +370,14 @@
                   "name": "SaveButton"
                 },
                 "position": {
+                  "basis": "91px",
                   "shrink": 0
                 },
                 "props": {
                   "style": {
                     "classes": "btn btn-primary btn-sm"
                   },
-                  "text": "Save"
+                  "text": "Create Rank"
                 },
                 "type": "ia.input.button"
               }
@@ -386,7 +388,8 @@
             "props": {
               "alignItems": "center",
               "style": {
-                "gap": "8px"
+                "gap": "8px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"

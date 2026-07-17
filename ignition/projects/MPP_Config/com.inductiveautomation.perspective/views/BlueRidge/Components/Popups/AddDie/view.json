@@ -386,6 +386,7 @@
               "name": "CancelButton"
             },
             "position": {
+              "basis": "62px",
               "shrink": 0
             },
             "props": {
@@ -412,6 +413,7 @@
               "name": "CreateButton"
             },
             "position": {
+              "basis": "82px",
               "shrink": 0
             },
             "props": {

@@ -187,7 +187,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "4px"
+                "gap": "4px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -251,7 +252,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "4px"
+                "gap": "4px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -302,7 +304,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "4px"
+                "gap": "4px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -353,7 +356,8 @@
             "props": {
               "direction": "column",
               "style": {
-                "gap": "4px"
+                "gap": "4px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -393,6 +397,7 @@
               "name": "CancelButton"
             },
             "position": {
+              "basis": "62px",
               "shrink": 0
             },
             "props": {
@@ -419,6 +424,7 @@
               "name": "CreateButton"
             },
             "position": {
+              "basis": "61px",
               "shrink": 0
             },
             "props": {

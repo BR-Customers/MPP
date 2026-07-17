@@ -11,9 +11,9 @@
           "$": [
             "ts",
             0,
-            1782846778825
+            1784297843677
           ],
-          "$ts": 1782847920321
+          "$ts": 1784238086444
         },
         "DeprecatedAt": null,
         "DisplayName": "Dev User",
@@ -22,30 +22,14 @@
         "Initials": "DEV"
       },
       {
-        "AdAccount": null,
-        "CreatedAt": {
-          "$": [
-            "ts",
-            0,
-            1782846778825
-          ],
-          "$ts": 1782848342895
-        },
-        "DeprecatedAt": null,
-        "DisplayName": "NOAH NESBIT",
-        "Id": 3,
-        "IgnitionRole": null,
-        "Initials": "NEN"
-      },
-      {
         "AdAccount": "system.bootstrap",
         "CreatedAt": {
           "$": [
             "ts",
             0,
-            1782846778825
+            1784297843677
           ],
-          "$ts": 1782847840835
+          "$ts": 1784238046314
         },
         "DeprecatedAt": null,
         "DisplayName": "System Bootstrap",
@@ -184,6 +168,9 @@
             },
             "meta": {
               "name": "AddCodeButton"
+            },
+            "position": {
+              "basis": "124px"
             },
             "props": {
               "style": {

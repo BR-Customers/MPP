@@ -161,6 +161,9 @@
             "meta": {
               "name": "AddCodeButton"
             },
+            "position": {
+              "basis": "100px"
+            },
             "props": {
               "style": {
                 "classes": "btn btn-primary",

@@ -205,6 +205,7 @@
               "name": "BtnNewVersion"
             },
             "position": {
+              "basis": "102px",
               "shrink": 0
             },
             "propConfig": {
@@ -241,6 +242,7 @@
               "name": "BtnDeprecate"
             },
             "position": {
+              "basis": "81px",
               "shrink": 0
             },
             "propConfig": {
@@ -388,6 +390,7 @@
               "name": "BtnDiscardDraft"
             },
             "position": {
+              "basis": "97px",
               "shrink": 0
             },
             "props": {
@@ -414,6 +417,7 @@
               "name": "BtnSaveDraft"
             },
             "position": {
+              "basis": "81px",
               "shrink": 0
             },
             "propConfig": {
@@ -450,6 +454,7 @@
               "name": "BtnPublish"
             },
             "position": {
+              "basis": "66px",
               "shrink": 0
             },
             "props": {
@@ -481,7 +486,7 @@
           "alignItems": "center",
           "style": {
             "gap": "8px",
-            "overflow": "hidden"
+            "overflow": "visible"
           }
         },
         "type": "ia.container.flex"

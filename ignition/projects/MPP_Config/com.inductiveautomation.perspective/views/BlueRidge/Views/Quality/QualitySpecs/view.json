@@ -49,7 +49,20 @@
     },
     "state": {
       "editDraft": {
-        "attributes": [],
+        "attributes": [
+          {
+            "attributeName": "",
+            "dataType": "Numeric",
+            "id": null,
+            "isRequired": true,
+            "lowerLimit": null,
+            "sortOrder": null,
+            "targetValue": null,
+            "uomCode": "",
+            "uomId": null,
+            "upperLimit": null
+          }
+        ],
         "deprecatedAt": null,
         "effectiveFrom": null,
         "effectiveFromDisplay": "",
@@ -333,6 +346,9 @@
             },
             "meta": {
               "name": "NewSpecButton"
+            },
+            "position": {
+              "basis": "101px"
             },
             "props": {
               "style": {
@@ -642,6 +658,9 @@
                         "meta": {
                           "name": "SaveHeaderButton"
                         },
+                        "position": {
+                          "basis": "79px"
+                        },
                         "propConfig": {
                           "position.display": {
                             "binding": {
@@ -675,6 +694,9 @@
                         "meta": {
                           "name": "DeprecateSpecButton"
                         },
+                        "position": {
+                          "basis": "109px"
+                        },
                         "propConfig": {
                           "position.display": {
                             "binding": {
@@ -700,7 +722,8 @@
                     "props": {
                       "alignItems": "center",
                       "style": {
-                        "gap": "8px"
+                        "gap": "8px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -1143,6 +1166,10 @@
                         "meta": {
                           "name": "NewVersionButton"
                         },
+                        "position": {
+                          "basis": "102px",
+                          "display": false
+                        },
                         "propConfig": {
                           "meta.visible": {
                             "binding": {
@@ -1183,6 +1210,9 @@
                         },
                         "meta": {
                           "name": "SaveDraftButton"
+                        },
+                        "position": {
+                          "basis": "81px"
                         },
                         "propConfig": {
                           "position.display": {
@@ -1225,6 +1255,9 @@
                         "meta": {
                           "name": "PublishButton"
                         },
+                        "position": {
+                          "basis": "66px"
+                        },
                         "propConfig": {
                           "position.display": {
                             "binding": {
@@ -1258,6 +1291,9 @@
                         "meta": {
                           "name": "DiscardDraftButton"
                         },
+                        "position": {
+                          "basis": "97px"
+                        },
                         "propConfig": {
                           "position.display": {
                             "binding": {
@@ -1290,6 +1326,9 @@
                         },
                         "meta": {
                           "name": "DeprecateVersionButton"
+                        },
+                        "position": {
+                          "basis": "124px"
                         },
                         "propConfig": {
                           "position.display": {
@@ -1584,6 +1623,7 @@
                               "name": "AddAttributeButton"
                             },
                             "position": {
+                              "basis": "108px",
                               "shrink": 0
                             },
                             "props": {
@@ -1597,6 +1637,9 @@
                         ],
                         "meta": {
                           "name": "DraftFooter"
+                        },
+                        "position": {
+                          "basis": "44px"
                         },
                         "propConfig": {
                           "position.display": {
@@ -1835,7 +1878,6 @@
                   "contentStyle": {
                     "classes": "tab-content-fill"
                   },
-                  "currentTabIndex": 1,
                   "menuStyle": {
                     "classes": "tab-strip"
                   },

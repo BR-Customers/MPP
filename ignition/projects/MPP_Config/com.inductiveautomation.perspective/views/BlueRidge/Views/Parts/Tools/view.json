@@ -1,7 +1,7 @@
 {
   "custom": {
-    "activeTab": "attributes",
-    "activeTabIndex": 0,
+    "activeTab": "assignments",
+    "activeTabIndex": 2,
     "editDraft": {
       "meta": {
         "Code": "jkhbj",
@@ -299,6 +299,9 @@
             "meta": {
               "name": "BtnDieRanks"
             },
+            "position": {
+              "basis": "92px"
+            },
             "props": {
               "style": {
                 "classes": "btn"
@@ -321,6 +324,9 @@
             },
             "meta": {
               "name": "BtnAddDie"
+            },
+            "position": {
+              "basis": "90px"
             },
             "props": {
               "style": {
@@ -634,6 +640,9 @@
                         "meta": {
                           "name": "BtnSave"
                         },
+                        "position": {
+                          "basis": "51px"
+                        },
                         "propConfig": {
                           "position.display": {
                             "binding": {
@@ -667,6 +676,9 @@
                         "meta": {
                           "name": "BtnRetire"
                         },
+                        "position": {
+                          "basis": "58px"
+                        },
                         "propConfig": {
                           "position.display": {
                             "binding": {
@@ -692,7 +704,8 @@
                     "props": {
                       "alignItems": "center",
                       "style": {
-                        "gap": "8px"
+                        "gap": "8px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"

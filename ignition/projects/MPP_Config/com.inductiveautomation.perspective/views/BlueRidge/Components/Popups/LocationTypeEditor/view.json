@@ -290,6 +290,7 @@
                       }
                     },
                     "position": {
+                      "basis": "57px",
                       "shrink": 0
                     },
                     "props": {
@@ -303,6 +304,9 @@
                 ],
                 "meta": {
                   "name": "DefinitionsRow"
+                },
+                "position": {
+                  "basis": ""
                 },
                 "props": {
                   "alignItems": "center",
@@ -473,6 +477,7 @@
                   "name": "SaveButton"
                 },
                 "position": {
+                  "basis": "51px",
                   "shrink": 0
                 },
                 "props": {
@@ -499,6 +504,7 @@
                   "name": "DeprecateButton"
                 },
                 "position": {
+                  "basis": "81px",
                   "shrink": 0
                 },
                 "propConfig": {
@@ -526,7 +532,8 @@
             "props": {
               "alignItems": "center",
               "style": {
-                "gap": "12px"
+                "gap": "12px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -778,6 +785,7 @@
                           "name": "PickButton"
                         },
                         "position": {
+                          "basis": "57px",
                           "shrink": 0
                         },
                         "props": {
@@ -796,7 +804,8 @@
                       "alignItems": "center",
                       "style": {
                         "gap": "8px",
-                        "minHeight": "32px"
+                        "minHeight": "32px",
+                        "overflow": "visible"
                       }
                     },
                     "type": "ia.container.flex"
@@ -813,7 +822,8 @@
                   "direction": "column",
                   "style": {
                     "gap": "4px",
-                    "minWidth": "0"
+                    "minWidth": "0",
+                    "overflow": "visible"
                   }
                 },
                 "type": "ia.container.flex"
@@ -824,7 +834,8 @@
             },
             "props": {
               "style": {
-                "gap": "12px"
+                "gap": "12px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -989,6 +1000,7 @@
                   "name": "AddAttrButton"
                 },
                 "position": {
+                  "basis": "108px",
                   "shrink": 0
                 },
                 "props": {
@@ -1010,7 +1022,8 @@
             "props": {
               "alignItems": "center",
               "style": {
-                "gap": "12px"
+                "gap": "12px",
+                "overflow": "visible"
               }
             },
             "type": "ia.container.flex"
@@ -1219,6 +1232,7 @@
               "name": "CloseButton"
             },
             "position": {
+              "basis": "65px",
               "shrink": 0
             },
             "props": {
