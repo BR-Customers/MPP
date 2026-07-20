@@ -1298,9 +1298,7 @@
         {
           "name": "addMethod",
           "params": [
-            {
-              "name": "method"
-            }
+            "method"
           ],
           "script": "\tdraft = system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state.editDraft)) or {}\n\tblock = draft.get(method) or {}\n\tblock[\"Active\"] = True\n\tif block.get(\"ClosureMethod\") is None:\n\t\tblock[\"ClosureMethod\"] = method\n\tif block.get(\"ItemId\") is None:\n\t\tblock[\"ItemId\"] = self.view.params.value or 0\n\tdraft[method] = block\n\tself.view.custom.state.editDraft = draft"
         }
