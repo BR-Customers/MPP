@@ -140,16 +140,53 @@ BEGIN
             RETURN;
         END
 
+        -- Die-cast-origin determination (needed by the LTT rule below AND the
+        -- Tool/Cavity rule later): Manufactured origin AND an active ToolAssignment
+        -- on the cell.
+        DECLARE @CellHasActiveTool BIT =
+            CASE WHEN @LotOriginTypeId = @ManufacturedOriginId
+                   AND EXISTS (SELECT 1 FROM Tools.ToolAssignment
+                               WHERE CellLocationId = @CurrentLocationId AND ReleasedAt IS NULL)
+                 THEN 1 ELSE 0 END;
+
         -- ---- 2b. D4: @LotName (caller-supplied identity) validation ----
         -- NULL = mint server-side (the inline IdentifierSequence block below, today's
         -- behavior). Supplied = use it verbatim; do NOT advance the 'Lot' counter (the
         -- pre-printed LTT carries its own identity; burning a counter would desync).
+        --
+        -- Die-cast births carry the operator-scanned external LTT (bulk pre-printed by
+        -- the external scheduler). It is REQUIRED and format-validated for die-cast
+        -- origin; other origins keep the optional/unvalidated behavior.
+        IF @CellHasActiveTool = 1 AND @LotName IS NULL
+        BEGIN
+            SET @Message = N'Die-cast LOT requires a scanned LTT.';
+            EXEC Audit.Audit_LogFailure
+                @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
+                @EntityId = NULL, @LogEventTypeCode = N'LotCreated',
+                @FailureReason = @Message, @ProcedureName = @ProcName,
+                @AttemptedParameters = @Params;
+            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @MintedLotName AS MintedLotName;
+            RETURN;
+        END
+
         IF @LotName IS NOT NULL
         BEGIN
             SET @LotName = LTRIM(RTRIM(@LotName));
             IF @LotName = N''
             BEGIN
                 SET @Message = N'LotName cannot be blank.';
+                EXEC Audit.Audit_LogFailure
+                    @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
+                    @EntityId = NULL, @LogEventTypeCode = N'LotCreated',
+                    @FailureReason = @Message, @ProcedureName = @ProcName,
+                    @AttemptedParameters = @Params;
+                SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @MintedLotName AS MintedLotName;
+                RETURN;
+            END
+            -- Die-cast LTT must match the external format (9 numeric digits; checksum).
+            IF @CellHasActiveTool = 1 AND Lots.ufn_IsValidExternalLtt(@LotName) = 0
+            BEGIN
+                SET @Message = N'LTT must be 9 digits.';
                 EXEC Audit.Audit_LogFailure
                     @AppUserId = @AppUserId, @LogEntityTypeCode = N'Lot',
                     @EntityId = NULL, @LogEventTypeCode = N'LotCreated',
@@ -223,12 +260,8 @@ BEGIN
         -- ---- 5. Die-cast Tool/Cavity (FDS-05-034) ----
         -- Die-cast-origin = Manufactured origin AND an active ToolAssignment on
         -- the Cell. In that case Tool + Cavity are required and validated.
-        DECLARE @CellHasActiveTool BIT =
-            CASE WHEN @LotOriginTypeId = @ManufacturedOriginId
-                   AND EXISTS (SELECT 1 FROM Tools.ToolAssignment
-                               WHERE CellLocationId = @CurrentLocationId AND ReleasedAt IS NULL)
-                 THEN 1 ELSE 0 END;
-
+        -- (@CellHasActiveTool is declared earlier, right after FK resolution, so
+        -- the LTT rule above can also use it.)
         IF @CellHasActiveTool = 1
         BEGIN
             -- Tool is always required for a die-cast LOT (FDS-05-034).

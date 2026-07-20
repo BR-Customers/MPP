@@ -19,11 +19,11 @@ EXEC test.BeginTestFile @FileName = N'0023_PlantFloor_DieCast_Deltas/030_Lot_Cre
 GO
 
 -- ---- teardown prior fixtures (FK-safe: LOTs before Tool/Cavity) ----
-DELETE FROM Lots.LotEventLog       WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'TEST-LTT%');
-DELETE FROM Lots.LotMovement       WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'TEST-LTT%');
-DELETE FROM Lots.LotStatusHistory  WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'TEST-LTT%');
-DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'TEST-LTT%');
-DELETE FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'TEST-LTT%';
+DELETE FROM Lots.LotEventLog       WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'TEST-LTT%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.LotMovement       WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'TEST-LTT%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.LotStatusHistory  WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'TEST-LTT%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'TEST-LTT%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'TEST-LTT%' OR LotName LIKE N'90000%';
 DELETE FROM Tools.ToolAssignment WHERE ToolId IN (SELECT Id FROM Tools.Tool WHERE Code = N'ZZ-DC-TEST');
 DELETE FROM Tools.ToolCavity     WHERE ToolId IN (SELECT Id FROM Tools.Tool WHERE Code = N'ZZ-DC-TEST');
 DELETE FROM Tools.Tool WHERE Code = N'ZZ-DC-TEST';
@@ -132,7 +132,7 @@ DECLARE @OriginMfg BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Ma
 DECLARE @S5 BIT, @New5 BIGINT;
 CREATE TABLE #C5 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
 INSERT INTO #C5 EXEC Lots.Lot_Create @ItemId=@ItemId, @LotOriginTypeId=@OriginMfg, @CurrentLocationId=@CellId,
-    @PieceCount=5, @AppUserId=1, @ToolId=@ToolId, @ToolCavityId=NULL, @CavityNote=N'C3';
+    @PieceCount=5, @AppUserId=1, @ToolId=@ToolId, @ToolCavityId=NULL, @CavityNote=N'C3', @LotName=N'900000005';
 SELECT @S5 = Status, @New5 = NewId FROM #C5; DROP TABLE #C5;
 DECLARE @S5Str NVARCHAR(10) = CAST(@S5 AS NVARCHAR(10));
 EXEC test.Assert_IsEqual @TestName = N'[LC][D2] manual cavity accepted', @Expected = N'1', @Actual = @S5Str;
@@ -153,7 +153,7 @@ DECLARE @OriginMfg BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Ma
 DECLARE @S6 BIT;
 CREATE TABLE #C6 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
 INSERT INTO #C6 EXEC Lots.Lot_Create @ItemId=@ItemId, @LotOriginTypeId=@OriginMfg, @CurrentLocationId=@CellId,
-    @PieceCount=5, @AppUserId=1, @ToolId=@ToolId, @ToolCavityId=NULL, @CavityNote=NULL;
+    @PieceCount=5, @AppUserId=1, @ToolId=@ToolId, @ToolCavityId=NULL, @CavityNote=NULL, @LotName=N'900000006';
 SELECT @S6 = Status FROM #C6; DROP TABLE #C6;
 DECLARE @S6Str NVARCHAR(10) = CAST(@S6 AS NVARCHAR(10));
 EXEC test.Assert_IsEqual @TestName = N'[LC][D2] no cavity + no note rejected', @Expected = N'0', @Actual = @S6Str;
@@ -173,7 +173,7 @@ DECLARE @OriginMfg BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Ma
 DECLARE @S7 BIT, @New7 BIGINT;
 CREATE TABLE #C7 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
 INSERT INTO #C7 EXEC Lots.Lot_Create @ItemId=@ItemId, @LotOriginTypeId=@OriginMfg, @CurrentLocationId=@CellId,
-    @PieceCount=5, @AppUserId=1, @ToolId=@ToolId, @ToolCavityId=@CavId;
+    @PieceCount=5, @AppUserId=1, @ToolId=@ToolId, @ToolCavityId=@CavId, @LotName=N'900000007';
 SELECT @S7 = Status, @New7 = NewId FROM #C7; DROP TABLE #C7;
 DECLARE @S7Str NVARCHAR(10) = CAST(@S7 AS NVARCHAR(10));
 EXEC test.Assert_IsEqual @TestName = N'[LC][D2] validated cavity path still works', @Expected = N'1', @Actual = @S7Str;
@@ -181,12 +181,78 @@ DECLARE @CavNull NVARCHAR(10) = CASE WHEN (SELECT CavityNumber FROM Lots.Lot WHE
 EXEC test.Assert_IsEqual @TestName = N'[LC][D2] validated path leaves CavityNumber NULL', @Expected = N'1', @Actual = @CavNull;
 GO
 
+-- =============================================
+-- Test 8: die-cast (Manufactured + active tool) + valid 9-digit LTT
+--         -> Status=1, LotName stored verbatim, sequence NOT advanced
+-- =============================================
+DECLARE @CellId BIGINT = (SELECT TOP 1 CellLocationId FROM Tools.ToolAssignment ta
+    INNER JOIN Tools.Tool t ON t.Id = ta.ToolId WHERE t.Code = N'ZZ-DC-TEST' AND ta.ReleasedAt IS NULL);
+DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'ZZ-DC-TEST');
+DECLARE @CavId BIGINT = (SELECT TOP 1 tc.Id FROM Tools.ToolCavity tc
+    INNER JOIN Tools.ToolCavityStatusCode sc ON sc.Id = tc.StatusCodeId
+    WHERE tc.ToolId = @ToolId AND sc.Code = N'Active' ORDER BY tc.Id);
+DECLARE @ItemId BIGINT = (SELECT TOP 1 ItemId FROM Parts.v_EffectiveItemLocation WHERE LocationId = @CellId ORDER BY ItemId);
+DECLARE @OriginMfg BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
+DECLARE @SeqBefore BIGINT = (SELECT LastValue FROM Lots.IdentifierSequence WHERE Code = N'Lot');
+DECLARE @S8 BIT, @Minted8 NVARCHAR(50);
+CREATE TABLE #C8 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
+INSERT INTO #C8 EXEC Lots.Lot_Create @ItemId=@ItemId, @LotOriginTypeId=@OriginMfg, @CurrentLocationId=@CellId,
+    @PieceCount=5, @AppUserId=1, @ToolId=@ToolId, @ToolCavityId=@CavId, @LotName=N'900000008';
+SELECT @S8 = Status, @Minted8 = MintedLotName FROM #C8; DROP TABLE #C8;
+DECLARE @SeqAfter BIGINT = (SELECT LastValue FROM Lots.IdentifierSequence WHERE Code = N'Lot');
+DECLARE @S8Str NVARCHAR(10) = CAST(@S8 AS NVARCHAR(10));
+DECLARE @SeqDelta8Str NVARCHAR(10) = CAST(@SeqAfter - @SeqBefore AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[LC][LTT] die-cast + valid LTT accepted', @Expected = N'1', @Actual = @S8Str;
+EXEC test.Assert_IsEqual @TestName = N'[LC][LTT] LotName stored verbatim', @Expected = N'900000008', @Actual = @Minted8;
+EXEC test.Assert_IsEqual @TestName = N'[LC][LTT] valid LTT does NOT advance sequence', @Expected = N'0', @Actual = @SeqDelta8Str;
+GO
+
+-- =============================================
+-- Test 9: die-cast + malformed LTT (5 digits) -> Status=0
+-- =============================================
+DECLARE @CellId BIGINT = (SELECT TOP 1 CellLocationId FROM Tools.ToolAssignment ta
+    INNER JOIN Tools.Tool t ON t.Id = ta.ToolId WHERE t.Code = N'ZZ-DC-TEST' AND ta.ReleasedAt IS NULL);
+DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'ZZ-DC-TEST');
+DECLARE @CavId BIGINT = (SELECT TOP 1 tc.Id FROM Tools.ToolCavity tc
+    INNER JOIN Tools.ToolCavityStatusCode sc ON sc.Id = tc.StatusCodeId
+    WHERE tc.ToolId = @ToolId AND sc.Code = N'Active' ORDER BY tc.Id);
+DECLARE @ItemId BIGINT = (SELECT TOP 1 ItemId FROM Parts.v_EffectiveItemLocation WHERE LocationId = @CellId ORDER BY ItemId);
+DECLARE @OriginMfg BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
+DECLARE @S9 BIT;
+CREATE TABLE #C9 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
+INSERT INTO #C9 EXEC Lots.Lot_Create @ItemId=@ItemId, @LotOriginTypeId=@OriginMfg, @CurrentLocationId=@CellId,
+    @PieceCount=5, @AppUserId=1, @ToolId=@ToolId, @ToolCavityId=@CavId, @LotName=N'12345';
+SELECT @S9 = Status FROM #C9; DROP TABLE #C9;
+DECLARE @S9Str NVARCHAR(10) = CAST(@S9 AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[LC][LTT] die-cast + malformed LTT rejected', @Expected = N'0', @Actual = @S9Str;
+GO
+
+-- =============================================
+-- Test 10: die-cast + NULL LTT -> Status=0 (die-cast requires a scanned LTT)
+-- =============================================
+DECLARE @CellId BIGINT = (SELECT TOP 1 CellLocationId FROM Tools.ToolAssignment ta
+    INNER JOIN Tools.Tool t ON t.Id = ta.ToolId WHERE t.Code = N'ZZ-DC-TEST' AND ta.ReleasedAt IS NULL);
+DECLARE @ToolId BIGINT = (SELECT Id FROM Tools.Tool WHERE Code = N'ZZ-DC-TEST');
+DECLARE @CavId BIGINT = (SELECT TOP 1 tc.Id FROM Tools.ToolCavity tc
+    INNER JOIN Tools.ToolCavityStatusCode sc ON sc.Id = tc.StatusCodeId
+    WHERE tc.ToolId = @ToolId AND sc.Code = N'Active' ORDER BY tc.Id);
+DECLARE @ItemId BIGINT = (SELECT TOP 1 ItemId FROM Parts.v_EffectiveItemLocation WHERE LocationId = @CellId ORDER BY ItemId);
+DECLARE @OriginMfg BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
+DECLARE @S10 BIT;
+CREATE TABLE #C10 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
+INSERT INTO #C10 EXEC Lots.Lot_Create @ItemId=@ItemId, @LotOriginTypeId=@OriginMfg, @CurrentLocationId=@CellId,
+    @PieceCount=5, @AppUserId=1, @ToolId=@ToolId, @ToolCavityId=@CavId;
+SELECT @S10 = Status FROM #C10; DROP TABLE #C10;
+DECLARE @S10Str NVARCHAR(10) = CAST(@S10 AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[LC][LTT] die-cast + NULL LTT rejected', @Expected = N'0', @Actual = @S10Str;
+GO
+
 -- ---- teardown ----
-DELETE FROM Lots.LotEventLog       WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'TEST-LTT%');
-DELETE FROM Lots.LotMovement       WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'TEST-LTT%');
-DELETE FROM Lots.LotStatusHistory  WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'TEST-LTT%');
-DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'TEST-LTT%');
-DELETE FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'TEST-LTT%';
+DELETE FROM Lots.LotEventLog       WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'TEST-LTT%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.LotMovement       WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'TEST-LTT%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.LotStatusHistory  WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'TEST-LTT%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId IN (SELECT Id FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'TEST-LTT%' OR LotName LIKE N'90000%');
+DELETE FROM Lots.Lot WHERE LotName LIKE N'MESL%' OR LotName LIKE N'TEST-LTT%' OR LotName LIKE N'90000%';
 DELETE FROM Tools.ToolAssignment WHERE ToolId IN (SELECT Id FROM Tools.Tool WHERE Code = N'ZZ-DC-TEST');
 DELETE FROM Tools.ToolCavity     WHERE ToolId IN (SELECT Id FROM Tools.Tool WHERE Code = N'ZZ-DC-TEST');
 DELETE FROM Tools.Tool WHERE Code = N'ZZ-DC-TEST';
