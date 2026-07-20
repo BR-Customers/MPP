@@ -15,8 +15,11 @@
 
 [CmdletBinding()]
 param(
+    # SAFETY: defaults to the THROWAWAY test DB. Run-Tests resets (DROPs) its target,
+    # so it must NEVER default to MPP_MES_Dev (hand-built dev data, no backups).
+    # Reset-DevDatabase additionally refuses to drop a *_Dev DB without -Force.
     [string]$ServerInstance = "localhost",
-    [string]$DatabaseName   = "MPP_MES_Dev",
+    [string]$DatabaseName   = "MPP_MES_Test",
     [string]$Filter         = ""
 )
 

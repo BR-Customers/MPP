@@ -35,7 +35,8 @@ param(
     [string]$DatabaseName  = "MPP_MES_Dev",
     [string]$Username      = "",
     [string]$Password      = "",
-    [switch]$SkipDemoSeed
+    [switch]$SkipDemoSeed,
+    [switch]$Force
 )
 
 # Build SQL auth args if credentials were supplied
@@ -46,6 +47,20 @@ if ($Username -ne "") {
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+
+# ── SAFETY GUARD ──────────────────────────────────────────────
+# This script DROPs the target database (no backup). A *_Dev database is
+# assumed to hold hand-built data that is NOT reproducible from migrations
+# (2026-07-20: a bare Run-Tests dropped MPP_MES_Dev and lost hand-added parts).
+# Refuse to drop any *_Dev database unless the caller explicitly passes -Force.
+if ($DatabaseName -like '*_Dev' -and -not $Force) {
+    Write-Host ""
+    Write-Host "REFUSING to drop '$DatabaseName': it looks like a hand-built dev DB." -ForegroundColor Red
+    Write-Host "  For tests, target the throwaway:  -DatabaseName MPP_MES_Test" -ForegroundColor Yellow
+    Write-Host "  To reset it anyway (destroys data): re-run with -Force" -ForegroundColor Yellow
+    Write-Host ""
+    throw "Reset-DevDatabase: refused to drop '$DatabaseName' without -Force."
+}
 
 # ── Resolve paths relative to this script ─────────────────────
 $ScriptDir    = Split-Path -Parent $MyInvocation.MyCommand.Path
