@@ -50,7 +50,20 @@ Executed the plan against a throwaway `MPP_MES_Test` (never touched `MPP_MES_Dev
 - Tests: new 025/026/027 (0008), 030/031/032 (0020), 093 (0028); fixed 020/020-cascade (0008), 010 quality-codes count 3→4, 092/077/095 CompleteTray callers, seed_demo.
 - Ignition: onStartup stashes `session.custom.closureMethod`/`closureCapabilities`; `Terminal.getClosureContext` (defensive) + NQ; `Location.ClosureMode.changeover` + NQ; `ContainerConfig.getByItemAll`/`getByItemAndMethod` + NQ; `Assembly.handleTrayComplete` routes closureMethod; `Assembly_CompleteTray` NQ closureMethod sqlType 7→12.
 
-**NOT done — needs Jacques / a Designer session:**
+**DONE 2026-07-20 (session 2): SQL deployed to Dev + Perspective UI built.**
+- **SQL deployed to `MPP_MES_Dev` nondestructively** (no reset): migrations 0040/0041 applied idempotently (must use `sqlcmd -I` for QUOTED_IDENTIFIER on the filtered-index UPDATE) + 7 changed/new procs (CREATE OR ALTER). Verified: ClosureMethodCode seeded, new index + NOT NULL live, `Terminal_GetClosureContext` returns caps. Dev's 1 ContainerConfig row (ByCount) backfilled cleanly.
+- **Perspective UI built (3 parallel subagents) + deployed via scan.ps1**, committed:
+  - AssemblyNonSerialized + AssemblySerialized: three appearances (Count/Weight/Vision) gated on `session.custom.closureMethod`; method chip opens the ChangeoverElevation popup; ByVision embeds `session.custom.terminal.visionAppUrl` via `ia.display.inline-frame`; Complete Tray passes closureMethod. (Serialized has no count/close controls — MIP-driven — so its Count/Weight panels are status-only.)
+  - New popup `BlueRidge/Components/Popups/ChangeoverElevation`: capability-limited method dropdown + AD account/password → `ClosureMode.changeover` → writes `session.custom.closureMethod`.
+  - Item Master ContainerConfig editor: per-method (ByCount/ByWeight/ByVision) list, atomic state, Save loops add/update. **Regenerated whole file (sorted keys) — structural anchors verified but NEEDS Designer/runtime click-through.**
+
+**Still open / decisions for Jacques:**
+- **Runtime click-through** of all three screens + the changeover (needs a terminal with a mode set) — I couldn't drive a live Perspective session here.
+- **`session-props/props.json`** still uncommitted (closure declarations + ambient pickled-terminal state DC1-T1/Indianapolis). scan deployed it (declarations needed at runtime); COMMIT the declarations + decide on the pickle.
+- **Item Master editor dropped `IsSerialized` + `CustomerCode` inputs** (carried through, not editable). Decide if `IsSerialized` needs to stay editable per-method.
+- **AD elevation `_validateAdCredentials` is a stub** (rejects all) → the changeover popup can't complete end-to-end until wired; test the proc directly meanwhile.
+
+**Original remaining items (still valid):**
 1. **`session-props/props.json`** — I added `closureMethod`/`closureCapabilities` declarations but LEFT THE FILE UNCOMMITTED because it carries ambient **pickled live-terminal state** (`DC1-T1`/id 15, timeZone → America/Indianapolis leaked into defaults). Review + commit the closure declarations; consider discarding the pickled defaults.
 2. **Designer view tasks (plan Tasks 11, 13, 15, 16)** — three-appearance conditional on both AssemblyNonSerialized + AssemblySerialized (Count/Weight/Vision off `session.custom.closureMethod`), the header changeover mode-chip (elevation popup → `ClosureMode.changeover`, then assign `session.custom.closureMethod` locally), and the Item Master ContainerConfig editor going per-method-list (load via `getByItemAll`). File-edit boundary → do in Designer.
 3. **Deploy sequence:** apply migrations 0040/0041 to `MPP_MES_Dev` → `.\scan.ps1` (deploys the NQs/scripts) → Designer view work → wire the Complete Tray button to pass `self.session.custom.closureMethod` into `handleTrayComplete`.
