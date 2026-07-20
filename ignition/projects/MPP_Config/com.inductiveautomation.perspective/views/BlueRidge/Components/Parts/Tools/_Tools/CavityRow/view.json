@@ -31,26 +31,6 @@
     },
     "children": [
       {
-        "type": "ia.display.label",
-        "meta": { "name": "IndexLabel" },
-        "position": { "basis": "32px", "shrink": 0 },
-        "propConfig": {
-          "props.text": {
-            "binding": {
-              "type": "expr",
-              "config": { "expression": "toStr({view.params.row.rowIndex} + 1)" }
-            }
-          }
-        },
-        "props": {
-          "style": {
-            "color": "var(--mpp-text-secondary)",
-            "fontSize": "12px",
-            "textAlign": "right"
-          }
-        }
-      },
-      {
         "type": "ia.input.numeric-entry-field",
         "meta": { "name": "NumberInput" },
         "position": { "basis": "120px", "shrink": 0 },

@@ -158,24 +158,6 @@
         "children": [
           {
             "meta": {
-              "name": "ColHash"
-            },
-            "position": {
-              "basis": "32px",
-              "shrink": 0
-            },
-            "props": {
-              "style": {
-                "color": "var(--mpp-text-muted)",
-                "fontSize": "11px",
-                "textAlign": "right"
-              },
-              "text": "#"
-            },
-            "type": "ia.display.label"
-          },
-          {
-            "meta": {
               "name": "ColNumber"
             },
             "position": {
