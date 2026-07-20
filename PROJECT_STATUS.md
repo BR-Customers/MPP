@@ -24,6 +24,17 @@
 
 ---
 
+## 🔖 2026-07-20 — Cell Mount Card embedded on Plant Hierarchy (Tool Configuration section)
+
+Completed the final outstanding item of the approved `docs/superpowers/specs/2026-06-16-cell-mount-card-design.md` — the PlantHierarchy embed. The data layer, NQs, `BlueRidge.Parts.Tool` methods, and the `CellMountCard` component were all already built + tested; only the view wiring remained.
+
+- **What:** on the Config Tool Plant Hierarchy (`/plant`, MPP_Config), selecting a mount-compatible cell (a Die Cast Machine) now shows a **Tool Configuration** card (`CellMountCard`) **to the right of** the Location Details card — mount an unmounted compatible tool (dropdown + notes + Mount) or Release the currently-mounted one.
+- **How:** `LocationDetailsPanel` + an `ia.display.view` embed of `BlueRidge/Components/Location/CellMountCard` wrapped in a new `DetailTopRow` (flex row, wrap); details `grow:1 basis:0`, embed `basis:460px shrink:0`. New `view.custom.cellContext` bound to `runScript(getCellMountContextOrEmpty, {selected.id})`; embed visibility gated on `{cellContext.IsMountTarget} && {mode} != "view"` (Jacques's "mount-compatible cells only" rule); `params.cellLocationId` ← `{selected.id}`. **No backend changes** — single-file view edit + `scan.ps1`.
+- **Verified live** in the Perspective client: card renders for a `DieCastMachine` cell, positioned right of the details card (bounding-box check: x=824 vs 589, same row), "No tool mounted" empty state with TOOL dropdown + Mount button. JSON valid; `scan.ps1` clean ("Project Up to Date … by external").
+- **⚠️ Working-tree note (pickled-data hazard):** `PlantHierarchy/view.json` re-pickled its `sortedTree`/`tree`/`editDraft` runtime data mid-session (a concurrent Designer/gateway save). I restored HEAD and re-applied only the logical edits, so the working-tree diff is a **clean 82-line insert**. Commit it before opening this view in Designer again, or Designer will re-pickle and bloat the next diff. Not yet committed (explicit-staging convention).
+
+---
+
 ## 🔖 2026-07-16 — Shop-floor bug-fix pass + die-cast→Warehouse deposit + branch reconcile (`main` = `db4800d5`)
 
 Worked a live shop-floor smoke list end-to-end on `jacques/working`; reconciled with a concurrent stream and promoted to `main` (`db4800d5`). Per-item root causes in `notes/2026-07-15_working-notes.md`.
