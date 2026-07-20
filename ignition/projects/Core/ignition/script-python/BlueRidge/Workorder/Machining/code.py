@@ -6,6 +6,8 @@
 
 import BlueRidge.Common.Db
 import BlueRidge.Common.Util
+import BlueRidge.Common.Notify
+import BlueRidge.Lots.LotLabel
 
 
 def recordPick(lotId, lineLocationId, appUserId=None, terminalLocationId=None):
@@ -42,4 +44,17 @@ def mint(sourceLotId, operationTemplateId, pieceCount, producedItemId=None,
     params = {"sourceLotId": sourceLotId, "operationTemplateId": operationTemplateId,
               "pieceCount": pieceCount, "producedItemId": producedItemId,
               "appUserId": appUserId, "terminalLocationId": terminalLocationId}
-    return BlueRidge.Common.Db.execMutation("workorder/MachiningOut_Mint", params)
+    result = BlueRidge.Common.Db.execMutation("workorder/MachiningOut_Mint", params)
+    # Auto-print the new sublot's LTT label so the basket is scannable downstream.
+    # A print failure must not lose the committed mint -- log + toast, return the mint.
+    if result and result.get("Status") and result.get("NewId"):
+        try:
+            BlueRidge.Lots.LotLabel.printLabel(
+                {"lotId": result.get("NewId")}, appUserId, terminalLocationId)
+        except Exception as e:
+            BlueRidge.Common.Util.log("MachiningOut sublot label print failed: %s" % e)
+            BlueRidge.Common.Notify.toast(
+                "Label not printed",
+                "The machined LOT was created but its LTT label did not print. Reprint from the LOT.",
+                "warning")
+    return result
