@@ -102,7 +102,7 @@ DECLARE @B BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P6-CT-B');
 DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-AOUT');
 
 DECLARE @R1 TABLE (Status BIT, Message NVARCHAR(500), FinishedGoodLotId BIGINT, ContainerId BIGINT, ContainerTrayId BIGINT, ContainerFull BIT);
-INSERT INTO @R1 EXEC Workorder.Assembly_CompleteTray @FinishedGoodItemId = @Out, @PieceCount = 24, @CellLocationId = @Cell, @AppUserId = 1;
+INSERT INTO @R1 EXEC Workorder.Assembly_CompleteTray @FinishedGoodItemId = @Out, @PieceCount = 24, @CellLocationId = @Cell, @ClosureMethod = N'ByCount', @AppUserId = 1;
 
 DECLARE @S1 NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @R1);
 EXEC test.Assert_IsEqual @TestName = N'[CompleteTray] tray-1 Status 1', @Expected = N'1', @Actual = @S1;
@@ -162,7 +162,7 @@ DECLARE @Out BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P6-CT-OUT'
 DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-AOUT');
 
 DECLARE @R2 TABLE (Status BIT, Message NVARCHAR(500), FinishedGoodLotId BIGINT, ContainerId BIGINT, ContainerTrayId BIGINT, ContainerFull BIT);
-INSERT INTO @R2 EXEC Workorder.Assembly_CompleteTray @FinishedGoodItemId = @Out, @PieceCount = 24, @CellLocationId = @Cell, @AppUserId = 1;
+INSERT INTO @R2 EXEC Workorder.Assembly_CompleteTray @FinishedGoodItemId = @Out, @PieceCount = 24, @CellLocationId = @Cell, @ClosureMethod = N'ByCount', @AppUserId = 1;
 
 DECLARE @S2 NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @R2);
 EXEC test.Assert_IsEqual @TestName = N'[CompleteTray] tray-2 Status 1', @Expected = N'1', @Actual = @S2;
@@ -191,7 +191,7 @@ DECLARE @Short BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P6-CT-SH
 DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-AOUT');
 
 DECLARE @R3 TABLE (Status BIT, Message NVARCHAR(500), FinishedGoodLotId BIGINT, ContainerId BIGINT, ContainerTrayId BIGINT, ContainerFull BIT);
-INSERT INTO @R3 EXEC Workorder.Assembly_CompleteTray @FinishedGoodItemId = @Short, @PieceCount = 24, @CellLocationId = @Cell, @AppUserId = 1;
+INSERT INTO @R3 EXEC Workorder.Assembly_CompleteTray @FinishedGoodItemId = @Short, @PieceCount = 24, @CellLocationId = @Cell, @ClosureMethod = N'ByCount', @AppUserId = 1;
 
 DECLARE @S3 BIT = (SELECT Status FROM @R3);
 DECLARE @M3 NVARCHAR(500) = (SELECT Message FROM @R3);

@@ -239,7 +239,7 @@ DECLARE @ShipContainer BIGINT, @tray INT = 1;
 WHILE @tray <= 4
 BEGIN
     DELETE FROM @rTray;
-    INSERT INTO @rTray EXEC Workorder.Assembly_CompleteTray @FinishedGoodItemId = @I_6NAfg, @PieceCount = 6, @CellLocationId = @L_6NA_AFIN, @AppUserId = @U;
+    INSERT INTO @rTray EXEC Workorder.Assembly_CompleteTray @FinishedGoodItemId = @I_6NAfg, @PieceCount = 6, @CellLocationId = @L_6NA_AFIN, @ClosureMethod = N'ByVision', @AppUserId = @U;
     IF (SELECT Status FROM @rTray) <> 1 BEGIN SET @ErrMsg = N'6NA-SHIP tray ' + CAST(@tray AS NVARCHAR(2)) + N' failed: ' + ISNULL((SELECT Message FROM @rTray), N'?'); THROW 51000, @ErrMsg, 1; END
     SET @ShipContainer = (SELECT ContainerId FROM @rTray);
     SET @tray = @tray + 1;

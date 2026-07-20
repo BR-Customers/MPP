@@ -88,9 +88,9 @@ BEGIN
         -- ================= Pre-transaction validations (no open txn) =================
 
         -- ---- 1. Required parameters ----
-        IF @FinishedGoodItemId IS NULL OR @PieceCount IS NULL OR @CellLocationId IS NULL OR @AppUserId IS NULL
+        IF @FinishedGoodItemId IS NULL OR @PieceCount IS NULL OR @CellLocationId IS NULL OR @ClosureMethod IS NULL OR @AppUserId IS NULL
         BEGIN
-            SET @Message = N'Required parameter missing (FinishedGoodItemId, PieceCount, CellLocationId, AppUserId).';
+            SET @Message = N'Required parameter missing (FinishedGoodItemId, PieceCount, CellLocationId, ClosureMethod, AppUserId).';
             IF @AppUserId IS NOT NULL
                 EXEC Audit.Audit_LogFailure @AppUserId = @AppUserId, @LogEntityTypeCode = N'ContainerTray',
                     @EntityId = NULL, @LogEventTypeCode = N'TrayClosed', @FailureReason = @Message,
@@ -121,26 +121,28 @@ BEGIN
             GOTO Reply;
         END
 
-        -- ---- 4. Active ContainerConfig for the FG Item (tray/container sizing) ----
-        SELECT TOP 1 @ContainerConfigId = cc.Id, @PartsPerTray = cc.PartsPerTray,
-               @TraysPerContainer = cc.TraysPerContainer,
-               @ClosureMethod = COALESCE(cc.ClosureMethod, @ClosureMethod, N'ByCount')
-        FROM Parts.ContainerConfig cc
-        WHERE cc.ItemId = @FinishedGoodItemId AND cc.DeprecatedAt IS NULL
-        ORDER BY cc.Id DESC;
-
-        IF @ContainerConfigId IS NULL
+        -- ---- 4a. Closure method (the terminal's active mode) must be a known code ----
+        IF @ClosureMethod NOT IN (N'ByCount', N'ByWeight', N'ByVision')
         BEGIN
-            SET @Message = N'No container configuration for the finished-good Item.';
+            SET @Message = N'ClosureMethod (' + ISNULL(@ClosureMethod, N'(none)') + N') is not a valid closure mode.';
             EXEC Audit.Audit_LogFailure @AppUserId = @AppUserId, @LogEntityTypeCode = N'ContainerTray',
                 @EntityId = NULL, @LogEventTypeCode = N'TrayClosed', @FailureReason = @Message,
                 @ProcedureName = @ProcName, @AttemptedParameters = @Params;
             GOTO Reply;
         END
 
-        IF @ClosureMethod NOT IN (N'ByCount', N'ByWeight', N'ByVision')
+        -- ---- 4b. Resolve the ContainerConfig for THIS (Item, closure method) ----
+        --      Terminal mode selects the pack-out; no TOP-1/COALESCE fallback.
+        SELECT @ContainerConfigId = cc.Id, @PartsPerTray = cc.PartsPerTray,
+               @TraysPerContainer = cc.TraysPerContainer
+        FROM Parts.ContainerConfig cc
+        WHERE cc.ItemId = @FinishedGoodItemId
+          AND cc.ClosureMethod = @ClosureMethod
+          AND cc.DeprecatedAt IS NULL;
+
+        IF @ContainerConfigId IS NULL
         BEGIN
-            SET @Message = N'Configured ClosureMethod (' + ISNULL(@ClosureMethod, N'(none)') + N') is invalid for this container.';
+            SET @Message = N'Part has no ' + @ClosureMethod + N' pack-out configured at this station.';
             EXEC Audit.Audit_LogFailure @AppUserId = @AppUserId, @LogEntityTypeCode = N'ContainerTray',
                 @EntityId = NULL, @LogEventTypeCode = N'TrayClosed', @FailureReason = @Message,
                 @ProcedureName = @ProcName, @AttemptedParameters = @Params;
