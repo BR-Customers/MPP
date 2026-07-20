@@ -40,7 +40,7 @@ BEGIN
     DECLARE @ManufacturedOriginId BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code=N'Manufactured');
     DECLARE @SrcItem BIGINT, @SrcAvail INT, @SrcPc INT, @SrcStatus BIGINT, @SrcLoc BIGINT, @SrcName NVARCHAR(50), @Blocks BIT, @SrcStatusCode NVARCHAR(20);
     DECLARE @BomId BIGINT, @QtyPer DECIMAL(18,4), @Consumed INT, @CandCount INT;
-    DECLARE @MintedName NVARCHAR(50), @SeqLast BIGINT, @SeqEnd BIGINT, @SeqFormat NVARCHAR(50), @SeqPrefix NVARCHAR(50), @SeqPad INT;
+    DECLARE @MintedName NVARCHAR(50), @NextOrd INT;
     DECLARE @ProducedPn NVARCHAR(50), @CellCode NVARCHAR(50), @Activity NVARCHAR(500), @NewValue NVARCHAR(MAX);
 
     BEGIN TRY
@@ -96,16 +96,26 @@ BEGIN
 
         -- ===== Mutation (atomic) =====
         BEGIN TRANSACTION;
-        -- B1. Mint the SubAssembly LOT (mirror R__Lots_Lot_Create inline IdentifierSequence 'Lot').
-        SELECT @SeqLast=s.LastValue+1, @SeqEnd=s.EndingValue, @SeqFormat=s.FormatString FROM Lots.IdentifierSequence s WITH (ROWLOCK,UPDLOCK,HOLDLOCK) WHERE s.Code=N'Lot';
-        IF @SeqLast IS NULL RAISERROR(N'Identifier sequence ''Lot'' not configured.',16,1);
-        IF @SeqLast > @SeqEnd RAISERROR(N'Identifier sequence ''Lot'' exhausted.',16,1);
-        UPDATE Lots.IdentifierSequence SET LastValue=@SeqLast, UpdatedAt=SYSUTCDATETIME() WHERE Code=N'Lot';
-        SET @SeqPrefix = CASE WHEN CHARINDEX(N'{',@SeqFormat)>0 THEN LEFT(@SeqFormat,CHARINDEX(N'{',@SeqFormat)-1) ELSE @SeqFormat END;
-        SET @SeqPad = TRY_CAST(SUBSTRING(@SeqFormat, CHARINDEX(N'D',@SeqFormat,CHARINDEX(N'{',@SeqFormat))+1,
-                          CHARINDEX(N'}',@SeqFormat,CHARINDEX(N'{',@SeqFormat))-CHARINDEX(N'D',@SeqFormat,CHARINDEX(N'{',@SeqFormat))-1) AS INT);
-        SET @MintedName = CASE WHEN @SeqPad IS NULL OR @SeqPad<1 THEN @SeqPrefix+CAST(@SeqLast AS NVARCHAR(20))
-                               ELSE @SeqPrefix+RIGHT(REPLICATE(N'0',@SeqPad)+CAST(@SeqLast AS NVARCHAR(20)),@SeqPad) END;
+        -- B1. Derive the SubAssembly LOT name as a '-NN' sublot of the source casting
+        -- (legacy convention: <sourceLTT>-01, -02, ...). Serialize concurrent mints of
+        -- THIS casting by re-reading the source row under UPDLOCK,HOLDLOCK before
+        -- probing the ordinal (mirrors Lots.Lot_Split's suffix allocation). The 'Lot'
+        -- counter is NOT advanced -- machined identity is parent-derived, not minted.
+        DECLARE @Ignore BIGINT;
+        SELECT @Ignore = l.Id
+        FROM Lots.Lot l WITH (UPDLOCK, HOLDLOCK)
+        WHERE l.Id = @SourceLotId;
+
+        SET @NextOrd = ISNULL((
+            SELECT MAX(TRY_CAST(RIGHT(LotName, 2) AS INT))
+            FROM Lots.Lot
+            WHERE LotName LIKE @SrcName + N'-[0-9][0-9]'
+        ), 0) + 1;
+
+        IF @NextOrd > 99
+            RAISERROR(N'Casting already has 99 machined sublots.', 16, 1);
+
+        SET @MintedName = @SrcName + N'-' + RIGHT(N'0' + CAST(@NextOrd AS NVARCHAR(2)), 2);
         INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, MaxPieceCount,
             Weight, WeightUomId, ToolId, ToolCavityId, CavityNumber, VendorLotNumber, MinSerialNumber, MaxSerialNumber,
             CurrentLocationId, TotalInProcess, InventoryAvailable, CreatedByUserId, CreatedAtTerminalId, CreatedAt)

@@ -52,6 +52,13 @@ DECLARE @mStatus NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @m);
 EXEC test.Assert_IsEqual @TestName = N'[MoMint] mint succeeds', @Expected = N'1', @Actual = @mStatus;
 DECLARE @MachLot BIGINT = (SELECT NewId FROM @m);
 
+-- Sublot name is derived from the casting LTT + '-01' (first child of this casting).
+DECLARE @castName NVARCHAR(50) = (SELECT LotName FROM Lots.Lot WHERE Id = @CastLot);
+DECLARE @machName NVARCHAR(50) = (SELECT LotName FROM Lots.Lot WHERE Id = @MachLot);
+DECLARE @exp1 NVARCHAR(50) = @castName + N'-01';
+EXEC test.Assert_IsEqual @TestName = N'[MoMint] first sublot name is <casting>-01', @Expected = @exp1, @Actual = @machName;
+DECLARE @seqBeforeMint BIGINT = (SELECT LastValue FROM Lots.IdentifierSequence WHERE Code = N'Lot');
+
 DECLARE @machItem NVARCHAR(20) = (SELECT CAST(ItemId AS NVARCHAR(20)) FROM Lots.Lot WHERE Id = @MachLot);
 DECLARE @machExp NVARCHAR(20) = CAST(@Machined AS NVARCHAR(20));
 EXEC test.Assert_IsEqual @TestName = N'[MoMint] minted LOT is the SubAssembly item', @Expected = @machExp, @Actual = @machItem;
@@ -80,6 +87,16 @@ EXEC test.Assert_IsEqual @TestName = N'[MoMint] ConsumptionEvent recorded', @Exp
 
 -- Mint the remaining 14 -> casting closes.
 DELETE FROM @m; INSERT INTO @m EXEC Workorder.MachiningOut_Mint @SourceLotId = @CastLot, @OperationTemplateId = @MoTpl, @PieceCount = 14, @AppUserId = @U, @TerminalLocationId = @Line;
+
+-- Second child of the same casting -> '-02'; counter still not advanced by the mint.
+DECLARE @machLot2 BIGINT = (SELECT NewId FROM @m);
+DECLARE @machName2 NVARCHAR(50) = (SELECT LotName FROM Lots.Lot WHERE Id = @machLot2);
+DECLARE @exp2 NVARCHAR(50) = @castName + N'-02';
+EXEC test.Assert_IsEqual @TestName = N'[MoMint] second sublot name is <casting>-02', @Expected = @exp2, @Actual = @machName2;
+DECLARE @seqAfterMint BIGINT = (SELECT LastValue FROM Lots.IdentifierSequence WHERE Code = N'Lot');
+DECLARE @seqDelta NVARCHAR(10) = CAST(@seqAfterMint - @seqBeforeMint AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[MoMint] mint does not advance Lot counter', @Expected = N'0', @Actual = @seqDelta;
+
 DECLARE @castClosed NVARCHAR(20) = (SELECT sc.Code FROM Lots.Lot l JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId WHERE l.Id = @CastLot);
 EXEC test.Assert_IsEqual @TestName = N'[MoMint] casting closes when fully consumed', @Expected = N'Closed', @Actual = @castClosed;
 
