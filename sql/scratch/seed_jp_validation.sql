@@ -1,7 +1,12 @@
 -- ============================================================
 -- seed_jp_validation.sql (scratch backup, run on demand -- NOT auto-run by Reset-DevDatabase)
+-- UPDATED 2026-07-20: refreshed to Jacques's rebuilt Dev state (after a stray agent reset).
+--   + ALL castings now route through Trim (DieCast->TrimIn->TrimOut->MachiningIn->MOUT/AOUT).
+--   + NEW section 6: container configs (5G0-FG, 6NA fuel pump FG, 59B holder set).
+--   + NEW section 7: the 3 dies (59B, 5G0, 6NA) mounted on Die Cast 1 machines 1-3.
+--   + 59B/6NA casting eligibility now DC1 + TRIM1 + their machining line.
 -- Jacques's validation fixture -- RE-AUTHORED 2026-07-07 to the terminal-mint
--- model (spec 2026-07-07 §5.5; matches the canonical demo routes in
+-- model (spec 2026-07-07 sec 5.5; matches the canonical demo routes in
 -- sql/seeds/029_seed_item_routes.sql). Old-model backup:
 -- sql/scratch/seed_jp_validation.old-model.sql.
 --
@@ -175,11 +180,11 @@ GO
 --
 -- Thread A -- 59B Cam-Rocker Holder Set  (machining = ADVANCE; fan-in assembly mint)
 --   Line MA2-59B (MIN + AOUT, no Machining Out) -> holders consumed as castings.
---     3 holder castings (Component): DieCast -> MachiningIn(Advance) -> AssemblyOut(mint set)
+--     3 holder castings (Component): DieCast -> TrimIn -> TrimOut -> MachiningIn(Advance) -> AssemblyOut(mint set)
 --     Set FG '1223A-59B -A0002' = 3 holders + dowel x19  (fan-in ConsumeMint at AssemblyOut)
 -- Thread B -- 6NA Fuel Pump  (machining = ConsumeMint)
 --   Line MA1-FP6NA (MIN -> MOUT -> AFIN, has Machining Out) -> machined SA minted at MOUT.
---     Casting '12270-6NA' (Component): DieCast -> MachiningIn -> MachiningOut(mint SA)
+--     Casting '12270-6NA' (Component): DieCast -> TrimIn -> TrimOut -> MachiningIn -> MachiningOut(mint SA)
 --     Synth SA '12270-6NA-M' (SubAssembly): AssemblyOut(mint FG)   [legacy had no machined PN]
 --     FG '12270-6NA -0001' (FinishedGood, unrouted) = SA + stud bolt + dowel x2
 -- ASCII only; idempotent by PartNumber/Code; run via the same sqlcmd line above.
@@ -218,7 +223,7 @@ FROM @items i
 WHERE NOT EXISTS (SELECT 1 FROM Parts.Item p WHERE p.PartNumber = i.PN);
 GO
 
--- ---- A.2 Thread A routes: each holder casting DieCast->MachiningIn->AssemblyOut ----
+-- ---- A.2 Thread A routes: each holder DieCast->TrimIn->TrimOut->MachiningIn->AssemblyOut ----
 DECLARE @U BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
 DECLARE @Eff DATETIME2(3) = CAST('2026-01-01' AS DATETIME2(3));
 DECLARE @rc TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
@@ -239,7 +244,7 @@ BEGIN
         SET @rcid = (SELECT NewId FROM @rc);
         SET @steps = (
             SELECT CAST(NULL AS BIGINT) AS Id, ot.Id AS OperationTemplateId, 1 AS IsRequired, CAST(NULL AS NVARCHAR(500)) AS Description
-            FROM (VALUES (1,N'DC-A'),(2,N'M-In-A'),(3,N'A-Out-A')) v(Seq,Code)
+            FROM (VALUES (1,N'DC-A'),(2,N'T-IN-A'),(3,N'T-Out-A'),(4,N'M-In-A'),(5,N'A-Out-A')) v(Seq,Code)
             JOIN Parts.OperationTemplate ot ON ot.Code = v.Code
             ORDER BY v.Seq FOR JSON PATH, INCLUDE_NULL_VALUES);
         DELETE FROM @rs; INSERT INTO @rs EXEC Parts.RouteTemplate_SaveAll @Id=@rcid, @Name=N'Route v1', @EffectiveFrom=@Eff, @AppUserId=@U, @StepsJson=@steps;
@@ -281,7 +286,7 @@ DECLARE @rc TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 DECLARE @rs TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 DECLARE @rp TABLE (Status BIT, Message NVARCHAR(500));
 
--- 12270-6NA (casting): DieCast -> MachiningIn -> MachiningOut (mints 12270-6NA-M)
+-- 12270-6NA (casting): DieCast -> TrimIn -> TrimOut -> MachiningIn -> MachiningOut (mints 12270-6NA-M)
 DECLARE @I_CAST BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'12270-6NA');
 IF @I_CAST IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Parts.RouteTemplate WHERE ItemId = @I_CAST AND PublishedAt IS NOT NULL AND DeprecatedAt IS NULL)
 BEGIN
@@ -289,7 +294,7 @@ BEGIN
     DECLARE @RC_CAST BIGINT = (SELECT NewId FROM @rc);
     DECLARE @StepsB1 NVARCHAR(MAX) = (
         SELECT CAST(NULL AS BIGINT) AS Id, ot.Id AS OperationTemplateId, 1 AS IsRequired, CAST(NULL AS NVARCHAR(500)) AS Description
-        FROM (VALUES (1,N'DC-A'),(2,N'M-In-A'),(3,N'M-Out-A')) v(Seq,Code)
+        FROM (VALUES (1,N'DC-A'),(2,N'T-IN-A'),(3,N'T-Out-A'),(4,N'M-In-A'),(5,N'M-Out-A')) v(Seq,Code)
         JOIN Parts.OperationTemplate ot ON ot.Code = v.Code
         ORDER BY v.Seq FOR JSON PATH, INCLUDE_NULL_VALUES);
     DELETE FROM @rs; INSERT INTO @rs EXEC Parts.RouteTemplate_SaveAll @Id=@RC_CAST, @Name=N'Route v1', @EffectiveFrom=@Eff, @AppUserId=@U, @StepsJson=@StepsB1;
@@ -352,13 +357,13 @@ GO
 DECLARE @el TABLE (PartNumber NVARCHAR(50), LocCode NVARCHAR(50), IsConsumptionPoint BIT);
 INSERT INTO @el VALUES
     -- Thread A: holder castings origin-mint at a die-cast machine, then line-resident at MA2-59B
-    (N'12231-59B-0000', N'DC3-M01', 0), (N'12231-59B-0000', N'MA2-59B', 0),
-    (N'12232-59B-0000', N'DC3-M01', 0), (N'12232-59B-0000', N'MA2-59B', 0),
-    (N'12241-59B-0000', N'DC3-M01', 0), (N'12241-59B-0000', N'MA2-59B', 0),
+    (N'12231-59B-0000', N'DC1', 0), (N'12231-59B-0000', N'TRIM1', 0), (N'12231-59B-0000', N'MA2-59B', 0),
+    (N'12232-59B-0000', N'DC1', 0), (N'12232-59B-0000', N'TRIM1', 0), (N'12232-59B-0000', N'MA2-59B', 0),
+    (N'12241-59B-0000', N'DC1', 0), (N'12241-59B-0000', N'TRIM1', 0), (N'12241-59B-0000', N'MA2-59B', 0),
     (N'1223A-59B -A0002', N'MA2-59B', 0),
     (N'90701-5R0-3000',   N'MA2-59B', 1),   -- dowel consumed at the set assembly
     -- Thread B: 6NA fuel pump on MA1-FP6NA
-    (N'12270-6NA',       N'DC2-M01',    0), (N'12270-6NA',      N'MA1-FP6NA', 0),
+    (N'12270-6NA',       N'DC1',    0), (N'12270-6NA',      N'TRIM1', 0), (N'12270-6NA',      N'MA1-FP6NA', 0),
     (N'12270-6NA-M',     N'MA1-FP6NA',  0),
     (N'12270-6NA -0001', N'MA1-FP6NA',  0),
     (N'92900-06014-1B',  N'MA1-FP6NA',  1),  -- stud bolt consumed at assembly
@@ -372,4 +377,106 @@ WHERE NOT EXISTS (SELECT 1 FROM Parts.ItemLocation il WHERE il.ItemId = i.Id AND
 GO
 
 PRINT N'seed_jp_validation: legacy golden threads (59B set on MA2-59B, 6NA fuel pump on MA1-FP6NA) captured.';
+GO
+
+-- ============================================================
+-- 6. CONTAINER CONFIGS (added 2026-07-20). Per-part pack-out methods captured
+--    from Dev. Guarded by (Item, ClosureMethod). Via Parts.ContainerConfig_Create.
+-- ============================================================
+DECLARE @U BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
+DECLARE @cc TABLE (Seq INT IDENTITY(1,1), PN NVARCHAR(50), Method NVARCHAR(20),
+                   TPC INT, PPT INT, Ser BIT, Dunn NVARCHAR(50), TgtWt DECIMAL(10,4));
+INSERT INTO @cc (PN, Method, TPC, PPT, Ser, Dunn, TgtWt) VALUES
+    (N'1223A-59B -A0002', N'ByCount',  1,  60, 0, N'2222', NULL),
+    (N'1223A-59B -A0002', N'ByVision', 4,  12, 0, N'2223', NULL),
+    (N'12270-6NA -0001',  N'ByCount',  12, 16, 0, N'1111', NULL),
+    (N'5G0-FG',           N'ByCount',  4,  4,  0, N'1102', NULL),
+    (N'5G0-FG',           N'ByWeight', 2,  12, 0, NULL,    24.0);
+DECLARE @ccr TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+DECLARE @i INT = 1, @n INT = (SELECT ISNULL(MAX(Seq),0) FROM @cc);
+DECLARE @pn NVARCHAR(50), @m NVARCHAR(20), @tpc INT, @ppt INT, @ser BIT, @dunn NVARCHAR(50), @tgt DECIMAL(10,4), @iid BIGINT;
+WHILE @i <= @n
+BEGIN
+    SELECT @pn=PN, @m=Method, @tpc=TPC, @ppt=PPT, @ser=Ser, @dunn=Dunn, @tgt=TgtWt FROM @cc WHERE Seq=@i;
+    SET @iid = (SELECT Id FROM Parts.Item WHERE PartNumber = @pn);
+    IF @iid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Parts.ContainerConfig WHERE ItemId=@iid AND ClosureMethod=@m)
+    BEGIN
+        DELETE FROM @ccr;
+        INSERT INTO @ccr EXEC Parts.ContainerConfig_Create
+            @ItemId=@iid, @TraysPerContainer=@tpc, @PartsPerTray=@ppt, @IsSerialized=@ser,
+            @DunnageCode=@dunn, @CustomerCode=NULL, @ClosureMethod=@m, @TargetWeight=@tgt, @AppUserId=@U;
+    END
+    SET @i += 1;
+END
+GO
+PRINT N'seed_jp_validation: container configs (5G0-FG, 6NA FG, 59B set) captured.';
+GO
+
+-- ============================================================
+-- 7. TOOLS + CAVITIES + ASSIGNMENTS (added 2026-07-20). The 3 dies mounted on
+--    Die Cast 1 machines 1-3. Guarded by Code / (Tool,Cavity) / active assignment.
+--    Via Tools.Tool_Create, Tools.ToolCavity_Create, Tools.ToolAssignment_Assign.
+-- ============================================================
+DECLARE @U BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
+DECLARE @ttDie BIGINT = (SELECT Id FROM Tools.ToolType WHERE Code = N'Die');
+DECLARE @drA   BIGINT = (SELECT Id FROM Tools.DieRank WHERE Code = N'A');
+DECLARE @scAct BIGINT = (SELECT Id FROM Tools.ToolStatusCode WHERE Code = N'Active');
+IF @ttDie IS NULL OR @scAct IS NULL RAISERROR(N'Prereq missing: Die tool type or Active status.', 16, 1);
+DECLARE @tr TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+DECLARE @i INT, @n INT, @code NVARCHAR(50), @name NVARCHAR(100), @tid BIGINT, @cnum INT, @cdesc NVARCHAR(500), @cell NVARCHAR(50), @cid BIGINT;
+
+-- 7a. Tools (Code-guarded)
+DECLARE @tools TABLE (Seq INT IDENTITY(1,1), Code NVARCHAR(50), Name NVARCHAR(100));
+INSERT INTO @tools (Code, Name) VALUES (N'59B', N'Cam Holder'), (N'5G0', N'Front Cover'), (N'6NA', N'Fuel Pump');
+SET @i = 1; SET @n = (SELECT ISNULL(MAX(Seq),0) FROM @tools);
+WHILE @i <= @n
+BEGIN
+    SELECT @code=Code, @name=Name FROM @tools WHERE Seq=@i;
+    IF NOT EXISTS (SELECT 1 FROM Tools.Tool WHERE Code = @code)
+    BEGIN
+        DELETE FROM @tr;
+        INSERT INTO @tr EXEC Tools.Tool_Create @ToolTypeId=@ttDie, @Code=@code, @Name=@name,
+            @Description=NULL, @DieRankId=@drA, @StatusCodeId=@scAct, @AppUserId=@U;
+    END
+    SET @i += 1;
+END
+
+-- 7b. Cavities ((Tool,CavityNumber)-guarded)
+DECLARE @cav TABLE (Seq INT IDENTITY(1,1), ToolCode NVARCHAR(50), CavNum INT, Descr NVARCHAR(500));
+INSERT INTO @cav (ToolCode, CavNum, Descr) VALUES
+    (N'59B', 1, N'In 1'), (N'59B', 2, N'In 2'), (N'59B', 3, N'ex 1'),
+    (N'5G0', 1, N'A'), (N'5G0', 2, N'B'),
+    (N'6NA', 1, N'A');
+SET @i = 1; SET @n = (SELECT ISNULL(MAX(Seq),0) FROM @cav);
+WHILE @i <= @n
+BEGIN
+    SELECT @code=ToolCode, @cnum=CavNum, @cdesc=Descr FROM @cav WHERE Seq=@i;
+    SET @tid = (SELECT Id FROM Tools.Tool WHERE Code = @code);
+    IF @tid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Tools.ToolCavity WHERE ToolId=@tid AND CavityNumber=@cnum)
+    BEGIN
+        DELETE FROM @tr;
+        INSERT INTO @tr EXEC Tools.ToolCavity_Create @ToolId=@tid, @CavityNumber=@cnum, @Description=@cdesc, @AppUserId=@U;
+    END
+    SET @i += 1;
+END
+
+-- 7c. Assignments (mount on DC1-M01..03; guarded by active tool/cell assignment)
+DECLARE @asn TABLE (Seq INT IDENTITY(1,1), ToolCode NVARCHAR(50), Cell NVARCHAR(50));
+INSERT INTO @asn (ToolCode, Cell) VALUES (N'59B', N'DC1-M01'), (N'6NA', N'DC1-M02'), (N'5G0', N'DC1-M03');
+SET @i = 1; SET @n = (SELECT ISNULL(MAX(Seq),0) FROM @asn);
+WHILE @i <= @n
+BEGIN
+    SELECT @code=ToolCode, @cell=Cell FROM @asn WHERE Seq=@i;
+    SET @tid = (SELECT Id FROM Tools.Tool WHERE Code = @code);
+    SET @cid = (SELECT Id FROM Location.Location WHERE Code = @cell);
+    IF @tid IS NOT NULL AND @cid IS NOT NULL
+       AND NOT EXISTS (SELECT 1 FROM Tools.ToolAssignment WHERE (ToolId=@tid OR CellLocationId=@cid) AND ReleasedAt IS NULL)
+    BEGIN
+        DELETE FROM @tr;
+        INSERT INTO @tr EXEC Tools.ToolAssignment_Assign @ToolId=@tid, @CellLocationId=@cid, @Notes=NULL, @AppUserId=@U;
+    END
+    SET @i += 1;
+END
+GO
+PRINT N'seed_jp_validation: 3 dies (59B, 5G0, 6NA) + cavities mounted on DC1-M01..03.';
 GO
