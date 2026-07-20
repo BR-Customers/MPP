@@ -202,7 +202,7 @@ PRINT N'--- 6NA-SHIP: cast x2 -> machine -> assemble 4 trays -> ship ---';
 
 -- cycle 1
 DELETE FROM @rLot;
-INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId = @I_6NAcast, @LotOriginTypeId = @OriginMfg, @CurrentLocationId = @L_DC3M01, @PieceCount = 12, @ToolId = @ToolId6NA, @ToolCavityId = @CavId6NA, @AppUserId = @U;
+INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId = @I_6NAcast, @LotOriginTypeId = @OriginMfg, @CurrentLocationId = @L_DC3M01, @PieceCount = 12, @ToolId = @ToolId6NA, @ToolCavityId = @CavId6NA, @LotName = N'800000001', @AppUserId = @U;
 IF (SELECT Status FROM @rLot) <> 1 BEGIN SET @ErrMsg = N'6NA-SHIP c1 cast failed: ' + ISNULL((SELECT Message FROM @rLot), N'?'); THROW 51000, @ErrMsg, 1; END
 SET @cast = (SELECT NewId FROM @rLot);
 DELETE FROM @rMove; INSERT INTO @rMove EXEC Lots.Lot_MoveTo @LotId = @cast, @ToLocationId = @L_TRIM1, @AppUserId = @U;
@@ -219,7 +219,7 @@ IF (SELECT Status FROM @rMove) <> 1 BEGIN SET @ErrMsg = N'6NA-SHIP c1 move-afin 
 
 -- cycle 2
 DELETE FROM @rLot;
-INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId = @I_6NAcast, @LotOriginTypeId = @OriginMfg, @CurrentLocationId = @L_DC3M01, @PieceCount = 12, @ToolId = @ToolId6NA, @ToolCavityId = @CavId6NA, @AppUserId = @U;
+INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId = @I_6NAcast, @LotOriginTypeId = @OriginMfg, @CurrentLocationId = @L_DC3M01, @PieceCount = 12, @ToolId = @ToolId6NA, @ToolCavityId = @CavId6NA, @LotName = N'800000002', @AppUserId = @U;
 IF (SELECT Status FROM @rLot) <> 1 BEGIN SET @ErrMsg = N'6NA-SHIP c2 cast failed: ' + ISNULL((SELECT Message FROM @rLot), N'?'); THROW 51000, @ErrMsg, 1; END
 SET @cast = (SELECT NewId FROM @rLot);
 DELETE FROM @rMove; INSERT INTO @rMove EXEC Lots.Lot_MoveTo @LotId = @cast, @ToLocationId = @L_TRIM1, @AppUserId = @U;
@@ -263,13 +263,13 @@ PRINT N'--- 6NA-WIP: WIP staged at every terminal ---';
 
 -- die-cast WIP (untouched cast at DC3-M01)
 DELETE FROM @rLot;
-INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId = @I_6NAcast, @LotOriginTypeId = @OriginMfg, @CurrentLocationId = @L_DC3M01, @PieceCount = 12, @ToolId = @ToolId6NA, @ToolCavityId = @CavId6NA, @AppUserId = @U;
+INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId = @I_6NAcast, @LotOriginTypeId = @OriginMfg, @CurrentLocationId = @L_DC3M01, @PieceCount = 12, @ToolId = @ToolId6NA, @ToolCavityId = @CavId6NA, @LotName = N'800000003', @AppUserId = @U;
 IF (SELECT Status FROM @rLot) <> 1 BEGIN SET @ErrMsg = N'6NA-WIP die-cast failed: ' + ISNULL((SELECT Message FROM @rLot), N'?'); THROW 51000, @ErrMsg, 1; END
 DECLARE @W_DieCast NVARCHAR(50) = (SELECT MintedLotName FROM @rLot);
 
 -- trim WIP (cast moved to TRIM1, not trimmed out)
 DELETE FROM @rLot;
-INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId = @I_6NAcast, @LotOriginTypeId = @OriginMfg, @CurrentLocationId = @L_DC3M01, @PieceCount = 12, @ToolId = @ToolId6NA, @ToolCavityId = @CavId6NA, @AppUserId = @U;
+INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId = @I_6NAcast, @LotOriginTypeId = @OriginMfg, @CurrentLocationId = @L_DC3M01, @PieceCount = 12, @ToolId = @ToolId6NA, @ToolCavityId = @CavId6NA, @LotName = N'800000004', @AppUserId = @U;
 IF (SELECT Status FROM @rLot) <> 1 BEGIN SET @ErrMsg = N'6NA-WIP trim cast failed: ' + ISNULL((SELECT Message FROM @rLot), N'?'); THROW 51000, @ErrMsg, 1; END
 SET @cast = (SELECT NewId FROM @rLot);
 DECLARE @W_Trim NVARCHAR(50) = (SELECT MintedLotName FROM @rLot);
@@ -278,7 +278,7 @@ IF (SELECT Status FROM @rMove) <> 1 BEGIN SET @ErrMsg = N'6NA-WIP trim move fail
 
 -- machining-IN unworked WIP (cast trimmed to MA1-FP6NA-MIN, not picked)
 DELETE FROM @rLot;
-INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId = @I_6NAcast, @LotOriginTypeId = @OriginMfg, @CurrentLocationId = @L_DC3M01, @PieceCount = 12, @ToolId = @ToolId6NA, @ToolCavityId = @CavId6NA, @AppUserId = @U;
+INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId = @I_6NAcast, @LotOriginTypeId = @OriginMfg, @CurrentLocationId = @L_DC3M01, @PieceCount = 12, @ToolId = @ToolId6NA, @ToolCavityId = @CavId6NA, @LotName = N'800000005', @AppUserId = @U;
 IF (SELECT Status FROM @rLot) <> 1 BEGIN SET @ErrMsg = N'6NA-WIP MIN cast failed: ' + ISNULL((SELECT Message FROM @rLot), N'?'); THROW 51000, @ErrMsg, 1; END
 SET @cast = (SELECT NewId FROM @rLot);
 DECLARE @W_MinCast NVARCHAR(50) = (SELECT MintedLotName FROM @rLot);
@@ -289,7 +289,7 @@ IF (SELECT Status FROM @rTrim) <> 1 BEGIN SET @ErrMsg = N'6NA-WIP MIN trim faile
 
 -- machining-OUT WIP (a fresh machined LOT parked at MOUT) -- carries pause + reject
 DELETE FROM @rLot;
-INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId = @I_6NAcast, @LotOriginTypeId = @OriginMfg, @CurrentLocationId = @L_DC3M01, @PieceCount = 12, @ToolId = @ToolId6NA, @ToolCavityId = @CavId6NA, @AppUserId = @U;
+INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId = @I_6NAcast, @LotOriginTypeId = @OriginMfg, @CurrentLocationId = @L_DC3M01, @PieceCount = 12, @ToolId = @ToolId6NA, @ToolCavityId = @CavId6NA, @LotName = N'800000006', @AppUserId = @U;
 IF (SELECT Status FROM @rLot) <> 1 BEGIN SET @ErrMsg = N'6NA-WIP MOUT cast failed: ' + ISNULL((SELECT Message FROM @rLot), N'?'); THROW 51000, @ErrMsg, 1; END
 SET @cast = (SELECT NewId FROM @rLot);
 DELETE FROM @rMove; INSERT INTO @rMove EXEC Lots.Lot_MoveTo @LotId = @cast, @ToLocationId = @L_TRIM1, @AppUserId = @U;
@@ -305,7 +305,7 @@ DECLARE @W_MoutMachName NVARCHAR(50) = (SELECT LotName FROM Lots.Lot WHERE Id = 
 
 -- assembly-ready: one more machined LOT left AT the assembly cell (Noah opens a container)
 DELETE FROM @rLot;
-INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId = @I_6NAcast, @LotOriginTypeId = @OriginMfg, @CurrentLocationId = @L_DC3M01, @PieceCount = 12, @ToolId = @ToolId6NA, @ToolCavityId = @CavId6NA, @AppUserId = @U;
+INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId = @I_6NAcast, @LotOriginTypeId = @OriginMfg, @CurrentLocationId = @L_DC3M01, @PieceCount = 12, @ToolId = @ToolId6NA, @ToolCavityId = @CavId6NA, @LotName = N'800000007', @AppUserId = @U;
 IF (SELECT Status FROM @rLot) <> 1 BEGIN SET @ErrMsg = N'6NA-WIP AFIN cast failed: ' + ISNULL((SELECT Message FROM @rLot), N'?'); THROW 51000, @ErrMsg, 1; END
 SET @cast = (SELECT NewId FROM @rLot);
 DELETE FROM @rMove; INSERT INTO @rMove EXEC Lots.Lot_MoveTo @LotId = @cast, @ToLocationId = @L_TRIM1, @AppUserId = @U;
@@ -328,7 +328,7 @@ PRINT N'    6NA-WIP ready: die-cast=' + @W_DieCast + N', trim=' + @W_Trim + N', 
 PRINT N'--- 5G0-SER: cast -> machine -> serialized placement + hold ---';
 
 DELETE FROM @rLot;
-INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId = @I_5G0cast, @LotOriginTypeId = @OriginMfg, @CurrentLocationId = @L_DC1M01, @PieceCount = 24, @ToolId = @ToolId5G0, @ToolCavityId = @CavId5G0, @AppUserId = @U;
+INSERT INTO @rLot EXEC Lots.Lot_Create @ItemId = @I_5G0cast, @LotOriginTypeId = @OriginMfg, @CurrentLocationId = @L_DC1M01, @PieceCount = 24, @ToolId = @ToolId5G0, @ToolCavityId = @CavId5G0, @LotName = N'800000008', @AppUserId = @U;
 IF (SELECT Status FROM @rLot) <> 1 BEGIN SET @ErrMsg = N'5G0 cast failed: ' + ISNULL((SELECT Message FROM @rLot), N'?'); THROW 51000, @ErrMsg, 1; END
 SET @cast = (SELECT NewId FROM @rLot);
 DELETE FROM @rMove; INSERT INTO @rMove EXEC Lots.Lot_MoveTo @LotId = @cast, @ToLocationId = @L_TRIM1, @AppUserId = @U;
