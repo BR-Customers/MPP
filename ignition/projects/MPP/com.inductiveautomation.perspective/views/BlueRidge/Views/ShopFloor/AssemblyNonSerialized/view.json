@@ -142,18 +142,48 @@
             "type": "ia.container.flex"
           },
           {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-changeover\", \"BlueRidge/Components/Popups/ChangeoverElevation\", params={\"terminalLocationId\": self.session.custom.terminal.terminalLocationId}, modal=True, showCloseIcon=True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
             "meta": {
               "name": "ConfirmMethod"
             },
             "position": {
               "shrink": 0
             },
-            "props": {
-              "data-method": "Vision",
-              "style": {
-                "classes": "pf-confirm-method"
+            "propConfig": {
+              "props.data-method": {
+                "binding": {
+                  "config": {
+                    "expression": "if({session.custom.closureMethod} = \"ByVision\", \"Vision\", if({session.custom.closureMethod} = \"ByWeight\", \"Weight\", \"Count\"))"
+                  },
+                  "type": "expr"
+                }
               },
-              "text": "ByVision"
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if({session.custom.closureMethod} = \"ByCount\", \"By Count\", if({session.custom.closureMethod} = \"ByWeight\", \"By Weight\", if({session.custom.closureMethod} = \"ByVision\", \"By Vision\", \"-\")))"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "data-method": "Count",
+              "style": {
+                "classes": "pf-confirm-method",
+                "cursor": "pointer"
+              },
+              "text": "-"
             },
             "type": "ia.display.label"
           },
@@ -687,7 +717,7 @@
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "if(isNull({view.custom.container.Id}), if({view.custom.fgConfig.TraysPerContainer} > 0, 'Per-Tray Close - first tray opens a container (' + toStr({view.custom.fgConfig.TraysPerContainer}) + ' trays x ' + toStr({view.custom.fgConfig.PartsPerTray}) + ' parts/tray)', 'Per-Tray Close - completing the first tray opens a container'), 'Per-Tray Close - ByVision - Tray ' + toStr(({view.custom.container.ClosedTrays} + 1)) + ' of ' + toStr({view.custom.container.TraysPerContainer}))"
+                            "expression": "if(isNull({view.custom.container.Id}), if({view.custom.fgConfig.TraysPerContainer} > 0, 'Per-Tray Close - first tray opens a container (' + toStr({view.custom.fgConfig.TraysPerContainer}) + ' trays x ' + toStr({view.custom.fgConfig.PartsPerTray}) + ' parts/tray)', 'Per-Tray Close - completing the first tray opens a container'), 'Per-Tray Close - ' + if({session.custom.closureMethod} = \"ByVision\", \"Vision\", if({session.custom.closureMethod} = \"ByWeight\", \"Weight\", \"Count\")) + ' - Tray ' + toStr(({view.custom.container.ClosedTrays} + 1)) + ' of ' + toStr({view.custom.container.TraysPerContainer}))"
                           },
                           "type": "expr"
                         }
@@ -771,86 +801,32 @@
                         "type": "ia.display.label"
                       },
                       {
-                        "children": [
-                          {
-                            "meta": {
-                              "name": "PassWord"
-                            },
-                            "props": {
-                              "style": {
-                                "color": "var(--pf-status-good-fg)",
-                                "fontSize": "26px",
-                                "fontWeight": "700",
-                                "letterSpacing": "0.1em"
-                              },
-                              "text": "PASS"
-                            },
-                            "type": "ia.display.label"
-                          },
-                          {
-                            "meta": {
-                              "name": "PassSub"
-                            },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "config": {
-                                    "expression": "'Last validated tray - ' + toStr({view.custom.container.ClosedTrays}) + ' of ' + toStr({view.custom.container.TraysPerContainer})"
-                                  },
-                                  "type": "expr"
-                                }
-                              }
-                            },
-                            "props": {
-                              "style": {
-                                "color": "var(--mpp-neutral-90)",
-                                "fontSize": "12px",
-                                "textAlign": "center"
-                              }
-                            },
-                            "type": "ia.display.label"
-                          },
-                          {
-                            "meta": {
-                              "name": "PassMeta"
-                            },
-                            "propConfig": {
-                              "props.text": {
-                                "binding": {
-                                  "config": {
-                                    "expression": "toStr({view.custom.container.PartsPerTray}) + ' / ' + toStr({view.custom.container.PartsPerTray}) + ' positions valid'"
-                                  },
-                                  "type": "expr"
-                                }
-                              }
-                            },
-                            "props": {
-                              "style": {
-                                "color": "var(--mpp-neutral-80)",
-                                "fontFamily": "var(--mpp-font-mono)",
-                                "fontSize": "11px",
-                                "textAlign": "center"
-                              }
-                            },
-                            "type": "ia.display.label"
-                          }
-                        ],
                         "meta": {
-                          "name": "PassOverlay"
+                          "name": "VisionFrame"
+                        },
+                        "position": {
+                          "basis": "220px",
+                          "grow": 1
+                        },
+                        "propConfig": {
+                          "props.url": {
+                            "binding": {
+                              "config": {
+                                "expression": "{session.custom.terminal.visionAppUrl}"
+                              },
+                              "type": "expr"
+                            }
+                          }
                         },
                         "props": {
-                          "alignItems": "center",
-                          "direction": "column",
-                          "justify": "center",
                           "style": {
-                            "backgroundColor": "var(--pf-status-good-bg)",
-                            "border": "3px solid var(--pf-status-good-fg)",
+                            "border": "0",
                             "borderRadius": "var(--mpp-radius-lg)",
-                            "gap": "6px",
-                            "padding": "22px 44px"
+                            "height": "100%",
+                            "width": "100%"
                           }
                         },
-                        "type": "ia.container.flex"
+                        "type": "ia.display.inline-frame"
                       },
                       {
                         "meta": {
@@ -879,6 +855,16 @@
                       "basis": "420px",
                       "grow": 2
                     },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "{session.custom.closureMethod} = \"ByVision\""
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
                     "props": {
                       "alignItems": "center",
                       "direction": "column",
@@ -891,6 +877,72 @@
                         "overflow": "hidden",
                         "padding": "16px",
                         "position": "relative"
+                      }
+                    },
+                    "type": "ia.container.flex"
+                  },
+                  {
+                    "children": [
+                      {
+                        "meta": {
+                          "name": "WeightLabel"
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-neutral-90)",
+                            "fontSize": "11px",
+                            "fontWeight": "500",
+                            "letterSpacing": "0.1em",
+                            "textTransform": "uppercase"
+                          },
+                          "text": "NS Line Scale"
+                        },
+                        "type": "ia.display.label"
+                      },
+                      {
+                        "meta": {
+                          "name": "WeightStatus"
+                        },
+                        "props": {
+                          "style": {
+                            "color": "var(--mpp-text-primary)",
+                            "fontSize": "18px",
+                            "fontWeight": "600",
+                            "maxWidth": "360px",
+                            "textAlign": "center"
+                          },
+                          "text": "Waiting for scale - PLC closes the container at target weight."
+                        },
+                        "type": "ia.display.label"
+                      }
+                    ],
+                    "meta": {
+                      "name": "WeightPane"
+                    },
+                    "position": {
+                      "basis": "420px",
+                      "grow": 2
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "{session.custom.closureMethod} = \"ByWeight\""
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "alignItems": "center",
+                      "direction": "column",
+                      "justify": "center",
+                      "style": {
+                        "border": "2px solid var(--mpp-border-subtle)",
+                        "borderRadius": "var(--mpp-radius-lg)",
+                        "gap": "12px",
+                        "minHeight": "280px",
+                        "padding": "16px"
                       }
                     },
                     "type": "ia.container.flex"
@@ -1069,7 +1121,7 @@
                           "component": {
                             "onActionPerformed": {
                               "config": {
-                                "script": "\tresult = BlueRidge.Workorder.Assembly.handleTrayComplete(self.view.custom.container, self.view.custom.draft, self.view.custom.selectedFinishedGoodItemId, self.session.custom.cell.locationId)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tray completed - FG LOT minted\")\n\tif result and result.get(\"Status\"):\n\t\t# Re-prime the next tray from the part's config (the fgConfig onChange only\n\t\t# fires when the CONFIG changes, so a same-container tray 2 would stay blank).\n\t\tcfg = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fgConfig) or {}\n\t\tself.view.custom.draft = {\"trayPosition\": \"\", \"partsCount\": cfg.get(\"PartsPerTray\") or \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1\n\t\tif result.get(\"ContainerFull\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Container full\", \"Press Complete to ship.\", \"info\")"
+                                "script": "\tresult = BlueRidge.Workorder.Assembly.handleTrayComplete(self.view.custom.container, self.view.custom.draft, self.view.custom.selectedFinishedGoodItemId, self.session.custom.cell.locationId, self.session.custom.closureMethod)\n\tBlueRidge.Common.Ui.notifyResult(result, \"Tray completed - FG LOT minted\")\n\tif result and result.get(\"Status\"):\n\t\t# Re-prime the next tray from the part's config (the fgConfig onChange only\n\t\t# fires when the CONFIG changes, so a same-container tray 2 would stay blank).\n\t\tcfg = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.fgConfig) or {}\n\t\tself.view.custom.draft = {\"trayPosition\": \"\", \"partsCount\": cfg.get(\"PartsPerTray\") or \"\"}\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1\n\t\tif result.get(\"ContainerFull\"):\n\t\t\tBlueRidge.Common.Notify.toast(\"Container full\", \"Press Complete to ship.\", \"info\")"
                               },
                               "scope": "G",
                               "type": "script"
@@ -1097,6 +1149,16 @@
                     "position": {
                       "basis": "300px",
                       "grow": 1
+                    },
+                    "propConfig": {
+                      "position.display": {
+                        "binding": {
+                          "config": {
+                            "expression": "{session.custom.closureMethod} = \"ByCount\""
+                          },
+                          "type": "expr"
+                        }
+                      }
                     },
                     "props": {
                       "direction": "column",

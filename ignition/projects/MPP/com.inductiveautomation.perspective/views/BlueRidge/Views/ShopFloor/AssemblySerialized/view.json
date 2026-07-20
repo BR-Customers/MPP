@@ -103,18 +103,38 @@
             "type": "ia.container.flex"
           },
           {
+            "events": {
+              "dom": {
+                "onClick": {
+                  "config": {
+                    "script": "\tsystem.perspective.openPopup(\"mpp-changeover\", \"BlueRidge/Components/Popups/ChangeoverElevation\", params={\"terminalLocationId\": self.session.custom.terminal.terminalLocationId}, modal=True, showCloseIcon=True)"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
             "meta": {
               "name": "ConfirmMethod"
             },
             "position": {
               "shrink": 0
             },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if({session.custom.closureMethod} = \"ByCount\", \"By Count\", if({session.custom.closureMethod} = \"ByWeight\", \"By Weight\", if({session.custom.closureMethod} = \"ByVision\", \"By Vision\", \"—\")))"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
             "props": {
-              "data-method": "Vision",
               "style": {
-                "classes": "pf-confirm-method"
-              },
-              "text": "Vision"
+                "classes": "pf-confirm-method",
+                "cursor": "pointer"
+              }
             },
             "type": "ia.display.label"
           },
@@ -666,11 +686,20 @@
                     "meta": {
                       "name": "Hsub"
                     },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "if({session.custom.closureMethod} = \"ByCount\", \"By Count\", if({session.custom.closureMethod} = \"ByWeight\", \"By Weight\", \"By Vision\")) + \" - camera scans the tray as a whole - 1 validation event per tray\""
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
                     "props": {
                       "style": {
                         "classes": "pf-kpi-sub"
-                      },
-                      "text": "ByVision - camera scans the tray as a whole - 1 validation event per tray"
+                      }
                     },
                     "type": "ia.display.label"
                   }
@@ -688,455 +717,31 @@
                 "type": "ia.container.flex"
               },
               {
-                "children": [
-                  {
-                    "meta": {
-                      "name": "P1"
-                    },
-                    "position": {
-                      "basis": "56px",
-                      "shrink": 0
-                    },
-                    "propConfig": {
-                      "position.display": {
-                        "binding": {
-                          "config": {
-                            "expression": "1 <= {view.custom.container.PartsPerTray}"
-                          },
-                          "type": "expr"
-                        }
-                      }
-                    },
-                    "props": {
-                      "style": {
-                        "alignItems": "center",
-                        "backgroundColor": "var(--mpp-surface-card)",
-                        "border": "2px dashed var(--mpp-border-subtle)",
-                        "borderRadius": "var(--mpp-radius-md)",
-                        "color": "var(--mpp-text-tertiary)",
-                        "display": "flex",
-                        "fontFamily": "var(--mpp-font-mono)",
-                        "fontSize": "11px",
-                        "fontWeight": "600",
-                        "height": "56px",
-                        "justifyContent": "center"
-                      },
-                      "text": "1"
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "P2"
-                    },
-                    "position": {
-                      "basis": "56px",
-                      "shrink": 0
-                    },
-                    "propConfig": {
-                      "position.display": {
-                        "binding": {
-                          "config": {
-                            "expression": "2 <= {view.custom.container.PartsPerTray}"
-                          },
-                          "type": "expr"
-                        }
-                      }
-                    },
-                    "props": {
-                      "style": {
-                        "alignItems": "center",
-                        "backgroundColor": "var(--mpp-surface-card)",
-                        "border": "2px dashed var(--mpp-border-subtle)",
-                        "borderRadius": "var(--mpp-radius-md)",
-                        "color": "var(--mpp-text-tertiary)",
-                        "display": "flex",
-                        "fontFamily": "var(--mpp-font-mono)",
-                        "fontSize": "11px",
-                        "fontWeight": "600",
-                        "height": "56px",
-                        "justifyContent": "center"
-                      },
-                      "text": "2"
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "P3"
-                    },
-                    "position": {
-                      "basis": "56px",
-                      "shrink": 0
-                    },
-                    "propConfig": {
-                      "position.display": {
-                        "binding": {
-                          "config": {
-                            "expression": "3 <= {view.custom.container.PartsPerTray}"
-                          },
-                          "type": "expr"
-                        }
-                      }
-                    },
-                    "props": {
-                      "style": {
-                        "alignItems": "center",
-                        "backgroundColor": "var(--mpp-surface-card)",
-                        "border": "2px dashed var(--mpp-border-subtle)",
-                        "borderRadius": "var(--mpp-radius-md)",
-                        "color": "var(--mpp-text-tertiary)",
-                        "display": "flex",
-                        "fontFamily": "var(--mpp-font-mono)",
-                        "fontSize": "11px",
-                        "fontWeight": "600",
-                        "height": "56px",
-                        "justifyContent": "center"
-                      },
-                      "text": "3"
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "P4"
-                    },
-                    "position": {
-                      "basis": "56px",
-                      "shrink": 0
-                    },
-                    "propConfig": {
-                      "position.display": {
-                        "binding": {
-                          "config": {
-                            "expression": "4 <= {view.custom.container.PartsPerTray}"
-                          },
-                          "type": "expr"
-                        }
-                      }
-                    },
-                    "props": {
-                      "style": {
-                        "alignItems": "center",
-                        "backgroundColor": "var(--mpp-surface-card)",
-                        "border": "2px dashed var(--mpp-border-subtle)",
-                        "borderRadius": "var(--mpp-radius-md)",
-                        "color": "var(--mpp-text-tertiary)",
-                        "display": "flex",
-                        "fontFamily": "var(--mpp-font-mono)",
-                        "fontSize": "11px",
-                        "fontWeight": "600",
-                        "height": "56px",
-                        "justifyContent": "center"
-                      },
-                      "text": "4"
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "P5"
-                    },
-                    "position": {
-                      "basis": "56px",
-                      "shrink": 0
-                    },
-                    "propConfig": {
-                      "position.display": {
-                        "binding": {
-                          "config": {
-                            "expression": "5 <= {view.custom.container.PartsPerTray}"
-                          },
-                          "type": "expr"
-                        }
-                      }
-                    },
-                    "props": {
-                      "style": {
-                        "alignItems": "center",
-                        "backgroundColor": "var(--mpp-surface-card)",
-                        "border": "2px dashed var(--mpp-border-subtle)",
-                        "borderRadius": "var(--mpp-radius-md)",
-                        "color": "var(--mpp-text-tertiary)",
-                        "display": "flex",
-                        "fontFamily": "var(--mpp-font-mono)",
-                        "fontSize": "11px",
-                        "fontWeight": "600",
-                        "height": "56px",
-                        "justifyContent": "center"
-                      },
-                      "text": "5"
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "P6"
-                    },
-                    "position": {
-                      "basis": "56px",
-                      "shrink": 0
-                    },
-                    "propConfig": {
-                      "position.display": {
-                        "binding": {
-                          "config": {
-                            "expression": "6 <= {view.custom.container.PartsPerTray}"
-                          },
-                          "type": "expr"
-                        }
-                      }
-                    },
-                    "props": {
-                      "style": {
-                        "alignItems": "center",
-                        "backgroundColor": "var(--mpp-surface-card)",
-                        "border": "2px dashed var(--mpp-border-subtle)",
-                        "borderRadius": "var(--mpp-radius-md)",
-                        "color": "var(--mpp-text-tertiary)",
-                        "display": "flex",
-                        "fontFamily": "var(--mpp-font-mono)",
-                        "fontSize": "11px",
-                        "fontWeight": "600",
-                        "height": "56px",
-                        "justifyContent": "center"
-                      },
-                      "text": "6"
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "P7"
-                    },
-                    "position": {
-                      "basis": "56px",
-                      "shrink": 0
-                    },
-                    "propConfig": {
-                      "position.display": {
-                        "binding": {
-                          "config": {
-                            "expression": "7 <= {view.custom.container.PartsPerTray}"
-                          },
-                          "type": "expr"
-                        }
-                      }
-                    },
-                    "props": {
-                      "style": {
-                        "alignItems": "center",
-                        "backgroundColor": "var(--mpp-surface-card)",
-                        "border": "2px dashed var(--mpp-border-subtle)",
-                        "borderRadius": "var(--mpp-radius-md)",
-                        "color": "var(--mpp-text-tertiary)",
-                        "display": "flex",
-                        "fontFamily": "var(--mpp-font-mono)",
-                        "fontSize": "11px",
-                        "fontWeight": "600",
-                        "height": "56px",
-                        "justifyContent": "center"
-                      },
-                      "text": "7"
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "P8"
-                    },
-                    "position": {
-                      "basis": "56px",
-                      "shrink": 0
-                    },
-                    "propConfig": {
-                      "position.display": {
-                        "binding": {
-                          "config": {
-                            "expression": "8 <= {view.custom.container.PartsPerTray}"
-                          },
-                          "type": "expr"
-                        }
-                      }
-                    },
-                    "props": {
-                      "style": {
-                        "alignItems": "center",
-                        "backgroundColor": "var(--mpp-surface-card)",
-                        "border": "2px dashed var(--mpp-border-subtle)",
-                        "borderRadius": "var(--mpp-radius-md)",
-                        "color": "var(--mpp-text-tertiary)",
-                        "display": "flex",
-                        "fontFamily": "var(--mpp-font-mono)",
-                        "fontSize": "11px",
-                        "fontWeight": "600",
-                        "height": "56px",
-                        "justifyContent": "center"
-                      },
-                      "text": "8"
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "P9"
-                    },
-                    "position": {
-                      "basis": "56px",
-                      "shrink": 0
-                    },
-                    "propConfig": {
-                      "position.display": {
-                        "binding": {
-                          "config": {
-                            "expression": "9 <= {view.custom.container.PartsPerTray}"
-                          },
-                          "type": "expr"
-                        }
-                      }
-                    },
-                    "props": {
-                      "style": {
-                        "alignItems": "center",
-                        "backgroundColor": "var(--mpp-surface-card)",
-                        "border": "2px dashed var(--mpp-border-subtle)",
-                        "borderRadius": "var(--mpp-radius-md)",
-                        "color": "var(--mpp-text-tertiary)",
-                        "display": "flex",
-                        "fontFamily": "var(--mpp-font-mono)",
-                        "fontSize": "11px",
-                        "fontWeight": "600",
-                        "height": "56px",
-                        "justifyContent": "center"
-                      },
-                      "text": "9"
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "P10"
-                    },
-                    "position": {
-                      "basis": "56px",
-                      "shrink": 0
-                    },
-                    "propConfig": {
-                      "position.display": {
-                        "binding": {
-                          "config": {
-                            "expression": "10 <= {view.custom.container.PartsPerTray}"
-                          },
-                          "type": "expr"
-                        }
-                      }
-                    },
-                    "props": {
-                      "style": {
-                        "alignItems": "center",
-                        "backgroundColor": "var(--mpp-surface-card)",
-                        "border": "2px dashed var(--mpp-border-subtle)",
-                        "borderRadius": "var(--mpp-radius-md)",
-                        "color": "var(--mpp-text-tertiary)",
-                        "display": "flex",
-                        "fontFamily": "var(--mpp-font-mono)",
-                        "fontSize": "11px",
-                        "fontWeight": "600",
-                        "height": "56px",
-                        "justifyContent": "center"
-                      },
-                      "text": "10"
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "P11"
-                    },
-                    "position": {
-                      "basis": "56px",
-                      "shrink": 0
-                    },
-                    "propConfig": {
-                      "position.display": {
-                        "binding": {
-                          "config": {
-                            "expression": "11 <= {view.custom.container.PartsPerTray}"
-                          },
-                          "type": "expr"
-                        }
-                      }
-                    },
-                    "props": {
-                      "style": {
-                        "alignItems": "center",
-                        "backgroundColor": "var(--mpp-surface-card)",
-                        "border": "2px dashed var(--mpp-border-subtle)",
-                        "borderRadius": "var(--mpp-radius-md)",
-                        "color": "var(--mpp-text-tertiary)",
-                        "display": "flex",
-                        "fontFamily": "var(--mpp-font-mono)",
-                        "fontSize": "11px",
-                        "fontWeight": "600",
-                        "height": "56px",
-                        "justifyContent": "center"
-                      },
-                      "text": "11"
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "P12"
-                    },
-                    "position": {
-                      "basis": "56px",
-                      "shrink": 0
-                    },
-                    "propConfig": {
-                      "position.display": {
-                        "binding": {
-                          "config": {
-                            "expression": "12 <= {view.custom.container.PartsPerTray}"
-                          },
-                          "type": "expr"
-                        }
-                      }
-                    },
-                    "props": {
-                      "style": {
-                        "alignItems": "center",
-                        "backgroundColor": "var(--mpp-surface-card)",
-                        "border": "2px dashed var(--mpp-border-subtle)",
-                        "borderRadius": "var(--mpp-radius-md)",
-                        "color": "var(--mpp-text-tertiary)",
-                        "display": "flex",
-                        "fontFamily": "var(--mpp-font-mono)",
-                        "fontSize": "11px",
-                        "fontWeight": "600",
-                        "height": "56px",
-                        "justifyContent": "center"
-                      },
-                      "text": "12"
-                    },
-                    "type": "ia.display.label"
-                  }
-                ],
                 "meta": {
-                  "name": "TrayGrid"
+                  "name": "VisionEmbed"
                 },
                 "position": {
+                  "basis": "360px",
                   "shrink": 0
+                },
+                "propConfig": {
+                  "props.url": {
+                    "binding": {
+                      "config": {
+                        "expression": "{session.custom.terminal.visionAppUrl}"
+                      },
+                      "type": "expr"
+                    }
+                  }
                 },
                 "props": {
                   "style": {
-                    "gap": "8px",
-                    "maxWidth": "392px",
-                    "padding": "8px 0"
-                  },
-                  "wrap": "wrap"
+                    "border": "2px solid var(--mpp-border-subtle)",
+                    "borderRadius": "var(--mpp-radius-lg)",
+                    "minHeight": "320px"
+                  }
                 },
-                "type": "ia.container.flex"
+                "type": "ia.display.inline-frame"
               },
               {
                 "meta": {
@@ -1161,7 +766,185 @@
               "position.display": {
                 "binding": {
                   "config": {
-                    "expression": "!isNull({view.custom.container.Id})"
+                    "expression": "{session.custom.closureMethod} = \"ByVision\""
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-panel",
+                "gap": "8px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "H"
+                    },
+                    "props": {
+                      "style": {
+                        "fontSize": "16px",
+                        "fontWeight": "700"
+                      },
+                      "text": "Tray Close - By Weight"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "Hsub"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      },
+                      "text": "Scale-validated - the PLC closes the tray when target weight is met"
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "WeightHeader"
+                },
+                "props": {
+                  "alignItems": "center",
+                  "justify": "space-between",
+                  "style": {
+                    "classes": "pf-panel-header"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "WeightWaiting"
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  },
+                  "text": "Waiting for scale — PLC closes at target weight."
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "WeightPanel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "{session.custom.closureMethod} = \"ByWeight\""
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "direction": "column",
+              "style": {
+                "classes": "pf-panel",
+                "gap": "8px"
+              }
+            },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "meta": {
+                      "name": "H"
+                    },
+                    "props": {
+                      "style": {
+                        "fontSize": "16px",
+                        "fontWeight": "700"
+                      },
+                      "text": "Tray Close - By Count"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "Hsub"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "'Operator count - tray closes at ' + toStr({view.custom.container.PartsPerTray}) + ' pcs'"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-sub"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "CountHeader"
+                },
+                "props": {
+                  "alignItems": "center",
+                  "justify": "space-between",
+                  "style": {
+                    "classes": "pf-panel-header"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "meta": {
+                  "name": "CountStatus"
+                },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "'Accumulated ' + toStr({view.custom.container.AccumulatedParts}) + ' / ' + toStr({view.custom.container.TargetParts}) + ' parts - trays close by operator count.'"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
+                "props": {
+                  "style": {
+                    "classes": "pf-kpi-sub"
+                  }
+                },
+                "type": "ia.display.label"
+              }
+            ],
+            "meta": {
+              "name": "CountPanel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "position.display": {
+                "binding": {
+                  "config": {
+                    "expression": "{session.custom.closureMethod} = \"ByCount\""
                   },
                   "type": "expr"
                 }
