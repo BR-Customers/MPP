@@ -551,9 +551,9 @@ GO
 
 -- =============================================
 -- Test 13: Audit-readability narrative — ContainerConfig_Update Description (diff)
---   Description shape:
---     <PartNumber> · Container Config · Updated ClosureMethod ByCount → ByWeight; ...
---   OldValue JSON carries a resolved "Item" sub-object.
+--   ClosureMethod is immutable, so the diff is shown on a MUTABLE field:
+--     <PartNumber> · Container Config · Updated TargetWeight null → 1500.0000; ...
+--   (ClosureMethod stays ByCount.) OldValue JSON carries a resolved "Item".
 -- =============================================
 DECLARE @S    BIT,
         @M    NVARCHAR(500),
@@ -570,7 +570,7 @@ INSERT INTO #RccAud2 EXEC Parts.ContainerConfig_Update
     @TraysPerContainer = 4,
     @PartsPerTray      = 25,
     @IsSerialized      = 0,
-    @ClosureMethod     = N'ByWeight',
+    @ClosureMethod     = N'ByCount',
     @TargetWeight      = 1500.0000,
     @AppUserId         = 1;
 SELECT @S = Status, @M = Message FROM #RccAud2;
@@ -584,7 +584,7 @@ WHERE let.Code = N'ContainerConfig' AND cl.EntityId = @CcId AND cl.Description L
 ORDER BY cl.Id DESC;
 
 DECLARE @CcUpdDescMatch NVARCHAR(1) =
-    CASE WHEN @CcUpdDesc LIKE N'TEST-CC-S5-001%Container Config%Updated%ClosureMethod ByCount%ByWeight%'
+    CASE WHEN @CcUpdDesc LIKE N'TEST-CC-S5-001%Container Config%Updated%TargetWeight%1500%'
          THEN N'1' ELSE N'0' END;
 EXEC test.Assert_IsEqual
     @TestName = N'[AuditCcUpdate] Description shows changed field old→new',
