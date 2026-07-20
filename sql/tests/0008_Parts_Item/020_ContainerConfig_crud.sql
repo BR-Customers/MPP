@@ -102,7 +102,7 @@ INSERT INTO #Rcc2 EXEC Parts.ContainerConfig_Create
     @IsSerialized      = 0,
     @DunnageCode       = N'DUN-001',
     @CustomerCode      = N'CUST-HON',
-    @ClosureMethod     = N'Strap',
+    @ClosureMethod     = N'ByCount',
     @TargetWeight      = 125.5000,
     @AppUserId         = 1;
 SELECT @S = Status, @M = Message, @NewId = NewId FROM #Rcc2;
@@ -192,10 +192,10 @@ EXEC test.Assert_IsEqual
 GO
 
 -- =============================================
--- Test 5: ContainerConfig_Create duplicate active config for same Item
---   Second active create for same ItemId must fail (filtered unique index
---   UQ_ContainerConfig_ActiveItemId). Proc should return status=0 with
---   a friendly message, whether pre-checked or caught via CATCH.
+-- Test 5: ContainerConfig_Create duplicate active config for same (Item, method)
+--   TEST-CC-001 already has an active ByCount config (Test 2). A second
+--   active create with the SAME method must fail (per-method business-rule
+--   check + filtered unique index UQ_ContainerConfig_ActiveItemMethod).
 -- =============================================
 DECLARE @S    BIT,
         @M    NVARCHAR(500),
@@ -213,6 +213,7 @@ INSERT INTO #Rcc5 EXEC Parts.ContainerConfig_Create
     @IsSerialized      = 0,
     @DunnageCode       = N'DUN-DUP',
     @CustomerCode      = N'CUST-DUP',
+    @ClosureMethod     = N'ByCount',
     @AppUserId         = 1;
 SELECT @S = Status, @M = Message, @NewId = NewId FROM #Rcc5;
 DROP TABLE #Rcc5;
@@ -220,14 +221,51 @@ DROP TABLE #Rcc5;
 SET @SStr = CAST(@S AS NVARCHAR(1));
 
 EXEC test.Assert_IsEqual
-    @TestName = N'[CreateDupActive] Status is 0',
+    @TestName = N'[CreateDupMethod] same-method duplicate Status is 0',
     @Expected = N'0',
     @Actual   = @SStr;
 
 DECLARE @NewIdStr NVARCHAR(20) = CAST(@NewId AS NVARCHAR(20));
 EXEC test.Assert_IsNull
-    @TestName = N'[CreateDupActive] NewId is NULL',
+    @TestName = N'[CreateDupMethod] NewId is NULL',
     @Value    = @NewIdStr;
+GO
+
+-- =============================================
+-- Test 5b: per-method create semantics on a throwaway item
+--   - a DIFFERENT method for the same item succeeds (Status 1);
+--   - an INVALID method code is rejected (Status 0).
+-- =============================================
+DECLARE @Item5b BIGINT;
+CREATE TABLE #Rc5bItem (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #Rc5bItem EXEC Parts.Item_Create
+    @ItemTypeId = 4, @PartNumber = N'TEST-CC-DM', @Description = N'diff-method host', @UomId = 1, @AppUserId = 1;
+SELECT @Item5b = NewId FROM #Rc5bItem;
+DROP TABLE #Rc5bItem;
+
+-- first config: ByCount
+CREATE TABLE #Rc5bA (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #Rc5bA EXEC Parts.ContainerConfig_Create
+    @ItemId = @Item5b, @TraysPerContainer = 1, @PartsPerTray = 48, @IsSerialized = 0,
+    @ClosureMethod = N'ByCount', @AppUserId = 1;
+DECLARE @S5bA NVARCHAR(1) = (SELECT CAST(Status AS NVARCHAR(1)) FROM #Rc5bA); DROP TABLE #Rc5bA;
+EXEC test.Assert_IsEqual @TestName = N'[CreateDiffMethod] first (ByCount) Status 1', @Expected = N'1', @Actual = @S5bA;
+
+-- second config: ByVision (different method, same item) -> allowed
+CREATE TABLE #Rc5bB (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #Rc5bB EXEC Parts.ContainerConfig_Create
+    @ItemId = @Item5b, @TraysPerContainer = 12, @PartsPerTray = 8, @IsSerialized = 0,
+    @ClosureMethod = N'ByVision', @AppUserId = 1;
+DECLARE @S5bB NVARCHAR(1) = (SELECT CAST(Status AS NVARCHAR(1)) FROM #Rc5bB); DROP TABLE #Rc5bB;
+EXEC test.Assert_IsEqual @TestName = N'[CreateDiffMethod] second (ByVision) Status 1', @Expected = N'1', @Actual = @S5bB;
+
+-- invalid method code -> rejected
+CREATE TABLE #Rc5bC (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO #Rc5bC EXEC Parts.ContainerConfig_Create
+    @ItemId = @Item5b, @TraysPerContainer = 1, @PartsPerTray = 1, @IsSerialized = 0,
+    @ClosureMethod = N'Nope', @AppUserId = 1;
+DECLARE @S5bC NVARCHAR(1) = (SELECT CAST(Status AS NVARCHAR(1)) FROM #Rc5bC); DROP TABLE #Rc5bC;
+EXEC test.Assert_IsEqual @TestName = N'[CreateBadMethod] invalid method Status 0', @Expected = N'0', @Actual = @S5bC;
 GO
 
 -- =============================================
@@ -289,7 +327,7 @@ INSERT INTO #Rcc7 EXEC Parts.ContainerConfig_Update
     @IsSerialized      = 0,
     @DunnageCode       = N'DUN-001',
     @CustomerCode      = N'CUST-HON',
-    @ClosureMethod     = N'Strap',
+    @ClosureMethod     = N'ByCount',
     @TargetWeight      = 150.0000,
     @AppUserId         = 1;
 SELECT @S = Status, @M = Message FROM #Rcc7;
@@ -410,7 +448,7 @@ INSERT INTO #Rcc10 EXEC Parts.ContainerConfig_Create
     @IsSerialized      = 1,
     @DunnageCode       = N'DUN-002',
     @CustomerCode      = N'CUST-HON',
-    @ClosureMethod     = N'Lid',
+    @ClosureMethod     = N'ByCount',
     @TargetWeight      = 200.0000,
     @AppUserId         = 1;
 SELECT @S = Status, @M = Message, @NewId = NewId FROM #Rcc10;

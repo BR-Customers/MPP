@@ -48,7 +48,7 @@ DROP TABLE #ce;
 
 CREATE TABLE #cc (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #cc EXEC Parts.ContainerConfig_Create
-    @ItemId = @ItemId, @TraysPerContainer = 4, @PartsPerTray = 10, @AppUserId = @App;
+    @ItemId = @ItemId, @TraysPerContainer = 4, @PartsPerTray = 10, @ClosureMethod = N'ByCount', @AppUserId = @App;
 DROP TABLE #cc;
 
 CREATE TABLE #dep (Status BIT, Message NVARCHAR(500));
