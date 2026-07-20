@@ -8,6 +8,8 @@
     "refreshToken": 0,
     "scrapCount": null,
     "shotCount": null,
+    "trimInInventory": [],
+    "trimOutInventory": [],
     "trimState": "in"
   },
   "params": {
@@ -31,10 +33,18 @@
         "type": "expr"
       }
     },
-    "custom.trimInventory": {
+    "custom.trimInInventory": {
       "binding": {
         "config": {
-          "expression": "if(isNull({session.custom.terminal.zoneLocationId}), \"\", runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.terminal.zoneLocationId}, true, {view.custom.refreshToken}))"
+          "expression": "if(isNull({session.custom.terminal.zoneLocationId}), \"\", runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.terminal.zoneLocationId}, true, {view.custom.refreshToken}, \"TrimIn\"))"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.trimOutInventory": {
+      "binding": {
+        "config": {
+          "expression": "if(isNull({session.custom.terminal.zoneLocationId}), \"\", runScript(\"BlueRidge.Lots.Lot.getWipQueueByLocation\", 0, {session.custom.terminal.zoneLocationId}, true, {view.custom.refreshToken}, \"TrimOut\"))"
         },
         "type": "expr"
       }
@@ -413,7 +423,7 @@
                       "position.display": {
                         "binding": {
                           "config": {
-                            "expression": "len({view.custom.trimInventory}) \u003d 0"
+                            "expression": "len({view.custom.trimInInventory}) \u003d 0"
                           },
                           "type": "expr"
                         }
@@ -439,7 +449,7 @@
                       "props.instances": {
                         "binding": {
                           "config": {
-                            "path": "view.custom.trimInventory"
+                            "path": "view.custom.trimInInventory"
                           },
                           "transforms": [
                             {
@@ -640,7 +650,7 @@
                       "position.display": {
                         "binding": {
                           "config": {
-                            "expression": "len({view.custom.trimInventory}) \u003d 0"
+                            "expression": "len({view.custom.trimOutInventory}) \u003d 0"
                           },
                           "type": "expr"
                         }
@@ -666,7 +676,7 @@
                       "props.instances": {
                         "binding": {
                           "config": {
-                            "path": "view.custom.trimInventory"
+                            "path": "view.custom.trimOutInventory"
                           },
                           "transforms": [
                             {
