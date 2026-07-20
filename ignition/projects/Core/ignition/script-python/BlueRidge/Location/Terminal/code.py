@@ -162,3 +162,23 @@ def getPrinter(terminalLocationId):
         "endpoint":   row.get("Endpoint") or "",
         "model":      row.get("Model") or "",
     }
+
+
+def getClosureContext(terminalLocationId):
+    """Assembly-out closure context for a terminal:
+       {CurrentClosureMethod, VisionAppUrl, ClosureCapabilities}. The capability
+       set is derived server-side from the terminal's bound PLC devices. Returns
+       {} when unresolved (fallback terminal / no id)."""
+    tid = BlueRidge.Common.Util.extractQualifiedValues(terminalLocationId)
+    if tid is None:
+        return {}
+    # Defensive: onStartup runs on every session connect. If the closure procs
+    # are not yet deployed to this gateway's DB, degrade to empty rather than
+    # break session establishment.
+    try:
+        row = BlueRidge.Common.Db.execOne(
+            "location/Terminal_GetClosureContext", {"terminalLocationId": tid})
+        return row if row is not None else {}
+    except Exception as e:
+        BlueRidge.Common.Util.log("getClosureContext failed: %s" % str(e))
+        return {}

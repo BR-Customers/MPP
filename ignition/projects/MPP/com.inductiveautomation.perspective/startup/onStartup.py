@@ -14,10 +14,13 @@ def onStartup(session):
 			"zoneLocationId":     None,
 			"zoneName":           "",
 			"defaultScreen":      "",
+			"visionAppUrl":       "",
 			"isFallback":         True,
 		}
 		session.custom.printer = {"locationId": None, "code": "", "endpoint": "", "model": ""}
 		session.custom.plcDevices = []
+		session.custom.closureMethod = ""
+		session.custom.closureCapabilities = ["ByCount"]
 		return
 	session.custom.terminal = {
 		"terminalLocationId": term.get("TerminalLocationId"),
@@ -41,3 +44,11 @@ def onStartup(session):
 	# Plan 3: resolve this terminal's PLC UDT-instance mappings for the gateway
 	# watchers + PLC screens (empty list when the terminal drives no devices).
 	session.custom.plcDevices = BlueRidge.Location.TerminalPlcDevice.getByTerminal(term.get("TerminalLocationId")) or []
+	# Assembly-out closure context: persisted mode + capability set (derived from
+	# the terminal's PLC devices) + the ByVision embed URL. Empty/ByCount defaults
+	# when the terminal has no closure attributes provisioned.
+	cc = BlueRidge.Location.Terminal.getClosureContext(term.get("TerminalLocationId")) or {}
+	session.custom.closureMethod = cc.get("CurrentClosureMethod") or ""
+	caps = cc.get("ClosureCapabilities") or "ByCount"
+	session.custom.closureCapabilities = [c for c in caps.split(",") if c]
+	session.custom.terminal["visionAppUrl"] = cc.get("VisionAppUrl") or ""

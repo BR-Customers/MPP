@@ -46,13 +46,16 @@ def completeTray(finishedGoodItemId, pieceCount, cellLocationId,
     return BlueRidge.Common.Db.execMutation("workorder/Assembly_CompleteTray", params)
 
 
-def handleTrayComplete(container, draft, selectedFinishedGoodItemId, cellLocationId):
-    """View helper for the non-serialized assembly tray-complete button. Resolves the
-       finished-good Item (the open container's Item, or the operator-selected FG when
-       no container is open yet - completeTray auto-opens one), validates the parts
-       count, and mints the FG LOT via completeTray. Returns the completeTray result
-       dict, or a Status-0 dict on a validation miss (surfaced by notifyResult)."""
+def handleTrayComplete(container, draft, selectedFinishedGoodItemId, cellLocationId, closureMethod=None):
+    """View helper for the assembly tray-complete button. Resolves the finished-good
+       Item (the open container's Item, or the operator-selected FG when no container
+       is open yet - completeTray auto-opens one), validates the parts count, and mints
+       the FG LOT via completeTray. closureMethod is the terminal's active mode
+       (session.custom.closureMethod) - it selects the part's per-method ContainerConfig
+       and is REQUIRED by the proc. Returns the completeTray result dict, or a Status-0
+       dict on a validation miss (surfaced by notifyResult)."""
     cnt = BlueRidge.Common.Util.toIntOrNone(draft.get("partsCount")) if draft else None
+    closureMethod = BlueRidge.Common.Util.extractQualifiedValues(closureMethod)
     if container and container.get("Id") is not None:
         fgItem = container.get("ItemId")
     else:
@@ -61,7 +64,10 @@ def handleTrayComplete(container, draft, selectedFinishedGoodItemId, cellLocatio
         return {"Status": False, "Message": "Select a finished good (or open a container) first."}
     if cnt is None:
         return {"Status": False, "Message": "Enter the parts count for the tray."}
-    return completeTray(fgItem, cnt, cellLocationId, terminalLocationId=cellLocationId)
+    if not closureMethod:
+        return {"Status": False, "Message": "No closure mode set for this terminal."}
+    return completeTray(fgItem, cnt, cellLocationId, closureMethod=closureMethod,
+                        terminalLocationId=cellLocationId)
 
 
 def _rankedFinishedGoods(cellLocationId):

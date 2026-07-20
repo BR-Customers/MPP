@@ -72,6 +72,34 @@ def getByItemOrEmpty(itemId, _refreshToken=None):
     return out
 
 
+def getByItemAll(itemId, _refreshToken=None):
+    """All active ContainerConfigs for an Item -- one per closure method,
+       ordered by method (ByCount/ByWeight/ByVision). Always returns a list
+       (never None) so a runScript-bound list prop is never overwritten with
+       null. Used by the per-method Item Master ContainerConfig editor and by
+       assembly capability resolution.
+       _refreshToken is ignored - runScript bindings pass a bumped token."""
+    itemId = _u(itemId)
+    if not itemId:
+        return []
+    return BlueRidge.Common.Db.execList(
+        "parts/ContainerConfig_GetByItem", {"itemId": itemId}) or []
+
+
+def getByItemAndMethod(itemId, method):
+    """The single active ContainerConfig for (Item, closure method), or {}.
+       This is the assembly-out resolver: the terminal's CurrentClosureMethod
+       selects which of the part's per-method pack-outs applies."""
+    itemId = _u(itemId)
+    method = _u(method)
+    if not itemId or not method:
+        return {}
+    row = BlueRidge.Common.Db.execOne(
+        "parts/ContainerConfig_GetByItemAndMethod",
+        {"itemId": itemId, "closureMethod": method})
+    return row if row is not None else {}
+
+
 def add(data):
     """Create a new active ContainerConfig for an Item.
 
