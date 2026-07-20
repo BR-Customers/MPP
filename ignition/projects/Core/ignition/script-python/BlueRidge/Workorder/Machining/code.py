@@ -1,8 +1,9 @@
 """BlueRidge.Workorder.Machining - thin access to the Machining procs.
 
-   Wrappers only; no business logic. Terminal-mint model (spec 2026-07-07):
+   Thin proc wrappers (no domain logic). Terminal-mint model (spec 2026-07-07):
    Machining IN is a pure advance (recordPick); Machining OUT is a consume-mint
-   (mint). Each entry logs at default INFO (meaningful shop-floor events)."""
+   (mint) that additionally auto-prints the new sublot's LTT label after a
+   successful mint. Each entry logs at default INFO (meaningful shop-floor events)."""
 
 import BlueRidge.Common.Db
 import BlueRidge.Common.Util
@@ -46,13 +47,19 @@ def mint(sourceLotId, operationTemplateId, pieceCount, producedItemId=None,
               "appUserId": appUserId, "terminalLocationId": terminalLocationId}
     result = BlueRidge.Common.Db.execMutation("workorder/MachiningOut_Mint", params)
     # Auto-print the new sublot's LTT label so the basket is scannable downstream.
-    # A print failure must not lose the committed mint -- log + toast, return the mint.
+    # printLabel does NOT raise on a print failure -- it RETURNS {Status:0,...} for the
+    # common shop-floor cases (no printer configured / dispatch failed). So check the
+    # returned Status AND catch genuine exceptions; either way never lose the committed
+    # mint -- log + warn the operator (basket is created but unlabeled), return the mint.
     if result and result.get("Status") and result.get("NewId"):
         try:
-            BlueRidge.Lots.LotLabel.printLabel(
+            printRes = BlueRidge.Lots.LotLabel.printLabel(
                 {"lotId": result.get("NewId")}, appUserId, terminalLocationId)
         except Exception as e:
-            BlueRidge.Common.Util.log("MachiningOut sublot label print failed: %s" % e)
+            printRes = {"Status": 0, "Message": "print raised: %s" % e}
+        if not (printRes and printRes.get("Status")):
+            BlueRidge.Common.Util.log(
+                "MachiningOut sublot label print failed: %s" % (printRes or {}).get("Message"))
             BlueRidge.Common.Notify.toast(
                 "Label not printed",
                 "The machined LOT was created but its LTT label did not print. Reprint from the LOT.",
