@@ -40,6 +40,22 @@ Final design:
 - The background Explore agent "Map legacy OPC tags to closure triggers" **failed** (process exited mid-run). No loss — superseded by reading the UDT JSON directly (`ignition/tags/udt/*.json`).
 - Next free versioned migration ids: `0039`, `0040`.
 
+## IMPLEMENTATION STATUS (updated end of session)
+
+Executed the plan against a throwaway `MPP_MES_Test` (never touched `MPP_MES_Dev`/the gateway). Full suite: **2110 passing / 8 failing — all 8 pre-existing** (0027 Machining + 077 Lot_Search, Jacques's in-flight `MachiningIn` route-aware + `Lot_Search` location commits; zero closure dependency; my work added only passing tests).
+
+**DONE + committed + pushed** (`jacques/working`):
+- Migrations **0040** (ClosureMethodCode + ContainerConfig re-key to `(ItemId, ClosureMethod)` NOT NULL + FK) and **0041** (PlcDeviceType.ClosureMethodCode map + terminal CurrentClosureMethod/VisionAppUrl attrs + Changeover HoldTypeCode + ClosureModeChanged LogEventType). *(0039 was already taken by plc_handshake_audit — bumped from the plan's 0039/0040.)*
+- Procs: `ContainerConfig_Create` (method required, per-(item,method) unique), `_Update` (method immutable), `_GetByItem` (0-N rows), new `_GetByItemAndMethod`, `Assembly_CompleteTray` (resolve by (item,method) + no-pack-out block), new `Terminal_GetClosureContext` (derived capability), new `Terminal_SetClosureMethod` (elevated changeover, freezes open container via inlined Hold_Place mirror).
+- Tests: new 025/026/027 (0008), 030/031/032 (0020), 093 (0028); fixed 020/020-cascade (0008), 010 quality-codes count 3→4, 092/077/095 CompleteTray callers, seed_demo.
+- Ignition: onStartup stashes `session.custom.closureMethod`/`closureCapabilities`; `Terminal.getClosureContext` (defensive) + NQ; `Location.ClosureMode.changeover` + NQ; `ContainerConfig.getByItemAll`/`getByItemAndMethod` + NQ; `Assembly.handleTrayComplete` routes closureMethod; `Assembly_CompleteTray` NQ closureMethod sqlType 7→12.
+
+**NOT done — needs Jacques / a Designer session:**
+1. **`session-props/props.json`** — I added `closureMethod`/`closureCapabilities` declarations but LEFT THE FILE UNCOMMITTED because it carries ambient **pickled live-terminal state** (`DC1-T1`/id 15, timeZone → America/Indianapolis leaked into defaults). Review + commit the closure declarations; consider discarding the pickled defaults.
+2. **Designer view tasks (plan Tasks 11, 13, 15, 16)** — three-appearance conditional on both AssemblyNonSerialized + AssemblySerialized (Count/Weight/Vision off `session.custom.closureMethod`), the header changeover mode-chip (elevation popup → `ClosureMode.changeover`, then assign `session.custom.closureMethod` locally), and the Item Master ContainerConfig editor going per-method-list (load via `getByItemAll`). File-edit boundary → do in Designer.
+3. **Deploy sequence:** apply migrations 0040/0041 to `MPP_MES_Dev` → `.\scan.ps1` (deploys the NQs/scripts) → Designer view work → wire the Complete Tray button to pass `self.session.custom.closureMethod` into `handleTrayComplete`.
+4. **Phase 7 (PLC auto-close)** — separate follow-on plan (Weight `NET_TargetWeightMetFlag` / Vision `OkToContinue` watchers). Not started.
+
 ## Where we stand (git)
 - `jacques/working` is **3 commits ahead of `origin/jacques/working`** (the spec+plan docs) and **0 behind / 3 ahead of `origin/main`** — no divergence from main.
 - Pre-existing uncommitted working-tree changes (session-props, `global-props/data.bin`, NavigationTree/LotSearch resource.json) are **ambient** (gateway/Designer/other session), NOT part of this work — left untouched.
