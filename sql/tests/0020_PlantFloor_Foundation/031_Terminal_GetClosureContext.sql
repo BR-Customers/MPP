@@ -34,6 +34,13 @@ EXEC test.Assert_IsEqual @TestName = N'[CtxCap] caps always include ByCount', @E
 DECLARE @HasVision NVARCHAR(1) = CASE WHEN @Caps LIKE N'%ByVision%' THEN N'1' ELSE N'0' END;
 EXEC test.Assert_IsEqual @TestName = N'[CtxCap] no vision device -> no ByVision', @Expected = N'0', @Actual = @HasVision;
 
+-- No CurrentClosureMethod attribute was ever set on this throwaway terminal, so
+-- the proc must fall back to ByCount (the device-free baseline) rather than NULL.
+-- Regression guard: without the COALESCE, the assembly-out UI renders no closure
+-- pane at all on a terminal that has never had a supervisor changeover.
+DECLARE @CurMethod NVARCHAR(20) = (SELECT CurrentClosureMethod FROM #Ctx);
+EXEC test.Assert_IsEqual @TestName = N'[CtxCur] unset method defaults to ByCount', @Expected = N'ByCount', @Actual = @CurMethod;
+
 DROP TABLE #Ctx;
 GO
 

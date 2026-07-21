@@ -222,7 +222,9 @@ def applyToSession(session, terminal):
         session.custom.terminal = term
         session.custom.printer = {"locationId": None, "code": "", "endpoint": "", "model": ""}
         session.custom.plcDevices = []
-        session.custom.closureMethod = ""
+        # ByCount is the universal device-free baseline (mirrors the proc default);
+        # keep the count-close UI usable on a fallback / unregistered terminal.
+        session.custom.closureMethod = "ByCount"
         session.custom.closureCapabilities = ["ByCount"]
         return
     prn = getPrinter(tid) or {}

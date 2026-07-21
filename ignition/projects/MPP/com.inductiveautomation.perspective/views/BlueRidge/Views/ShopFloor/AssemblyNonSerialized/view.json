@@ -739,7 +739,7 @@
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "'Configured PartsPerTray = ' + toStr({view.custom.container.PartsPerTray}) + ' - accumulated ' + toStr({view.custom.container.AccumulatedParts}) + ' / ' + toStr({view.custom.container.TargetParts}) + ' toward Container'"
+                            "expression": "if(isNull({view.custom.container.Id}), 'Configured PartsPerTray = ' + toStr({view.custom.fgConfig.PartsPerTray}) + ' - complete the first tray to open a Container', 'Configured PartsPerTray = ' + toStr({view.custom.container.PartsPerTray}) + ' - accumulated ' + toStr({view.custom.container.AccumulatedParts}) + ' / ' + toStr({view.custom.container.TargetParts}) + ' toward Container')"
                           },
                           "type": "expr"
                         }

@@ -6,7 +6,12 @@
 --
 -- Description:
 --   Resolves a terminal's closure context in one row:
---     * CurrentClosureMethod - persisted LocationAttribute (the active mode);
+--     * CurrentClosureMethod - persisted LocationAttribute (the active mode),
+--                              defaulting to ByCount when unset (a terminal that
+--                              has never had a supervisor changeover). ByCount is
+--                              the universal, device-free baseline (it is always
+--                              in ClosureCapabilities), so the count-close UI is
+--                              usable without first forcing a changeover;
 --     * VisionAppUrl         - persisted LocationAttribute (ByVision embed);
 --     * ClosureCapabilities  - DERIVED CSV of methods the terminal can run,
 --                              from its active PLC devices'
@@ -55,6 +60,6 @@ BEGIN
     INNER JOIN Parts.ClosureMethodCode cmc ON cmc.Code = m.Code AND cmc.DeprecatedAt IS NULL
     ORDER BY cmc.SortOrder;
 
-    SELECT @Current AS CurrentClosureMethod, @Vision AS VisionAppUrl, @Caps AS ClosureCapabilities;
+    SELECT COALESCE(@Current, N'ByCount') AS CurrentClosureMethod, @Vision AS VisionAppUrl, @Caps AS ClosureCapabilities;
 END;
 GO
