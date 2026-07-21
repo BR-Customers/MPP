@@ -8,7 +8,6 @@
     "refreshToken": 0,
     "scrapCount": null,
     "shotCount": null,
-    "trimInventory": [],
     "trimState": "in"
   },
   "params": {
@@ -77,7 +76,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "if(isNull({session.custom.terminal.zoneName}) || {session.custom.terminal.zoneName} = \"\", \"No terminal resolved\", {session.custom.terminal.zoneName})"
+                        "expression": "if(isNull({session.custom.terminal.zoneName}) || {session.custom.terminal.zoneName} \u003d \"\", \"No terminal resolved\", {session.custom.terminal.zoneName})"
                       },
                       "type": "expr"
                     }
@@ -1161,7 +1160,7 @@
         {
           "name": "resolveOutScan",
           "params": [],
-          "script": "\tcode \u003d self.view.custom.outScan\n\tif not code:\n\t\treturn\n\tr \u003d BlueRidge.Lots.Lot.getByName(code)\n\tif r:\n\t\tself.view.custom.activeLotId \u003d r.get(\"Id\")\n\t\tself.view.custom.activeLotName \u003d r.get(\"LotName\")\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"LOT not found\", \"No LOT matches \u0027%s\u0027.\" % code, \"warning\")"
+          "script": "\tcode \u003d self.view.custom.outScan\n\tif not code:\n\t\treturn\n\tr \u003d BlueRidge.Lots.Lot.getByName(code)\n\tif r:\n\t\tself.view.custom.activeLotId \u003d r.get(\"Id\")\n\t\tself.view.custom.activeLotName \u003d r.get(\"LotName\")\n\t\tself.view.custom.shotCount = r.get(\"PieceCount\")\n\t\tself.view.custom.scrapCount = None\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"LOT not found\", \"No LOT matches \u0027%s\u0027.\" % code, \"warning\")"
         },
         {
           "name": "submitTrimOut",
@@ -1171,7 +1170,7 @@
         {
           "name": "startup",
           "params": [],
-          "script": "\t# Operator gate: no logged-in operator -> open the initials popup OVER this screen.\n\t# Non-blocking: the page still populates behind the modal, and session.custom is\n\t# reactive, so the operator label/mutations pick up the user with no re-populate.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
+          "script": "\t# Operator gate: no logged-in operator -\u003e open the initials popup OVER this screen.\n\t# Non-blocking: the page still populates behind the modal, and session.custom is\n\t# reactive, so the operator label/mutations pick up the user with no re-populate.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dFalse, overlayDismiss\u003dFalse)"
         }
       ],
       "extensionFunctions": null,
@@ -1179,7 +1178,7 @@
         {
           "messageType": "trimLotSelected",
           "pageScope": true,
-          "script": "\tself.view.custom.activeLotId \u003d payload.get(\"lotId\")\n\tself.view.custom.activeLotName \u003d payload.get(\"lotName\")\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1",
+          "script": "\tself.view.custom.activeLotId \u003d payload.get(\"lotId\")\n\tself.view.custom.activeLotName \u003d payload.get(\"lotName\")\n\tsel = BlueRidge.Lots.Lot.get(lotId=payload.get(\"lotId\"))\n\tself.view.custom.shotCount = sel.get(\"PieceCount\") if sel else None\n\tself.view.custom.scrapCount = None\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1",
           "sessionScope": false,
           "viewScope": false
         },
