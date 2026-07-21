@@ -827,7 +827,8 @@ def releaseAssignment(toolId, notes=None):
 
 def getCavitiesForDropdown(toolId):
     """Active cavities for the mounted tool, as [{label, value}] for the cavity
-    dropdown (label = 'Cavity N', value = ToolCavity.Id). Empty list = no active
+    dropdown (label = 'Cavity N - <Description>', or just 'Cavity N' when the
+    cavity has no description; value = ToolCavity.Id). Empty list = no active
     cavities (the FE then enters free-entry / manual-cavity mode, D2). Wraps
     Tools.ToolCavity_ListActiveByTool."""
     toolId = _u(toolId)
@@ -840,8 +841,13 @@ def getCavitiesForDropdown(toolId):
     except Exception as e:
         BlueRidge.Common.Util.log("getCavitiesForDropdown failed: %s" % str(e))
         return []
-    return [{"label": "Cavity %s" % r.get("CavityNumber"), "value": r.get("Id")}
-            for r in (rows or [])]
+    out = []
+    for r in (rows or []):
+        num = r.get("CavityNumber")
+        desc = (r.get("Description") or "").strip()
+        label = ("Cavity %s - %s" % (num, desc)) if desc else ("Cavity %s" % num)
+        out.append({"label": label, "value": r.get("Id")})
+    return out
 
 
 def getMountedToolForCell(cellLocationId):
