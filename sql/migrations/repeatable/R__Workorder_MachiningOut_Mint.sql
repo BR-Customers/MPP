@@ -1,12 +1,13 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_MachiningOut_Mint.sql
 -- Author:      Blue Ridge Automation
--- Version:     2.1 (2026-07-21) - FIFO candidate set matches Lots.Lot_GetWipQueueByLocation.
+-- Version:     2.2 (2026-07-21) - bound each draw by MIN(InventoryAvailable, PieceCount).
 -- Description: Machining OUT consume-mint. @SourceLotId is the FIFO HANDLE (its cell +
 --              casting part). Consumes strict oldest-first (arrival order) across ALL
 --              open same-part castings at that cell, rolling into the next as each
 --              empties; each draw is bounded by the casting's lock-fresh
---              InventoryAvailable so NO casting can go negative. Mints ONE SubAssembly
+--              MIN(InventoryAvailable, PieceCount) so NO casting can go negative even
+--              when upstream data left InventoryAvailable > PieceCount. Mints ONE SubAssembly
 --              LOT named <oldest-casting-LTT>-NN, with one ConsumptionEvent + Consumption
 --              genealogy edge + closure PER source casting (multi-parent traceability).
 --              Shortfall: @AllowPartial=0 -> reject + Available=max producible;
@@ -115,9 +116,12 @@ BEGIN
                            SELECT 1 FROM Workorder.ProductionEvent pe
                            WHERE pe.LotId = l.Id AND pe.OperationTemplateId = rs.OperationTemplateId)) )
         )
-        SELECT @TotalAvail = ISNULL(SUM(l.InventoryAvailable),0)
+        -- v2.2: consumable per casting = MIN(InventoryAvailable, PieceCount). Upstream
+        -- data can leave InvAvail > PieceCount (Trim scrap historically decremented
+        -- PieceCount but not InvAvail); bounding by the MIN keeps every casting >= 0.
+        SELECT @TotalAvail = ISNULL(SUM(CASE WHEN l.InventoryAvailable < l.PieceCount THEN l.InventoryAvailable ELSE l.PieceCount END),0)
         FROM Lots.Lot l
-        WHERE l.ItemId=@SrcItem AND l.CurrentLocationId=@SrcLoc AND l.LotStatusId=@GoodStatusId AND l.InventoryAvailable > 0
+        WHERE l.ItemId=@SrcItem AND l.CurrentLocationId=@SrcLoc AND l.LotStatusId=@GoodStatusId AND l.InventoryAvailable > 0 AND l.PieceCount > 0
           AND EXISTS (SELECT 1 FROM NextStep ns WHERE ns.LotId=l.Id AND ns.rn=1 AND ns.OpCode=@OpTypeCode);
         SET @Available = CAST(FLOOR(@TotalAvail / @QtyPer) AS INT);
 
@@ -160,7 +164,7 @@ BEGIN
         SELECT l.Id
         FROM Lots.Lot l
         LEFT JOIN (SELECT LotId, MAX(MovedAt) AS LastMovementAt FROM Lots.LotMovement GROUP BY LotId) lm ON lm.LotId=l.Id
-        WHERE l.ItemId=@SrcItem AND l.CurrentLocationId=@SrcLoc AND l.LotStatusId=@GoodStatusId AND l.InventoryAvailable > 0
+        WHERE l.ItemId=@SrcItem AND l.CurrentLocationId=@SrcLoc AND l.LotStatusId=@GoodStatusId AND l.InventoryAvailable > 0 AND l.PieceCount > 0
           AND EXISTS (SELECT 1 FROM NextStep ns WHERE ns.LotId=l.Id AND ns.rn=1 AND ns.OpCode=@OpTypeCode)
         ORDER BY lm.LastMovementAt ASC, l.Id ASC;
 
@@ -189,6 +193,7 @@ BEGIN
             SELECT @cLot = LotId FROM @Queue WHERE Ord=@i;
             SELECT @cAvail=l.InventoryAvailable, @cPc=l.PieceCount, @cStatus=l.LotStatusId
             FROM Lots.Lot l WITH (UPDLOCK, HOLDLOCK) WHERE l.Id=@cLot;
+            IF @cPc < @cAvail SET @cAvail = @cPc;  -- v2.2: bound the draw by MIN(InvAvail,PieceCount); a diverged casting (InvAvail>PieceCount) can never go negative
             IF @cStatus <> @GoodStatusId OR @cAvail <= 0 BEGIN SET @i=@i+1; CONTINUE; END
             SET @take = CASE WHEN @Need < @cAvail THEN @Need ELSE @cAvail END;
             UPDATE Lots.Lot SET PieceCount=PieceCount-@take, InventoryAvailable=InventoryAvailable-@take, UpdatedAt=SYSUTCDATETIME(), UpdatedByUserId=@AppUserId WHERE Id=@cLot;

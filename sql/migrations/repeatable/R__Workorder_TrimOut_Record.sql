@@ -291,9 +291,10 @@ BEGIN
         --     with its real remaining quantity. Never negative (guard 6b).
         UPDATE Lots.Lot
         SET CurrentLocationId = @DestinationCellLocationId,
-            PieceCount        = PieceCount - ISNULL(@ScrapCount, 0),
-            UpdatedAt         = SYSUTCDATETIME(),
-            UpdatedByUserId   = @AppUserId
+            PieceCount         = PieceCount - ISNULL(@ScrapCount, 0),
+            InventoryAvailable = InventoryAvailable - ISNULL(@ScrapCount, 0),
+            UpdatedAt          = SYSUTCDATETIME(),
+            UpdatedByUserId    = @AppUserId
         WHERE Id = @ParentLotId;
 
         INSERT INTO Lots.LotMovement (LotId, FromLocationId, ToLocationId, MovedByUserId, TerminalLocationId, MovedAt)

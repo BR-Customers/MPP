@@ -67,6 +67,12 @@ EXEC test.Assert_IsEqual @TestName = N'[TrimOut] LotMovement row to destination'
 DECLARE @Pc NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id = @L);
 EXEC test.Assert_IsEqual @TestName = N'[TrimOut] scrap decrements Lot.PieceCount (20 - 2 = 18)', @Expected = N'18', @Actual = @Pc;
 
+-- scrap must decrement InventoryAvailable in lockstep with PieceCount, else the
+-- casting arrives at Machining with InvAvail > PieceCount and the MachiningOut
+-- FIFO walk (which bounds by availability) can over-consume it negative.
+DECLARE @InvAvail NVARCHAR(10) = (SELECT CAST(InventoryAvailable AS NVARCHAR(10)) FROM Lots.Lot WHERE Id = @L);
+EXEC test.Assert_IsEqual @TestName = N'[TrimOut] scrap decrements InventoryAvailable too (20 - 2 = 18)', @Expected = N'18', @Actual = @InvAvail;
+
 -- parent stays open (Good) -- no split
 DECLARE @StatusCode NVARCHAR(20) = (SELECT sc.Code FROM Lots.Lot l INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId WHERE l.Id = @L);
 EXEC test.Assert_IsEqual @TestName = N'[TrimOut] parent LOT stays Good (open)', @Expected = N'Good', @Actual = @StatusCode;

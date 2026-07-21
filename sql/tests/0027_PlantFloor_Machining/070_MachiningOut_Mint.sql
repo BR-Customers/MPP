@@ -384,6 +384,52 @@ DECLARE @p2Parent NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lot
 EXEC test.Assert_IsEqual @TestName = N'[Eligibility-Partial] MachiningIn-pending casting NOT a genealogy parent', @Expected = N'0', @Actual = @p2Parent;
 GO
 
+-- =============================================
+-- No-negative under InvAvail > PieceCount divergence (v2.2): a casting whose
+-- InventoryAvailable exceeds PieceCount (legacy data -- e.g. Trim scrap that
+-- decremented PieceCount but not InvAvail) must NOT be driven negative. The walk
+-- bounds each draw by MIN(InventoryAvailable, PieceCount), and @TotalAvail counts
+-- the same MIN, so the casting drains to exactly 0, never below.
+-- =============================================
+DECLARE @U BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
+DECLARE @Casting BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
+DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MOUT');
+DECLARE @Origin BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
+DECLARE @MoTpl BIGINT = (SELECT TOP 1 ot.Id FROM Parts.OperationTemplate ot
+    JOIN Parts.OperationType oty ON oty.Id = ot.OperationTypeId
+    JOIN Parts.OperationRoleKind rk ON rk.Id = oty.OperationRoleKindId
+    WHERE oty.Code = N'MachiningOut' AND rk.Code = N'ConsumeMint' AND ot.DeprecatedAt IS NULL);
+
+-- clear leftover open 5G0-c castings so the queue is exactly @Div.
+UPDATE Lots.Lot SET LotStatusId=(SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Closed')
+  WHERE ItemId=@Casting AND CurrentLocationId=@Line AND LotStatusId=(SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Good');
+
+-- Diverged casting: PieceCount 20, pre-stamped through MachiningIn (eligible),
+-- then InventoryAvailable force-inflated to 24 (excess 4) to simulate the Trim bug.
+DECLARE @Div BIGINT;
+CREATE TABLE #DV (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
+INSERT INTO #DV EXEC Lots.Lot_Create @ItemId=@Casting, @LotOriginTypeId=@Origin, @CurrentLocationId=@Line, @PieceCount=20, @AppUserId=@U;
+SELECT @Div = NewId FROM #DV; DROP TABLE #DV;
+INSERT INTO Workorder.ProductionEvent (LotId, OperationTemplateId, EventAt, ShotCount, AppUserId)
+SELECT @Div, rs.OperationTemplateId, SYSUTCDATETIME(), 20, @U
+FROM Parts.RouteTemplate rt JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
+WHERE rt.ItemId = @Casting AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL AND rs.OperationTemplateId <> @MoTpl;
+UPDATE Lots.Lot SET InventoryAvailable = 24 WHERE Id = @Div;  -- InvAvail(24) > PieceCount(20)
+
+-- @Available must be the MIN bound (20), not the inflated 24.
+DECLARE @dm TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT, Available INT);
+INSERT INTO @dm EXEC Workorder.MachiningOut_Mint @SourceLotId=@Div, @OperationTemplateId=@MoTpl, @PieceCount=24, @AppUserId=@U, @TerminalLocationId=@Line, @AllowPartial=1;
+DECLARE @dmStatus NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @dm);
+DECLARE @dmLot BIGINT = (SELECT NewId FROM @dm);
+EXEC test.Assert_IsEqual @TestName = N'[NoNeg] partial mint against diverged casting succeeds', @Expected = N'1', @Actual = @dmStatus;
+DECLARE @dmMinted NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id=@dmLot);
+EXEC test.Assert_IsEqual @TestName = N'[NoNeg] minted MIN(InvAvail,PieceCount)=20, not 24', @Expected = N'20', @Actual = @dmMinted;
+DECLARE @divPc NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id=@Div);
+EXEC test.Assert_IsEqual @TestName = N'[NoNeg] diverged casting drained to exactly 0 (never negative)', @Expected = N'0', @Actual = @divPc;
+DECLARE @anyNeg NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.Lot WHERE Id=@Div AND PieceCount < 0);
+EXEC test.Assert_IsEqual @TestName = N'[NoNeg] no negative PieceCount', @Expected = N'0', @Actual = @anyNeg;
+GO
+
 -- ---- teardown (FK-safe): all LOTs of the fixture items 5G0-c / 5G0-SA ----
 DECLARE @Cast BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
 DECLARE @Mach BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-SA');
