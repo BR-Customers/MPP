@@ -1,7 +1,7 @@
 -- ============================================================
 -- Repeatable:  R__Workorder_MachiningOut_Mint.sql
 -- Author:      Blue Ridge Automation
--- Version:     2.0 (2026-07-21) - MULTI-SOURCE FIFO consume.
+-- Version:     2.1 (2026-07-21) - FIFO candidate set matches Lots.Lot_GetWipQueueByLocation.
 -- Description: Machining OUT consume-mint. @SourceLotId is the FIFO HANDLE (its cell +
 --              casting part). Consumes strict oldest-first (arrival order) across ALL
 --              open same-part castings at that cell, rolling into the next as each
@@ -13,6 +13,14 @@
 --              @AllowPartial=1 -> mint floor(totalAvail/QtyPer). INSERT-EXEC safe:
 --              rejects before BEGIN TRAN; RAISERROR (not THROW) in CATCH. Result:
 --              Status, Message, NewId, Available.
+--              v2.1: the FIFO candidate set (@TotalAvail select AND the @Queue
+--              INSERT...SELECT) now requires Good/non-blocking status (LotStatusId =
+--              @GoodStatusId, matching the walk's own guard) AND that the casting's
+--              next PENDING route step (mirrors the NextStep CTE in
+--              R__Lots_Lot_GetWipQueueByLocation.sql) is THIS MachiningOut ConsumeMint
+--              step -- i.e. the exact set Lots.Lot_GetWipQueueByLocation would surface
+--              for this cell/role. Prevents consuming a same-part casting that is still
+--              pending an earlier Advance checkpoint (e.g. MachiningIn) or is on Hold.
 -- ============================================================
 CREATE OR ALTER PROCEDURE Workorder.MachiningOut_Mint
     @SourceLotId         BIGINT,
@@ -51,6 +59,10 @@ BEGIN
                        WHERE ot.Id=@OperationTemplateId AND ot.DeprecatedAt IS NULL AND rk.Code=N'ConsumeMint')
         BEGIN SET @Message=N'OperationTemplate not found, deprecated, or not a consume-mint role.';
             EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Lot', @EntityId=@SourceLotId, @LogEventTypeCode=N'MachiningOutCompleted', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params; GOTO Reply; END
+        -- OperationType role code of @OperationTemplateId (e.g. 'MachiningOut'), derived once,
+        -- used to gate the FIFO candidate set to LOTs whose next-pending route step is THIS role.
+        DECLARE @OpTypeCode NVARCHAR(20) = (SELECT oty.Code FROM Parts.OperationTemplate ot
+            JOIN Parts.OperationType oty ON oty.Id=ot.OperationTypeId WHERE ot.Id=@OperationTemplateId);
         -- Source LOT = FIFO handle (cell + part); must be open/not-blocked.
         SELECT @SrcItem=l.ItemId, @SrcLoc=l.CurrentLocationId, @Blocks=sc.BlocksProduction, @SrcStatusCode=sc.Code
         FROM Lots.Lot l JOIN Lots.LotStatusCode sc ON sc.Id=l.LotStatusId WHERE l.Id=@SourceLotId;
@@ -82,10 +94,31 @@ BEGIN
             EXEC Audit.Audit_LogFailure @AppUserId=@AppUserId, @LogEntityTypeCode=N'Lot', @EntityId=@SourceLotId, @LogEventTypeCode=N'MachiningOutCompleted', @FailureReason=@Message, @ProcedureName=@ProcName, @AttemptedParameters=@Params; GOTO Reply; END
         SET @Consumed = CAST(@QtyPer * @PieceCount AS INT);
 
-        -- FIFO source total (open, same part, same cell). @Available = max producible sub-assemblies.
+        -- FIFO source total: Good/non-blocking, same part, same cell, AND next-pending route
+        -- step is THIS MachiningOut ConsumeMint step (mirrors NextStep CTE in
+        -- R__Lots_Lot_GetWipQueueByLocation.sql) -- i.e. exactly the set the terminal's
+        -- WIP queue would display. @Available = max producible sub-assemblies.
+        ;WITH NextStep AS (
+            SELECT l.Id AS LotId, rs.SequenceNumber, oty2.Code AS OpCode,
+                   ROW_NUMBER() OVER (PARTITION BY l.Id ORDER BY rs.SequenceNumber ASC) AS rn
+            FROM Lots.Lot l
+            INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId AND sc.Code <> N'Closed'
+            INNER JOIN Parts.RouteTemplate rt ON rt.ItemId = l.ItemId
+                 AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL
+            INNER JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
+            INNER JOIN Parts.OperationTemplate ot2 ON ot2.Id = rs.OperationTemplateId
+            INNER JOIN Parts.OperationType oty2 ON oty2.Id = ot2.OperationTypeId
+            INNER JOIN Parts.OperationRoleKind rk ON rk.Id = oty2.OperationRoleKindId
+            WHERE l.ItemId = @SrcItem AND l.CurrentLocationId = @SrcLoc
+              AND ( rk.Code = N'ConsumeMint'
+                    OR (rk.Code = N'Advance' AND NOT EXISTS (
+                           SELECT 1 FROM Workorder.ProductionEvent pe
+                           WHERE pe.LotId = l.Id AND pe.OperationTemplateId = rs.OperationTemplateId)) )
+        )
         SELECT @TotalAvail = ISNULL(SUM(l.InventoryAvailable),0)
-        FROM Lots.Lot l JOIN Lots.LotStatusCode sc ON sc.Id=l.LotStatusId
-        WHERE l.ItemId=@SrcItem AND l.CurrentLocationId=@SrcLoc AND sc.Code<>N'Closed' AND l.InventoryAvailable > 0;
+        FROM Lots.Lot l
+        WHERE l.ItemId=@SrcItem AND l.CurrentLocationId=@SrcLoc AND l.LotStatusId=@GoodStatusId AND l.InventoryAvailable > 0
+          AND EXISTS (SELECT 1 FROM NextStep ns WHERE ns.LotId=l.Id AND ns.rn=1 AND ns.OpCode=@OpTypeCode);
         SET @Available = CAST(FLOOR(@TotalAvail / @QtyPer) AS INT);
 
         IF @TotalAvail < @Consumed
@@ -103,12 +136,32 @@ BEGIN
         -- ===== Mutation (atomic) =====
         BEGIN TRANSACTION;
         -- Ordered FIFO list of candidate castings (arrival-first, matches Lot_GetWipQueueByLocation).
+        -- Same predicate as @TotalAvail above: Good/non-blocking status AND next-pending
+        -- route step is THIS MachiningOut ConsumeMint step.
         DECLARE @Queue TABLE (Ord INT IDENTITY(1,1), LotId BIGINT);
+        ;WITH NextStep AS (
+            SELECT l.Id AS LotId, rs.SequenceNumber, oty2.Code AS OpCode,
+                   ROW_NUMBER() OVER (PARTITION BY l.Id ORDER BY rs.SequenceNumber ASC) AS rn
+            FROM Lots.Lot l
+            INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId AND sc.Code <> N'Closed'
+            INNER JOIN Parts.RouteTemplate rt ON rt.ItemId = l.ItemId
+                 AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL
+            INNER JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
+            INNER JOIN Parts.OperationTemplate ot2 ON ot2.Id = rs.OperationTemplateId
+            INNER JOIN Parts.OperationType oty2 ON oty2.Id = ot2.OperationTypeId
+            INNER JOIN Parts.OperationRoleKind rk ON rk.Id = oty2.OperationRoleKindId
+            WHERE l.ItemId = @SrcItem AND l.CurrentLocationId = @SrcLoc
+              AND ( rk.Code = N'ConsumeMint'
+                    OR (rk.Code = N'Advance' AND NOT EXISTS (
+                           SELECT 1 FROM Workorder.ProductionEvent pe
+                           WHERE pe.LotId = l.Id AND pe.OperationTemplateId = rs.OperationTemplateId)) )
+        )
         INSERT INTO @Queue (LotId)
         SELECT l.Id
-        FROM Lots.Lot l JOIN Lots.LotStatusCode sc ON sc.Id=l.LotStatusId
+        FROM Lots.Lot l
         LEFT JOIN (SELECT LotId, MAX(MovedAt) AS LastMovementAt FROM Lots.LotMovement GROUP BY LotId) lm ON lm.LotId=l.Id
-        WHERE l.ItemId=@SrcItem AND l.CurrentLocationId=@SrcLoc AND sc.Code<>N'Closed' AND l.InventoryAvailable > 0
+        WHERE l.ItemId=@SrcItem AND l.CurrentLocationId=@SrcLoc AND l.LotStatusId=@GoodStatusId AND l.InventoryAvailable > 0
+          AND EXISTS (SELECT 1 FROM NextStep ns WHERE ns.LotId=l.Id AND ns.rn=1 AND ns.OpCode=@OpTypeCode)
         ORDER BY lm.LastMovementAt ASC, l.Id ASC;
 
         SET @OldestName = (SELECT LotName FROM Lots.Lot WHERE Id = (SELECT LotId FROM @Queue WHERE Ord=1));
