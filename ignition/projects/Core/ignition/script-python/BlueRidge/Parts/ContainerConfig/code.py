@@ -129,6 +129,18 @@ def add(data):
     )
 
 
+def deprecate(configId):
+    """Soft-delete (deprecate) one active ContainerConfig row by Id. Used by the
+       per-method Item Master editor to REMOVE a pack-out (e.g. clear ByVision so
+       a part is only ByCount + ByWeight). Returns {Status, Message}."""
+    configId = _u(configId)
+    BlueRidge.Common.Util.log("deprecate configId=%s" % configId)
+    return BlueRidge.Common.Db.execMutation(
+        "parts/ContainerConfig_Deprecate",
+        {"id": configId, "appUserId": BlueRidge.Common.Util._currentAppUserId()},
+    )
+
+
 def update(data):
     """Update an existing active ContainerConfig in place. ItemId is
     immutable per the proc -- to re-associate with a different Item,

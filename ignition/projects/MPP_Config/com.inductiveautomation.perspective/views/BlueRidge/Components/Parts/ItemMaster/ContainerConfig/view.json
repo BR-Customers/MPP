@@ -251,6 +251,33 @@
             "type": "ia.display.label"
           },
           {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.clearMethod(\"ByCount\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "Btn_Clear_ByCount"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-sm",
+                "marginLeft": "8px"
+              },
+              "text": "Clear"
+            },
+            "type": "ia.input.button"
+          },
+          {
             "children": [
               {
                 "children": [
@@ -573,6 +600,33 @@
               "text": "By Weight"
             },
             "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.clearMethod(\"ByWeight\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "Btn_Clear_ByWeight"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-sm",
+                "marginLeft": "8px"
+              },
+              "text": "Clear"
+            },
+            "type": "ia.input.button"
           },
           {
             "children": [
@@ -962,6 +1016,33 @@
             "type": "ia.display.label"
           },
           {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.clearMethod(\"ByVision\")"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "Btn_Clear_ByVision"
+            },
+            "position": {
+              "basis": "auto"
+            },
+            "props": {
+              "style": {
+                "classes": "btn btn-sm",
+                "marginLeft": "8px"
+              },
+              "text": "Clear"
+            },
+            "type": "ia.input.button"
+          },
+          {
             "children": [
               {
                 "children": [
@@ -1288,7 +1369,7 @@
         {
           "name": "handleSave",
           "params": [],
-          "script": "\titemId = self.view.params.value or 0\n\tif not itemId:\n\t\tBlueRidge.Common.Notify.toast(\"No item selected\", \"Select an item before saving container configuration.\", \"warning\")\n\t\treturn\n\tdraft = system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state.editDraft)) or {}\n\tmethods = [\"ByCount\", \"ByWeight\", \"ByVision\"]\n\tdef _toNum(v):\n\t\tif v is None or v == \"\":\n\t\t\treturn None\n\t\ttry:\n\t\t\treturn int(v)\n\t\texcept (ValueError, TypeError):\n\t\t\ttry:\n\t\t\t\treturn float(v)\n\t\t\texcept (ValueError, TypeError):\n\t\t\t\treturn None\n\ttoSave = []\n\tfor m in methods:\n\t\tblock = draft.get(m)\n\t\tif not block or not block.get(\"Active\"):\n\t\t\tcontinue\n\t\ttrays = _toNum(block.get(\"TraysPerContainer\"))\n\t\tpartsPerTray = _toNum(block.get(\"PartsPerTray\"))\n\t\tif partsPerTray is None or partsPerTray <= 0:\n\t\t\tBlueRidge.Common.Notify.toast(\"Parts per Tray required\", \"Enter a positive parts per tray for the %s pack-out.\" % m, \"warning\")\n\t\t\treturn\n\t\tif trays is None or trays <= 0:\n\t\t\tBlueRidge.Common.Notify.toast(\"Trays per Container required\", \"Enter a positive trays per container for the %s pack-out.\" % m, \"warning\")\n\t\t\treturn\n\t\ttargetWeight = None\n\t\tif m == \"ByWeight\":\n\t\t\ttargetWeight = _toNum(block.get(\"TargetWeight\"))\n\t\t\tif targetWeight is None or targetWeight <= 0:\n\t\t\t\tBlueRidge.Common.Notify.toast(\"Target Weight required\", \"The By Weight pack-out requires a positive target weight.\", \"warning\")\n\t\t\t\treturn\n\t\ttoSave.append({\n\t\t\t\"Id\":                block.get(\"Id\"),\n\t\t\t\"ItemId\":            itemId,\n\t\t\t\"ClosureMethod\":     m,\n\t\t\t\"TraysPerContainer\": trays,\n\t\t\t\"PartsPerTray\":      partsPerTray,\n\t\t\t\"TargetWeight\":      targetWeight,\n\t\t\t\"DunnageCode\":       block.get(\"DunnageCode\"),\n\t\t\t\"CustomerCode\":      block.get(\"CustomerCode\"),\n\t\t\t\"IsSerialized\":      bool(block.get(\"IsSerialized\", False)),\n\t\t})\n\tif not toSave:\n\t\tBlueRidge.Common.Notify.toast(\"Nothing to save\", \"Add at least one pack-out before saving.\", \"info\")\n\t\treturn\n\tfailures = []\n\tfor payload in toSave:\n\t\tif payload.get(\"Id\"):\n\t\t\tresult = BlueRidge.Parts.ContainerConfig.update(payload)\n\t\telse:\n\t\t\tresult = BlueRidge.Parts.ContainerConfig.add(payload)\n\t\tif not (result and result.get(\"Status\")):\n\t\t\tmsg = (result or {}).get(\"Message\") or \"Unknown error\"\n\t\t\tfailures.append(\"%s - %s\" % (payload[\"ClosureMethod\"], msg))\n\tif failures:\n\t\tBlueRidge.Common.Notify.toast(\"Some pack-outs not saved\", \"; \".join(failures), \"error\")\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"Container config saved\", \"Pack-out configuration saved.\", \"success\")\n\tself.load()"
+          "script": "\titemId = self.view.params.value or 0\n\tif not itemId:\n\t\tBlueRidge.Common.Notify.toast(\"No item selected\", \"Select an item before saving container configuration.\", \"warning\")\n\t\treturn\n\tdraft = system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state.editDraft)) or {}\n\tmethods = [\"ByCount\", \"ByWeight\", \"ByVision\"]\n\tdef _toNum(v):\n\t\tif v is None or v == \"\":\n\t\t\treturn None\n\t\ttry:\n\t\t\treturn int(v)\n\t\texcept (ValueError, TypeError):\n\t\t\ttry:\n\t\t\t\treturn float(v)\n\t\t\texcept (ValueError, TypeError):\n\t\t\t\treturn None\n\ttoSave = []\n\ttoDeprecate = []\n\tfor m in methods:\n\t\tblock = draft.get(m) or {}\n\t\tpriorId = block.get(\"Id\")\n\t\tpartsPerTray = _toNum(block.get(\"PartsPerTray\"))\n\t\tif partsPerTray is not None and partsPerTray > 0:\n\t\t\ttrays = _toNum(block.get(\"TraysPerContainer\"))\n\t\t\tif trays is None or trays <= 0:\n\t\t\t\tBlueRidge.Common.Notify.toast(\"Trays per Container required\", \"Enter a positive trays per container for the %s pack-out.\" % m, \"warning\")\n\t\t\t\treturn\n\t\t\ttargetWeight = None\n\t\t\tif m == \"ByWeight\":\n\t\t\t\ttargetWeight = _toNum(block.get(\"TargetWeight\"))\n\t\t\t\tif targetWeight is None or targetWeight <= 0:\n\t\t\t\t\tBlueRidge.Common.Notify.toast(\"Target Weight required\", \"The By Weight pack-out requires a positive target weight.\", \"warning\")\n\t\t\t\t\treturn\n\t\t\ttoSave.append({\"Id\": priorId, \"ItemId\": itemId, \"ClosureMethod\": m, \"TraysPerContainer\": trays, \"PartsPerTray\": partsPerTray, \"TargetWeight\": targetWeight, \"DunnageCode\": block.get(\"DunnageCode\"), \"CustomerCode\": block.get(\"CustomerCode\"), \"IsSerialized\": bool(block.get(\"IsSerialized\", False))})\n\t\telif priorId:\n\t\t\ttoDeprecate.append({\"Id\": priorId, \"ClosureMethod\": m})\n\tif not toSave and not toDeprecate:\n\t\tBlueRidge.Common.Notify.toast(\"Nothing to save\", \"Add at least one pack-out, or leave it cleared.\", \"info\")\n\t\treturn\n\tfailures = []\n\tfor payload in toSave:\n\t\tif payload.get(\"Id\"):\n\t\t\tresult = BlueRidge.Parts.ContainerConfig.update(payload)\n\t\telse:\n\t\t\tresult = BlueRidge.Parts.ContainerConfig.add(payload)\n\t\tif not (result and result.get(\"Status\")):\n\t\t\tmsg = (result or {}).get(\"Message\") or \"Unknown error\"\n\t\t\tfailures.append(\"%s - %s\" % (payload[\"ClosureMethod\"], msg))\n\tfor dep in toDeprecate:\n\t\tresult = BlueRidge.Parts.ContainerConfig.deprecate(dep[\"Id\"])\n\t\tif not (result and result.get(\"Status\")):\n\t\t\tmsg = (result or {}).get(\"Message\") or \"Unknown error\"\n\t\t\tfailures.append(\"%s - %s\" % (dep[\"ClosureMethod\"], msg))\n\tif failures:\n\t\tBlueRidge.Common.Notify.toast(\"Some pack-outs not saved\", \"; \".join(failures), \"error\")\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"Container config saved\", \"Pack-out configuration saved.\", \"success\")\n\tself.load()"
         },
         {
           "name": "handleDiscard",
@@ -1301,6 +1382,13 @@
             "method"
           ],
           "script": "\tdraft = system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state.editDraft)) or {}\n\tblock = draft.get(method) or {}\n\tblock[\"Active\"] = True\n\tif block.get(\"ClosureMethod\") is None:\n\t\tblock[\"ClosureMethod\"] = method\n\tif block.get(\"ItemId\") is None:\n\t\tblock[\"ItemId\"] = self.view.params.value or 0\n\tdraft[method] = block\n\tself.view.custom.state.editDraft = draft"
+        },
+        {
+          "name": "clearMethod",
+          "params": [
+            "method"
+          ],
+          "script": "\tst = system.util.jsonDecode(BlueRidge.Common.Util.convertWrapperObjectToJson(self.view.custom.state)) or {}\n\tsel = st.get(\"selected\") or {}\n\tdraft = st.get(\"editDraft\") or {}\n\tcur = draft.get(method) or {}\n\tdraft[method] = {\"Id\": cur.get(\"Id\"), \"ItemId\": self.view.params.value or 0, \"ClosureMethod\": method, \"Active\": False, \"PartsPerTray\": \"\", \"TraysPerContainer\": \"\", \"DunnageCode\": \"\", \"CustomerCode\": \"\", \"IsSerialized\": False, \"TargetWeight\": \"\"}\n\tself.view.custom.state = {\"selected\": sel, \"editDraft\": draft}"
         }
       ],
       "messageHandlers": [
