@@ -322,6 +322,68 @@ DECLARE @pendParent NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM L
 EXEC test.Assert_IsEqual @TestName = N'[Eligibility] MachiningIn-pending casting NOT a genealogy parent', @Expected = N'0', @Actual = @pendParent;
 GO
 
+-- =============================================
+-- Eligibility x PARTIAL walk-reach (v2.1): with @AllowPartial, the walk must
+-- mint ONLY the eligible supply and never iterate INTO an ineligible casting,
+-- even when the request exceeds the eligible supply. The old loose predicate
+-- would drain the eligible casting THEN spill the remainder into the
+-- MachiningIn-pending casting -- minting a checkpoint-skipping SA (Defect A on
+-- the consumption path). This forces @Need past the eligible supply, which the
+-- earlier exact-fit [Eligibility] mint does not.
+-- =============================================
+DECLARE @U BIGINT = (SELECT Id FROM Location.AppUser WHERE Initials = N'DEV');
+DECLARE @Casting BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
+DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MOUT');
+DECLARE @Origin BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
+DECLARE @MoTpl BIGINT = (SELECT TOP 1 ot.Id FROM Parts.OperationTemplate ot
+    JOIN Parts.OperationType oty ON oty.Id = ot.OperationTypeId
+    JOIN Parts.OperationRoleKind rk ON rk.Id = oty.OperationRoleKindId
+    WHERE oty.Code = N'MachiningOut' AND rk.Code = N'ConsumeMint' AND ot.DeprecatedAt IS NULL);
+
+-- clear leftover open 5G0-c castings so the eligible queue total is exactly 8.
+UPDATE Lots.Lot SET LotStatusId=(SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Closed')
+  WHERE ItemId=@Casting AND CurrentLocationId=@Line AND LotStatusId=(SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Good');
+
+-- Eligible: 8 pcs, OLDEST, pre-stamped through MachiningIn (next-pending = MachiningOut).
+DECLARE @Elig2 BIGINT;
+CREATE TABLE #P1 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
+INSERT INTO #P1 EXEC Lots.Lot_Create @ItemId=@Casting, @LotOriginTypeId=@Origin, @CurrentLocationId=@Line, @PieceCount=8, @AppUserId=@U;
+SELECT @Elig2 = NewId FROM #P1; DROP TABLE #P1;
+INSERT INTO Workorder.ProductionEvent (LotId, OperationTemplateId, EventAt, ShotCount, AppUserId)
+SELECT @Elig2, rs.OperationTemplateId, SYSUTCDATETIME(), 8, @U
+FROM Parts.RouteTemplate rt JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
+WHERE rt.ItemId = @Casting AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL AND rs.OperationTemplateId <> @MoTpl;
+
+-- MachiningIn-pending: 20 pcs, NEWER, stamped only through TrimOut (ineligible; next-pending = MachiningIn).
+DECLARE @Pend2 BIGINT;
+CREATE TABLE #P2 (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
+INSERT INTO #P2 EXEC Lots.Lot_Create @ItemId=@Casting, @LotOriginTypeId=@Origin, @CurrentLocationId=@Line, @PieceCount=20, @AppUserId=@U;
+SELECT @Pend2 = NewId FROM #P2; DROP TABLE #P2;
+INSERT INTO Workorder.ProductionEvent (LotId, OperationTemplateId, EventAt, ShotCount, AppUserId)
+SELECT @Pend2, rs.OperationTemplateId, SYSUTCDATETIME(), 20, @U
+FROM Parts.RouteTemplate rt JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
+JOIN Parts.OperationTemplate ot2 ON ot2.Id = rs.OperationTemplateId
+JOIN Parts.OperationType oty2 ON oty2.Id = ot2.OperationTypeId
+WHERE rt.ItemId = @Casting AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL
+  AND oty2.Code IN (N'DieCast', N'TrimIn', N'TrimOut');
+
+-- Request 15 (> eligible 8) with AllowPartial=1: fix must mint 8 (eligible only)
+-- and NEVER reach @Pend2. Old loose code would mint 15 (8 from @Elig2 + 7 from @Pend2).
+DECLARE @pm TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT, Available INT);
+INSERT INTO @pm EXEC Workorder.MachiningOut_Mint @SourceLotId=@Elig2, @OperationTemplateId=@MoTpl, @PieceCount=15, @AppUserId=@U, @TerminalLocationId=@Line, @AllowPartial=1;
+DECLARE @pmStatus NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @pm);
+DECLARE @pmLot BIGINT = (SELECT NewId FROM @pm);
+EXEC test.Assert_IsEqual @TestName = N'[Eligibility-Partial] partial mint against mixed queue succeeds', @Expected = N'1', @Actual = @pmStatus;
+DECLARE @pmPc NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id=@pmLot);
+EXEC test.Assert_IsEqual @TestName = N'[Eligibility-Partial] minted only the eligible supply (8, not 15)', @Expected = N'8', @Actual = @pmPc;
+DECLARE @e2After NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id=@Elig2);
+EXEC test.Assert_IsEqual @TestName = N'[Eligibility-Partial] eligible casting fully consumed', @Expected = N'0', @Actual = @e2After;
+DECLARE @p2After NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id=@Pend2);
+EXEC test.Assert_IsEqual @TestName = N'[Eligibility-Partial] MachiningIn-pending casting NOT reached by walk', @Expected = N'20', @Actual = @p2After;
+DECLARE @p2Parent NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.LotGenealogy WHERE ParentLotId=@Pend2 AND ChildLotId=@pmLot);
+EXEC test.Assert_IsEqual @TestName = N'[Eligibility-Partial] MachiningIn-pending casting NOT a genealogy parent', @Expected = N'0', @Actual = @p2Parent;
+GO
+
 -- ---- teardown (FK-safe): all LOTs of the fixture items 5G0-c / 5G0-SA ----
 DECLARE @Cast BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
 DECLARE @Mach BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-SA');
