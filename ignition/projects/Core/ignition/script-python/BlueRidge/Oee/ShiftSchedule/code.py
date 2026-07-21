@@ -61,10 +61,15 @@ def bitmaskToLabel(mask):
 
 # ---- time/date formatting (proc returns java.sql.Time/Date; normalize to text) ----
 def _fmtTime(v):
-    """java.sql.Time / string / None -> 'HH:MM' (or '')."""
+    """java.sql.Time / Timestamp / string / None -> 'HH:MM' (or '').
+       The JDBC driver returns a TIME column as a Timestamp with a 1900-01-01 date
+       prefix (e.g. '1900-01-01 06:00:00.0'), so drop any leading date part before
+       taking HH:MM."""
     if v is None:
         return ""
-    s = unicode(v)                      # '06:00:00' or '06:00'
+    s = unicode(v)
+    if " " in s:                        # 'YYYY-MM-DD HH:MM:SS[.f]' -> 'HH:MM:SS[.f]'
+        s = s.split(" ")[-1]
     return s[:5]
 
 
