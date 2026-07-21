@@ -38,7 +38,7 @@
       {
         "type": "Parameter",
         "identifier": "closureMethod",
-        "sqlType": 12
+        "sqlType": 7
       }
     ]
   }
