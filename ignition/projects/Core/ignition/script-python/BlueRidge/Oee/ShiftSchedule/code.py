@@ -29,11 +29,12 @@ def daysToBitmask(days):
     return m
 
 
-def chipOn(days, i):
-    """True if day index i (0=Mon..6=Sun) is in the selected-days list. Used by the
-       editor's per-chip style bindings (runScript inside an expr if())."""
-    d = _u(days) or []
-    return int(i) in [int(x) for x in d]
+def chipOn(mask, i):
+    """True if day-bit i (0=Mon..6=Sun) is set in the bitmask. Takes the mask as a
+       SINGLE INT, never a list: a list property passed to a runScript expr arrives
+       as a Java QualifiedValue[] whose elements int() cannot coerce (extractQualified-
+       Values does not unwrap a top-level Java array). A scalar unwraps cleanly."""
+    return (int(_u(mask) or 0) & (1 << int(_u(i)))) != 0
 
 
 def bitmaskToLabel(mask):
@@ -172,12 +173,13 @@ def deprecate(id):
 
 
 def emptyMeta():
-    """Blank editor dict (create mode). Every key the editor form binds is present."""
+    """Blank editor dict (create mode). Every key the editor form binds is present.
+       Day selection is a bitmask int (Mon=1..Sun=64), NOT a list -- see chipOn()."""
     return {
         "id":                None,
         "name":              "",
         "description":       "",
-        "days":              [],       # list of day indices 0..6 (editor chips)
+        "daysMask":          0,        # bitmask of selected days (editor chips)
         "startTime":         "",       # 'HH:MM'
         "endTime":           "",       # 'HH:MM'
         "effectiveFrom":     "",       # 'YYYY-MM-DD'
@@ -202,7 +204,7 @@ def loadMeta(id):
         "id":                  row.get("Id"),
         "name":                row.get("Name") or "",
         "description":         row.get("Description") or "",
-        "days":                bitmaskToDays(mask),
+        "daysMask":            mask,
         "startTime":           _fmtTime(row.get("StartTime")),
         "endTime":             _fmtTime(row.get("EndTime")),
         "effectiveFrom":       eff,
