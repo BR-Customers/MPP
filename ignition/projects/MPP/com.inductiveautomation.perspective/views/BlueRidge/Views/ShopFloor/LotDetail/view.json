@@ -63,6 +63,11 @@
     "scripts": {
       "customMethods": [
         {
+          "name": "reprintLabel",
+          "params": [],
+          "script": "\tlotId = self.view.custom.lotId\n\tif not lotId:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT\", \"No LOT loaded to reprint.\", \"warning\")\n\t\treturn\n\tappUserId = self.session.custom.appUserId\n\ttermId = None\n\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\tresult = BlueRidge.Lots.LotLabel.reprint(lotId, None, appUserId, termId)\n\tBlueRidge.Common.Ui.notifyResult(result, successTitle=\"LTT reprinted\")"
+        },
+        {
           "name": "load",
           "params": [],
           "script": "\tlotId = self.view.params.lotId\n\tif not lotId:\n\t\treturn\n\tself.view.custom.lot      = BlueRidge.Lots.Lot.get(lotId) or self.view.custom.lot\n\tself.view.custom.history  = BlueRidge.Lots.Lot.getHistory(lotId)\n\tself.view.custom.parents  = BlueRidge.Lots.Lot.getParents(lotId)\n\tself.view.custom.children = BlueRidge.Lots.Lot.getChildren(lotId)\n\tself.view.custom.pauses   = BlueRidge.Lots.Lot.getPauses(lotId)\n\tself.view.custom.scrapSummary = BlueRidge.Lots.Lot.getScrapSummaryOrEmpty(lotId)"
@@ -1266,6 +1271,34 @@
                   "scope": "G",
                   "config": {
                     "script": "\tsystem.perspective.navigate(\"/shop-floor/lot-search\")"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "ia.input.button",
+            "meta": {
+              "name": "BtnReprint"
+            },
+            "position": {
+              "basis": "auto",
+              "shrink": 0
+            },
+            "props": {
+              "text": "Reprint LTT",
+              "style": {
+                "classes": "pf-btn pf-btn-secondary"
+              },
+              "toolTipText": "Reprint the LTT label for this LOT (e.g. if it was damaged or did not print)."
+            },
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "type": "script",
+                  "scope": "G",
+                  "config": {
+                    "script": "\tself.view.rootContainer.reprintLabel()"
                   }
                 }
               }
