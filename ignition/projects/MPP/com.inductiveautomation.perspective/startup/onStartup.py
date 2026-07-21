@@ -1,28 +1,18 @@
 def onStartup(session):
-	# Resolve the terminal this Perspective session is connecting from by its
-	# client IP, and stash terminal/zone/default-screen context for the Home
-	# Router + per-screen context. Read-only; never errors (the proc returns a
-	# fallback Terminal row for unregistered IPs). No DB mutation, no audit.
+	# Resolve the terminal this Perspective session connects from by its client
+	# IP, then bind the FULL terminal context (terminal / printer / plcDevices /
+	# closure / vision, and clear any stale cell) via the shared
+	# BlueRidge.Location.Terminal.applyToSession resolver -- the SAME one the
+	# NavigationTree launch and the Terminal Selector use, so all three paths set
+	# identical context and can never drift. Read-only; never errors (the proc
+	# returns a fallback Terminal row for unregistered IPs).
 	ip = session.props.address       # Perspective client IP
 	term = BlueRidge.Location.Terminal.getByIpAddress(ip)
 	if term is None:
-		# Defensive: proc is designed to always return a fallback row, but guard.
-		session.custom.terminal = {
-			"terminalLocationId": None,
-			"terminalCode":       "",
-			"terminalName":       "",
-			"zoneLocationId":     None,
-			"zoneName":           "",
-			"defaultScreen":      "",
-			"visionAppUrl":       "",
-			"isFallback":         True,
-		}
-		session.custom.printer = {"locationId": None, "code": "", "endpoint": "", "model": ""}
-		session.custom.plcDevices = []
-		session.custom.closureMethod = ""
-		session.custom.closureCapabilities = ["ByCount"]
+		# Defensive: the proc is designed to always return a fallback row.
+		BlueRidge.Location.Terminal.applyToSession(session, {"terminalLocationId": None})
 		return
-	session.custom.terminal = {
+	BlueRidge.Location.Terminal.applyToSession(session, {
 		"terminalLocationId": term.get("TerminalLocationId"),
 		"terminalCode":       term.get("TerminalCode"),
 		"terminalName":       term.get("TerminalName"),
@@ -30,25 +20,4 @@ def onStartup(session):
 		"zoneName":           term.get("ZoneName"),
 		"defaultScreen":      term.get("DefaultScreen"),
 		"isFallback":         bool(term.get("IsFallback")),
-	}
-	# Arc 2 Phase 4: resolve the terminal's child Printer into session.custom.printer
-	# (one DB round-trip per session; the LTT dispatch path reads it). Empty dict
-	# when the terminal has no Printer child (HasPrinter false / FALLBACK terminal).
-	prn = BlueRidge.Location.Terminal.getPrinter(term.get("TerminalLocationId")) or {}
-	session.custom.printer = {
-		"locationId": prn.get("locationId"),
-		"code":       prn.get("code") or "",
-		"endpoint":   prn.get("endpoint") or "",
-		"model":      prn.get("model") or "",
-	}
-	# Plan 3: resolve this terminal's PLC UDT-instance mappings for the gateway
-	# watchers + PLC screens (empty list when the terminal drives no devices).
-	session.custom.plcDevices = BlueRidge.Location.TerminalPlcDevice.getByTerminal(term.get("TerminalLocationId")) or []
-	# Assembly-out closure context: persisted mode + capability set (derived from
-	# the terminal's PLC devices) + the ByVision embed URL. Empty/ByCount defaults
-	# when the terminal has no closure attributes provisioned.
-	cc = BlueRidge.Location.Terminal.getClosureContext(term.get("TerminalLocationId")) or {}
-	session.custom.closureMethod = cc.get("CurrentClosureMethod") or ""
-	caps = cc.get("ClosureCapabilities") or "ByCount"
-	session.custom.closureCapabilities = [c for c in caps.split(",") if c]
-	session.custom.terminal["visionAppUrl"] = cc.get("VisionAppUrl") or ""
+	})
