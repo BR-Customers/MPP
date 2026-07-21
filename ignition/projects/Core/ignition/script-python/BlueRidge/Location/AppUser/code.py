@@ -4,6 +4,7 @@
 
 import BlueRidge.Common.Db
 import BlueRidge.Common.Util
+import system.security
 
 
 def getUserList(includeDeprecated=False, textFilter=None):
@@ -174,26 +175,53 @@ def resolveForPresence(initials):
     }
 
 
+# =============================================================================
+# *** DEPLOYMENT CHANGE (interim, 2026-07-21) -- REVERT AT GO-LIVE ***
+# _validateAdCredentials is wired to challenge the gateway's INTERNAL user source
+# (_DEV_USER_SOURCE) via system.security.validateUser, instead of Active
+# Directory, because AD is unavailable in the current environment. This lets
+# per-action elevation (changeover + other protected actions) work for
+# dev/testing. Attribution/audit is UNAFFECTED: validateUser only gates the
+# password; the account name still flows to AppUser_AuthenticateAd, which
+# resolves it to an AppUser and writes the ElevationGranted/Denied audit row.
+# AT DEPLOYMENT (FDS-04-007): repoint _DEV_USER_SOURCE at the real AD auth
+# profile (or restore the dedicated AD IdP challenge) and drop this banner.
+# =============================================================================
+_DEV_USER_SOURCE = "default"  # INTERIM: authProfile / user source to challenge --
+                              # MUST match a user source configured on the gateway
+                              # (Config > Security > Users, Roles). "" = project default.
+
+
 def _validateAdCredentials(adAccount, password):
-    """DEPLOYMENT-TIME INTEGRATION SEAM (FDS-04-007) -- NOT YET WIRED.
+    """DEPLOYMENT-TIME INTEGRATION SEAM (FDS-04-007).
 
-       Validates the AD *credential* (username + password) against the gateway's
-       Active Directory Identity Provider. Per FDS-04-007 the password is checked
-       by Ignition's AD IdP binding (system.security / IdP challenge), NOT by the
-       stored proc (AppUser_AuthenticateAd receives only @AdAccount and performs
-       the post-validation role check + audit). This function MUST be wired to the
-       configured gateway AD identity provider at deployment.
+       *** INTERIM (2026-07-21): challenges the INTERNAL user source
+       (_DEV_USER_SOURCE) via system.security.validateUser, NOT Active Directory,
+       because AD is unavailable here. REVERT AT DEPLOYMENT -- see the banner
+       above. ***
 
-       Returns a (validated, reason) tuple.
+       Validates the credential (username + password) against the configured user
+       source. The password is checked HERE; the stored proc
+       (AppUser_AuthenticateAd) receives only the account name and does the
+       post-validation AppUser mapping + role resolution + audit -- so the
+       elevating identity is still captured for auditing (validateUser returns
+       only a boolean, but we pass the typed account on to the proc).
 
-       SAFE DEFAULT: until the IdP federation is configured this returns
-       (False, <reason>) so NOTHING silently authenticates. Do not replace this
-       with a permissive stub -- the only correct change here is to call the real
-       gateway AD challenge."""
-    BlueRidge.Common.Util.log("adAccount=%s (AD credential validation seam)" % adAccount)
-    return (False,
-            "AD credential validation not yet wired - configure gateway AD "
-            "identity provider (FDS-04-007)")
+       Returns a (validated, reason) tuple and NEVER raises -- any error degrades
+       to (False, <reason>) so nothing silently authenticates."""
+    account = (adAccount or "").strip()
+    if not account or not password:
+        return (False, "Enter both account and password.")
+    try:
+        ok = system.security.validateUser(account, password, _DEV_USER_SOURCE)
+    except Exception as e:
+        BlueRidge.Common.Util.log(
+            "validateUser error (source=%s account=%s): %s"
+            % (_DEV_USER_SOURCE, account, e), level="error")
+        return (False, "Credential validation error - check the user source name.")
+    if ok:
+        return (True, "")
+    return (False, "Invalid account or password.")
 
 
 def elevate(adAccount, password, actionCode, terminalLocationId):
