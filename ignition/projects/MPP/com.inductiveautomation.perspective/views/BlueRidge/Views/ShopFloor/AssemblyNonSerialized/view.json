@@ -1136,7 +1136,7 @@
                         },
                         "props": {
                           "style": {
-                            "classes": "pf-btn pf-btn-secondary pf-btn-large"
+                            "classes": "pf-btn pf-btn-primary pf-btn-large"
                           },
                           "text": "Complete Tray"
                         },

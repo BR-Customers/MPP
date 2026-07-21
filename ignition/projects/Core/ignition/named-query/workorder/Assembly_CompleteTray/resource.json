@@ -33,7 +33,7 @@
       { "type": "Parameter", "identifier": "finishedGoodItemId", "sqlType": 3 },
       { "type": "Parameter", "identifier": "pieceCount", "sqlType": 2 },
       { "type": "Parameter", "identifier": "cellLocationId", "sqlType": 3 },
-      { "type": "Parameter", "identifier": "closureMethod", "sqlType": 12 },
+      { "type": "Parameter", "identifier": "closureMethod", "sqlType": 7 },
       { "type": "Parameter", "identifier": "appUserId", "sqlType": 3 },
       { "type": "Parameter", "identifier": "terminalLocationId", "sqlType": 3 }
     ]
