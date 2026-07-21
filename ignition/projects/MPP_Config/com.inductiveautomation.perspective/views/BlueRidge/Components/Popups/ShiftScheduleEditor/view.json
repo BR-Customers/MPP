@@ -101,7 +101,7 @@
             },
             "props": {
               "style": {
-                "color": "var(--mpp-accent)",
+                "color": "var(--mpp-accent-60)",
                 "fontSize": "11px",
                 "fontStyle": "italic"
               }
@@ -299,7 +299,7 @@
                       "props.style.background": {
                         "binding": {
                           "config": {
-                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 0), 'var(--mpp-accent)', 'transparent')"
+                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 0), 'var(--mpp-accent-50)', 'transparent')"
                           },
                           "type": "expr"
                         }
@@ -348,7 +348,7 @@
                       "props.style.background": {
                         "binding": {
                           "config": {
-                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 1), 'var(--mpp-accent)', 'transparent')"
+                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 1), 'var(--mpp-accent-50)', 'transparent')"
                           },
                           "type": "expr"
                         }
@@ -397,7 +397,7 @@
                       "props.style.background": {
                         "binding": {
                           "config": {
-                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 2), 'var(--mpp-accent)', 'transparent')"
+                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 2), 'var(--mpp-accent-50)', 'transparent')"
                           },
                           "type": "expr"
                         }
@@ -446,7 +446,7 @@
                       "props.style.background": {
                         "binding": {
                           "config": {
-                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 3), 'var(--mpp-accent)', 'transparent')"
+                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 3), 'var(--mpp-accent-50)', 'transparent')"
                           },
                           "type": "expr"
                         }
@@ -495,7 +495,7 @@
                       "props.style.background": {
                         "binding": {
                           "config": {
-                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 4), 'var(--mpp-accent)', 'transparent')"
+                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 4), 'var(--mpp-accent-50)', 'transparent')"
                           },
                           "type": "expr"
                         }
@@ -544,7 +544,7 @@
                       "props.style.background": {
                         "binding": {
                           "config": {
-                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 5), 'var(--mpp-accent)', 'transparent')"
+                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 5), 'var(--mpp-accent-50)', 'transparent')"
                           },
                           "type": "expr"
                         }
@@ -593,7 +593,7 @@
                       "props.style.background": {
                         "binding": {
                           "config": {
-                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 6), 'var(--mpp-accent)', 'transparent')"
+                            "expression": "if(runScript(\"BlueRidge.Oee.ShiftSchedule.chipOn\", 0, {view.custom.editDraft.meta.daysMask}, 6), 'var(--mpp-accent-50)', 'transparent')"
                           },
                           "type": "expr"
                         }
@@ -976,7 +976,7 @@
         {
           "name": "doSave",
           "params": [],
-          "script": "\timport re\n\tdraft = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft.get(\"meta\", {})) or {}\n\tname = (draft.get(\"name\") or \"\").strip()\n\tmask = int(draft.get(\"daysMask\") or 0)\n\tst = (draft.get(\"startTime\") or \"\").strip()\n\tet = (draft.get(\"endTime\") or \"\").strip()\n\tmillis = draft.get(\"effectiveFromMillis\")\n\tpat = re.compile(\"^([01]?[0-9]|2[0-3]):[0-5][0-9]$\")\n\tif not name or mask == 0 or not pat.match(st) or not pat.match(et) or millis is None:\n\t\tBlueRidge.Common.Notify.toast(\"Cannot save\", \"Name, at least one day, valid HH:MM start/end times, and an effective date are required.\", \"warning\")\n\t\treturn\n\teff = system.date.format(system.date.fromMillis(long(millis)), \"yyyy-MM-dd\")\n\tmeta = {\n\t\t\"id\": draft.get(\"id\"),\n\t\t\"name\": name,\n\t\t\"description\": (draft.get(\"description\") or \"\").strip(),\n\t\t\"daysOfWeekBitmask\": mask,\n\t\t\"startTime\": st,\n\t\t\"endTime\": et,\n\t\t\"effectiveFrom\": eff\n\t}\n\tif self.view.params.mode == \"create\":\n\t\tresult = BlueRidge.Oee.ShiftSchedule.add(meta)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"Shift schedule created\")\n\telse:\n\t\tresult = BlueRidge.Oee.ShiftSchedule.update(meta)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"Shift schedule updated\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"shiftSchedulesRefresh\", scope=\"page\")\n\t\tsystem.perspective.closePopup(id=\"mpp-shift-schedule-editor\")"
+          "script": "\timport re\n\tdraft = BlueRidge.Common.Util.extractQualifiedValues(self.view.custom.editDraft.get(\"meta\", {})) or {}\n\tname = (draft.get(\"name\") or \"\").strip()\n\tmask = int(draft.get(\"daysMask\") or 0)\n\tst = (draft.get(\"startTime\") or \"\").strip()\n\tet = (draft.get(\"endTime\") or \"\").strip()\n\tmillis = draft.get(\"effectiveFromMillis\")\n\tpat = re.compile(\"^([01]?[0-9]|2[0-3]):[0-5][0-9]$\")\n\tif not name or mask == 0 or not pat.match(st) or not pat.match(et) or millis is None:\n\t\tBlueRidge.Common.Notify.toast(\"Cannot save\", \"Name, at least one day, valid HH:MM start/end times, and an effective date are required.\", \"warning\")\n\t\treturn\n\tif isinstance(millis, (int, long, float)):\n\t\tmillis = system.date.fromMillis(long(millis))\n\teff = system.date.format(millis, \"yyyy-MM-dd\")\n\tmeta = {\n\t\t\"id\": draft.get(\"id\"),\n\t\t\"name\": name,\n\t\t\"description\": (draft.get(\"description\") or \"\").strip(),\n\t\t\"daysOfWeekBitmask\": mask,\n\t\t\"startTime\": st,\n\t\t\"endTime\": et,\n\t\t\"effectiveFrom\": eff\n\t}\n\tif self.view.params.mode == \"create\":\n\t\tresult = BlueRidge.Oee.ShiftSchedule.add(meta)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"Shift schedule created\")\n\telse:\n\t\tresult = BlueRidge.Oee.ShiftSchedule.update(meta)\n\t\tBlueRidge.Common.Ui.notifyResult(result, \"Shift schedule updated\")\n\tif result and result.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"shiftSchedulesRefresh\", scope=\"page\")\n\t\tsystem.perspective.closePopup(id=\"mpp-shift-schedule-editor\")"
         },
         {
           "name": "handleClose",

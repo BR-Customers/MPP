@@ -194,12 +194,14 @@ def loadMeta(id):
         return emptyMeta()
     mask = int(row.get("DaysOfWeekBitmask") or 0)
     eff = _fmtDate(row.get("EffectiveFrom"))
-    millis = None
+    # The date-time-input's props.value is a java.util.Date (NOT epoch millis), so
+    # seed edit-mode with a Date the picker can display; doSave formats it back.
+    dateVal = None
     if eff:
         try:
-            millis = system.date.getMillis(system.date.parse(eff, "yyyy-MM-dd"))
+            dateVal = system.date.parse(eff, "yyyy-MM-dd")
         except Exception:
-            millis = None
+            dateVal = None
     return {
         "id":                  row.get("Id"),
         "name":                row.get("Name") or "",
@@ -208,5 +210,5 @@ def loadMeta(id):
         "startTime":           _fmtTime(row.get("StartTime")),
         "endTime":             _fmtTime(row.get("EndTime")),
         "effectiveFrom":       eff,
-        "effectiveFromMillis": millis,
+        "effectiveFromMillis": dateVal,
     }
