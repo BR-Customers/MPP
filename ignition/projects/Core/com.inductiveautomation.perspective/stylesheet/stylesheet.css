@@ -2351,7 +2351,7 @@ button {
 
 .psc-pf-queue-row {
     display: grid;
-    grid-template-columns: 1fr auto auto auto;
+    grid-template-columns: auto 1fr auto auto;
     gap: var(--mpp-space-4);
     align-items: center;
     padding: var(--mpp-space-3) var(--mpp-space-4);
