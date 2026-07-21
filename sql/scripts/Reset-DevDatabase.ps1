@@ -4,9 +4,12 @@
 # FOR DEV USE ONLY. Never run against staging or production.
 #
 # Usage:
-#   .\Reset-DevDatabase.ps1                          # localhost, Windows auth
+#   .\Reset-DevDatabase.ps1                          # localhost, Windows auth (config + demo threads)
 #   .\Reset-DevDatabase.ps1 -ServerInstance ".\SQL2022"
 #   .\Reset-DevDatabase.ps1 -ServerInstance "server" -DatabaseName "MPP_MES_QA"
+#   .\Reset-DevDatabase.ps1 -DatabaseName MPP_MES_Dev -Force -JpValidation
+#         # rebuild Jacques's Dev: standard seeds + JP validation config + die mounts, LOT-free
+#         # (-Force required to drop a *_Dev DB; -JpValidation runs seed_jp_validation instead of seed_demo)
 #
 # Prerequisites:
 #   - sqlcmd.exe (ships with SSMS or SQL Server)
@@ -36,7 +39,8 @@ param(
     [string]$Username      = "",
     [string]$Password      = "",
     [switch]$SkipDemoSeed,
-    [switch]$Force
+    [switch]$Force,
+    [switch]$JpValidation
 )
 
 # Build SQL auth args if credentials were supplied
@@ -240,7 +244,20 @@ if (Test-Path $Seeds) {
 # threads). Pass -SkipDemoSeed to keep the DB LOT-free -- Run-Tests.ps1
 # does this so the suite runs against config only.
 # ============================================================
-if (-not $SkipDemoSeed) {
+if ($JpValidation) {
+    # JP validation config: parts/routes/BOMs/container-configs/eligibility + die mounts,
+    # LOT-free. Runs INSTEAD of seed_demo (mutually exclusive: seed_jp_validation mounts
+    # dies on DC1-M01..03 which would collide with seed_demo's own mounts). This is
+    # Jacques's canonical Dev config -- `-Force -JpValidation` reproduces it on reset.
+    $jp = Join-Path $SqlRoot "scratch\seed_jp_validation.sql"
+    if (Test-Path $jp) {
+        Write-Host "[7/7] Seeding JP validation config (seed_jp_validation.sql, LOT-free)..." -ForegroundColor Cyan
+        Invoke-SqlFile -FilePath $jp
+        Write-Host "  JP validation config seeded." -ForegroundColor Green
+    } else {
+        Write-Host "[7/7] seed_jp_validation.sql not found - skipping." -ForegroundColor DarkYellow
+    }
+} elseif (-not $SkipDemoSeed) {
     $demo = Join-Path $SqlRoot "scratch\seed_demo.sql"
     if (Test-Path $demo) {
         Write-Host "[7/7] Seeding demo threads (seed_demo.sql)..." -ForegroundColor Cyan
