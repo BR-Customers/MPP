@@ -29,6 +29,13 @@ def daysToBitmask(days):
     return m
 
 
+def chipOn(days, i):
+    """True if day index i (0=Mon..6=Sun) is in the selected-days list. Used by the
+       editor's per-chip style bindings (runScript inside an expr if())."""
+    d = _u(days) or []
+    return int(i) in [int(x) for x in d]
+
+
 def bitmaskToLabel(mask):
     idx = bitmaskToDays(mask)
     if not idx:
