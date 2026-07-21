@@ -1,6 +1,7 @@
 {
   "custom": {
     "scanCode": "",
+    "alreadyHere": false,
     "lot": {},
     "eligibility": {
       "IsEligible": false,
@@ -53,12 +54,12 @@
         {
           "name": "applyScan",
           "params": [],
-          "script": "\tcode = self.view.custom.scanCode\n\tif not code:\n\t\treturn\n\tr = BlueRidge.Lots.Lot.getByName(code)\n\tif r:\n\t\tself.view.custom.lot = r\n\t\titemId = r.get(\"ItemId\")\n\t\tdestId = self.view.params.destinationLocationId\n\t\tself.view.custom.eligibility = BlueRidge.Parts.ItemLocation.checkEligibilityOrEmpty(itemId, destId)\n\t\tmp = BlueRidge.Parts.Item.getMaxParts(itemId)\n\t\tself.view.custom.maxParts = mp if mp else {\"MaxParts\": None}\n\t\teq = BlueRidge.Lots.Lot.getCellLineQuantity(destId, itemId)\n\t\tself.view.custom.existingQty = eq if eq else {\"ExistingPieceCount\": 0}\n\t\tself.view.custom.phase = \"review\"\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"LOT not found\", \"No LOT matches '%s'.\" % code, \"warning\")"
+          "script": "\tcode = self.view.custom.scanCode\n\tif not code:\n\t\treturn\n\tr = BlueRidge.Lots.Lot.getByName(code)\n\tif r:\n\t\tself.view.custom.lot = r\n\t\titemId = r.get(\"ItemId\")\n\t\tdestId = self.view.params.destinationLocationId\n\t\tcur = r.get(\"CurrentLocationId\")\n\t\ttry:\n\t\t\tself.view.custom.alreadyHere = (cur is not None and int(cur) == int(destId))\n\t\texcept:\n\t\t\tself.view.custom.alreadyHere = False\n\t\tself.view.custom.eligibility = BlueRidge.Parts.ItemLocation.checkEligibilityOrEmpty(itemId, destId)\n\t\tmp = BlueRidge.Parts.Item.getMaxParts(itemId)\n\t\tself.view.custom.maxParts = mp if mp else {\"MaxParts\": None}\n\t\teq = BlueRidge.Lots.Lot.getCellLineQuantity(destId, itemId)\n\t\tself.view.custom.existingQty = eq if eq else {\"ExistingPieceCount\": 0}\n\t\tself.view.custom.phase = \"review\"\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"LOT not found\", \"No LOT matches '%s'.\" % code, \"warning\")"
         },
         {
           "name": "commitMove",
           "params": [],
-          "script": "\tlotId = self.view.custom.lot.get(\"Id\")\n\tif lotId is None:\n\t\treturn\n\tres = BlueRidge.Lots.Lot.moveToValidated(lotId, self.view.params.destinationLocationId)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Moved\")\n\tif res.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"lotId\": lotId}, scope=\"page\")\n\t\tself.view.custom.scanCode = \"\"\n\t\tself.view.custom.lot = {}\n\t\tself.view.custom.eligibility = {\"IsEligible\": False, \"Path\": None}\n\t\tself.view.custom.maxParts = {\"MaxParts\": None}\n\t\tself.view.custom.existingQty = {\"ExistingPieceCount\": 0}\n\t\tself.view.custom.phase = \"scan\""
+          "script": "\tlotId = self.view.custom.lot.get(\"Id\")\n\tif lotId is None:\n\t\treturn\n\tres = BlueRidge.Lots.Lot.moveToValidated(lotId, self.view.params.destinationLocationId)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Moved\")\n\tif res.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"lotId\": lotId}, scope=\"page\")\n\t\tself.view.custom.scanCode = \"\"\n\t\tself.view.custom.lot = {}\n\t\tself.view.custom.eligibility = {\"IsEligible\": False, \"Path\": None}\n\t\tself.view.custom.maxParts = {\"MaxParts\": None}\n\t\tself.view.custom.existingQty = {\"ExistingPieceCount\": 0}\n\t\tself.view.custom.alreadyHere = False\n\t\tself.view.custom.phase = \"scan\""
         }
       ]
     },
@@ -243,7 +244,7 @@
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "if({view.custom.eligibility.IsEligible}, \"Eligible at destination\", \"Not eligible at destination\")"
+                    "expression": "if({view.custom.alreadyHere}, \"Already at this location\", if({view.custom.eligibility.IsEligible}, \"Eligible at destination\", \"Not eligible at destination\"))"
                   }
                 }
               },
@@ -251,7 +252,7 @@
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "if({view.custom.eligibility.IsEligible}, \"var(--mpp-success, #2e7d32)\", \"var(--mpp-error, #c62828)\")"
+                    "expression": "if({view.custom.alreadyHere}, \"var(--mpp-warn, #f9a825)\", if({view.custom.eligibility.IsEligible}, \"var(--mpp-success, #2e7d32)\", \"var(--mpp-error, #c62828)\"))"
                   }
                 }
               }
@@ -303,7 +304,7 @@
                 "binding": {
                   "type": "expr",
                   "config": {
-                    "expression": "{view.custom.eligibility.IsEligible}"
+                    "expression": "{view.custom.eligibility.IsEligible} && !{view.custom.alreadyHere}"
                   }
                 }
               }
