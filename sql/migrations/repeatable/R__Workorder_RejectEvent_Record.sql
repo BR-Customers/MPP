@@ -46,7 +46,8 @@ CREATE OR ALTER PROCEDURE Workorder.RejectEvent_Record
     @ChargeToArea        NVARCHAR(100)  = NULL,
     @Remarks             NVARCHAR(500)  = NULL,
     @AppUserId           BIGINT,
-    @TerminalLocationId  BIGINT         = NULL   -- audit-only; no column on RejectEvent
+    @TerminalLocationId  BIGINT         = NULL,  -- audit-only; no column on RejectEvent
+    @OperationTypeCode   NVARCHAR(20)   = NULL   -- reject's operation context; drives additive-vs-subtractive (0042)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -60,7 +61,8 @@ BEGIN
     DECLARE @Params   NVARCHAR(MAX) = (
         SELECT @LotId AS LotId, @DefectCodeId AS DefectCodeId, @Quantity AS Quantity,
                @ProductionEventId AS ProductionEventId, @ChargeToArea AS ChargeToArea,
-               @AppUserId AS AppUserId, @TerminalLocationId AS TerminalLocationId
+               @AppUserId AS AppUserId, @TerminalLocationId AS TerminalLocationId,
+               @OperationTypeCode AS OperationTypeCode
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
     DECLARE @StatusCode NVARCHAR(20);
@@ -72,6 +74,13 @@ BEGIN
 
     DECLARE @GoodStatusId   BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Good');
     DECLARE @ClosedStatusId BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Closed');
+
+    -- Additive-vs-subtractive scrap rule (0042): derived in SQL from the reject's
+    -- operation context, NOT the caller. Die-cast scrap is additive (LOT not
+    -- decremented -- bad shots never entered the basket); all other / unknown
+    -- operations are subtractive (default 0 = today's D3 behavior).
+    DECLARE @Additive BIT = ISNULL(
+        (SELECT ScrapIsAdditive FROM Parts.OperationType WHERE Code = @OperationTypeCode), 0);
 
     BEGIN TRY
         -- ---- 1. Required parameters ----
@@ -170,8 +179,9 @@ BEGIN
             RETURN;
         END
 
-        -- ---- 5. Quantity cannot exceed remaining pieces (D3 cannot go below zero) ----
-        IF @Quantity > @PieceCount
+        -- ---- 5. Quantity cannot exceed remaining pieces (SUBTRACTIVE only; D3 cannot go
+        --         below zero). Additive scrap is not bounded by remaining pieces. ----
+        IF @Additive = 0 AND @Quantity > @PieceCount
         BEGIN
             SET @Message = N'Reject Quantity ' + CAST(@Quantity AS NVARCHAR(20))
                          + N' exceeds LOT remaining pieces ' + CAST(@PieceCount AS NVARCHAR(20)) + N'.';
@@ -200,33 +210,37 @@ BEGIN
 
         SET @NewId = CAST(SCOPE_IDENTITY() AS BIGINT);
 
-        -- D3: decrement materialized B5 quantities under UPDLOCK/HOLDLOCK on the
-        -- Lot row (mirrors the Lot_Split PieceCount-mutation locking). PieceCount
-        -- is bounded >= 0 by the validation above; InventoryAvailable is floored
-        -- at 0 defensively (it can already trail PieceCount via consumption).
-        DECLARE @NewPieceCount     INT;
-        DECLARE @NewInventoryAvail INT;
+        -- Additive scrap (die cast, ScrapIsAdditive=1): the bad shots never entered the
+        -- basket, so the LOT already holds the fulfilled good count -- record the reject
+        -- for yield/metrics but DO NOT decrement (and never close-at-zero). Subtractive
+        -- scrap (downstream) decrements the materialized B5 quantities (D3).
+        DECLARE @NewPieceCount     INT = @PieceCount;      -- additive: unchanged
+        DECLARE @NewInventoryAvail INT = @InventoryAvail;
 
-        UPDATE l
-        SET @NewPieceCount     = l.PieceCount - @Quantity,
-            @NewInventoryAvail = CASE WHEN l.InventoryAvailable - @Quantity < 0 THEN 0
-                                      ELSE l.InventoryAvailable - @Quantity END,
-            l.PieceCount        = l.PieceCount - @Quantity,
-            l.InventoryAvailable= CASE WHEN l.InventoryAvailable - @Quantity < 0 THEN 0
-                                       ELSE l.InventoryAvailable - @Quantity END,
-            l.UpdatedAt         = SYSUTCDATETIME(),
-            l.UpdatedByUserId   = @AppUserId
-        FROM Lots.Lot l WITH (UPDLOCK, HOLDLOCK)
-        WHERE l.Id = @LotId;
+        IF @Additive = 0
+        BEGIN
+            -- D3: decrement under UPDLOCK/HOLDLOCK on the Lot row (mirrors the Lot_Split
+            -- PieceCount-mutation locking). PieceCount bounded >= 0 by the validation
+            -- above; InventoryAvailable floored at 0 defensively.
+            UPDATE l
+            SET @NewPieceCount     = l.PieceCount - @Quantity,
+                @NewInventoryAvail = CASE WHEN l.InventoryAvailable - @Quantity < 0 THEN 0
+                                          ELSE l.InventoryAvailable - @Quantity END,
+                l.PieceCount        = l.PieceCount - @Quantity,
+                l.InventoryAvailable= CASE WHEN l.InventoryAvailable - @Quantity < 0 THEN 0
+                                           ELSE l.InventoryAvailable - @Quantity END,
+                l.UpdatedAt         = SYSUTCDATETIME(),
+                l.UpdatedByUserId   = @AppUserId
+            FROM Lots.Lot l WITH (UPDLOCK, HOLDLOCK)
+            WHERE l.Id = @LotId;
 
-        -- Concurrency guard (TOCTOU): the @Quantity > @PieceCount gate above read
-        -- PieceCount UNLOCKED, before BEGIN TRANSACTION. Re-check against the value
-        -- read under UPDLOCK; a concurrent reject that slipped between the gate and
-        -- this lock would drive PieceCount negative (and skip close-at-zero, since
-        -- @NewPieceCount would be < 0, not = 0). RAISERROR lands in the CATCH (the
-        -- only legal ROLLBACK site under INSERT-EXEC / Msg-3915) -> clean Status=0.
-        IF @NewPieceCount < 0
-            RAISERROR(N'Reject Quantity exceeds the LOT''s remaining pieces (concurrent update). Reload and retry.', 16, 1);
+            -- Concurrency guard (TOCTOU): the @Quantity > @PieceCount gate above read
+            -- PieceCount UNLOCKED, before BEGIN TRANSACTION. Re-check under the lock; a
+            -- concurrent reject would drive it negative. RAISERROR -> CATCH (the only
+            -- legal ROLLBACK site under INSERT-EXEC / Msg-3915) -> clean Status=0.
+            IF @NewPieceCount < 0
+                RAISERROR(N'Reject Quantity exceeds the LOT''s remaining pieces (concurrent update). Reload and retry.', 16, 1);
+        END
 
         -- ----- Reject audit (resolved-FK JSON + readable Description) -----
         DECLARE @LotName    NVARCHAR(50)  = (SELECT LotName FROM Lots.Lot WHERE Id = @LotId);
@@ -235,7 +249,9 @@ BEGIN
         DECLARE @ActivityRaw NVARCHAR(MAX) =
             @LotName + N' ' + Audit.ufn_MidDot() + N' Reject ' + Audit.ufn_MidDot()
             + N' ' + CAST(@Quantity AS NVARCHAR(20)) + N' pcs (' + ISNULL(@DefCode, N'?') + N')'
-            + N'; remaining ' + CAST(@NewPieceCount AS NVARCHAR(20));
+            + CASE WHEN @Additive = 1
+                   THEN N'; additive, LOT unchanged at ' + CAST(@NewPieceCount AS NVARCHAR(20))
+                   ELSE N'; remaining ' + CAST(@NewPieceCount AS NVARCHAR(20)) END;
         DECLARE @Activity NVARCHAR(500) = Audit.ufn_TruncateActivity(@ActivityRaw);
 
         DECLARE @NewValue NVARCHAR(MAX) = (
@@ -269,7 +285,7 @@ BEGIN
         -- the 20-yr Lots.LotEventLog, exactly as Lot_UpdateStatus would). Inlined
         -- (not EXEC Lots.Lot_UpdateStatus) per the INSERT-EXEC / single-result-set
         -- rule. Source of truth: R__Lots_Lot_UpdateStatus.sql.
-        IF @NewPieceCount = 0 AND @CurrentStatusId = @GoodStatusId
+        IF @Additive = 0 AND @NewPieceCount = 0 AND @CurrentStatusId = @GoodStatusId
         BEGIN
             UPDATE Lots.Lot
             SET LotStatusId     = @ClosedStatusId,
@@ -313,7 +329,9 @@ BEGIN
         COMMIT TRANSACTION;
 
         SET @Status  = 1;
-        SET @Message = CASE WHEN @NewPieceCount = 0
+        SET @Message = CASE WHEN @Additive = 1
+                            THEN N'Reject recorded (additive); LOT unchanged at ' + CAST(@NewPieceCount AS NVARCHAR(20)) + N' pieces.'
+                            WHEN @NewPieceCount = 0
                             THEN N'Reject recorded; LOT closed (zero pieces remaining).'
                             ELSE N'Reject recorded; ' + CAST(@NewPieceCount AS NVARCHAR(20)) + N' pieces remaining.' END;
         SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
