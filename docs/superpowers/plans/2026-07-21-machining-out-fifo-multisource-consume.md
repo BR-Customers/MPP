@@ -10,7 +10,8 @@
 
 ## Global Constraints
 
-- **DB safety:** run tests ONLY as `.\Run-Tests.ps1 -DatabaseName "MPP_MES_Test"` (or `-Filter`). NEVER a bare `.\Run-Tests.ps1`, NEVER `MPP_MES_Dev` (a guardrail defaults the runner to Test and blocks dropping `*_Dev`, but pass the flag anyway).
+- **DB safety (development):** run tests ONLY as `.\Run-Tests.ps1 -DatabaseName "MPP_MES_Test"` (or `-Filter`). NEVER a bare `.\Run-Tests.ps1`, NEVER `MPP_MES_Dev` (a guardrail defaults the runner to Test and blocks dropping `*_Dev`, but pass the flag anyway). **`MPP_MES_Dev` is NOT reset, rebuilt, or dropped at any point during development — its table data must be preserved.**
+- **Deployment to Dev (on completion only):** apply to `MPP_MES_Dev` NON-DESTRUCTIVELY — the reworked proc via `sqlcmd -S localhost -d MPP_MES_Dev -E -b -I -C -i sql/migrations/repeatable/R__Workorder_MachiningOut_Mint.sql` (a `CREATE OR ALTER` that replaces the definition and touches no rows), and the Ignition wrapper/NQ/view via `.\scan.ps1`. This feature has NO schema migration, so no rebuild is ever needed. The Task 4 data repair is the only row-level change to Dev, and it's gated on Jacques's confirmation + targets only the specific damaged LOTs.
 - **INSERT-EXEC safety** (this proc is captured via INSERT-EXEC): all rejecting validations run BEFORE `BEGIN TRANSACTION`; the CATCH is the only `ROLLBACK` site; `RAISERROR` not `THROW`; no OUTPUT params.
 - **Result shape:** every exit ends `SELECT @Status AS Status, @Message AS Message, @NewId AS NewId, @Available AS Available;` (4 columns — the new `@Available` is the blast-radius item).
 - **FIFO source set:** OPEN (`LotStatusCode <> 'Closed'`) LOTs with `ItemId = @SrcItem` at `CurrentLocationId = @SrcLoc`, ordered **arrival-first: `LastMovementAt ASC, Id ASC`** (matches `Lots.Lot_GetWipQueueByLocation`). Consumable per casting = `InventoryAvailable` (`InventoryAvailable <= PieceCount`, so bounding by it keeps PieceCount ≥ 0).
