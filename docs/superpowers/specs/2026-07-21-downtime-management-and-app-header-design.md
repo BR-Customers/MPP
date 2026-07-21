@@ -212,6 +212,76 @@ list helper. Thin wrappers (`execList/execOne/execMutation`), `_u()` unwrap at e
 - No overlap/again validation beyond `EndedAt>StartedAt` and B3 one-open-per-scope.
 - Dashboard, PLC commissioning, availability rollup — separate efforts.
 
+## Blast Radius Analysis
+
+Enumerated from a full sweep of every `Oee.DowntimeEvent` reference (SQL + Ignition)
+and every `DowntimeEvent_Start` / `session.custom.cell` writer.
+
+### Schema change — `0043` adds `VoidedAt/VoidedByUserId/VoidReason` — **LOW (additive)**
+- All nullable, no default. Every writer uses an **explicit column list**
+  (`DowntimeEvent_Start`, `EndOfShiftEntry_Submit`) → inserts unaffected. **No
+  `SELECT *`** on the table anywhere (verified) → existing reads
+  (`GetOpenByLocation`, `GetOpenSummary`) never see the new columns.
+- `clear_demo.sql` (`DELETE FROM Oee.DowntimeEvent`) and `seed_demo.sql` (proc insert)
+  unaffected. Existing `sql/tests/0026_PlantFloor_Downtime_Shift/*` don't reference the
+  new columns → stay green.
+- `Void` also sets `EndedAt`, so a voided event drops out of the open-based reads/
+  summary automatically — no retrofit of existing reads required.
+
+### Recording location cell → resolved line scope — **MEDIUM, contained by NOT touching `Start`**
+- **Key mitigation:** `DowntimeEvent_Start`'s signature/behaviour is **unchanged** — the
+  *caller* supplies the location. Only the new popup passes the resolved **line**;
+  every existing caller keeps passing its **cell**. So **zero forced changes** to: the
+  old `DowntimeEntry` page, the `DowntimePlc` watcher (stub), `EndOfShiftEntry` breaks,
+  `seed_demo`, and all eight `0026` tests.
+- **Consequence — mixed grain:** new manager events at the line; legacy/break/PLC events
+  at the cell. Reconciled by the read: `GetByScope(line, IncludeDescendants=1)` walks the
+  line **and its descendant cells**, so it shows both. Legacy exact-match reads keep
+  working at their grain.
+- **B3 one-open invariant now spans grains:** a line-open (manager) and a cell-open
+  (break/PLC) coexist — different `LocationId`s. Acceptable (machine break vs line down
+  are distinct), but the "one open" guarantee is per-location, not per-line-subtree.
+
+### Old `DowntimeEntry` page (`/shop-floor/downtime`) — **retire after Inc 3 (decision)**
+- The popup is a superset (scope-aware, closed events, full CRUD). After Inc 3 verifies,
+  retire the route + `DowntimeEntry` view + its `EventRow` to avoid two divergent
+  downtime UIs writing at different grains. Not deleted by this spec's increments —
+  flagged as a **follow-up cleanup**, not a blocker.
+
+### `EndOfShiftEntry` breaks — **keep at cell (no change)**
+- Breaks are operator/cell time, not line-down; correct at the cell. `GetByScope`
+  (+descendants) still rolls them up under the line for future availability math. No
+  change to `EndOfShiftEntry_Submit` or its test.
+- `ShiftEndSummary` keeps reading open downtime **by cell** (`getEndOfShiftSummary` →
+  `GetOpenByLocation`); a line-level machine-down logged via the popup won't appear there
+  until `ShiftEndSummary` optionally moves to `GetByScope`. Minor follow-up, not a blocker.
+
+### `UpdateReason` vs B7 `DowntimeReasonCode_Assign` — **coexist**
+- `Assign` (refuses overwrite) stays for the PLC late-bind path; new `UpdateReason`
+  (allows change) is the popup's. Two setters, distinct callers — documented so a future
+  refactor doesn't collapse them wrongly.
+
+### `TestNavHeader` replacement (Inc 2) — **MEDIUM, DEV-only**
+- Production sets `session.custom.cell` via `Terminal.applyToSession` (terminal
+  registration), **not** `TestNavHeader` → production unaffected.
+- **Dev impact:** `TestNavHeader` is the **only** thing that sets `session.custom.cell`
+  on a click; `DevLauncher` does **not** (verified: 0 refs). Removing it as the dock
+  removes the one-click dev cell-setter. **Mitigation:** keep `TestNavHeader` reachable at
+  `/dev/test-nav` (retained), reachable via the AppHeader dev-menu → DevLauncher; consider
+  adding cell-set shortcuts to DevLauncher later. Dev-ergonomics note, not a production
+  issue. No code references the `dev-nav` dock id.
+
+### Not affected (false-positive grep hits)
+- `Common/Nav`, `Location/Location`, `Quality/DefectCode`, `DowntimeReasonType`, Config
+  `AuditLog`/`Sidebar`/`NewOperationTemplate` matched "downtime" via
+  `DowntimeReasonCode`/type or comments — none touch `Oee.DowntimeEvent`.
+
+### Regression gates (run to prove no regression)
+- After **Inc 1**: run `sql/tests/0026_PlantFloor_Downtime_Shift/*` → all green (schema add
+  + new procs don't alter existing procs).
+- After **Inc 2**: existing shop-floor screens still render under the new header; dev can
+  still set a cell (via `/dev/test-nav`) and open DevLauncher.
+
 ## Build order
 1. **Increment 1 (SQL)** — its own plan; build + sqlcmd-verify first (everything
    depends on it).

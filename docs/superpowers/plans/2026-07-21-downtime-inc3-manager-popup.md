@@ -17,6 +17,17 @@
 - Editor `editDraft` custom prop: pre-seed the **full shape** (every bound key); reseed in **one** atomic property write (`feedback_ignition_bidi_nested_path_init`, Item-Master atomic-state rule).
 - Toasts via `BlueRidge.Common.Ui.notifyResult` / `Common.Notify.toast`. Commit to `jacques/working`, explicit paths.
 
+## Blast radius (see spec § Blast Radius Analysis)
+- **Purely additive:** three NEW views + reads/writes via Inc-1 procs. No existing proc or
+  view is modified, so no regression surface of its own.
+- **Mixed-grain awareness:** the popup logs new events at the **line scope** while
+  legacy/break/PLC events remain at the **cell**; `getByScope(..., includeDescendants=True)`
+  intentionally reads both. Verify (Task 4) the list shows break/PLC cell-events under the
+  line too.
+- **Follow-up (not in this plan):** once verified, the old `/shop-floor/downtime` page +
+  `DowntimeEntry` view + its `EventRow` become redundant and should be retired in a
+  separate cleanup; `ShiftEndSummary` may later switch its cell read to `getByScope`.
+
 ## Inc-1 contract this plan consumes (confirm these when Inc 1 is built)
 `BlueRidge.Oee.Downtime`: `resolveScope(cellId)→scopeId`; `getByScope(scopeId, includeDescendants, shiftId)→list[dict]` with keys `DowntimeEventId, LocationCode, ReasonCode, ReasonDescription, DowntimeReasonCodeId, SourceCode, StartedAtEt, EndedAtEt, DurationMinutes, Remarks, OperatorInitials, IsOpen, IsVoided, VoidReason`; `updateReason(id, reasonId)`; `updateTimes(id, startedAtEtStr, endedAtEtStr, remarks)`; `recordHistorical(scopeId, startedAtEtStr, endedAtEtStr, reasonId, remarks)`; `void(id, reason)`. Plus existing `BlueRidge.Oee.DowntimeEvent.start(scopeId, downtimeReasonCodeId=)` / `.end(id)`.
 > **Two Inc-1 refinements required for this UI** (fold into Inc-1 before/at build): (a) `UpdateTimes`/`RecordHistorical` ET datetime NQ params are **strings** (`sqlType 7`, `'yyyy-MM-dd HH:mm:ss'`), not sqlType 8; (b) `UpdateTimes` also accepts an optional `@Remarks` so "edit times + remarks" is one call.

@@ -15,6 +15,17 @@
 - Perspective live clock = expression `now(1000)` + `dateFormat(...)` (polls once/sec, ET is the gateway/session tz).
 - Commit to `jacques/working`, explicit paths.
 
+## Blast radius (see spec § Blast Radius Analysis)
+- **Production unaffected:** terminals set `session.custom.cell` via `Terminal.applyToSession`,
+  not `TestNavHeader`.
+- **Dev-only impact:** `TestNavHeader` is the ONLY click-setter of `session.custom.cell`
+  (`DevLauncher` does not set it — verified). Keep `TestNavHeader` reachable at
+  `/dev/test-nav` (do NOT delete the view/page); the AppHeader dev-menu opens DevLauncher.
+  So dev can still set a cell during testing.
+- No code references the `dev-nav` dock id; changing its `viewPath`/`size` is safe.
+- Regression check (Task 2 Step 2): existing shop-floor screens still render under the new
+  header and dev cell-set still works via `/dev/test-nav`.
+
 ## Reference (read first)
 - `Views/Dev/TestNavHeader/view.json` (what we replace; session.custom usage, `toggleDock('LeftDock')`)
 - `page-config/config.json` `sharedDocks.top` (the `dev-nav` dock)

@@ -19,6 +19,15 @@
 - Named queries live in **Core** (`ignition/projects/Core/ignition/named-query/oee/`); status-row mutation NQs need `attributes.type: "Query"`.
 - Test on `MPP_MES_Dev` via `sqlcmd -S localhost -d MPP_MES_Dev -E -C`. Commit to `jacques/working`, explicit paths.
 
+## Blast radius (see spec § Blast Radius Analysis)
+- **Schema add is safe:** all-nullable columns, explicit-column-list inserts, no `SELECT *`
+  on the table → existing reads/inserts/tests unaffected.
+- **`DowntimeEvent_Start` is NOT modified** — its callers (old DowntimeEntry page, PLC
+  watcher, `EndOfShiftEntry` breaks, seed_demo, `0026` tests) keep passing a cell; only
+  the new popup (Inc 3) passes the resolved line scope. This is the containment boundary —
+  do not change `Start`/`End`/`Assign`/`EndOfShiftEntry_Submit` in this increment.
+- **Regression gate (Task 8):** the existing `0026` downtime test suite must stay green.
+
 ## Reference (read before starting)
 - `sql/migrations/versioned/0026_arc2_phase8_downtime_shift.sql` (DowntimeEvent table + audit-seed idiom)
 - `sql/migrations/repeatable/R__Oee_DowntimeEvent_Start.sql`, `_End.sql`, `R__Oee_DowntimeReasonCode_Assign.sql` (proc patterns, audit calls)
@@ -384,6 +393,19 @@ git commit -m "feat(oee): named queries + python wrappers for downtime scope res
 ```
 
 ---
+
+## Task 8: Regression gate — existing downtime tests stay green
+
+**Files:** none (verification only).
+
+- [ ] **Step 1: Run the 0026 downtime suite** against `MPP_MES_Dev` (or the throwaway
+  `MPP_MES_Test`) using the project test runner (`sql/tests` harness — see
+  `feedback_runtests_exit1_zero_failures`: exit 1 with 0 failures usually = a cleanup FK
+  order issue, not a real failure). Target `sql/tests/0026_PlantFloor_Downtime_Shift/*`.
+- [ ] **Step 2: Confirm 0 failures.** The schema add + new procs must not have altered
+  `Start`/`End`/`Assign`/`GetOpenByLocation`/`GetOpenSummary`/`EndOfShiftEntry_Submit`.
+  If any 0026 test fails, STOP — a "contained" change leaked; reconcile before Inc 2/3.
+- [ ] **Step 3:** No commit (verification), or commit any test-data fixes separately.
 
 ## Self-Review
 - Scope resolver (Task 1), read (Task 2), UpdateReason (Task 3), UpdateTimes (Task 4), RecordHistorical (Task 5), Void (Task 6), NQ+Python (Task 7) — every spec §2 item covered. ✅
