@@ -1806,6 +1806,21 @@ button {
     border-color: var(--mpp-interactive-primary-hover);
 }
 
+/* Disabled state for all plant-floor buttons: clearly grey + not-allowed,
+   overriding the solid primary/danger fills so a disabled button no longer
+   reads as pressable (props.enabled=false alone kept the coloured fill). */
+.psc-pf-btn:disabled,
+.psc-pf-btn[disabled],
+.psc-pf-primary-button:disabled,
+.psc-pf-primary-button[disabled] {
+    background: var(--mpp-surface-card);
+    border-color: var(--mpp-border-subtle);
+    color: var(--mpp-text-tertiary);
+    cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.75;
+}
+
 .psc-pf-btn-danger {
     background: var(--mpp-state-bad-bg);
     border-color: var(--mpp-state-bad-border);
