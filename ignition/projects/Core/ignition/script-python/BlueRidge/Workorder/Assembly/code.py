@@ -8,6 +8,9 @@
 
 import BlueRidge.Common.Db
 import BlueRidge.Common.Util
+import BlueRidge.Location.Terminal
+import BlueRidge.Lots.Container
+import BlueRidge.Parts.ContainerConfig
 
 
 def scanIn(cellLocationId, lotName=None, lotId=None, appUserId=None, terminalLocationId=None):
@@ -68,6 +71,68 @@ def handleTrayComplete(container, draft, selectedFinishedGoodItemId, cellLocatio
         return {"Status": False, "Message": "No closure mode set for this terminal."}
     return completeTray(fgItem, cnt, cellLocationId, closureMethod=closureMethod,
                         terminalLocationId=cellLocationId)
+
+
+def resolvePlcCloseContext(terminalLocationId, closureMethod):
+    """Headless resolution of everything a PLC-triggered tray close needs, from just
+       the terminal + closure method -- mirrors the operator AssemblyNonSerialized
+       flow so a PLC line and an operator line mint identically:
+         cellLocationId    = the terminal's zone cell (Terminal_List.ZoneId);
+         finishedGoodItemId= the OPEN container's item, else the recommended FG;
+         pieceCount        = the (item, method) ContainerConfig.PartsPerTray;
+         containerId       = the open container's Id, or None (proc auto-opens).
+       Returns that dict, or {"error": <str>} on any missing input -- never a faked
+       default, so the caller logs + alarms instead of minting a wrong LOT."""
+    tid = BlueRidge.Common.Util.extractQualifiedValues(terminalLocationId)
+    if tid is None:
+        return {"error": "No terminal bound to the PLC device."}
+    term = BlueRidge.Location.Terminal.findById(BlueRidge.Location.Terminal.listAll(), tid)
+    cell = (term or {}).get("ZoneId")
+    if cell is None:
+        return {"error": "Terminal %s has no zone cell." % tid}
+    containerId = None
+    openRows = BlueRidge.Lots.Container.getOpenByCell(cell) or []
+    if openRows:
+        fgItem = openRows[0].get("ItemId")
+        containerId = openRows[0].get("Id")
+    else:
+        fgItem = getRecommendedFinishedGoodId(cell)
+    if fgItem is None:
+        return {"error": "No open container and no eligible finished good at cell %s." % cell}
+    cfg = BlueRidge.Parts.ContainerConfig.getByItemAndMethod(fgItem, closureMethod) or {}
+    ppt = cfg.get("PartsPerTray")
+    try:
+        ppt = int(ppt) if ppt is not None else None
+    except (ValueError, TypeError):
+        ppt = None
+    if not ppt or ppt <= 0:
+        return {"error": "No %s pack-out (PartsPerTray) configured for finished good %s."
+                % (closureMethod, fgItem)}
+    return {"cellLocationId": cell, "finishedGoodItemId": fgItem,
+            "pieceCount": ppt, "containerId": containerId}
+
+
+def plcCompleteTray(terminalLocationId, closureMethod):
+    """Shared PLC-triggered tray close for ByWeight / ByVision. Resolves the close
+       context headlessly, then mints the FG LOT + consumes BOM via the SAME
+       Assembly_CompleteTray proc the operator ByCount path uses (identical
+       genealogy). PLC lines run lights-out, so on ContainerFull it auto-completes
+       the container -- AIM claim + label print via Container_Complete with
+       plcCompletionConfirmed=True. Returns the completeTray result dict (with a
+       "ContainerComplete" sub-result when the container was completed), or a
+       {"Status": 0, "Message": <resolution error>} dict with NO LOT minted."""
+    ctx = resolvePlcCloseContext(terminalLocationId, closureMethod)
+    if ctx.get("error"):
+        return {"Status": 0, "Message": ctx["error"]}
+    appUserId = BlueRidge.Common.Util.systemAppUserId()
+    result = completeTray(ctx["finishedGoodItemId"], ctx["pieceCount"], ctx["cellLocationId"],
+                          closureMethod=closureMethod, appUserId=appUserId,
+                          terminalLocationId=terminalLocationId)
+    if result and result.get("Status") and result.get("ContainerFull") and result.get("ContainerId") is not None:
+        result["ContainerComplete"] = BlueRidge.Lots.Container.complete(
+            result.get("ContainerId"), plcCompletionConfirmed=True,
+            appUserId=appUserId, terminalLocationId=terminalLocationId)
+    return result
 
 
 def _rankedFinishedGoods(cellLocationId):

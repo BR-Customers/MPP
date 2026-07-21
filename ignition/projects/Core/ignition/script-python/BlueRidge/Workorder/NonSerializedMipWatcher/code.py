@@ -18,6 +18,7 @@
 import BlueRidge.Common.Util
 import BlueRidge.Workorder.PlcWatcher
 import BlueRidge.Workorder.Assembly
+import BlueRidge.Location.Terminal
 
 _TRIGGERS = ("DataReady",)
 
@@ -43,9 +44,14 @@ def handleEdge(instancePath, terminalLocationId, member):
         return
 
     appUserId = BlueRidge.Common.Util.systemAppUserId()
+    # closureMethod is REQUIRED by Assembly_CompleteTray (NOT NULL). Resolve the
+    # terminal's active mode (defaults ByCount) so this call is valid the moment
+    # _resolveLineConfig is supplied at commissioning.
+    cc = BlueRidge.Location.Terminal.getClosureContext(terminalLocationId) or {}
+    closureMethod = cc.get("CurrentClosureMethod") or "ByCount"
     result = BlueRidge.Workorder.Assembly.completeTray(
         line["finishedGoodItemId"], line["pieceCount"], line["cellLocationId"],
-        appUserId=appUserId, terminalLocationId=terminalLocationId)
+        closureMethod=closureMethod, appUserId=appUserId, terminalLocationId=terminalLocationId)
     ok = bool(result and result.get("Status"))
     W.writeMember(instancePath, "PartValid", ok)
     W.logInterface(device, "Non-serialized tray complete",
