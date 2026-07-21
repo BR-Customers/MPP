@@ -66,7 +66,12 @@ BEGIN
         CONCAT(N'Cavity ', tc.CavityNumber)            AS CavityLabel,
         ISNULL(SUM(l.PieceCount + ISNULL(rj.RejectedQty, 0)), 0) AS PieceSum,
         ISNULL(SUM(rj.RejectedQty), 0)                 AS RejectSum,
-        ISNULL(MAX(SUM(l.PieceCount + ISNULL(rj.RejectedQty, 0))) OVER (), 0) AS ShiftShots
+        ISNULL(MAX(SUM(l.PieceCount + ISNULL(rj.RejectedQty, 0))) OVER (), 0) AS ShiftShots,
+        -- Press-totals (identical on every row) for the right-rail KPIs, added 2026-07-21:
+        -- ShiftGoodTotal = net good across ALL cavities (live PieceCount = as-cast minus
+        -- scrap); ShiftScrapTotal = scrapped qty across ALL cavities. Not cavity-scoped.
+        ISNULL(SUM(SUM(l.PieceCount)) OVER (), 0)                             AS ShiftGoodTotal,
+        ISNULL(SUM(SUM(ISNULL(rj.RejectedQty, 0))) OVER (), 0)                AS ShiftScrapTotal
     FROM Tools.ToolCavity tc
     INNER JOIN Tools.ToolCavityStatusCode sc ON sc.Id = tc.StatusCodeId
     LEFT JOIN Lots.Lot l

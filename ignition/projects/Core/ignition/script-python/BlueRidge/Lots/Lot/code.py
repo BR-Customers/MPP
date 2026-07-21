@@ -573,6 +573,60 @@ def shiftScrapForCavityOnTool(toolId, toolCavityId, _refreshToken=None):
     return shiftScrapForCavity(getShiftCavityTally(toolId), toolCavityId)
 
 
+def shiftGoodFromTally(tally):
+    """Press-total 'Good parts this shift' (net of scrap, all cavities) from a tally
+       list -- ShiftGoodTotal is identical on every row, so read the first. Int (0)."""
+    rows = _tallyRows(tally)
+    for r in rows:
+        return r.get("ShiftGoodTotal") or 0
+    return 0
+
+
+def shiftScrapTotalFromTally(tally):
+    """Press-total 'Scrap this shift' across ALL cavities from a tally list --
+       ShiftScrapTotal is identical on every row. Int (0 when empty)."""
+    rows = _tallyRows(tally)
+    for r in rows:
+        return r.get("ShiftScrapTotal") or 0
+    return 0
+
+
+def shiftGoodForTool(toolId, _refreshToken=None):
+    """'Good parts this shift' PRESS-TOTAL KPI (net of scrap, all cavities) from
+       scalar args -- see shiftShotsForTool for the scalar-args rationale."""
+    return shiftGoodFromTally(getShiftCavityTally(toolId))
+
+
+def shiftScrapForTool(toolId, _refreshToken=None):
+    """'Scrap this shift' PRESS-TOTAL KPI (all cavities) from scalar args."""
+    return shiftScrapTotalFromTally(getShiftCavityTally(toolId))
+
+
+def getTerminalRecentCreations(terminalLocationId, topN=15, _refreshToken=None):
+    """Rolling last-N die-cast LOTs created AT THIS TERMINAL (across all its presses),
+       newest first, for the die-cast right-rail activity log. Reshaped to the
+       PeerTallyRow param shape {peer:{Cavity,LotName,PieceCount,LotId}} where Cavity
+       is the cavity Number + Description (the row view prepends 'Cavity '). [] when
+       none. _refreshToken is ignored (bumped by the binding to force a re-read)."""
+    tid = _u(terminalLocationId)
+    if tid is None or tid == "":
+        return []
+    n = _u(topN) or 15
+    rows = BlueRidge.Common.Db.execList(
+        "lots/Lot_GetTerminalRecentCreations",
+        {"terminalLocationId": tid, "topN": n}) or []
+    out = []
+    for r in rows:
+        r = r or {}
+        out.append({"peer": {
+            "Cavity":     r.get("CavityText") or "-",
+            "LotName":    r.get("LotName") or "",
+            "PieceCount": r.get("PieceCount") or 0,
+            "LotId":      r.get("LotId"),
+        }})
+    return out
+
+
 def defaultShiftCavityId(tally):
     """ToolCavityId of the busiest cavity this shift (highest PieceSum) -> the
        default right-rail selection so the card opens on the most accurate shot

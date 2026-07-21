@@ -16,13 +16,22 @@
     "refreshToken": 0,
     "selectedLotId": null,
     "shiftTally": [],
-    "tallyCavityId": null
+    "tallyCavityId": null,
+    "terminalRecent": []
   },
   "params": {
     "areaId": null,
     "cellPickerEnabled": false
   },
   "propConfig": {
+    "custom.terminalRecent": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Lots.Lot.getTerminalRecentCreations\", 0, {session.custom.terminal.terminalLocationId}, 15, {view.custom.refreshToken})"
+        },
+        "type": "expr"
+      }
+    },
     "params.cellPickerEnabled": {
       "paramDirection": "input",
       "persistent": true
@@ -942,13 +951,129 @@
                 "children": [
                   {
                     "meta": {
+                      "name": "ShotsShiftLabel"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-label"
+                      },
+                      "text": "Shots this shift"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "ShotsShiftValue"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "toStr(runScript(\"BlueRidge.Lots.Lot.shiftShotsForTool\", 0, {view.custom.activeTool.ToolId}, {view.custom.refreshToken}))"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-value"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "PiecesCavityLabel"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-label"
+                      },
+                      "text": "Good parts this shift"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "PiecesCavityValue"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "toStr(runScript(\"BlueRidge.Lots.Lot.shiftGoodForTool\", 0, {view.custom.activeTool.ToolId}, {view.custom.refreshToken}))"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-value"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "ScrapCavityLabel"
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-label"
+                      },
+                      "text": "Scrap this shift"
+                    },
+                    "type": "ia.display.label"
+                  },
+                  {
+                    "meta": {
+                      "name": "ScrapCavityValue"
+                    },
+                    "propConfig": {
+                      "props.text": {
+                        "binding": {
+                          "config": {
+                            "expression": "toStr(runScript(\"BlueRidge.Lots.Lot.shiftScrapForTool\", 0, {view.custom.activeTool.ToolId}, {view.custom.refreshToken}))"
+                          },
+                          "type": "expr"
+                        }
+                      }
+                    },
+                    "props": {
+                      "style": {
+                        "classes": "pf-kpi-value"
+                      }
+                    },
+                    "type": "ia.display.label"
+                  }
+                ],
+                "meta": {
+                  "name": "CumulativeCard"
+                },
+                "props": {
+                  "direction": "column",
+                  "style": {
+                    "borderTop": "1px solid var(--mpp-border, #e0e0e0)",
+                    "gap": "10px",
+                    "overflow": "hidden",
+                    "paddingTop": "12px"
+                  }
+                },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  {
+                    "meta": {
                       "name": "ActiveCavityLabel"
                     },
                     "props": {
                       "style": {
                         "classes": "pf-field-label"
                       },
-                      "text": "Cavity (this shift)"
+                      "text": "Cavity"
                     },
                     "type": "ia.display.label"
                   },
@@ -1005,122 +1130,6 @@
                 "type": "ia.container.flex"
               },
               {
-                "children": [
-                  {
-                    "meta": {
-                      "name": "ShotsShiftLabel"
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "pf-kpi-label"
-                      },
-                      "text": "Shots this shift (incl. scrap)"
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "ShotsShiftValue"
-                    },
-                    "propConfig": {
-                      "props.text": {
-                        "binding": {
-                          "config": {
-                            "expression": "toStr(runScript(\"BlueRidge.Lots.Lot.shiftShotsForTool\", 0, {view.custom.activeTool.ToolId}, {view.custom.refreshToken}))"
-                          },
-                          "type": "expr"
-                        }
-                      }
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "pf-kpi-value"
-                      }
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "PiecesCavityLabel"
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "pf-kpi-label"
-                      },
-                      "text": "Pieces this shift (selected cavity)"
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "PiecesCavityValue"
-                    },
-                    "propConfig": {
-                      "props.text": {
-                        "binding": {
-                          "config": {
-                            "expression": "toStr(runScript(\"BlueRidge.Lots.Lot.shiftSumForCavityOnTool\", 0, {view.custom.activeTool.ToolId}, {view.custom.tallyCavityId}, {view.custom.refreshToken}))"
-                          },
-                          "type": "expr"
-                        }
-                      }
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "pf-kpi-value"
-                      }
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "ScrapCavityLabel"
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "pf-kpi-label"
-                      },
-                      "text": "Scrap this shift (selected cavity)"
-                    },
-                    "type": "ia.display.label"
-                  },
-                  {
-                    "meta": {
-                      "name": "ScrapCavityValue"
-                    },
-                    "propConfig": {
-                      "props.text": {
-                        "binding": {
-                          "config": {
-                            "expression": "toStr(runScript(\"BlueRidge.Lots.Lot.shiftScrapForCavityOnTool\", 0, {view.custom.activeTool.ToolId}, {view.custom.tallyCavityId}, {view.custom.refreshToken}))"
-                          },
-                          "type": "expr"
-                        }
-                      }
-                    },
-                    "props": {
-                      "style": {
-                        "classes": "pf-kpi-value"
-                      }
-                    },
-                    "type": "ia.display.label"
-                  }
-                ],
-                "meta": {
-                  "name": "CumulativeCard"
-                },
-                "props": {
-                  "direction": "column",
-                  "style": {
-                    "borderTop": "1px solid var(--mpp-border, #e0e0e0)",
-                    "gap": "10px",
-                    "overflow": "hidden",
-                    "paddingTop": "12px"
-                  }
-                },
-                "type": "ia.container.flex"
-              },
-              {
                 "meta": {
                   "name": "RejectEmbed"
                 },
@@ -1165,7 +1174,7 @@
                       "props.text": {
                         "binding": {
                           "config": {
-                            "expression": "toStr(len({view.custom.peersThisSession})) + \" logged this run\""
+                            "expression": "toStr(len({view.custom.terminalRecent})) + \" recent at this terminal\""
                           },
                           "type": "expr"
                         }
@@ -1186,7 +1195,7 @@
                       "props.instances": {
                         "binding": {
                           "config": {
-                            "path": "view.custom.peersThisSession"
+                            "path": "view.custom.terminalRecent"
                           },
                           "type": "property"
                         }
