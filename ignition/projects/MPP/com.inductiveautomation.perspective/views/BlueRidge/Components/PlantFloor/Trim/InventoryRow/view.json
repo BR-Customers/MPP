@@ -47,39 +47,136 @@
     }
   },
   "root": {
-    "type": "ia.container.flex",
-    "meta": {
-      "name": "root"
-    },
-    "propConfig": {
-      "props.style.borderLeft": {
-        "binding": {
-          "type": "expr",
-          "config": {
-            "expression": "if({view.params.isSelected}, \"3px solid var(--mpp-accent-60)\", \"\")"
-          }
-        }
-      }
-    },
-    "props": {
-      "direction": "row",
-      "alignItems": "center",
-      "style": {
-        "classes": "pf-queue-row",
-        "gap": "16px",
-        "overflow": "hidden",
-        "padding": "12px 16px"
-      }
-    },
     "children": [
       {
-        "type": "ia.container.flex",
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.sendMessage(\"trimLotSelected\", payload\u003d{\"lotId\": self.view.params.lotId, \"lotName\": self.view.params.lotName}, scope\u003d\"page\")"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "SelectButton"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "meta.visible": {
+            "binding": {
+              "config": {
+                "path": "view.params.selectable"
+              },
+              "type": "property"
+            }
+          },
+          "props.enabled": {
+            "binding": {
+              "config": {
+                "expression": "{view.params.lotStatusCode} \u003d \u0027Good\u0027"
+              },
+              "type": "expr"
+            }
+          },
+          "props.style.classes": {
+            "binding": {
+              "config": {
+                "expression": "if({view.params.isSelected}, \u0027pf-btn pf-btn-primary pf-btn-large\u0027, \u0027pf-btn pf-btn-secondary pf-btn-large\u0027)"
+              },
+              "type": "expr"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": {
+                "expression": "if({view.params.isSelected}, \u0027Selected\u0027, \u0027Select\u0027)"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {}
+        },
+        "type": "ia.input.button"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "Position"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.params.position} \u003d 1, \u0027Position 1 - oldest\u0027, \u0027Position \u0027 + toStr({view.params.position}))"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-queue-position"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "LotName"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "path": "view.params.lotName"
+                  },
+                  "type": "property"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-queue-name"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "Detail"
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.params.item} + \u0027 | \u0027 + toStr({view.params.pieceCount}) + \u0027 pcs\u0027 + if({view.params.arrival} \u003d \u0027\u0027, \u0027\u0027, \u0027 | arrived \u0027 + {view.params.arrival})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-queue-detail"
+              }
+            },
+            "type": "ia.display.label"
+          }
+        ],
         "meta": {
           "name": "Info"
         },
         "position": {
-          "grow": 1,
-          "basis": "0"
+          "basis": "0",
+          "grow": 1
         },
         "props": {
           "direction": "column",
@@ -88,74 +185,9 @@
             "overflow": "hidden"
           }
         },
-        "children": [
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "Position"
-            },
-            "props": {
-              "style": {
-                "classes": "pf-queue-position"
-              }
-            },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "if({view.params.position} = 1, 'Position 1 - oldest', 'Position ' + toStr({view.params.position}))"
-                  }
-                }
-              }
-            }
-          },
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "LotName"
-            },
-            "props": {
-              "style": {
-                "classes": "pf-queue-name"
-              }
-            },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "property",
-                  "config": {
-                    "path": "view.params.lotName"
-                  }
-                }
-              }
-            }
-          },
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "Detail"
-            },
-            "props": {
-              "style": {
-                "classes": "pf-queue-detail"
-              }
-            },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "{view.params.item} + ' | ' + toStr({view.params.pieceCount}) + ' pcs' + if({view.params.arrival} = '', '', ' | arrived ' + {view.params.arrival})"
-                  }
-                }
-              }
-            }
-          }
-        ]
+        "type": "ia.container.flex"
       },
       {
-        "type": "ia.display.label",
         "meta": {
           "name": "StatusPill"
         },
@@ -163,89 +195,51 @@
           "shrink": 0
         },
         "propConfig": {
-          "props.text": {
-            "binding": {
-              "type": "expr",
-              "config": {
-                "expression": "if({view.params.lotStatusCode} = 'Good', 'Good', 'Hold')"
-              }
-            }
-          },
           "props.style.classes": {
             "binding": {
-              "type": "expr",
               "config": {
-                "expression": "if({view.params.lotStatusCode} = 'Good', 'pf-pill pf-pill-good', 'pf-pill pf-pill-hold')"
-              }
-            }
-          }
-        },
-        "props": {
-          "style": {
-            "classes": "pf-pill pf-pill-good"
-          }
-        }
-      },
-      {
-        "type": "ia.input.button",
-        "meta": {
-          "name": "SelectButton"
-        },
-        "position": {
-          "shrink": 0
-        },
-        "propConfig": {
-          "position.display": {
-            "binding": {
-              "type": "property",
-              "config": {
-                "path": "view.params.selectable"
-              }
-            }
-          },
-          "props.enabled": {
-            "binding": {
-              "type": "expr",
-              "config": {
-                "expression": "{view.params.lotStatusCode} = 'Good'"
-              }
+                "expression": "if({view.params.lotStatusCode} \u003d \u0027Good\u0027, \u0027pf-pill pf-pill-good\u0027, \u0027pf-pill pf-pill-hold\u0027)"
+              },
+              "type": "expr"
             }
           },
           "props.text": {
             "binding": {
-              "type": "expr",
               "config": {
-                "expression": "if({view.params.isSelected}, 'Selected', 'Select')"
-              }
-            }
-          },
-          "props.style.classes": {
-            "binding": {
-              "type": "expr",
-              "config": {
-                "expression": "if({view.params.isSelected}, 'pf-btn pf-btn-primary pf-btn-large', 'pf-btn pf-btn-secondary pf-btn-large')"
-              }
+                "expression": "if({view.params.lotStatusCode} \u003d \u0027Good\u0027, \u0027Good\u0027, \u0027Hold\u0027)"
+              },
+              "type": "expr"
             }
           }
         },
         "props": {
-          "text": "Select",
-          "style": {
-            "classes": "pf-btn pf-btn-secondary pf-btn-large"
-          }
+          "style": {}
         },
-        "events": {
-          "component": {
-            "onActionPerformed": {
-              "type": "script",
-              "scope": "G",
-              "config": {
-                "script": "\tsystem.perspective.sendMessage(\"trimLotSelected\", payload={\"lotId\": self.view.params.lotId, \"lotName\": self.view.params.lotName}, scope=\"page\")"
-              }
-            }
-          }
+        "type": "ia.display.label"
+      }
+    ],
+    "meta": {
+      "name": "root"
+    },
+    "propConfig": {
+      "props.style.borderLeft": {
+        "binding": {
+          "config": {
+            "expression": "if({view.params.isSelected}, \"3px solid var(--mpp-accent-60)\", \"\")"
+          },
+          "type": "expr"
         }
       }
-    ]
+    },
+    "props": {
+      "alignItems": "center",
+      "style": {
+        "classes": "pf-inventory-row",
+        "gap": "16px",
+        "overflow": "hidden",
+        "padding": "12px 16px"
+      }
+    },
+    "type": "ia.container.flex"
   }
 }

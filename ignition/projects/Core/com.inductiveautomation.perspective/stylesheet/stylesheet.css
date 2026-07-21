@@ -2351,7 +2351,7 @@ button {
 
 .psc-pf-queue-row {
     display: grid;
-    grid-template-columns: auto 1fr auto auto;
+    grid-template-columns: 1fr auto auto auto;
     gap: var(--mpp-space-4);
     align-items: center;
     padding: var(--mpp-space-3) var(--mpp-space-4);
@@ -2365,6 +2365,24 @@ button {
 .psc-pf-queue-row-selected {
     background: var(--mpp-accent-20);
     border-color: var(--mpp-accent-60);
+}
+
+/* Flex variant of the queue row for rows with an optional leading action
+   button (Trim inventory: Select on the left). Same card look as
+   .psc-pf-queue-row but display:flex, so the row's own grow/shrink child
+   layout applies (Info grows, Select/StatusPill fit) regardless of whether
+   the leading button is present - avoids the fixed grid-template-columns of
+   the shared grid row. */
+.psc-pf-inventory-row {
+    display: flex;
+    align-items: center;
+    gap: var(--mpp-space-4);
+    padding: var(--mpp-space-3) var(--mpp-space-4);
+    background: var(--mpp-surface-raised);
+    border: 1px solid var(--mpp-border-subtle);
+    border-radius: var(--mpp-radius-md);
+    min-height: var(--pf-touch-min);
+    flex-shrink: 0;
 }
 
 .psc-pf-queue-name {
