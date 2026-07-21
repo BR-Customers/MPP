@@ -233,49 +233,74 @@
       {
         "children": [
           {
-            "meta": {
-              "name": "Title_ByCount"
-            },
-            "position": {
-              "basis": "auto"
-            },
-            "props": {
-              "style": {
-                "classes": "",
-                "fontSize": "12px",
-                "fontWeight": "600",
-                "opacity": "0.85"
-              },
-              "text": "By Count"
-            },
-            "type": "ia.display.label"
-          },
-          {
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "config": {
-                    "script": "\tself.view.rootContainer.clearMethod(\"ByCount\")"
+            "children": [
+              {
+                "meta": {
+                  "name": "Title_ByCount"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "props": {
+                  "style": {
+                    "classes": "",
+                    "fontSize": "12px",
+                    "fontWeight": "600",
+                    "opacity": "0.85"
                   },
-                  "scope": "G",
-                  "type": "script"
+                  "text": "By Count"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.clearMethod(\"ByCount\")"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "Btn_Clear_ByCount"
+                },
+                "props": {
+                  "style": {
+                    "classes": "btn btn-sm"
+                  },
+                  "text": "Clear"
+                },
+                "type": "ia.input.button",
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.state.editDraft.ByCount.Active} = true"
+                      }
+                    }
+                  }
                 }
               }
-            },
+            ],
             "meta": {
-              "name": "Btn_Clear_ByCount"
+              "name": "HeaderRow_ByCount"
             },
             "position": {
               "basis": "auto"
             },
             "props": {
+              "alignItems": "center",
+              "direction": "row",
               "style": {
-                "classes": "btn btn-sm",
-                "marginLeft": "8px"
-              },
-              "text": "Clear"
+                "gap": "8px",
+                "marginBottom": "2px"
+              }
             },
-            "type": "ia.input.button"
+            "type": "ia.container.flex"
           },
           {
             "children": [
@@ -584,49 +609,74 @@
       {
         "children": [
           {
-            "meta": {
-              "name": "Title_ByWeight"
-            },
-            "position": {
-              "basis": "auto"
-            },
-            "props": {
-              "style": {
-                "classes": "",
-                "fontSize": "12px",
-                "fontWeight": "600",
-                "opacity": "0.85"
-              },
-              "text": "By Weight"
-            },
-            "type": "ia.display.label"
-          },
-          {
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "config": {
-                    "script": "\tself.view.rootContainer.clearMethod(\"ByWeight\")"
+            "children": [
+              {
+                "meta": {
+                  "name": "Title_ByWeight"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "props": {
+                  "style": {
+                    "classes": "",
+                    "fontSize": "12px",
+                    "fontWeight": "600",
+                    "opacity": "0.85"
                   },
-                  "scope": "G",
-                  "type": "script"
+                  "text": "By Weight"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.clearMethod(\"ByWeight\")"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "Btn_Clear_ByWeight"
+                },
+                "props": {
+                  "style": {
+                    "classes": "btn btn-sm"
+                  },
+                  "text": "Clear"
+                },
+                "type": "ia.input.button",
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.state.editDraft.ByWeight.Active} = true"
+                      }
+                    }
+                  }
                 }
               }
-            },
+            ],
             "meta": {
-              "name": "Btn_Clear_ByWeight"
+              "name": "HeaderRow_ByWeight"
             },
             "position": {
               "basis": "auto"
             },
             "props": {
+              "alignItems": "center",
+              "direction": "row",
               "style": {
-                "classes": "btn btn-sm",
-                "marginLeft": "8px"
-              },
-              "text": "Clear"
+                "gap": "8px",
+                "marginBottom": "2px"
+              }
             },
-            "type": "ia.input.button"
+            "type": "ia.container.flex"
           },
           {
             "children": [
@@ -998,49 +1048,74 @@
       {
         "children": [
           {
-            "meta": {
-              "name": "Title_ByVision"
-            },
-            "position": {
-              "basis": "auto"
-            },
-            "props": {
-              "style": {
-                "classes": "",
-                "fontSize": "12px",
-                "fontWeight": "600",
-                "opacity": "0.85"
-              },
-              "text": "By Vision"
-            },
-            "type": "ia.display.label"
-          },
-          {
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "config": {
-                    "script": "\tself.view.rootContainer.clearMethod(\"ByVision\")"
+            "children": [
+              {
+                "meta": {
+                  "name": "Title_ByVision"
+                },
+                "position": {
+                  "basis": "auto"
+                },
+                "props": {
+                  "style": {
+                    "classes": "",
+                    "fontSize": "12px",
+                    "fontWeight": "600",
+                    "opacity": "0.85"
                   },
-                  "scope": "G",
-                  "type": "script"
+                  "text": "By Vision"
+                },
+                "type": "ia.display.label"
+              },
+              {
+                "events": {
+                  "component": {
+                    "onActionPerformed": {
+                      "config": {
+                        "script": "\tself.view.rootContainer.clearMethod(\"ByVision\")"
+                      },
+                      "scope": "G",
+                      "type": "script"
+                    }
+                  }
+                },
+                "meta": {
+                  "name": "Btn_Clear_ByVision"
+                },
+                "props": {
+                  "style": {
+                    "classes": "btn btn-sm"
+                  },
+                  "text": "Clear"
+                },
+                "type": "ia.input.button",
+                "propConfig": {
+                  "position.display": {
+                    "binding": {
+                      "type": "expr",
+                      "config": {
+                        "expression": "{view.custom.state.editDraft.ByVision.Active} = true"
+                      }
+                    }
+                  }
                 }
               }
-            },
+            ],
             "meta": {
-              "name": "Btn_Clear_ByVision"
+              "name": "HeaderRow_ByVision"
             },
             "position": {
               "basis": "auto"
             },
             "props": {
+              "alignItems": "center",
+              "direction": "row",
               "style": {
-                "classes": "btn btn-sm",
-                "marginLeft": "8px"
-              },
-              "text": "Clear"
+                "gap": "8px",
+                "marginBottom": "2px"
+              }
             },
-            "type": "ia.input.button"
+            "type": "ia.container.flex"
           },
           {
             "children": [
