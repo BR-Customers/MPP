@@ -52,7 +52,7 @@
     "custom.fgConfig": {
       "binding": {
         "config": {
-          "expression": "runScript(\"BlueRidge.Parts.ContainerConfig.getByItemOrEmpty\", 0, coalesce({view.custom.container.ItemId}, {view.custom.selectedFinishedGoodItemId}))"
+          "expression": "runScript(\"BlueRidge.Parts.ContainerConfig.getByItemAndMethodOrEmpty\", 0, coalesce({view.custom.container.ItemId}, {view.custom.selectedFinishedGoodItemId}), {session.custom.closureMethod})"
         },
         "type": "expr"
       },

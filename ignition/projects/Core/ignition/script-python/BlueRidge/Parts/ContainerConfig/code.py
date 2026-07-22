@@ -100,6 +100,23 @@ def getByItemAndMethod(itemId, method):
     return row if row is not None else {}
 
 
+def getByItemAndMethodOrEmpty(itemId, method, _refreshToken=None):
+    """Binding-safe getByItemAndMethod: ALWAYS returns the full ContainerConfig key
+       shape (zeros/blanks when the item has no pack-out for that closure method) so
+       nested header/prefill reads like {view.custom.fgConfig.PartsPerTray} never
+       traverse a missing key (pre-declared-bound-props rule). Method-aware sibling
+       of getByItemOrEmpty -- the assembly-out header shows the ACTIVE closure
+       method's pack-out (e.g. the ByWeight 12/6), not the part's first config.
+       _refreshToken is ignored - runScript bindings pass a bumped token."""
+    out = dict(_CONFIG_SHAPE)
+    row = getByItemAndMethod(itemId, method)
+    if row:
+        for k in out.keys():
+            if row.get(k) is not None:
+                out[k] = row.get(k)
+    return out
+
+
 def add(data):
     """Create a new active ContainerConfig for an Item.
 
