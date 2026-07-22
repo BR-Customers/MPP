@@ -321,11 +321,19 @@
         {
           "name": "commitMove",
           "params": [],
-          "script": "\tlotId \u003d self.view.custom.lot.get(\"Id\")\n\tif lotId is None:\n\t\treturn\n\tres \u003d BlueRidge.Lots.Lot.moveToValidated(lotId, self.view.params.destinationLocationId, self.view.params.operationTypeCode)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Moved\")\n\tif res.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload\u003d{\"lotId\": lotId}, scope\u003d\"page\")\n\t\tself.view.custom.scanCode \u003d \"\"\n\t\tself.view.custom.lot \u003d {}\n\t\tself.view.custom.eligibility \u003d {\"IsEligible\": False, \"Path\": None}\n\t\tself.view.custom.maxParts \u003d {\"MaxParts\": None}\n\t\tself.view.custom.existingQty \u003d {\"ExistingPieceCount\": 0}\n\t\tself.view.custom.alreadyHere \u003d False\n\t\tself.view.custom.phase \u003d \"scan\""
+          "script": "\tlotId \u003d self.view.custom.lot.get(\"Id\")\n\tif lotId is None:\n\t\treturn\n\tres \u003d BlueRidge.Lots.Lot.moveToValidated(lotId, self.view.params.destinationLocationId, self.view.params.operationTypeCode)\n\tmsg = (res or {}).get(\"Message\") or \"\"\n\tif not res.get(\"Status\") and \"Backward move blocked\" in msg:\n\t\tsystem.perspective.openPopup(\"mpp-move-override\", \"BlueRidge/Components/Popups/MoveOverride\", params={\"popupId\": \"mpp-move-override\", \"replyMessage\": \"moveOverrideAuthorized\", \"reason\": msg}, modal=True, showCloseIcon=True)\n\t\treturn\n\tBlueRidge.Common.Ui.notifyResult(res, \"Moved\")\n\tif res.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload\u003d{\"lotId\": lotId}, scope\u003d\"page\")\n\t\tself.view.custom.scanCode \u003d \"\"\n\t\tself.view.custom.lot \u003d {}\n\t\tself.view.custom.eligibility \u003d {\"IsEligible\": False, \"Path\": None}\n\t\tself.view.custom.maxParts \u003d {\"MaxParts\": None}\n\t\tself.view.custom.existingQty \u003d {\"ExistingPieceCount\": 0}\n\t\tself.view.custom.alreadyHere \u003d False\n\t\tself.view.custom.phase \u003d \"scan\""
         }
       ],
       "extensionFunctions": null,
-      "messageHandlers": null
+      "messageHandlers": [
+        {
+          "messageType": "moveOverrideAuthorized",
+          "pageScope": true,
+          "script": "\tlotId = self.view.custom.lot.get(\"Id\")\n\tif lotId is None:\n\t\treturn\n\tovr = payload.get(\"appUserId\")\n\tres = BlueRidge.Lots.Lot.moveToValidated(lotId, self.view.params.destinationLocationId, self.view.params.operationTypeCode, ovr)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Moved (supervisor override)\")\n\tif res.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"lotId\": lotId}, scope=\"page\")\n\t\tself.view.custom.scanCode = \"\"\n\t\tself.view.custom.lot = {}\n\t\tself.view.custom.eligibility = {\"IsEligible\": False, \"Path\": None}\n\t\tself.view.custom.maxParts = {\"MaxParts\": None}\n\t\tself.view.custom.existingQty = {\"ExistingPieceCount\": 0}\n\t\tself.view.custom.alreadyHere = False\n\t\tself.view.custom.phase = \"scan\"",
+          "sessionScope": false,
+          "viewScope": false
+        }
+      ]
     },
     "type": "ia.container.flex"
   }
