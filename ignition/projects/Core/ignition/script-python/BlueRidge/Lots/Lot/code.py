@@ -336,13 +336,19 @@ def search(query=None, lotStatusId=None, lotOriginTypeId=None, limitRows=100):
     return BlueRidge.Common.Db.execList("lots/Lot_Search", params)
 
 
-def moveToValidated(lotId, toLocationId, appUserId=None, terminalLocationId=None):
+def moveToValidated(lotId, toLocationId, operationTypeCode=None, overrideAppUserId=None,
+                    appUserId=None, terminalLocationId=None):
     """Arc 2 Phase 4. Server-authoritative validated inbound move (the Movement
        Scan commit). The proc re-checks eligibility (FDS-02-012) + MaxParts (OI-12)
-       + not-blocked (B2) and performs the move atomically. Returns {Status, Message}."""
+       + not-blocked (B2), enforces the FORWARD-ONLY route guard when the caller
+       supplies the operation this move is for (operationTypeCode, e.g. 'TrimIn'),
+       and performs the move atomically. A backward move (the operation is already
+       complete on the LOT) rejects unless overrideAppUserId (an elevated supervisor)
+       is supplied. operationTypeCode None = plain storage/hold move, not guarded.
+       Returns {Status, Message}."""
     BlueRidge.Common.Util.log(
-        "lotId=%s toLocationId=%s appUserId=%s terminalLocationId=%s"
-        % (lotId, toLocationId, appUserId, terminalLocationId)
+        "lotId=%s toLocationId=%s operationTypeCode=%s overrideAppUserId=%s appUserId=%s terminalLocationId=%s"
+        % (lotId, toLocationId, operationTypeCode, overrideAppUserId, appUserId, terminalLocationId)
     )
     if appUserId is None:
         appUserId = BlueRidge.Common.Util._currentAppUserId()
@@ -351,6 +357,8 @@ def moveToValidated(lotId, toLocationId, appUserId=None, terminalLocationId=None
         "toLocationId":       _u(toLocationId),
         "appUserId":          appUserId,
         "terminalLocationId": terminalLocationId,
+        "operationTypeCode":  _u(operationTypeCode),
+        "overrideAppUserId":  _u(overrideAppUserId),
     }
     return BlueRidge.Common.Db.execMutation("lots/Lot_MoveToValidated", params)
 

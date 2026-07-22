@@ -1,30 +1,35 @@
 {
   "custom": {
-    "scanCode": "",
     "alreadyHere": false,
-    "lot": {},
     "eligibility": {
       "IsEligible": false,
       "Path": null
     },
-    "maxParts": {
-      "MaxParts": null
-    },
     "existingQty": {
       "ExistingPieceCount": 0
     },
-    "phase": "scan"
+    "lot": {},
+    "maxParts": {
+      "MaxParts": null
+    },
+    "phase": "scan",
+    "scanCode": ""
   },
   "params": {
-    "replyMessage": "movementScanCommitted",
-    "destinationLocationId": null
+    "destinationLocationId": null,
+    "operationTypeCode": null,
+    "replyMessage": "movementScanCommitted"
   },
   "propConfig": {
-    "params.replyMessage": {
+    "params.destinationLocationId": {
       "paramDirection": "input",
       "persistent": true
     },
-    "params.destinationLocationId": {
+    "params.operationTypeCode": {
+      "paramDirection": "input",
+      "persistent": true
+    },
+    "params.replyMessage": {
       "paramDirection": "input",
       "persistent": true
     }
@@ -36,13 +41,270 @@
     }
   },
   "root": {
-    "type": "ia.container.flex",
+    "children": [
+      {
+        "meta": {
+          "name": "ScanLabel"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "props": {
+          "style": {
+            "classes": "pf-field-label",
+            "marginBottom": "0px"
+          },
+          "text": "Scan LTT"
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "events": {
+          "dom": {
+            "onBlur": {
+              "config": {
+                "script": "\tself.view.rootContainer.applyScan()"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": {
+          "name": "ScanInput"
+        },
+        "position": {
+          "shrink": 0
+        },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "bidirectional": true,
+                "path": "view.custom.scanCode"
+              },
+              "type": "property"
+            }
+          }
+        },
+        "props": {
+          "placeholder": "Scan LTT barcode",
+          "style": {
+            "classes": "pf-field-input-mono",
+            "fontSize": "18px",
+            "minHeight": "44px",
+            "textTransform": "uppercase"
+          }
+        },
+        "type": "ia.input.text-field"
+      },
+      {
+        "children": [
+          {
+            "meta": {
+              "name": "LotNameLabel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "\"LOT: \" + if(isNull({view.custom.lot.LotName}), \"\", {view.custom.lot.LotName})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontSize": "20px",
+                "fontWeight": 600
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "ItemLabel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "\"Item: \" + if(isNull({view.custom.lot.ItemPartNumber}), \"\", {view.custom.lot.ItemPartNumber})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "16px"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "PiecesLabel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "\"Pieces: \" + if(isNull({view.custom.lot.PieceCount}), \"-\", toStr({view.custom.lot.PieceCount}))"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "16px"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "EligibilityLabel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.style.color": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.alreadyHere}, \"var(--mpp-warn, #f9a825)\", if({view.custom.eligibility.IsEligible}, \"var(--mpp-success, #2e7d32)\", \"var(--mpp-error, #c62828)\"))"
+                  },
+                  "type": "expr"
+                }
+              },
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if({view.custom.alreadyHere}, \"Already at this location\", if({view.custom.eligibility.IsEligible}, \"Eligible at destination\", \"Not eligible at destination\"))"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "fontSize": "16px",
+                "fontWeight": 600
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": {
+              "name": "CapacityLabel"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "\"Capacity: \" + toStr(if(isNull({view.custom.existingQty.ExistingPieceCount}), 0, {view.custom.existingQty.ExistingPieceCount}) + if(isNull({view.custom.lot.PieceCount}), 0, {view.custom.lot.PieceCount})) + if(isNull({view.custom.maxParts.MaxParts}), \" (no cap)\", \" of \" + toStr({view.custom.maxParts.MaxParts}))"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "color": "var(--mpp-text-secondary)",
+                "fontSize": "16px"
+              }
+            },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": {
+                    "script": "\tself.view.rootContainer.commitMove()"
+                  },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": {
+              "name": "MoveButton"
+            },
+            "position": {
+              "shrink": 0
+            },
+            "propConfig": {
+              "props.enabled": {
+                "binding": {
+                  "config": {
+                    "expression": "{view.custom.eligibility.IsEligible} \u0026\u0026 !{view.custom.alreadyHere}"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": {
+              "style": {
+                "classes": "pf-primary-button",
+                "fontSize": "18px",
+                "marginTop": "8px",
+                "minHeight": "48px"
+              },
+              "text": "Move"
+            },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": {
+          "name": "ReviewPanel"
+        },
+        "position": {
+          "grow": 1
+        },
+        "propConfig": {
+          "position.display": {
+            "binding": {
+              "config": {
+                "expression": "{view.custom.phase} !\u003d \"scan\""
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "direction": "column",
+          "style": {
+            "classes": "pf-review-panel",
+            "gap": "8px",
+            "padding": "12px"
+          }
+        },
+        "type": "ia.container.flex"
+      }
+    ],
     "meta": {
       "name": "root"
     },
     "props": {
       "direction": "column",
-      "alignItems": "stretch",
       "style": {
         "classes": "pf-field-col",
         "gap": "12px",
@@ -54,284 +316,17 @@
         {
           "name": "applyScan",
           "params": [],
-          "script": "\tcode = self.view.custom.scanCode\n\tif not code:\n\t\treturn\n\tr = BlueRidge.Lots.Lot.getByName(code)\n\tif r:\n\t\tself.view.custom.lot = r\n\t\titemId = r.get(\"ItemId\")\n\t\tdestId = self.view.params.destinationLocationId\n\t\tcur = r.get(\"CurrentLocationId\")\n\t\ttry:\n\t\t\tself.view.custom.alreadyHere = (cur is not None and int(cur) == int(destId))\n\t\texcept:\n\t\t\tself.view.custom.alreadyHere = False\n\t\tself.view.custom.eligibility = BlueRidge.Parts.ItemLocation.checkEligibilityOrEmpty(itemId, destId)\n\t\tmp = BlueRidge.Parts.Item.getMaxParts(itemId)\n\t\tself.view.custom.maxParts = mp if mp else {\"MaxParts\": None}\n\t\teq = BlueRidge.Lots.Lot.getCellLineQuantity(destId, itemId)\n\t\tself.view.custom.existingQty = eq if eq else {\"ExistingPieceCount\": 0}\n\t\tself.view.custom.phase = \"review\"\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"LOT not found\", \"No LOT matches '%s'.\" % code, \"warning\")"
+          "script": "\tcode \u003d self.view.custom.scanCode\n\tif not code:\n\t\treturn\n\tr \u003d BlueRidge.Lots.Lot.getByName(code)\n\tif r:\n\t\tself.view.custom.lot \u003d r\n\t\titemId \u003d r.get(\"ItemId\")\n\t\tdestId \u003d self.view.params.destinationLocationId\n\t\tcur \u003d r.get(\"CurrentLocationId\")\n\t\ttry:\n\t\t\tself.view.custom.alreadyHere \u003d (cur is not None and int(cur) \u003d\u003d int(destId))\n\t\texcept:\n\t\t\tself.view.custom.alreadyHere \u003d False\n\t\tself.view.custom.eligibility \u003d BlueRidge.Parts.ItemLocation.checkEligibilityOrEmpty(itemId, destId)\n\t\tmp \u003d BlueRidge.Parts.Item.getMaxParts(itemId)\n\t\tself.view.custom.maxParts \u003d mp if mp else {\"MaxParts\": None}\n\t\teq \u003d BlueRidge.Lots.Lot.getCellLineQuantity(destId, itemId)\n\t\tself.view.custom.existingQty \u003d eq if eq else {\"ExistingPieceCount\": 0}\n\t\tself.view.custom.phase \u003d \"review\"\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"LOT not found\", \"No LOT matches \u0027%s\u0027.\" % code, \"warning\")"
         },
         {
           "name": "commitMove",
           "params": [],
-          "script": "\tlotId = self.view.custom.lot.get(\"Id\")\n\tif lotId is None:\n\t\treturn\n\tres = BlueRidge.Lots.Lot.moveToValidated(lotId, self.view.params.destinationLocationId)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Moved\")\n\tif res.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload={\"lotId\": lotId}, scope=\"page\")\n\t\tself.view.custom.scanCode = \"\"\n\t\tself.view.custom.lot = {}\n\t\tself.view.custom.eligibility = {\"IsEligible\": False, \"Path\": None}\n\t\tself.view.custom.maxParts = {\"MaxParts\": None}\n\t\tself.view.custom.existingQty = {\"ExistingPieceCount\": 0}\n\t\tself.view.custom.alreadyHere = False\n\t\tself.view.custom.phase = \"scan\""
+          "script": "\tlotId \u003d self.view.custom.lot.get(\"Id\")\n\tif lotId is None:\n\t\treturn\n\tres \u003d BlueRidge.Lots.Lot.moveToValidated(lotId, self.view.params.destinationLocationId, self.view.params.operationTypeCode)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Moved\")\n\tif res.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(self.view.params.replyMessage, payload\u003d{\"lotId\": lotId}, scope\u003d\"page\")\n\t\tself.view.custom.scanCode \u003d \"\"\n\t\tself.view.custom.lot \u003d {}\n\t\tself.view.custom.eligibility \u003d {\"IsEligible\": False, \"Path\": None}\n\t\tself.view.custom.maxParts \u003d {\"MaxParts\": None}\n\t\tself.view.custom.existingQty \u003d {\"ExistingPieceCount\": 0}\n\t\tself.view.custom.alreadyHere \u003d False\n\t\tself.view.custom.phase \u003d \"scan\""
         }
-      ]
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": null
     },
-    "children": [
-      {
-        "type": "ia.display.label",
-        "meta": {
-          "name": "ScanLabel"
-        },
-        "position": {
-          "basis": "auto",
-          "shrink": 0
-        },
-        "props": {
-          "text": "Scan LTT",
-          "style": {
-            "classes": "pf-field-label",
-            "marginBottom": "0px"
-          }
-        }
-      },
-      {
-        "type": "ia.input.text-field",
-        "meta": {
-          "name": "ScanInput"
-        },
-        "position": {
-          "basis": "auto",
-          "shrink": 0
-        },
-        "propConfig": {
-          "props.text": {
-            "binding": {
-              "type": "property",
-              "config": {
-                "bidirectional": true,
-                "path": "view.custom.scanCode"
-              }
-            }
-          }
-        },
-        "props": {
-          "placeholder": "Scan LTT barcode",
-          "style": {
-            "classes": "pf-field-input-mono",
-            "textTransform": "uppercase",
-            "minHeight": "44px",
-            "fontSize": "18px"
-          }
-        },
-        "events": {
-          "dom": {
-            "onBlur": {
-              "type": "script",
-              "scope": "G",
-              "config": {
-                "script": "\tself.view.rootContainer.applyScan()"
-              }
-            }
-          }
-        }
-      },
-      {
-        "type": "ia.container.flex",
-        "meta": {
-          "name": "ReviewPanel"
-        },
-        "position": {
-          "basis": "auto",
-          "grow": 1,
-          "shrink": 1
-        },
-        "propConfig": {
-          "position.display": {
-            "binding": {
-              "type": "expr",
-              "config": {
-                "expression": "{view.custom.phase} != \"scan\""
-              }
-            }
-          }
-        },
-        "props": {
-          "direction": "column",
-          "alignItems": "stretch",
-          "style": {
-            "classes": "pf-review-panel",
-            "gap": "8px",
-            "padding": "12px"
-          }
-        },
-        "children": [
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "LotNameLabel"
-            },
-            "position": {
-              "basis": "auto",
-              "shrink": 0
-            },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "\"LOT: \" + if(isNull({view.custom.lot.LotName}), \"\", {view.custom.lot.LotName})"
-                  }
-                }
-              }
-            },
-            "props": {
-              "style": {
-                "fontSize": "20px",
-                "fontWeight": 600
-              }
-            }
-          },
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "ItemLabel"
-            },
-            "position": {
-              "basis": "auto",
-              "shrink": 0
-            },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "\"Item: \" + if(isNull({view.custom.lot.ItemPartNumber}), \"\", {view.custom.lot.ItemPartNumber})"
-                  }
-                }
-              }
-            },
-            "props": {
-              "style": {
-                "fontSize": "16px",
-                "color": "var(--mpp-text-secondary)"
-              }
-            }
-          },
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "PiecesLabel"
-            },
-            "position": {
-              "basis": "auto",
-              "shrink": 0
-            },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "\"Pieces: \" + if(isNull({view.custom.lot.PieceCount}), \"-\", toStr({view.custom.lot.PieceCount}))"
-                  }
-                }
-              }
-            },
-            "props": {
-              "style": {
-                "fontSize": "16px",
-                "color": "var(--mpp-text-secondary)"
-              }
-            }
-          },
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "EligibilityLabel"
-            },
-            "position": {
-              "basis": "auto",
-              "shrink": 0
-            },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "if({view.custom.alreadyHere}, \"Already at this location\", if({view.custom.eligibility.IsEligible}, \"Eligible at destination\", \"Not eligible at destination\"))"
-                  }
-                }
-              },
-              "props.style.color": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "if({view.custom.alreadyHere}, \"var(--mpp-warn, #f9a825)\", if({view.custom.eligibility.IsEligible}, \"var(--mpp-success, #2e7d32)\", \"var(--mpp-error, #c62828)\"))"
-                  }
-                }
-              }
-            },
-            "props": {
-              "style": {
-                "fontSize": "16px",
-                "fontWeight": 600
-              }
-            }
-          },
-          {
-            "type": "ia.display.label",
-            "meta": {
-              "name": "CapacityLabel"
-            },
-            "position": {
-              "basis": "auto",
-              "shrink": 0
-            },
-            "propConfig": {
-              "props.text": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "\"Capacity: \" + toStr(if(isNull({view.custom.existingQty.ExistingPieceCount}), 0, {view.custom.existingQty.ExistingPieceCount}) + if(isNull({view.custom.lot.PieceCount}), 0, {view.custom.lot.PieceCount})) + if(isNull({view.custom.maxParts.MaxParts}), \" (no cap)\", \" of \" + toStr({view.custom.maxParts.MaxParts}))"
-                  }
-                }
-              }
-            },
-            "props": {
-              "style": {
-                "fontSize": "16px",
-                "color": "var(--mpp-text-secondary)"
-              }
-            }
-          },
-          {
-            "type": "ia.input.button",
-            "meta": {
-              "name": "MoveButton"
-            },
-            "position": {
-              "basis": "auto",
-              "shrink": 0
-            },
-            "propConfig": {
-              "props.enabled": {
-                "binding": {
-                  "type": "expr",
-                  "config": {
-                    "expression": "{view.custom.eligibility.IsEligible} && !{view.custom.alreadyHere}"
-                  }
-                }
-              }
-            },
-            "props": {
-              "text": "Move",
-              "style": {
-                "classes": "pf-primary-button",
-                "minHeight": "48px",
-                "fontSize": "18px",
-                "marginTop": "8px"
-              }
-            },
-            "events": {
-              "component": {
-                "onActionPerformed": {
-                  "type": "script",
-                  "scope": "G",
-                  "config": {
-                    "script": "\tself.view.rootContainer.commitMove()"
-                  }
-                }
-              }
-            }
-          }
-        ]
-      }
-    ]
+    "type": "ia.container.flex"
   }
 }

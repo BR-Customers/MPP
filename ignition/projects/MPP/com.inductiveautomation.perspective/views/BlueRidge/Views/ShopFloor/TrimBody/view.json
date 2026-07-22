@@ -504,6 +504,7 @@
                     },
                     "props": {
                       "params": {
+                        "operationTypeCode": "TrimIn",
                         "replyMessage": "trimInMoved"
                       },
                       "path": "BlueRidge/Components/PlantFloor/MovementScan"
