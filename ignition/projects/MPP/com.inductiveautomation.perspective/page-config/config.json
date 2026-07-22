@@ -165,7 +165,7 @@
         "modal": false,
         "resizable": false,
         "show": "visible",
-        "size": 56,
+        "size": 88,
         "viewParams": {},
         "viewPath": "BlueRidge/Views/ShopFloor/AppHeader"
       }

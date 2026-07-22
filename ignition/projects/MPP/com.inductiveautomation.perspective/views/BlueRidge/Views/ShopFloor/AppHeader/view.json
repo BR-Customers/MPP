@@ -40,7 +40,7 @@
     }
   },
   "props": {
-    "defaultSize": { "height": 56, "width": 1920 }
+    "defaultSize": { "height": 88, "width": 1920 }
   },
   "root": {
     "children": [
@@ -73,7 +73,7 @@
                 }
               }
             },
-            "props": { "style": { "classes": "pf-app-title", "lineHeight": "1.1" } },
+            "props": { "style": { "classes": "pf-app-title", "lineHeight": "1.25", "whiteSpace": "nowrap" } },
             "type": "ia.display.label"
           },
           {
@@ -86,20 +86,14 @@
                 }
               }
             },
-            "props": { "style": { "classes": "pf-banner-detail", "lineHeight": "1.1" } },
+            "props": { "style": { "classes": "pf-banner-detail", "lineHeight": "1.25", "whiteSpace": "nowrap" } },
             "type": "ia.display.label"
           }
         ],
         "meta": { "name": "BrandCol" },
         "position": { "shrink": 0 },
-        "props": { "direction": "column", "style": { "gap": "1px", "marginLeft": "4px" } },
+        "props": { "direction": "column", "style": { "gap": "2px", "marginLeft": "8px" } },
         "type": "ia.container.flex"
-      },
-      {
-        "meta": { "name": "Divider1" },
-        "position": { "shrink": 0 },
-        "props": { "style": { "width": "1px", "height": "28px", "background": "var(--mpp-border-subtle)", "marginLeft": "16px" } },
-        "type": "ia.display.label"
       },
       {
         "children": [
@@ -210,7 +204,7 @@
       }
     ],
     "meta": { "name": "root" },
-    "props": { "alignItems": "center", "style": { "classes": "pf-header" } },
+    "props": { "alignItems": "center", "style": { "classes": "pf-header", "height": "100%" } },
     "type": "ia.container.flex"
   }
 }
