@@ -1,0 +1,196 @@
+{
+  "custom": {
+    "editDraft": {
+      "reasonCodeId": null,
+      "startVal": null,
+      "endVal": null,
+      "remarks": ""
+    },
+    "reasonFilter": { "includeDeprecated": false },
+    "reasonOptions": []
+  },
+  "params": {
+    "mode": "create",
+    "editId": null,
+    "scopeLocationId": null,
+    "reasonCodeId": null,
+    "startedAtEtStr": null,
+    "endedAtEtStr": null,
+    "remarks": null
+  },
+  "propConfig": {
+    "params.mode": { "paramDirection": "input", "persistent": true },
+    "params.editId": { "paramDirection": "input", "persistent": true },
+    "params.scopeLocationId": { "paramDirection": "input", "persistent": true },
+    "params.reasonCodeId": { "paramDirection": "input", "persistent": true },
+    "params.startedAtEtStr": { "paramDirection": "input", "persistent": true },
+    "params.endedAtEtStr": { "paramDirection": "input", "persistent": true },
+    "params.remarks": { "paramDirection": "input", "persistent": true },
+    "custom.reasonOptions": {
+      "binding": {
+        "config": { "expression": "runScript(\"BlueRidge.Oee.DowntimeReasonCode.search\", 0, {view.custom.reasonFilter})" },
+        "transforms": [
+          {
+            "code": "\treturn [{\"value\": r.get(\"Id\"), \"label\": (r.get(\"Code\") or \"\") + \" - \" + (r.get(\"Description\") or \"\")} for r in (value or [])]",
+            "type": "script"
+          }
+        ],
+        "type": "expr"
+      }
+    }
+  },
+  "props": {
+    "defaultSize": { "height": 460, "width": 520 }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": { "name": "TitleLabel" },
+            "position": { "grow": 1 },
+            "propConfig": {
+              "props.text": { "binding": { "config": { "expression": "if({view.params.mode} = \"create\", \"Add Past Downtime\", \"Edit Downtime\")" }, "type": "expr" } }
+            },
+            "props": { "style": { "classes": "modal-title", "fontSize": "14px", "fontWeight": "600" } },
+            "type": "ia.display.label"
+          },
+          {
+            "events": { "dom": { "onClick": { "config": { "script": "\tsystem.perspective.closePopup(id=\"mpp-downtime-editor\")" }, "scope": "G", "type": "script" } } },
+            "meta": { "name": "CloseIcon" },
+            "props": { "path": "mpp/cancel", "style": { "classes": "modal-close", "cursor": "pointer", "height": "18px", "width": "18px" } },
+            "type": "ia.display.icon"
+          }
+        ],
+        "meta": { "name": "HeaderBar" },
+        "position": { "basis": "50px", "shrink": 0 },
+        "props": { "alignItems": "center", "style": { "background": "var(--mpp-surface-raised)", "borderBottom": "1px solid var(--mpp-border-subtle)", "gap": "12px", "padding": "0 16px" } },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              { "meta": { "name": "Label" }, "props": { "text": "Reason", "style": { "classes": "field-label" } }, "type": "ia.display.label" },
+              {
+                "meta": { "name": "Input" },
+                "propConfig": {
+                  "props.options": { "binding": { "config": { "path": "view.custom.reasonOptions" }, "type": "property" } },
+                  "props.value": { "binding": { "config": { "bidirectional": true, "path": "view.custom.editDraft.reasonCodeId" }, "type": "property" } }
+                },
+                "props": { "placeholder": "(no reason)", "style": { "boxSizing": "border-box", "classes": "search-input", "width": "100%" } },
+                "type": "ia.input.dropdown"
+              }
+            ],
+            "meta": { "name": "ReasonField" },
+            "props": { "direction": "column", "style": { "gap": "4px" } },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  { "meta": { "name": "Label" }, "props": { "text": "Start (ET)", "style": { "classes": "field-label" } }, "type": "ia.display.label" },
+                  {
+                    "meta": { "name": "Input" },
+                    "propConfig": { "props.value": { "binding": { "config": { "bidirectional": true, "path": "view.custom.editDraft.startVal" }, "type": "property" } } },
+                    "props": { "format": "YYYY-MM-DD HH:mm", "pickerType": "datetime", "style": { "boxSizing": "border-box", "width": "100%" } },
+                    "type": "ia.input.date-time-input"
+                  }
+                ],
+                "meta": { "name": "StartField" },
+                "position": { "grow": 1 },
+                "props": { "direction": "column", "style": { "gap": "4px" } },
+                "type": "ia.container.flex"
+              },
+              {
+                "children": [
+                  { "meta": { "name": "Label" }, "props": { "text": "End (ET) — blank = still open", "style": { "classes": "field-label" } }, "type": "ia.display.label" },
+                  {
+                    "meta": { "name": "Input" },
+                    "propConfig": { "props.value": { "binding": { "config": { "bidirectional": true, "path": "view.custom.editDraft.endVal" }, "type": "property" } } },
+                    "props": { "format": "YYYY-MM-DD HH:mm", "pickerType": "datetime", "style": { "boxSizing": "border-box", "width": "100%" } },
+                    "type": "ia.input.date-time-input"
+                  }
+                ],
+                "meta": { "name": "EndField" },
+                "position": { "grow": 1 },
+                "props": { "direction": "column", "style": { "gap": "4px" } },
+                "type": "ia.container.flex"
+              }
+            ],
+            "meta": { "name": "TimeRow" },
+            "props": { "style": { "gap": "12px" } },
+            "type": "ia.container.flex"
+          },
+          {
+            "children": [
+              { "meta": { "name": "Label" }, "props": { "text": "Remarks", "style": { "classes": "field-label" } }, "type": "ia.display.label" },
+              {
+                "meta": { "name": "Input" },
+                "propConfig": { "props.text": { "binding": { "config": { "bidirectional": true, "path": "view.custom.editDraft.remarks" }, "type": "property" } } },
+                "props": { "placeholder": "Optional note", "style": { "boxSizing": "border-box", "classes": "search-input", "width": "100%" } },
+                "type": "ia.input.text-field"
+              }
+            ],
+            "meta": { "name": "RemarksField" },
+            "props": { "direction": "column", "style": { "gap": "4px" } },
+            "type": "ia.container.flex"
+          }
+        ],
+        "meta": { "name": "FormBody" },
+        "position": { "grow": 1 },
+        "props": { "direction": "column", "style": { "gap": "14px", "overflowY": "auto", "padding": "16px" } },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          { "meta": { "name": "FooterSpacer" }, "position": { "grow": 1 }, "type": "ia.display.label" },
+          {
+            "events": { "component": { "onActionPerformed": { "config": { "script": "\tsystem.perspective.closePopup(id=\"mpp-downtime-editor\")" }, "scope": "G", "type": "script" } } },
+            "meta": { "name": "CancelButton" },
+            "position": { "shrink": 0 },
+            "props": { "style": { "classes": "pf-btn pf-btn-secondary" }, "text": "Cancel" },
+            "type": "ia.input.button"
+          },
+          {
+            "events": { "component": { "onActionPerformed": { "config": { "script": "\tself.view.rootContainer.doSave()" }, "scope": "G", "type": "script" } } },
+            "meta": { "name": "SaveButton" },
+            "position": { "shrink": 0 },
+            "props": { "style": { "classes": "pf-btn pf-btn-primary" }, "text": "Save" },
+            "type": "ia.input.button"
+          }
+        ],
+        "meta": { "name": "FooterBar" },
+        "position": { "basis": "56px", "shrink": 0 },
+        "props": { "alignItems": "center", "style": { "background": "var(--mpp-surface-raised)", "borderTop": "1px solid var(--mpp-border-subtle)", "gap": "8px", "padding": "0 16px" } },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": { "name": "root" },
+    "events": {
+      "system": {
+        "onStartup": {
+          "type": "script",
+          "scope": "G",
+          "config": {
+            "script": "\tif self.view.params.mode == \"update\":\n\t\tst = self.view.params.startedAtEtStr\n\t\ten = self.view.params.endedAtEtStr\n\t\tself.view.custom.editDraft = {\n\t\t\t\"reasonCodeId\": self.view.params.reasonCodeId,\n\t\t\t\"startVal\": system.date.parse(st, \"yyyy-MM-dd HH:mm:ss\") if st else None,\n\t\t\t\"endVal\": system.date.parse(en, \"yyyy-MM-dd HH:mm:ss\") if en else None,\n\t\t\t\"remarks\": self.view.params.remarks or \"\"\n\t\t}\n\telse:\n\t\tself.view.custom.editDraft = {\"reasonCodeId\": None, \"startVal\": None, \"endVal\": None, \"remarks\": \"\"}"
+          }
+        }
+      }
+    },
+    "props": { "direction": "column", "style": { "background": "var(--mpp-surface-canvas)", "borderRadius": "var(--mpp-radius-md, 8px)", "height": "100%", "overflow": "hidden", "width": "100%" } },
+    "scripts": {
+      "customMethods": [
+        {
+          "name": "doSave",
+          "params": [],
+          "script": "\timport BlueRidge.Oee.Downtime as D\n\timport BlueRidge.Common.Ui as Ui\n\timport BlueRidge.Common.Util as U\n\td = U.extractQualifiedValues(self.view.custom.editDraft) or {}\n\tsv = d.get(\"startVal\"); ev = d.get(\"endVal\")\n\tif sv is None:\n\t\tUi.notifyResult({\"Status\": 0, \"Message\": \"Start time is required.\"}, \"\")\n\t\treturn\n\tif ev is not None and ev <= sv:\n\t\tUi.notifyResult({\"Status\": 0, \"Message\": \"End must be after start.\"}, \"\")\n\t\treturn\n\tstartStr = system.date.format(sv, \"yyyy-MM-dd HH:mm:ss\")\n\tendStr = system.date.format(ev, \"yyyy-MM-dd HH:mm:ss\") if ev is not None else None\n\treason = d.get(\"reasonCodeId\")\n\tremarks = d.get(\"remarks\")\n\tmode = self.view.params.mode\n\tif mode == \"create\":\n\t\tif ev is None:\n\t\t\tUi.notifyResult({\"Status\": 0, \"Message\": \"End time is required for a past event.\"}, \"\")\n\t\t\treturn\n\t\tres = D.recordHistorical(self.view.params.scopeLocationId, startStr, endStr, reason, remarks)\n\t\tUi.notifyResult(res, \"Past downtime recorded\")\n\telse:\n\t\teid = self.view.params.editId\n\t\tD.updateReason(eid, reason)\n\t\tres = D.updateTimes(eid, startStr, endStr, remarks)\n\t\tUi.notifyResult(res, \"Downtime updated\")\n\tif res and res.get(\"Status\"):\n\t\tsystem.perspective.sendMessage(\"downtimeManagerRefresh\", scope=\"page\")\n\t\tsystem.perspective.closePopup(id=\"mpp-downtime-editor\")"
+        }
+      ],
+      "extensionFunctions": null,
+      "messageHandlers": []
+    },
+    "type": "ia.container.flex"
+  }
+}

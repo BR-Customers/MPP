@@ -45,6 +45,17 @@ def end(actualEnd=None, remarks=None, appUserId=None, terminalLocationId=None):
     return BlueRidge.Common.Db.execMutation("oee/Shift_End", params)
 
 
+def listRecent(shiftScheduleId=None, fromDate=None, toDate=None):
+    """Recent shift instances (newest-first): Id, ScheduleName, ActualStart, ...
+       All filters optional; no args = all shifts. Used by the Downtime Manager
+       shift selector. Returns list[dict]."""
+    return BlueRidge.Common.Db.execList("oee/Shift_List", {
+        "shiftScheduleId": shiftScheduleId,
+        "fromDate":        fromDate,
+        "toDate":          toDate,
+    })
+
+
 def getActive(atMoment=None):
     """Resolve the active shift schedule at a moment (default: now).
        Returns a dict or None."""
