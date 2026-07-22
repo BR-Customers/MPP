@@ -1,0 +1,218 @@
+{
+  "custom": {
+    "scopeLocationId": null,
+    "openCount": 0,
+    "shift": {
+      "ScheduleName": ""
+    }
+  },
+  "params": {},
+  "propConfig": {
+    "custom.scopeLocationId": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Oee.Downtime.resolveScope\", 0, {session.custom.cell.locationId})"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.shift": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Oee.Shift.getOpenOrEmpty\", 15000)"
+        },
+        "type": "expr"
+      }
+    },
+    "custom.openCount": {
+      "binding": {
+        "config": {
+          "expression": "runScript(\"BlueRidge.Oee.Downtime.getByScope\", 30000, {view.custom.scopeLocationId}, true, null)"
+        },
+        "transforms": [
+          {
+            "code": "\treturn len([r for r in (value or []) if r.get(\"IsOpen\")])",
+            "type": "script"
+          }
+        ],
+        "type": "expr"
+      }
+    }
+  },
+  "props": {
+    "defaultSize": {
+      "height": 56,
+      "width": 1920
+    }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": { "name": "TerminalName" },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if(isNull({session.custom.terminal.terminalName}) || {session.custom.terminal.terminalName} = \"\", \"Madison Facility\", {session.custom.terminal.terminalName})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": { "style": { "classes": "pf-app-title" } },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": { "name": "ScopeName" },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": {
+                    "expression": "if(isNull({session.custom.terminal.zoneName}) || {session.custom.terminal.zoneName} = \"\", \"\", {session.custom.terminal.zoneName})"
+                  },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": { "style": { "classes": "pf-banner-detail" } },
+            "type": "ia.display.label"
+          }
+        ],
+        "meta": { "name": "BrandCol" },
+        "position": { "shrink": 0 },
+        "props": { "direction": "column", "style": { "gap": "0px" } },
+        "type": "ia.container.flex"
+      },
+      {
+        "meta": { "name": "Clock" },
+        "position": { "shrink": 0 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": { "expression": "dateFormat(now(1000), \"EEE MMM d   h:mm:ss a\")" },
+              "type": "expr"
+            }
+          }
+        },
+        "props": {
+          "style": {
+            "classes": "pf-banner-detail",
+            "marginLeft": "16px",
+            "fontVariantNumeric": "tabular-nums",
+            "whiteSpace": "nowrap"
+          }
+        },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": { "name": "ShiftLabel" },
+        "position": { "shrink": 0 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "expression": "\"Shift: \" + if(isNull({view.custom.shift.ScheduleName}) || {view.custom.shift.ScheduleName} = \"\", \"none\", {view.custom.shift.ScheduleName})"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": { "style": { "classes": "pf-banner-detail", "marginLeft": "16px", "whiteSpace": "nowrap" } },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": { "name": "Operator" },
+        "position": { "shrink": 0 },
+        "propConfig": {
+          "props.text": {
+            "binding": {
+              "config": {
+                "expression": "\"Operator: \" + if(isNull({session.custom.user.initials}) || {session.custom.user.initials} = \"\", \"--\", {session.custom.user.initials})"
+              },
+              "type": "expr"
+            }
+          }
+        },
+        "props": { "style": { "classes": "pf-banner-detail", "marginLeft": "16px", "whiteSpace": "nowrap" } },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": { "name": "Spacer" },
+        "position": { "grow": 1 },
+        "type": "ia.display.label"
+      },
+      {
+        "meta": { "name": "LineDownPill" },
+        "position": { "shrink": 0 },
+        "propConfig": {
+          "meta.visible": {
+            "binding": {
+              "config": { "expression": "{view.custom.openCount} > 0" },
+              "type": "expr"
+            }
+          },
+          "props.text": {
+            "binding": {
+              "config": { "expression": "\"● LINE DOWN · \" + toStr({view.custom.openCount})" },
+              "type": "expr"
+            }
+          }
+        },
+        "props": { "style": { "classes": "dt-open-badge", "marginRight": "12px" } },
+        "type": "ia.display.label"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.openPopup(id=\"mpp-downtime-manager\", view=\"BlueRidge/Components/Popups/DowntimeManager\", modal=True, showCloseIcon=False, params={})"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": { "name": "DowntimeButton" },
+        "position": { "shrink": 0 },
+        "props": { "style": { "classes": "pf-btn pf-btn-primary", "marginRight": "8px" }, "text": "Downtime" },
+        "type": "ia.input.button"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": { "script": "\tsystem.perspective.login()" },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": { "name": "ElevatedLoginButton" },
+        "position": { "shrink": 0 },
+        "props": { "style": { "classes": "pf-btn pf-btn-secondary", "marginRight": "8px" }, "text": "Elevated Login" },
+        "type": "ia.input.button"
+      },
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": { "script": "\tsystem.perspective.toggleDock(\"LeftDock\")" },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": { "name": "DevMenuButton", "tooltip": { "text": "Dev menu" } },
+        "position": { "shrink": 0 },
+        "props": { "style": { "classes": "pf-btn pf-btn-secondary" }, "text": "≡" },
+        "type": "ia.input.button"
+      }
+    ],
+    "meta": { "name": "root" },
+    "props": { "style": { "classes": "pf-header" } },
+    "type": "ia.container.flex"
+  }
+}
