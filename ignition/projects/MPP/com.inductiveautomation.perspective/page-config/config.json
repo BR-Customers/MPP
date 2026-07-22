@@ -165,9 +165,9 @@
         "modal": false,
         "resizable": false,
         "show": "visible",
-        "size": 96,
+        "size": 56,
         "viewParams": {},
-        "viewPath": "BlueRidge/Views/Dev/TestNavHeader"
+        "viewPath": "BlueRidge/Views/ShopFloor/AppHeader"
       }
     ]
   }
