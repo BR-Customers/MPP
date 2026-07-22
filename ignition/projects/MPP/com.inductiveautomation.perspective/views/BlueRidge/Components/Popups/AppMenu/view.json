@@ -1,0 +1,63 @@
+{
+  "custom": {},
+  "params": {},
+  "props": {
+    "defaultSize": { "height": 640, "width": 460 }
+  },
+  "root": {
+    "children": [
+      {
+        "children": [
+          {
+            "meta": { "name": "Title" },
+            "position": { "grow": 1 },
+            "props": { "text": "Menu", "style": { "classes": "modal-title", "fontSize": "15px", "fontWeight": "600" } },
+            "type": "ia.display.label"
+          },
+          {
+            "events": { "dom": { "onClick": { "config": { "script": "\tsystem.perspective.closePopup(id=\"mpp-app-menu\")" }, "scope": "G", "type": "script" } } },
+            "meta": { "name": "CloseIcon" },
+            "props": { "path": "mpp/cancel", "style": { "classes": "modal-close", "cursor": "pointer", "height": "18px", "width": "18px" } },
+            "type": "ia.display.icon"
+          }
+        ],
+        "meta": { "name": "HeaderBar" },
+        "position": { "basis": "48px", "shrink": 0 },
+        "props": { "alignItems": "center", "style": { "background": "var(--mpp-surface-raised)", "borderBottom": "1px solid var(--mpp-border-subtle)", "gap": "12px", "padding": "0 16px" } },
+        "type": "ia.container.flex"
+      },
+      {
+        "children": [
+          { "meta": { "name": "GrpOps" }, "props": { "text": "OPERATIONS", "style": { "classes": "label-eyebrow", "marginTop": "4px" } }, "type": "ia.display.label" },
+          { "events": { "component": { "onActionPerformed": { "config": { "script": "\tsystem.perspective.navigate(\"/shop-floor/supervisor\")\n\tsystem.perspective.closePopup(id=\"mpp-app-menu\")" }, "scope": "G", "type": "script" } } }, "meta": { "name": "NavSupervisor" }, "props": { "text": "Supervisor Dashboard", "style": { "classes": "pf-btn pf-btn-secondary", "justifyContent": "flex-start" } }, "type": "ia.input.button" },
+          { "events": { "component": { "onActionPerformed": { "config": { "script": "\tsystem.perspective.navigate(\"/shop-floor/downtime\")\n\tsystem.perspective.closePopup(id=\"mpp-app-menu\")" }, "scope": "G", "type": "script" } } }, "meta": { "name": "NavDowntime" }, "props": { "text": "Downtime Entry (legacy)", "style": { "classes": "pf-btn pf-btn-secondary", "justifyContent": "flex-start" } }, "type": "ia.input.button" },
+          { "events": { "component": { "onActionPerformed": { "config": { "script": "\tsystem.perspective.navigate(\"/shop-floor/end-of-shift\")\n\tsystem.perspective.closePopup(id=\"mpp-app-menu\")" }, "scope": "G", "type": "script" } } }, "meta": { "name": "NavEndShift" }, "props": { "text": "End of Shift", "style": { "classes": "pf-btn pf-btn-secondary", "justifyContent": "flex-start" } }, "type": "ia.input.button" },
+          { "events": { "component": { "onActionPerformed": { "config": { "script": "\tsystem.perspective.navigate(\"/shop-floor/shift-summary\")\n\tsystem.perspective.closePopup(id=\"mpp-app-menu\")" }, "scope": "G", "type": "script" } } }, "meta": { "name": "NavShiftSummary" }, "props": { "text": "Shift-End Summary", "style": { "classes": "pf-btn pf-btn-secondary", "justifyContent": "flex-start" } }, "type": "ia.input.button" },
+          { "events": { "component": { "onActionPerformed": { "config": { "script": "\tsystem.perspective.navigate(\"/shop-floor/inspection\")\n\tsystem.perspective.closePopup(id=\"mpp-app-menu\")" }, "scope": "G", "type": "script" } } }, "meta": { "name": "NavInspection" }, "props": { "text": "Inspection", "style": { "classes": "pf-btn pf-btn-secondary", "justifyContent": "flex-start" } }, "type": "ia.input.button" },
+
+          { "meta": { "name": "GrpTrace" }, "props": { "text": "TRACEABILITY", "style": { "classes": "label-eyebrow", "marginTop": "12px" } }, "type": "ia.display.label" },
+          { "events": { "component": { "onActionPerformed": { "config": { "script": "\tsystem.perspective.navigate(\"/shop-floor/lot-search\")\n\tsystem.perspective.closePopup(id=\"mpp-app-menu\")" }, "scope": "G", "type": "script" } } }, "meta": { "name": "NavLotSearch" }, "props": { "text": "LOT Search", "style": { "classes": "pf-btn pf-btn-secondary", "justifyContent": "flex-start" } }, "type": "ia.input.button" },
+          { "events": { "component": { "onActionPerformed": { "config": { "script": "\tsystem.perspective.navigate(\"/shop-floor/genealogy\")\n\tsystem.perspective.closePopup(id=\"mpp-app-menu\")" }, "scope": "G", "type": "script" } } }, "meta": { "name": "NavGenealogy" }, "props": { "text": "Genealogy", "style": { "classes": "pf-btn pf-btn-secondary", "justifyContent": "flex-start" } }, "type": "ia.input.button" },
+          { "events": { "component": { "onActionPerformed": { "config": { "script": "\tsystem.perspective.navigate(\"/shop-floor/trace\")\n\tsystem.perspective.closePopup(id=\"mpp-app-menu\")" }, "scope": "G", "type": "script" } } }, "meta": { "name": "NavTrace" }, "props": { "text": "Track & Trace", "style": { "classes": "pf-btn pf-btn-secondary", "justifyContent": "flex-start" } }, "type": "ia.input.button" },
+          { "events": { "component": { "onActionPerformed": { "config": { "script": "\tsystem.perspective.navigate(\"/shop-floor/hold-management\")\n\tsystem.perspective.closePopup(id=\"mpp-app-menu\")" }, "scope": "G", "type": "script" } } }, "meta": { "name": "NavHold" }, "props": { "text": "Hold Management", "style": { "classes": "pf-btn pf-btn-secondary", "justifyContent": "flex-start" } }, "type": "ia.input.button" },
+
+          { "meta": { "name": "GrpAdmin" }, "props": { "text": "ADMIN & SETUP", "style": { "classes": "label-eyebrow", "marginTop": "12px" } }, "type": "ia.display.label" },
+          { "events": { "component": { "onActionPerformed": { "config": { "script": "\tsystem.perspective.navigate(\"/shop-floor/aim-pool-config\")\n\tsystem.perspective.closePopup(id=\"mpp-app-menu\")" }, "scope": "G", "type": "script" } } }, "meta": { "name": "NavAim" }, "props": { "text": "AIM Pool Config", "style": { "classes": "pf-btn pf-btn-secondary", "justifyContent": "flex-start" } }, "type": "ia.input.button" },
+          { "events": { "component": { "onActionPerformed": { "config": { "script": "\tsystem.perspective.navigate(\"/shop-floor/terminal-selector\")\n\tsystem.perspective.closePopup(id=\"mpp-app-menu\")" }, "scope": "G", "type": "script" } } }, "meta": { "name": "NavTerminal" }, "props": { "text": "Select Terminal", "style": { "classes": "pf-btn pf-btn-secondary", "justifyContent": "flex-start" } }, "type": "ia.input.button" },
+          { "events": { "component": { "onActionPerformed": { "config": { "script": "\tsystem.perspective.navigate(\"/\")\n\tsystem.perspective.closePopup(id=\"mpp-app-menu\")" }, "scope": "G", "type": "script" } } }, "meta": { "name": "NavHome" }, "props": { "text": "Home", "style": { "classes": "pf-btn pf-btn-secondary", "justifyContent": "flex-start" } }, "type": "ia.input.button" },
+
+          { "meta": { "name": "GrpDev" }, "props": { "text": "DEV", "style": { "classes": "label-eyebrow", "marginTop": "12px" } }, "type": "ia.display.label" },
+          { "events": { "component": { "onActionPerformed": { "config": { "script": "\tsystem.perspective.navigate(\"/dev/test-nav\")\n\tsystem.perspective.closePopup(id=\"mpp-app-menu\")" }, "scope": "G", "type": "script" } } }, "meta": { "name": "NavDevNav" }, "props": { "text": "Dev Nav (all screens)", "style": { "classes": "pf-btn pf-btn-secondary", "justifyContent": "flex-start" } }, "type": "ia.input.button" },
+          { "events": { "component": { "onActionPerformed": { "config": { "script": "\tsystem.perspective.navigate(\"/dev/sim/plc\")\n\tsystem.perspective.closePopup(id=\"mpp-app-menu\")" }, "scope": "G", "type": "script" } } }, "meta": { "name": "NavPlcSim" }, "props": { "text": "PLC Simulator", "style": { "classes": "pf-btn pf-btn-secondary", "justifyContent": "flex-start" } }, "type": "ia.input.button" }
+        ],
+        "meta": { "name": "MenuBody" },
+        "position": { "grow": 1 },
+        "props": { "direction": "column", "style": { "gap": "6px", "overflowY": "auto", "padding": "12px 16px" } },
+        "type": "ia.container.flex"
+      }
+    ],
+    "meta": { "name": "root" },
+    "props": { "direction": "column", "style": { "background": "var(--mpp-surface-canvas)", "height": "100%", "width": "100%" } },
+    "type": "ia.container.flex"
+  }
+}

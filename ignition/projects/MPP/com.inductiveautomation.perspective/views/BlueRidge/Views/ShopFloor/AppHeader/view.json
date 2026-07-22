@@ -40,13 +40,27 @@
     }
   },
   "props": {
-    "defaultSize": {
-      "height": 56,
-      "width": 1920
-    }
+    "defaultSize": { "height": 56, "width": 1920 }
   },
   "root": {
     "children": [
+      {
+        "events": {
+          "component": {
+            "onActionPerformed": {
+              "config": {
+                "script": "\tsystem.perspective.openPopup(id=\"mpp-app-menu\", view=\"BlueRidge/Components/Popups/AppMenu\", modal=True, showCloseIcon=False)"
+              },
+              "scope": "G",
+              "type": "script"
+            }
+          }
+        },
+        "meta": { "name": "MenuButton", "tooltip": { "text": "Menu" } },
+        "position": { "shrink": 0 },
+        "props": { "style": { "classes": "pf-btn pf-btn-secondary", "fontSize": "18px", "minWidth": "44px" }, "text": "≡" },
+        "type": "ia.input.button"
+      },
       {
         "children": [
           {
@@ -54,14 +68,12 @@
             "propConfig": {
               "props.text": {
                 "binding": {
-                  "config": {
-                    "expression": "if(isNull({session.custom.terminal.terminalName}) || {session.custom.terminal.terminalName} = \"\", \"Madison Facility\", {session.custom.terminal.terminalName})"
-                  },
+                  "config": { "expression": "if(isNull({session.custom.terminal.terminalName}) || {session.custom.terminal.terminalName} = \"\", \"Madison Facility\", {session.custom.terminal.terminalName})" },
                   "type": "expr"
                 }
               }
             },
-            "props": { "style": { "classes": "pf-app-title" } },
+            "props": { "style": { "classes": "pf-app-title", "lineHeight": "1.1" } },
             "type": "ia.display.label"
           },
           {
@@ -69,74 +81,75 @@
             "propConfig": {
               "props.text": {
                 "binding": {
-                  "config": {
-                    "expression": "if(isNull({session.custom.terminal.zoneName}) || {session.custom.terminal.zoneName} = \"\", \"\", {session.custom.terminal.zoneName})"
-                  },
+                  "config": { "expression": "if(isNull({session.custom.terminal.zoneName}) || {session.custom.terminal.zoneName} = \"\", \"\", {session.custom.terminal.zoneName})" },
                   "type": "expr"
                 }
               }
             },
-            "props": { "style": { "classes": "pf-banner-detail" } },
+            "props": { "style": { "classes": "pf-banner-detail", "lineHeight": "1.1" } },
             "type": "ia.display.label"
           }
         ],
         "meta": { "name": "BrandCol" },
         "position": { "shrink": 0 },
-        "props": { "direction": "column", "style": { "gap": "0px" } },
+        "props": { "direction": "column", "style": { "gap": "1px", "marginLeft": "4px" } },
         "type": "ia.container.flex"
       },
       {
-        "meta": { "name": "Clock" },
+        "meta": { "name": "Divider1" },
         "position": { "shrink": 0 },
-        "propConfig": {
-          "props.text": {
-            "binding": {
-              "config": { "expression": "dateFormat(now(1000), \"EEE MMM d   h:mm:ss a\")" },
-              "type": "expr"
-            }
-          }
-        },
-        "props": {
-          "style": {
-            "classes": "pf-banner-detail",
-            "marginLeft": "16px",
-            "fontVariantNumeric": "tabular-nums",
-            "whiteSpace": "nowrap"
-          }
-        },
+        "props": { "style": { "width": "1px", "height": "28px", "background": "var(--mpp-border-subtle)", "marginLeft": "16px" } },
         "type": "ia.display.label"
       },
       {
-        "meta": { "name": "ShiftLabel" },
-        "position": { "shrink": 0 },
-        "propConfig": {
-          "props.text": {
-            "binding": {
-              "config": {
-                "expression": "\"Shift: \" + if(isNull({view.custom.shift.ScheduleName}) || {view.custom.shift.ScheduleName} = \"\", \"none\", {view.custom.shift.ScheduleName})"
-              },
-              "type": "expr"
-            }
+        "children": [
+          {
+            "meta": { "name": "Clock" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": { "expression": "dateFormat(now(1000), \"EEE MMM d   h:mm:ss a\")" },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": { "style": { "classes": "pf-banner-detail", "fontVariantNumeric": "tabular-nums", "whiteSpace": "nowrap" } },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": { "name": "ShiftLabel" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": { "expression": "\"Shift: \" + if(isNull({view.custom.shift.ScheduleName}) || {view.custom.shift.ScheduleName} = \"\", \"none\", {view.custom.shift.ScheduleName})" },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": { "style": { "classes": "pf-banner-detail", "whiteSpace": "nowrap" } },
+            "type": "ia.display.label"
+          },
+          {
+            "meta": { "name": "Operator" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "props.text": {
+                "binding": {
+                  "config": { "expression": "\"Operator: \" + if(isNull({session.custom.user.initials}) || {session.custom.user.initials} = \"\", \"--\", {session.custom.user.initials})" },
+                  "type": "expr"
+                }
+              }
+            },
+            "props": { "style": { "classes": "pf-banner-detail", "whiteSpace": "nowrap" } },
+            "type": "ia.display.label"
           }
-        },
-        "props": { "style": { "classes": "pf-banner-detail", "marginLeft": "16px", "whiteSpace": "nowrap" } },
-        "type": "ia.display.label"
-      },
-      {
-        "meta": { "name": "Operator" },
+        ],
+        "meta": { "name": "ContextCluster" },
         "position": { "shrink": 0 },
-        "propConfig": {
-          "props.text": {
-            "binding": {
-              "config": {
-                "expression": "\"Operator: \" + if(isNull({session.custom.user.initials}) || {session.custom.user.initials} = \"\", \"--\", {session.custom.user.initials})"
-              },
-              "type": "expr"
-            }
-          }
-        },
-        "props": { "style": { "classes": "pf-banner-detail", "marginLeft": "16px", "whiteSpace": "nowrap" } },
-        "type": "ia.display.label"
+        "props": { "alignItems": "center", "style": { "gap": "20px", "marginLeft": "16px" } },
+        "type": "ia.container.flex"
       },
       {
         "meta": { "name": "Spacer" },
@@ -144,75 +157,60 @@
         "type": "ia.display.label"
       },
       {
-        "meta": { "name": "LineDownPill" },
-        "position": { "shrink": 0 },
-        "propConfig": {
-          "meta.visible": {
-            "binding": {
-              "config": { "expression": "{view.custom.openCount} > 0" },
-              "type": "expr"
-            }
-          },
-          "props.text": {
-            "binding": {
-              "config": { "expression": "\"● LINE DOWN · \" + toStr({view.custom.openCount})" },
-              "type": "expr"
-            }
-          }
-        },
-        "props": { "style": { "classes": "dt-open-badge", "marginRight": "12px" } },
-        "type": "ia.display.label"
-      },
-      {
-        "events": {
-          "component": {
-            "onActionPerformed": {
-              "config": {
-                "script": "\tsystem.perspective.openPopup(id=\"mpp-downtime-manager\", view=\"BlueRidge/Components/Popups/DowntimeManager\", modal=True, showCloseIcon=False, params={})"
+        "children": [
+          {
+            "meta": { "name": "LineDownPill" },
+            "position": { "shrink": 0 },
+            "propConfig": {
+              "meta.visible": {
+                "binding": { "config": { "expression": "{view.custom.openCount} > 0" }, "type": "expr" }
               },
-              "scope": "G",
-              "type": "script"
-            }
+              "props.text": {
+                "binding": { "config": { "expression": "\"● LINE DOWN · \" + toStr({view.custom.openCount})" }, "type": "expr" }
+              }
+            },
+            "props": { "style": { "classes": "dt-open-badge" } },
+            "type": "ia.display.label"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": { "script": "\tsystem.perspective.openPopup(id=\"mpp-downtime-manager\", view=\"BlueRidge/Components/Popups/DowntimeManager\", modal=True, showCloseIcon=False, params={})" },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": { "name": "DowntimeButton" },
+            "position": { "shrink": 0 },
+            "props": { "style": { "classes": "pf-btn pf-btn-primary" }, "text": "Downtime" },
+            "type": "ia.input.button"
+          },
+          {
+            "events": {
+              "component": {
+                "onActionPerformed": {
+                  "config": { "script": "\tsystem.perspective.login()" },
+                  "scope": "G",
+                  "type": "script"
+                }
+              }
+            },
+            "meta": { "name": "ElevatedLoginButton" },
+            "position": { "shrink": 0 },
+            "props": { "style": { "classes": "pf-btn pf-btn-secondary" }, "text": "Elevated Login" },
+            "type": "ia.input.button"
           }
-        },
-        "meta": { "name": "DowntimeButton" },
+        ],
+        "meta": { "name": "RightCluster" },
         "position": { "shrink": 0 },
-        "props": { "style": { "classes": "pf-btn pf-btn-primary", "marginRight": "8px" }, "text": "Downtime" },
-        "type": "ia.input.button"
-      },
-      {
-        "events": {
-          "component": {
-            "onActionPerformed": {
-              "config": { "script": "\tsystem.perspective.login()" },
-              "scope": "G",
-              "type": "script"
-            }
-          }
-        },
-        "meta": { "name": "ElevatedLoginButton" },
-        "position": { "shrink": 0 },
-        "props": { "style": { "classes": "pf-btn pf-btn-secondary", "marginRight": "8px" }, "text": "Elevated Login" },
-        "type": "ia.input.button"
-      },
-      {
-        "events": {
-          "component": {
-            "onActionPerformed": {
-              "config": { "script": "\tsystem.perspective.toggleDock(\"LeftDock\")" },
-              "scope": "G",
-              "type": "script"
-            }
-          }
-        },
-        "meta": { "name": "DevMenuButton", "tooltip": { "text": "Dev menu" } },
-        "position": { "shrink": 0 },
-        "props": { "style": { "classes": "pf-btn pf-btn-secondary" }, "text": "≡" },
-        "type": "ia.input.button"
+        "props": { "alignItems": "center", "style": { "gap": "8px" } },
+        "type": "ia.container.flex"
       }
     ],
     "meta": { "name": "root" },
-    "props": { "style": { "classes": "pf-header" } },
+    "props": { "alignItems": "center", "style": { "classes": "pf-header" } },
     "type": "ia.container.flex"
   }
 }
