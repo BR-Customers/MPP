@@ -769,11 +769,21 @@
                 "meta": {
                   "name": "TrayNote"
                 },
+                "propConfig": {
+                  "props.text": {
+                    "binding": {
+                      "config": {
+                        "expression": "if({session.custom.closureMethod} = \"ByWeight\", \"The line scale reports net weight to the PLC; at the configured target weight the PLC closes the container and BOM consumption is recorded for that tray. Container fill is the MES-side accumulation of validated tray closes.\", if({session.custom.closureMethod} = \"ByVision\", \"The Cognex camera scans the full tray as a single image once the PLC asserts TrayFullFlag at PartsPerTray - one validation event per tray, never per piece. On PASS, the tray closes and BOM consumption is recorded for that tray. Container fill is the MES-side accumulation of validated tray closes.\", \"The operator confirms the piece count for the full tray; on Complete Tray the tray closes and BOM consumption is recorded for that tray. Container fill is the MES-side accumulation of validated tray closes.\"))"
+                      },
+                      "type": "expr"
+                    }
+                  }
+                },
                 "props": {
                   "style": {
                     "classes": "pf-kpi-sub"
                   },
-                  "text": "The Cognex camera scans the full tray as a single image once the PLC asserts TrayFullFlag at PartsPerTray - one validation event per tray, never per piece. On PASS, the tray closes and BOM consumption is recorded for that tray. Container fill is the MES-side accumulation of validated tray closes - same camera, same closure path as the Sort Cage non-serialized re-pack flow."
+                  "text": "The operator confirms the piece count for the full tray; on Complete Tray the tray closes and BOM consumption is recorded for that tray. Container fill is the MES-side accumulation of validated tray closes."
                 },
                 "type": "ia.display.label"
               },
