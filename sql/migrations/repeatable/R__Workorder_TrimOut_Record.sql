@@ -51,7 +51,7 @@ CREATE OR ALTER PROCEDURE Workorder.TrimOut_Record
     @OperationTemplateId       BIGINT,
     @ShotCount                 INT    = NULL,
     @ScrapCount                INT    = NULL,
-    @DestinationCellLocationId BIGINT,
+    @DestinationCellLocationId BIGINT = NULL,   -- v2 (2026-07-23): IGNORED. Destination is Trim Storage, resolved internally.
     @SourceLocationId          BIGINT,
     @AppUserId                 BIGINT,
     @TerminalLocationId        BIGINT = NULL
@@ -79,13 +79,14 @@ BEGIN
     DECLARE @StatusCode     NVARCHAR(20);
     DECLARE @StatusName     NVARCHAR(100);
     DECLARE @Blocks         BIT;
+    DECLARE @TrimStoreId    BIGINT;   -- v2: destination = local shop's Trim Storage (InventoryLocation)
 
     BEGIN TRY
         -- ---- 1. Required parameters ----
         IF @ParentLotId IS NULL OR @OperationTemplateId IS NULL
-           OR @DestinationCellLocationId IS NULL OR @SourceLocationId IS NULL OR @AppUserId IS NULL
+           OR @SourceLocationId IS NULL OR @AppUserId IS NULL
         BEGIN
-            SET @Message = N'Required parameter missing (ParentLotId, OperationTemplateId, DestinationCellLocationId, SourceLocationId, AppUserId).';
+            SET @Message = N'Required parameter missing (ParentLotId, OperationTemplateId, SourceLocationId, AppUserId).';
             IF @AppUserId IS NOT NULL
                 EXEC Audit.Audit_LogFailure
                     @AppUserId = @AppUserId, @LogEntityTypeCode = N'ProductionEvent',
@@ -166,29 +167,22 @@ BEGIN
             RETURN;
         END
 
-        -- ---- 4. Destination existence ----
-        IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Id = @DestinationCellLocationId AND DeprecatedAt IS NULL)
-        BEGIN
-            SET @Message = N'Destination location not found or deprecated.';
-            EXEC Audit.Audit_LogFailure
-                @AppUserId = @AppUserId, @LogEntityTypeCode = N'ProductionEvent',
-                @EntityId = @ParentLotId, @LogEventTypeCode = N'TrimOutRecorded',
-                @FailureReason = @Message, @ProcedureName = @ProcName,
-                @AttemptedParameters = @Params;
-            SELECT @Status AS Status, @Message AS Message, @NewId AS NewId;
-            RETURN;
-        END
+        -- ---- 4. Resolve destination = the local shop's Trim Storage (v2, 2026-07-23).
+        -- The machining line is NO LONGER chosen at Trim; every trimmed LOT lands in the
+        -- neutral Trim Storage (InventoryLocation def 14) of the shop this terminal records
+        -- from -- the store whose parent TRIM* area is an ancestor of @SourceLocationId.
+        -- Machining IN assigns the line later. NO destination-eligibility gate here: Trim
+        -- Storage is neutral; eligibility moves entirely to Machining IN. ----
+        SET @TrimStoreId = (
+            SELECT TOP 1 s.Id
+            FROM Location.Location s
+            WHERE s.LocationTypeDefinitionId = 14 AND s.DeprecatedAt IS NULL
+              AND s.ParentLocationId IN (SELECT LocationId FROM Location.ufn_AncestorLocationIds(@SourceLocationId))
+            ORDER BY s.Id);
 
-        -- ---- 5. Destination eligibility (FDS-02-012 / FDS-03-014 hierarchy cascade). NO MaxParts (Confirm B). ----
-        -- Eligible at the destination Cell OR any ancestor tier (Cell -> WorkCenter
-        -- -> Area -> Site), consistent with Item_ListEligibleForLocation + the
-        -- Lot_Create / Lot_MoveToValidated gates.
-        IF NOT EXISTS (
-            SELECT 1 FROM Parts.v_EffectiveItemLocation
-            WHERE ItemId = @ItemId
-              AND LocationId IN (SELECT LocationId FROM Location.ufn_AncestorLocationIds(@DestinationCellLocationId)))
+        IF @TrimStoreId IS NULL
         BEGIN
-            SET @Message = N'Item is not eligible at the destination location.';
+            SET @Message = N'Trim Storage is not configured for this shop (no InventoryLocation under the Trim area).';
             EXEC Audit.Audit_LogFailure
                 @AppUserId = @AppUserId, @LogEntityTypeCode = N'ProductionEvent',
                 @EntityId = @ParentLotId, @LogEventTypeCode = N'TrimOutRecorded',
@@ -268,7 +262,7 @@ BEGIN
 
         -- ===== Mutation (atomic) =====
         DECLARE @LotName NVARCHAR(50)  = (SELECT LotName FROM Lots.Lot WHERE Id = @ParentLotId);
-        DECLARE @ToName  NVARCHAR(200) = (SELECT Name FROM Location.Location WHERE Id = @DestinationCellLocationId);
+        DECLARE @ToName  NVARCHAR(200) = (SELECT Name FROM Location.Location WHERE Id = @TrimStoreId);
 
         BEGIN TRANSACTION;
 
@@ -290,7 +284,7 @@ BEGIN
         --     v1.2: scrap comes out of the LOT here -- the LOT arrives at Machining
         --     with its real remaining quantity. Never negative (guard 6b).
         UPDATE Lots.Lot
-        SET CurrentLocationId = @DestinationCellLocationId,
+        SET CurrentLocationId = @TrimStoreId,
             PieceCount         = PieceCount - ISNULL(@ScrapCount, 0),
             InventoryAvailable = InventoryAvailable - ISNULL(@ScrapCount, 0),
             UpdatedAt          = SYSUTCDATETIME(),
@@ -298,7 +292,7 @@ BEGIN
         WHERE Id = @ParentLotId;
 
         INSERT INTO Lots.LotMovement (LotId, FromLocationId, ToLocationId, MovedByUserId, TerminalLocationId, MovedAt)
-        VALUES (@ParentLotId, @FromLocationId, @DestinationCellLocationId, @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
+        VALUES (@ParentLotId, @FromLocationId, @TrimStoreId, @AppUserId, @TerminalLocationId, SYSUTCDATETIME());
 
         -- (c) Audit 'TrimOutRecorded' (ProductionEvent entity -> OperationLog).
         DECLARE @ActivityRaw NVARCHAR(MAX) =
@@ -315,7 +309,7 @@ BEGIN
                             FROM Lots.Lot l WHERE l.Id = pe.LotId
                             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Lot,
                 JSON_QUERY((SELECT loc.Id, loc.Code, loc.Name
-                            FROM Location.Location loc WHERE loc.Id = @DestinationCellLocationId
+                            FROM Location.Location loc WHERE loc.Id = @TrimStoreId
                             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)) AS Destination,
                 JSON_QUERY((SELECT ot.Id, ot.Code, ot.Name
                             FROM Parts.OperationTemplate ot WHERE ot.Id = pe.OperationTemplateId
@@ -326,7 +320,7 @@ BEGIN
         EXEC Audit.Audit_LogOperation
             @AppUserId          = @AppUserId,
             @TerminalLocationId = @TerminalLocationId,
-            @LocationId         = @DestinationCellLocationId,
+            @LocationId         = @TrimStoreId,
             @LogEntityTypeCode  = N'ProductionEvent',
             @EntityId           = @NewId,
             @LogEventTypeCode   = N'TrimOutRecorded',

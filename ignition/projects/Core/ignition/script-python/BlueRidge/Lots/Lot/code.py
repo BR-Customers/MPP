@@ -395,6 +395,23 @@ def getWipQueueByLocation(locationId, includeDescendants=False, _refreshToken=No
     )
 
 
+def getTrimStorageQueueForLine(lineLocationId, storageLocationId=None, _refreshToken=None):
+    """Trim-Storage model (2026-07-23) Machining IN queue for a LINE: the open LOTs sitting
+       in Trim Storage whose next pending route step is MachiningIn AND whose Item is eligible
+       at this line (ancestor cascade). A part eligible at two lines appears in both lines'
+       queues; claiming it (Machining.recordPick) moves it onto the line and off the others.
+       storageLocationId None => all trim stores (both shops). Same column shape as
+       getWipQueueByLocation, so the MachiningIn view row transform is unchanged.
+       Returns list[dict] (empty when no line bound)."""
+    lineLocationId = _u(lineLocationId)
+    if lineLocationId is None:
+        return []
+    return BlueRidge.Common.Db.execList(
+        "lots/Lot_GetTrimStorageQueueForLine",
+        {"lineLocationId": lineLocationId, "storageLocationId": _u(storageLocationId)},
+    )
+
+
 def getComponentsAtCell(locationId, includeDescendants=True, _refreshToken=None):
     """'Components at this cell' read for the assembly screens
        (Lots.Lot_GetComponentsAtCell): the UNION of route-driven WIP (LOTs whose next

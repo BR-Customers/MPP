@@ -29,22 +29,28 @@ DELETE FROM Lots.LotGenealogyClosure WHERE AncestorLotId IN (SELECT Id FROM Lots
 DELETE FROM Lots.Lot WHERE LotName LIKE N'MESL%';
 GO
 
-DECLARE @LocA BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'DC1-M05');
-DECLARE @LocB BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'DC1-M06');
+DECLARE @Src BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-P01');   -- trim press under TRIM1
+DECLARE @TrimStore BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-STORE');
 DECLARE @OriginRcv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
 DECLARE @OtId BIGINT = (SELECT Id FROM Parts.OperationTemplate WHERE Code = N'TrimOut');
 
+-- item 1 eligible under TRIM1 so Lot_Create can stage it at the trim press (v2: TrimOut
+-- resolves the destination = TRIM1's Trim Storage internally; no destination param).
+IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE ItemId = 1 AND LocationId = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1') AND DeprecatedAt IS NULL)
+    INSERT INTO Parts.ItemLocation (ItemId, LocationId, IsConsumptionPoint, CreatedAt)
+    VALUES (1, (SELECT Id FROM Location.Location WHERE Code = N'TRIM1'), 0, SYSUTCDATETIME());
+
 DECLARE @L BIGINT;
 CREATE TABLE #C (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
-INSERT INTO #C EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @OriginRcv, @CurrentLocationId = @LocA, @PieceCount = 20, @AppUserId = 1;
+INSERT INTO #C EXEC Lots.Lot_Create @ItemId = 1, @LotOriginTypeId = @OriginRcv, @CurrentLocationId = @Src, @PieceCount = 20, @AppUserId = 1;
 SELECT @L = NewId FROM #C; DROP TABLE #C;
 
 DECLARE @S BIT, @PeId BIGINT;
 CREATE TABLE #T (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #T EXEC Workorder.TrimOut_Record
     @ParentLotId = @L, @OperationTemplateId = @OtId,
-    @ShotCount = 18, @ScrapCount = 2, @DestinationCellLocationId = @LocB,
-    @SourceLocationId = @LocA, @AppUserId = 1;
+    @ShotCount = 18, @ScrapCount = 2,
+    @SourceLocationId = @Src, @AppUserId = 1;
 SELECT @S = Status, @PeId = NewId FROM #T; DROP TABLE #T;
 
 DECLARE @SStr NVARCHAR(10) = CAST(@S AS NVARCHAR(10));
@@ -57,11 +63,11 @@ DECLARE @PeCnt NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Workor
 EXEC test.Assert_IsEqual @TestName = N'[TrimOut] closing ProductionEvent (TrimOut template)', @Expected = N'1', @Actual = @PeCnt;
 
 DECLARE @Cur NVARCHAR(20) = (SELECT CAST(CurrentLocationId AS NVARCHAR(20)) FROM Lots.Lot WHERE Id = @L);
-DECLARE @LocBStr NVARCHAR(20) = CAST(@LocB AS NVARCHAR(20));
-EXEC test.Assert_IsEqual @TestName = N'[TrimOut] whole LOT moved to destination', @Expected = @LocBStr, @Actual = @Cur;
+DECLARE @TrimStoreStr NVARCHAR(20) = CAST(@TrimStore AS NVARCHAR(20));
+EXEC test.Assert_IsEqual @TestName = N'[TrimOut] whole LOT moved to Trim Storage', @Expected = @TrimStoreStr, @Actual = @Cur;
 
-DECLARE @MovCnt NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.LotMovement WHERE LotId = @L AND ToLocationId = @LocB);
-EXEC test.Assert_IsEqual @TestName = N'[TrimOut] LotMovement row to destination', @Expected = N'1', @Actual = @MovCnt;
+DECLARE @MovCnt NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.LotMovement WHERE LotId = @L AND ToLocationId = @TrimStore);
+EXEC test.Assert_IsEqual @TestName = N'[TrimOut] LotMovement row to Trim Storage', @Expected = N'1', @Actual = @MovCnt;
 
 -- scrap decrements the LOT (2026-07-07): 20 pieces - 2 scrap = 18
 DECLARE @Pc NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id = @L);

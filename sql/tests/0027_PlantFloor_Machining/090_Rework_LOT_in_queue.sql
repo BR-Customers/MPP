@@ -1,59 +1,51 @@
 -- =============================================
 -- File:         0027_PlantFloor_Machining/090_Rework_LOT_in_queue.sql
 -- Author:       Blue Ridge Automation
--- Created:      2026-06-19
--- Rewritten:    2026-07-06 - "unworked arrivals" model. A rework LOT routed back to
---               a machining line is treated as a fresh unworked arrival and picked
---               with no special handling; the pick records a MachiningIn event and
---               keeps the LOT's identity (no consume / rename / close).
--- Description:  A rework LOT (CurrentLocationId = a machining LINE):
---                 - appears in that line's FIFO queue as an unworked arrival
---                   (HasLineEvent=0)
---                 - MachiningIn_RecordPick succeeds; the LOT stays OPEN, same Item
---                 - after the pick it has HasLineEvent=1 and leaves the queue
---               Fixture: P5-CAST-TEST eligible at the LINE MA1-COMPBR.
+-- Rewritten:    2026-07-23 - Trim-Storage model (v2). A rework casting re-staged in Trim
+--               Storage is picked with no special handling: MachiningIn_RecordPick claims
+--               it onto the line (Trim Storage -> line) and records the MachiningIn event,
+--               keeping the LOT's identity (no consume / rename / close).
+--               Fixture: routed casting 5G0-c eligible at MA1-5GOF; staged in TRIM1-STORE.
 -- =============================================
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
 EXEC test.BeginTestFile @FileName = N'0027_PlantFloor_Machining/090_Rework_LOT_in_queue.sql';
 GO
 
--- ---- fixture (idempotent) ----
-DECLARE @Now  DATETIME2(3) = SYSUTCDATETIME();
-DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR');
-IF NOT EXISTS (SELECT 1 FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST')
-    INSERT INTO Parts.Item (ItemTypeId, PartNumber, Description, UomId, CreatedAt, CreatedByUserId) VALUES (2, N'P5-CAST-TEST', N'Phase5 test cast/trim part', 1, @Now, 1);
-DECLARE @SrcItem BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST');
-IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE ItemId = @SrcItem AND LocationId = @Line AND DeprecatedAt IS NULL)
-    INSERT INTO Parts.ItemLocation (ItemId, LocationId, IsConsumptionPoint, CreatedAt) VALUES (@SrcItem, @Line, 0, @Now);
+DECLARE @Item BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
+DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF');
+IF NOT EXISTS (SELECT 1 FROM Parts.ItemLocation WHERE ItemId = @Item AND LocationId = @Line AND DeprecatedAt IS NULL)
+    INSERT INTO Parts.ItemLocation (ItemId, LocationId, IsConsumptionPoint, CreatedAt) VALUES (@Item, @Line, 0, SYSUTCDATETIME());
+DELETE pe FROM Workorder.ProductionEvent pe INNER JOIN Lots.Lot l ON l.Id = pe.LotId WHERE l.LotName = N'P5T-REWORK-090';
+DELETE m FROM Lots.LotMovement m INNER JOIN Lots.Lot l ON l.Id = m.LotId WHERE l.LotName = N'P5T-REWORK-090';
+DELETE h FROM Lots.LotStatusHistory h INNER JOIN Lots.Lot l ON l.Id = h.LotId WHERE l.LotName = N'P5T-REWORK-090';
+DELETE eg FROM Lots.LotEventLog eg INNER JOIN Lots.Lot l ON l.Id = eg.LotId WHERE l.LotName = N'P5T-REWORK-090';
+DELETE c FROM Lots.LotGenealogyClosure c INNER JOIN Lots.Lot l ON l.Id = c.AncestorLotId OR l.Id = c.DescendantLotId WHERE l.LotName = N'P5T-REWORK-090';
+DELETE FROM Lots.Lot WHERE LotName = N'P5T-REWORK-090';
 GO
 
--- ---- LOT cleanup ----
-DELETE pe FROM Workorder.ProductionEvent pe INNER JOIN Lots.Lot l ON l.Id = pe.LotId WHERE l.ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST');
-DELETE c FROM Lots.LotGenealogyClosure c INNER JOIN Lots.Lot l ON l.Id = c.AncestorLotId OR l.Id = c.DescendantLotId WHERE l.ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST');
-DELETE m FROM Lots.LotMovement m INNER JOIN Lots.Lot l ON l.Id = m.LotId WHERE l.ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST');
-DELETE h FROM Lots.LotStatusHistory h INNER JOIN Lots.Lot l ON l.Id = h.LotId WHERE l.ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST');
-DELETE eg FROM Lots.LotEventLog eg INNER JOIN Lots.Lot l ON l.Id = eg.LotId WHERE l.ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST');
-DELETE FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST');
-GO
+DECLARE @Item  BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'5G0-c');
+DECLARE @Line  BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF');
+DECLARE @Term  BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-5GOF-MIN');
+DECLARE @Store BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'TRIM1-STORE');
+DECLARE @Origin BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Manufactured');
 
--- ====================================================================
-DECLARE @Line BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR');
-DECLARE @Term BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-MIN');
-DECLARE @SrcItem BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST');
-DECLARE @OriginRcv BIGINT = (SELECT Id FROM Lots.LotOriginType WHERE Code = N'Received');
+-- a "rework" LOT staged directly in Trim Storage (deterministic; avoids Lot_Create eligibility)
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId, CreatedAt)
+VALUES (N'P5T-REWORK-090', @Item, @Origin, (SELECT Id FROM Lots.LotStatusCode WHERE Code=N'Good'), 18, 18, @Store, 1, SYSUTCDATETIME());
+DECLARE @Rework BIGINT = SCOPE_IDENTITY();
+INSERT INTO Lots.LotGenealogyClosure (AncestorLotId, DescendantLotId, Depth) VALUES (@Rework, @Rework, 0);
+INSERT INTO Lots.LotMovement (LotId, FromLocationId, ToLocationId, MovedByUserId, MovedAt) VALUES (@Rework, NULL, @Store, 1, SYSUTCDATETIME());
 
--- a "rework" LOT: routed back to the machining line
-DECLARE @Rework BIGINT;
-CREATE TABLE #C (Status BIT, Message NVARCHAR(500), NewId BIGINT, MintedLotName NVARCHAR(50));
-INSERT INTO #C EXEC Lots.Lot_Create @ItemId = @SrcItem, @LotOriginTypeId = @OriginRcv, @CurrentLocationId = @Line, @PieceCount = 18, @AppUserId = 1, @LotName = N'P5T-REWORK-090';
-SELECT @Rework = NewId FROM #C; DROP TABLE #C;
+-- pre-advance past DieCast/TrimIn/TrimOut so next pending is MachiningIn
+INSERT INTO Workorder.ProductionEvent (LotId, OperationTemplateId, EventAt, ShotCount, AppUserId)
+SELECT @Rework, rs.OperationTemplateId, SYSUTCDATETIME(), 18, 1
+FROM Parts.RouteTemplate rt JOIN Parts.RouteStep rs ON rs.RouteTemplateId = rt.Id
+JOIN Parts.OperationTemplate ot ON ot.Id = rs.OperationTemplateId
+JOIN Parts.OperationType oty ON oty.Id = ot.OperationTypeId
+WHERE rt.ItemId = @Item AND rt.PublishedAt IS NOT NULL AND rt.DeprecatedAt IS NULL
+  AND oty.Code IN (N'DieCast', N'TrimIn', N'TrimOut');
 
--- (Queue membership before/after the pick is covered by the dedicated route-driven
---  queue test 0024/060; this file focuses on a rework LOT flowing through pick with
---  no special handling.)
-
--- flows through MachiningIn pick with no special handling (keeps identity)
 DECLARE @S BIT;
 CREATE TABLE #R (Status BIT, Message NVARCHAR(500), NewId BIGINT);
 INSERT INTO #R EXEC Workorder.MachiningIn_RecordPick @LotId = @Rework, @LineLocationId = @Line, @AppUserId = 1, @TerminalLocationId = @Term;
@@ -61,28 +53,28 @@ SELECT @S = Status FROM #R; DROP TABLE #R;
 DECLARE @SStr NVARCHAR(10) = CAST(@S AS NVARCHAR(10));
 EXEC test.Assert_IsEqual @TestName = N'[Rework] MachiningIn pick succeeds for rework LOT', @Expected = N'1', @Actual = @SStr;
 
--- rework LOT keeps its identity + stays open (no consume/close)
+-- keeps identity + stays open
 DECLARE @ReworkItem NVARCHAR(20) = (SELECT CAST(ItemId AS NVARCHAR(20)) FROM Lots.Lot WHERE Id = @Rework);
-DECLARE @SrcItemStr NVARCHAR(20) = CAST(@SrcItem AS NVARCHAR(20));
-EXEC test.Assert_IsEqual @TestName = N'[Rework] rework LOT keeps its Item (no rename)', @Expected = @SrcItemStr, @Actual = @ReworkItem;
-
+DECLARE @ItemStr NVARCHAR(20) = CAST(@Item AS NVARCHAR(20));
+EXEC test.Assert_IsEqual @TestName = N'[Rework] rework LOT keeps its Item (no rename)', @Expected = @ItemStr, @Actual = @ReworkItem;
 DECLARE @ReworkStatus NVARCHAR(20) = (SELECT sc.Code FROM Lots.Lot l INNER JOIN Lots.LotStatusCode sc ON sc.Id = l.LotStatusId WHERE l.Id = @Rework);
 EXEC test.Assert_IsEqual @TestName = N'[Rework] rework LOT stays open after pick', @Expected = N'Good', @Actual = @ReworkStatus;
 
--- the MachiningIn ProductionEvent exists on the same LOT (advances it in the route-driven queue)
+-- MachiningIn event stamped on the same LOT
 DECLARE @PeCnt NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Workorder.ProductionEvent pe
     INNER JOIN Parts.OperationTemplate ot ON ot.Id = pe.OperationTemplateId
-    WHERE pe.LotId = @Rework AND ot.Code = N'MachiningIn');
+    INNER JOIN Parts.OperationType oty ON oty.Id = ot.OperationTypeId
+    WHERE pe.LotId = @Rework AND oty.Code = N'MachiningIn' AND pe.TerminalLocationId = @Term);
 EXEC test.Assert_IsEqual @TestName = N'[Rework] MachiningIn event stamped on the rework LOT', @Expected = N'1', @Actual = @PeCnt;
 GO
 
 -- ---- cleanup ----
-DELETE pe FROM Workorder.ProductionEvent pe INNER JOIN Lots.Lot l ON l.Id = pe.LotId WHERE l.ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST');
-DELETE c FROM Lots.LotGenealogyClosure c INNER JOIN Lots.Lot l ON l.Id = c.AncestorLotId OR l.Id = c.DescendantLotId WHERE l.ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST');
-DELETE m FROM Lots.LotMovement m INNER JOIN Lots.Lot l ON l.Id = m.LotId WHERE l.ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST');
-DELETE h FROM Lots.LotStatusHistory h INNER JOIN Lots.Lot l ON l.Id = h.LotId WHERE l.ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST');
-DELETE eg FROM Lots.LotEventLog eg INNER JOIN Lots.Lot l ON l.Id = eg.LotId WHERE l.ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST');
-DELETE FROM Lots.Lot WHERE ItemId IN (SELECT Id FROM Parts.Item WHERE PartNumber = N'P5-CAST-TEST');
+DELETE pe FROM Workorder.ProductionEvent pe INNER JOIN Lots.Lot l ON l.Id = pe.LotId WHERE l.LotName = N'P5T-REWORK-090';
+DELETE m FROM Lots.LotMovement m INNER JOIN Lots.Lot l ON l.Id = m.LotId WHERE l.LotName = N'P5T-REWORK-090';
+DELETE h FROM Lots.LotStatusHistory h INNER JOIN Lots.Lot l ON l.Id = h.LotId WHERE l.LotName = N'P5T-REWORK-090';
+DELETE eg FROM Lots.LotEventLog eg INNER JOIN Lots.Lot l ON l.Id = eg.LotId WHERE l.LotName = N'P5T-REWORK-090';
+DELETE c FROM Lots.LotGenealogyClosure c INNER JOIN Lots.Lot l ON l.Id = c.AncestorLotId OR l.Id = c.DescendantLotId WHERE l.LotName = N'P5T-REWORK-090';
+DELETE FROM Lots.Lot WHERE LotName = N'P5T-REWORK-090';
 GO
 
 EXEC test.EndTestFile;
