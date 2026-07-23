@@ -217,3 +217,21 @@ def getRecommendedFinishedGoodId(cellLocationId):
         if r.get("IsRecommended"):
             return r.get("Id")
     return None
+
+
+def getComponentProjection(cellLocationId, finishedGoodItemId, closureMethod=None, _refreshToken=None):
+    """DISPLAY-ONLY: per active-BOM component of the finished good, how many will be consumed
+       to COMPLETE the current container + a low-stock flag, for the Assembly OUT line-inventory
+       panel. NOT a gate -- the authoritative sufficiency check is in Assembly_CompleteTray.
+       Thin glue: all math lives in Workorder.Assembly_GetComponentProjection. Returns
+       list[dict] (empty = nothing to show). `_refreshToken` is the ignored runScript re-read
+       arg, consistent with getComponentsAtCell / getOpenByCell."""
+    cellLocationId = BlueRidge.Common.Util.extractQualifiedValues(cellLocationId)
+    finishedGoodItemId = BlueRidge.Common.Util.extractQualifiedValues(finishedGoodItemId)
+    closureMethod = BlueRidge.Common.Util.extractQualifiedValues(closureMethod)
+    if cellLocationId is None or finishedGoodItemId is None:
+        return []
+    return BlueRidge.Common.Db.execList(
+        "workorder/Assembly_GetComponentProjection",
+        {"locationId": cellLocationId, "finishedGoodItemId": finishedGoodItemId,
+         "closureMethod": closureMethod})
