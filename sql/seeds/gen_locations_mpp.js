@@ -273,6 +273,8 @@ rc.push(`DELETE la FROM Location.LocationAttribute la
 // re-emit the attr inserts (from the seed's attr block)
 rc.push(out.filter(s => s.includes("INTO Location.LocationAttribute")).join('\n'));
 
-const rcPath = path.join(DIR, '_reconcile_dev.sql');
+// Written to sql/scripts/ (NOT sql/seeds/) so the DB reset does not auto-run this one-time
+// in-place ops script against a fresh DB (it transforms an EXISTING old-model DB only).
+const rcPath = path.join(DIR, '..', 'scripts', 'reconcile_location_dev.sql');
 fs.writeFileSync(rcPath, rc.join('\n') + '\n', 'utf8');
 console.error(`Wrote ${rcPath}: ${Object.keys(CODEMAP).length} renames, ${keptPrinters.length} kept printers.`);
