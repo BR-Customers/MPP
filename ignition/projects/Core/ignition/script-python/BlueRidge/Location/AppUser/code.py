@@ -5,6 +5,7 @@
 import BlueRidge.Common.Db
 import BlueRidge.Common.Util
 import system.security
+import java.lang
 
 
 def getUserList(includeDeprecated=False, textFilter=None):
@@ -250,3 +251,28 @@ def elevate(adAccount, password, actionCode, terminalLocationId):
         "message":      res.get("Message"),
         "ignitionRole": res.get("IgnitionRole"),
     }
+
+
+def logOperatorChange(oldAppUserId, newAppUserId, terminalLocationId=None, appUserId=None):
+    """Audit a terminal operator handoff. Fired from InitialsEntry.loginAs on every sign-in
+       path (typed / scanned / post-registration). Thin glue only: the SQL proc
+       Audit.OperatorChange_Log resolves operator names + terminal code, builds the
+       description + resolved-name JSON, suppresses a same-operator re-scan, and writes the
+       Audit.OperationLog row. Attribution defaults to the NEW operator.
+
+       Fire-and-forget: a logging failure must NEVER block an operator from signing in, so
+       every error - including Java throwables that Jython's `except Exception` misses - is
+       swallowed with a warning."""
+    try:
+        newId = BlueRidge.Common.Util.toIntOrNone(newAppUserId)
+        if newId is None:
+            return
+        params = {
+            "oldAppUserId":       BlueRidge.Common.Util.toIntOrNone(oldAppUserId),
+            "newAppUserId":       newId,
+            "terminalLocationId": BlueRidge.Common.Util.toIntOrNone(terminalLocationId),
+            "appUserId":          BlueRidge.Common.Util.toIntOrNone(appUserId) or newId,
+        }
+        BlueRidge.Common.Db.execMutation("audit/OperatorChange_Log", params)
+    except (Exception, java.lang.Exception) as e:
+        BlueRidge.Common.Util.log("logOperatorChange failed (non-fatal): %s" % e, level="warn")
