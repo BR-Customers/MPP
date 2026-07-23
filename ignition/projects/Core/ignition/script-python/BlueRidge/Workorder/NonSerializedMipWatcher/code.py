@@ -59,7 +59,12 @@ def handleEdge(instancePath, terminalLocationId, member):
                    % (line["finishedGoodItemId"], line["pieceCount"], line["cellLocationId"]),
                    responsePayload=str(result), ok=ok,
                    errorDescription=None if ok else (result or {}).get("Message"))
-    if not ok:
+    if ok:
+        # Live-refresh the operator terminal at this cell (gateway scope -> no
+        # session unless we push). Best-effort; only on a real close.
+        BlueRidge.Workorder.Assembly.notifyInventoryChanged(
+            line["cellLocationId"], terminalLocationId)
+    else:
         W.writeDisplay(instancePath, {"MESAlarmType": 1,
                                       "MESAlarmText": (result or {}).get("Message") or "Tray complete failed"})
     W.writeMembers(instancePath, {member: False, "TransInProc": False})

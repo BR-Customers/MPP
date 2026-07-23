@@ -849,7 +849,7 @@
         {
           "messageType": "inventoryChanged",
           "pageScope": true,
-          "script": "\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
+          "script": "\tloc = (payload or {}).get(\"cellLocationId\")\n\tmyCell = None\n\ttry:\n\t\tmyCell = self.session.custom.cell.locationId\n\texcept:\n\t\tmyCell = None\n\tif loc is None or loc == myCell:\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
           "sessionScope": false,
           "viewScope": false
         },

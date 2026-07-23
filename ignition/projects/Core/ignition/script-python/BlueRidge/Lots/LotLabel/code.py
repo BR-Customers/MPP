@@ -116,7 +116,7 @@ def _logDispatch(endpoint, zpl, outcome):
         "isHighFidelity":   True,
     }
     try:
-        BlueRidge.Common.Db.execList("audit/Audit_LogInterfaceCall", params)
+        BlueRidge.Common.Db.execNonQuery("audit/Audit_LogInterfaceCall", params)
     except Exception as e:
         BlueRidge.Common.Util.log("_logDispatch failed: %s" % str(e))
 

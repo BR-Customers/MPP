@@ -13,6 +13,8 @@
 #       execOne(nq, params=None)       -> dict | None   (0 or 1 row)
 #       execMutation(nq, params=None)  -> dict          (status row;
 #                                                        Status BIT 1/0)
+#       execNonQuery(nq, params=None)  -> int            (silent proc,
+#                                                        UpdateQuery NQ)
 #
 #   Every entity script in the project routes its DB calls through these
 #   three. No entity script calls system.db.* directly. The three-layer
@@ -41,6 +43,9 @@
 #                      BlueRidge.Common.Action.runMutation (which mixed
 #                      DB + toast). The toast firing is now the caller's
 #                      explicit responsibility via Common.Ui.notifyResult.
+#   2026-07-22 - 1.1 - Add execNonQuery for silent (no-result-set) procs
+#                      paired to an "UpdateQuery" NQ. Fixes logInterface
+#                      calling the silent Audit_LogInterfaceCall via execList.
 # =============================================================================
 
 
@@ -130,3 +135,26 @@ def execMutation(nq, params=None):
     result = rows[0]
     BlueRidge.Common.Util.log("result=%s" % result, level="debug")
     return result
+
+
+def execNonQuery(nq, params=None):
+    """
+    Run a mutation NQ whose proc emits NO result set (a silent INSERT/UPDATE).
+
+    Used for fire-and-forget writers such as Audit.Audit_LogInterfaceCall that
+    deliberately do not SELECT a status row (the audit-writer convention: they
+    may run inside a mutation-proc transaction, so emitting a result set would
+    break INSERT-EXEC + ROLLBACK). The paired NQ MUST be attributes.type
+    "UpdateQuery" -- a "Query"-typed NQ over a proc that never SELECTs throws
+    "The statement did not return a result set" from the JDBC driver.
+
+    Args:
+        nq (str):           Named-query path.
+        params (dict|None): Parameter map. Pass None for parameterless NQs.
+
+    Returns:
+        int: Affected-row count reported by the driver (informational only;
+             most callers ignore it).
+    """
+    BlueRidge.Common.Util.log("nq=%s params=%s" % (nq, params), level="debug")
+    return system.db.runNamedQuery(nq, params) if params is not None else system.db.runNamedQuery(nq)

@@ -27,6 +27,7 @@ import BlueRidge.Common.Db
 import BlueRidge.Common.Util
 import BlueRidge.Location.TerminalPlcDevice
 import system.tag
+import java.lang
 
 _SYSTEM_NAME = "PLC"
 
@@ -124,8 +125,15 @@ def logInterface(deviceCode, description, requestPayload=None,
         "isHighFidelity":   True,
     }
     try:
-        BlueRidge.Common.Db.execList("audit/Audit_LogInterfaceCall", params)
-    except Exception as e:
+        # Silent proc (no result set) -> UpdateQuery NQ via execNonQuery.
+        # execList would demand a result set and throw
+        # "The statement did not return a result set".
+        BlueRidge.Common.Db.execNonQuery("audit/Audit_LogInterfaceCall", params)
+    except (Exception, java.lang.Exception) as e:
+        # Best-effort: MUST also catch Java (JDBC) throwables. Jython's
+        # `except Exception` does NOT catch a java.lang.Throwable, so a bare
+        # `except Exception` would let a DB error abort the watcher edge -- a
+        # broken interface log must never break the handshake.
         BlueRidge.Common.Util.log("logInterface failed: %s" % e, level="warn")
 
 
@@ -167,7 +175,9 @@ def dispatch(tagPath, previousValue, currentValue):
             "edge %s on %s -> %s (terminal %s)"
             % (member, instancePath, code, terminalLocationId))
         _route(code, instancePath, terminalLocationId, member)
-    except Exception as e:
+    except (Exception, java.lang.Exception) as e:
+        # Catch Java throwables too (see logInterface): a tag-change script
+        # must never throw out to the gateway TagChangeScriptExecutor.
         BlueRidge.Common.Util.log(
             "dispatch error tagPath=%s: %s" % (tagPath, e), level="error")
 

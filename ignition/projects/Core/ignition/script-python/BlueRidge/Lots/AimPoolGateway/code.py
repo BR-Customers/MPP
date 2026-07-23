@@ -63,7 +63,7 @@ def _logAim(action, aimShipperId, ok, err=None):
         "responsePayload": "OK" if ok else None,
         "errorCondition": None if ok else "AimCallFailed", "errorDescription": err, "isHighFidelity": True}
     try:
-        BlueRidge.Common.Db.execList("audit/Audit_LogInterfaceCall", params)
+        BlueRidge.Common.Db.execNonQuery("audit/Audit_LogInterfaceCall", params)
     except Exception as e:
         BlueRidge.Common.Util.log("_logAim failed: %s" % str(e), level="debug")
 

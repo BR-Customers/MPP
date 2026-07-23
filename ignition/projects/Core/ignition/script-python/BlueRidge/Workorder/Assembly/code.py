@@ -11,6 +11,8 @@ import BlueRidge.Common.Util
 import BlueRidge.Location.Terminal
 import BlueRidge.Lots.Container
 import BlueRidge.Parts.ContainerConfig
+import system.perspective
+import java.lang
 
 
 def scanIn(cellLocationId, lotName=None, lotId=None, appUserId=None, terminalLocationId=None):
@@ -112,6 +114,46 @@ def resolvePlcCloseContext(terminalLocationId, closureMethod):
             "pieceCount": ppt, "containerId": containerId}
 
 
+def notifyInventoryChanged(cellLocationId, terminalLocationId):
+    """Best-effort live-refresh push after a lights-out PLC completion. Public --
+       called by plcCompleteTray (ByWeight/ByVision) and the MIP watchers
+       (NonSerializedMipWatcher, SerializedMipWatcher) after a successful mint /
+       tray close. The close
+       runs in GATEWAY scope (tag-change script) with no session, so the operator
+       terminal never hears about it -- unlike the operator ByCount path, which
+       refreshes in-session. Send the same 'inventoryChanged' page-scoped message
+       the InventoryManager sends, but carry the event's cellLocationId so each
+       terminal's handler refreshes ONLY when it matches its own cell (the
+       InventoryManager payload has no cellLocationId -> those handlers still
+       refresh unconditionally, preserving manual-move behavior).
+
+       system.perspective.sendMessage in GATEWAY scope REQUIRES an explicit
+       sessionId + pageId (it cannot default to "the current session" -- there is
+       none), so there is no true broadcast: enumerate every open session/page via
+       getSessionInfo() and target each. Non-terminal pages simply have no
+       'inventoryChanged' handler and ignore it. Never raises into the completion
+       path -- a failed UI nudge must not undo a committed tray close. Catches
+       java.lang.Exception too (Jython's `except Exception` does not catch Java
+       throwables)."""
+    payload = {"cellLocationId": cellLocationId,
+               "terminalLocationId": terminalLocationId,
+               "source": "plc"}
+    try:
+        for s in (system.perspective.getSessionInfo() or []):
+            sid = s["id"]
+            for pid in (s["pageIds"] or []):
+                try:
+                    system.perspective.sendMessage(
+                        "inventoryChanged", payload=payload,
+                        scope="page", sessionId=sid, pageId=pid)
+                except (Exception, java.lang.Exception) as e:
+                    BlueRidge.Common.Util.log(
+                        "notifyInventoryChanged send failed sid=%s pid=%s: %s"
+                        % (sid, pid, e), level="warn")
+    except (Exception, java.lang.Exception) as e:
+        BlueRidge.Common.Util.log("notifyInventoryChanged enumerate failed: %s" % e, level="warn")
+
+
 def plcCompleteTray(terminalLocationId, closureMethod):
     """Shared PLC-triggered tray close for ByWeight / ByVision. Resolves the close
        context headlessly, then mints the FG LOT + consumes BOM via the SAME
@@ -132,6 +174,10 @@ def plcCompleteTray(terminalLocationId, closureMethod):
         result["ContainerComplete"] = BlueRidge.Lots.Container.complete(
             result.get("ContainerId"), plcCompletionConfirmed=True,
             appUserId=appUserId, terminalLocationId=terminalLocationId)
+    # Live-refresh the operator terminal at this cell (gateway scope -> no session
+    # unless we push). Best-effort; only fires on a real close.
+    if result and result.get("Status"):
+        notifyInventoryChanged(ctx.get("cellLocationId"), terminalLocationId)
     return result
 
 
