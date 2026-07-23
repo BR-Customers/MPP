@@ -1,63 +1,142 @@
 // ============================================================
-// Generator: gen_locations_mpp.js
+// Generator: gen_locations_mpp.js  (v2 - Site-reconciled, 2026-07-23)
 // Emits:     011_seed_locations_mpp_plant.sql  (idempotent)
-// Source:    MPP_LOCATION_SEED_TREE.md (validated 2026-06-04)
+// Source:    _site_locations.tsv + _site_attributes.tsv  (dumped from MPP_MES_Site,
+//            the authoritative onsite mapping). Spec:
+//            docs/superpowers/specs/2026-07-23-location-model-reconciliation-design.md
 //
-// Conventions (per Jacques, 2026-06-04):
-//   - ASCII ONLY in Name/Description (no em-dash / middle-dot -> mojibake in sqlcmd/Ignition).
-//   - Name is the SHORT tree label; the parent gives context. Code stays globally unique.
-//       machine  -> Name "Machine 01"          Code DC1-M01
-//       terminal -> Name role only e.g. "Machining In"   Code MA2-5GOR-MIN
-//       printer  -> Name "P - 001" (global running number)  Code <term>-P1
-//   - One terminal per die-cast area (tablets exempt for now).
-//   - SortOrder: machines first (1..N), then terminal(s).
-//
-// LocationTypeDefinition Ids (migration 0002): 3 ProductionArea, 4 SupportArea,
-//   5 ProductionLine(WorkCenter), 7 Terminal, 8 DieCastMachine, 16 Printer (NEW).
+// Rules baked in (all approved 2026-07-23):
+//   - Names are authoritative (Site) - carried verbatim, ASCII-cleaned (double spaces).
+//   - Role is derived from the NAME and realized as DefaultScreen. Codes are CORRECTED
+//     to match the name-role (CODEMAP); names are never bent to codes.
+//   - Printer child ONLY under MOUT / AOUT / COMBINED / ASER terminals (die-cast, trim,
+//     MIN, AIN, fallback get none).
+//   - Closure method normalized to enum (ByCount/ByWeight/ByVision); the 3 vision-through-
+//     scale terminals override to ByVision.
+//   - Adds: Trim Storage per shop; Inspection area (66B-TC re-parented in, sort-cage
+//     inspection line, one 3-closure validation terminal).
 // ============================================================
 const fs = require('fs');
 const path = require('path');
-
-const DEF = { AREA: 3, SUPPORT: 4, WC: 5, TERM: 7, DCM: 8, PRINTER: 16 };
-const out = [];
+const DIR = __dirname;
 const sq = s => String(s).replace(/'/g, "''");
-const pad2 = n => String(n).padStart(2, '0');
 const pad3 = n => String(n).padStart(3, '0');
-let printerSeq = 0;
 
+const DEFID = { Organization:1, Facility:2, ProductionArea:3, SupportArea:4, ProductionLine:5,
+  InspectionLine:6, Terminal:7, DieCastMachine:8, CNCMachine:9, TrimPress:10, AssemblyStation:11,
+  SerializedAssemblyLine:12, InspectionStation:13, InventoryLocation:14, Scale:15, Printer:16 };
+
+function tsv(f) {
+  return fs.readFileSync(path.join(DIR, f), 'utf8').split(/\r?\n/).filter(x => x.trim())
+    .map(l => l.split('\t'));
+}
+const locRows = tsv('_site_locations.tsv');   // [Id, Code, Name, Def, ParentCode, Sort, Deprecated]
+const attrRows = tsv('_site_attributes.tsv');  // [LocCode, Name, Val]
+
+// ---- code corrections: old Site code -> corrected code (unchanged codes pass through) ----
+const CODEMAP = {
+  'MA1-FP6NA-AFIN':'MA1-FP6NA-AOUT', 'MA1-FPRPY-AFIN':'MA1-FPRPY-AOUT',
+  'MA2-6F9TC-MOUT':'MA2-6F9TC-AOUT', 'MA2-COS-MOUT':'MA2-COS-AOUT',
+  'MA2-5PA-MIN1':'MA2-5PA-MIN', 'MA2-5PA-MIN2':'MA2-5PA-MOUT', 'MA2-5PA-MIN3':'MA2-5PA-AIN',
+  '5PA - AO':'MA2-5PA-AOUT', 'MA2-RPY6B2-AFIN':'MA2-RPY6B2-AOUT',
+  // RPYCAM1 re-key (off authoritative names)
+  'MA2-RPYCAM1-MIN-A':'MA2-RPYCAM1-MIN-CH', 'MA2-RPYCAM1-MIN-B':'MA2-RPYCAM1-MIN-RS',
+  'MA2-RPYCAM1-AIN':'MA2-RPYCAM1-MOUT-CH', 'MA2-RPYCAM1-MOUT-B':'MA2-RPYCAM1-MOUT-RS',
+  'MA2-RPYCAM1-MOUT-A':'MA2-RPYCAM1-MIO-RS5',
+  'MA2-RPYCAM1-AOUT1':'MA2-RPYCAM1-AIN', 'MA2-RPYCAM1-AOUT2':'MA2-RPYCAM1-AOUT1', 'MA2-RPYCAM1-AOUT3':'MA2-RPYCAM1-AOUT2',
+  // RPYCAM2 re-key
+  'MA2-RPYCAM2-MOUT-A':'MA2-RPYCAM2-MIN-CH', 'MA2-RPYCAM2-MIN-B':'MA2-RPYCAM2-MIN-RS',
+  'MA2-RPYCAM2-MOUT-B':'MA2-RPYCAM2-MOUT-CH', 'RS-MO':'MA2-RPYCAM2-MOUT-RS',
+  'MA2-RPYCAM2-MIN-A':'MA2-RPYCAM2-MIO-RS5',
+};
+const newCode = c => CODEMAP[c] || c;
+
+// ---- parent re-parenting (66B Thermal Case moves under the new inspection area).
+//      Applied as a post-insert UPDATE, because INSP is created after the Site loop. ----
+const PARENTOVR = {};
+
+// ---- name overrides (the single authorized name change) ----
+const NAMEOVR = { 'MA2-RPY6B2-AFIN':'Assembly Out' };
+
+// ---- rows to drop entirely ----
+const seenCode = new Set();
+function skip(r) {
+  const [id, code, name, def, parent, sort, dep] = r;
+  if (dep === '1') return true;                 // deprecated
+  if (!code || !code.trim()) return true;       // stray "[add 10 printers]" placeholder
+  if (def === 'Printer') return true;           // re-emit printers per rule, not Site's
+  if (seenCode.has(code)) return true;          // duplicate (e.g. 66B-Ins appears twice)
+  seenCode.add(code);
+  return false;
+}
+
+const clean = s => s.replace(/\s+/g, ' ').trim();   // collapse double spaces
+
+// ---- role from authoritative name; DefaultScreen from role ----
+const SCREEN = { MIN:'/shop-floor/machining-in', MOUT:'/shop-floor/machining-out',
+  AIN:'/shop-floor/assembly-in', AOUT:'/shop-floor/assembly-nonserialized',
+  ASER:'/shop-floor/assembly-serialized', COMBINED:'/shop-floor/machining' };
+function roleOf(name, code) {
+  const n = clean(name).toLowerCase();
+  if (/in\s*-\s*out/.test(n)) return 'COMBINED';
+  if (/serial/.test(n)) return 'ASER';
+  if (/machining\s+out/.test(n)) return 'MOUT';
+  if (/machining\s+in/.test(n)) return 'MIN';
+  if (/assembly\s+out/.test(n)) return 'AOUT';
+  if (/assembly\s+in/.test(n)) return 'AIN';
+  if (/^dc/i.test(code)) return 'DIECAST';
+  if (/^trim/i.test(code)) return 'TRIM';
+  if (code === 'FALLBACK-TERMINAL') return 'FALLBACK';
+  return 'OTHER';
+}
+const printsFor = role => ['MOUT','AOUT','COMBINED','ASER'].includes(role);
+
+// ---- closure normalization (+ vision-through-scale override by NEW code) ----
+const CLOSURE_NORM = { 'weight':'ByWeight', 'vision':'ByVision', 'bycount':'ByCount' };
+const VISION_SCALE = new Set(['MA1-FP6NA-AOUT','MA1-FPRPY-AOUT','MA2-5PA-AOUT']); // desc "vision through scale"
+function normClosure(newC, raw) {
+  if (VISION_SCALE.has(newC)) return 'ByVision';
+  return CLOSURE_NORM[String(raw).toLowerCase()] || raw;
+}
+
+// ---- attribute lookup by old Site code ----
+const attrByCode = {};
+for (const [loc, name, val] of attrRows) {
+  if (!loc || !loc.trim()) continue;
+  (attrByCode[loc] = attrByCode[loc] || {})[name] = val;
+}
+
+// ---------------- emit ----------------
+const out = [];
 function loc(defId, parentCode, name, code, desc, sort) {
-  const parent = parentCode === null
-    ? 'NULL'
+  const parent = parentCode === null ? 'NULL'
     : `(SELECT Id FROM Location.Location WHERE Code = N'${sq(parentCode)}')`;
   out.push(
 `IF NOT EXISTS (SELECT 1 FROM Location.Location WHERE Code = N'${sq(code)}')
     INSERT INTO Location.Location (LocationTypeDefinitionId, ParentLocationId, Name, Code, Description, SortOrder)
     SELECT ${defId}, ${parent}, N'${sq(name)}', N'${sq(code)}', N'${sq(desc)}', ${sort};`);
 }
-// every terminal gets one Printer child (uniform model, FDS-10-008); printer Name is a global running number
-function terminalWithPrinter(parentCode, name, code, desc, sort) {
-  loc(DEF.TERM, parentCode, name, code, desc, sort);
-  printerSeq++;
-  loc(DEF.PRINTER, code, `P - ${pad3(printerSeq)}`, `${code}-P1`, `Label printer for ${code}`, 1);
+function attr(code, attrName, val) {
+  out.push(
+`IF NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la JOIN Location.Location l ON l.Id = la.LocationId
+        JOIN Location.LocationAttributeDefinition ad ON ad.Id = la.LocationAttributeDefinitionId
+        WHERE l.Code = N'${sq(code)}' AND ad.AttributeName = N'${sq(attrName)}')
+    INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue, CreatedAt)
+    SELECT (SELECT Id FROM Location.Location WHERE Code = N'${sq(code)}'),
+           (SELECT TOP 1 Id FROM Location.LocationAttributeDefinition WHERE AttributeName = N'${sq(attrName)}' AND LocationTypeDefinitionId = 7 ORDER BY Id),
+           N'${sq(val)}', SYSUTCDATETIME();`);
 }
-
-const ROLE = {
-  'MIN':'Machining In','MOUT':'Machining Out','AIN':'Assembly In','AOUT':'Assembly Out',
-  'AFIN':'Assembly Finished','ASER':'Assembly (Serialized)',
-  'MIN-A':'Machining In - Side A','MIN-B':'Machining In - Side B',
-  'MOUT-A':'Machining Out - Side A','MOUT-B':'Machining Out - Side B',
-  'MIN1':'Machining In 1','MIN2':'Machining In 2','MIN3':'Machining In 3',
-  'AOUT1':'Assembly Out 1','AOUT2':'Assembly Out 2','AOUT3':'Assembly Out 3',
-};
 
 out.push(`-- ============================================================
 -- Seed:        011_seed_locations_mpp_plant.sql   (GENERATED - edit gen_locations_mpp.js)
--- Description: Full MPP plant Location tree, reconciled from the two plant-layout-mapper
---              exports. ASCII-only Names/Descriptions. Idempotent by Code.
+-- Description: Full MPP plant Location tree reconciled to MPP_MES_Site (authoritative).
+--              Names authoritative; codes corrected to name-role; printers only on
+--              OUT terminals; DefaultScreen/closure/scanner/confirm attributes seeded.
+--              ASCII-only Names/Descriptions. Idempotent by Code.
 -- ============================================================
 SET NOCOUNT ON;
 
--- === NEW LocationTypeDefinition: Printer (Cell-kind, DefId 16) =====
+-- === LocationTypeDefinition: Printer (Cell-kind, DefId 16) =====
 IF NOT EXISTS (SELECT 1 FROM Location.LocationTypeDefinition WHERE Code = N'Printer')
 BEGIN
     SET IDENTITY_INSERT Location.LocationTypeDefinition ON;
@@ -72,81 +151,67 @@ IF NOT EXISTS (SELECT 1 FROM Location.LocationAttributeDefinition WHERE Location
     VALUES (16, N'Model', N'NVARCHAR', 0, NULL, NULL, 2, N'Printer model (informs label-template selection)');
 `);
 
-out.push('\n-- === Enterprise + Site =======================================');
-loc(1, null, 'Madison Precision Products', 'MPP-ENT', 'Enterprise root', 1);
-loc(2, 'MPP-ENT', 'Madison Facility', 'MPP-MAD', 'Main manufacturing facility, Madison IN', 1);
+// ---- structure (from Site, transformed) ----
+out.push('\n-- === Plant hierarchy (reconciled from Site) ===');
+const terminals = [];  // {code, role, parentDef}
+let printerSeq = 0;
+const defByCode = {};
+for (const r of locRows) defByCode[r[1]] = r[3];
 
-// Die Cast areas: machines (1..N) then ONE area terminal
-const dieCast = [['DC1','Die Cast 1',11],['DC2','Die Cast 2',3],['DC3','Die Cast 3',5],['DC4','Die Cast 4',3]];
-let areaSort = 1;
-for (const [code, name, n] of dieCast) {
-  out.push(`\n-- === ${name} (${n} machines, one terminal) ===`);
-  loc(DEF.AREA, 'MPP-MAD', name, code, `Die casting area - ${n} machines`, areaSort++);
-  for (let i = 1; i <= n; i++) loc(DEF.DCM, code, `Machine ${pad2(i)}`, `${code}-M${pad2(i)}`, 'Die cast machine', i);
-  terminalWithPrinter(code, 'Terminal', `${code}-T1`, 'Die cast area terminal', n + 1);
-}
+for (const r of locRows) {
+  if (skip(r)) continue;
+  const [id, code0, name0, def, parent0, sort] = r;
+  const code = newCode(code0);
+  const name = clean(NAMEOVR[code0] || name0);
+  const parent = parent0 ? (PARENTOVR[code0] || newCode(parent0)) : null;
+  const desc = code;   // description not authoritative; keep terse (code) to avoid stale notes
+  loc(DEFID[def], parent, name, code, desc, Number(sort) || 1);
 
-// Trim Shops: one area-level terminal each
-for (const [code, name] of [['TRIM1','Trim Shop 1'],['TRIM2','Trim Shop 2']]) {
-  out.push(`\n-- === ${name} ===`);
-  loc(DEF.AREA, 'MPP-MAD', name, code, 'Trim shop - area-level processing, no sublot split', areaSort++);
-  terminalWithPrinter(code, 'Terminal', `${code}-T1`, 'Area-level trim terminal', 1);
-}
-
-// Machining & Assembly rooms
-const MA1 = [
-  ['MA1-COMPBR','Comp bracket',['MIN','AOUT']],
-  ['MA1-6MD','6MD',['MIN','AOUT']],
-  ['MA1-FPRPY','Fuel Pump (RPY 66v)',['MIN','MOUT','AFIN']],
-  ['MA1-FP6NA','Fuel Pump (6na 6vj)',['MIN','MOUT','AFIN']],
-  ['MA1-5GOR','5G0 Rear',['MIN','MOUT','ASER']],
-  ['MA1-5GOF','5G0 Front',['MIN','MOUT','ASER']],
-];
-const CAM8 = ['MIN-A','MIN-B','MOUT-A','MOUT-B','AIN','AOUT1','AOUT2','AOUT3'];
-const MA2 = [
-  ['MA2-RPY6B2','RPY 6b2 line2',['MIN','MOUT','AIN','AFIN']],
-  ['MA2-RPYCAM2','RPY Line 2 Cam holders',CAM8],
-  ['MA2-RPYCAM1','RPY Line 1 CH',CAM8],
-  ['MA2-5PA','5PA Fuel Pump',['MIN1','MIN2','MIN3']],
-  ['MA2-6MAOP','6ma oil pan',['MIN','AOUT']],
-  ['MA2-V6OP','v6 oil pan',['MIN','AOUT']],
-  ['MA2-COS','COS (offsite-origin)',['MOUT']],
-  ['MA2-6F9TC','6F9-TC (offsite-origin)',['MOUT']],
-  ['MA2-59B','59b Cam holder',['MIN','AOUT1','AOUT2']],
-  ['MA2-6FBCHOP','6FB CH/OP',['MIN','AOUT']],
-  ['MA2-64AOP','64A Oil Pan',['MIN','AOUT']],
-  ['MA2-6MACH','6MA CH',['MIN','AOUT1','AOUT2','AOUT3']],
-];
-for (const [areaCode, areaName, wcs] of [['MA1','Machining & Assembly 1',MA1],['MA2','Machining & Assembly 2',MA2]]) {
-  out.push(`\n-- === ${areaName} ===`);
-  loc(DEF.AREA, 'MPP-MAD', areaName, areaCode, 'Machining and Assembly room', areaSort++);
-  let wcSort = 1;
-  for (const [wcCode, wcName, roles] of wcs) {
-    loc(DEF.WC, areaCode, wcName, wcCode, `Line - ${wcName}`, wcSort++);
-    let tSort = 1;
-    for (const r of roles) terminalWithPrinter(wcCode, ROLE[r], `${wcCode}-${r}`, ROLE[r], tSort++);
+  if (def === 'Terminal' || def === 'InspectionStation') {
+    const role = roleOf(name, code);
+    const parentDef = defByCode[parent0] || '';
+    terminals.push({ code, code0, role, parentDef });
+    if (printsFor(role)) {
+      printerSeq++;
+      loc(DEFID.Printer, code, `P - ${pad3(printerSeq)}`, `${code}-P1`, `Label printer for ${code}`, 99);
+    }
   }
 }
 
-// Storage (SupportArea)
-out.push('\n-- === Storage ===');
-for (const [code, name, desc] of [
-  ['WHSE','Warehouse','WIP / cast storage - all die cast goes here prior to Trim'],
-  ['SHIPIN','Shipping IN','Receiving dock - pass-through parts'],
-  ['SHIPOUT','Shipping OUT','Finished-goods staging']]) {
-  loc(DEF.SUPPORT, 'MPP-MAD', name, code, desc, areaSort++);
+// ---- exceptions: Trim Storage per shop + Inspection area ----
+out.push('\n-- === Exception 1: Trim Storage (one per trim shop) ===');
+loc(DEFID.InventoryLocation, 'TRIM1', 'Trim Storage', 'TRIM1-STORE', 'TRIM1-STORE', 99);
+loc(DEFID.InventoryLocation, 'TRIM2', 'Trim Storage', 'TRIM2-STORE', 'TRIM2-STORE', 99);
+
+out.push('\n-- === Exception 2: Inspection area (66B-TC re-parented here; sort-cage line; 3-closure terminal) ===');
+loc(DEFID.ProductionArea, 'MPP-MAD', 'Inspection', 'INSP', 'INSP', 98);
+loc(DEFID.InspectionLine, 'INSP', 'Sort Cage Inspection', 'INSP-SORT', 'INSP-SORT', 1);
+loc(DEFID.Terminal, 'INSP-SORT', 'Inspection', 'INSP-SORT-T1', 'INSP-SORT-T1', 1);
+// re-parent 66B Thermal Case under the inspection area (INSP now exists)
+out.push(`UPDATE Location.Location SET ParentLocationId = (SELECT Id FROM Location.Location WHERE Code = N'INSP')
+    WHERE Code = N'66B-TC' AND ParentLocationId <> (SELECT Id FROM Location.Location WHERE Code = N'INSP');`);
+// NOTE: INSP-SORT-T1 supports all 3 closure methods (count/weight/vision) - capability of the
+// inspection screen, not a single CurrentClosureMethod value. Inspection screen TBD (flag).
+
+// ---- attributes ----
+out.push('\n-- === DefaultScreen (derived from name-role) ===');
+for (const t of terminals) {
+  let screen = SCREEN[t.role];
+  if (t.role === 'DIECAST') screen = t.parentDef === 'DieCastMachine' ? '/shop-floor/die-cast/dedicated' : '/shop-floor/die-cast';
+  if (t.role === 'TRIM')    screen = t.parentDef === 'TrimPress'      ? '/shop-floor/trim/dedicated'      : '/shop-floor/trim';
+  if (screen) attr(t.code, 'DefaultScreen', screen);
 }
 
-// Fallback Terminal (Arc 2 Phase 1 Task C): global default returned by
-// Location.Terminal_GetByIpAddress when an unregistered IP connects. Parented at
-// the Site (MPP-MAD). Behavior follows its assigned operator view (DefaultScreen; view-policy model, FDS-02-010 v1.4).
-// Lives here (not in migration 0020) because the plant hierarchy parent only
-// exists after this seed runs - migrations run before seeds.
-out.push('\n-- === Fallback Terminal (Arc 2 Phase 1 Task C) ===');
-loc(DEF.TERM, 'MPP-MAD', 'Fallback Terminal', 'FALLBACK-TERMINAL',
-    'Global default terminal returned when an unregistered IP address connects.', areaSort++);
+out.push('\n-- === Closure method (normalized enum; vision-through-scale -> ByVision) ===');
+out.push('\n-- === HasBarcodeScanner / RequiresCompletionConfirm (Site-authoritative) ===');
+for (const t of terminals) {
+  const a = attrByCode[t.code0] || {};
+  if (a.CurrentClosureMethod != null) attr(t.code, 'CurrentClosureMethod', normClosure(t.code, a.CurrentClosureMethod));
+  if (a.HasBarcodeScanner != null)    attr(t.code, 'HasBarcodeScanner', a.HasBarcodeScanner);
+  if (a.RequiresCompletionConfirm != null) attr(t.code, 'RequiresCompletionConfirm', a.RequiresCompletionConfirm);
+}
 
-const sqlPath = path.join(__dirname, '011_seed_locations_mpp_plant.sql');
+const sqlPath = path.join(DIR, '011_seed_locations_mpp_plant.sql');
 fs.writeFileSync(sqlPath, out.join('\n') + '\n', 'utf8');
-const n = out.join('\n').split('IF NOT EXISTS').length - 1;
-console.error(`Wrote ${sqlPath} - ${n} idempotent inserts, ${printerSeq} printers.`);
+const inserts = out.join('\n').split('IF NOT EXISTS').length - 1;
+console.error(`Wrote ${sqlPath}: ${inserts} idempotent inserts, ${terminals.length} terminals, ${printerSeq} printers.`);
