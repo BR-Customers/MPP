@@ -100,6 +100,18 @@ BEGIN
                 SELECT @Status AS Status, @Message AS Message, @ShippingLabelId AS ShippingLabelId, @AimShipperId AS AimShipperId;
                 RETURN;
             END
+            -- Defense-in-depth: an OVER-target accumulation is a data-integrity error, not a
+            -- pass. Historically only "< target" rejected, so an over-filled container (the
+            -- container-24 incident: 20 parts / 5 trays against a 16-part / 4-tray config)
+            -- shipped under one AIM id. Refuse it, leaving the container Open for remediation.
+            IF ISNULL(@Accum, 0) > @Target
+            BEGIN
+                SET @Message = N'Container is over target (' + CAST(ISNULL(@Accum, 0) AS NVARCHAR(10)) + N' of ' + CAST(@Target AS NVARCHAR(10)) + N' parts) -- data integrity error; container left open.';
+                EXEC Audit.Audit_LogFailure @AppUserId = @AppUserId, @LogEntityTypeCode = N'Container', @EntityId = @ContainerId,
+                    @LogEventTypeCode = N'ContainerCompleted', @FailureReason = @Message, @ProcedureName = @ProcName, @AttemptedParameters = @Params;
+                SELECT @Status AS Status, @Message AS Message, @ShippingLabelId AS ShippingLabelId, @AimShipperId AS AimShipperId;
+                RETURN;
+            END
         END
 
         -- ---- OI-33 empty-pool hard-fail (BEFORE tran: container stays Open) ----

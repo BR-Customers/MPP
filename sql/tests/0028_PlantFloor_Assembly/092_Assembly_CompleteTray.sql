@@ -185,6 +185,48 @@ EXEC test.Assert_IsEqual @TestName = N'[CompleteTray] no ShippingLabel created b
 GO
 
 -- =============================================
+-- Test 2b: appending a tray onto an ALREADY-FULL container is REJECTED (over-fill guard).
+--          After Test 2 the container is full (2/2 trays) and still Open (delegation);
+--          a 3rd Complete Tray must reject BEFORE minting anything -- no 3rd tray, no 3rd
+--          FG LOT, no component consumption. (Regression: container 24 shipped 5/4.)
+-- =============================================
+DECLARE @Out BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P6-CT-OUT');
+DECLARE @A BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P6-CT-A');
+DECLARE @B BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P6-CT-B');
+DECLARE @Cell BIGINT = (SELECT Id FROM Location.Location WHERE Code = N'MA1-COMPBR-AOUT');
+DECLARE @Now2 DATETIME2(3) = SYSUTCDATETIME();
+
+-- Trays 1+2 drained the staged A/B stock. Stage MORE than a 3rd tray needs so component
+-- stock is NOT the limiting factor -- the full-container guard must be the SOLE reason a
+-- 3rd tray rejects. (Otherwise Status 0 would pass for the wrong reason.)
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId, CreatedAt) VALUES (N'STG-092A3', @A, 1, 1, 100, 100, @Cell, 1, @Now2);
+INSERT INTO Lots.Lot (LotName, ItemId, LotOriginTypeId, LotStatusId, PieceCount, InventoryAvailable, CurrentLocationId, CreatedByUserId, CreatedAt) VALUES (N'STG-092B2', @B, 1, 1, 100, 100, @Cell, 1, @Now2);
+INSERT INTO Lots.LotGenealogyClosure (AncestorLotId, DescendantLotId, Depth)
+SELECT Id, Id, 0 FROM Lots.Lot WHERE LotName IN (N'STG-092A3', N'STG-092B2')
+  AND NOT EXISTS (SELECT 1 FROM Lots.LotGenealogyClosure c WHERE c.AncestorLotId = Lots.Lot.Id AND c.DescendantLotId = Lots.Lot.Id);
+
+DECLARE @TraysBefore INT = (SELECT COUNT(*) FROM Lots.ContainerTray tr INNER JOIN Lots.Container ct ON ct.Id = tr.ContainerId WHERE ct.ItemId = @Out);
+DECLARE @FgBefore    INT = (SELECT COUNT(*) FROM Lots.Lot WHERE ItemId = @Out);
+
+DECLARE @R2b TABLE (Status BIT, Message NVARCHAR(500), FinishedGoodLotId BIGINT, ContainerId BIGINT, ContainerTrayId BIGINT, ContainerFull BIT);
+INSERT INTO @R2b EXEC Workorder.Assembly_CompleteTray @FinishedGoodItemId = @Out, @PieceCount = 24, @CellLocationId = @Cell, @ClosureMethod = N'ByCount', @AppUserId = 1;
+
+DECLARE @S2b BIT = (SELECT Status FROM @R2b);
+DECLARE @S2bCond BIT = CASE WHEN @S2b = 0 THEN 1 ELSE 0 END;
+EXEC test.Assert_IsTrue @TestName = N'[CompleteTray] tray onto a FULL container rejected (Status 0)', @Condition = @S2bCond;
+DECLARE @M2b NVARCHAR(500) = (SELECT Message FROM @R2b);
+EXEC test.Assert_Contains @TestName = N'[CompleteTray] full-container reject message', @HaystackStr = @M2b, @NeedleStr = N'full';
+
+-- pre-txn reject: no 3rd tray appended, no 3rd FG LOT minted
+DECLARE @TraysAfter NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.ContainerTray tr INNER JOIN Lots.Container ct ON ct.Id = tr.ContainerId WHERE ct.ItemId = @Out);
+DECLARE @TraysBeforeStr NVARCHAR(10) = CAST(@TraysBefore AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[CompleteTray] no extra tray appended to full container', @Expected = @TraysBeforeStr, @Actual = @TraysAfter;
+DECLARE @FgAfter NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Lots.Lot WHERE ItemId = @Out);
+DECLARE @FgBeforeStr NVARCHAR(10) = CAST(@FgBefore AS NVARCHAR(10));
+EXEC test.Assert_IsEqual @TestName = N'[CompleteTray] no extra FG LOT minted on full-container reject', @Expected = @FgBeforeStr, @Actual = @FgAfter;
+GO
+
+-- =============================================
 -- Test 3: insufficient component stock -> Status 0, nothing minted (rolled back)
 -- =============================================
 DECLARE @Short BIGINT = (SELECT Id FROM Parts.Item WHERE PartNumber = N'P6-CT-SHORT');

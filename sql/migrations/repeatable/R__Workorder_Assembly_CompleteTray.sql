@@ -73,6 +73,7 @@ BEGIN
     DECLARE @BomId BIGINT, @CellCode NVARCHAR(50), @PartNumber NVARCHAR(50);
     DECLARE @Accum INT, @Target INT, @TrayPosition INT;
     DECLARE @OpenedContainer BIT = 0;
+    DECLARE @OpenCid BIGINT, @OpenAccum INT, @FullTarget INT;
 
     -- FG-LOT mint locals (mirror R__Lots_Lot_Create)
     DECLARE @MintedName NVARCHAR(50),
@@ -200,6 +201,34 @@ BEGIN
                 @EntityId = NULL, @LogEventTypeCode = N'TrayClosed', @FailureReason = @Message,
                 @ProcedureName = @ProcName, @AttemptedParameters = @Params;
             GOTO Reply;
+        END
+
+        -- ---- 8. Reject a tray onto an already-FULL open container (over-fill guard). This
+        --      orchestrator does NOT auto-complete a full container (delegation to
+        --      Lots.Container_Complete); until the operator presses Complete the container
+        --      stays Open, so a repeat Complete-Tray would append PAST the target (the
+        --      container-24 incident shipped 5 trays against a 4-tray config). Full =
+        --      accumulated closed-tray parts >= the configured target. No open container yet
+        --      (first tray auto-opens one) or an unlimited config -> nothing to guard. ----
+        IF @TraysPerContainer IS NOT NULL AND @PartsPerTray IS NOT NULL
+        BEGIN
+            SET @FullTarget = @TraysPerContainer * @PartsPerTray;
+            SELECT TOP 1 @OpenCid = Id FROM Lots.Container
+            WHERE CurrentLocationId = @CellLocationId AND ItemId = @FinishedGoodItemId AND ContainerStatusCodeId = 1
+            ORDER BY OpenedAt, Id;
+            IF @OpenCid IS NOT NULL
+            BEGIN
+                SET @OpenAccum = (SELECT ISNULL(SUM(PartsClosedCount), 0) FROM Lots.ContainerTray WHERE ContainerId = @OpenCid AND ClosedAt IS NOT NULL);
+                IF @OpenAccum >= @FullTarget
+                BEGIN
+                    SET @Message = N'Container is full (' + CAST(@OpenAccum AS NVARCHAR(10)) + N' of '
+                                 + CAST(@FullTarget AS NVARCHAR(10)) + N' parts) -- press Complete to ship before starting a new tray.';
+                    EXEC Audit.Audit_LogFailure @AppUserId = @AppUserId, @LogEntityTypeCode = N'ContainerTray',
+                        @EntityId = NULL, @LogEventTypeCode = N'TrayClosed', @FailureReason = @Message,
+                        @ProcedureName = @ProcName, @AttemptedParameters = @Params;
+                    GOTO Reply;
+                END
+            END
         END
 
         SET @MaxLotSize  = (SELECT MaxLotSize FROM Parts.Item WHERE Id = @FinishedGoodItemId);
