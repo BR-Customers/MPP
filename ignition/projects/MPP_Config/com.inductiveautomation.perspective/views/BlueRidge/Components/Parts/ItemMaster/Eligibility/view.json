@@ -179,7 +179,11 @@
           },
           {
             "meta": {
-              "name": "ColLocation"
+              "name": "ColLocation",
+              "tooltip": {
+                "enabled": true,
+                "text": "Where this part may run. Pick an Area, WorkCenter, or Cell — eligibility cascades down to every Cell beneath the chosen tier."
+              }
             },
             "position": {
               "basis": "0",
@@ -196,7 +200,11 @@
           },
           {
             "meta": {
-              "name": "ColCsp"
+              "name": "ColCsp",
+              "tooltip": {
+                "enabled": true,
+                "text": "On = this location consumes the part as an input (enables Min/Max/Default and the scan-in Allocations grid). Off = the location produces the part or is merely eligible."
+              }
             },
             "position": {
               "basis": "60px",
@@ -213,7 +221,11 @@
           },
           {
             "meta": {
-              "name": "ColMin"
+              "name": "ColMin",
+              "tooltip": {
+                "enabled": true,
+                "text": "Fewest pieces allowed per scan-in; smaller scans are rejected. Applies only when Consumption is on."
+              }
             },
             "position": {
               "basis": "80px",
@@ -231,7 +243,11 @@
           },
           {
             "meta": {
-              "name": "ColMax"
+              "name": "ColMax",
+              "tooltip": {
+                "enabled": true,
+                "text": "Most pieces allowed per scan-in — the over-scan guard; larger scans are rejected. Applies only when Consumption is on."
+              }
             },
             "position": {
               "basis": "80px",
@@ -249,7 +265,11 @@
           },
           {
             "meta": {
-              "name": "ColDef"
+              "name": "ColDef",
+              "tooltip": {
+                "enabled": true,
+                "text": "Quantity pre-filled on the scan-in Allocations form. Applies only when Consumption is on."
+              }
             },
             "position": {
               "basis": "80px",

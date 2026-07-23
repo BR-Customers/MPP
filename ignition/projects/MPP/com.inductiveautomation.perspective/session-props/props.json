@@ -6,6 +6,8 @@
       "locationId": null,
       "name": ""
     },
+    "closureCapabilities": [],
+    "closureMethod": "",
     "plcDevices": [],
     "presence": {
       "policy": "strict"
@@ -17,13 +19,13 @@
       "model": ""
     },
     "terminal": {
-      "defaultScreen": "",
+      "defaultScreen": "/shop-floor/die-cast",
       "isFallback": false,
-      "terminalCode": "",
-      "terminalLocationId": null,
-      "terminalName": "",
-      "zoneLocationId": null,
-      "zoneName": ""
+      "terminalCode": "DC1-T1",
+      "terminalLocationId": 15,
+      "terminalName": "Terminal",
+      "zoneLocationId": 3,
+      "zoneName": "Die Cast 1"
     },
     "toastInstances": [],
     "user": {
@@ -101,6 +103,6 @@
     "geolocation": {},
     "locale": "en-US",
     "offline": {},
-    "timeZoneId": "America/New_York"
+    "timeZoneId": "America/Indianapolis"
   }
 }

@@ -97,7 +97,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "coalesce({view.custom.state.editDraft.PartNumber}, '') + ' \u00e2\u20ac\u201d ' + coalesce({view.custom.state.editDraft.Description}, '')"
+                    "expression": "coalesce({view.custom.state.editDraft.PartNumber}, '') + ' - ' + coalesce({view.custom.state.editDraft.Description}, '')"
                   },
                   "type": "expr"
                 }
@@ -248,7 +248,11 @@
             "children": [
               {
                 "meta": {
-                  "name": "Label"
+                  "name": "Label",
+                  "tooltip": {
+                    "enabled": true,
+                    "text": "Unique MPP part number. Read-only here — set when the part is created."
+                  }
                 },
                 "props": {
                   "style": {
@@ -301,7 +305,11 @@
             "children": [
               {
                 "meta": {
-                  "name": "Label"
+                  "name": "Label",
+                  "tooltip": {
+                    "enabled": true,
+                    "text": "Part classification (Component, Sub-Assembly, Finished Good, etc.). Gates which Areas and routes the part may use. Read-only."
+                  }
                 },
                 "props": {
                   "style": {
@@ -354,7 +362,11 @@
             "children": [
               {
                 "meta": {
-                  "name": "Label"
+                  "name": "Label",
+                  "tooltip": {
+                    "enabled": true,
+                    "text": "Counting unit of measure the part is tracked in (e.g. EA = each)."
+                  }
                 },
                 "props": {
                   "style": {
@@ -426,7 +438,11 @@
             "children": [
               {
                 "meta": {
-                  "name": "Label"
+                  "name": "Label",
+                  "tooltip": {
+                    "enabled": true,
+                    "text": "Human-readable part name shown throughout the app and on labels."
+                  }
                 },
                 "props": {
                   "style": {
@@ -480,7 +496,11 @@
             "children": [
               {
                 "meta": {
-                  "name": "Label"
+                  "name": "Label",
+                  "tooltip": {
+                    "enabled": true,
+                    "text": "Cross-reference to this part's number in Macola (the ERP system). Optional."
+                  }
                 },
                 "props": {
                   "style": {
@@ -534,7 +554,11 @@
             "children": [
               {
                 "meta": {
-                  "name": "Label"
+                  "name": "Label",
+                  "tooltip": {
+                    "enabled": true,
+                    "text": "Integer recipe/program number the PLC or vision system loads for this part at serialized/vision stations. Blank for parts with no PLC recipe."
+                  }
                 },
                 "props": {
                   "style": {
@@ -602,7 +626,11 @@
             "children": [
               {
                 "meta": {
-                  "name": "Label"
+                  "name": "Label",
+                  "tooltip": {
+                    "enabled": true,
+                    "text": "Weight of a single piece, expressed in the Weight UOM."
+                  }
                 },
                 "props": {
                   "style": {
@@ -652,7 +680,11 @@
             "children": [
               {
                 "meta": {
-                  "name": "Label"
+                  "name": "Label",
+                  "tooltip": {
+                    "enabled": true,
+                    "text": "Unit of measure for Unit Weight (e.g. LB, KG)."
+                  }
                 },
                 "props": {
                   "style": {
@@ -711,7 +743,11 @@
             "children": [
               {
                 "meta": {
-                  "name": "Label"
+                  "name": "Label",
+                  "tooltip": {
+                    "enabled": true,
+                    "text": "Default pieces per sub-LOT when a machined LOT is split across downstream destinations at Machining OUT."
+                  }
                 },
                 "props": {
                   "style": {
@@ -761,7 +797,11 @@
             "children": [
               {
                 "meta": {
-                  "name": "Label"
+                  "name": "Label",
+                  "tooltip": {
+                    "enabled": true,
+                    "text": "Standard pieces per basket, which equals one LOT / one LTT label at Die Cast, Trim, and intermediate Machining. Also the max LOT size."
+                  }
                 },
                 "props": {
                   "style": {
@@ -825,7 +865,11 @@
             "children": [
               {
                 "meta": {
-                  "name": "Label"
+                  "name": "Label",
+                  "tooltip": {
+                    "enabled": true,
+                    "text": "ISO 3166-1 alpha-2 country code (US, JP, MX) where the part originates. Appears on genealogy and shipping output for Honda compliance."
+                  }
                 },
                 "props": {
                   "style": {
@@ -876,13 +920,17 @@
             "children": [
               {
                 "meta": {
-                  "name": "Label"
+                  "name": "Label",
+                  "tooltip": {
+                    "enabled": true,
+                    "text": "Hard cap on pieces of this part allowed at any single location. Scan-in is rejected if existing + incoming pieces would exceed it. Optional."
+                  }
                 },
                 "props": {
                   "style": {
                     "classes": "field-label"
                   },
-                  "text": "Max Parts (per container)"
+                  "text": "Max Parts (per location)"
                 },
                 "type": "ia.display.label"
               },
