@@ -25,8 +25,8 @@ The Dev DB holds **operational data not present in Site** (PLC device registrati
 | `AOUT` | Assembly Out | Assembly OUT (non-serialized) | **Yes** |
 | `ASER` | Assembly (Serialized) | Serialized Assembly | **Yes** (serialized assembly OUT) — confirm |
 | `COMBINED` | Machining In **and** Out at one terminal ("In - out" / "Tab View") | Combined Machining IN/OUT tabs (spec: `2026-07-23-combined-machining-in-out-terminal-tabs`) | **Yes** (does Machining OUT) |
-| `DIECAST` | Die-cast area/machine terminal | Die Cast | **Conflict — see §5** |
-| `TRIM` | Trim shop terminal | Trim | **Conflict — see §5** |
+| `DIECAST` | Die-cast area/machine terminal | Die Cast | **No** (resolved 2026-07-23) |
+| `TRIM` | Trim shop terminal | Trim | **No** (resolved 2026-07-23) |
 | `INSPECT` | Inspection station (3rd-party validate) | Inspection (may not exist yet) | 3 closure methods — see §6 |
 | `FALLBACK` | Unregistered-IP fallback | Terminal selector | No (by design) |
 
@@ -58,19 +58,20 @@ Because codes encode role and role now comes from the name, every terminal whose
 | `MA2-RPYCAM1-MOUT-A` | Rocker Shaft 5 Machining In - out | COMBINED | `MA2-RPYCAM1-MIO-*` (convention TBD) |
 | `MA2-RPYCAM2-MIN-A` | Rocker Shaft 5 Machining In - out | COMBINED | `MA2-RPYCAM2-MIO-*` |
 | `MA2-RPYCAM2-MOUT-A` | Cam Holders Machining IN | MIN | `MA2-RPYCAM2-MIN-*` |
+| `MA2-RPY6B2-AFIN` | Assembly Out *(rename from "Assembly Finished" — authorized 2026-07-23)* | AOUT | `MA2-RPY6B2-AOUT` |
 
-> **⚠ RPYCAM1 / RPYCAM2 clusters are heavily scrambled** (code↔name↔description all disagree across the 8 terminals on each line). The safe procedure is to **re-key every RPYCAM terminal code off its authoritative name**, not to patch individual suffixes. These two lines need a human eyeball pass — flagged in §9.
+> **NAMES ARE NOT CHANGED.** Only **codes** are corrected to match the authoritative name. The RPYCAM1/RPYCAM2 terminal names are intentional; the codes are what disagree. Procedure: **re-key every RPYCAM terminal code off its authoritative name** (do not patch suffixes piecemeal — the whole cluster is misaligned). The single exception where a *name* changes is `MA2-RPY6B2-AFIN` → "Assembly Out", explicitly authorized.
 
 **Combined-code convention:** COMBINED terminals need a suffix. Proposed `-MIO` (Machining In/Out). Open for your preference (§9).
 
 ## 5. Printer rule
 
-**New rule:** *only Machining-OUT and Assembly-OUT terminals get a printer child.* Today **all 64 terminals** carry a `<code>-P1` printer (def 16, parented under the terminal). Under the rule:
+**Rule (resolved 2026-07-23):** *only Machining-OUT and Assembly-OUT terminals get a printer child.* Literal — **die-cast and trim terminals get NO printer.** Today **all 64 terminals** carry a `<code>-P1` printer (def 16, parented under the terminal). Under the rule:
 
-- **Keep** (~27): every `MOUT` and `AOUT` terminal, plus `COMBINED` (it performs Machining OUT). `ASER` — confirm whether serialized-assembly OUT prints.
-- **Prune** (~37): all `MIN`, `AIN`, `AFIN`→(now AOUT keeps), `ASER`(TBD), and — pending §9 — die-cast and trim terminals.
+- **Keep:** every `MOUT` and `AOUT` terminal, plus `COMBINED` (performs Machining OUT) and `ASER` (serialized-assembly OUT — the shippable output).
+- **Prune (all others):** `MIN`, `AIN`, `FALLBACK`, **die-cast**, and **trim** terminals.
 
-**⚠ Conflict to resolve (§9):** the literal rule ("only MOUT/AOUT") would strip printers from **die-cast** and **trim** terminals, but die cast prints **LTT labels** today (and there is a stray `[add 10 printers]` note, §7). Likely the intended reading is *"within a machining/assembly line, only the OUT terminal prints"* — leaving die-cast/trim printing to their own logic. **Do not strip die-cast/trim printers until confirmed.**
+The stray `[add 10 printers]` note (§7) is superseded by this rule (die-cast/machine terminals do not print); left as a §9 nicety only.
 
 Printer association is pure parent/child + `def.Name='Printer'` (no FK/join table), so pruning = not seeding the `-P1` child. `Terminal_GetPrinter` and Ignition `getPrinter()` already tolerate a missing printer (empty → fail-fast on dispatch).
 
@@ -85,6 +86,8 @@ Printer association is pure parent/child + `def.Name='Printer'` (no FK/join tabl
    - Clean up the **duplicated `66B - Ins`** row on ingest.
 
 3. **Closure-method normalization + dropdown.** Site `CurrentClosureMethod` values are free-text and inconsistent (`Weight`, `Vision`, `byCount`, `ByCount`). Normalize to the canonical `ClosureMethodCode` enum (`ByCount` / `ByWeight` / `ByVision`) on ingest, and **change the config entry from free text to a dropdown** bound to `ClosureMethodCode` so values can't drift again. `HasBarcodeScanner` (43 rows) and `RequiresCompletionConfirm` (6 rows) are Site-authoritative and carry over.
+
+   **Vision-through-scale terminals** (`MA1-FP6NA-AFIN→AOUT`, `MA1-FPRPY-AFIN→AOUT`, `5PA-AO`): closure = **`ByVision`** (resolved 2026-07-23). The `CurrentClosureMethod=Weight` attribute values on these are stale — override to `ByVision`. The "through scale" note means the automation team piped the vision result in via the **scale tags**, so those terminals need the **scale UDT wired on the Ignition side** — a config task, not a closure change.
 
 ## 7. Config / task notes mined from Site descriptions
 
@@ -116,17 +119,20 @@ Actionable items found in `Description`:
 - **Guaranteed breakers:** `0024…/060_ListMachiningDestinations.sql` (asserts a **MIN** printer exists **and** `Name LIKE 'Machining In%'`), `0023…/050_Eligible_and_AreaCell_reads.sql` (asserts a **DC** printer). Both break on the printer prune + name changes.
 - **Procs hardcoding codes** (`WHSE`, `SHIPOUT`, `FALLBACK-TERMINAL`) are safe **only if those codes are unchanged** — they are, so no proc change needed, but re-verify after the RPYCAM re-key.
 
-## 9. Open questions / conflicts (need your call before build)
+## 9. Decisions
 
-1. **Die-cast & trim printers** — does the "only MOUT/AOUT" rule strip them, or is the rule scoped to machining/assembly lines only (die-cast/trim keep their label printers)? (Die cast prints LTTs.)
-2. **`[add 10 printers]` note** — where do these 10 go?
-3. **`MA2-RPY6B2-AFIN` = "Assembly Finished"** — the one AFIN you didn't rename. Is it an **Assembly Out** (→ `-AOUT`, gets printer) or a distinct "final assembly" role?
-4. **Closure conflicts** — descriptions say "vision through scale" while the `CurrentClosureMethod` attribute says `Weight` (FP6NA-AFIN, FPRPY-AFIN; and `5PA - AO` desc "Vision" vs attr "Weight"). Which wins — is "vision through scale" `ByVision` or `ByWeight`?
-5. **`ASER` printer** — does serialized-assembly OUT print?
-6. **COMBINED code suffix** — `-MIO` acceptable?
-7. **RPYCAM1/RPYCAM2 re-key** — confirm re-keying every terminal on those two lines off its authoritative name (the scramble is too deep to patch piecewise).
-8. **Trim Storage node type** — `InventoryLocation` (Cell) vs `SupportArea` (Area) per trim shop?
-9. **Inspection area tier** — `ProductionArea` vs `SupportArea`, and its code?
+**Resolved 2026-07-23:**
+1. **Die-cast & trim printers** — ❌ none. Literal MOUT/AOUT-only rule (§5).
+2. **`MA2-RPY6B2-AFIN`** — renamed to **"Assembly Out"** (AOUT, gets printer). The *only* authorized name change.
+3. **Vision-through-scale closure** — **`ByVision`**; those terminals need the scale UDT wired on the Ignition side (§6.3).
+4. **Names are authoritative and unchanged** — only codes are corrected. RPYCAM1/RPYCAM2 codes re-keyed off their (intentional) names.
+5. **`ASER`** — treated as serialized-assembly OUT → prints.
+
+**Still to confirm (non-blocking — sensible defaults chosen):**
+6. **COMBINED code suffix** — default `-MIO` (Machining In/Out). Say if you'd prefer another.
+7. **Trim Storage node type** — default `InventoryLocation` (Cell) under each trim shop.
+8. **Inspection area tier/code** — default a new `ProductionArea` (proposed code `INSP`).
+9. **`[add 10 printers]` note** — superseded by the printer rule; ignoring unless you meant something specific.
 
 ## 10. Phased implementation plan (TDD)
 
