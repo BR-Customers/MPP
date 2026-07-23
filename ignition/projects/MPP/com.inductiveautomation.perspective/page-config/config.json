@@ -84,6 +84,10 @@
       "title": "Machining OUT - Split",
       "viewPath": "BlueRidge/Views/ShopFloor/MachiningOutSplit"
     },
+    "/shop-floor/machining": {
+      "title": "Machining IN / OUT",
+      "viewPath": "BlueRidge/Views/ShopFloor/MachiningStation"
+    },
     "/shop-floor/receiving": {
       "title": "Receiving",
       "viewPath": "BlueRidge/Views/ShopFloor/ReceivingDock"
