@@ -412,6 +412,21 @@ def getTrimStorageQueueForLine(lineLocationId, storageLocationId=None, _refreshT
     )
 
 
+def getInspectionQueue(locationId, includeDescendants=False, _refreshToken=None):
+    """Third-party inspection station queue: OPEN Received/ReceivedOffsite LOTs at the station
+       (the bought-in parts awaiting inspection / check-out) with their latest inspection
+       result (Pass/Fail/Conditional/None) + vendor lot. Check-out is plain assembly-out
+       (Assembly.completeTray mints the pass-through FG consuming this component), so this read
+       only drives the inspect pick-list + pass gate. Returns list[dict]."""
+    locationId = _u(locationId)
+    if locationId is None:
+        return []
+    return BlueRidge.Common.Db.execList(
+        "lots/Lot_GetInspectionQueueByLocation",
+        {"locationId": locationId, "includeDescendants": bool(includeDescendants)},
+    )
+
+
 def getComponentsAtCell(locationId, includeDescendants=True, _refreshToken=None):
     """'Components at this cell' read for the assembly screens
        (Lots.Lot_GetComponentsAtCell): the UNION of route-driven WIP (LOTs whose next
