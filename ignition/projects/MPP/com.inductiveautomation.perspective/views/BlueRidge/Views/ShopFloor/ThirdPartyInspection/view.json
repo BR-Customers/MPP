@@ -79,7 +79,7 @@
             }
           },
           {
-            "type": "ia.container.flex",
+            "type": "ia.display.view",
             "meta": {
               "name": "InspectTab"
             },
@@ -87,59 +87,10 @@
               "grow": 1
             },
             "props": {
-              "direction": "column",
-              "alignItems": "stretch",
-              "style": {
-                "gap": "12px",
-                "padding": "24px",
-                "overflowY": "auto"
-              }
-            },
-            "children": [
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "InspectHeader"
-                },
-                "props": {
-                  "text": "Inspect - received LOTs awaiting inspection. Record a QualitySample per LOT; a PASS enables Check Out.",
-                  "style": {
-                    "fontWeight": 600,
-                    "fontSize": "16px"
-                  }
-                }
-              },
-              {
-                "type": "ia.display.label",
-                "meta": {
-                  "name": "InspectQueue"
-                },
-                "props": {
-                  "text": "(loading...)",
-                  "style": {
-                    "whiteSpace": "pre-line",
-                    "fontFamily": "monospace",
-                    "fontSize": "13px"
-                  }
-                },
-                "propConfig": {
-                  "props.text": {
-                    "binding": {
-                      "type": "expr",
-                      "config": {
-                        "expression": "if(!isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Lots.Lot.getInspectionQueue\", 0, {session.custom.cell.locationId}, false), \"\")"
-                      },
-                      "transforms": [
-                        {
-                          "type": "script",
-                          "code": "\trows = value or []\n\tif not rows:\n\t\treturn \"(no LOTs awaiting inspection at this station)\"\n\tlines = []\n\tfor r in rows:\n\t\tres = r.get(\"LatestInspectionResult\") or \"not inspected\"\n\t\tlines.append(\"%s  -  %s, %s pcs  -  vendor %s  [%s]\" % (r.get(\"LotName\") or \"?\", r.get(\"ItemPartNumber\") or \"?\", r.get(\"PieceCount\") or 0, r.get(\"VendorLotNumber\") or \"-\", res))\n\treturn \"\n\".join(lines)"
-                        }
-                      ]
-                    }
-                  }
-                }
-              }
-            ]
+              "path": "BlueRidge/Views/ShopFloor/InspectionEntry",
+              "useDefaultViewHeight": false,
+              "useDefaultViewWidth": false
+            }
           },
           {
             "type": "ia.display.view",

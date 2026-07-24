@@ -6,7 +6,9 @@
 
 Legend per feature: **✅ done** · **🖥 Designer/view wiring left** · **🧪 smoke steps**.
 
-> **Update 2026-07-24:** the Ignition **view layer is now built too** (file-authored with Designer closed, scanned into the gateway) — MachiningIn flex + queue rebind, `loginAs` audit call, TrimBody dropdown removal + "Lot count", AssemblyNonSerialized `componentProjection` binding, and the new `ThirdPartyInspection` tabs view + route. The `🖥` sections below are therefore **implemented**; treat them as "what to verify" rather than "still to do". **One exception:** the inspection **Inspect** tab shows the received-LOT queue but the full quality-capture *attribute form* (dynamic inputs from the QualitySpec → `QualitySample_Record`) is **scaffolded, not finished** — the first consumer of the Phase-9 capture API and a meaty form on its own. Check-in and check-out are fully functional via the embedded proven views.
+> **Update 2026-07-24:** the Ignition **view layer is now built too** (file-authored with Designer closed, scanned into the gateway) — MachiningIn flex + queue rebind, `loginAs` audit call, TrimBody dropdown removal + "Lot count", AssemblyNonSerialized `componentProjection` binding, and the new `ThirdPartyInspection` tabs view + route. The `🖥` sections below are therefore **implemented**; treat them as "what to verify" rather than "still to do".
+>
+> **Update 2026-07-24 (session 2):** the inspection **Inspect** tab is now **complete**. The quality-capture attribute form already existed as the standalone `InspectionEntry` view (Phase-9), so the Inspect tab now **embeds** it; plus a Fail→one-tap **Place Hold**. The check-out PASS gate is enforced structurally: `Workorder.Assembly_CompleteTray` was fixed to exclude blocked (Hold/Scrap) source LOTs — a held LOT can no longer be consumed by check-out. See `2026-07-24-inspection-form-and-consume-hold-guard-design.md`. Full suite **2163/0**.
 
 ---
 
@@ -98,8 +100,8 @@ BlueRidge.Location.AppUser.logOperatorChange(
 
 **🖥 New view `Views/ShopFloor/ThirdPartyInspection`** (file-authored + scan; route `/shop-floor/third-party-inspection`), three panels sharing the station's session cell:
 - **Check in** — reuse `ReceivingDock`'s create flow: `Lots.Lot.create` (Received origin, `VendorLotNumber`, mint MPP LotName + print LTT). Mints the bought-in **component** LOT at the station.
-- **Inspect** — pick list from `Lots.Lot.getInspectionQueue`; load the part's active `QualitySpecVersion` attributes into a form; submit `Quality.QualitySample.record`; Pass/Fail toast. (First shop-floor consumer of the Phase-9 quality-capture API.)
-- **Check out** — embed / reuse **Assembly OUT** (`AssemblyNonSerialized`): the pass-through FG consumes the inspected component and ships (container + AIM label). **Gate:** enable check-out only when the component's latest inspection = **Pass** and no open hold (the queue read supplies the result; server integrity is the assembly-out proc). On **Fail**, offer one-tap `Quality.Hold.place`.
+- **Inspect** — ✅ **built (session 2): embeds the existing `InspectionEntry` form.** Scan/resolve a LOT → its active `QualitySpecVersion` attributes render as an `AttributeRow` form → submit `Quality.QualitySample.record` → Pass/Fail toast. On **Fail**, a one-tap **PLACE HOLD** button (`placeHold` → `Quality.Hold.place`, HoldTypeCode `Quality`) appears.
+- **Check out** — embed / reuse **Assembly OUT** (`AssemblyNonSerialized`): the pass-through FG consumes the inspected component and ships (container + AIM label). **Gate (session 2): structural, via the universal hold-block** — `Assembly_CompleteTray` now excludes blocked (Hold/Scrap) source LOTs from its consume, so a failed LOT placed on Hold physically cannot be checked out (same block as every other lot event). No bespoke PASS rule; the Fail→Hold path is the gate.
 
 **Config prerequisite (seeding):** for each third-party part, seed (a) the pass-through **FG Item + BOM** (FG ← received part), (b) an FG **ContainerConfig** (1 tray × N), (c) the FG's **AIM shipper-id pool** entries, and (d) the received part eligible at the inspection station.
 
