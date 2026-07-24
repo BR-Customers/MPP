@@ -6,6 +6,8 @@
 
 Legend per feature: **✅ done** · **🖥 Designer/view wiring left** · **🧪 smoke steps**.
 
+> **Update 2026-07-24:** the Ignition **view layer is now built too** (file-authored with Designer closed, scanned into the gateway) — MachiningIn flex + queue rebind, `loginAs` audit call, TrimBody dropdown removal + "Lot count", AssemblyNonSerialized `componentProjection` binding, and the new `ThirdPartyInspection` tabs view + route. The `🖥` sections below are therefore **implemented**; treat them as "what to verify" rather than "still to do". **One exception:** the inspection **Inspect** tab shows the received-LOT queue but the full quality-capture *attribute form* (dynamic inputs from the QualitySpec → `QualitySample_Record`) is **scaffolded, not finished** — the first consumer of the Phase-9 capture API and a meaty form on its own. Check-in and check-out are fully functional via the embedded proven views.
+
 ---
 
 ## 0. Location model reconciled to the Site DB ✅
