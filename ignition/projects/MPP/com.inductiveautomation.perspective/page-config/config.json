@@ -88,6 +88,10 @@
       "title": "Machining IN / OUT",
       "viewPath": "BlueRidge/Views/ShopFloor/MachiningStation"
     },
+    "/shop-floor/third-party-inspection": {
+      "title": "Third-Party Inspection",
+      "viewPath": "BlueRidge/Views/ShopFloor/ThirdPartyInspection"
+    },
     "/shop-floor/receiving": {
       "title": "Receiving",
       "viewPath": "BlueRidge/Views/ShopFloor/ReceivingDock"

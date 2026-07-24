@@ -913,11 +913,25 @@ IF NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la JOIN Location.Locatio
            N'/shop-floor/assembly-nonserialized', SYSUTCDATETIME();
 IF NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la JOIN Location.Location l ON l.Id = la.LocationId
         JOIN Location.LocationAttributeDefinition ad ON ad.Id = la.LocationAttributeDefinitionId
+        WHERE l.Code = N'66B - Ins' AND ad.AttributeName = N'DefaultScreen')
+    INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue, CreatedAt)
+    SELECT (SELECT Id FROM Location.Location WHERE Code = N'66B - Ins'),
+           (SELECT TOP 1 Id FROM Location.LocationAttributeDefinition WHERE AttributeName = N'DefaultScreen' AND LocationTypeDefinitionId = 7 ORDER BY Id),
+           N'/shop-floor/third-party-inspection', SYSUTCDATETIME();
+IF NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la JOIN Location.Location l ON l.Id = la.LocationId
+        JOIN Location.LocationAttributeDefinition ad ON ad.Id = la.LocationAttributeDefinitionId
         WHERE l.Code = N'MA2-RPYCAM2-MOUT-RS' AND ad.AttributeName = N'DefaultScreen')
     INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue, CreatedAt)
     SELECT (SELECT Id FROM Location.Location WHERE Code = N'MA2-RPYCAM2-MOUT-RS'),
            (SELECT TOP 1 Id FROM Location.LocationAttributeDefinition WHERE AttributeName = N'DefaultScreen' AND LocationTypeDefinitionId = 7 ORDER BY Id),
            N'/shop-floor/machining-out', SYSUTCDATETIME();
+IF NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la JOIN Location.Location l ON l.Id = la.LocationId
+        JOIN Location.LocationAttributeDefinition ad ON ad.Id = la.LocationAttributeDefinitionId
+        WHERE l.Code = N'INSP-SORT-T1' AND ad.AttributeName = N'DefaultScreen')
+    INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue, CreatedAt)
+    SELECT (SELECT Id FROM Location.Location WHERE Code = N'INSP-SORT-T1'),
+           (SELECT TOP 1 Id FROM Location.LocationAttributeDefinition WHERE AttributeName = N'DefaultScreen' AND LocationTypeDefinitionId = 7 ORDER BY Id),
+           N'/shop-floor/third-party-inspection', SYSUTCDATETIME();
 
 -- === Closure method (normalized enum; vision-through-scale -> ByVision) ===
 

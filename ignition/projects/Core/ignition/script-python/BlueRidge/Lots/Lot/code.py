@@ -395,7 +395,7 @@ def getWipQueueByLocation(locationId, includeDescendants=False, _refreshToken=No
     )
 
 
-def getTrimStorageQueueForLine(lineLocationId, storageLocationId=None, _refreshToken=None):
+def getTrimStorageQueueForLine(lineLocationId, _refreshToken=None, storageLocationId=None):
     """Trim-Storage model (2026-07-23) Machining IN queue for a LINE: the open LOTs sitting
        in Trim Storage whose next pending route step is MachiningIn AND whose Item is eligible
        at this line (ancestor cascade). A part eligible at two lines appears in both lines'

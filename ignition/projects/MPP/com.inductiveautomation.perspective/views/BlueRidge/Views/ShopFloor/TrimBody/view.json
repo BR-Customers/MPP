@@ -83,7 +83,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "if(isNull({session.custom.terminal.zoneName}) || {session.custom.terminal.zoneName} \u003d \"\", \"No terminal resolved\", {session.custom.terminal.zoneName})"
+                        "expression": "if(isNull({session.custom.terminal.zoneName}) || {session.custom.terminal.zoneName} = \"\", \"No terminal resolved\", {session.custom.terminal.zoneName})"
                       },
                       "type": "expr"
                     }
@@ -113,7 +113,7 @@
               "dom": {
                 "onClick": {
                   "config": {
-                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dTrue, overlayDismiss\u003dTrue)"
+                    "script": "\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=True, overlayDismiss=True)"
                   },
                   "scope": "G",
                   "type": "script"
@@ -130,7 +130,7 @@
               "props.text": {
                 "binding": {
                   "config": {
-                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} \u003d \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
+                    "expression": "\"Operator: \" + if(isNull({session.custom.user.displayName}) || {session.custom.user.displayName} = \"\", if(isNull({session.custom.user.initials}), \"-\", {session.custom.user.initials}), {session.custom.user.displayName})"
                   },
                   "type": "expr"
                 }
@@ -220,7 +220,7 @@
                   },
                   "transforms": [
                     {
-                      "code": "\tcells \u003d BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\treturn [{\"label\": c.get(\"label\"), \"value\": c.get(\"value\")} for c in cells]",
+                      "code": "\tcells = BlueRidge.Common.Util.extractQualifiedValues(value) or []\n\treturn [{\"label\": c.get(\"label\"), \"value\": c.get(\"value\")} for c in cells]",
                       "type": "script"
                     }
                   ],
@@ -289,7 +289,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tself.view.custom.trimState \u003d \"in\""
+                    "script": "\tself.view.custom.trimState = \"in\""
                   },
                   "scope": "G",
                   "type": "script"
@@ -303,7 +303,7 @@
               "props.style.classes": {
                 "binding": {
                   "config": {
-                    "expression": "if({view.custom.trimState} \u003d \"in\", \"pf-btn pf-btn-primary\", \"pf-btn pf-btn-secondary\")"
+                    "expression": "if({view.custom.trimState} = \"in\", \"pf-btn pf-btn-primary\", \"pf-btn pf-btn-secondary\")"
                   },
                   "type": "expr"
                 }
@@ -323,7 +323,7 @@
               "component": {
                 "onActionPerformed": {
                   "config": {
-                    "script": "\tself.view.custom.trimState \u003d \"out\""
+                    "script": "\tself.view.custom.trimState = \"out\""
                   },
                   "scope": "G",
                   "type": "script"
@@ -337,7 +337,7 @@
               "props.style.classes": {
                 "binding": {
                   "config": {
-                    "expression": "if({view.custom.trimState} \u003d \"out\", \"pf-btn pf-btn-primary\", \"pf-btn pf-btn-secondary\")"
+                    "expression": "if({view.custom.trimState} = \"out\", \"pf-btn pf-btn-primary\", \"pf-btn pf-btn-secondary\")"
                   },
                   "type": "expr"
                 }
@@ -420,7 +420,7 @@
                       "position.display": {
                         "binding": {
                           "config": {
-                            "expression": "len({view.custom.trimInventory}) \u003d 0"
+                            "expression": "len({view.custom.trimInventory}) = 0"
                           },
                           "type": "expr"
                         }
@@ -577,7 +577,7 @@
           "position.display": {
             "binding": {
               "config": {
-                "expression": "{view.custom.trimState} \u003d \"in\""
+                "expression": "{view.custom.trimState} = \"in\""
               },
               "type": "expr"
             }
@@ -648,7 +648,7 @@
                       "position.display": {
                         "binding": {
                           "config": {
-                            "expression": "len({view.custom.trimInventory}) \u003d 0"
+                            "expression": "len({view.custom.trimInventory}) = 0"
                           },
                           "type": "expr"
                         }
@@ -820,69 +820,6 @@
                   {
                     "children": [
                       {
-                        "meta": {
-                          "name": "DestLabel"
-                        },
-                        "props": {
-                          "style": {
-                            "classes": "pf-field-label"
-                          },
-                          "text": "Destination (Machining line)"
-                        },
-                        "type": "ia.display.label"
-                      },
-                      {
-                        "meta": {
-                          "name": "DestDropdown"
-                        },
-                        "propConfig": {
-                          "props.options": {
-                            "binding": {
-                              "config": {
-                                "path": "view.custom.destCells"
-                              },
-                              "type": "property"
-                            }
-                          },
-                          "props.value": {
-                            "binding": {
-                              "config": {
-                                "bidirectional": true,
-                                "path": "view.custom.destValue"
-                              },
-                              "type": "property"
-                            }
-                          }
-                        },
-                        "props": {
-                          "placeholder": "Select the production line",
-                          "style": {
-                            "minHeight": "44px",
-                            "width": "100%"
-                          }
-                        },
-                        "type": "ia.input.dropdown"
-                      }
-                    ],
-                    "meta": {
-                      "name": "DestField"
-                    },
-                    "position": {
-                      "shrink": 0
-                    },
-                    "props": {
-                      "direction": "column",
-                      "style": {
-                        "classes": "pf-field",
-                        "gap": "4px",
-                        "overflow": "hidden"
-                      }
-                    },
-                    "type": "ia.container.flex"
-                  },
-                  {
-                    "children": [
-                      {
                         "children": [
                           {
                             "meta": {
@@ -892,7 +829,7 @@
                               "style": {
                                 "classes": "pf-field-label"
                               },
-                              "text": "Shot count"
+                              "text": "Lot count"
                             },
                             "type": "ia.display.label"
                           },
@@ -1014,7 +951,7 @@
                       "style": {
                         "classes": "pf-field-help"
                       },
-                      "text": "Shots + scrap together cannot exceed the LOT\u0027s pieces; scrap is deducted from the LOT."
+                      "text": "Lot count + scrap together cannot exceed the LOT's pieces; scrap is deducted from the LOT."
                     },
                     "type": "ia.display.label"
                   },
@@ -1118,7 +1055,7 @@
           "position.display": {
             "binding": {
               "config": {
-                "expression": "{view.custom.trimState} \u003d \"out\""
+                "expression": "{view.custom.trimState} = \"out\""
               },
               "type": "expr"
             }
@@ -1163,22 +1100,22 @@
           "params": [
             "cellId"
           ],
-          "script": "\tcellId \u003d BlueRidge.Common.Util.extractQualifiedValues(cellId)\n\trow \u003d BlueRidge.Location.Location.findCellById(self.view.custom.cells, cellId)\n\tif row is None:\n\t\treturn\n\tself.session.custom.cell \u003d {\"locationId\": row.get(\"value\"), \"code\": row.get(\"code\") or \"\", \"name\": row.get(\"name\") or \"\"}"
+          "script": "\tcellId = BlueRidge.Common.Util.extractQualifiedValues(cellId)\n\trow = BlueRidge.Location.Location.findCellById(self.view.custom.cells, cellId)\n\tif row is None:\n\t\treturn\n\tself.session.custom.cell = {\"locationId\": row.get(\"value\"), \"code\": row.get(\"code\") or \"\", \"name\": row.get(\"name\") or \"\"}"
         },
         {
           "name": "resolveOutScan",
           "params": [],
-          "script": "\tcode \u003d self.view.custom.outScan\n\tif not code:\n\t\treturn\n\tr \u003d BlueRidge.Lots.Lot.getByName(code)\n\tif r:\n\t\tself.view.custom.activeLotId \u003d r.get(\"Id\")\n\t\tself.view.custom.activeLotName \u003d r.get(\"LotName\")\n\t\tself.view.custom.shotCount = r.get(\"PieceCount\")\n\t\tself.view.custom.lotPieceCount = r.get(\"PieceCount\")\n\t\tself.view.custom.scrapCount = None\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"LOT not found\", \"No LOT matches \u0027%s\u0027.\" % code, \"warning\")"
+          "script": "\tcode = self.view.custom.outScan\n\tif not code:\n\t\treturn\n\tr = BlueRidge.Lots.Lot.getByName(code)\n\tif r:\n\t\tself.view.custom.activeLotId = r.get(\"Id\")\n\t\tself.view.custom.activeLotName = r.get(\"LotName\")\n\t\tself.view.custom.shotCount = r.get(\"PieceCount\")\n\t\tself.view.custom.lotPieceCount = r.get(\"PieceCount\")\n\t\tself.view.custom.scrapCount = None\n\telse:\n\t\tBlueRidge.Common.Notify.toast(\"LOT not found\", \"No LOT matches '%s'.\" % code, \"warning\")"
         },
         {
           "name": "submitTrimOut",
           "params": [],
-          "script": "\tlotId \u003d self.view.custom.activeLotId\n\tif lotId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT\", \"Scan or select a LOT before recording Trim OUT.\", \"warning\")\n\t\treturn\n\toperationTemplateId \u003d BlueRidge.Parts.OperationTemplate.getActiveTemplateIdForLot(lotId, \"TrimOut\")\n\tif operationTemplateId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Template missing\", \"No active \u0027TrimOut\u0027 operation template is published.\", \"error\")\n\t\treturn\n\tdest \u003d self.view.custom.destValue\n\tif dest is None or dest \u003d\u003d \"\":\n\t\tBlueRidge.Common.Notify.toast(\"No destination\", \"Scan or pick a Machining destination.\", \"warning\")\n\t\treturn\n\tdata \u003d {\n\t\t\"parentLotId\": lotId,\n\t\t\"operationTemplateId\": operationTemplateId,\n\t\t\"shotCount\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.shotCount),\n\t\t\"scrapCount\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.scrapCount),\n\t\t\"destinationCellLocationId\": dest,\n\t\t\"sourceLocationId\": self.session.custom.terminal.zoneLocationId,\n\t}\n\tres \u003d BlueRidge.Workorder.TrimOut.record(data)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Trim OUT recorded\")\n\tif res.get(\"Status\"):\n\t\t# Stay on the Trim OUT screen (2026-07-06 Jacques): clear the form for the next LOT.\n\t\tself.view.custom.activeLotId \u003d None\n\t\tself.view.custom.activeLotName \u003d None\n\t\tself.view.custom.outScan \u003d \"\"\n\t\tself.view.custom.shotCount \u003d None\n\t\tself.view.custom.lotPieceCount \u003d None\n\t\tself.view.custom.scrapCount \u003d None\n\t\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1"
+          "script": "\tlotId = self.view.custom.activeLotId\n\tif lotId is None:\n\t\tBlueRidge.Common.Notify.toast(\"No LOT\", \"Scan or select a LOT before recording Trim OUT.\", \"warning\")\n\t\treturn\n\toperationTemplateId = BlueRidge.Parts.OperationTemplate.getActiveTemplateIdForLot(lotId, \"TrimOut\")\n\tif operationTemplateId is None:\n\t\tBlueRidge.Common.Notify.toast(\"Template missing\", \"No active 'TrimOut' operation template is published.\", \"error\")\n\t\treturn\n\tdata = {\n\t\t\"parentLotId\": lotId,\n\t\t\"operationTemplateId\": operationTemplateId,\n\t\t\"shotCount\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.shotCount),\n\t\t\"scrapCount\": BlueRidge.Common.Util.toIntOrNone(self.view.custom.scrapCount),\n\t\t\"destinationCellLocationId\": None,\n\t\t\"sourceLocationId\": self.session.custom.terminal.zoneLocationId,\n\t}\n\tres = BlueRidge.Workorder.TrimOut.record(data)\n\tBlueRidge.Common.Ui.notifyResult(res, \"Trim OUT recorded\")\n\tif res.get(\"Status\"):\n\t\t# Stay on the Trim OUT screen (2026-07-06 Jacques): clear the form for the next LOT.\n\t\tself.view.custom.activeLotId = None\n\t\tself.view.custom.activeLotName = None\n\t\tself.view.custom.outScan = \"\"\n\t\tself.view.custom.shotCount = None\n\t\tself.view.custom.lotPieceCount = None\n\t\tself.view.custom.scrapCount = None\n\t\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1"
         },
         {
           "name": "startup",
           "params": [],
-          "script": "\t# Operator gate: no logged-in operator -\u003e open the initials popup OVER this screen.\n\t# Non-blocking: the page still populates behind the modal, and session.custom is\n\t# reactive, so the operator label/mutations pick up the user with no re-populate.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params\u003d{\"popupId\": \"mpp-initials\"}, modal\u003dTrue, showCloseIcon\u003dFalse, overlayDismiss\u003dFalse)"
+          "script": "\t# Operator gate: no logged-in operator -> open the initials popup OVER this screen.\n\t# Non-blocking: the page still populates behind the modal, and session.custom is\n\t# reactive, so the operator label/mutations pick up the user with no re-populate.\n\tif not self.session.custom.appUserId:\n\t\tsystem.perspective.openPopup(\"mpp-initials\", \"BlueRidge/Components/Popups/InitialsEntry\", params={\"popupId\": \"mpp-initials\"}, modal=True, showCloseIcon=False, overlayDismiss=False)"
         }
       ],
       "extensionFunctions": null,
@@ -1186,14 +1123,14 @@
         {
           "messageType": "trimLotSelected",
           "pageScope": true,
-          "script": "\tself.view.custom.activeLotId \u003d payload.get(\"lotId\")\n\tself.view.custom.activeLotName \u003d payload.get(\"lotName\")\n\tsel = BlueRidge.Lots.Lot.get(lotId=payload.get(\"lotId\"))\n\tself.view.custom.shotCount = sel.get(\"PieceCount\") if sel else None\n\tself.view.custom.lotPieceCount = sel.get(\"PieceCount\") if sel else None\n\tself.view.custom.scrapCount = None\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1",
+          "script": "\tself.view.custom.activeLotId = payload.get(\"lotId\")\n\tself.view.custom.activeLotName = payload.get(\"lotName\")\n\tsel = BlueRidge.Lots.Lot.get(lotId=payload.get(\"lotId\"))\n\tself.view.custom.shotCount = sel.get(\"PieceCount\") if sel else None\n\tself.view.custom.lotPieceCount = sel.get(\"PieceCount\") if sel else None\n\tself.view.custom.scrapCount = None\n\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
           "sessionScope": false,
           "viewScope": false
         },
         {
           "messageType": "trimInMoved",
           "pageScope": true,
-          "script": "\ttry:\n\t\ttermId \u003d self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId \u003d None\n\t# TrimIn checkpoint (route Advance step; Phase-4 TODO closed 2026-07-08): without it the\n\t# route-driven queues hold the LOT pending at TrimIn and it never reaches Machining IN.\n\tBlueRidge.Workorder.ProductionEvent.recordTrimInCheckpoint(payload.get(\"lotId\"), self.session.custom.appUserId, termId)\n\tself.view.custom.refreshToken \u003d (self.view.custom.refreshToken or 0) + 1",
+          "script": "\ttry:\n\t\ttermId = self.session.custom.terminal.terminalLocationId\n\texcept:\n\t\ttermId = None\n\t# TrimIn checkpoint (route Advance step; Phase-4 TODO closed 2026-07-08): without it the\n\t# route-driven queues hold the LOT pending at TrimIn and it never reaches Machining IN.\n\tBlueRidge.Workorder.ProductionEvent.recordTrimInCheckpoint(payload.get(\"lotId\"), self.session.custom.appUserId, termId)\n\tself.view.custom.refreshToken = (self.view.custom.refreshToken or 0) + 1",
           "sessionScope": false,
           "viewScope": false
         }

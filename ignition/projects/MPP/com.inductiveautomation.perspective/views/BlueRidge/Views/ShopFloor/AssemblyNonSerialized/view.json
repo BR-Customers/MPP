@@ -32,7 +32,8 @@
     },
     "selectedFinishedGoodItemId": null,
     "refreshToken": 0,
-    "queueByPartVertical": ""
+    "queueByPartVertical": "",
+    "componentProjection": []
   },
   "params": {},
   "propConfig": {
@@ -96,6 +97,20 @@
           }
         ],
         "type": "expr"
+      }
+    },
+    "custom.componentProjection": {
+      "binding": {
+        "type": "expr",
+        "config": {
+          "expression": "if({view.custom.refreshToken} >= 0 && !isNull({session.custom.cell.locationId}), runScript(\"BlueRidge.Workorder.Assembly.getComponentProjection\", 0, {session.custom.cell.locationId}, coalesce({view.custom.container.ItemId}, {view.custom.selectedFinishedGoodItemId}), {session.custom.closureMethod}, {view.custom.refreshToken}), \"\")"
+        },
+        "transforms": [
+          {
+            "type": "script",
+            "code": "\treturn value or []"
+          }
+        ]
       }
     }
   },

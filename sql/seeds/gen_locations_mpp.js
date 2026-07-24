@@ -75,7 +75,8 @@ const clean = s => s.replace(/\s+/g, ' ').trim();   // collapse double spaces
 // ---- role from authoritative name; DefaultScreen from role ----
 const SCREEN = { MIN:'/shop-floor/machining-in', MOUT:'/shop-floor/machining-out',
   AIN:'/shop-floor/assembly-in', AOUT:'/shop-floor/assembly-nonserialized',
-  ASER:'/shop-floor/assembly-serialized', COMBINED:'/shop-floor/machining' };
+  ASER:'/shop-floor/assembly-serialized', COMBINED:'/shop-floor/machining',
+  INSPECT:'/shop-floor/third-party-inspection' };
 function roleOf(name, code) {
   const n = clean(name).toLowerCase();
   if (/in\s*-\s*out/.test(n)) return 'COMBINED';
@@ -86,6 +87,7 @@ function roleOf(name, code) {
   if (/assembly\s+in/.test(n)) return 'AIN';
   if (/^dc/i.test(code)) return 'DIECAST';
   if (/^trim/i.test(code)) return 'TRIM';
+  if (/^insp/i.test(code) || /insp/i.test(n)) return 'INSPECT';
   if (code === 'FALLBACK-TERMINAL') return 'FALLBACK';
   return 'OTHER';
 }
@@ -168,7 +170,7 @@ for (const r of locRows) {
   loc(DEFID[def], parent, name, code, desc, Number(sort) || 1);
 
   if (def === 'Terminal' || def === 'InspectionStation') {
-    const role = roleOf(name, code);
+    const role = (def === 'InspectionStation') ? 'INSPECT' : roleOf(name, code);
     const parentDef = defByCode[parent0] || '';
     terminals.push({ code, code0, role, parentDef });
     if (printsFor(role)) {
@@ -187,6 +189,7 @@ out.push('\n-- === Exception 2: Inspection area (66B-TC re-parented here; sort-c
 loc(DEFID.ProductionArea, 'MPP-MAD', 'Inspection', 'INSP', 'INSP', 98);
 loc(DEFID.InspectionLine, 'INSP', 'Sort Cage Inspection', 'INSP-SORT', 'INSP-SORT', 1);
 loc(DEFID.Terminal, 'INSP-SORT', 'Inspection', 'INSP-SORT-T1', 'INSP-SORT-T1', 1);
+terminals.push({ code: 'INSP-SORT-T1', code0: 'INSP-SORT-T1', role: 'INSPECT', parentDef: 'InspectionLine' });
 // re-parent 66B Thermal Case under the inspection area (INSP now exists)
 out.push(`UPDATE Location.Location SET ParentLocationId = (SELECT Id FROM Location.Location WHERE Code = N'INSP')
     WHERE Code = N'66B-TC' AND ParentLocationId <> (SELECT Id FROM Location.Location WHERE Code = N'INSP');`);

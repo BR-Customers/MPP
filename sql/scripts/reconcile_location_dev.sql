@@ -658,7 +658,7 @@ UPDATE Location.Location SET ParentLocationId = (SELECT Id FROM Location.Locatio
 DELETE la FROM Location.LocationAttribute la
     JOIN Location.Location l ON l.Id = la.LocationId
     JOIN Location.LocationAttributeDefinition ad ON ad.Id = la.LocationAttributeDefinitionId
-    WHERE l.Code IN (N'DC1-T1', N'DC2-T1', N'DC3-T1', N'DC4-T1', N'TRIM1-T1', N'TRIM2-T1', N'MA1-COMPBR-MIN', N'MA1-COMPBR-AOUT', N'MA1-6MD-AOUT', N'MA1-FPRPY-MIN', N'MA1-FPRPY-AOUT', N'MA1-FP6NA-MIN', N'MA1-FP6NA-MOUT', N'MA1-FP6NA-AOUT', N'MA1-5GOR-MIN', N'MA1-5GOR-ASER', N'MA1-5GOF-MIN', N'MA1-5GOF-ASER', N'MA2-RPY6B2-MIN', N'MA2-RPY6B2-MOUT', N'MA2-RPY6B2-AIN', N'MA2-RPY6B2-AOUT', N'MA2-RPYCAM2-MIO-RS5', N'MA2-RPYCAM2-MIN-RS', N'MA2-RPYCAM2-MIN-CH', N'MA2-RPYCAM2-MOUT-CH', N'MA2-RPYCAM2-AIN', N'MA2-RPYCAM2-AOUT1', N'MA2-RPYCAM1-MIN-CH', N'MA2-RPYCAM1-MIN-RS', N'MA2-RPYCAM1-MIO-RS5', N'MA2-RPYCAM1-MOUT-RS', N'MA2-RPYCAM1-MOUT-CH', N'MA2-RPYCAM1-AIN', N'MA2-RPYCAM1-AOUT1', N'MA2-5PA-MIN', N'MA2-5PA-MOUT', N'MA2-5PA-AIN', N'MA2-6MAOP-MIN', N'MA2-6MAOP-AOUT', N'MA2-V6OP-MIN', N'MA2-V6OP-AOUT', N'MA2-COS-AOUT', N'MA2-6F9TC-AOUT', N'MA2-59B-MIN', N'MA2-59B-AOUT1', N'MA2-59B-AOUT2', N'MA2-6FBCHOP-MIN', N'MA2-6FBCHOP-AOUT', N'MA2-64AOP-MIN', N'MA2-64AOP-AOUT', N'MA2-6MACH-MIN', N'MA2-6MACH-AOUT1', N'MA2-6MACH-AOUT2', N'MA2-6MACH-AOUT3', N'FALLBACK-TERMINAL', N'DC1-M01-T1', N'TRIM1-P01-T1', N'MA2-5PA-AOUT', N'66B - Ins', N'MA2-RPYCAM2-MOUT-RS') AND ad.AttributeName IN (N'DefaultScreen', N'CurrentClosureMethod', N'HasBarcodeScanner', N'RequiresCompletionConfirm');
+    WHERE l.Code IN (N'DC1-T1', N'DC2-T1', N'DC3-T1', N'DC4-T1', N'TRIM1-T1', N'TRIM2-T1', N'MA1-COMPBR-MIN', N'MA1-COMPBR-AOUT', N'MA1-6MD-AOUT', N'MA1-FPRPY-MIN', N'MA1-FPRPY-AOUT', N'MA1-FP6NA-MIN', N'MA1-FP6NA-MOUT', N'MA1-FP6NA-AOUT', N'MA1-5GOR-MIN', N'MA1-5GOR-ASER', N'MA1-5GOF-MIN', N'MA1-5GOF-ASER', N'MA2-RPY6B2-MIN', N'MA2-RPY6B2-MOUT', N'MA2-RPY6B2-AIN', N'MA2-RPY6B2-AOUT', N'MA2-RPYCAM2-MIO-RS5', N'MA2-RPYCAM2-MIN-RS', N'MA2-RPYCAM2-MIN-CH', N'MA2-RPYCAM2-MOUT-CH', N'MA2-RPYCAM2-AIN', N'MA2-RPYCAM2-AOUT1', N'MA2-RPYCAM1-MIN-CH', N'MA2-RPYCAM1-MIN-RS', N'MA2-RPYCAM1-MIO-RS5', N'MA2-RPYCAM1-MOUT-RS', N'MA2-RPYCAM1-MOUT-CH', N'MA2-RPYCAM1-AIN', N'MA2-RPYCAM1-AOUT1', N'MA2-5PA-MIN', N'MA2-5PA-MOUT', N'MA2-5PA-AIN', N'MA2-6MAOP-MIN', N'MA2-6MAOP-AOUT', N'MA2-V6OP-MIN', N'MA2-V6OP-AOUT', N'MA2-COS-AOUT', N'MA2-6F9TC-AOUT', N'MA2-59B-MIN', N'MA2-59B-AOUT1', N'MA2-59B-AOUT2', N'MA2-6FBCHOP-MIN', N'MA2-6FBCHOP-AOUT', N'MA2-64AOP-MIN', N'MA2-64AOP-AOUT', N'MA2-6MACH-MIN', N'MA2-6MACH-AOUT1', N'MA2-6MACH-AOUT2', N'MA2-6MACH-AOUT3', N'FALLBACK-TERMINAL', N'DC1-M01-T1', N'TRIM1-P01-T1', N'MA2-5PA-AOUT', N'66B - Ins', N'MA2-RPYCAM2-MOUT-RS', N'INSP-SORT-T1') AND ad.AttributeName IN (N'DefaultScreen', N'CurrentClosureMethod', N'HasBarcodeScanner', N'RequiresCompletionConfirm');
 -- ============================================================
 -- Seed:        011_seed_locations_mpp_plant.sql   (GENERATED - edit gen_locations_mpp.js)
 -- Description: Full MPP plant Location tree reconciled to MPP_MES_Site (authoritative).
@@ -1090,11 +1090,25 @@ IF NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la JOIN Location.Locatio
            N'/shop-floor/assembly-nonserialized', SYSUTCDATETIME();
 IF NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la JOIN Location.Location l ON l.Id = la.LocationId
         JOIN Location.LocationAttributeDefinition ad ON ad.Id = la.LocationAttributeDefinitionId
+        WHERE l.Code = N'66B - Ins' AND ad.AttributeName = N'DefaultScreen')
+    INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue, CreatedAt)
+    SELECT (SELECT Id FROM Location.Location WHERE Code = N'66B - Ins'),
+           (SELECT TOP 1 Id FROM Location.LocationAttributeDefinition WHERE AttributeName = N'DefaultScreen' AND LocationTypeDefinitionId = 7 ORDER BY Id),
+           N'/shop-floor/third-party-inspection', SYSUTCDATETIME();
+IF NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la JOIN Location.Location l ON l.Id = la.LocationId
+        JOIN Location.LocationAttributeDefinition ad ON ad.Id = la.LocationAttributeDefinitionId
         WHERE l.Code = N'MA2-RPYCAM2-MOUT-RS' AND ad.AttributeName = N'DefaultScreen')
     INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue, CreatedAt)
     SELECT (SELECT Id FROM Location.Location WHERE Code = N'MA2-RPYCAM2-MOUT-RS'),
            (SELECT TOP 1 Id FROM Location.LocationAttributeDefinition WHERE AttributeName = N'DefaultScreen' AND LocationTypeDefinitionId = 7 ORDER BY Id),
            N'/shop-floor/machining-out', SYSUTCDATETIME();
+IF NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la JOIN Location.Location l ON l.Id = la.LocationId
+        JOIN Location.LocationAttributeDefinition ad ON ad.Id = la.LocationAttributeDefinitionId
+        WHERE l.Code = N'INSP-SORT-T1' AND ad.AttributeName = N'DefaultScreen')
+    INSERT INTO Location.LocationAttribute (LocationId, LocationAttributeDefinitionId, AttributeValue, CreatedAt)
+    SELECT (SELECT Id FROM Location.Location WHERE Code = N'INSP-SORT-T1'),
+           (SELECT TOP 1 Id FROM Location.LocationAttributeDefinition WHERE AttributeName = N'DefaultScreen' AND LocationTypeDefinitionId = 7 ORDER BY Id),
+           N'/shop-floor/third-party-inspection', SYSUTCDATETIME();
 IF NOT EXISTS (SELECT 1 FROM Location.LocationAttribute la JOIN Location.Location l ON l.Id = la.LocationId
         JOIN Location.LocationAttributeDefinition ad ON ad.Id = la.LocationAttributeDefinitionId
         WHERE l.Code = N'MA1-COMPBR-MIN' AND ad.AttributeName = N'HasBarcodeScanner')
