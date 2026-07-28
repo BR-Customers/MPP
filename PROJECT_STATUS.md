@@ -58,6 +58,55 @@ Worked a live shop-floor smoke list end-to-end on `jacques/working`; reconciled 
 - **Merge/reconcile.** `jacques/working` was 13 behind `origin/main`; merged main **cleanly** (auto-merged the concurrent MachiningOut-queue feature + warehouse wiring + the other stream's components-at-cell / InventoryManager / ReceivingDock / LotLabel / Zebra work), verified coherent, promoted to `main` by fast-forward.
 
 **Dev DB (`MPP_MES_Dev`) applied this session — all data-safe, NO reset (live test data preserved):** versioned `0037`/`0038`/`0039` (were unapplied — quality-capture + PLC foundation incl. `Item.PlcId`) + all 349 repeatables re-run, then the route-aware `MachiningIn_RecordPick`, `Lot_Create` warehouse deposit, and `Assembly_CompleteTray` message.
+---
+
+## 🔖 2026-07-16 — AIM integration researched end-to-end; ⛔ BLOCKED pending customer input
+
+**Come back to this.** Did a full repo sweep of the AIM (Honda EDI) footprint this session — FRS
+contract, design, and the actual build. Conclusion: **the local pool layer is built + tested, but
+every external AIM call is a simulation stub, and I cannot responsibly continue down the AIM path
+until MPP/Honda give us the interface details.** No further AIM build until that lands. This section
+is the pickup for the next AIM pass — the open questions below are the research/decision backlog.
+
+**What IS built (works in dev off the seeded pool):** `Lots.AimShipperIdPool` + `Lots.AimPoolConfig`
+(migration `0028`/`0029`), `AimShipperIdPool_Claim`/`_Topup`/`_GetDepth`, `AimPoolConfig_Get`/`_Update`,
+the atomic claim inlined into `Container_Complete` (OI-33 empty-pool hard-fail), the per-part alarm
+loop (`AimPoolGateway.alarmTick`), the dev seed `028_seed_aim_pool_dev.sql`, and shipping-label
+render/dispatch. Tests: `sql/tests/0028…/035,040,050`, `0029…/030,040`.
+
+**What is STUBBED (no real AIM comms anywhere):** `BlueRidge.Lots.AimPoolGateway` — `topupTick()`
+is a no-op, and `placeOnHold`/`releaseFromHold`/`update()` just log an InterfaceLog attempt and return
+"AIM endpoint not configured (dev)". They aren't even invoked by Hold/SortCage yet. **The entire live
+integration reduces to filling in those 4 function bodies + wiring the two hold handlers** — the data
+model, claim path, alarms, labels, and traceability are already in place. That's the seam.
+
+**⛔ Blocked on — need from MPP/Honda before any more AIM work (this is the ask in the email):**
+1. **Transport + issuing authority (the big one).** FRS is self-contradictory: §2.3.1 says web-service
+   API, §5.5.1 says OPC/ethernet, and the legacy Base2 code (Appendix J) *self-assigned* the serial from
+   a local counter + dropped a flat CSV file. **Does AIM issue every shipper number (`GetNextNumber` is
+   authority) or may MPP self-assign locally and just report via `UpdateAim`?** This decides the
+   connectivity-resilience ceiling: AIM-issued → we're bounded by buffer depth on an outage; self-assign
+   → fully outage-proof (mint locally, queue the report).
+2. **Per-part vs generic pool.** Built pool is **per-part** (`AimShipperIdPool.PartNumber NOT NULL`, claim
+   filters by part, per-part hard-fail). Data-model doc leans generic; the 2026-04-30 notes recorded MPP
+   saying "IDs are part-specific" but left *partition-for-sizing* open. **Verified nothing downstream
+   depends on the per-part binding** — the container's part comes from `Container.ItemId`, `ShippingLabel`
+   stores no part, and the label/trace/`UpdateAim` payload all re-derive it. So collapsing to a generic
+   pool is a clean change *if* that's the decision (and generic gives strictly better outage tolerance).
+3. **Message contract** — exact payloads + error-recovery for `GetNextNumber` / `UpdateAim` /
+   `PlaceOnHold` / `ReleaseFromHold` (Phase-0 **A6 / T006** — owed by MPP/Honda; procs were built to the
+   *documented* Appendix L signatures only).
+4. **Empty-pool policy** — **OI-33**: hard-fail (line-stop) vs soft-fallback; awaiting MPP Ops/IT sign-off.
+5. **Container label — remaining blank fields are NOT AIM-sourced.** Part No. Ext (C), D/C Part Level (2P),
+   Auditor, and the 2D DataMatrix do **not** come from AIM (AIM only supplies the 1S serial, already wired).
+   They need part-master/engineering data (Part Ext, D/C level → a new `Parts.Item` column + seed), MES
+   attribution capture (Auditor), and the **Honda container-label content spec** (2D payload). Seeding-registry
+   + Honda spec items, tracked separately from the AIM interface. See
+   `notes/2026-07-14_zebra-label-template-datamodel-mapping.md`.
+
+**Refs:** FDS §7.2–7.5 + §13.1 (AIM = MVP by design); OI-33; Phase-0 log A6/T006; UJ-04 (pool design);
+`MPP_MES_DATA_MODEL.md` §Lots (AimShipperIdPool/AimPoolConfig — note the doc may not reflect the shipped
+per-part column); `docs/ARC2_FDS_CONFORMANCE.md` (07-010/011/012 flagged sim/deferred-by-seam).
 
 ---
 

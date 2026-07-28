@@ -115,10 +115,13 @@ def _logDispatch(endpoint, zpl, outcome):
         "errorDescription": None if ok else (outcome.get("error") if outcome else "unknown"),
         "isHighFidelity":   True,
     }
+    # Best-effort interface log. A BARE except (not `except Exception`) because the
+    # audit NQ returns no result set, so runNamedQuery raises a java.lang.Exception,
+    # which Jython's `except Exception` does NOT catch -- it must never break dispatch.
     try:
-        BlueRidge.Common.Db.execNonQuery("audit/Audit_LogInterfaceCall", params)
-    except Exception as e:
-        BlueRidge.Common.Util.log("_logDispatch failed: %s" % str(e))
+        BlueRidge.Common.Db.execList("audit/Audit_LogInterfaceCall", params)
+    except:
+        pass
 
 
 def _dispatchAfterRender(res, appUserId, terminalLocationId):
