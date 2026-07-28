@@ -1,13 +1,17 @@
 """BlueRidge.Lots.ShippingDispatcher - container shipping-label ZPL dispatch (Arc 2 Phase 6).
 
    Renders a shipping-label ZPL from the claimed Honda AIM Shipper ID + synchronously
-   dispatches it to the terminal's Zebra (raw TCP 9100), logging every attempt to
-   Audit.InterfaceLog. Mirrors the LotLabel LTT dispatcher transport.
+   dispatches it to the terminal's printer, logging every attempt to Audit.InterfaceLog.
 
-   SIM / HARDWARE-GATED: there is no networked Zebra in dev, so dispatch fails-fast +
-   logs (it never rolls back the completed container -- complete + print are separate
-   steps). The ShippingLabel.PrintedAt / PrintFailedAt write-back + the stranded-print
-   safety sweep + reprint/void are the Phase 7 print-failure lifecycle.
+   This module owns ORCHESTRATION only. Transport lives in BlueRidge.Lots.LabelTransport
+   -- shared with the LotLabel LTT path -- which picks raw TCP or a Windows print queue
+   from the endpoint's syntax (design 2026-07-28). A networked Zebra and a USB printer
+   shared from a terminal PC are both reachable; neither is named here.
+
+   HARDWARE-GATED: with no printer configured, dispatch fails-fast + logs (it never rolls
+   back the completed container -- complete + print are separate steps). The
+   ShippingLabel.PrintedAt / PrintFailedAt write-back + the stranded-print safety sweep +
+   reprint/void are the Phase 7 print-failure lifecycle.
 """
 import BlueRidge.Common.Db
 import BlueRidge.Common.Util

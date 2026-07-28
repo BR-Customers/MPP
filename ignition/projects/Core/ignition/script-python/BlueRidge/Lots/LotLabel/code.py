@@ -3,17 +3,21 @@
    Arc 2 Phase 4 (Spec 2 sec 3/4). Orchestrates:
      SQL render (Lots.LotLabel_Print/_Reprint -> ZplContent)
        -> resolve printer endpoint from session.custom.printer
-       -> synchronous raw-TCP socket write to the networked Zebra
-       -> log EVERY attempt to Audit.InterfaceLog (Audit_LogInterfaceCall)
+       -> hand the bytes to BlueRidge.Lots.LabelTransport
+       -> log EVERY attempt to Audit.InterfaceLog (LabelTransport.logDispatch)
        -> on success: Lots.LotLabel_RecordDispatch ack write-back.
+
+   This module owns ORCHESTRATION only. Transport lives in LabelTransport, which
+   picks raw TCP or a Windows print queue from the endpoint's syntax (design
+   2026-07-28) -- so this path serves a networked Zebra and a USB printer shared
+   from a terminal PC equally, and neither is named here.
 
    Print failure NEVER rolls back the LOT (mint + print are separate steps);
    the UI holds on the failed-print state and offers Reprint.
 
    NOTE: the public method is printLabel (NOT 'print' -- a Jython 2 keyword).
-   HARDWARE-GATED: raw TCP 9100 reaches NETWORKED Zebra printers only; real-print
-   certification is a deployment gate. Verify via a local socket listener / Labelary
-   until hardware is available.
+   HARDWARE-GATED: real-print certification is a deployment gate. Verify via a
+   local socket listener / Labelary until hardware is available.
 
    Wrappers route View -> here -> BlueRidge.Common.Db -> system.db.*."""
 
