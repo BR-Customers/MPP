@@ -59,10 +59,16 @@
 - Test: `tools/script-console-demos/label_transport_grammar.py`
 
 **Interfaces:**
-- Consumes: nothing (no DB, no other BlueRidge module — deliberately dependency-free so the grammar is testable in isolation).
+- Consumes: `BlueRidge.Common.Db.execNonQuery` (for `logDispatch` only — the grammar functions stay pure and callable with no DB).
 - Produces:
   - `send(endpoint, zpl) -> {"ok": bool, "error": str|None, "transport": "tcp"|"queue"|None}`
   - `describeEndpoint(endpoint) -> {"transport": str|None, "target": str|None, "valid": bool, "reason": str|None}`
+  - `logDispatch(endpoint, zpl, outcome, labelKind) -> None`
+
+> **Decision (2026-07-28, supersedes the spec's §3.2 wording):** `_logDispatch` is **extracted
+> into this module** rather than duplicated in both dispatchers. The two copies would have
+> differed by a single description string — both already use `systemName = "Zebra"` — and this
+> module already produces the transport name being logged, so it is the natural owner.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -152,12 +158,19 @@ Create `ignition/projects/Core/ignition/script-python/BlueRidge/Lots/LabelTransp
    is pure and testable on its own (tools/script-console-demos/
    label_transport_grammar.py). Java imports are lazy, inside the senders.
 
+   Also owns dispatch LOGGING (logDispatch), so the LTT and shipping dispatchers do
+   not carry near-identical copies that differ by one string. The grammar functions
+   stay pure -- only logDispatch touches the DB.
+
    HARDWARE-GATED. TCP reaches a networked Zebra or a terminal running
    zebraPrinter/usb_tcp_bridge.py. The queue transport requires the queue to be
    installed on the GATEWAY host under the Gateway service account -- naming a
    UNC path is not by itself enough. Real-print certification is a deployment gate."""
 import re
 
+import BlueRidge.Common.Db
+
+_SYSTEM_NAME = "Zebra"
 _TIMEOUT_MS = 4000            # bounded connect + write (spec: 3-5 s)
 _TCP_RE = re.compile(r"^(.+):(\d+)$")
 
@@ -278,6 +291,36 @@ def send(endpoint, zpl):
         out["transport"] = "queue"
         return out
     return {"ok": False, "error": p["reason"], "transport": None}
+
+
+def logDispatch(endpoint, zpl, outcome, labelKind):
+    """Log ONE dispatch attempt to Audit.InterfaceLog -- every attempt: success,
+       failure, retry (FDS-01-014). labelKind is the human label for the description,
+       e.g. 'LTT' or 'Shipping label'. High-fidelity so endpoint, transport and the
+       ZPL head persist; the transport name is what distinguishes a TCP failure from
+       a queue failure in the audit trail without re-parsing the endpoint."""
+    ok = bool(outcome and outcome.get("ok"))
+    transport = (outcome or {}).get("transport") or "unknown"
+    params = {
+        "systemName":       _SYSTEM_NAME,
+        "direction":        "Outbound",
+        "logEventTypeCode": "LabelDispatched",
+        "description":      "%s dispatch via %s to %s" % (labelKind, transport, endpoint or "(none)"),
+        "requestPayload":   "%s | %s" % (endpoint or "", (zpl or "")[:200]),
+        "responsePayload":  "OK" if ok else None,
+        "errorCondition":   None if ok else "DispatchFailed",
+        "errorDescription": None if ok else (outcome.get("error") if outcome else "unknown"),
+        "isHighFidelity":   True,
+    }
+    # audit/Audit_LogInterfaceCall is "UpdateQuery"-typed (the proc emits no result set),
+    # so it MUST go through execNonQuery -- execList would hand _rowsToDicts an Integer
+    # row count and throw. Bare except (not `except Exception`) because Jython's
+    # `except Exception` does NOT catch java.lang.Throwable; logging must never
+    # break dispatch.
+    try:
+        BlueRidge.Common.Db.execNonQuery("audit/Audit_LogInterfaceCall", params)
+    except:
+        pass
 ```
 
 Create `ignition/projects/Core/ignition/script-python/BlueRidge/Lots/LabelTransport/resource.json`:
@@ -367,68 +410,56 @@ Add to the import block:
 import BlueRidge.Lots.LabelTransport
 ```
 
-- [ ] **Step 2: Fix `_logDispatch` and thread the transport through**
+- [ ] **Step 2: Delete `LotLabel._logDispatch` — the logger now lives in `LabelTransport`**
 
-Replace `LotLabel._logDispatch` with:
+Delete the entire `_logDispatch` function from `LotLabel/code.py` (lines 102–124), and delete the now-unused module constant:
 
 ```python
-def _logDispatch(endpoint, zpl, outcome):
-    """Log one dispatch attempt to Audit.InterfaceLog (every attempt: success,
-       failure, retry). High-fidelity so endpoint + transport + ZPL head persist."""
-    ok = bool(outcome and outcome.get("ok"))
-    transport = (outcome or {}).get("transport") or "unknown"
-    head = (zpl or "")[:200]
-    params = {
-        "systemName":       _SYSTEM_NAME,
-        "direction":        "Outbound",
-        "logEventTypeCode": "LabelDispatched",
-        "description":      "LTT dispatch via %s to %s" % (transport, endpoint or "(none)"),
-        "requestPayload":   "%s | %s" % (endpoint or "", head),
-        "responsePayload":  "OK" if ok else None,
-        "errorCondition":   None if ok else "DispatchFailed",
-        "errorDescription": None if ok else (outcome.get("error") if outcome else "unknown"),
-        "isHighFidelity":   True,
-    }
-    # audit/Audit_LogInterfaceCall is "UpdateQuery"-typed (the proc emits no result set),
-    # so it MUST go through execNonQuery -- execList would hand _rowsToDicts an Integer
-    # row count and throw. Bare except (not `except Exception`) because Jython's
-    # `except Exception` does NOT catch java.lang.Throwable; logging must never
-    # break dispatch.
-    try:
-        BlueRidge.Common.Db.execNonQuery("audit/Audit_LogInterfaceCall", params)
-    except:
-        pass
+_SYSTEM_NAME = "Zebra"
 ```
 
-> This reverts the uncommitted `execList` change and keeps the bare `except:`. The NQ's `resource.json` is `"type": "UpdateQuery"`, and `Common.Db.execNonQuery`'s docstring states the rule.
+Every call site becomes:
+
+```python
+    BlueRidge.Lots.LabelTransport.logDispatch(endpoint, zpl, outcome, "LTT")
+```
+
+> This is where the `execList` regression gets resolved: `LabelTransport.logDispatch` (Task 1) uses `execNonQuery`, which is what the `"type": "UpdateQuery"` NQ requires per `Common.Db.execNonQuery`'s own docstring. It keeps the bare `except:` — that half of the uncommitted change was correct, because Jython's `except Exception` does not catch `java.lang.Throwable`.
 
 - [ ] **Step 3: Point the dispatch tail at `LabelTransport`**
 
-In `_dispatchAfterRender`, replace the two `_dispatchZpl(...)` calls:
+In `_dispatchAfterRender`, replace the first `_dispatchZpl` / `_logDispatch` pair:
 
 ```python
     outcome = BlueRidge.Lots.LabelTransport.send(endpoint, zpl)
+    BlueRidge.Lots.LabelTransport.logDispatch(endpoint, zpl, outcome, "LTT")
 ```
 
-and
+and the retry pair:
 
 ```python
         outcome = BlueRidge.Lots.LabelTransport.send(freshEndpoint, zpl)
+        BlueRidge.Lots.LabelTransport.logDispatch(freshEndpoint, zpl, outcome, "LTT")
 ```
 
 Everything else in that function is unchanged — same re-resolve, same single retry, same return shapes.
 
-- [ ] **Step 4: Apply the identical treatment to `ShippingDispatcher/code.py`**
+- [ ] **Step 4: Apply the same treatment to `ShippingDispatcher/code.py`**
 
-Delete its `_dispatchZpl` (lines 104–129) and the two `java.net` / `java.lang` imports. Add `import BlueRidge.Lots.LabelTransport`. Replace both `_dispatchZpl(endpoint, zpl)` calls in `dispatch` and `dispatchContainer` with `BlueRidge.Lots.LabelTransport.send(endpoint, zpl)`. Update its `_logDispatch` to the same shape, with `"Shipping label dispatch via %s to %s"` and the same `execNonQuery` + bare-except body.
+Delete its `_dispatchZpl` (lines 104–129), its `_logDispatch` (lines 132–151), the `_SYSTEM_NAME` constant, and the two `java.net` / `java.lang` imports. Add `import BlueRidge.Lots.LabelTransport`. In both `dispatch` and `dispatchContainer`, replace each dispatch/log pair with:
 
-- [ ] **Step 5: Verify no `_dispatchZpl` remains**
-
-```bash
-grep -rn "_dispatchZpl\|from java.net import Socket" ignition/projects/Core/ignition/script-python/BlueRidge/Lots/
+```python
+    outcome = BlueRidge.Lots.LabelTransport.send(endpoint, zpl)
+    BlueRidge.Lots.LabelTransport.logDispatch(endpoint, zpl, outcome, "Shipping label")
 ```
 
-Expected: matches only inside `LabelTransport/code.py`.
+- [ ] **Step 5: Verify no duplicated transport or logging code remains**
+
+```bash
+grep -rn "_dispatchZpl\|_logDispatch\|from java.net import Socket\|_SYSTEM_NAME" ignition/projects/Core/ignition/script-python/BlueRidge/Lots/
+```
+
+Expected: `_SYSTEM_NAME` matches only inside `LabelTransport/code.py`; `_dispatchZpl`, `_logDispatch` and the `java.net` import produce **no matches at all** (the transport module names its socket import inside `_sendTcp`).
 
 - [ ] **Step 6: Smoke the LTT path end to end**
 
@@ -1491,7 +1522,7 @@ def dispatchContainer(containerId, terminalLocationId=None, shippingLabelId=None
         return {"Status": 0, "Message": msg}
 
     outcome = BlueRidge.Lots.LabelTransport.send(endpoint, zpl)
-    _logDispatch(endpoint, zpl, outcome)
+    BlueRidge.Lots.LabelTransport.logDispatch(endpoint, zpl, outcome, "Shipping label")
     if outcome.get("ok"):
         _writeBack(True, None)
         return {"Status": 1, "Message": "Container label printed."}
