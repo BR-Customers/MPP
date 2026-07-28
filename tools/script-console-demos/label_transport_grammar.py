@@ -7,11 +7,15 @@
 # Grammar under test (design 2026-07-28 sec 3.1), evaluated in order:
 #   1. empty/whitespace          -> invalid
 #   2. starts with \\            -> queue (UNC verbatim)
-#   3. matches ^(.+):(\d+)$      -> tcp
+#   3. matches ^(.*):(\d+)$      -> tcp   (empty host -> invalid, see below)
 #   4. anything else             -> queue (local queue name)
 #
 # The port is MANDATORY for tcp. That is the whole point: it makes a bare
 # name unambiguously a queue, where the old code silently guessed hostname.
+#
+# Rule 3 is (.*) not (.+) deliberately: an empty host must still MATCH so the
+# "host missing before port" guard rejects ':9100'. With (.+) that input falls
+# through to rule 4 and is silently accepted as a queue NAMED ':9100'.
 # =============================================================================
 import BlueRidge.Lots.LabelTransport as LT
 
