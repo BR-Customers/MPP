@@ -12,7 +12,17 @@
 >
 > **How to run it:** SERIALIZE — do it on a quiet `jacques/working` as a clean sweep; it's a *poor* parallel candidate (it rewrites the exact operation procs/views the active session churns → heavy merge conflicts; gateway + `MPP_MES_Dev` are shared singletons). Full inventory + blast-radius detail: **`notes/2026-07-16_operation-template-methodology-inventory.md`**.
 
-**Last updated:** 2026-07-24 — **Meeting-driven workstreams (2026-07-22 notes) built + the plant location model reconciled to the authoritative Site DB; `jacques/working` == `main` == `a7829b6a`. Full `MPP_MES_Test` suite 2151/0.** Six of seven meeting items shipped (**die cast HELD** pending Jacques's feedback on its spec's assumptions):
+**Last updated:** 2026-07-28 — **Dual-transport label printing built end-to-end on `hunter/explore`: the MES now prints to BOTH networked Zebras (raw TCP) and USB printers shared as Windows print queues, chosen from the syntax of the printer's `Endpoint`. Container shipping labels now actually dispatch — before this they printed nothing at all. Suite 2167 assertions / 0 FAIL.**
+
+> **The transport layer.** New `BlueRidge.Lots.LabelTransport` is the ONE place ZPL bytes leave the Gateway: `send()`, `describeEndpoint()` (a pure config-time validator), and `logDispatch()`. Grammar: `host:port` → raw TCP (**port mandatory** — that is what makes a bare name unambiguously a queue, where the old code silently guessed `hostname:9100`); `\\HOST\Queue` or a bare name → Windows print queue via `javax.print`. Both dispatchers' byte-identical `_dispatchZpl`/`_logDispatch` copies are deleted. **Verified live in the Script Console:** the queue path enumerates correctly and the Gateway service account CAN see printers, including `Zebra GX420d (RAW)` — which was the single biggest risk to the whole hardwired design.
+> **Label-type routing.** `Location.Terminal_GetPrinter` v2.0 takes an optional `@LabelTypeCode` and prefers a printer whose new `LabelTypes` CSV attribute contains it, falling back to the previous single-printer behaviour when nothing matches — so every existing caller and every seeded printer is unaffected. Wired through the NQ, `Terminal.getPrinter`, and both dispatchers.
+> **Container labels dispatch.** `Container.complete` and `Shipping.reprintLabel` now call `ShippingDispatcher`, which had **zero callers** before today. New `Lots.ShippingLabel_RecordDispatch` finally writes the `PrintedAt`/`PrintAttempts`/`LastPrintError`/`PrintFailedAt` columns that have existed unwritten since migration `0028`. The Honda container ZPL moved out of a Python constant into `Lots.LabelTemplate` (FDS §2064).
+> **Migrations `0045`/`0046`/`0047`**, all applied to `MPP_MES_Dev` data-safe (no reset). `0047` exists because the `LabelTypes` attribute FKs to a **seed**-created row and Reset runs migrations before seeds — so a seed-only home would strand Dev now and Prod at cutover.
+> **⚠️ Owed before this reaches a line:** every Assembly OUT terminal needs a Container-capable printer with `LabelTypes` set. Container completion now emits the Honda body (`^PQ2`, two copies, ~1300-dot coordinates) to whatever printer resolves — on an assembly terminal that is the LTT printer until configured.
+> **⚠️ Owed — real-print certification.** No Jython here has run in a Gateway beyond the one console check. The Script Console grammar suite (`tools/script-console-demos/label_transport_grammar.py`) and a physical print on both transports are the real gate.
+> Spec `docs/superpowers/specs/2026-07-28-dual-transport-label-printing-design.md`; plan `docs/superpowers/plans/2026-07-28-dual-transport-label-printing.md` (§8 is the **pre-onsite MPP ask** — start with `Get-PrinterPort` on FLXWAPSRV1, which may convert most of the "hardwired" fleet into the already-built TCP path). Full detail in the 2026-07-28 section below.
+
+**Prior header (2026-07-24):** **Meeting-driven workstreams (2026-07-22 notes) built + the plant location model reconciled to the authoritative Site DB; `jacques/working` == `main` == `a7829b6a`. Full `MPP_MES_Test` suite 2151/0.** Six of seven meeting items shipped (**die cast HELD** pending Jacques's feedback on its spec's assumptions):
 > **(1) Location reconcile** — `MPP_MES_Site` is now the authoritative location map. Regenerated the seed (`gen_locations_mpp.js` now reads `sql/seeds/_site_*.tsv` dumps) with authoritative **Names** (never renamed — codes fixed to match: RPYCAM re-key, AFIN→AOUT, 5PA MIN→MOUT/AIN, 6F9TC/COS MOUT→AOUT…), **printers only on MOUT/AOUT/COMBINED/ASER** terminals, DefaultScreen/closure(→enum, vision-through-scale→ByVision)/scanner/confirm seeded, `TRIM{1,2}-STORE` + `INSP` inspection area (66B-TC re-parented) added. Applied to **Dev in place** via `sql/scripts/reconcile_location_dev.sql` (two-phase rename preserves `Location.Id` → the 50 live LOTs + PLC reg stayed attached; old printers retired to `__OLD__`/deprecated for the downtime FK). Memory: [[project-mpp-location-authority]].
 > **(2) Operator-change audit** — migration `0044` (LogEventType 75 `OperatorChanged`) + `Audit.OperatorChange_Log` + NQ + `AppUser.logOperatorChange`, wired into `InitialsEntry.loginAs` (capture old op → audit handoff, fire-and-forget). Tests 18/18.
 > **(3) Assembly-OUT projected consumption (display-only, NOT a gate)** — `Workorder.Assembly_GetComponentProjection` (mirrors CompleteTray math + exact-cell pool) + NQ + `Assembly.getComponentProjection` + `view.custom.componentProjection` binding + **rendered**: `ComponentProjectionRow` instance view + flex-repeater under the components sidebar with red LOW pills. Tests 10/10.
@@ -32,6 +42,67 @@
 > **See the `## 🔖 2026-07-14 — PLC Integration` section directly below for the full PLC writeup.**
 
 **Prior header note (hunter/explore, 2026-07-07):** **Smoke-findings fix pass on `hunter/explore`: all 14 items from `notes/2026-07-07_smoke_findings.md` addressed (full suite 1945/1945, only the pre-existing `010_Parts_codes_crud` thrower). Per-item ✅/⚠️ annotations live in the findings file. Re-smoke owed — see the section directly below.** Prior header note (2026-07-06 second session): **Jacques 2026-07-06 meeting task list worked on `hunter/explore`: 21 of 24 items fixed, tested, committed (full suite 1934/1934, only the pre-existing `010_Parts_codes_crud` thrower). 3 items open pending live repro / Jacques's call.** Prior header note (earlier 2026-07-06):
+
+---
+
+## 🔖 2026-07-28 — Dual-transport label printing (TCP + Windows queue)
+
+Brainstormed → spec → 6-task plan → executed subagent-driven with a review gate per task and an
+Opus whole-branch review at the end. 27 commits on `hunter/explore`.
+
+**Why.** All label dispatch was a raw TCP socket to `host:9100`, duplicated byte-for-byte in two
+modules. That reaches networked printers only — but `zebraPrinter/MPP_Terminal_Printer_Inventory.xlsx`
+lists **63 printers of which 63 have Windows share paths and exactly 1 has an IP**. MPP confirmed the
+fleet is mixed, with the hardwired ones USB-attached to shop-floor terminal PCs.
+
+**Built:** `LabelTransport` (grammar-selected TCP vs `javax.print` queue); both dispatchers repointed;
+`Terminal_GetPrinter` v2.0 + `LabelTypes` attribute for label-type routing; `ShippingLabel_RecordDispatch`;
+container ZPL into `LabelTemplate`; container dispatch wired into `Container.complete` and
+`Shipping.reprintLabel`. Migrations `0045`/`0046`/`0047`.
+
+**Fold-in fixes:** the uncommitted `execList` regression on the `UpdateQuery`-typed
+`Audit_LogInterfaceCall` NQ; the `Reprint - Damaged` em-dash (P4-7); the Shipping Dock's
+"Label reprinted" toast that printed nothing.
+
+**What the review gates caught** — every one a defect in the *plan*, not the implementation:
+
+1. `^(.+):(\d+)$` made the "host missing before port" guard unreachable, so `:9100` was silently
+   accepted as a print queue **named** `:9100`. Fixed to `(.*)`.
+2. Migration `0045` FK'd to a seed-created row and would have failed **every fresh build** — hence
+   the seed-layer placement plus `0047` for existing DBs.
+3. The LTT retry re-resolved **without** the label type, so a failed routed print landed on the
+   terminal's default printer while reporting success. Deleted (its stale-session purpose was
+   already removed by this same work).
+4. `dispatchContainer` wasn't exception-safe — a DB throw skipped all five write-backs, leaving
+   exactly the stranded-label state the future sweep reads.
+5. `except Exception` at both call sites cannot catch `java.lang.Throwable` in Jython.
+6. `reprintLabel` fell through to `Status: 1` "Label reprinted" when the container lookup missed.
+7. **The whole-branch review caught what six task reviews structurally could not:** label-type
+   routing **never fired** on either container path. The Assembly views pass
+   `session.custom.cell.locationId` — the terminal's parent **LINE** — and the Shipping Dock passes
+   nothing, while printers are children of **TERMINALS**. Both fell back to the label-type-agnostic
+   session printer, silently. Fixed inside `ShippingDispatcher` (session-first terminal resolution),
+   no Designer edit needed.
+
+**Known-failing baseline discovered:** the suite has **7 pre-existing `ERROR running` files** on this
+branch (`077_Lot_Search`, `050_Lot_GetShiftCavityTally`, `060_Lot_GetWipQueueByLocation`,
+`070_MachiningOut_Mint`, `100_Lot_GetLineInventoryByPart`, `076_Assembly_ScanIn`,
+`060_OperatorChange_Log`). The runner already exits non-zero before this work. At least one is a
+`Msg 213` fixed-shape `INSERT-EXEC` breakage from an earlier proc-shape change. **`2151/0` in the
+prior header counted assertions and hid this.** Separate pre-existing work.
+
+**Design wart recorded (not a bug today):** `Lots.LabelTemplate` is keyed by `LabelTypeCode`, but
+type 2 (`Container`) now holds the Honda shipping template rendered in Python from a different token
+vocabulary than `LotLabel_Print` substitutes — so `LotLabel_Print` with type 2 emits literal
+`{PartNumber}` text. Latent (no caller passes a non-default type); reserving comments in both procs
+plus a test pin it. Clean fix is a distinct `LabelTypeCode` row. Originated in the spec, not the build.
+
+**Backlog from the whole-branch review:** ZPL token values aren't escaped (a `^` or `~` in
+`Item.Description` becomes a ZPL command); no test covers `Container_GetLabelData` or token
+substitution; `reprint()` hardcodes `"Primary"`; `ShippingDispatcher.dispatch()` has no live caller
+yet `PrintFailureGateway`'s comment points the future sweep at it; `applyToSession` drops the new
+`labelTypes` key. The FDS-07-006b sweep-design warning is on that row in
+`docs/ARC2_FDS_CONFORMANCE.md`.
 
 ---
 
