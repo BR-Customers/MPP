@@ -14,9 +14,6 @@ import BlueRidge.Common.Util
 import BlueRidge.Lots.LabelTransport
 import BlueRidge.Location.Terminal
 
-_DEFAULT_PORT = 9100
-_TIMEOUT_MS = 4000
-
 
 def _sessionPrinter():
     try:

@@ -22,9 +22,6 @@ import BlueRidge.Common.Util
 import BlueRidge.Lots.LabelTransport
 import BlueRidge.Location.Terminal
 
-_DEFAULT_PORT = 9100
-_TIMEOUT_MS = 4000   # bounded connect + write timeout (spec: 3-5 s)
-
 
 def _u(value):
     return BlueRidge.Common.Util.extractQualifiedValues(value)
