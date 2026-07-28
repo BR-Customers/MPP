@@ -644,8 +644,37 @@ powershell -File sql/tests/Run-Tests.ps1 -DatabaseName MPP_MES_Test -Filter "030
 
 Expected: failure — `LabelTypes` attribute definition does not exist, and `@LabelTypeCode` is not a parameter of the proc.
 
-- [ ] **Step 3: Write migration `0045`**
+- [ ] **Step 3: Add the `LabelTypes` attribute definition — in the SEED layer, not the migration**
 
+> **Correction applied during execution (2026-07-28).** This step originally put the
+> `LabelTypes` `LocationAttributeDefinition` insert into migration `0045`. That is **wrong and
+> would fail every fresh build**: the insert FKs to `LocationTypeDefinitionId = 16` (`Printer`),
+> and that row is created only by the **seed** (`sql/seeds/011_seed_locations_mpp_plant.sql`,
+> generated from `sql/seeds/gen_locations_mpp.js`) — no versioned migration creates it.
+> `Reset-DevDatabase.ps1` runs versioned migrations at step **4/6** and seeds at step **6/6**, so
+> at migration time the FK target does not yet exist. The sibling `Endpoint` and `Model`
+> attributes for the same DefId are seeded for exactly this reason; `LabelTypes` follows that
+> precedent.
+
+Add to `sql/seeds/gen_locations_mpp.js`, immediately after the existing `Model` attribute block:
+
+```javascript
+IF NOT EXISTS (SELECT 1 FROM Location.LocationAttributeDefinition WHERE LocationTypeDefinitionId = 16 AND AttributeName = N'LabelTypes')
+    INSERT INTO Location.LocationAttributeDefinition (LocationTypeDefinitionId, AttributeName, DataType, IsRequired, DefaultValue, Uom, SortOrder, Description)
+    VALUES (16, N'LabelTypes', N'NVARCHAR', 0, NULL, NULL, 3, N'Comma-separated Lots.LabelTypeCode codes this printer serves (Primary,Container,Master,Void). Blank = any.');
+```
+
+Then regenerate both generated artifacts so they do not drift from the generator:
+
+```bash
+node sql/seeds/gen_locations_mpp.js
+```
+
+This rewrites `sql/seeds/011_seed_locations_mpp_plant.sql` and `sql/scripts/reconcile_location_dev.sql`.
+
+- [ ] **Step 3b: Write migration `0045`**
+
+With the attribute definition moved to the seed layer, `0045` carries only the ASCII correction.
 Create `sql/migrations/versioned/0045_label_type_routing.sql`:
 
 ```sql
@@ -654,25 +683,11 @@ Create `sql/migrations/versioned/0045_label_type_routing.sql`:
 -- Author:      Blue Ridge Automation
 -- Date:        2026-07-28
 -- Description: Dual-transport label printing (design 2026-07-28) part 1.
---                + Location.LocationAttributeDefinition 'LabelTypes' on the
---                  Printer definition (DefId 16) -- optional CSV of
---                  Lots.LabelTypeCode.Code values naming which label types this
---                  printer serves. Blank = serves everything via the fallback,
---                  so every existing printer keeps working untouched.
 --                ~ Lots.PrintReasonCode Id 2 name em-dash -> ASCII hyphen. The
 --                  0004 seed wrote 'Reprint - Damaged' with an em-dash, which
 --                  mojibakes through sqlcmd (repo ASCII-only rule; tracked P4-7).
 --              Idempotent (re-apply = no-op). ASCII-only strings.
 -- ============================================================
-
-IF NOT EXISTS (SELECT 1 FROM Location.LocationAttributeDefinition
-               WHERE LocationTypeDefinitionId = 16 AND AttributeName = N'LabelTypes')
-    INSERT INTO Location.LocationAttributeDefinition
-        (LocationTypeDefinitionId, AttributeName, DataType, IsRequired, DefaultValue, Uom, SortOrder, Description)
-    VALUES
-        (16, N'LabelTypes', N'NVARCHAR', 0, NULL, NULL, 3,
-         N'Comma-separated Lots.LabelTypeCode codes this printer serves (Primary,Container,Master,Void). Blank = any.');
-GO
 
 UPDATE Lots.PrintReasonCode
 SET Name = N'Reprint - Damaged'
