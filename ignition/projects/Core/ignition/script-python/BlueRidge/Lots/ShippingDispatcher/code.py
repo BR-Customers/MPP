@@ -109,32 +109,42 @@ def dispatchContainer(containerId, terminalLocationId=None, shippingLabelId=None
         except:
             pass
 
-    printer = BlueRidge.Location.Terminal.getPrinter(terminalLocationId, "Container") or {}
-    if not (printer.get("endpoint") or "").strip():
-        printer = _sessionPrinter()
-    endpoint = (printer.get("endpoint") or "").strip()
-    if not endpoint:
-        msg = "This terminal has no printer configured."
-        _writeBack(False, msg)
-        return {"Status": 0, "Message": msg}
+    from java.lang import Throwable
 
-    fields = BlueRidge.Common.Db.execOne("lots/Container_GetLabelData", {"containerId": containerId})
-    if not fields:
-        msg = "Container %s not found." % containerId
-        _writeBack(False, msg)
-        return {"Status": 0, "Message": msg}
+    try:
+        printer = BlueRidge.Location.Terminal.getPrinter(terminalLocationId, "Container") or {}
+        if not (printer.get("endpoint") or "").strip():
+            printer = _sessionPrinter()
+        endpoint = (printer.get("endpoint") or "").strip()
+        if not endpoint:
+            msg = "This terminal has no printer configured."
+            _writeBack(False, msg)
+            return {"Status": 0, "Message": msg}
 
-    zpl = _renderContainerLabel(fields)
-    if not zpl:
-        msg = "No active Container label template."
-        _writeBack(False, msg)
-        return {"Status": 0, "Message": msg}
+        fields = BlueRidge.Common.Db.execOne("lots/Container_GetLabelData", {"containerId": containerId})
+        if not fields:
+            msg = "Container %s not found." % containerId
+            _writeBack(False, msg)
+            return {"Status": 0, "Message": msg}
 
-    outcome = BlueRidge.Lots.LabelTransport.send(endpoint, zpl)
-    BlueRidge.Lots.LabelTransport.logDispatch(endpoint, zpl, outcome, "Shipping label")
-    if outcome.get("ok"):
-        _writeBack(True, None)
-        return {"Status": 1, "Message": "Container label printed."}
-    err = outcome.get("error") or "unknown"
-    _writeBack(False, err)
-    return {"Status": 0, "Message": "Print failed: %s." % err}
+        zpl = _renderContainerLabel(fields)
+        if not zpl:
+            msg = "No active Container label template."
+            _writeBack(False, msg)
+            return {"Status": 0, "Message": msg}
+
+        outcome = BlueRidge.Lots.LabelTransport.send(endpoint, zpl)
+        BlueRidge.Lots.LabelTransport.logDispatch(endpoint, zpl, outcome, "Shipping label")
+        if outcome.get("ok"):
+            _writeBack(True, None)
+            return {"Status": 1, "Message": "Container label printed."}
+        err = outcome.get("error") or "unknown"
+        _writeBack(False, err)
+        return {"Status": 0, "Message": "Print failed: %s." % err}
+    except Throwable as t:
+        msg = t.getMessage() or str(t)
+        _writeBack(False, msg)
+        return {"Status": 0, "Message": "Print failed: %s." % msg}
+    except Exception as e:
+        _writeBack(False, str(e))
+        return {"Status": 0, "Message": "Print failed: %s." % str(e)}

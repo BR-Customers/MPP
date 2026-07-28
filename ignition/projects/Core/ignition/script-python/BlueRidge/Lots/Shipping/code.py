@@ -37,7 +37,12 @@ def voidLabel(shippingLabelId, voidReason=None, appUserId=None, terminalLocation
 
 def reprintLabel(shippingLabelId, printReasonCode=None, appUserId=None, terminalLocationId=None):
     """Reprint a shipping label -- appends a new label row (Initial=0) for the same
-       container + AimShipperId. Returns {Status, Message, NewId (ShippingLabelId)}."""
+       container + AimShipperId. Returns {Status, Message, NewId (ShippingLabelId),
+       LabelPrint (dispatch outcome)}. Status can come back 0 even after a
+       successful DB mutation -- printing IS the point of this action, so a print
+       failure (or an unresolvable container) flips Status to 0 rather than
+       reporting a false "Label reprinted"."""
+    from java.lang import Throwable
     if appUserId is None:
         appUserId = BlueRidge.Common.Util._currentAppUserId()
     BlueRidge.Common.Util.log(
@@ -54,10 +59,16 @@ def reprintLabel(shippingLabelId, printReasonCode=None, appUserId=None, terminal
             try:
                 printRes = BlueRidge.Lots.ShippingDispatcher.dispatchContainer(
                     containerId, terminalLocationId, result.get("NewId"))
+            except Throwable as t:
+                printRes = {"Status": 0, "Message": "print raised: %s" % (t.getMessage() or t)}
             except Exception as e:
                 printRes = {"Status": 0, "Message": "print raised: %s" % e}
             result["LabelPrint"] = printRes
             if not (printRes and printRes.get("Status")):
                 result["Status"] = 0
                 result["Message"] = printRes.get("Message") or "Print failed."
+        else:
+            result["Status"] = 0
+            result["Message"] = ("Label row %s was created but its container could not be "
+                                 "resolved, so nothing was printed." % result.get("NewId"))
     return result

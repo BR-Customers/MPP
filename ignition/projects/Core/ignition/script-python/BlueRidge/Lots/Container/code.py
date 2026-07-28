@@ -61,7 +61,9 @@ def complete(containerId, operatorConfirmed=False, plcCompletionConfirmed=False,
              appUserId=None, terminalLocationId=None):
     """Complete (close out) a full container -- claims an AIM shipper ID + prints
        the shipping label when configured. Returns
-       {Status, Message, ShippingLabelId, AimShipperId}."""
+       {Status, Message, ShippingLabelId, AimShipperId, LabelPrint (dispatch outcome,
+       present only when a ShippingLabelId was claimed)}."""
+    from java.lang import Throwable
     if appUserId is None:
         appUserId = BlueRidge.Common.Util._currentAppUserId()
     BlueRidge.Common.Util.log(
@@ -79,6 +81,8 @@ def complete(containerId, operatorConfirmed=False, plcCompletionConfirmed=False,
         try:
             printRes = BlueRidge.Lots.ShippingDispatcher.dispatchContainer(
                 containerId, terminalLocationId, result.get("ShippingLabelId"))
+        except Throwable as t:
+            printRes = {"Status": 0, "Message": "print raised: %s" % (t.getMessage() or t)}
         except Exception as e:
             printRes = {"Status": 0, "Message": "print raised: %s" % e}
         result["LabelPrint"] = printRes
