@@ -913,7 +913,21 @@ def _dispatchAfterRender(res, appUserId, terminalLocationId, labelTypeCode=None)
     printerCode = printer.get("code") or ""
 ```
 
-Delete the now-redundant `if not endpoint and terminalLocationId is not None:` re-resolve block that followed (the fresh read above replaces it). Keep the fail-fast `if not endpoint:` block, the dispatch, the log, the ack, and the retry block exactly as they are.
+Delete the now-redundant `if not endpoint and terminalLocationId is not None:` re-resolve block that followed (the fresh read above replaces it). Keep the fail-fast `if not endpoint:` block, the dispatch, the log, and the ack.
+
+> **Correction applied during execution (2026-07-28).** This step originally said to keep the
+> failure **retry** block "exactly as they are." That is wrong and was caught in review. The retry
+> calls `getPrinter(terminalLocationId)` with **no label type**, so after this task's change the
+> first attempt resolves the *routed* printer while the retry resolves the terminal's SortOrder-1
+> *default*. On a terminal with two printers the endpoints differ, the guard passes, and a failed
+> container label reprints on the lot printer while the caller is told `"Label printed."` — the
+> exact misroute this feature exists to prevent.
+>
+> **Delete the retry block entirely.** Its purpose was recovering from a stale
+> `session.custom.printer` endpoint, and the fresh DB read above removes that staleness. Making it
+> route-aware instead would query identically to the first attempt, so the `freshEndpoint !=
+> endpoint` guard could never fire and the block would be unreachable. One resolve, one attempt;
+> the UI offers Reprint on failure. (Decision: Hunter, 2026-07-28.)
 
 - [ ] **Step 4: Pass the label type from both entry points**
 
