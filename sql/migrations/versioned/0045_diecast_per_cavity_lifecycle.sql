@@ -1,6 +1,13 @@
 SET NOCOUNT ON; SET XACT_ABORT ON;
 BEGIN TRANSACTION;
 
+IF EXISTS (SELECT 1 FROM dbo.SchemaVersion WHERE MigrationId = N'0045_diecast_per_cavity_lifecycle')
+BEGIN
+    PRINT 'Migration 0045 already applied - skipping.';
+    COMMIT TRANSACTION;
+    RETURN;
+END
+
 -- 1. Open status (append; do NOT renumber 1-4). Let IDENTITY assign the next Id.
 IF NOT EXISTS (SELECT 1 FROM Lots.LotStatusCode WHERE Code = N'Open')
     INSERT INTO Lots.LotStatusCode (Code, Name, BlocksProduction)
