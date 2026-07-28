@@ -8,6 +8,7 @@
 
 import BlueRidge.Common.Db
 import BlueRidge.Common.Util
+import BlueRidge.Lots.ShippingDispatcher
 
 
 def ship(shippingLabelId, appUserId=None, terminalLocationId=None):
@@ -44,4 +45,19 @@ def reprintLabel(shippingLabelId, printReasonCode=None, appUserId=None, terminal
         % (shippingLabelId, printReasonCode, appUserId))
     params = {"shippingLabelId": shippingLabelId, "printReasonCode": printReasonCode,
               "appUserId": appUserId, "terminalLocationId": terminalLocationId}
-    return BlueRidge.Common.Db.execMutation("lots/ShippingLabel_Reprint", params)
+    result = BlueRidge.Common.Db.execMutation("lots/ShippingLabel_Reprint", params)
+    if result and result.get("Status") and result.get("NewId") is not None:
+        containerId = (BlueRidge.Common.Db.execOne(
+            "lots/ShippingLabel_GetContainerId", {"shippingLabelId": result.get("NewId")}) or {}
+        ).get("ContainerId")
+        if containerId is not None:
+            try:
+                printRes = BlueRidge.Lots.ShippingDispatcher.dispatchContainer(
+                    containerId, terminalLocationId, result.get("NewId"))
+            except Exception as e:
+                printRes = {"Status": 0, "Message": "print raised: %s" % e}
+            result["LabelPrint"] = printRes
+            if not (printRes and printRes.get("Status")):
+                result["Status"] = 0
+                result["Message"] = printRes.get("Message") or "Print failed."
+    return result

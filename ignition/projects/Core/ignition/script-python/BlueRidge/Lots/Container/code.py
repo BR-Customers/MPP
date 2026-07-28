@@ -7,7 +7,9 @@
    via BlueRidge.Common.Util._currentAppUserId() when None."""
 
 import BlueRidge.Common.Db
+import BlueRidge.Common.Notify
 import BlueRidge.Common.Util
+import BlueRidge.Lots.ShippingDispatcher
 
 
 def open(itemId, containerConfigId, cellLocationId, appUserId=None, terminalLocationId=None):
@@ -68,7 +70,27 @@ def complete(containerId, operatorConfirmed=False, plcCompletionConfirmed=False,
     params = {"containerId": containerId, "plcCompletionConfirmed": plcCompletionConfirmed,
               "operatorConfirmed": operatorConfirmed, "appUserId": appUserId,
               "terminalLocationId": terminalLocationId}
-    return BlueRidge.Common.Db.execMutation("lots/Container_Complete", params)
+    result = BlueRidge.Common.Db.execMutation("lots/Container_Complete", params)
+    # Print the container's shipping label. Mirrors Workorder.Machining.mint: check the
+    # RETURNED Status (dispatchContainer does not raise for the common shop-floor cases)
+    # AND catch genuine exceptions -- either way NEVER lose the completed container.
+    # Complete and print are separate steps (FDS-07-005/006a).
+    if result and result.get("Status") and result.get("ShippingLabelId") is not None:
+        try:
+            printRes = BlueRidge.Lots.ShippingDispatcher.dispatchContainer(
+                containerId, terminalLocationId, result.get("ShippingLabelId"))
+        except Exception as e:
+            printRes = {"Status": 0, "Message": "print raised: %s" % e}
+        result["LabelPrint"] = printRes
+        if not (printRes and printRes.get("Status")):
+            BlueRidge.Common.Util.log(
+                "Container shipping label print failed: %s" % (printRes or {}).get("Message"))
+            BlueRidge.Common.Notify.toast(
+                "Label not printed",
+                "The container was completed but its shipping label did not print. "
+                "Reprint from the Shipping Dock.",
+                "warning")
+    return result
 
 
 def getOpenByCell(cellLocationId, _refreshToken=None):

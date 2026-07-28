@@ -36,51 +36,21 @@ def _renderZpl(aimShipperId):
             "^FO40,110^BY3^BCN,140,Y,N,N^FD%s^FS^XZ" % sid)
 
 
-# Honda container shipping label -- first pass (flattened from
-# zebraPrinter/Label Template - Container.zpl; positions/fonts/lines preserved).
-# The 10 mappable {tokens} are filled from Lots.Container_GetLabelData; the Honda-
-# specific fields (part-# extension, D/C part level, auditor) render blank, and their
-# un-sourced barcodes (2D DataMatrix, part-ext, part-level) are omitted for now.
-# ^PQ2 = 2 copies per the source label.
-_CONTAINER_TEMPLATE = (
-    "^XA^POI"
-    "^A0R,24,26^FO740,20^FDPART NO. (P)^FS"
-    "^A0R,86,86^FO690,200^FD{PartNumber}^FS"
-    "^A0R^FO600,70^BY3^B3,,100,N,^FD{PartNumber}^FS"
-    "^A0R,24,24^FO550,20^FDPART NO. EXT (C)^FS"
-    "^A0R,72,72^FO480,70^FD{PartExt}^FS"
-    "^A0R,24,24^FO550,670^FDDESCRIPTION^FS"
-    "^A0R,45,36^FO500,670^FD{Description}^FS"
-    "^A0R,24,24^FO460,670^FDMFG LOT NUMBER^FS"
-    "^A0R,45,36^FO410,670^FD{MfgLotNumber}^FS"
-    "^A0R,24,24^FO460,1070^FDMFG DATE^FS"
-    "^A0R,45,36^FO410,1070^FD{MfgDate}^FS"
-    "^A0R,24,24^FO460,940^FDAUDIT^FS"
-    "^A0R,45,36^FO420,940^FD{Auditor}^FS"
-    "^A0R,24,24^FO370,20^FDD/C PART LEVEL (2P)^FS"
-    "^A0R,72,72^FO300,70^FD{PartLevel}^FS"
-    "^A0R^FO320,720^BY3^B3,,75,N,^FDQ{Quantity}^FS"
-    "^A0R,72,72^FO240,720^FD{Quantity}^FS"
-    "^A0R,24,24^FO230,670^FDQUANTITY (Q)^FS"
-    "^A0R,24,24^FO190,20^FDSERIAL (1S)^FS"
-    "^A0R,72,72^FO140,200^FD{Serial}^FS"
-    "^A0R^FO50,60^BY3^B3,,95,N,^FD{Serial}^FS"
-    "^A0R,24,24^FO20,20^FDMade In / C.O.O.                                               Madison Precision Products Inc., 94 E 400 North, Madison, IN 47250^FS"
-    "^A0R,24,24^FO20,220^FD{CountryOfOrigin}^FS"
-    "^FO580,10^GB0,1300,3^FS"
-    "^FO490,650^GB0,905,3^FS"
-    "^FO400,10^GB0,1300,3^FS"
-    "^FO220,10^GB0,1300,3^FS"
-    "^FO220,650^GB360,0,3^FS"
-    "^PQ2"
-    "^XZ"
-)
-
-
 def _renderContainerLabel(fields):
-    """Render the real container shipping label from a fields dict (Container_GetLabelData
-       shape). Honda-specific tokens (PartExt, PartLevel, Auditor) default to blank."""
+    """Render the Honda container shipping label from a fields dict
+       (Lots.Container_GetLabelData shape). The ZPL body comes from the ACTIVE
+       'Container' Lots.LabelTemplate row -- NOT a Python constant (FDS sec 2064:
+       templates SHALL be configurable). Honda-specific tokens (PartExt, PartLevel,
+       Auditor) render blank until sourced. Returns the ZPL, or None when no active
+       Container template exists."""
     f = BlueRidge.Common.Util.extractQualifiedValues(fields) or {}
+    template = None
+    for r in (BlueRidge.Common.Db.execList("lots/LabelTemplate_GetActiveByTypeCode",
+                                           {"labelTypeCode": "Container"}) or []):
+        template = r.get("ZplBody")
+        break
+    if not template:
+        return None
     subs = {
         "PartNumber":      f.get("PartNumber") or "",
         "PartExt":         f.get("PartExt") or "",
@@ -93,7 +63,7 @@ def _renderContainerLabel(fields):
         "Serial":          f.get("Serial") or "",
         "CountryOfOrigin": f.get("CountryOfOrigin") or "",
     }
-    zpl = _CONTAINER_TEMPLATE
+    zpl = template
     for k, v in subs.items():
         zpl = zpl.replace("{%s}" % k, v)
     return zpl
@@ -120,26 +90,51 @@ def dispatch(aimShipperId, terminalLocationId=None):
     return {"Status": 0, "Message": "Print failed: %s." % (outcome.get("error") or "unknown")}
 
 
-def dispatchContainer(containerId, terminalLocationId=None):
-    """Render the REAL Honda container shipping label (first pass) from the container's
-       data and synchronously dispatch it. Fields resolve via Lots.Container_GetLabelData;
-       Honda-specific fields render blank until sourced. Returns {Status, Message}.
-       Fails-fast (no rollback) when no printer is configured for the terminal."""
+def dispatchContainer(containerId, terminalLocationId=None, shippingLabelId=None):
+    """Render the Honda container shipping label from the container's data and
+       synchronously dispatch it. Fields resolve via Lots.Container_GetLabelData;
+       Honda-specific fields render blank until sourced. When shippingLabelId is
+       given, the outcome is written back via Lots.ShippingLabel_RecordDispatch.
+       Returns {Status, Message}. Fails-fast (NO container rollback) when the
+       terminal has no printer -- complete and print are separate steps."""
     BlueRidge.Common.Util.log("dispatchContainer containerId=%s" % containerId)
+
+    def _writeBack(ok, errorText):
+        if shippingLabelId is None:
+            return
+        try:
+            BlueRidge.Common.Db.execMutation(
+                "lots/ShippingLabel_RecordDispatch",
+                {"shippingLabelId": shippingLabelId, "success": ok, "errorText": errorText})
+        except:
+            pass
+
     printer = BlueRidge.Location.Terminal.getPrinter(terminalLocationId, "Container") or {}
     if not (printer.get("endpoint") or "").strip():
         printer = _sessionPrinter()
     endpoint = (printer.get("endpoint") or "").strip()
     if not endpoint:
-        return {"Status": 0, "Message": "This terminal has no printer configured."}
+        msg = "This terminal has no printer configured."
+        _writeBack(False, msg)
+        return {"Status": 0, "Message": msg}
 
     fields = BlueRidge.Common.Db.execOne("lots/Container_GetLabelData", {"containerId": containerId})
     if not fields:
-        return {"Status": 0, "Message": "Container %s not found." % containerId}
+        msg = "Container %s not found." % containerId
+        _writeBack(False, msg)
+        return {"Status": 0, "Message": msg}
 
     zpl = _renderContainerLabel(fields)
+    if not zpl:
+        msg = "No active Container label template."
+        _writeBack(False, msg)
+        return {"Status": 0, "Message": msg}
+
     outcome = BlueRidge.Lots.LabelTransport.send(endpoint, zpl)
     BlueRidge.Lots.LabelTransport.logDispatch(endpoint, zpl, outcome, "Shipping label")
     if outcome.get("ok"):
+        _writeBack(True, None)
         return {"Status": 1, "Message": "Container label printed."}
-    return {"Status": 0, "Message": "Print failed: %s." % (outcome.get("error") or "unknown")}
+    err = outcome.get("error") or "unknown"
+    _writeBack(False, err)
+    return {"Status": 0, "Message": "Print failed: %s." % err}
