@@ -2,7 +2,7 @@
 
    Arc 2 Phase 4 (Spec 2 sec 3/4). Orchestrates:
      SQL render (Lots.LotLabel_Print/_Reprint -> ZplContent)
-       -> resolve printer endpoint from session.custom.printer
+       -> resolve the printer serving this label type (session.custom.printer as fallback)
        -> hand the bytes to BlueRidge.Lots.LabelTransport
        -> log EVERY attempt to Audit.InterfaceLog (LabelTransport.logDispatch)
        -> on success: Lots.LotLabel_RecordDispatch ack write-back.
@@ -80,8 +80,14 @@ def _sessionPrinter():
 
 def _dispatchAfterRender(res, appUserId, terminalLocationId, labelTypeCode=None):
     """Shared tail for printLabel/reprint: take a render result (Status, Message,
-       NewId=LotLabelId, ZplContent), dispatch the ZPL, log, ack on success, with
-       one endpoint re-resolve + retry on failure. Returns a UI status dict."""
+       NewId=LotLabelId, ZplContent), resolve the printer serving labelTypeCode,
+       dispatch the ZPL, log the attempt, and ack on success. Returns a UI status dict.
+
+       ONE resolve, ONE attempt, by design. The old re-resolve-and-retry existed to
+       recover from a stale session.custom.printer endpoint; the resolve above now reads
+       fresh from the DB, so there is nothing stale left to recover from. A route-aware
+       retry would also be unreachable -- it would query identically and the
+       endpoint-changed guard could never fire. On failure the UI offers Reprint."""
     if not res or not res.get("Status"):
         return res
     lotLabelId = res.get("NewId")
@@ -111,19 +117,6 @@ def _dispatchAfterRender(res, appUserId, terminalLocationId, labelTypeCode=None)
             "lots/LotLabel_RecordDispatch",
             {"lotLabelId": lotLabelId, "printerName": printerCode})
         return {"Status": 1, "Message": "Label printed.", "NewId": lotLabelId}
-
-    # One re-resolve of the endpoint from the DB (covers a stale session value)
-    # + retry, logged.
-    fresh = BlueRidge.Location.Terminal.getPrinter(terminalLocationId) or {}
-    freshEndpoint = (fresh.get("endpoint") or "").strip()
-    if freshEndpoint and freshEndpoint != endpoint:
-        outcome = BlueRidge.Lots.LabelTransport.send(freshEndpoint, zpl)
-        BlueRidge.Lots.LabelTransport.logDispatch(freshEndpoint, zpl, outcome, "LTT")
-        if outcome.get("ok"):
-            BlueRidge.Common.Db.execMutation(
-                "lots/LotLabel_RecordDispatch",
-                {"lotLabelId": lotLabelId, "printerName": fresh.get("code") or printerCode})
-            return {"Status": 1, "Message": "Label printed.", "NewId": lotLabelId}
 
     return {"Status": 0,
             "Message": "Print failed: %s. Use Reprint to retry." % (outcome.get("error") or "unknown"),
