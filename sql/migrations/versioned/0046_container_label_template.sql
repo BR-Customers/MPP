@@ -16,6 +16,10 @@
 --              PartLevel, Auditor) render blank until sourced, and their un-sourced
 --              barcodes (2D DataMatrix, part-ext, part-level) are omitted. ^PQ2 = 2
 --              copies, per the source label.
+--
+--              WARNING: this makes LabelTypeCodeId 2 unusable through Lots.LotLabel_Print
+--              (its token vocabulary no longer overlaps LOT-shaped tokens) -- see that
+--              proc's header for the full explanation.
 --              Idempotent (re-apply = no-op). ASCII-only.
 -- ============================================================
 

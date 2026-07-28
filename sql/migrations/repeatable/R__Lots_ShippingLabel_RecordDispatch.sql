@@ -8,7 +8,11 @@
 --                @Success = 1 -> PrintedAt + LastPrintAttemptAt set, error cleared.
 --                @Success = 0 -> PrintAttempts incremented, LastPrintAttemptAt and
 --                                LastPrintError stored; PrintFailedAt set once
---                                attempts reach @MaxAttempts (FDS-07-006a: 3).
+--                                attempts reach @MaxAttempts (FDS-07-006a: 3), then
+--                                LATCHED -- a 4th+ failure past the cap does NOT slide
+--                                PrintFailedAt forward, since the FDS-07-006b age-based
+--                                stranded-print sweep needs the moment it first failed,
+--                                not the moment of the most recent retry.
 --              These five columns exist since 0028 and NOTHING wrote them until now;
 --              the FDS-07-006b stranded-print sweep reads them, so populating them is
 --              what makes that sweep buildable later (the sweep itself is out of scope).
@@ -61,8 +65,9 @@ BEGIN
             SET PrintAttempts      = PrintAttempts + 1,
                 LastPrintAttemptAt = SYSUTCDATETIME(),
                 LastPrintError     = @ErrorText,
-                PrintFailedAt      = CASE WHEN PrintAttempts + 1 >= @MaxAttempts
-                                          THEN SYSUTCDATETIME() ELSE PrintFailedAt END
+                PrintFailedAt      = CASE WHEN PrintFailedAt IS NOT NULL THEN PrintFailedAt
+                                          WHEN PrintAttempts + 1 >= @MaxAttempts THEN SYSUTCDATETIME()
+                                          ELSE NULL END
             WHERE Id = @ShippingLabelId;
 
             SET @Message = N'Print failure recorded.';

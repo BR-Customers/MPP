@@ -25,6 +25,16 @@
 --                * re-run       -> attribute present       -> skip
 --
 --              Idempotent (re-apply = no-op). ASCII-only strings.
+--
+--              RELATED, deliberately not deduplicated: sql/scripts/reconcile_location_dev.sql
+--              carries an identical guarded INSERT (it is regenerated from
+--              gen_locations_mpp.js alongside the seed). That script is MANUAL -- someone
+--              has to remember to run it against a specific dev DB. This migration is the
+--              AUTOMATIC path, which is what an unattended Prod cutover needs. Both are
+--              guarded and idempotent, so running either or both is safe. If the attribute
+--              definition is ever corrected, update the generator (which refreshes the seed
+--              and the reconcile script) AND add a new forward migration -- this one is an
+--              immutable historical snapshot and must not be edited after release.
 -- ============================================================
 
 IF EXISTS (SELECT 1 FROM Location.LocationTypeDefinition WHERE Id = 16)

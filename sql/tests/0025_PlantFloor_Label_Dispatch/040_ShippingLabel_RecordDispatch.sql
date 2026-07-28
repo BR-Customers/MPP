@@ -102,6 +102,24 @@ EXEC test.Assert_IsNotNull @TestName = N'[ShipDispatch] third failure sets Print
 GO
 
 -- =============================================
+-- Test 3b: PrintFailedAt is LATCHED -- a 4th failure past the cap must not
+--          slide the timestamp forward (FDS-07-006b needs the first-failed moment).
+-- =============================================
+DECLARE @Id BIGINT = (SELECT Id FROM Lots.ShippingLabel WHERE AimShipperId = N'TESTRD0002');
+DECLARE @FailedAtBefore DATETIME2(3) = (SELECT PrintFailedAt FROM Lots.ShippingLabel WHERE Id = @Id);
+WAITFOR DELAY '00:00:00.010';
+CREATE TABLE #S3b (Status BIT, Message NVARCHAR(500));
+INSERT INTO #S3b EXEC Lots.ShippingLabel_RecordDispatch
+    @ShippingLabelId = @Id, @Success = 0, @ErrorText = N'connection refused';
+DROP TABLE #S3b;
+DECLARE @FailedAtAfter DATETIME2(3) = (SELECT PrintFailedAt FROM Lots.ShippingLabel WHERE Id = @Id);
+DECLARE @FailedAtBeforeStr NVARCHAR(30) = CONVERT(NVARCHAR(30), @FailedAtBefore, 121);
+DECLARE @FailedAtAfterStr  NVARCHAR(30) = CONVERT(NVARCHAR(30), @FailedAtAfter, 121);
+EXEC test.Assert_IsEqual @TestName = N'[ShipDispatch] PrintFailedAt is latched (4th failure does not move it)',
+    @Expected = @FailedAtBeforeStr, @Actual = @FailedAtAfterStr;
+GO
+
+-- =============================================
 -- Test 4: unknown id -> Status = 0
 -- =============================================
 DECLARE @Status BIT;
@@ -110,6 +128,25 @@ INSERT INTO #S4 EXEC Lots.ShippingLabel_RecordDispatch @ShippingLabelId = -1, @S
 SELECT @Status = Status FROM #S4; DROP TABLE #S4;
 EXEC test.Assert_IsEqual @TestName = N'[ShipDispatch] unknown id -> Status=0',
     @Expected = N'0', @Actual = @Status;
+GO
+
+-- =============================================
+-- Test 5: migration 0046 landed -- the active Container template is the
+--         Honda container ZPL (has {PartNumber}), not the old LOT-shaped
+--         placeholder body (no {LotName}). Pins the post-0046 state so a
+--         future edit that silently reverts the Container template fails
+--         a test instead of surprising someone at a printer.
+-- =============================================
+DECLARE @ContainerZpl NVARCHAR(MAX) = (
+    SELECT lt.ZplBody FROM Lots.LabelTemplate lt
+    INNER JOIN Lots.LabelTypeCode ltc ON ltc.Id = lt.LabelTypeCodeId
+    WHERE ltc.Code = N'Container' AND lt.DeprecatedAt IS NULL);
+DECLARE @Is0046 BIT = CASE
+    WHEN CHARINDEX(N'{PartNumber}', ISNULL(@ContainerZpl, N'')) > 0
+     AND CHARINDEX(N'{LotName}',    ISNULL(@ContainerZpl, N'{LotName}')) = 0
+    THEN 1 ELSE 0 END;
+EXEC test.Assert_IsTrue @TestName = N'[ShipDispatch] migration 0046 landed (Container has {PartNumber}, no {LotName})',
+    @Condition = @Is0046;
 GO
 
 -- ---- teardown: labels first, then the containers they referenced, so a re-run

@@ -12,6 +12,15 @@
 --              rendered ZplContent, audits 'LabelPrinted', and returns
 --              SELECT @Status, @Message, @NewId, @Zpl AS ZplContent.
 --
+--              RESERVED: LabelTypeCodeId 2 ('Container') is NOT usable through this proc.
+--              Migration 0046 replaced that template body with the Honda container SHIPPING
+--              label, which is rendered by BlueRidge.Lots.ShippingDispatcher from
+--              Lots.Container_GetLabelData -- a completely different token vocabulary
+--              ({PartNumber}/{Serial}/{MfgLotNumber}...). Calling LotLabel_Print with
+--              LabelTypeCodeId 2 renders those tokens as LITERAL TEXT and drops all LOT
+--              identity. Use 1 ('Primary') for LTT labels. Wiring a genuine container-LTT
+--              would need its own LabelTypeCode row, not a reuse of 2.
+--
 --              SQL-side ZPL rendering (spec decision sec 2.3 / sec 4.4): label CONTENT
 --              is proc-enforced + assertable here; the gateway only DISPATCHES
 --              the returned string (B17 async, later phase). Rendering is pure
