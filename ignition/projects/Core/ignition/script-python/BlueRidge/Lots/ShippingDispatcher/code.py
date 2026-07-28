@@ -11,12 +11,9 @@
 """
 import BlueRidge.Common.Db
 import BlueRidge.Common.Util
+import BlueRidge.Lots.LabelTransport
 import BlueRidge.Location.Terminal
 
-from java.net import Socket, InetSocketAddress
-from java.lang import String as JString
-
-_SYSTEM_NAME = "Zebra"
 _DEFAULT_PORT = 9100
 _TIMEOUT_MS = 4000
 
@@ -101,56 +98,6 @@ def _renderContainerLabel(fields):
     return zpl
 
 
-def _dispatchZpl(endpoint, zpl):
-    s = None
-    try:
-        ep = (endpoint or "").strip()
-        if ":" in ep:
-            host, portStr = ep.rsplit(":", 1)
-            port = int(portStr)
-        else:
-            host, port = ep, _DEFAULT_PORT
-        if not host:
-            return {"ok": False, "error": "empty endpoint"}
-        s = Socket()
-        s.connect(InetSocketAddress(host, port), _TIMEOUT_MS)
-        s.setSoTimeout(_TIMEOUT_MS)
-        out = s.getOutputStream()
-        out.write(JString(zpl or "").getBytes("US-ASCII"))
-        out.flush()
-        return {"ok": True, "error": None}
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
-    finally:
-        try:
-            if s is not None:
-                s.close()
-        except Exception:
-            pass
-
-
-def _logDispatch(endpoint, zpl, outcome):
-    ok = bool(outcome and outcome.get("ok"))
-    params = {
-        "systemName":       _SYSTEM_NAME,
-        "direction":        "Outbound",
-        "logEventTypeCode": "LabelDispatched",
-        "description":      "Shipping label dispatch to %s" % (endpoint or "(none)"),
-        "requestPayload":   "%s | %s" % (endpoint or "", (zpl or "")[:200]),
-        "responsePayload":  "OK" if ok else None,
-        "errorCondition":   None if ok else "DispatchFailed",
-        "errorDescription": None if ok else (outcome.get("error") if outcome else "unknown"),
-        "isHighFidelity":   True,
-    }
-    # Best-effort interface log -- must never break dispatch. The audit NQ is
-    # "UpdateQuery"-typed (the proc emits no result set), so it goes through
-    # execNonQuery; a "Query"-typed read would throw out of the JDBC driver.
-    try:
-        BlueRidge.Common.Db.execNonQuery("audit/Audit_LogInterfaceCall", params)
-    except Exception as e:
-        BlueRidge.Common.Util.log("_logDispatch failed: %s" % str(e), level="debug")
-
-
 def dispatch(aimShipperId, terminalLocationId=None):
     """Render + synchronously dispatch a container shipping label for a claimed AIM
        Shipper ID. Returns {Status, Message}. Fails-fast (no container rollback) when no
@@ -166,8 +113,8 @@ def dispatch(aimShipperId, terminalLocationId=None):
     if not endpoint:
         return {"Status": 0, "Message": "This terminal has no printer configured."}
 
-    outcome = _dispatchZpl(endpoint, zpl)
-    _logDispatch(endpoint, zpl, outcome)
+    outcome = BlueRidge.Lots.LabelTransport.send(endpoint, zpl)
+    BlueRidge.Lots.LabelTransport.logDispatch(endpoint, zpl, outcome, "Shipping label")
     if outcome.get("ok"):
         return {"Status": 1, "Message": "Shipping label printed."}
     return {"Status": 0, "Message": "Print failed: %s." % (outcome.get("error") or "unknown")}
@@ -192,8 +139,8 @@ def dispatchContainer(containerId, terminalLocationId=None):
         return {"Status": 0, "Message": "Container %s not found." % containerId}
 
     zpl = _renderContainerLabel(fields)
-    outcome = _dispatchZpl(endpoint, zpl)
-    _logDispatch(endpoint, zpl, outcome)
+    outcome = BlueRidge.Lots.LabelTransport.send(endpoint, zpl)
+    BlueRidge.Lots.LabelTransport.logDispatch(endpoint, zpl, outcome, "Shipping label")
     if outcome.get("ok"):
         return {"Status": 1, "Message": "Container label printed."}
     return {"Status": 0, "Message": "Print failed: %s." % (outcome.get("error") or "unknown")}
