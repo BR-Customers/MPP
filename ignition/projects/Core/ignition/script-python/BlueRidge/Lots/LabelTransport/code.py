@@ -29,7 +29,11 @@ import BlueRidge.Common.Db
 
 _SYSTEM_NAME = "Zebra"
 _TIMEOUT_MS = 4000            # bounded connect + write (spec: 3-5 s)
-_TCP_RE = re.compile(r"^(.+):(\d+)$")
+# (.*) NOT (.+): an empty host must still MATCH here so the "host missing before
+# port" guard below can reject ':9100'. With (.+) that input falls through to the
+# rule-4 catch-all and is silently accepted as a print-QUEUE named ':9100', which
+# then fails much later with a baffling "print queue not found" error.
+_TCP_RE = re.compile(r"^(.*):(\d+)$")
 
 
 def _parseEndpoint(endpoint):
