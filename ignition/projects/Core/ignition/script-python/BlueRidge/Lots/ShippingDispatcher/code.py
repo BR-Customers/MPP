@@ -74,7 +74,20 @@ def dispatch(aimShipperId, terminalLocationId=None):
        Shipper ID. Returns {Status, Message}. Fails-fast (no container rollback) when no
        printer is configured for the terminal."""
     BlueRidge.Common.Util.log("dispatch aimShipperId=%s" % aimShipperId)
-    printer = BlueRidge.Location.Terminal.getPrinter(terminalLocationId, "Container") or {}
+    # The Assembly views pass session.custom.cell.locationId, which is the terminal's
+    # parent LINE, and the Shipping Dock passes nothing -- neither resolves a Printer,
+    # whose parent is the TERMINAL. Prefer the session's terminal id so label-type
+    # routing is actually reachable from the operator UI. In Gateway scope (the PLC
+    # auto-complete path) getSessionInfo raises and the passed id IS a real terminal id,
+    # so the fallback is correct there. Bare except: Jython's `except Exception` does
+    # not catch java.lang.Throwable.
+    tid = terminalLocationId
+    try:
+        tid = (system.perspective.getSessionInfo()["custom"]["terminal"]["terminalLocationId"]
+               or terminalLocationId)
+    except:
+        pass
+    printer = BlueRidge.Location.Terminal.getPrinter(tid, "Container") or {}
     if not (printer.get("endpoint") or "").strip():
         printer = _sessionPrinter()
     endpoint = (printer.get("endpoint") or "").strip()
@@ -112,7 +125,20 @@ def dispatchContainer(containerId, terminalLocationId=None, shippingLabelId=None
     from java.lang import Throwable
 
     try:
-        printer = BlueRidge.Location.Terminal.getPrinter(terminalLocationId, "Container") or {}
+        # The Assembly views pass session.custom.cell.locationId, which is the terminal's
+        # parent LINE, and the Shipping Dock passes nothing -- neither resolves a Printer,
+        # whose parent is the TERMINAL. Prefer the session's terminal id so label-type
+        # routing is actually reachable from the operator UI. In Gateway scope (the PLC
+        # auto-complete path) getSessionInfo raises and the passed id IS a real terminal id,
+        # so the fallback is correct there. Bare except: Jython's `except Exception` does
+        # not catch java.lang.Throwable.
+        tid = terminalLocationId
+        try:
+            tid = (system.perspective.getSessionInfo()["custom"]["terminal"]["terminalLocationId"]
+                   or terminalLocationId)
+        except:
+            pass
+        printer = BlueRidge.Location.Terminal.getPrinter(tid, "Container") or {}
         if not (printer.get("endpoint") or "").strip():
             printer = _sessionPrinter()
         endpoint = (printer.get("endpoint") or "").strip()

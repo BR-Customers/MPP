@@ -89,11 +89,16 @@ def complete(containerId, operatorConfirmed=False, plcCompletionConfirmed=False,
         if not (printRes and printRes.get("Status")):
             BlueRidge.Common.Util.log(
                 "Container shipping label print failed: %s" % (printRes or {}).get("Message"))
-            BlueRidge.Common.Notify.toast(
-                "Label not printed",
-                "The container was completed but its shipping label did not print. "
-                "Reprint from the Shipping Dock.",
-                "warning")
+            try:
+                BlueRidge.Common.Notify.toast(
+                    "Label not printed",
+                    "The container was completed but its shipping label did not print. "
+                    "Reprint from the Shipping Dock.",
+                    "warning")
+            except:
+                # Gateway scope (PLC auto-complete) has no session to toast into.
+                # The container is already committed; never let a toast failure escape.
+                pass
     return result
 
 
