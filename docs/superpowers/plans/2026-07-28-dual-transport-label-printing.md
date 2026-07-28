@@ -24,6 +24,26 @@
 - **Git commits:** omit the `Co-Authored-By: Claude` trailer.
 - **Next free versioned migration number is `0045`** (last applied is `0044_operator_change_audit_event.sql`).
 
+### Known-failing baseline (discovered 2026-07-28, PRE-EXISTING — not caused by this plan)
+
+A full-suite run on `hunter/explore` is **2151 assertions passing, 0 `FAIL:`, and 7 `ERROR running`
+files**. The runner therefore exits non-zero *before* any work in this plan. The 7 files are:
+
+`077_Lot_Search.sql`, `050_Lot_GetShiftCavityTally.sql`, `060_Lot_GetWipQueueByLocation.sql`,
+`070_MachiningOut_Mint.sql`, `100_Lot_GetLineInventoryByPart.sql`, `076_Assembly_ScanIn.sql`,
+`060_OperatorChange_Log.sql`
+
+At least one fails with `Msg 213 — Column name or number of supplied values does not match table
+definition` against `Lots.Lot_Search`, which is the signature of a fixed-shape `INSERT ... EXEC`
+capture left behind by an earlier proc-shape change. None of the seven reference
+`Location.Terminal_GetPrinter`, `Lots.PrintReasonCode`, or anything else this plan touches
+(verified independently during the Task 3 review).
+
+**How to judge a suite run in this plan:** the gate is **no `FAIL:` lines and no `ERROR running`
+line outside that list of 7** — not a clean run, which is currently unattainable. An 8th error, or
+any of these 7 changing shape, IS a regression and must be investigated. Do not "fix" these seven
+under this plan; they are separate pre-existing work.
+
 ## File Structure
 
 | File | Responsibility |
@@ -793,7 +813,7 @@ Expected: 6 assertions, 0 failures.
 powershell -File sql/tests/Run-Tests.ps1 -DatabaseName MPP_MES_Test
 ```
 
-Expected: no `FAIL:` lines and no `ERROR running` lines. `sql/tests/0020_PlantFloor_Foundation/015_Terminal_ContextCells_List.sql` exercises `Terminal_List`/`HasPrinter` rather than this proc, but confirm it stays green.
+Expected: no `FAIL:` lines, and **no `ERROR running` line beyond the 7 pre-existing ones** listed under "Known-failing baseline" below. `sql/tests/0020_PlantFloor_Foundation/015_Terminal_ContextCells_List.sql` exercises `Terminal_List`/`HasPrinter` rather than this proc, but confirm it stays green.
 
 - [ ] **Step 7: Commit**
 
@@ -1351,7 +1371,7 @@ EXEC Lots.ShippingLabel_RecordDispatch
 powershell -File sql/tests/Run-Tests.ps1 -DatabaseName MPP_MES_Test
 ```
 
-Expected: no `FAIL:` lines and no `ERROR running` lines.
+Expected: no `FAIL:` lines, and no `ERROR running` line beyond the 7 pre-existing ones listed in Global Constraints > Known-failing baseline.
 
 - [ ] **Step 9: Commit**
 
@@ -1703,7 +1723,7 @@ Expected: the bridge receives bytes; `Lots.ShippingLabel.PrintedAt` is set for t
 powershell -File sql/tests/Run-Tests.ps1 -DatabaseName MPP_MES_Test
 ```
 
-Expected: no `FAIL:` lines, no `ERROR running` lines.
+Expected: no `FAIL:` lines, and no `ERROR running` line beyond the 7 pre-existing ones listed in Global Constraints > Known-failing baseline.
 
 ```bash
 git add ignition/projects/Core/ignition/script-python/BlueRidge/Lots sql/migrations/repeatable/R__Lots_LabelTemplate_GetActiveByTypeCode.sql sql/migrations/repeatable/R__Lots_ShippingLabel_GetContainerId.sql ignition/projects/Core/ignition/named-query/lots
