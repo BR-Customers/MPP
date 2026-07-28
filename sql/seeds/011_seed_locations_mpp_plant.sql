@@ -20,6 +20,9 @@ IF NOT EXISTS (SELECT 1 FROM Location.LocationAttributeDefinition WHERE Location
 IF NOT EXISTS (SELECT 1 FROM Location.LocationAttributeDefinition WHERE LocationTypeDefinitionId = 16 AND AttributeName = N'Model')
     INSERT INTO Location.LocationAttributeDefinition (LocationTypeDefinitionId, AttributeName, DataType, IsRequired, DefaultValue, Uom, SortOrder, Description)
     VALUES (16, N'Model', N'NVARCHAR', 0, NULL, NULL, 2, N'Printer model (informs label-template selection)');
+IF NOT EXISTS (SELECT 1 FROM Location.LocationAttributeDefinition WHERE LocationTypeDefinitionId = 16 AND AttributeName = N'LabelTypes')
+    INSERT INTO Location.LocationAttributeDefinition (LocationTypeDefinitionId, AttributeName, DataType, IsRequired, DefaultValue, Uom, SortOrder, Description)
+    VALUES (16, N'LabelTypes', N'NVARCHAR', 0, NULL, NULL, 3, N'Comma-separated Lots.LabelTypeCode codes this printer serves (Primary,Container,Master,Void). Blank = any.');
 
 
 -- === Plant hierarchy (reconciled from Site) ===
