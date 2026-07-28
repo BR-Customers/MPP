@@ -104,11 +104,10 @@ def dispatch(aimShipperId, terminalLocationId=None):
        Shipper ID. Returns {Status, Message}. Fails-fast (no container rollback) when no
        printer is configured for the terminal."""
     BlueRidge.Common.Util.log("dispatch aimShipperId=%s" % aimShipperId)
-    printer = _sessionPrinter()
+    printer = BlueRidge.Location.Terminal.getPrinter(terminalLocationId, "Container") or {}
+    if not (printer.get("endpoint") or "").strip():
+        printer = _sessionPrinter()
     endpoint = (printer.get("endpoint") or "").strip()
-    if not endpoint and terminalLocationId is not None:
-        printer = BlueRidge.Location.Terminal.getPrinter(terminalLocationId) or {}
-        endpoint = (printer.get("endpoint") or "").strip()
 
     zpl = _renderZpl(aimShipperId)
     if not endpoint:
@@ -127,11 +126,10 @@ def dispatchContainer(containerId, terminalLocationId=None):
        Honda-specific fields render blank until sourced. Returns {Status, Message}.
        Fails-fast (no rollback) when no printer is configured for the terminal."""
     BlueRidge.Common.Util.log("dispatchContainer containerId=%s" % containerId)
-    printer = _sessionPrinter()
+    printer = BlueRidge.Location.Terminal.getPrinter(terminalLocationId, "Container") or {}
+    if not (printer.get("endpoint") or "").strip():
+        printer = _sessionPrinter()
     endpoint = (printer.get("endpoint") or "").strip()
-    if not endpoint and terminalLocationId is not None:
-        printer = BlueRidge.Location.Terminal.getPrinter(terminalLocationId) or {}
-        endpoint = (printer.get("endpoint") or "").strip()
     if not endpoint:
         return {"Status": 0, "Message": "This terminal has no printer configured."}
 

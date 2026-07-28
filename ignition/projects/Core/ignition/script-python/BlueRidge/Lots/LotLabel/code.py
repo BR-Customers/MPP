@@ -40,6 +40,17 @@ def _labelTypeIdByCode(code):
     return None
 
 
+def _labelTypeCodeById(labelTypeCodeId):
+    """Resolve a Lots.LabelTypeCode Code by Id (routing needs the code, the procs
+       take the id). Returns the Code or None."""
+    if labelTypeCodeId is None:
+        return None
+    for r in (BlueRidge.Common.Db.execList("lots/LabelTypeCode_List") or []):
+        if r.get("Id") == labelTypeCodeId:
+            return r.get("Code")
+    return None
+
+
 def _printReasonIdByCode(code):
     """Resolve a Lots.PrintReasonCode Id by Code. Returns Id or None."""
     for r in (BlueRidge.Common.Db.execList("lots/PrintReasonCode_List") or []):
@@ -67,7 +78,7 @@ def _sessionPrinter():
         return {}
 
 
-def _dispatchAfterRender(res, appUserId, terminalLocationId):
+def _dispatchAfterRender(res, appUserId, terminalLocationId, labelTypeCode=None):
     """Shared tail for printLabel/reprint: take a render result (Status, Message,
        NewId=LotLabelId, ZplContent), dispatch the ZPL, log, ack on success, with
        one endpoint re-resolve + retry on failure. Returns a UI status dict."""
@@ -76,17 +87,16 @@ def _dispatchAfterRender(res, appUserId, terminalLocationId):
     lotLabelId = res.get("NewId")
     zpl = res.get("ZplContent") or ""
 
-    printer = _sessionPrinter()
+    # Resolve by label type first (design sec 3.5): resolving fresh also sidesteps the
+    # stale-session bug where a printer configured mid-session stays invisible until
+    # a restart. Fall back to the session printer when the DB read yields nothing.
+    printer = {}
+    if terminalLocationId is not None:
+        printer = BlueRidge.Location.Terminal.getPrinter(terminalLocationId, labelTypeCode) or {}
+    if not (printer.get("endpoint") or "").strip():
+        printer = _sessionPrinter()
     endpoint = (printer.get("endpoint") or "").strip()
     printerCode = printer.get("code") or ""
-
-    # session.custom.printer is resolved once at session onStartup, so a printer that is
-    # configured or changed mid-session is not reflected until a full session restart.
-    # When the session value is empty, re-resolve from the DB by terminal before failing.
-    if not endpoint and terminalLocationId is not None:
-        fresh = BlueRidge.Location.Terminal.getPrinter(terminalLocationId) or {}
-        endpoint = (fresh.get("endpoint") or "").strip()
-        printerCode = fresh.get("code") or printerCode
 
     # Fail-fast: genuinely no printer configured for this terminal. LOT/label already exist.
     if not endpoint:
@@ -140,7 +150,8 @@ def printLabel(data, appUserId=None, terminalLocationId=None):
         "terminalLocationId": terminalLocationId,
         "printerName":        printer.get("code") or None,
     })
-    return _dispatchAfterRender(res, appUserId, terminalLocationId)
+    return _dispatchAfterRender(res, appUserId, terminalLocationId,
+                                _labelTypeCodeById(labelTypeCodeId))
 
 
 def reprint(lotId, printReasonCodeId, appUserId=None, terminalLocationId=None):
@@ -158,4 +169,4 @@ def reprint(lotId, printReasonCodeId, appUserId=None, terminalLocationId=None):
         "terminalLocationId": terminalLocationId,
         "printerName":        printer.get("code") or None,
     })
-    return _dispatchAfterRender(res, appUserId, terminalLocationId)
+    return _dispatchAfterRender(res, appUserId, terminalLocationId, "Primary")

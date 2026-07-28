@@ -144,16 +144,19 @@ def getContextCellsForDropdown(terminalLocationId, kindFilter=None):
     return out
 
 
-def getPrinter(terminalLocationId):
-    """Arc 2 Phase 4. Resolve the terminal's child Printer Location + its
-       Endpoint/Model attribute values for the onStartup session resolution +
-       the LTT dispatch path. Returns {locationId, code, endpoint, model} or {}
-       (empty when the terminal has no Printer child -- the fail-fast case)."""
+def getPrinter(terminalLocationId, labelTypeCode=None):
+    """Resolve the terminal's Printer Location + its Endpoint/Model/LabelTypes values.
+       labelTypeCode (a Lots.LabelTypeCode Code such as 'Primary' or 'Container')
+       routes to the printer serving that type; the proc falls back to the terminal's
+       first printer when nothing matches, so omitting it is v1 behaviour.
+       Returns {locationId, code, endpoint, model, labelTypes} or {} (the fail-fast case)."""
     tid = BlueRidge.Common.Util.extractQualifiedValues(terminalLocationId)
-    BlueRidge.Common.Util.log("terminalLocationId=%s" % tid)
+    ltc = BlueRidge.Common.Util.extractQualifiedValues(labelTypeCode)
+    BlueRidge.Common.Util.log("terminalLocationId=%s labelTypeCode=%s" % (tid, ltc))
     if tid is None:
         return {}
-    row = BlueRidge.Common.Db.execOne("location/Terminal_GetPrinter", {"terminalLocationId": tid})
+    row = BlueRidge.Common.Db.execOne("location/Terminal_GetPrinter",
+                                      {"terminalLocationId": tid, "labelTypeCode": ltc})
     if not row:
         return {}
     return {
@@ -161,6 +164,7 @@ def getPrinter(terminalLocationId):
         "code":       row.get("Code") or "",
         "endpoint":   row.get("Endpoint") or "",
         "model":      row.get("Model") or "",
+        "labelTypes": row.get("LabelTypes") or "",
     }
 
 
