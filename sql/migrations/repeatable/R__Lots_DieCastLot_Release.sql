@@ -18,9 +18,14 @@
 --                'Open' -> resolve @StorageLocationId (well-known 'WHSE' when
 --                NULL, hard reject if still unresolved; reject if a supplied
 --                @StorageLocationId does not exist) -> @ScrapLinesJson well-
---                formed JSON when supplied -> projected PieceCount (current +
---                ISNULL(@FinalPieceDelta,0)) must be > 0, else reject (an empty
---                basket is Void's job, not Release's).
+--                formed JSON when supplied -> @FinalPieceDelta must not be
+--                negative (mirrors DieCastShiftOutput_Record's own guard +
+--                DieCastContribution's CHECK (PieceDelta >= 0); the mutation
+--                below only applies the delta when > 0, so a negative value
+--                must reject rather than silently no-op) -> projected
+--                PieceCount (current + ISNULL(@FinalPieceDelta,0)) must be
+--                > 0, else reject (an empty basket is Void's job, not
+--                Release's).
 --
 --              Mutation (inlined per the Msg-3915 / INSERT-EXEC rule -- this
 --              proc returns a status row and is itself captured via
@@ -79,6 +84,12 @@ BEGIN
 
         IF @ScrapLinesJson IS NOT NULL AND ISJSON(@ScrapLinesJson) <> 1
         BEGIN SET @Message = N'ScrapLinesJson is not valid JSON.'; GOTO Fail; END
+
+        -- mirrors DieCastShiftOutput_Record's negative-delta guard + DieCastContribution's
+        -- CHECK (PieceDelta >= 0): a negative @FinalPieceDelta must reject, not silently
+        -- no-op (the mutation below only applies the delta when > 0).
+        IF @FinalPieceDelta IS NOT NULL AND @FinalPieceDelta < 0
+        BEGIN SET @Message = N'FinalPieceDelta cannot be negative.'; GOTO Fail; END
 
         -- an empty basket is Void's job, not Release's
         DECLARE @ProjectedPieceCount INT = (SELECT PieceCount FROM Lots.Lot WHERE Id = @LotId) + ISNULL(@FinalPieceDelta, 0);

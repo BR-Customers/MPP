@@ -41,9 +41,23 @@
 --               fires first regardless of piece count, so an empty basket is
 --               fine for isolating that specific rejection path.
 --
+--               Test 4 (negative @FinalPieceDelta rejected) uses a THIRD
+--               cavity (@Cavity3): after Test 3, both @Cavity1 (Lot3, still
+--               Open -- its release was rejected for bad storage) and
+--               @Cavity2 (Lot2, still Open -- its release was rejected as
+--               empty) are occupied, so a fresh cavity is needed. Covers the
+--               code-review finding that the pre-txn projected-PieceCount
+--               gate (current + ISNULL(@FinalPieceDelta,0) > 0) let a
+--               negative @FinalPieceDelta pass validation while the
+--               mutation only applies it when > 0 -- silently no-op'ing the
+--               delta and returning Status=1 with PieceCount unchanged,
+--               contradicting the validation. Fixed by rejecting any
+--               negative @FinalPieceDelta pre-transaction.
+--
 --               LTTs: '404040401' (Test 1, happy release), '404040402'
 --               (Test 2, empty-basket release reject), '404040403' (Test 3,
---               nonexistent storage reject) -- distinct 9-digit externals
+--               nonexistent storage reject), '404040404' (Test 4, negative
+--               FinalPieceDelta reject) -- distinct 9-digit externals
 --               (Lots.ufn_IsValidExternalLtt) from 020's 2000002xx /
 --               030's 3030303xx.
 -- =============================================
@@ -51,13 +65,13 @@ SET NOCOUNT ON; SET XACT_ABORT ON;
 EXEC test.BeginTestFile @FileName = N'0045_DieCast_Lifecycle/040_Release_and_queue.sql';
 GO
 -- ---- cleanup (idempotent, FK-safe, reverse order) ----
-DELETE FROM Workorder.RejectEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName IN (N'404040401', N'404040402', N'404040403'));
-DELETE FROM Workorder.DieCastContribution WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName IN (N'404040401', N'404040402', N'404040403'));
-DELETE cl FROM Lots.LotGenealogyClosure cl INNER JOIN Lots.Lot l ON l.Id IN (cl.AncestorLotId, cl.DescendantLotId) WHERE l.LotName IN (N'404040401', N'404040402', N'404040403');
-DELETE m  FROM Lots.LotMovement m INNER JOIN Lots.Lot l ON l.Id = m.LotId WHERE l.LotName IN (N'404040401', N'404040402', N'404040403');
-DELETE h  FROM Lots.LotStatusHistory h INNER JOIN Lots.Lot l ON l.Id = h.LotId WHERE l.LotName IN (N'404040401', N'404040402', N'404040403');
-DELETE le FROM Lots.LotEventLog le INNER JOIN Lots.Lot l ON l.Id = le.LotId WHERE l.LotName IN (N'404040401', N'404040402', N'404040403');
-DELETE FROM Lots.Lot WHERE LotName IN (N'404040401', N'404040402', N'404040403');
+DELETE FROM Workorder.RejectEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName IN (N'404040401', N'404040402', N'404040403', N'404040404'));
+DELETE FROM Workorder.DieCastContribution WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName IN (N'404040401', N'404040402', N'404040403', N'404040404'));
+DELETE cl FROM Lots.LotGenealogyClosure cl INNER JOIN Lots.Lot l ON l.Id IN (cl.AncestorLotId, cl.DescendantLotId) WHERE l.LotName IN (N'404040401', N'404040402', N'404040403', N'404040404');
+DELETE m  FROM Lots.LotMovement m INNER JOIN Lots.Lot l ON l.Id = m.LotId WHERE l.LotName IN (N'404040401', N'404040402', N'404040403', N'404040404');
+DELETE h  FROM Lots.LotStatusHistory h INNER JOIN Lots.Lot l ON l.Id = h.LotId WHERE l.LotName IN (N'404040401', N'404040402', N'404040403', N'404040404');
+DELETE le FROM Lots.LotEventLog le INNER JOIN Lots.Lot l ON l.Id = le.LotId WHERE l.LotName IN (N'404040401', N'404040402', N'404040403', N'404040404');
+DELETE FROM Lots.Lot WHERE LotName IN (N'404040401', N'404040402', N'404040403', N'404040404');
 DELETE tc FROM Tools.ToolCavity tc INNER JOIN Tools.Tool t ON t.Id = tc.ToolId WHERE t.Code = N'TEST-DCR-TOOL';
 DELETE FROM Tools.ToolAssignment WHERE ToolId IN (SELECT Id FROM Tools.Tool WHERE Code = N'TEST-DCR-TOOL');
 DELETE FROM Tools.Tool WHERE Code = N'TEST-DCR-TOOL';
@@ -102,6 +116,9 @@ DECLARE @Cavity1 BIGINT = SCOPE_IDENTITY();
 INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedAt, CreatedByUserId)
 VALUES (@Tool, 2, @CavActive, SYSUTCDATETIME(), 1);
 DECLARE @Cavity2 BIGINT = SCOPE_IDENTITY();
+INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedAt, CreatedByUserId)
+VALUES (@Tool, 3, @CavActive, SYSUTCDATETIME(), 1);
+DECLARE @Cavity3 BIGINT = SCOPE_IDENTITY();
 
 INSERT INTO Tools.ToolAssignment (ToolId, CellLocationId, AssignedAt, AssignedByUserId)
 VALUES (@Tool, @Cell, SYSUTCDATETIME(), 1);
@@ -195,14 +212,39 @@ INSERT INTO @Rel3 EXEC Lots.DieCastLot_Release @LotId=@Lot3, @StorageLocationId=
 DECLARE @rs3 BIT = (SELECT Status FROM @Rel3); DECLARE @rs3c BIT = CASE WHEN @rs3=0 THEN 1 ELSE 0 END;
 EXEC test.Assert_IsTrue @TestName=N'[Release] nonexistent storage location rejected', @Condition=@rs3c;
 
+-- =============================================
+-- Test 4: negative @FinalPieceDelta rejected (code-review finding -- the
+-- pre-txn projected-PieceCount gate let a negative delta pass validation
+-- while the mutation silently no-op'd it, returning Status=1 with
+-- PieceCount unchanged; own cavity since this basket stays Open)
+-- =============================================
+DECLARE @O4 TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @O4 EXEC Lots.DieCastLot_Open @ItemId=@Item, @CurrentLocationId=@Cell, @ToolId=@Tool,
+    @ToolCavityId=@Cavity3, @LotName=N'404040404', @AppUserId=1, @TerminalLocationId=NULL;
+DECLARE @Lot4 BIGINT = (SELECT NewId FROM @O4);
+IF @Lot4 IS NULL
+    RAISERROR(N'0045/040 Test 4 fixture: DieCastLot_Open failed to mint the basket -- BLOCKED.', 16, 1);
+
+DECLARE @Lines4 NVARCHAR(MAX) = N'[{"lotId":' + CAST(@Lot4 AS NVARCHAR(20)) + N',"pieceDelta":20,"scrapLines":null}]';
+DECLARE @W4 TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @W4 EXEC Workorder.DieCastShiftOutput_Record @ShiftId=@Shift, @ToolId=@Tool, @LinesJson=@Lines4,
+    @ShotLossJson=NULL, @AppUserId=1, @TerminalLocationId=NULL;
+DECLARE @w4s NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @W4);
+EXEC test.Assert_IsEqual @TestName=N'[Release] Test 4 fixture: 20pc contributed, Status 1', @Expected=N'1', @Actual=@w4s;
+
+DECLARE @Rel4 TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @Rel4 EXEC Lots.DieCastLot_Release @LotId=@Lot4, @StorageLocationId=NULL, @FinalPieceDelta=-5, @AppUserId=1, @TerminalLocationId=NULL;
+DECLARE @rs4 BIT = (SELECT Status FROM @Rel4); DECLARE @rs4c BIT = CASE WHEN @rs4=0 THEN 1 ELSE 0 END;
+EXEC test.Assert_IsTrue @TestName=N'[Release] negative FinalPieceDelta rejected', @Condition=@rs4c;
+
 -- ---- cleanup (FK-safe, reverse order) ----
-DELETE FROM Workorder.RejectEvent WHERE LotId IN (@Lot, @Lot2, @Lot3);
-DELETE FROM Workorder.DieCastContribution WHERE LotId IN (@Lot, @Lot2, @Lot3) OR (@ShiftCreatedByTest = 1 AND ShiftId = @Shift);
-DELETE cl FROM Lots.LotGenealogyClosure cl WHERE cl.AncestorLotId IN (@Lot, @Lot2, @Lot3) OR cl.DescendantLotId IN (@Lot, @Lot2, @Lot3);
-DELETE m  FROM Lots.LotMovement m WHERE m.LotId IN (@Lot, @Lot2, @Lot3);
-DELETE h  FROM Lots.LotStatusHistory h WHERE h.LotId IN (@Lot, @Lot2, @Lot3);
-DELETE le FROM Lots.LotEventLog le WHERE le.LotId IN (@Lot, @Lot2, @Lot3);
-DELETE FROM Lots.Lot WHERE Id IN (@Lot, @Lot2, @Lot3);
+DELETE FROM Workorder.RejectEvent WHERE LotId IN (@Lot, @Lot2, @Lot3, @Lot4);
+DELETE FROM Workorder.DieCastContribution WHERE LotId IN (@Lot, @Lot2, @Lot3, @Lot4) OR (@ShiftCreatedByTest = 1 AND ShiftId = @Shift);
+DELETE cl FROM Lots.LotGenealogyClosure cl WHERE cl.AncestorLotId IN (@Lot, @Lot2, @Lot3, @Lot4) OR cl.DescendantLotId IN (@Lot, @Lot2, @Lot3, @Lot4);
+DELETE m  FROM Lots.LotMovement m WHERE m.LotId IN (@Lot, @Lot2, @Lot3, @Lot4);
+DELETE h  FROM Lots.LotStatusHistory h WHERE h.LotId IN (@Lot, @Lot2, @Lot3, @Lot4);
+DELETE le FROM Lots.LotEventLog le WHERE le.LotId IN (@Lot, @Lot2, @Lot3, @Lot4);
+DELETE FROM Lots.Lot WHERE Id IN (@Lot, @Lot2, @Lot3, @Lot4);
 DELETE FROM Tools.ToolCavity WHERE ToolId = @Tool;
 DELETE FROM Tools.ToolAssignment WHERE ToolId = @Tool;
 DELETE FROM Tools.Tool WHERE Id = @Tool;
