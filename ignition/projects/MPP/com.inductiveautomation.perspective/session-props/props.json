@@ -1,38 +1,5 @@
 {
-  "custom": {
-    "appUserId": null,
-    "cell": {
-      "code": "",
-      "locationId": null,
-      "name": ""
-    },
-    "plcDevices": [],
-    "presence": {
-      "policy": "confirm"
-    },
-    "printer": {
-      "code": "",
-      "endpoint": "",
-      "locationId": null,
-      "model": ""
-    },
-    "terminal": {
-      "defaultScreen": "",
-      "isFallback": false,
-      "terminalCode": "",
-      "terminalLocationId": null,
-      "terminalName": "",
-      "zoneLocationId": null,
-      "zoneName": ""
-    },
-    "toastInstances": [],
-    "user": {
-      "appUserId": null,
-      "displayName": "",
-      "ignitionRole": "",
-      "initials": ""
-    }
-  },
+  "custom": {},
   "propConfig": {
     "props.auth": {
       "access": "PRIVATE",
@@ -95,12 +62,5 @@
       "persistent": false
     }
   },
-  "props": {
-    "address": "127.0.0.1",
-    "device": {},
-    "geolocation": {},
-    "locale": "en-US",
-    "offline": {},
-    "timeZoneId": "America/Indianapolis"
-  }
+  "props": {}
 }
