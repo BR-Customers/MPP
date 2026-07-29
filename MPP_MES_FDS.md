@@ -4,8 +4,8 @@
 **Project:** Madison Precision Products MES Replacement
 **Prepared By:** Blue Ridge Automation
 **Client:** Madison Precision Products, Inc. (Madison, IN)
-**Version:** 1.6 — Customer Review Release
-**Date:** 2026-07-06
+**Version:** 1.7 — Customer Review Release
+**Date:** 2026-07-29
 
 ---
 
@@ -32,6 +32,7 @@ Comments may be returned as annotations on the Word document, an annotated PDF, 
 
 | Version | Date | Author | Change Summary |
 |---|---|---|---|
+| 1.7 | 2026-07-29 | Blue Ridge Automation | **Die Cast redesigned to a per-cavity Open → accumulate → release lifecycle.** (spec `docs/superpowers/specs/2026-07-28-diecast-per-cavity-lifecycle-design.md`, migration `0045`) Die Cast LOT creation (**FDS-05-004**, retitled) no longer mints a fully-populated `Good`-status LOT at scan time — it **opens** an empty per-`(Tool, ToolCavity)` accumulator basket at the new `Open` status (`PieceCount = 0`), which fills across shifts and is explicitly released when full. Four new requirements added: **FDS-05-039** (basket lifecycle overview), **FDS-05-040** (shift-output recording — die-wide gross shot entry, per-cavity good/scrap split via `Workorder.DieCast_GetShiftOutputBreakdown`, additive scrap, soft `MaxLotSize` ceiling), **FDS-05-041** (Release: `Open → Good` + first `LotMovement` to warehouse storage), **FDS-05-042** (Void: empty `Open → Scrap`). **FDS-05-013/-014** (status codes / transition rules) gain the `Open` status and its `OPEN → GOOD` / `OPEN → SCRAP` transitions. **FDS-05-036** (lazy LOT creation) and **FDS-05-037** (close semantics) amended with Die-Cast-specific carve-outs. **FDS-06-001/-002/-003** (§6.2 Die Cast Workflow) rewritten: the production screen is now an Open panel + Shape-1 die-wide shift-output entry with a Currently-Open list (Release/Void); good/scrap capture moves from `Workorder.ProductionEvent` checkpoints to the new `Workorder.DieCastContribution` ledger (additive scrap continues to post to `RejectEvent`, unchanged). `Workorder.ProductionEvent` is otherwise unaffected — it remains the checkpoint mechanism for Trim / Machining / Assembly. All SQL landed + tested (full `MPP_MES_Test` suite 2225/0), deployed to `MPP_MES_Dev`; `DieCastBody` view rebuilt (first cut, pending Jacques's live smoke — see `PROJECT_STATUS.md` 2026-07-29). See Data Model v2.1 for the `Open` `LotStatusCode` row and the new `Workorder.DieCastContribution` table. |
 | 1.6 | 2026-07-06 | Blue Ridge Automation | **Machining extract-one + assembly finished-good LOT (Spec 2).** Machining OUT is now **extract-one / partial-remainder** - the operator extracts one-or-more sub-LOTs of an entered quantity and the parent STAYS OPEN with its remaining balance, closing only at zero (retires the even-N-way-split default; **closes UJ-03** and executes the v1.3a carried action). Amended **FDS-05-009** (extraction workflow), **FDS-05-010** (partial-remainder handling), **FDS-05-022** (parent stays open across extractions). Assembly-out (serialized AND non-serialized) now **mints a finished-good LOT** where `tray = LOT`, consuming `BOM x PieceCount` FIFO (oldest-first by `CreatedAt`) from line inventory with the Container retained as the wrapper; consumption targets the finished-good LOT. Amended **FDS-06-013** (non-serialized mint + tray=LOT + container wrapper), **FDS-06-010/011** (serialized mints the FG LOT), **FDS-06-020/021** (`ConsumptionEvent.ProducedLotId` is the primary consumption target; assembly genealogy shape). Reconciled the FIFO-ordering wording into one stated rule per terminal class (machining-in queue `LotMovement.MovedAt` FDS-06-007; machining-cell cavity FIFO `CreatedAt` FDS-05-029; assembly consumption `CreatedAt` FDS-06-013). New column `Lots.ContainerTray.FinishedGoodLotId` (see Data Model). Closes **OI-32** (lineside check-in IS the allocation). Design record: `docs/superpowers/specs/2026-07-02-machining-assembly-plant-floor-flow-design.md`. |
 | 1.5 | 2026-07-02 | Blue Ridge Automation | **Operation-type model restructure (Spec 1).** Operation templates are decoupled from a specific Area: `OperationTemplate.AreaLocationId` is replaced by an operation **role** (`OperationTypeId` → new `Parts.OperationType`, grouped by `Parts.OperationCategory`) so one template serves all areas of a kind (e.g. one die-cast template for DC1–DC4) and a terminal resolves the right template by role. Amended: **FDS-03-012** (`AreaLocationId` → `OperationTypeId` field), **FDS-03-009** (operation template defines the role, not the area), **FDS-02-001 note** + **FDS-02-003** (defect/downtime screens filter by the terminal's runtime area, not the template). Defect/downtime code area filtering is otherwise unchanged (those tables keep their own `AreaLocationId`). **FDS-05-025** sort/inspection-terminator marker is orthogonal to `OperationType` (a route-step property) — no conflict. Migrations `0032`/`0033`; SQL + Ignition NQ/entity layers built and green; Config-Tool views pending Designer smoke. |
 | 1.4 | 2026-06-10 | Blue Ridge Automation | **Terminal mode model replaced (view-policy).** FDS-02-010 rewritten — dedicated-vs-shared behavior is a property of the operator view assigned via the Terminal's `DefaultScreen` attribute; the parent-tier derivation is retired (MPP's machining/assembly lines + trim shops are tracked at line/area resolution with no equipment cells beneath their terminals, so the hierarchy cannot encode behavior; smoke-discovered 2026-06-10). Dedicated context = the Terminal's parent Location at any tier; shared context picker = descendant **equipment** Cells (new `Location.Terminal_ListContextCells`, excluding Terminal/Printer kinds). FDS-02-008 (no mode attribute; ≥1 child Printer required, `HasPrinter` registry flag), FDS-02-009/011 (context rules re-anchored to view flavor), FDS-04-003 (presence policy via `session.custom.presence.policy`) amended; **FDS-04-006 explicitly unchanged** — both flavors keep the 30-minute re-confirmation. Design record: `docs/superpowers/specs/2026-06-10-terminal-mode-view-policy-design.md`. |
@@ -897,23 +898,80 @@ Legacy Flexware exposes these as header fields on its Lot Details screen.
 
 ### 5.2 LOT Creation Workflows
 
-#### FDS-05-004 — Manufactured LOT Creation (Die Cast)
-At Die Cast, the operator SHALL:
+#### FDS-05-004 — Manufactured LOT Creation (Die Cast) — Per-Cavity Open Basket — `MVP` (amended 2026-07-29)
 
-1. Fill a basket with parts from the active cavity of the die cast machine.
-2. Attach a **pre-printed LTT barcode sticker** to the basket (LTTs are printed in batches outside the MES per FRS 2.2.1).
-3. Scan the LTT barcode at the MES terminal — this scan creates the LOT record; the physical label already exists.
-4. On Cell selection, the screen SHALL **auto-populate the currently mounted Tool** from `Tools.ToolAssignment_ListActiveByCell(@CellLocationId)`. Operator SHALL confirm the populated Tool matches the physical die. **Edit** (elevated action per FDS-04-007) SHALL trigger inline `Tools.ToolAssignment_Release` + `Tools.ToolAssignment_Assign` to correct the system of record when physical ≠ system.
-5. Operator SHALL select the active `ToolCavityId` producing this basket (cavity dropdown filtered to cavities where `Tool.Id = @ToolId` AND `StatusCode = Active`). Operator SHALL select the produced `ItemId` from a dropdown constrained to Items eligible at this Cell per FDS-02-012 (typically a short list at Die Cast). Piece count is operator-entered.
-6. The MES SHALL validate: piece count ≤ `Item.MaxLotSize` (now labeled `PartsPerBasket` — basket capacity), part is eligible on this Cell, Tool + Cavity per FDS-05-034.
-7. The MES SHALL create the LOT with origin type Manufactured, status Good, location = scanned Cell (per FDS-02-009), `ToolId` and `ToolCavityId` set.
-8. The MES SHALL write a `Workorder.ProductionEvent` checkpoint row with cumulative `ShotCount` / `ScrapCount` as-of-this-basket-close (per FDS-03-017a checkpoint shape).
-9. The MES SHALL **NOT** trigger an `Initial` label print — the label was pre-printed. (See FDS-05-020 for print reason policy.)
-10. The MES SHALL log the creation to `Audit.OperationLog`.
+**Superseded by the per-cavity Open → accumulate → release lifecycle** (design `docs/superpowers/specs/2026-07-28-diecast-per-cavity-lifecycle-design.md`, migration `0045`). Die Cast LOT creation no longer mints a fully-populated `Good`-status LOT in one step; it **opens an empty accumulating basket** that fills over subsequent shifts (FDS-05-039) and is explicitly released when full (FDS-05-041). At Die Cast, the operator SHALL:
 
-**Note:** Other areas (Trim, Machining, Assembly) do NOT require operator Tool validation at LOT create — their LOTs carry NULL `ToolId` / `ToolCavityId`.
+1. Attach a **pre-printed LTT barcode sticker** to an empty basket at the active cavity of the die cast machine (LTTs are printed in batches outside the MES per FRS 2.2.1).
+2. Scan the LTT barcode at the MES terminal — this scan is the **Open** action; it creates the LOT record. The physical label already exists, so no print is triggered.
+3. On Cell selection, the screen SHALL **auto-populate the currently mounted Tool** from `Tools.ToolAssignment_ListActiveByCell(@CellLocationId)`. Operator SHALL confirm the populated Tool matches the physical die. **Edit** (elevated action per FDS-04-007) SHALL trigger inline `Tools.ToolAssignment_Release` + `Tools.ToolAssignment_Assign` to correct the system of record when physical ≠ system.
+4. Operator SHALL select the active `ToolCavityId` producing this basket (cavity dropdown filtered to cavities where `Tool.Id = @ToolId` AND `StatusCode = Active`). Operator SHALL select the produced `ItemId` from a dropdown constrained to Items eligible at this Cell per FDS-02-012 (typically a short list at Die Cast).
+5. The MES SHALL validate: the Item's route is a published Die Cast route (i.e., this Tool/Cell/Item combination is legitimately die-cast-origin); part is eligible on this Cell; Tool + Cavity per FDS-05-034; **at most one `Open` LOT exists for this `(ToolId, ToolCavityId)` at a time** — a second Open attempt on an already-open cavity SHALL be rejected with a clear message pointing at the existing open basket.
+6. The MES SHALL create the LOT with origin type Manufactured, status **`Open`** (not Good), `PieceCount = 0`, location = scanned Cell (per FDS-02-009), `ToolId` and `ToolCavityId` set.
+7. The MES SHALL **NOT** trigger an `Initial` label print — the label was pre-printed. (See FDS-05-020 for print reason policy.)
+8. The MES SHALL log the Open event to `Audit.OperationLog` (`LogEventType = DieCastLotOpened`).
+
+Piece count is **not** entered at Open — it is `0` and accumulates over the LOT's life per FDS-05-039. There is no operator-entered "max" at Open time; `Item.MaxLotSize` (`PartsPerBasket`) is enforced later as a soft ceiling during accumulation (FDS-05-040) and at release (FDS-05-041), never as a hard gate at Open.
+
+**Note:** Other areas (Trim, Machining, Assembly) do NOT require operator Tool validation at LOT create — their LOTs carry NULL `ToolId` / `ToolCavityId`, and their LOTs are created at status `Good` directly (this Open-basket lifecycle is specific to Die Cast).
 
 LTT tags at Die Cast are pre-printed in batches by MPP per FRS 2.2.1; the first scan creates the LOT record. The MES does not print at Die Cast LOT creation.
+
+#### FDS-05-039 — Die Cast Basket Lifecycle: Open → Accumulate → Release / Void — `MVP`
+
+**Concept.** A die-cast basket LOT moves through four states: **Open** (accumulating, not yet on its route), **Good** (released — on its route, sitting in warehouse storage awaiting Trim IN), **Closed** (consumed downstream, as for any LOT), or **Scrap** (voided while still empty). Granularity is **one Open LOT per `(Tool, ToolCavity)`** — a 16-cavity die has up to 16 independently-filling baskets; cavity peers do not open or close together, and there is no parent/child FK between them (per FDS-05-034/FDS-05-035 — cavity-parallel LOTs remain peers, not sublots).
+
+**Open** (FDS-05-004) mints the basket at `Lots.LotStatusCode = Open`, `PieceCount = 0`.
+
+**Accumulate** (FDS-05-040) credits net-good pieces to the Open basket via a shift-scoped shift-output entry. The basket's `PieceCount` rises; its status stays `Open`. While `Open`, the LOT is deliberately absent from the WIP queue and reports `TotalInProcess = 0` (FDS-05-031) — it has not made its first route movement yet.
+
+**Release** (FDS-05-041) is the explicit operator action that closes out the basket: `Open → Good` plus a system move from the press Cell to warehouse storage — the LOT's first `LotMovement`. This is what makes the LOT visible to the Trim IN queue for the first time.
+
+**Void** (FDS-05-042) is the escape hatch for an Open basket that never received any pieces (e.g., mis-scan, changed mind): `Open → Scrap`, freeing the cavity for a new Open.
+
+No other transitions exist for an `Open` LOT — it cannot be Held, merged, split, or consumed while `Open` (all of those procs already gate on `LotStatusCode`, and `Open` is simply not a status they accept).
+
+#### FDS-05-040 — Shift-Output Recording (the Accumulate action) — `MVP`
+
+The die-cast operator does not log a checkpoint per shot; per shift (or after), the operator reads the machine HMI's shot count and records shift output at the die-cast terminal. Entry is **time-decoupled** (available whenever the operator gets to it) but **reported against a shift** (`Oee.Shift`), defaulting to the most recently open/completed shift, operator-overridable.
+
+**Screen shape — die-wide, cavity-row.** One **gross shot count** is entered once per die (die-wide, because one machine cycle produces one part in every active cavity simultaneously). The screen then lists every currently-`Open` cavity LOT (plus any LOT that closed mid-shift for that cavity) as a row, each showing its computed good count and a per-cavity scrap entry (defect code + quantity, repeatable). A **"Register shot loss"** action logs a whole lost machine cycle (short shot, cold shot, etc.) — this SHALL fan one scrap unit across **every** currently-open cavity's LOT on that tool, since a lost cycle produces no good part anywhere on the die.
+
+**Arithmetic (per cavity, for the reporting shift):**
+
+```
+good(cavity) = grossShots − shotLosses − Σ scrap(cavity)
+```
+
+The MES SHALL compute this split across all LOTs contributing to a cavity during the shift (`Workorder.DieCast_GetShiftOutputBreakdown`): a LOT that closed mid-shift keeps the good count it was already credited before closing; the currently-`Open` LOT for that cavity receives the remainder, **floored at zero** (never negative).
+
+**The basket receives good pieces only.** Scrap is recorded **additively** to `Workorder.RejectEvent` (die-cast `ScrapIsAdditive = 1` per migration `0042`) — it is reported as a yield/defect metric but SHALL NOT decrement `Lot.PieceCount` and SHALL NOT auto-close the basket. `Workorder.DieCastShiftOutput_Record` (per FDS-03-017a, in one transaction) SHALL, per contributing LOT: write one `Workorder.DieCastContribution` row (`LotId`, `ShiftId`, `PieceDelta` = the computed good), increment `Lot.PieceCount` by `PieceDelta`, write the scrap quantity to `RejectEvent` (unchanged `PieceCount`), and log to `Audit.OperationLog` (`LogEventType = DieCastPieceContributed`).
+
+**Soft ceiling.** `Item.MaxLotSize` (`PartsPerBasket`) is a **soft** ceiling during accumulation: if a contribution would carry a basket's `PieceCount` past `MaxLotSize`, the MES SHALL warn the operator but SHALL NOT reject the entry. The operator MAY continue accumulating, close the basket via Release (FDS-05-041) and open a fresh one for the remainder, or otherwise handle the overflow — the system never blocks production over this ceiling.
+
+#### FDS-05-041 — Basket Release (Open → Good) — `MVP`
+
+When a basket is physically full, the operator SHALL trigger **Release** at the die-cast terminal. In one transaction, the MES SHALL:
+
+1. Optionally accept one final good + scrap entry for the basket (same arithmetic as FDS-05-040, applied to this LOT only).
+2. Validate the basket is not empty (`PieceCount = 0` after any final entry) — an empty basket SHALL be hard-rejected with a message directing the operator to Void (FDS-05-042) instead.
+3. Validate a warehouse storage destination is configured — SHALL hard-reject with a clear message if none exists.
+4. Transition `Lot.LotStatusId` from `Open` to `Good`.
+5. Write the LOT's **first** `LotMovement` row: press Cell → warehouse storage. This is what makes the LOT visible to `Lot_GetWipQueueByLocation` (i.e., the Trim IN queue) for the first time.
+6. Log to `Audit.OperationLog` (`LogEventType = DieCastLotReleased`).
+
+A released basket behaves exactly like any other `Good` LOT thereafter — it has no further die-cast-specific behavior.
+
+#### FDS-05-042 — Basket Void (Open → Scrap) — `MVP`
+
+An operator MAY void their own **empty** Open basket (a scanned-LTT `Open` LOT with `PieceCount = 0` and no prior contributions) — e.g., a mis-scan or a cavity that never produced a good part. The MES SHALL:
+
+1. Warn the operator with a Continue/Cancel confirmation before voiding (this is a destructive, non-reversible action).
+2. On confirmation, transition `Lot.LotStatusId` from `Open` to `Scrap`.
+3. Free the `(ToolId, ToolCavityId)` for a fresh Open (FDS-05-004) and free the LTT number for reuse per site LTT-reuse policy.
+4. Log to `Audit.OperationLog` (`LogEventType = DieCastLotVoided`).
+
+Voiding a basket that already holds accumulated pieces (`PieceCount > 0`) SHALL be rejected — an accumulated basket must Release (FDS-05-041), not Void.
 
 #### FDS-05-005 — Received LOT Creation (Pass-Through Parts)
 At the Receiving Dock, the operator SHALL:
@@ -954,6 +1012,8 @@ LOT creation SHALL be **lazy and operator-driven**. The MES SHALL NOT auto-creat
 
 Physical-but-unlogged baskets exist until the operator logs them. The Die Cast UX and associated procs SHALL NOT require a LOT row to exist for an in-progress cavity. Tool + Cavity assignment happens at `Lot_Create` time, not at any abstract "run start" event.
 
+**Die Cast amendment (2026-07-29):** Die Cast's `Lot_Create` moment is now specifically the **Open** action (FDS-05-004 / FDS-05-039) — the operator opens a fresh empty basket at (or shortly after) the start of accumulation, not at physical completion; the basket then fills over one or more shifts before Release. This is still lazy and operator-driven (the MES does not force *when* the operator opens a cavity's basket, only that a basket must be Open before shift output can be credited to it) — it narrows *which* moment "logging" means for Die Cast specifically. The general rule above (creation at physical completion / pre-emptively / at operator discretion) continues to govern all other LOT origins (Trim, Machining, Assembly sub-LOTs, Received).
+
 #### FDS-05-037 — LOT Close Semantics — `MVP`
 
 LOT close behavior SHALL vary by origin:
@@ -964,6 +1024,8 @@ LOT close behavior SHALL vary by origin:
 | **Finished-goods LOTs** (Assembly end-products packed into shipping Containers) | MAY auto-close on container fill. The `Container_Complete` action SHALL close the associated LOT as part of its transaction. Detailed in §6 container workflow and §7 shipping. |
 
 No other close paths are defined. Scrapped material SHALL still move through either explicit Pattern-A reject (FDS-06-019) or Pattern-B split-to-scrap — not via auto-close.
+
+**Die Cast amendment (2026-07-29):** the "Component LOTs" row above describes what happens when a die-cast LOT is later consumed downstream (e.g. at Machining IN) — it still reaches `Closed` only via explicit operator/system action, never auto-close. Die Cast now has an **additional prior transition** not shown in the table: `Open → Good` via Release (FDS-05-041), which is itself an explicit operator-driven combined status-transition-plus-movement action, matching the "Complete + Move" pattern one step earlier in the LOT's life. A die-cast LOT's full status path is therefore `Open → Good → Closed` (Release, then eventual downstream consumption), or `Open → Scrap` directly (Void, FDS-05-042) if never filled.
 
 #### FDS-05-032 — Partial Start and Partial Complete — `MVP`
 
@@ -1089,6 +1151,7 @@ LOT quality status SHALL be managed via the `LotStatusCode` table with the follo
 | Hold | Hold | true | LOT is held — no production operations allowed |
 | Scrap | Scrap | true | LOT is scrapped — permanently removed from production |
 | Closed | Closed | true | LOT is fully consumed or split — no pieces remain |
+| Open | Open | false | **Added migration `0045` (2026-07-29).** Die-cast accumulator basket — accumulating good pieces at the press, not yet on its route. See FDS-05-039. |
 
 (FRS 3.16.3)
 
@@ -1104,7 +1167,11 @@ HOLD → SCRAP    (held LOT scrapped after investigation)
 HOLD → CLOSED   (held LOT fully consumed via authorized disposition)
 SCRAP → (none)  (terminal state)
 CLOSED → (none) (terminal state)
+OPEN → GOOD     (Release — die-cast basket full; FDS-05-041)
+OPEN → SCRAP    (Void — die-cast basket empty; FDS-05-042)
 ```
+
+**`Open` is Die-Cast-specific and origin-gated.** Only `Lots.DieCastLot_Open` creates a LOT at `Open`; no other proc transitions any LOT *into* `Open`. `Open` is a valid starting state, not a general mid-lifecycle state — a LOT that is `Good`, `Hold`, `Scrap`, or `Closed` SHALL NOT transition to `Open`.
 
 #### FDS-05-015 — Status History
 Every status transition SHALL be recorded as an immutable `LotStatusHistory` event: LOT, old status, new status, reason, changed-by user, terminal, timestamp. (FRS 3.16.4)
@@ -1189,33 +1256,31 @@ This section replaces the paper production sheets (DCFM-1589/1785/2003 and MS1FM
 
 ### 6.2 Die Cast Workflow
 
-#### FDS-06-001 — Die Cast Production Screen
-The Die Cast production screen SHALL be driven by the active operation template's `OperationTemplateField` rows (typically configured with `DieInfo`, `CavityInfo`, `Weight`, `GoodCount`, `BadCount` for die cast operations). Fields flagged `IsRequired = 1` on the junction SHALL be mandatory on submit. The screen SHALL present:
-- LOT selection (scan LTT barcode or select from active LOTs at this machine)
-- Part number (entered by operator at LOT creation per FDS-05-004)
-- Shot counts: total shots, good shots, warm-up shots (per paper form fields DCFM-1785)
-- Good piece count
-- Reject entry: defect code (filtered to Die Cast area codes), quantity, remarks (optional per operation — FRS Section 4)
-- Weight (manual entry or automatic from OmniServer scale where available)
+#### FDS-06-001 — Die Cast Production Screen — Open Panel + Shift-Output Entry (amended 2026-07-29)
 
-#### FDS-06-002 — Die Cast Validation
-Before recording production, the system SHALL validate:
-- The LOT status is GOOD (not HOLD, SCRAP, or CLOSED)
+**Superseded by the per-cavity Open → accumulate → release lifecycle** — see FDS-05-039 through FDS-05-042 for the authoritative workflow; this requirement describes the screen surface only. The Die Cast production screen (`DieCastBody`) SHALL present two coupled surfaces, both scoped to the die (Cell) the terminal is bound to:
+
+1. **Open panel** — scan a fresh pre-printed LTT to open a new per-cavity basket (FDS-05-004): Tool auto-populated + confirmed, cavity dropdown, produced Item dropdown.
+2. **Shift-output entry (Shape 1)** — a single die-wide **gross shot count** field, entered once per submission, plus a row per currently-open cavity LOT (and any LOT that closed mid-shift for that cavity) showing its computed good count and a per-cavity scrap flex-repeater (defect code + quantity), a **"Register shot loss"** action, and a **Currently-Open list** (per-cavity open baskets) with **Release** and **Void** actions per LOT (FDS-05-041 / FDS-05-042).
+
+Weight capture (manual entry or automatic from OmniServer scale where available) and any other `OperationTemplateField`-driven fields remain available per the active die-cast operation template, unchanged from the prior per-checkpoint design.
+
+#### FDS-06-002 — Die Cast Validation (amended 2026-07-29)
+Before recording shift output or a release/void action, the system SHALL validate:
+- The target LOT's status is `Open` (shift-output entry, release, void all operate on `Open` LOTs only — see FDS-05-039)
 - The item is eligible for this machine (`ItemLocation` check)
-- The piece count does not exceed the item's max lot size
-- If any validation fails, the system SHALL display a clear error and prevent the recording
+- The computed good count per cavity does not go negative (floored at zero — FDS-05-040)
+- `Item.MaxLotSize` (`PartsPerBasket`) is checked as a **soft** ceiling only — an overflow SHALL warn, never reject (FDS-05-040)
+- Release SHALL hard-reject an empty basket (`PieceCount = 0`) and a missing warehouse storage destination (FDS-05-041)
+- If any hard-reject validation fails, the system SHALL display a clear error and prevent the action
 
-#### FDS-06-003 — Die Cast Production Event
-On operator submission at a Die Cast checkpoint (e.g., basket close, end-of-shift handoff, scrap-from-location action), the system SHALL (per FDS-03-017a, in one transaction):
+#### FDS-06-003 — Die Cast Shift-Output Recording (amended 2026-07-29)
 
-1. Write an immutable `Workorder.ProductionEvent` row carrying `LotId`, `OperationTemplateId`, `EventAt`, cumulative `ShotCount` / `ScrapCount` as-of-this-moment, optional `ScrapSourceId` (non-NULL only when this checkpoint is a scrap-driving action), optional `WeightValue` + `WeightUomId`, `AppUserId`, `TerminalLocationId`.
-2. Write one `Workorder.ProductionEventValue` child row per non-hot `DataCollectionField` configured on the active operation template.
-3. Update the LOT's `PieceCount` to reflect the current good count (derivation: `ShotCount - ScrapCount` since last event, plus any adjustments).
-4. Log to `Audit.OperationLog`.
+**Superseded — see FDS-05-040 (Shift-Output Recording) for the authoritative arithmetic and transaction contract.** Die-cast good-piece capture no longer writes a `Workorder.ProductionEvent` checkpoint row; it writes one `Workorder.DieCastContribution` row per contributing LOT via `Workorder.DieCastShiftOutput_Record`, crediting `Lot.PieceCount` directly by the computed net-good delta, while scrap posts additively to `Workorder.RejectEvent` (never decrementing `PieceCount`). `Workorder.ProductionEvent` remains the checkpoint mechanism for other operations (Trim, Machining, Assembly) and for any non-die-cast Die Cast Area events (e.g., downtime-adjacent checkpoints) — it is simply no longer how die-cast good/scrap shot counts are captured.
 
-Reports that need per-event good-count deltas SHALL compute `ShotsSinceLast = ShotCount - LAG(ShotCount) OVER (PARTITION BY LotId ORDER BY EventAt)`. Reports that need Tool/Cavity context SHALL join to `Lots.Lot` on `ProductionEvent.LotId` and read `Lot.ToolId` / `Lot.ToolCavityId` (per FDS-05-035).
+Reports that need per-LOT contribution history SHALL read `Workorder.DieCastContribution` (one row per shift-output submission, `LotId`, `ShiftId`, `PieceDelta`, `EventAt`) rather than `LAG()`-deriving a delta from cumulative counters. Reports that need Tool/Cavity context SHALL join to `Lots.Lot` on `DieCastContribution.LotId` and read `Lot.ToolId` / `Lot.ToolCavityId` (per FDS-05-035).
 
-Warm-up shots are tracked as a downtime sub-category rather than on the production event. The Die Cast operator SHALL log warm-up time as a `DowntimeEvent` with `ReasonType` = `Setup` and SHALL record the warm-up shot count in the `ShotCount` column on that downtime event. Good and bad production shot counts remain on the `ProductionEvent`. This separates warm-up activity (time and shots wasted) from production activity (good parts made).
+Warm-up shots are tracked as a downtime sub-category rather than as part of shift-output recording. The Die Cast operator SHALL log warm-up time as a `DowntimeEvent` with `ReasonType` = `Setup` and SHALL record the warm-up shot count in the `ShotCount` column on that downtime event. Good pieces and additive scrap from production shots are recorded per FDS-05-040 (`Workorder.DieCastContribution` / `Workorder.RejectEvent`), not on `DowntimeEvent`. This separates warm-up activity (time and shots wasted) from production activity (good parts made).
 
 ### 6.3 Trim Shop Workflow
 
