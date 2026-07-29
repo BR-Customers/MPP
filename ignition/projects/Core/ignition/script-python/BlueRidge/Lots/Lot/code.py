@@ -680,3 +680,81 @@ def defaultShiftCavityId(tally):
             bestSum = s
             best = r.get("ToolCavityId")
     return best
+
+
+def openDieCast(data):
+    """Open a new die-cast accumulator basket (Lots.DieCastLot_Open): mints an
+       Open-status LOT for one (Tool, ToolCavity), PieceCount 0 -- the LOT the
+       shift-output recording flow subsequently tops up and Release later closes.
+       data carries itemId, currentLocationId, toolId, toolCavityId, lotName,
+       appUserId, terminalLocationId. Returns {Status, Message, NewId}."""
+    BlueRidge.Common.Util.log("openDieCast data=%s" % data)
+    d = _u(data) or {}
+    appUserId = d.get("appUserId")
+    if appUserId is None:
+        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    params = {
+        "itemId":             d.get("itemId"),
+        "currentLocationId":  d.get("currentLocationId"),
+        "toolId":             d.get("toolId"),
+        "toolCavityId":       d.get("toolCavityId"),
+        "lotName":            d.get("lotName"),
+        "appUserId":          appUserId,
+        "terminalLocationId": d.get("terminalLocationId"),
+    }
+    return BlueRidge.Common.Db.execMutation("lots/DieCastLot_Open", params)
+
+
+def releaseDieCast(data):
+    """Release (close) an open die-cast basket to storage (Lots.DieCastLot_Release):
+       Open -> Good, moved cell -> storage, carrying an optional final good-piece
+       delta and an optional additive scrap batch. data carries lotId,
+       storageLocationId, finalPieceDelta, scrapLines ([{defectCodeId, quantity},
+       ...], JSON-encoded here for the proc's @ScrapLinesJson), shiftId,
+       appUserId, terminalLocationId. Returns {Status, Message, NewId} (NewId is
+       always None -- Release closes an existing LOT, it never mints one)."""
+    BlueRidge.Common.Util.log("releaseDieCast data=%s" % data)
+    d = _u(data) or {}
+    appUserId = d.get("appUserId")
+    if appUserId is None:
+        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    scrapLines = _u(d.get("scrapLines")) or []
+    params = {
+        "lotId":              d.get("lotId"),
+        "storageLocationId":  d.get("storageLocationId"),
+        "finalPieceDelta":    d.get("finalPieceDelta"),
+        "scrapLinesJson":     BlueRidge.Common.Util.convertWrapperObjectToJson(scrapLines) if scrapLines else None,
+        "shiftId":            d.get("shiftId"),
+        "appUserId":          appUserId,
+        "terminalLocationId": d.get("terminalLocationId"),
+    }
+    return BlueRidge.Common.Db.execMutation("lots/DieCastLot_Release", params)
+
+
+def voidDieCast(lotId, appUserId=None, terminalLocationId=None):
+    """Void an EMPTY open die-cast basket (Lots.DieCastLot_Void): Open -> Scrap,
+       no movement (the basket stays wherever it physically is). Returns
+       {Status, Message, NewId} (NewId is always None)."""
+    BlueRidge.Common.Util.log(
+        "voidDieCast lotId=%s appUserId=%s terminalLocationId=%s"
+        % (lotId, appUserId, terminalLocationId)
+    )
+    if appUserId is None:
+        appUserId = BlueRidge.Common.Util._currentAppUserId()
+    params = {
+        "lotId":              _u(lotId),
+        "appUserId":          appUserId,
+        "terminalLocationId": terminalLocationId,
+    }
+    return BlueRidge.Common.Db.execMutation("lots/DieCastLot_Void", params)
+
+
+def getOpenByTool(toolId, _refreshToken=None):
+    """Open (status 'Open') die-cast accumulator baskets for a tool, one row per
+       cavity currently holding an open basket (Lots.Lot_GetOpenByTool).
+       _refreshToken is ignored -- runScript bindings pass a bumped token to
+       force a re-read after an open/release/void. Returns list[dict]."""
+    toolId = _u(toolId)
+    if not toolId:
+        return []
+    return BlueRidge.Common.Db.execList("lots/Lot_GetOpenByTool", {"toolId": toolId})
