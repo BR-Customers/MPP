@@ -43,12 +43,15 @@ SET NOCOUNT ON; SET XACT_ABORT ON;
 EXEC test.BeginTestFile @FileName = N'0045_DieCast_Lifecycle/030_ShiftOutput_Record.sql';
 GO
 -- ---- cleanup (idempotent, FK-safe, reverse order) ----
-DELETE FROM Workorder.DieCastContribution WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName = N'303030301');
-DELETE cl FROM Lots.LotGenealogyClosure cl INNER JOIN Lots.Lot l ON l.Id IN (cl.AncestorLotId, cl.DescendantLotId) WHERE l.LotName = N'303030301';
-DELETE m  FROM Lots.LotMovement m INNER JOIN Lots.Lot l ON l.Id = m.LotId WHERE l.LotName = N'303030301';
-DELETE h  FROM Lots.LotStatusHistory h INNER JOIN Lots.Lot l ON l.Id = h.LotId WHERE l.LotName = N'303030301';
-DELETE le FROM Lots.LotEventLog le INNER JOIN Lots.Lot l ON l.Id = le.LotId WHERE l.LotName = N'303030301';
-DELETE FROM Lots.Lot WHERE LotName = N'303030301';
+-- LotNames: 303030301 = Part A/B primary fixture basket; 303030302/303 =
+-- the multi-lot-per-cavity coverage's lot A / lot B (Part B, added Task 4).
+DELETE FROM Workorder.RejectEvent WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName IN (N'303030301', N'303030302', N'303030303'));
+DELETE FROM Workorder.DieCastContribution WHERE LotId IN (SELECT Id FROM Lots.Lot WHERE LotName IN (N'303030301', N'303030302', N'303030303'));
+DELETE cl FROM Lots.LotGenealogyClosure cl INNER JOIN Lots.Lot l ON l.Id IN (cl.AncestorLotId, cl.DescendantLotId) WHERE l.LotName IN (N'303030301', N'303030302', N'303030303');
+DELETE m  FROM Lots.LotMovement m INNER JOIN Lots.Lot l ON l.Id = m.LotId WHERE l.LotName IN (N'303030301', N'303030302', N'303030303');
+DELETE h  FROM Lots.LotStatusHistory h INNER JOIN Lots.Lot l ON l.Id = h.LotId WHERE l.LotName IN (N'303030301', N'303030302', N'303030303');
+DELETE le FROM Lots.LotEventLog le INNER JOIN Lots.Lot l ON l.Id = le.LotId WHERE l.LotName IN (N'303030301', N'303030302', N'303030303');
+DELETE FROM Lots.Lot WHERE LotName IN (N'303030301', N'303030302', N'303030303');
 DELETE tc FROM Tools.ToolCavity tc INNER JOIN Tools.Tool t ON t.Id = tc.ToolId WHERE t.Code = N'TEST-DCB-TOOL';
 DELETE FROM Tools.ToolAssignment WHERE ToolId IN (SELECT Id FROM Tools.Tool WHERE Code = N'TEST-DCB-TOOL');
 DELETE FROM Tools.Tool WHERE Code = N'TEST-DCB-TOOL';
@@ -148,14 +151,126 @@ EXEC test.Assert_IsEqual @TestName=N'[Breakdown] prior good = 0 (nothing recorde
 
 -- ===== PART B (Task 4: DieCastShiftOutput_Record) APPENDS BELOW, BEFORE EndTestFile =====
 
+-- ---------------------------------------------------------------
+-- Part B: Workorder.DieCastShiftOutput_Record (write). Uses @Lot / @Shift /
+-- @Tool / @Cavity from Part A (same file, same batch scope -- no GO between
+-- fixture / Part A / Part B / the multi-lot scenario / cleanup, since a GO
+-- would scope out the locals before later sections could reuse them).
+-- ---------------------------------------------------------------
+DECLARE @DefectCode BIGINT = (SELECT TOP 1 Id FROM Quality.DefectCode WHERE DeprecatedAt IS NULL ORDER BY Id);
+DECLARE @Lines NVARCHAR(MAX) = N'[{"lotId":' + CAST(@Lot AS NVARCHAR(20))
+    + N',"pieceDelta":95,"scrapLines":[{"defectCodeId":' + CAST(@DefectCode AS NVARCHAR(20)) + N',"quantity":5}]}]';
+DECLARE @W TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @W EXEC Workorder.DieCastShiftOutput_Record @ShiftId=@Shift, @ToolId=@Tool, @LinesJson=@Lines,
+    @ShotLossJson=NULL, @AppUserId=1, @TerminalLocationId=NULL;
+DECLARE @ws NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @W);
+EXEC test.Assert_IsEqual @TestName=N'[Record] Status 1', @Expected=N'1', @Actual=@ws;
+-- basket got the NET good (95), not decremented by the additive scrap
+DECLARE @pcAfter NVARCHAR(10) = (SELECT CAST(PieceCount AS NVARCHAR(10)) FROM Lots.Lot WHERE Id=@Lot);
+EXEC test.Assert_IsEqual @TestName=N'[Record] basket PieceCount += net good (95)', @Expected=N'95', @Actual=@pcAfter;
+-- contribution row recorded with operator + shift
+DECLARE @contrib NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Workorder.DieCastContribution
+    WHERE LotId=@Lot AND ShiftId=@Shift AND PieceDelta=95 AND AppUserId=1);
+EXEC test.Assert_IsEqual @TestName=N'[Record] contribution row present', @Expected=N'1', @Actual=@contrib;
+-- additive reject recorded, LOT not decremented, not closed
+DECLARE @rej NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Workorder.RejectEvent WHERE LotId=@Lot AND Quantity=5);
+EXEC test.Assert_IsEqual @TestName=N'[Record] additive scrap RejectEvent present', @Expected=N'1', @Actual=@rej;
+DECLARE @stillOpen NVARCHAR(20) = (SELECT sc.Code FROM Lots.Lot l INNER JOIN Lots.LotStatusCode sc ON sc.Id=l.LotStatusId WHERE l.Id=@Lot);
+EXEC test.Assert_IsEqual @TestName=N'[Record] basket still Open (additive scrap never closes)', @Expected=N'Open', @Actual=@stillOpen;
+
+-- ---------------------------------------------------------------
+-- Multi-lot-per-cavity breakdown coverage (closes the Task 3 review gap: the
+-- read proc's core purpose -- splitting a shift's gross shots across MORE
+-- THAN ONE lot that occupied the same cavity during the shift window -- had
+-- no automated coverage). A SECOND cavity (@Cavity2) is minted on the SAME
+-- @Tool -- reusing @Cavity would entangle the numbers with @Lot's own 95-piece
+-- contribution recorded on @Cavity THIS SAME SHIFT just above (the read
+-- proc's ProposedGood subquery sums every OTHER lot's contribution on the
+-- SAME ToolCavityId this shift, so @Lot's 95 would bleed into lot B's
+-- remainder math if they shared a cavity). Recipe: open lot A on @Cavity2,
+-- credit it 40 good via the write proc under test, hand-simulate a mid-shift
+-- Release (Release itself is Task 6 / not yet built -- flip LotStatusId
+-- Open->Good directly, exactly as the task brief prescribes) so the cavity is
+-- free, open lot B on the SAME cavity, then assert
+-- DieCast_GetShiftOutputBreakdown reports lot A closed-out-with-its-shift-
+-- credit and lot B getting the remainder of gross shots (floored at 0, never
+-- negative).
+-- ---------------------------------------------------------------
+DECLARE @LotAName NVARCHAR(50) = N'303030302', @LotBName NVARCHAR(50) = N'303030303';
+DECLARE @GoodStatusId BIGINT = (SELECT Id FROM Lots.LotStatusCode WHERE Code = N'Good');
+
+DECLARE @Cav2Active BIGINT = (SELECT Id FROM Tools.ToolCavityStatusCode WHERE Code = N'Active');
+INSERT INTO Tools.ToolCavity (ToolId, CavityNumber, StatusCodeId, CreatedAt, CreatedByUserId)
+VALUES (@Tool, 2, @Cav2Active, SYSUTCDATETIME(), 1);
+DECLARE @Cavity2 BIGINT = SCOPE_IDENTITY();
+
+DECLARE @OA TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @OA EXEC Lots.DieCastLot_Open @ItemId=@Item, @CurrentLocationId=@Cell, @ToolId=@Tool,
+    @ToolCavityId=@Cavity2, @LotName=@LotAName, @AppUserId=1, @TerminalLocationId=NULL;
+DECLARE @LotA BIGINT = (SELECT NewId FROM @OA);
+IF @LotA IS NULL
+    RAISERROR(N'0045/030 Part B multi-lot fixture: DieCastLot_Open failed to mint lot A -- BLOCKED.', 16, 1);
+
+-- credit lot A 40 good this shift
+DECLARE @LinesA NVARCHAR(MAX) = N'[{"lotId":' + CAST(@LotA AS NVARCHAR(20)) + N',"pieceDelta":40,"scrapLines":null}]';
+DECLARE @WA TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @WA EXEC Workorder.DieCastShiftOutput_Record @ShiftId=@Shift, @ToolId=@Tool, @LinesJson=@LinesA,
+    @ShotLossJson=NULL, @AppUserId=1, @TerminalLocationId=NULL;
+DECLARE @wsA NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @WA);
+EXEC test.Assert_IsEqual @TestName=N'[MultiLot] lot A credited 40 good, Status 1', @Expected=N'1', @Actual=@wsA;
+
+-- hand-simulate a mid-shift Release (real release = Task 6; the breakdown
+-- considers any lot with a DieCastContribution this shift regardless of
+-- current status, per the read proc's Prior/Lots CTEs).
+UPDATE Lots.Lot SET LotStatusId = @GoodStatusId WHERE Id = @LotA;
+
+-- lot A is no longer Open -> lot B can now open on the SAME cavity
+DECLARE @OB TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @OB EXEC Lots.DieCastLot_Open @ItemId=@Item, @CurrentLocationId=@Cell, @ToolId=@Tool,
+    @ToolCavityId=@Cavity2, @LotName=@LotBName, @AppUserId=1, @TerminalLocationId=NULL;
+DECLARE @LotB BIGINT = (SELECT NewId FROM @OB);
+IF @LotB IS NULL
+    RAISERROR(N'0045/030 Part B multi-lot fixture: DieCastLot_Open failed to mint lot B (cavity should be free after A''s release) -- BLOCKED.', 16, 1);
+
+DECLARE @B2 TABLE (ToolCavityId BIGINT, CavityNumber NVARCHAR(50), LotId BIGINT, LotName NVARCHAR(50),
+    IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT);
+INSERT INTO @B2 EXEC Workorder.DieCast_GetShiftOutputBreakdown @ToolId=@Tool, @ShiftId=@Shift, @GrossShots=100;
+
+-- scoped to @Cavity2 -- the tool-wide result also includes @Lot's own
+-- closed-out row on @Cavity (that lot/cavity pair is asserted separately in
+-- Part A/B above); the multi-lot claim is specifically "two rows sharing ONE
+-- cavity", so count within @Cavity2 only.
+DECLARE @rowCount2 NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM @B2 WHERE ToolCavityId = @Cavity2);
+EXEC test.Assert_IsEqual @TestName=N'[MultiLot] two rows for the shared cavity (lot A closed-out + lot B open)', @Expected=N'2', @Actual=@rowCount2;
+
+DECLARE @aIsOpen NVARCHAR(10)  = (SELECT CAST(IsOpen AS NVARCHAR(10)) FROM @B2 WHERE LotId=@LotA);
+EXEC test.Assert_IsEqual @TestName=N'[MultiLot] lot A row IsOpen=0 (released)', @Expected=N'0', @Actual=@aIsOpen;
+DECLARE @aPrior NVARCHAR(10)   = (SELECT CAST(PriorGoodThisShift AS NVARCHAR(10)) FROM @B2 WHERE LotId=@LotA);
+EXEC test.Assert_IsEqual @TestName=N'[MultiLot] lot A PriorGoodThisShift=40', @Expected=N'40', @Actual=@aPrior;
+DECLARE @aProp NVARCHAR(10)    = (SELECT CAST(ProposedGood AS NVARCHAR(10)) FROM @B2 WHERE LotId=@LotA);
+EXEC test.Assert_IsEqual @TestName=N'[MultiLot] lot A ProposedGood=40 (keeps its shift credit)', @Expected=N'40', @Actual=@aProp;
+
+DECLARE @bIsOpen NVARCHAR(10)  = (SELECT CAST(IsOpen AS NVARCHAR(10)) FROM @B2 WHERE LotId=@LotB);
+EXEC test.Assert_IsEqual @TestName=N'[MultiLot] lot B row IsOpen=1 (still open)', @Expected=N'1', @Actual=@bIsOpen;
+DECLARE @bProp NVARCHAR(10)    = (SELECT CAST(ProposedGood AS NVARCHAR(10)) FROM @B2 WHERE LotId=@LotB);
+EXEC test.Assert_IsEqual @TestName=N'[MultiLot] lot B ProposedGood=60 (100 gross - lot A''s 40)', @Expected=N'60', @Actual=@bProp;
+
+-- at a lower gross-shot count than lot A already claimed, lot B floors at 0 (not negative)
+DECLARE @B3 TABLE (ToolCavityId BIGINT, CavityNumber NVARCHAR(50), LotId BIGINT, LotName NVARCHAR(50),
+    IsOpen BIT, PriorGoodThisShift INT, ProposedGood INT, MaxHeadroom INT);
+INSERT INTO @B3 EXEC Workorder.DieCast_GetShiftOutputBreakdown @ToolId=@Tool, @ShiftId=@Shift, @GrossShots=30;
+DECLARE @bPropFloor NVARCHAR(10) = (SELECT CAST(ProposedGood AS NVARCHAR(10)) FROM @B3 WHERE LotId=@LotB);
+EXEC test.Assert_IsEqual @TestName=N'[MultiLot] lot B ProposedGood floors at 0 (GrossShots=30 < lot A''s 40)', @Expected=N'0', @Actual=@bPropFloor;
+
 -- ---- cleanup (FK-safe, reverse order) ----
-DELETE FROM Workorder.DieCastContribution WHERE LotId = @Lot OR (@ShiftCreatedByTest = 1 AND ShiftId = @Shift);
-DELETE cl FROM Lots.LotGenealogyClosure cl WHERE cl.AncestorLotId = @Lot OR cl.DescendantLotId = @Lot;
-DELETE m  FROM Lots.LotMovement m WHERE m.LotId = @Lot;
-DELETE h  FROM Lots.LotStatusHistory h WHERE h.LotId = @Lot;
-DELETE le FROM Lots.LotEventLog le WHERE le.LotId = @Lot;
-DELETE FROM Lots.Lot WHERE Id = @Lot;
-DELETE FROM Tools.ToolCavity WHERE Id = @Cavity;
+DELETE FROM Workorder.RejectEvent WHERE LotId IN (@Lot, @LotA, @LotB);
+DELETE FROM Workorder.DieCastContribution WHERE LotId IN (@Lot, @LotA, @LotB) OR (@ShiftCreatedByTest = 1 AND ShiftId = @Shift);
+DELETE cl FROM Lots.LotGenealogyClosure cl WHERE cl.AncestorLotId IN (@Lot, @LotA, @LotB) OR cl.DescendantLotId IN (@Lot, @LotA, @LotB);
+DELETE m  FROM Lots.LotMovement m WHERE m.LotId IN (@Lot, @LotA, @LotB);
+DELETE h  FROM Lots.LotStatusHistory h WHERE h.LotId IN (@Lot, @LotA, @LotB);
+DELETE le FROM Lots.LotEventLog le WHERE le.LotId IN (@Lot, @LotA, @LotB);
+DELETE FROM Lots.Lot WHERE Id IN (@Lot, @LotA, @LotB);
+DELETE FROM Tools.ToolCavity WHERE ToolId = @Tool;
 DELETE FROM Tools.ToolAssignment WHERE ToolId = @Tool;
 DELETE FROM Tools.Tool WHERE Id = @Tool;
 IF @ShiftCreatedByTest = 1
