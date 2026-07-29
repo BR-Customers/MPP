@@ -55,6 +55,7 @@ DELETE FROM Lots.Lot WHERE LotName IN (N'303030301', N'303030302', N'303030303')
 DELETE tc FROM Tools.ToolCavity tc INNER JOIN Tools.Tool t ON t.Id = tc.ToolId WHERE t.Code = N'TEST-DCB-TOOL';
 DELETE FROM Tools.ToolAssignment WHERE ToolId IN (SELECT Id FROM Tools.Tool WHERE Code = N'TEST-DCB-TOOL');
 DELETE FROM Tools.Tool WHERE Code = N'TEST-DCB-TOOL';
+DELETE FROM Quality.DefectCode WHERE Code = N'TEST-DCB-DEP';
 GO
 
 -- ---- fixture: resolve (Cell, ItemId) via ancestor-cascade eligibility + a
@@ -177,6 +178,46 @@ DECLARE @rej NVARCHAR(10) = (SELECT CAST(COUNT(*) AS NVARCHAR(10)) FROM Workorde
 EXEC test.Assert_IsEqual @TestName=N'[Record] additive scrap RejectEvent present', @Expected=N'1', @Actual=@rej;
 DECLARE @stillOpen NVARCHAR(20) = (SELECT sc.Code FROM Lots.Lot l INNER JOIN Lots.LotStatusCode sc ON sc.Id=l.LotStatusId WHERE l.Id=@Lot);
 EXEC test.Assert_IsEqual @TestName=N'[Record] basket still Open (additive scrap never closes)', @Expected=N'Open', @Actual=@stillOpen;
+
+-- ---------------------------------------------------------------
+-- Defect-code validation (robustness fix): a scrap/shot-loss defectCodeId
+-- that is nonexistent or deprecated must reject PRE-TRANSACTION with a clean
+-- Status=0 (not an in-transaction FK RAISERROR), mirroring
+-- RejectEvent_Record's DeprecatedAt check (R__Workorder_RejectEvent_Record.sql
+-- ~line 121). Reuses @Lot (already Open on @Tool) -- the rejection fires
+-- before any mutation, so it's safe to probe against the live fixture lot.
+-- ---------------------------------------------------------------
+DECLARE @BadLines NVARCHAR(MAX) = N'[{"lotId":' + CAST(@Lot AS NVARCHAR(20))
+    + N',"pieceDelta":0,"scrapLines":[{"defectCodeId":999999999,"quantity":1}]}]';
+DECLARE @WBad TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @WBad EXEC Workorder.DieCastShiftOutput_Record @ShiftId=@Shift, @ToolId=@Tool, @LinesJson=@BadLines,
+    @ShotLossJson=NULL, @AppUserId=1, @TerminalLocationId=NULL;
+DECLARE @wBadStatus NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @WBad);
+EXEC test.Assert_IsEqual @TestName=N'[DefectCode] nonexistent scrap defectCodeId rejected, Status 0', @Expected=N'0', @Actual=@wBadStatus;
+DECLARE @wBadMsg NVARCHAR(500) = (SELECT Message FROM @WBad);
+DECLARE @wBadGraceful NVARCHAR(10) = CASE WHEN @wBadMsg LIKE N'Unexpected error%' THEN N'0' ELSE N'1' END;
+EXEC test.Assert_IsEqual @TestName=N'[DefectCode] rejection message is graceful (not an unexpected-error)', @Expected=N'1', @Actual=@wBadGraceful;
+
+-- deprecated defect code also rejected (parity with RejectEvent_Record)
+DECLARE @DepDefectAreaId BIGINT = (
+    SELECT TOP 1 l.Id FROM Location.Location l
+    INNER JOIN Location.LocationTypeDefinition ltd ON ltd.Id = l.LocationTypeDefinitionId
+    INNER JOIN Location.LocationType lt ON lt.Id = ltd.LocationTypeId
+    WHERE l.DeprecatedAt IS NULL AND lt.Code = N'Area' ORDER BY l.Id);
+INSERT INTO Quality.DefectCode (Code, Description, AreaLocationId, IsExcused, CreatedAt)
+VALUES (N'TEST-DCB-DEP', N'0045/030 deprecated defect code test', @DepDefectAreaId, 0, SYSUTCDATETIME());
+DECLARE @DepDefectCode BIGINT = SCOPE_IDENTITY();
+UPDATE Quality.DefectCode SET DeprecatedAt = SYSUTCDATETIME() WHERE Id = @DepDefectCode;
+
+DECLARE @DepLines NVARCHAR(MAX) = N'[{"lotId":' + CAST(@Lot AS NVARCHAR(20))
+    + N',"pieceDelta":0,"scrapLines":[{"defectCodeId":' + CAST(@DepDefectCode AS NVARCHAR(20)) + N',"quantity":1}]}]';
+DECLARE @WDep TABLE (Status BIT, Message NVARCHAR(500), NewId BIGINT);
+INSERT INTO @WDep EXEC Workorder.DieCastShiftOutput_Record @ShiftId=@Shift, @ToolId=@Tool, @LinesJson=@DepLines,
+    @ShotLossJson=NULL, @AppUserId=1, @TerminalLocationId=NULL;
+DECLARE @wDepStatus NVARCHAR(10) = (SELECT CAST(Status AS NVARCHAR(10)) FROM @WDep);
+EXEC test.Assert_IsEqual @TestName=N'[DefectCode] deprecated scrap defectCodeId rejected, Status 0', @Expected=N'0', @Actual=@wDepStatus;
+
+DELETE FROM Quality.DefectCode WHERE Id = @DepDefectCode;
 
 -- ---------------------------------------------------------------
 -- Multi-lot-per-cavity breakdown coverage (closes the Task 3 review gap: the
