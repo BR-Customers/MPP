@@ -69,6 +69,33 @@ def recordShiftOutput(data, appUserId=None, terminalLocationId=None):
     return BlueRidge.Common.Db.execMutation("workorder/DieCastShiftOutput_Record", params)
 
 
+def mapBreakdownInstances(rows):
+    """Cavity-lot row instances for DieCastBody's shift-output repeater (Task
+       12): one instance per Workorder.DieCast_GetShiftOutputBreakdown row,
+       camelCased for the CavityLotRow sub-view's params. Presentation only --
+       the proposed split and headroom are computed in SQL; this just
+       reshapes columns (mirrors Lots.Lot.mapTrimInventoryInstances). Bind as
+       a script transform on a property path to view.custom.breakdown (NOT a
+       runScript call -- passing the already-fetched list through a runScript
+       arg hits the QualifiedValue[] array bug, feedback_ignition_runscript_
+       list_arg_qv_array). Returns list[dict] ([] on empty/None)."""
+    rows = BlueRidge.Common.Util.extractQualifiedValues(rows) or []
+    out = []
+    for r in rows:
+        r = r or {}
+        out.append({
+            "toolCavityId":       r.get("ToolCavityId"),
+            "cavityNumber":       r.get("CavityNumber") or "",
+            "lotId":              r.get("LotId"),
+            "lotName":            r.get("LotName") or "",
+            "isOpen":             bool(r.get("IsOpen")),
+            "priorGoodThisShift": r.get("PriorGoodThisShift") or 0,
+            "proposedGood":       r.get("ProposedGood") or 0,
+            "maxHeadroom":        r.get("MaxHeadroom") or 0,
+        })
+    return out
+
+
 def registerShotLoss(toolId, shiftId, defectCodeId, quantity, appUserId=None, terminalLocationId=None):
     """Record a shot-level defect (e.g. a short shot on the whole cycle) against
        EVERY currently-open basket on a tool -- builds a one-element shotLoss

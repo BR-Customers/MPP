@@ -102,6 +102,62 @@ def acknowledgeHandover(shiftId, cellLocationId=None, appUserId=None, terminalLo
     return BlueRidge.Common.Db.execMutation("oee/ShiftHandover_Acknowledge", params)
 
 
+def getRecentOptions(limitRows=20):
+    """[{label, value}] for the die-cast shift-output entry's shift picker
+       (Die-Cast Per-Cavity Lifecycle, Task 12): the most recent shift
+       instances, newest first, label 'ScheduleName  MM/dd HH:mm-HH:mm' (or
+       '-open' for the still-open shift). Display only -- ActualStart/End are
+       shown as stored (UTC per Shift_List; not converted to ET here), same
+       precision-only-no-TZ-conversion pattern already used by the arrival/
+       history display helpers elsewhere in this module (mapTrimInventoryInstances
+       et al) -- a full ET conversion sweep is tracked separately as OI-36."""
+    rows = listRecent() or []
+    out = []
+    n = 0
+    for r in rows:
+        r = r or {}
+        n += 1
+        if n > limitRows:
+            break
+        start = r.get("ActualStart")
+        end = r.get("ActualEnd")
+        try:
+            startTxt = system.date.format(start, "MM/dd HH:mm") if start is not None else "?"
+        except:
+            startTxt = ("%s" % start)[:16]
+        if end is not None:
+            try:
+                endTxt = system.date.format(end, "HH:mm")
+            except:
+                endTxt = ("%s" % end)[:16]
+        else:
+            endTxt = "open"
+        label = "%s  %s-%s" % (r.get("ScheduleName") or "Shift", startTxt, endTxt)
+        out.append({"label": label, "value": r.get("Id")})
+    return out
+
+
+def defaultEntryShiftId():
+    """Default shift for the die-cast shift-output entry screen (Task 12).
+
+       SIMPLIFIED vs spec Sec 3.3: returns the currently open shift if one
+       exists, else the most recently ended shift. Does NOT implement the
+       'entry within the first hour of the new shift's ActualStart -> default
+       to the just-ended (previous) shift' smart-default rule -- that needs a
+       clock-vs-ActualStart comparison that's easy to get subtly wrong blind
+       (shift-length assumptions, DST). Flagged as a documented follow-up for
+       Jacques to refine; the operator can always override the shift picker,
+       so this is a UX nicety, not a data-integrity gap."""
+    open_ = getOpen()
+    if open_ and open_.get("Id") is not None:
+        return open_.get("Id")
+    rows = listRecent() or []
+    for r in rows:
+        if r.get("Id") is not None:
+            return r.get("Id")
+    return None
+
+
 def tickShiftBoundary(nowUtc=None):
     """Called every 60s by the ShiftBoundaryTicker gateway timer.
 

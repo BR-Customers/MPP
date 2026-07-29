@@ -758,3 +758,41 @@ def getOpenByTool(toolId, _refreshToken=None):
     if not toolId:
         return []
     return BlueRidge.Common.Db.execList("lots/Lot_GetOpenByTool", {"toolId": toolId})
+
+
+def getOpenByToolInstances(toolId, _refreshToken=None):
+    """'Currently Open' basket-list instances for DieCastBody (Task 13). One
+       instance per getOpenByTool row with OpenedAt (already ET from the proc)
+       reformatted to a short display string (repeater-param date rule --
+       date math is unreliable once it crosses the params hop, mirrors
+       mapHistoryInstances) and a voidEligible flag (PieceCount == 0) driving
+       the row's Void-button visibility. Scalar args only -- fetches inside
+       (mirrors getLineInventoryCards; a list arg re-evaluates as a Java
+       QualifiedValue[] that neither _u nor the JSON round-trip survive).
+       Returns list[dict]."""
+    toolId = _u(toolId)
+    if toolId is None:
+        return []
+    rows = getOpenByTool(toolId) or []
+    out = []
+    for r in rows:
+        r = r or {}
+        opened = r.get("OpenedAt")
+        openedDisplay = ""
+        if opened is not None:
+            try:
+                openedDisplay = system.date.format(opened, "MM/dd HH:mm")
+            except:
+                openedDisplay = ("%s" % opened)[:16]
+        pieceCount = r.get("PieceCount") or 0
+        out.append({
+            "toolCavityId":     r.get("ToolCavityId"),
+            "cavityNumber":     r.get("CavityNumber") or "",
+            "lotId":            r.get("LotId"),
+            "lotName":          r.get("LotName") or "",
+            "pieceCount":       pieceCount,
+            "contributorCount": r.get("ContributorCount") or 0,
+            "openedAtDisplay":  openedDisplay,
+            "voidEligible":     (pieceCount == 0),
+        })
+    return out
