@@ -18,7 +18,20 @@
     "pendingReleaseLotId": null,
     "pendingReleaseLotName": "",
     "pendingVoidLotId": null,
-    "pendingVoidLotName": ""
+    "pendingVoidLotName": "",
+    "activeTool": {
+      "Id": null,
+      "ToolId": null,
+      "ToolCode": "",
+      "ToolName": "",
+      "AssignedByUserId": null,
+      "Notes": null
+    },
+    "cavityOptions": [],
+    "itemOptions": [],
+    "shiftOptions": [],
+    "shotLossDefectOptions": [],
+    "defaultShiftId": null
   },
   "params": {
     "areaId": null,
@@ -138,7 +151,7 @@
                   "props.text": {
                     "binding": {
                       "config": {
-                        "expression": "{session.custom.cell.name} + \"  ·  SHARED TERMINAL  ·  \" + if(isNull({view.custom.activeTool.ToolCode}) || {view.custom.activeTool.ToolCode} = \"\", \"No die mounted\", \"Tool \" + {view.custom.activeTool.ToolCode})"
+                        "expression": "{session.custom.cell.name} + \"  Â·  SHARED TERMINAL  Â·  \" + if(isNull({view.custom.activeTool.ToolCode}) || {view.custom.activeTool.ToolCode} = \"\", \"No die mounted\", \"Tool \" + {view.custom.activeTool.ToolCode})"
                       },
                       "type": "expr"
                     }
