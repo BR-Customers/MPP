@@ -208,6 +208,7 @@
         <div class="toc-grp">Start here</div>
         <a href="#overview">Overview &amp; conventions</a>
         <div class="toc-grp">Plant</div>
+        <a href="#location-type-definitions">Location Type Definitions</a>
         <a href="#plant-hierarchy">Plant Hierarchy</a>
         <div class="toc-grp">Parts</div>
         <a href="#item-master">Item Master</a>
@@ -240,7 +241,7 @@
         when you touch it, and exactly how.</p>
       <div class="meta">
         <span class="tag">Prepared by <b>Blue Ridge Automation</b></span>
-        <span class="tag"><b>13</b> configuration screens</span>
+        <span class="tag"><b>14</b> configuration screens</span>
         <span class="tag">Draft <b>v0.1</b> · 2026-07-29</span>
       </div>
     </header>
@@ -283,7 +284,8 @@
           <p>Locations and tools carry <b>attributes</b> defined by their type (e.g. a Die
             Cast machine has <code>Tonnage</code>, <code>NumberOfCavities</code>). The form
             shows exactly the fields that type allows, with data type and unit — no free-for-all
-            custom columns.</p>
+            custom columns. Those schemas are set in
+            <a href="#location-type-definitions">Location Type Definitions</a>.</p>
         </div>
         <div class="card">
           <h4><span class="k">E</span> Everything is attributed &amp; audited</h4>
@@ -304,6 +306,86 @@
         <code>Sign In</code> button elevates you for protected actions via Active Directory;
         routine configuration is done as the signed-in operator.</div></div>
     </section>
+
+    <!-- ============ LOCATION TYPE DEFINITIONS ============ -->
+    <section id="location-type-definitions">
+      <span class="eyebrow">Plant</span>
+      <h2>Location Type Definitions</h2>
+      <p class="lead">This is the schema layer <em>behind</em> the plant hierarchy. The attributes
+        a location carries aren't hard-coded — they're defined here, per ISA-95 tier and per
+        definition. It's what lets a Die Cast machine carry <code>Tonnage</code> while a terminal
+        carries an IP address, a printer, a scanner flag and a closure method — each type with
+        exactly its own fields and nothing else.</p>
+
+      <div class="note"><span class="ic">&#9881;</span><div>Open it from the <b>gear icon</b> at
+        the top-right of the <a href="#plant-hierarchy">Plant Hierarchy</a> screen. This is
+        structural configuration — set up at commissioning and rarely touched afterward; the
+        day-to-day job is filling in attribute <em>values</em> in the hierarchy itself.</div></div>
+
+      <div class="www">
+        <div><h4>What</h4><p>For each ISA-95 tier (Enterprise, Site, Area, Work Center, Cell), the
+          named <b>definitions</b> available and the <b>attribute schema</b> each one carries —
+          attribute name, data type, required, default, UOM.</p></div>
+        <div><h4>When</h4><p>At commissioning, or when a new class of equipment/terminal is
+          introduced, or an attribute must be added to a type (e.g. a new terminal setting).</p></div>
+        <div><h4>Why</h4><p>It makes the hierarchy <b>polymorphic and safe</b>: every location of a
+          given type shares one schema, so there are no free-text columns and no drift between two
+          machines of the same kind.</p></div>
+      </div>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Plant Hierarchy <b>&rsaquo;</b> Location Type Definitions <b>&rsaquo;</b> Area</span></div>
+          <img src="shots/18_loctype_area.png" alt="Location Type Definitions modal on the Area tier, showing ProductionArea and SupportArea definitions, Definition Details (code, name, icon, description), and an empty attribute-definitions grid.">
+        </div>
+        <figcaption>Pick a <b>tier</b> (here Area), then a <b>definition</b> (ProductionArea /
+          SupportArea). <b>Definition Details</b> sets the display Name, Icon and Description — the
+          <b>Code</b> is fixed once created. The <b>Attribute Definitions</b> grid is the schema
+          every location of this type inherits.</figcaption>
+      </figure>
+
+      <h3>Define a type or add an attribute</h3>
+      <ol class="steps">
+        <li>Choose the <b>Location Type (ISA-95 tier)</b>, then a <b>definition</b> in that tier —
+          or click <code>+ Add</code> to create a new definition.</li>
+        <li>Set the <b>Name</b>, an <b>Icon</b> (<code>Pick…</code>) and an optional description.
+          The <b>Code</b> is the stable identifier and can't be changed later.</li>
+        <li>Under <b>Attribute Definitions</b>, click <code>+ Add Attribute</code> and set the
+          attribute's <b>name</b>, <b>data type</b> (NVARCHAR / BIT / INT / DECIMAL), <b>required</b>
+          flag, <b>default</b> and <b>UOM</b>. Reorder with the arrows.</li>
+        <li>Click <code>Save</code>. Every existing and future location of this type immediately
+          exposes the field in its Attributes grid.</li>
+      </ol>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Location Type Definitions <b>&rsaquo;</b> Cell <b>&rsaquo;</b> Terminal</span></div>
+          <img src="shots/19_loctype_terminal.png" alt="Cell tier showing all equipment definitions (AssemblyStation, CNCMachine, DieCastMachine, InspectionStation, InventoryLocation, Printer, Scale, SerializedAssemblyLine, Terminal, TrimPress) with the Terminal definition selected and its attribute schema beginning with IpAddress, DefaultPrinter, HasBarcodeScanner.">
+        </div>
+        <figcaption>The <b>Cell</b> tier holds the shop-floor equipment definitions —
+          AssemblyStation, CNCMachine, DieCastMachine, InspectionStation, InventoryLocation,
+          Printer, Scale, SerializedAssemblyLine, Terminal, TrimPress. Each carries its own schema;
+          the <b>Terminal</b> definition declares seven attributes (detailed under
+          <a href="#plant-hierarchy">Plant Hierarchy → Configuring a terminal</a>).</figcaption>
+      </figure>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Location Type Definitions <b>&rsaquo;</b> Cell <b>&rsaquo;</b> Printer</span></div>
+          <img src="shots/20_loctype_printer.png" alt="Printer definition on the Cell tier with two attributes: Endpoint (required, NVARCHAR) and Model (NVARCHAR).">
+        </div>
+        <figcaption>The <b>Printer</b> definition is deliberately small: a required
+          <code>Endpoint</code> (the Zebra target — <span class="mono">IP:port</span> or a
+          print-queue name) and a <code>Model</code> (which informs label-template selection).
+          Printers are placed as child locations under the terminals they serve — see
+          <a href="#plant-hierarchy">Attaching a printer</a>.</figcaption>
+      </figure>
+    </section>
+
+    <hr class="div">
 
     <!-- ============ PLANT HIERARCHY ============ -->
     <section id="plant-hierarchy">
@@ -361,6 +443,86 @@
           attribute grid stays empty until a Definition is chosen, then fills with exactly
           that type's fields.</figcaption>
       </figure>
+
+      <h3>Configuring a terminal</h3>
+      <p>A terminal is a shop-floor station. Its <b>Attributes</b> (the Terminal schema) are what
+        make the physical station behave correctly — which screen it boots into, which printer and
+        scanner it uses, and how it closes out work. Getting these right is essential: an
+        unconfigured terminal falls back to plant-wide defaults and misbehaves on the floor.</p>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Plant <b>&rsaquo;</b> Plant Hierarchy <b>&rsaquo;</b> Terminal</span></div>
+          <img src="shots/21_terminal_config.png" alt="The Assembly Out terminal selected, showing the Terminal-schema attribute values: IpAddress and DefaultPrinter blank, HasBarcodeScanner unchecked, DefaultScreen set to /shop-floor/assembly-nonserialized, CurrentClosureMethod ByVision.">
+        </div>
+        <figcaption>The <b>Assembly Out</b> terminal (<span class="mono">MA1-FP6NA-AOUT</span>).
+          <code>DefaultScreen</code> and <code>CurrentClosureMethod</code> are set;
+          <code>IpAddress</code> and <code>DefaultPrinter</code> are still blank — exactly the
+          fields to fill in before the station goes live.</figcaption>
+      </figure>
+
+      <div class="tbl-scroll"><table class="fields">
+        <thead><tr><th>Terminal attribute</th><th>Why it matters</th></tr></thead>
+        <tbody>
+          <tr><td>IpAddress</td><td>The terminal's network identity — how a session recognizes
+            <b>which</b> terminal it's running on and binds to that station's line, queue and
+            devices. An unregistered or blank IP drops to the plant-wide <b>Fallback Terminal</b>,
+            which breaks eligibility and shows plant-wide queues. Set it to the station's actual IP.</td></tr>
+          <tr><td>DefaultPrinter</td><td>The label printer this station prints to — point it at the
+            <a href="#plant-hierarchy">Printer entity</a> attached beneath the terminal.</td></tr>
+          <tr><td>HasBarcodeScanner</td><td>Whether the station has a scanner — drives scan-vs-manual
+            entry on the floor. <em>Schema-dependent:</em> present because the terminal's type
+            definition declares it.</td></tr>
+          <tr><td>DefaultScreen</td><td>The Perspective view the terminal opens to at session start
+            (e.g. <span class="mono">/shop-floor/assembly-nonserialized</span>) — this effectively
+            sets the station's role.</td></tr>
+          <tr><td>CurrentClosureMethod</td><td>For assembly-out terminals, the active pack-out mode:
+            <span class="mono">ByCount</span> / <span class="mono">ByWeight</span> /
+            <span class="mono">ByVision</span>. <em>Schema-dependent:</em> only terminals whose
+            definition declares it expose this.</td></tr>
+          <tr><td>RequiresCompletionConfirm</td><td>Whether the terminal prompts for an explicit
+            completion confirmation before finishing work.</td></tr>
+          <tr><td>VisionAppUrl</td><td>The external vision web-app URL embedded in the ByVision
+            assembly screen.</td></tr>
+        </tbody>
+      </table></div>
+
+      <div class="note"><span class="ic">i</span><div><b>Not every terminal has every field.</b>
+        <code>HasBarcodeScanner</code> and <code>CurrentClosureMethod</code> come from the
+        <a href="#location-type-definitions">type definition</a>, so which attributes a terminal
+        exposes depends on how its definition is set up — a die-cast IN terminal and an assembly-out
+        terminal legitimately differ.</div></div>
+
+      <h3>Attaching a printer</h3>
+      <p>Any terminal with a physical label printer gets a <b>Printer location as a child</b>
+        beneath it. Modeling the printer as its own location keeps the endpoint and model with the
+        station that owns it, and lets the terminal's <code>DefaultPrinter</code> resolve to a real
+        device.</p>
+
+      <figure class="shot">
+        <div class="frame">
+          <div class="frame-bar"><span class="dots"><i></i><i></i><i></i></span>
+            <span class="path">Plant <b>&rsaquo;</b> Plant Hierarchy <b>&rsaquo;</b> Printer</span></div>
+          <img src="shots/22_printer_entity.png" alt="Printer P-005 nested under the Assembly Out terminal in the tree, with CELL - PRINTER details (code MA1-FP6NA-AOUT-P1, 'Label printer for MA1-FP6NA-AOUT') and Printer-schema attributes Endpoint (required) and Model.">
+        </div>
+        <figcaption>Printer <span class="mono">P - 005</span> nested under the Assembly Out
+          terminal. Its attributes are <code>Endpoint</code> (required) and <code>Model</code>.</figcaption>
+      </figure>
+
+      <ol class="steps">
+        <li>Select the <b>terminal</b> in the tree, then click <code>+ Add Location</code>.</li>
+        <li>Set <b>Type</b> = <span class="mono">Cell</span>, <b>Definition</b> =
+          <span class="mono">Printer</span>.</li>
+        <li>Name it and give it a code (convention:
+          <span class="mono">&lt;TERMINAL&gt;-P1</span>, e.g.
+          <span class="mono">MA1-FP6NA-AOUT-P1</span>).</li>
+        <li>Set <b>Endpoint</b> (required — the Zebra target as <span class="mono">IP:port</span>
+          or a print-queue name) and <b>Model</b> (drives label-template selection), then
+          <code>Save</code>.</li>
+        <li>Back on the terminal, set <code>DefaultPrinter</code> so its label jobs route to this
+          printer.</li>
+      </ol>
 
       <h3>Mounting a tool &amp; retiring a location</h3>
       <ul>
